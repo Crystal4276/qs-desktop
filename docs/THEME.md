@@ -2,7 +2,9 @@
 
 Extraite le 2026-10-15 de la config en place. `config/Theme.qml` en est la traduction fidèle et rien d'autre.
 Unités : **px logiques** (Wayland). Sur les écrans en scale 1.5, multiplier par 1.5 pour les pixels physiques.
-`1rem` = 16 px (police GTK par défaut `Inter Light 12` = 16 px ; Waybar ne fixe pas de taille racine).
+`1rem` = **20 px** : police GTK par défaut `Inter Light 12` (16 px) × `text-scaling-factor` **1.25** (gsettings) ; Waybar ne fixe pas de taille racine.
+Vérifié sur capture : arrondi des pilules = 20 px. Les tailles de police écrites en `px` (26 px, 34 px…) ne sont **pas** agrandies (chiffres de l'horloge ≈ 19 px de haut = Inter 26 px).
+Quickshell (Qt) ne lit pas ce facteur : `Theme.qml` porte directement les valeurs en px ci-dessous.
 
 ## 1. Palette
 
@@ -102,17 +104,17 @@ on ne s'appuie sur aucun repli implicite.
 |---|---|
 | Fond de la barre | transparent |
 | Zone exclusive | 65 px (= 10 marge haute + 55 pilule) |
-| Pilule (groupe de modules) | hauteur **55 px** bordure comprise, bordure 1 px `overlay0`, fond `mantle`, rayon `1rem` = 16 px |
+| Pilule (groupe de modules) | hauteur **55 px** bordure comprise, bordure 1 px `overlay0`, fond `mantle`, rayon `1rem` = **20 px** (mesuré) |
 | Marge haute des pilules | 10 px |
 | Marge entre pilules | 10 px |
 | Marge gauche / droite de la barre | 10 px |
-| Padding interne des modules | `0.5rem` = 8 px (haut/bas et gauche/droite) |
-| Espaces de travail | glyphes 34 px, padding horizontal `0.4rem` = 6.4 px |
+| Padding interne des modules | `0.5rem` = 10 px (haut/bas et gauche/droite) |
+| Espaces de travail | glyphes 34 px, padding horizontal `0.4rem` = 8 px |
 | Bouton menu Arch | min 40x40, padding horizontal 10 px, image SVG 38 px centrée |
-| Tray | icônes 32 px, espacement 5 px, padding horizontal `0.3rem` = 4.8 px |
+| Tray | icônes 32 px, espacement 5 px, padding horizontal `0.3rem` = 6 px |
 | Network | padding horizontal 10 px, largeur min 80 px |
 | Volume (icône) | largeur min 35 px |
-| Curseur de volume | largeur min 50 px, padding horizontal `1rem` ; rail : hauteur 15, largeur min 50, rayon 15, `crust` ; remplissage : rayon 15, `text` ; bouton : 20x20, `surface2` (CSS `opacity: 0` mais **visible** sur capture) |
+| Curseur de volume | largeur min 50 px, padding horizontal `1rem` = 20 px ; rail : hauteur 15, largeur min 50, rayon 15, `crust` ; remplissage : rayon 15, `text` ; bouton : 20x20, `surface2` (CSS `opacity: 0` mais **visible** sur capture) |
 | cava | padding gauche 10 px, padding haut 12 px |
 
 ### Groupes de pilules (une seule bordure arrondie autour du groupe)
@@ -136,7 +138,7 @@ on ne s'appuie sur aucun repli implicite.
 | espaces : 1re / 2e / 3e position | `teal` / `sapphire` / `blue` |
 | espace vide | `surface1` |
 | espace focalisé | sa couleur + halo `text-shadow 0 0 6px currentColor` |
-| espace survolé | fond `alpha(couleur, 0.1)`, rayon 16 px |
+| espace survolé | fond `alpha(couleur, 0.1)`, rayon 20 px |
 | `custom/updates` | `sapphire` |
 | `custom/nvidia` | `sky` |
 | `cpu` | `teal` |
@@ -198,9 +200,9 @@ Transitions : aucune (`transition: none` sur le bouton menu et les espaces vides
 
 ## 7. Menu d'applications (nwg-menu, bouton Arch)
 
-Fond `mantle`, bordure 1 px `overlay0`, rayon 16 px ; listes internes fond `base`, bordure `overlay0`, rayon 16 px ;
-éléments : padding 5, marge 2, rayon 16, texte `text` ; survol/sélection : fond `green`, texte `mantle` ;
-recherche : soulignement 1 px `overlay2`, rayon 8 px, 24 px ; barre de défilement 25 px, curseur `overlay0` (survol `overlay1`) ;
+Fond `mantle`, bordure 1 px `overlay0`, rayon 20 px ; listes internes fond `base`, bordure `overlay0`, rayon 20 px ;
+éléments : padding 5, marge 2, rayon 20, texte `text` ; survol/sélection : fond `green`, texte `mantle` ;
+recherche : soulignement 1 px `overlay2`, rayon 10 px, 24 px ; barre de défilement 25 px, curseur `overlay0` (survol `overlay1`) ;
 boutons lock/logout/reboot/power : survol `rgba(255,255,255,0.1)` + bordure `overlay0`. Icônes : catégories 48 px, éléments 24 px.
 
 ## 8. Fenêtres (compositeur, pour mémoire)

@@ -77,7 +77,7 @@ Locale : `en_US.UTF-8` (jours en anglais : `Thu`).
   - visible sur son écran sans focus : même couleur que occupé, pas de marque supplémentaire ;
   - focalisé : couleur + **halo** (`text-shadow 0 0 6px`) ;
   - urgent : aucun style défini (rien de visible) ;
-  - survol : fond de la couleur à 10 % d'opacité, coins arrondis 16 px.
+  - survol : fond de la couleur à 10 % d'opacité, coins arrondis 20 px.
 - **Clic gauche** : aller à l'espace (défaut Waybar). Sous Hyprland en config Lua, le clic est inopérant (bug Waybar #5008).
 - **Molette** : Sway : espace précédent / suivant (défaut, avec bouclage) ; Hyprland : désactivée (`disable-scroll: true`).
 - **Tooltip** : aucun.
@@ -383,3 +383,53 @@ puis comparaison avec les types QML disponibles dans Quickshell 0.3.2 (`/usr/lib
   de fond d'écran, non lancés), `cinnamon/spices/*` (dossiers vides), `nwg-look` (outil qui écrit `gtk-3.0/settings.ini`), `qtile/`, `openbox/`, `xfce4/`.
 - **Applications personnelles** de `~/.local/share/applications` (132 fichiers : jeux Steam, web apps Chrome, Discord web…) : le lanceur et le menu
   les lisent via `DesktopEntries`, rien à faire.
+
+## 11. Troisième passe (2026-10-15) — autour du bureau
+
+Champ élargi : démarrage de session, variables d'environnement, réglages dconf/GTK/Qt, portails, alimentation, trousseau, polices de repli,
+et revue de **tous** les paquets installés explicitement (`pacman -Qe`).
+
+### 11.1 Démarrage de session et environnement
+
+- Sway est lancé par **SDDM** (thème `catppuccin-mocha-green` ; SDDM sera remplacé par un greeter Quickshell en phase 12) via une session **créée à la main** :
+  `/usr/share/wayland-sessions/sway-vulkan.desktop` → `env WLR_RENDERER=vulkan sway --unsupported-gpu` (aucun paquet ne possède ce fichier).
+- `/etc/environment` : `QT_QPA_PLATFORMTHEME=qt6ct`. qt6ct : style `kvantum` (thème Kvantum `KvArcDark`), icônes **`breeze`**.
+  **Quickshell est une application Qt : il hérite de ces réglages** (style, police par défaut, thème d'icônes) — voir `ARCHITECTURE.md` § 11.
+- Le trousseau `gnome-keyring` est déverrouillé à la connexion par la config PAM de SDDM (`pam_gnome_keyring.so`) → à reproduire avec le futur greeter (phase 12).
+- `logind` : réglages par défaut (bouton power = extinction immédiate ; capot = mise en veille sur laptop).
+
+### 11.2 Réglages dconf / GTK (à reproduire sur un nouveau PC)
+
+| Clé `org.gnome.desktop.interface` | Valeur |
+|---|---|
+| `gtk-theme` | `catppuccin-mocha-green-standard+default` |
+| `icon-theme` | `Papirus-Dark` |
+| `font-name` / `document-font-name` / `monospace-font-name` | `Inter Light 12` / `Inter Light 13` / `Source Code Pro 12` |
+| `text-scaling-factor` | **`1.25`** → agrandit le texte GTK, donc `1rem` = 20 px dans Waybar (`THEME.md` corrigé) |
+| `color-scheme` | `prefer-dark` |
+| `cursor-theme` / `cursor-size` | `default` / `48` (le thème réel est fixé par Sway/Hyprland : `catppuccin-mocha-green-cursors`) |
+| `clock-format` | `24h` |
+
+Incohérence relevée : `gtk-3.0/settings.ini` a `prefer-dark=1`, `gtk-4.0/settings.ini` a `prefer-dark=0`.
+
+### 11.3 Polices de repli (texte non latin, emojis)
+
+| Texte | Police utilisée aujourd'hui | Problème |
+|---|---|---|
+| Japonais, chinois | MS Gothic | `/usr/share/fonts/MS_Fonts/` : **540 polices Microsoft copiées à la main**, aucun paquet → absentes d'un nouveau PC |
+| Coréen | Malgun Gothic | idem |
+| Emojis | DejaVu Sans (monochrome), alors que `Noto Color Emoji` est installé | rendu à vérifier dans Quickshell (notifications Discord/WhatsApp, titres Spotify) |
+
+Proposition : `noto-fonts-cjk` et `noto-fonts-emoji` dans `deps/` ; test en phase 4 (titre MPRIS japonais) et en phase 6 (notification avec emojis).
+
+### 11.4 Autres constats
+
+- **Portail de partage d'écran** (Sway) : `xdg-desktop-portal-wlr` choisit l'écran avec `slurp` → `slurp` reste une dépendance même avec un outil de capture natif.
+- **`gnome-screenshot`** et GNOME Shell sont installés : référence disponible pour l'outil de capture (phase 8b).
+- **Onduleur** : `apcupsd` actif mais `STATUS: COMMLOST` (onduleur non joignable). Rien à afficher aujourd'hui.
+- **VPN** installés : `networkmanager-openvpn`, `networkmanager-pptp`, `wireguard-tools`, `tailscale`, `zerotier-one`, NordVPN. Seul NordVPN a une icône (tray).
+  `Quickshell.Networking` n'expose pas les VPN → `nm-connection-editor` en repli.
+- **Bluetooth** : `bluez-tools` (`bt-agent`) est installé, mais il n'est pas retenu comme agent : ses modes sans interaction acceptent tout (cf. `ARCHITECTURE.md` § 10.2).
+- **Autostart XDG** (`~/.config/autostart`) : rappel, Bitwarden ne démarre pas (rien n'exécute ces fichiers).
+- **Hors bureau, sans action** : `lightdm`, `gdm` (installés, inactifs), `picom`, `openbox`, `qtile`, `numlockx` (X11), `hyprpicker`, `autotiling`, `obs-studio`,
+  `timeshift`, `gamemode`, `openrgb`, `webapp-manager` (crée les web apps lues par le lanceur).

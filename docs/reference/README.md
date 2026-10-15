@@ -12,3 +12,4 @@ Prises le 2026-10-15 sous Sway, trois écrans, Waybar visible. Pixels **physique
 | `nwg-menu.png` | menu du bouton Arch (bouton actif en vert) | DP-2 |
 | `dunst-DP-2.png` | 3 notifications : critique avec icône, normale, basse | `notify-send -u critical -i dialog-warning …`, `-u normal -i audio-volume-high …` (icône non trouvée), `-u low …` |
 | `glyphs.png` | planche de toutes les icônes utilisées (barre, power menu, lanceur), avec leur code | rendue avec `Symbols Nerd Font Mono` (`scripts` non requis : ImageMagick) |
+| `sddm-catppuccin-preview.png` | aperçu du thème SDDM `catppuccin-mocha-green` (référence cosmétique du futur greeter, phase 12) | copié depuis `/usr/share/sddm/themes/catppuccin-mocha-green/preview.png` ; aperçu générique du paquet, la variante installée est verte |
