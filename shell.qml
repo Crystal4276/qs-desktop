@@ -1,0 +1,12 @@
+//@ pragma IconTheme Papirus-Dark
+//@ pragma ShellId desktop
+
+// Point d'entrée. ShellId fixe : la config est lancée depuis le dépôt (dev) ou via
+// ~/.config/quickshell/desktop, et `qs ipc` doit trouver la même instance dans les deux cas.
+
+import Quickshell
+import qs.modules.bar
+
+ShellRoot {
+    Bar {}
+}
