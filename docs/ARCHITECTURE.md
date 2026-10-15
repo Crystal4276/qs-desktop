@@ -346,7 +346,7 @@ Barre, notifications, verrouillage, agent polkit, agent Bluetooth et veille vive
 - **écran verrouillé** : le protocole `ext-session-lock` garde la session verrouillée si le verrouilleur meurt (c'est voulu, c'est sûr) ; il faut donc que le `qs` redémarré
   puisse reprendre le verrouillage, et documenter un **retour de secours** depuis un TTY. À tester explicitement en phase 8b, sans risque pour ta session (écran virtuel ou session de test).
 
-### 11.3 Polices Microsoft — à décider
+### 11.3 Polices Microsoft — décidé : dépôt privé `Crystal4276/fonts-ms` (créé le 2026-10-15)
 
 Tu veux garder les 540 polices Microsoft (363 Mo, `/usr/share/fonts/MS_Fonts/`), utiles pour les documents Word.
 Ce sont des polices **propriétaires** : leur usage personnel avec ta licence Windows ne pose pas de problème, mais les versionner, c'est les
