@@ -29,7 +29,7 @@ Chaque commande a été rattachée à son paquet sur cette machine avec `pacman 
 | Volume (icône + curseur) | natif (`Services.Pipewire`) | `pipewire`, `wireplumber` (services utilisateur actifs) | `pavucontrol` (clic droit) | Symbols Nerd Font Mono | — |
 | Sortie audio suivante (ex-`audio-toggle.sh`) | natif (`Services.Pipewire`) + notification interne | — | — | — | — |
 | Mises à jour | `checkupdates` | `pacman-contrib`, **`fakeroot`** (`checkupdates` échoue sans lui ; non déclaré par `pacman-contrib`) | `paru` ou `yay` (clic) ; terminal | Inter, Symbols Nerd Font Mono | — |
-| GPU | `nvidia-smi` | — | `nvidia-utils` (sinon module masqué) ; `nvtop` (clic) | Inter, Symbols Nerd Font Mono | — |
+| GPU | NVIDIA : `nvidia-smi` ; AMD / Intel : sysfs (natif) | — | `nvidia-utils` (NVIDIA uniquement) ; `nvtop` (clic, tous constructeurs) ; module masqué sans température lisible | Inter, Symbols Nerd Font Mono | — |
 | CPU | natif (`/proc/stat`) | — | `btop` (clic) | Inter, Symbols Nerd Font Mono | — |
 | Mémoire | natif (`/proc/meminfo`) | — | `btop` (clic) | Inter, Symbols Nerd Font Mono | — |
 | Horloge + fenêtre calendrier | natif (Qt) | `tzdata` (système) | — | Inter, Symbols Nerd Font Mono | — |

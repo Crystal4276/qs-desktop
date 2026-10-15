@@ -376,3 +376,25 @@ Proposition (phase 5, avec le réseau) : service `services/Vpn.qml` + widget dan
 Points d'attention : le format texte de `nordvpn status` peut changer d'une version à l'autre (lecture centralisée dans le service, testée à chaque mise à jour) ;
 `nordvpn set tray off` modifie un réglage de NordVPN → appliqué seulement à la bascule (phase 10), avec ton accord.
 Emplacement du widget dans la barre : à décider en phase 5 (nouveau widget, sans équivalent dans la Waybar actuelle).
+
+### 11.5 GPU multi-constructeur et moniteur système
+
+**Module GPU** (phase 4) — détection, sans rien supposer de la machine :
+1. cartes : `/sys/class/drm/card*/device/vendor` (`0x10de` NVIDIA, `0x1002` AMD, `0x8086` Intel) ; s'il y en a plusieurs, celle marquée `boot_vga=1` (écran principal) ;
+2. lecture selon le constructeur :
+
+| Constructeur | Température | Charge / mémoire | Externe ? |
+|---|---|---|---|
+| NVIDIA (pilote propriétaire ou `nvidia-open`) | `nvidia-smi` (le pilote **n'expose aucun capteur hwmon** : vérifié sur cette machine) | `nvidia-smi` | `nvidia-utils` |
+| AMD (`amdgpu`) | `device/hwmon/hwmon*/temp*_input` (capteurs `edge` / `junction`) | `device/gpu_busy_percent`, `mem_info_vram_used` / `_total` | non (sysfs) |
+| Intel dédié (Arc, pilote `xe` ou `i915`) | `device/hwmon/hwmon*/temp*_input` si présent | — | non |
+| Intel intégré (iGPU) | pas de capteur propre (puce partagée avec le CPU) | — | — |
+
+3. aucune température GPU lisible → module masqué (cas iGPU seul).
+
+Clic : `nvtop` (gère AMD, Intel et NVIDIA). Ce desktop n'a qu'un GPU NVIDIA : les branches AMD et Intel seront testées avec une fausse arborescence sysfs
+(dossier de test passé au service), puis sur une vraie machine quand l'occasion se présente — à signaler dans le rapport de phase 4.
+
+**Moniteur système** : au départ, les clics CPU / mémoire ouvrent `btop` (parité). Ensuite, une **fenêtre Quickshell de statistiques système**
+(équivalent de btop : CPU par cœur, mémoire et swap, températures, GPU, disques, réseau, processus) — ajoutée à la phase 8b, en dernier.
+Les données viennent de `/proc` et `/sys` (déjà lus par les services de la barre) ; la liste des processus et l'arrêt d'un processus sont à concevoir à ce moment-là.
