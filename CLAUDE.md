@@ -257,33 +257,38 @@ Lire toute la config existante et produire :
 
 **Phase 1 — Squelette.** `shell.qml`, `Theme` (complet dès maintenant), `Settings` + config machine, `Compositor`, une barre vide par écran actif, aux bonnes dimensions et aux bonnes couleurs, apparaissant et disparaissant avec les écrans, scripts de dev, lien `~/.config/quickshell/desktop`.
 
-**Phase 2 — Barre : modules de base.** Espaces de travail (seulement ceux de l'écran de la barre), titre de fenêtre, mode Sway (resize, etc.), horloge — sous Sway.
+**Phase 2 — Barre : modules de base.** Espaces de travail (seulement ceux de l'écran de la barre), horloge — sous Sway. Titre de fenêtre et mode Sway : exposés par `Compositor`, sans widget (parité, `ARCHITECTURE.md` § 8).
 
-**Phase 3 — Écrans dynamiques.** Répartition automatique des espaces de travail et, si retenu, profils Kanshi. `scripts/test-outputs.sh` passe sur tous les scénarios avec écrans virtuels. Sur mon desktop à trois écrans, le résultat est strictement identique à l'attribution actuelle. Liste des tests à faire à la main (vrai câble, capot) dans le rapport.
+**Phase 3 — Écrans dynamiques.** Répartition automatique des espaces de travail ; sorties configurées nativement par le compositeur, par description d'écran (Kanshi écarté, `ARCHITECTURE.md` § 3.1). `scripts/test-outputs.sh` passe sur tous les scénarios avec écrans virtuels. Sur mon desktop à trois écrans, le résultat est strictement identique à l'attribution actuelle. Liste des tests à faire à la main (vrai câble, capot) dans le rapport.
 
-**Phase 4 — Barre : modules système.** Tous les autres modules inventoriés (audio, réseau, CPU/RAM/températures, GPU, MPRIS, modules custom…) avec leurs tooltips et actions. Modules matériels masqués si le matériel est absent ; prévoir dès maintenant batterie et luminosité pour le futur laptop si cela reste simple.
+**Phase 4 — Barre : modules système.** Tous les autres modules inventoriés (audio, réseau, CPU/RAM/températures, GPU, MPRIS, modules custom…) avec leurs tooltips et actions. Modules matériels masqués si le matériel est absent ; prévoir dès maintenant batterie et luminosité pour le futur laptop si cela reste simple. Le tooltip calendrier devient une fenêtre Quickshell soignée.
 
-**Phase 5 — Tray.** Icônes, menus contextuels, clics.
+**Phase 5 — Tray, réseau, Bluetooth, disques.** Tray (icônes, menus contextuels, clics) ; menus natifs remplaçant `nm-applet`, `blueman` (appairage via un agent `bluetoothctl` piloté par Quickshell) et `udiskie` (`busctl` / `gdbus` / `udisksctl`) — `ARCHITECTURE.md` § 10.
 
 **Phase 6 — Notifications.** Popups conformes aux règles Dunst, actions, urgences, historique et équivalents des commandes `dunstctl` que j'utilise (via IPC). Les popups s'affichent sur l'écran prévu, avec un repli si cet écran a disparu.
 
 **Phase 7 — Lanceur.** Remplacement de `rofi -show drun` (recherche, icônes, navigation clavier), ouvert sur l'écran focalisé.
 
-**Phase 8 — Menus custom et scripts.** Power menu et tous les autres menus Rofi inventoriés ; application des décisions de `SCRIPTS.md` (scripts remplacés en QML, gardés et rapatriés dans `scripts/`, ou abandonnés après mon accord).
+**Phase 8 — Menus custom et scripts.** Power menu, menu d'applications maison sur le modèle du menu Cinnamon (remplace nwg-menu), et tous les autres menus Rofi inventoriés ; application des décisions de `SCRIPTS.md` (scripts remplacés en QML, gardés et rapatriés dans `scripts/`, ou abandonnés après mon accord).
+
+**Phase 8b — Services de session et utilitaires.** Fond d'écran natif et utilitaire de changement de fond (`docs/WALLPAPERS.md`) ; écran de verrouillage natif au design entièrement refait (moderne, dans la charte) ; veille des écrans (`IdleMonitor`) ; agent polkit ; outil de capture d'écran (écran entier, un écran, une fenêtre, une zone — modèle de l'outil GNOME), d'abord sur `grim`/`slurp`.
 
 **Phase 9 — Parité Hyprland.** Rejouer le protocole de vérification complet sous Hyprland, y compris `test-outputs.sh`.
 
 **Phase 10 — Bascule.** Sur une branche dédiée et avec mon accord :
-- rapatrier les configs Sway/Hyprland (et Kanshi) dans `dotfiles/`, avec sauvegarde préalable ;
+- rapatrier les configs Sway/Hyprland dans `dotfiles/`, avec sauvegarde préalable ;
 - remplacer les attributions fixes `workspace N output …` par le mécanisme dynamique ;
 - faire pointer les raccourcis clavier vers `qs ipc call …` ;
-- autostart `qs -c desktop` dans Sway (`exec`) et Hyprland (`exec-once`), plus Kanshi si retenu ;
-- retirer Waybar/Dunst/Rofi de l'autostart ;
+- autostart `qs -c desktop` dans Sway (`exec`) et Hyprland (`exec-once`) ;
+- retirer de l'autostart Waybar, Dunst, Rofi, swaybg, swayidle/hypridle, polkit-gnome, nm-applet, blueman, udiskie ;
+- au démarrage, chaque écran affiche le premier espace de son bloc (1 / 4 / 7) ;
 - documenter la procédure de retour arrière.
 
 Suppression des anciens paquets seulement quand je le décide.
 
 **Phase 11 — Portabilité.** `install.sh` complet (`--dry-run`, `--uninstall`), finalisation de `deps/` (y compris correspondances Fedora/Debian), `README.md` d'installation, test dans un conteneur Arch si possible, et une config machine par défaut pour un laptop à écran unique. Vérifier qu'aucun chemin ou nom d'écran personnel ne reste en dur (`grep -rn "/home/\|DP-2"` hors `hosts/`).
+
+**Phase 12 — Écran de connexion (tout à la fin).** Remplacer SDDM par un greeter, entièrement en Quickshell si possible (module `Greetd`). À concevoir ensemble ; touche aux fichiers système, donc rien sans mon accord explicite.
 
 ## Git
 

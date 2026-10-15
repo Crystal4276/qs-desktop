@@ -35,7 +35,7 @@ Chaque commande a été rattachée à son paquet sur cette machine avec `pacman 
 | Horloge + fenêtre calendrier | natif (Qt) | `tzdata` (système) | — | Inter, Symbols Nerd Font Mono | — |
 | Réseau (débit) | natif (`/proc/net/dev`, `/proc/net/route`) | — | — | Inter, Symbols Nerd Font Mono | — |
 | Tray | natif (`Services.SystemTray` ; Quickshell fait aussi le rôle de « watcher ») | — | — | — | — |
-| Bouton power → power menu | natif | `swaylock` (Lock), `systemd` (Reboot/Shutdown) | — | Symbols Nerd Font Mono | `assets/{lock,logout,restart,shutdown}.svg`, `swaylock.conf` |
+| Bouton power → power menu | natif | `systemd` (Reboot/Shutdown) ; Lock → verrouillage natif | — | Symbols Nerd Font Mono | `assets/{lock,logout,restart,shutdown}.svg` |
 | Batterie (laptop) | natif (`Services.UPower`) | — | `upower` (service système) | Symbols Nerd Font Mono | — |
 | Luminosité (laptop) | `/sys/class/backlight` | — | `brightnessctl` (écriture sans root) | Symbols Nerd Font Mono | — |
 
@@ -49,13 +49,20 @@ Thème d'icônes des applications (tray, lanceur, notifications) : `papirus-icon
 | Notifications | — (natif) | `libnotify` (tests `notify-send`) | Noto Sans Mono (`noto-fonts`) | — |
 | Lanceur | — (natif, `DesktopEntries`) | terminal pour les applis `Terminal=true` | Inter, Symbols Nerd Font Mono | — |
 | Menu d'applications (modèle Cinnamon, remplace nwg-menu) | — (natif, `DesktopEntries`) | à préciser en phase 8 (ex. ouverture de dossiers → gestionnaire de fichiers par défaut via `xdg-open`) | à préciser | — |
-| Verrouillage | `swaylock` | — | Symbols Nerd Font Mono | `swaylock.conf` |
+| Verrouillage (design refait) | — (natif, `WlSessionLock` + PAM, `pam` installé avec `quickshell`) | — | à définir | — |
+| Veille des écrans | — (natif, `IdleMonitor` + commande DPMS au compositeur) | — | — | — |
+| Agent polkit | — (natif, `PolkitAgent` ; `polkit` installé avec `quickshell`) | — | à définir | — |
+| Fond d'écran + utilitaire | — (natif) | — | à définir | dépôt `wallpapers` cloné dans `~/Pictures/Wallpapers` |
+| Réseau | `networkmanager` (natif, `Networking`) | `nm-connection-editor` (`network-manager-applet`) pour l'édition | Symbols Nerd Font Mono | — |
+| Bluetooth | `bluez` (natif, `Bluetooth`), `bluez-utils` (agent d'appairage) | — | Symbols Nerd Font Mono | — |
+| Disques amovibles | `udisks2`, `glib2` (`gdbus`), `systemd` (`busctl`) | — | Symbols Nerd Font Mono | — |
+| Outil de capture | `grim`, `slurp`, `wl-clipboard` (au départ) | — | à définir | — |
 | Événements Thunderbird (backlog) | `sqlite` | — | — | — |
 
 ### Hors barre (configs compositeur, phase 10)
 
-`swaybg` / `swayidle` (Sway), `hypridle` (Hyprland), captures `grim` + `slurp` + `wl-clipboard` + `jq` (Sway) / `hyprshot` (Hyprland),
-agent polkit `polkit-gnome`, applets du tray (`network-manager-applet`, `blueman`, `udiskie`), thème GTK et curseur (AUR).
+Thème GTK et curseur (AUR). Tout le reste (fond, veille, verrouillage, polkit, applets réseau/Bluetooth/disques, captures) est repris par Quickshell :
+`swaybg`, `swayidle`, `hypridle`, `swaylock`, `polkit-gnome`, `blueman`, `udiskie`, `hyprshot` ne seront plus nécessaires après la bascule.
 Les applications personnelles lancées au démarrage (Steam, Spotify, Thunderbird, NordVPN…) ne sont **pas** des dépendances du bureau.
 
 ### Outils de développement (phases 1–9)

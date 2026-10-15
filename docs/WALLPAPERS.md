@@ -31,7 +31,24 @@ Utilisés aujourd'hui : Sway → `3-screens/monitor_{left,center,right}_*.png` ;
 - **animé** : vidéos MP4/WebM et WebP animés (`Live/`), utilisés autrefois avec `mpvpaper` / `swww` (lignes commentées dans la config Sway).
 - **exclu** : icônes de l'ancienne barre qtile (`layout/png/`) et 3 images portrait (fonds de téléphone) — à confirmer.
 
-## Proposition
+## État (2026-10-15)
+
+Décisions : W1 dépôt séparé ✔ ; W2 pas de fonds animés ✔ ; W3 icônes et portraits exclus ✔ ; W4 cache swww supprimé ✔ (11 Go libérés).
+
+Fait :
+- 91 images copiées dans `~/Pictures/Wallpapers/` (42 `simple/`, 43 `panorama/`, triptyques `green-storm` et `blame-city`), **chaque copie vérifiée par MD5**.
+- Dépôt Git `~/Pictures/Wallpapers`, poussé sur GitHub en **privé** : `Crystal4276/wallpapers`.
+- Configs actuelles adaptées (exception à la règle « lecture seule », demandée par toi) :
+  `~/.config/sway/config` (3 lignes `output … bg` → `triptych/green-storm/`), `~/.config/hypr/lua/autostart.lua` et `~/.config/hypr/hyprland.conf`
+  (repli) → `triptych/blame-city/`. Sway : `sway -C` valide, nouveaux chemins appliqués en direct (`swaybg` relancé dessus). Hyprland : `luac -p` valide.
+  Ces modifications ne sont **pas committées** dans les dépôts git de `~/.config/sway` et `~/.config/hypr`.
+
+Reste à faire (suppression, bloquée par le garde-fou : à faire par toi ou à autoriser) :
+- originaux devenus doublons dans `~/Pictures/Wallpaper/` (hors `Live/`) ;
+- `~/Pictures/Wallpaper/Live/` (3,2 Go, fonds animés non retenus) : garder ailleurs ou supprimer ?
+- copies dans `~/.config/{sway,hypr,qtile}/assets/{wallpaper,wallpaper2,widewallpaper}` et `~/Documents/backup/assets/` (dans des dépôts git pour sway et hypr).
+
+## Proposition initiale
 
 1. **Un dossier unique** : `~/Pictures/Wallpapers/` (nouveau nom, pour ne pas toucher à `~/Pictures/Wallpaper/` que la config actuelle utilise
    jusqu'à la bascule), organisé en `simple/`, `panorama/`, `triptych/<nom>/{left,center,right}.<ext>`, `live/`.
