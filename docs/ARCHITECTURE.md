@@ -268,7 +268,7 @@ Issue de `INVENTORY.md` § 10. Objectif rappelé : à terme, le bureau ne dépen
 
 | # | Sujet | Recommandation | Pourquoi |
 |---|---|---|---|
-| R1 | Fond d'écran | **natif** (une image par écran, choisie par description dans la config machine) | trivial en QML ; supprime `swaybg` ; corrige l'écart Sway/Hyprland. Quelle série d'images garder ? |
+| R1 | Fond d'écran | **Décidé** : natif, avec un **utilitaire de changement de fond** moderne (vignettes) ; pas d'image imposée. Fonds consolidés en un seul dossier. Détails et questions W1–W4 : `docs/WALLPAPERS.md` | supprime `swaybg` ; panoramas découpés à la volée selon les écrans |
 | R2 | Verrouillage | **natif** (`WlSessionLock` + PAM), apparence de `swaylock.conf` | supprime `swaylock` ; protocole sûr (si Quickshell plante, la session reste verrouillée) |
 | R3 | Veille écrans | **natif** (`IdleMonitor` 300 s → DPMS via le compositeur ; réveil échelonné repris de `hypridle`) | une seule implémentation pour Sway et Hyprland ; supprime `swayidle` et `hypridle`. Les règles `inhibit_idle` du compositeur restent respectées (`respectInhibitors`) **[à vérifier]** |
 | R4 | Agent polkit | **natif** (`PolkitAgent`) | fenêtre de mot de passe aux couleurs de la charte ; supprime `polkit-gnome` |

@@ -350,7 +350,7 @@ puis comparaison avec les types QML disponibles dans Quickshell 0.3.2 (`/usr/lib
 | Menu d'applications | nwg-menu | `DesktopEntries` | natif, modèle Cinnamon (phase 8) |
 | Power menu | Rofi `-dmenu` | — | natif (phase 8) |
 | Tray | Waybar | `SystemTray` | natif (phase 5) |
-| **Fond d'écran** | `swaybg` (Sway : `output … bg`, Hyprland : `swaybg` avec **d'autres images**) | `PanelWindow` sur la couche `Background` | **?** natif |
+| **Fond d'écran** | `swaybg` (Sway : `output … bg`, Hyprland : `swaybg` avec **d'autres images**) | `PanelWindow` sur la couche `Background` | natif + utilitaire de changement de fond (voir `WALLPAPERS.md`) |
 | **Verrouillage** | `swaylock -C swaylock.conf` (power menu, nwg-menu) | `WlSessionLock` + `PamContext` | **?** natif |
 | **Veille écrans** | `swayidle` 300 s → `output * power off` (Sway) ; `hypridle` 300 s → DPMS off, réveil échelonné DP-1/DP-3 puis DP-2 après 3 s (Hyprland) | `IdleMonitor` (`timeout`, `respectInhibitors`) + commande DPMS au compositeur | **?** natif |
 | **Agent polkit** (fenêtre de mot de passe administrateur) | `polkit-gnome-authentication-agent-1` | `PolkitAgent` + `AuthFlow` | **?** natif |
