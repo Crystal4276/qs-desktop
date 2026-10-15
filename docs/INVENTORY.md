@@ -143,8 +143,9 @@ Locale : `en_US.UTF-8` (jours en anglais : `Thu`).
 #### `clock` — horloge (toutes)
 
 - **Affichage** :
-  - DP-2 : `U+E385 17:46` + 3 espaces + `U+F274 Thu-15` (heure 24 h, jour abrégé en anglais, jour du mois) ;
-  - DP-1, DP-3 : `U+E385 17:46` seulement.
+  - DP-2 : format exact `U+E385␣␣%H:%M␣␣U+F274␣%a-%d` → `U+E385  17:46  U+F274 Thu-15` (heure 24 h, jour abrégé selon la locale, jour du mois) ;
+  - DP-1, DP-3 : `U+E385␣␣%H:%M` seulement.
+  - Tout le texte est en Inter 26 px (espaces compris) ; les deux glyphes viennent de Symbols Nerd Font Mono par repli.
   - Couleur `yellow`. Mise à jour chaque minute. Fuseau `Asia/Riyadh` écrit en dur, identique au fuseau système.
 - **Tooltip** : titre `2026 October` en grand, puis le calendrier du mois en police à chasse fixe, petite taille, **aujourd'hui en gras souligné** (défaut Waybar), semaines non numérotées, semaine commençant le dimanche (locale `en_US`).
 - Pas de clic ni de molette configurés (le calendrier ne défile pas).

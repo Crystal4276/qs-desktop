@@ -56,7 +56,12 @@ Singleton {
 
     // § 2 — Polices : chaque texte nomme la sienne, aucun repli implicite
     readonly property QtObject font: QtObject {
-        readonly property string icons: "Symbols Nerd Font Mono"
+        // Icônes : la police est celle que Waybar utilisait réellement (THEME.md § 2, « Police de chaque glyphe »)
+        readonly property string icons: "Symbols Nerd Font Mono"      // modules dont le texte est l'icône
+        readonly property string inlineIcons: "Hack Nerd Font"        // icônes collées à du texte Inter
+        readonly property string awesome: "Font Awesome 7 Free"        // Regular (400)
+        readonly property string awesomeBrands: "Font Awesome 7 Brands"
+        readonly property string awesome4: "FontAwesome"               // Font Awesome 4.7
         readonly property string text: "Inter"
         readonly property string bars: "DejaVu Sans"          // ▁…█ de cava
         readonly property string notification: "Noto Sans Mono"
@@ -141,27 +146,33 @@ Singleton {
         readonly property color menuActiveBackground: root.color.green
     }
 
-    // Glyphes (INVENTORY.md § 1, planche docs/reference/glyphs.png), police `font.icons`
+    // Glyphes (INVENTORY.md § 1, planche docs/reference/glyphs.png), avec leur police
     readonly property QtObject icon: QtObject {
-        // par numéro d'espace de travail, 1 à 9
-        readonly property list<string> workspaces: ["\ue79a", "\ue78c", "\uf32e", "\u{f043e}", "\uf1ff", "\uf1bc", "\uf043", "\uf0e0", "\uf1b6"]
-        readonly property string spotify: "\uf1bc"
-        readonly property string paused: "\uf04c"
+        // font.icons (Symbols Nerd Font Mono)
+        readonly property list<string> workspaces: ["\ue79a", "\ue78c", "\uf32e", "\u{f043e}", "\uf1ff", "\uf1bc", "\uf043", "\uf0e0", "\uf1b6"]  // par numéro, 1 à 9
         readonly property list<string> volume: ["\uf026", "\uf027", "\uf028"]  // 0–33, 34–66, 67–100 %
         readonly property string muted: "\uf466"
+        readonly property string power: "\uf011"
+        readonly property string search: "\uf002"
+        readonly property list<string> backlight: ["\ue38d", "\ue3d3", "\ue3d1", "\ue3cf", "\ue3ce", "\ue3cd", "\ue3ca", "\ue3c8", "\ue39b"]
+        // batterie : anciennes icônes retirées de Nerd Fonts v3, à choisir en phase 4
+
+        // font.inlineIcons (Hack Nerd Font)
         readonly property string updates: "\u{f01a7}"
         readonly property string gpu: "\u{f0379}"
         readonly property string cpu: "\uec19"
         readonly property string memory: "\u{f035b}"
         readonly property string clock: "\ue385"
-        readonly property string calendar: "\uf274"
         readonly property string download: "\u{f1625}"
         readonly property string upload: "\u{f1628}"
-        readonly property string power: "\uf011"
-        readonly property string search: "\uf002"
-        readonly property list<string> backlight: ["\ue38d", "\ue3d3", "\ue3d1", "\ue3cf", "\ue3ce", "\ue3cd", "\ue3ca", "\ue3c8", "\ue39b"]
-        // batterie : anciennes icônes retirées de Nerd Fonts v3, à choisir en phase 4
-        readonly property list<string> cavaBars: ["▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"]  // police `font.bars`
+
+        // font.awesome / awesomeBrands / awesome4
+        readonly property string calendar: "\uf274"   // font.awesome
+        readonly property string spotify: "\uf1bc"    // font.awesomeBrands
+        readonly property string paused: "\uf04c"     // font.awesome4
+
+        // font.bars (DejaVu Sans)
+        readonly property list<string> cavaBars: ["▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"]
     }
 
     // § 12 — Images embarquées
