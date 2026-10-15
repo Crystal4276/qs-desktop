@@ -207,7 +207,7 @@ Logout adapté au compositeur. Confirmation : aucune aujourd'hui → aucune (par
 |---|---|
 | Q1 | Règle « principal d'abord, puis gauche → droite, reste sur les premiers » **validée**. |
 | Q2 | Kanshi validé sous condition HDR / VRR, puis **remplacé** par la configuration native des compositeurs (Kanshi ne gère pas le HDR) — voir § 3.1 et § 8.1. |
-| Q3 | Phase 4 : nwg-menu gardé, lancé par le bouton QML (parité). **À terme : nouveau menu entièrement refait en QML, sur le modèle du menu de Cinnamon** (Cinnamon n'est pas installé : il faudra une capture de référence). Inscrit dans `BACKLOG.md`. |
+| Q3 | **nwg-menu est remplacé par un menu maison en QML, sur le modèle du menu de Cinnamon, dans le cadre du projet (phase 8).** État final : aucune dépendance à nwg-menu. D'ici là, le bouton Arch de la barre QML existe (apparence, survol) mais n'ouvre rien ; Waybar reste le bureau réel jusqu'à la bascule. Cinnamon n'est pas installé : il faudra une capture de référence de son menu au début de la phase 8. Style : charte de `THEME.md` (§ 7 reprend le style actuel de nwg-menu). |
 | Q4 | Parité : ni titre de fenêtre ni mode dans la barre (le service les expose quand même ; idée en `BACKLOG.md`). |
 | Q5 | `custom/logout`, `custom/reboot`, `custom/power` ignorés. |
 | Q6 | Scripts morts abandonnés. |

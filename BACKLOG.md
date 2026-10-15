@@ -2,7 +2,6 @@
 
 Idées notées pendant le travail. Rien ici n'est implémenté sans accord.
 
-- **Nouveau menu d'applications en QML, sur le modèle du menu Cinnamon** (remplace nwg-menu ; décision Q3). Prévoir une capture de référence du menu Cinnamon.
 - Titre de la fenêtre active / mode Sway dans la barre (absents de la Waybar actuelle ; décision Q4 : parité d'abord).
 - Activer le VRR (`adaptive_sync on` / `vrr = 1`) dans les règles d'écran, si le test de phase 3 est concluant.
 - **Événements Thunderbird dans la fenêtre calendrier** (lecture seule de `calendar-data/cache.sqlite` / `local.sqlite` ; 3 CalDAV, 2 Owl, 1 local). Voir ARCHITECTURE § 8.3.

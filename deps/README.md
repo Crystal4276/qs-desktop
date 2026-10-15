@@ -22,7 +22,7 @@ Chaque commande a été rattachée à son paquet sur cette machine avec `pacman 
 | Module | Comment il obtient ses données | Paquets requis | Optionnel (module masqué / clic inactif si absent) | Polices | Fichiers du dépôt |
 |---|---|---|---|---|---|
 | Barre (toutes) | layer-shell Wayland | `quickshell`, `sway` ou `hyprland` | — | — | — |
-| Bouton Arch | — | `nwg-menu` ; `nemo` (ouverture des dossiers depuis le menu) ; `gnome-terminal` (option `-term`) ; `swaylock` (bouton Lock du menu) | — | Symbols Nerd Font Mono (texte du menu) | `assets/arch_linux_icon_green.svg`, `arch_linux_icon_mantle.svg` ; `dotfiles/nwg-panel/menu-start.css` + `mocha.css` (lus par nwg-menu dans `~/.config/nwg-panel/`) ; `swaylock.conf` |
+| Bouton Arch | natif (ouvre le menu d'applications maison, phase 8) | — | — | — | `assets/arch_linux_icon_green.svg`, `arch_linux_icon_mantle.svg` |
 | Espaces de travail | natif (`Quickshell.I3` / `Quickshell.Hyprland`) | — | — | Symbols Nerd Font Mono | — |
 | Média (mpris) | natif (`Services.Mpris`, D-Bus) | — | un lecteur MPRIS (Spotify, AUR, n'est pas une dépendance du bureau) | Inter, Symbols Nerd Font Mono | — |
 | cava | programme `cava` (sortie brute) | `cava` ; `pipewire-pulse` (source audio) | — | **DejaVu Sans** (barres `▁…█`) | config cava générée par le service |
@@ -48,6 +48,7 @@ Thème d'icônes des applications (tray, lanceur, notifications) : `papirus-icon
 |---|---|---|---|---|
 | Notifications | — (natif) | `libnotify` (tests `notify-send`) | Noto Sans Mono (`noto-fonts`) | — |
 | Lanceur | — (natif, `DesktopEntries`) | terminal pour les applis `Terminal=true` | Inter, Symbols Nerd Font Mono | — |
+| Menu d'applications (modèle Cinnamon, remplace nwg-menu) | — (natif, `DesktopEntries`) | à préciser en phase 8 (ex. ouverture de dossiers → gestionnaire de fichiers par défaut via `xdg-open`) | à préciser | — |
 | Verrouillage | `swaylock` | — | Symbols Nerd Font Mono | `swaylock.conf` |
 | Événements Thunderbird (backlog) | `sqlite` | — | — | — |
 
@@ -84,8 +85,6 @@ Correspondances attendues, **non encore vérifiées** (phase 11).
 | pacman-contrib + fakeroot | — | — | spécifique Arch : module mises à jour masqué |
 | btop / nvtop | idem | idem | |
 | gnome-terminal | idem | idem | |
-| nwg-menu | — | — | à compiler (Go) |
-| nemo | nemo | nemo | |
 | libnotify | libnotify | libnotify-bin | |
 | grim / slurp / wl-clipboard / jq | idem | idem | |
 | imagemagick | ImageMagick | imagemagick | |

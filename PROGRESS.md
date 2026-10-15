@@ -35,6 +35,10 @@ Constats importants :
 - Polices vérifiées glyphe par glyphe : tout est dans Symbols Nerd Font Mono, sauf les barres cava (DejaVu Sans, ajoutée à `deps/`)
   et les icônes batterie (retirées de Nerd Fonts v3, à remplacer en phase 4).
 
+- nwg-menu : remplacé par un menu d'applications maison (modèle Cinnamon) en **phase 8** ; aucune dépendance à nwg-menu ni à nemo dans l'état final.
+- Dépendances par module : `deps/README.md` (ajout de `fakeroot`, requis par `checkupdates`).
+- `custom/updates` sur DP-3 : oubli de config, non repris.
+
 ## Prochaine étape
 
 Phase 1 (squelette), après validation.
