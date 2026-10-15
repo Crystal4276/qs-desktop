@@ -85,7 +85,7 @@ Les tooltips de Waybar suivent le thème GTK (`catppuccin-mocha-green-standard+d
 ### Police de chaque glyphe
 
 Vérifié caractère par caractère avec `fc-list ":charset=<code>"` : **toutes** les icônes de la barre, du power menu et du lanceur
-(planche `docs/reference/glyphs.png`) sont dans `Symbols Nerd Font Mono` (`/usr/share/fonts/TTF/SymbolsNerdFontMono-Regular.ttf`,
+(planche `docs/reference/glyphs.png`) sont dans `Symbols Nerd Font Mono` (copie versionnée : `assets/fonts/SymbolsNerdFontMono-Regular.ttf` ; sur cette machine aussi `/usr/share/fonts/TTF/SymbolsNerdFontMono-Regular.ttf`,
 paquet `ttf-nerd-fonts-symbols-mono`, licence MIT). Aucune ne dépend d'un repli.
 
 Exceptions :
