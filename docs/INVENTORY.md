@@ -427,10 +427,10 @@ Proposition : `noto-fonts-cjk` et `noto-fonts-emoji` dans `deps/` ; test en phas
 - **Portail de partage d'écran** (Sway) : `xdg-desktop-portal-wlr` choisit l'écran avec `slurp` → `slurp` reste une dépendance même avec un outil de capture natif.
 - **`gnome-screenshot`** et GNOME Shell sont installés : référence disponible pour l'outil de capture (phase 8b).
 - **Onduleur** : `apcupsd` actif mais `STATUS: COMMLOST`. **Hors périmètre** (tu le règles séparément).
-- **VPN** : le seul VPN voulu est **NordVPN** (icône dans le tray). Restes encore installés : `networkmanager-openvpn`, `networkmanager-pptp`, `wireguard-tools`,
-  et surtout `tailscale` et `zerotier-one`, dont les **services sont activés et tournent** (`tailscaled`, `zerotier-one`). Attention : le montage
-  `gio mount ssh://…@<serveur>` de l'autostart Sway vise une adresse de type ZeroTier — à vérifier avant de désinstaller ZeroTier.
-  Aucun module VPN n'est prévu dans la barre ; leur désinstallation est hors projet (à ta main, `sudo`).
+- **Réseaux privés et VPN** : **NordVPN** (VPN, icône dans le tray), **Tailscale** et **ZeroTier** (réseaux privés, utilisés et nécessaires ;
+  services `tailscaled` et `zerotier-one` activés). Le montage `gio mount ssh://…@<serveur>` de l'autostart Sway passe vraisemblablement par ZeroTier.
+  Restes inutilisés : `networkmanager-openvpn`, `networkmanager-pptp`, `wireguard-tools` (désinstallation à ta main, hors projet).
+  Aucun module dans la barre n'est prévu pour eux (parité) ; ce sont des services système, hors du shell.
 - **Bluetooth** : `bluez-tools` (`bt-agent`) est installé, mais il n'est pas retenu comme agent : ses modes sans interaction acceptent tout (cf. `ARCHITECTURE.md` § 10.2).
 - **Autostart XDG** (`~/.config/autostart`) : rappel, Bitwarden ne démarre pas (rien n'exécute ces fichiers).
 - **Hors bureau, sans action** : `lightdm`, `gdm` (installés, inactifs), `picom`, `openbox`, `qtile`, `numlockx` (X11), `hyprpicker`, `autotiling`, `obs-studio`,

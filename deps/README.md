@@ -89,7 +89,8 @@ Ce que `install.sh` (phase 11) devra installer, activer ou vérifier — relevé
 | Commande de session Sway sur Nvidia | `WLR_RENDERER=vulkan sway --unsupported-gpu` | fichier `sway-vulkan.desktop` créé à la main pour SDDM | SDDM abandonné : la commande sera fournie par la config du greeter Quickshell (phase 12), selon la présence d'un GPU Nvidia |
 | `QT_QPA_PLATFORMTHEME=qt6ct` | thème des applications Qt (Kvantum `KvArcDark`) | dans `/etc/environment` | à reproduire (fichier système, `sudo`) ; Quickshell en hérite (`ARCHITECTURE.md` § 11.1) |
 | Réglages dconf (`text-scaling-factor 1.25`, thème GTK, icônes, polices, `prefer-dark`) | apparence des applications GTK | dconf | `gsettings set …` par `install.sh` (liste : `INVENTORY.md` § 11.2) |
-| Polices CJK | titres et notifications en japonais/chinois/coréen | polices MS copiées à la main (non portables) | `noto-fonts-cjk` |
+| Polices CJK | titres et notifications en japonais/chinois/coréen | polices MS copiées à la main | `noto-fonts-cjk` (repli du bureau) |
+| Polices Microsoft (optionnel) | documents Word, repli CJK | `/usr/share/fonts/MS_Fonts` (363 Mo) | dépôt privé `Crystal4276/fonts-ms`, cloné à la demande dans `~/.local/share/fonts/fonts-ms` + `fc-cache -f` (clé SSH GitHub nécessaire) |
 | Utilisateur dans le groupe `video` ou règles udev | `brightnessctl` sans `sudo` (laptop) | sans objet (pas de rétroéclairage) | fourni par le paquet `brightnessctl` (règles udev) ; à vérifier sur le laptop |
 
 Commandes dont `install.sh` vérifiera la présence après installation :
