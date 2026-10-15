@@ -49,7 +49,7 @@ avec `gaps inner 10`).
 
 - Gauche : `sway/workspaces`, `hyprland/workspaces`, `pulseaudio`, `pulseaudio/slider`
 - Droite : `custom/updates`, `network`, `clock`
-  - `custom/updates` est placé ici mais **pas défini dans le bloc DP-3** (chaque barre Waybar a ses propres définitions) : sans commande, il ne devrait jamais rien afficher. Non vérifiable pour l'instant (aucune mise à jour en attente).
+  - `custom/updates` est placé ici mais **pas défini dans le bloc DP-3** (chaque barre Waybar a ses propres définitions) : sans commande, il ne devrait jamais rien afficher. Confirmé par toi : **oubli de config** → le compteur ne sera **pas** affiché sur DP-3.
 
 Les modules `custom/maximized`, `backlight`, `battery` sont définis mais placés dans aucune barre
 (`backlight`/`battery` serviront pour le laptop ; `custom/maximized` est mort).

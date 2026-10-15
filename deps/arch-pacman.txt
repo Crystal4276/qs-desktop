@@ -31,10 +31,12 @@ cava                    # visualiseur audio de la barre
 # --- Système ---
 upower                  # batterie (Quickshell.Services.UPower), utile sur laptop
 pacman-contrib          # checkupdates (module mises à jour)
+fakeroot                # requis par checkupdates (non déclaré par pacman-contrib)
 btop                    # clic sur CPU / mémoire
 nvtop                   # clic sur la température GPU
 gnome-terminal          # terminal lancé par les modules (configurable par machine)
-nwg-menu                # menu d'applications du bouton Arch (en attente de Q3)
+nwg-menu                # menu d'applications du bouton Arch (jusqu'au futur menu QML, cf. BACKLOG)
+nemo                    # gestionnaire de fichiers ouvert par nwg-menu (dossiers utilisateur)
 libnotify               # notify-send (tests, scripts)
 
 # --- Captures et outils de dev ---
