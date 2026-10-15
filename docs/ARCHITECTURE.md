@@ -97,15 +97,28 @@ Pourquoi Quickshell :
 
 Si Quickshell ne tourne pas, rien n'est perdu : Sway et Hyprland déplacent d'eux-mêmes les espaces d'un écran disparu.
 
-Algorithme :
+Algorithme (implémenté et testé en phase 3, Sway) :
 1. Source de vérité : sorties **actives** du compositeur (`swaymsg -t get_outputs` → `active: true` ; Hyprland : `monitors`, hors `disabled`).
-2. Anti-rebond : on recalcule 500 ms après le **dernier** événement de sortie (un branchement en produit plusieurs, le temps que le compositeur applique ses règles d'écran).
+2. Anti-rebond : on recalcule 500 ms après le **dernier** changement d'écrans ou de répartition (config machine modifiée).
 3. Si la config machine a une répartition imposée pour exactement cet ensemble de descriptions → on l'applique.
 4. Sinon, règle générale (§ 3.3).
-5. Application : attribution (`workspace N output X` sous Sway ; règle d'espace sous Hyprland) puis déplacement des espaces
-   existants mal placés ; l'espace focalisé avant le changement est refocalisé s'il existe toujours.
+5. Application, en **une seule commande** au compositeur : chaque espace existant mal placé rejoint l'écran de son bloc ;
+   chaque écran affiche ensuite l'espace qu'il affichait avant le changement s'il y est chez lui (recréé s'il était vide),
+   sinon le premier espace existant de son bloc, sinon le premier de son bloc ; puis l'espace focalisé est refocalisé.
+6. **Espace créé hors de son écran** (ex. `$mod+3` depuis l'écran de gauche, ou fenêtre envoyée vers un espace inexistant) :
+   100 ms plus tard (focus à jour), il est déplacé sur son écran ; focalisé, il le reste ; créé en arrière-plan, le focus revient où il était.
+   Aucune correction ne crée d'espace (pas de boucle possible).
+7. Un espace déplacé à la main reste où il est jusqu'au prochain changement d'écrans.
 
-### 3.3 Règle générale — **à valider**
+**Aucune attribution `workspace N output X`** (contrairement à ce que prévoyait `CLAUDE.md`) — vérifié sur Sway 1.12 : la **première**
+attribution d'un espace l'emporte ; les commandes suivantes ne la remplacent pas. Une attribution envoyée pour 3 écrans
+ne pourrait donc plus être corrigée pour 4. La création au bon endroit est assurée par l'étape 6 ; en phase 10, les raccourcis
+`$mod+N` passeront par `qs ipc` et focaliseront directement le bon écran (`focus output X; workspace number N`), sans détour visible.
+
+Les commandes envoyées sont écrites dans le journal (`Compositor: placement des espaces : …`).
+Hyprland : `Compositor.placeWorkspaces` / `moveFocusedWorkspace` restent à écrire en phase 9 (avertissement dans le journal d'ici là).
+
+### 3.3 Règle générale — validée (Q1)
 
 Constat : l'attribution actuelle n'est **pas** « gauche → droite » : 1-3 sont sur l'écran **central** (DP-2), 4-6 à gauche, 7-9 à droite.
 Une règle purement gauche → droite donnerait 1-3 à gauche et ne reproduirait pas l'existant sans exception.
@@ -128,9 +141,20 @@ Avantage : la machine actuelle tombe juste sans répartition imposée ; la confi
 
 ### 3.4 Tests
 
-`scripts/test-outputs.sh` (phase 3) : écrans `HEADLESS-N` (`swaymsg create_output` / `hyprctl output create headless`),
-désactivation, vérification via `get_workspaces` / `hyprctl workspaces -j`, `trap` de remise en état
-(retrait des écrans virtuels + réattribution initiale enregistrée au début).
+`scripts/test-outputs.sh` (phase 3) tourne dans une **session Sway isolée** (backend headless, `WLR_BACKENDS=headless`, sans `sudo`),
+avec sa propre instance Quickshell : la session de travail n'est jamais touchée (ni écrans, ni fenêtres, ni focus).
+La session de test reproduit les trois écrans du bureau (4K × 1.5 / 3440x1440 / 4K × 1.5) et ouvre des fenêtres `zenity`
+sur les espaces 1, 2, 4–9. Scénarios : ajout de 1 puis 2 écrans, création d'un espace depuis un autre écran, désactivation /
+réactivation, débranchement, écran de droite puis de gauche éteints (2 écrans, puis 1), retour à la référence.
+Contrôles après chacun : répartition calculée = règle recalculée indépendamment (jq), espaces sur le bon écran, focus inchangé,
+espace visible conservé ; à la fin, aucune fenêtre perdue, et nombre de commandes de placement borné (pas de boucle).
+
+Pièges relevés :
+- `swaymsg` et `Quickshell.I3` lisent **`I3SOCK` avant `SWAYSOCK`** : les deux doivent viser la session de test (garde-fou dans le script) ;
+- un test lancé dans la vraie session déplace les espaces de l'utilisateur et se fait fausser par son activité : à proscrire ;
+- les écrans virtuels portent tous la description « Unknown Unknown Unknown » : la répartition **imposée** par description se teste
+  avec les écrans réels (fait une fois en phase 3, réussi) ;
+- un écran virtuel créé pendant que swayidle a éteint les écrans hérite de `power off`.
 
 ## 4. Config par machine
 

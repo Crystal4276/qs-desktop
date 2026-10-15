@@ -79,6 +79,42 @@ Singleton {
         return outputs.find(o => o.name === name) ?? null;
     }
 
+    // Création d'un espace (événement du compositeur) : numéro et sortie où il est né.
+    signal workspaceCreated(int number, string output)
+
+    // Placement des espaces (docs/ARCHITECTURE.md § 3.2), en une seule commande :
+    //   moves : [{ number, output }]  espaces existants à déplacer ;
+    //   show  : [{ number, output }]  espace à afficher sur chaque sortie (créé s'il n'existe pas) ;
+    //   focus : numéro de l'espace à focaliser à la fin (0 : aucun).
+    function placeWorkspaces(moves: var, show: var, focus: int): void {
+        if (isSway) {
+            const commands = [];
+            for (const m of moves)
+                commands.push(`workspace number ${m.number}`, `move workspace to output "${m.output}"`);
+            for (const s of show)
+                commands.push(`focus output "${s.output}"`, `workspace number ${s.number}`);
+            if (focus > 0)
+                commands.push(`workspace number ${focus}`);
+            if (commands.length > 0) {
+                console.info("Compositor: placement des espaces :", commands.join("; "));
+                I3.dispatch(commands.join("; "));
+            }
+        } else if (isHyprland) {
+            // [phase 9] règles d'espaces et déplacement sous Hyprland (ARCHITECTURE § 2)
+            console.warn("Compositor: placement des espaces pas encore écrit pour Hyprland (phase 9)");
+        }
+    }
+
+    // Déplace l'espace focalisé sur une autre sortie ; il y reste focalisé.
+    function moveFocusedWorkspace(output: string): void {
+        if (isSway) {
+            console.info("Compositor: placement des espaces :", `move workspace to output "${output}"`);
+            I3.dispatch(`move workspace to output "${output}"`);
+        } else if (isHyprland) {
+            console.warn("Compositor: placement des espaces pas encore écrit pour Hyprland (phase 9)");
+        }
+    }
+
     function focusWorkspace(n: int): void {
         if (isSway)
             I3.dispatch(`workspace number ${n}`);
@@ -96,10 +132,15 @@ Singleton {
     }
 
     I3IpcListener {
-        subscriptions: root.isSway ? ["window", "mode"] : []
+        subscriptions: root.isSway ? ["window", "mode", "workspace"] : []
 
         onIpcEvent: event => {
             const data = JSON.parse(event.data);
+            if (event.type === "workspace") {
+                if (data.change === "init" && data.current)
+                    root.workspaceCreated(data.current.num, data.current.output ?? "");
+                return;
+            }
             if (event.type === "mode") {
                 sway.mode = data.change === "default" ? "" : data.change;
                 return;

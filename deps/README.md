@@ -68,13 +68,14 @@ Les applications personnelles lancées au démarrage (Steam, Spotify, Thunderbir
 
 ### Outils de développement (phases 1–9)
 
-`grim`, `imagemagick` (captures et recadrage), `jq` (tests), `libnotify` (tests de notifications).
+`grim`, `imagemagick` (captures et recadrage), `jq` (tests), `libnotify` (tests de notifications), `zenity` (fenêtres de test de `scripts/test-outputs.sh`).
 
 | Script | Rôle | Commandes |
 |---|---|---|
 | `scripts/dev.sh [stop]` | (re)lance l'instance de dev depuis le dépôt, affiche les erreurs | `qs` |
 | `scripts/shot.sh <nom> [sortie\|géométrie]` | capture dans `.shots/` (ignoré par git) | `grim` |
 | `scripts/crop.sh <image> <géométrie> [sortie]` | recadre une capture | `magick` (`imagemagick`) |
+| `scripts/test-outputs.sh [-v]` | teste la répartition des espaces dans une session Sway isolée | `sway`, `jq`, `zenity`, `qs` |
 
 ## Prérequis système d'un nouveau PC (au-delà des paquets)
 
@@ -138,6 +139,7 @@ Correspondances attendues, **non encore vérifiées** (phase 11).
 | gnome-terminal | idem | idem | |
 | libnotify | libnotify | libnotify-bin | |
 | grim / slurp / wl-clipboard / jq | idem | idem | |
+| zenity | zenity | zenity | tests uniquement |
 | imagemagick | ImageMagick | imagemagick | |
 | catppuccin-gtk-theme-mocha | — | — | depuis github.com/catppuccin/gtk |
 | catppuccin-cursors-mocha | — | — | depuis github.com/catppuccin/cursors |
