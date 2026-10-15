@@ -152,8 +152,8 @@ Règles pour Qt :
 
 | Module | Couleur du texte |
 |---|---|
-| espaces : 1re / 2e / 3e position | `teal` / `sapphire` / `blue` |
-| espace en 4e position ou plus (rare : espace déplacé sur cet écran) | `text` (couleur par défaut de la barre, aucune règle `nth-child`) |
+| espaces 1, 4, 7 / 2, 5, 8 / 3, 6, 9 | `teal` / `sapphire` / `blue`. Waybar colore par **position** dans la barre (1re / 2e / 3e) ; avec 3 écrans c'est identique. Décision du 2026-10-15 : la couleur suit l'**espace**, pour qu'elle reste la même quand des blocs se regroupent sur une barre (2 écrans, 1 écran) |
+| espace nommé (sans numéro) | `text` (couleur par défaut de la barre) |
 | espace vide (aucune fenêtre, flottantes comprises), non visible | `surface1` (la règle `.visible:nth-child` l'emporte : un espace vide **visible** garde sa couleur de position) |
 | espace focalisé | sa couleur + halo `text-shadow 0 0 6px currentColor`. Traduction Qt : copie du glyphe floutée (MultiEffect, `blurMax` 28) sous le glyphe net, calibrée contre la capture de référence (écart moyen 5/255 sur le bouton ; une ombre MultiEffect seule est deux fois trop faible) |
 | espace survolé | fond `alpha(couleur, 0.1)`, rayon 20 px, texte dans sa couleur de position même vide ; bouton = glyphe + 2 × 8 px, hauteur de la pilule moins la bordure |

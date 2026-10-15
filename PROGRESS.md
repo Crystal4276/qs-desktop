@@ -170,12 +170,20 @@ Incidents de session (assumés) :
 - une fenêtre **Steam** (flottante, espace 9) a disparu pendant l'un de ces passages ; Steam tourne toujours (réouverture par son icône).
   Lien avec le test probable mais non établi.
 
-À tester à la main :
-- vrai câble : débrancher / rebrancher un écran (fenêtres ouvertes), vérifier la répartition et que les espaces reviennent ;
-- éteindre un écran réel (`swaymsg output "LG Electronics 27GN950 207NTHMFY841" disable`, puis `enable`) — non fait sans ton accord ;
-- capot du laptop (futur laptop) ;
-- VRR (G-Sync) avec le pilote Nvidia : `swaymsg output "Dell Inc. Dell AW3418DW #ASPFPBQwWjbd" adaptive_sync on`, observer
-  (menu de l'écran, jeu ou vidéo), puis `adaptive_sync off` ; idem pour les LG. Résultat → BACKLOG.
+Tests sur les écrans réels (à ta demande, le 2026-10-15), instance de dev sur ta session :
+- DP-3 éteint (2 écrans : DP-2 1-5, DP-1 6-9), DP-1 + DP-3 éteints (1 écran : 1-9), DP-2 (principal, focalisé) éteint
+  (DP-1 devient principal : 1-5, DP-3 6-9), chacun éteint puis rallumé à tour de rôle : répartition conforme, focus conservé,
+  vue de chaque écran retrouvée au rallumage ; à la fin espaces, vue, focus, fenêtres (10) et réglages d'écran identiques au départ.
+- Ces tests ont révélé et fait corriger : la couleur des espaces regroupés sur une barre (blanc au-delà de 3, cf. ci-dessous),
+  la vue d'un écran rallumé (mémoire par configuration d'écrans) et le focus perdu quand l'écran focalisé s'éteint.
+  Les deux derniers cas ont été ajoutés à `test-outputs.sh` (18 contrôles, 0 échec sur 3 passages).
+- **Couleurs** (ton retour) : la couleur suit l'espace (1, 4, 7 sarcelle ; 2, 5, 8 saphir ; 3, 6, 9 bleu), identique à Waybar avec 3 écrans
+  (`THEME.md` § 3).
+- **VRR** : `adaptive_sync on` accepté par Sway + Nvidia sur les trois écrans (statut `enabled`, aucune erreur), puis remis à `off`.
+  L'effet réel (indicateur G-Sync de l'écran, absence de scintillement) demande un œil humain.
+
+Reste impossible d'ici : retirer un vrai câble (Sway le traite comme un écran qui disparaît, ce qui est testé ; seul le nom du connecteur
+peut changer, d'où l'identification par description), fermer un capot (pas de laptop).
 
 État laissé : Waybar et Dunst actifs, aucune instance `qs`, aucun écran virtuel, attribution des espaces inchangée.
 

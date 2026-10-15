@@ -83,10 +83,19 @@ Singleton {
         settle.restart();
     }
 
-    // Espace visible de chaque écran dans le dernier état stable : { "DP-1": 4, … }.
+    // Vue de chaque configuration d'écrans : { "<layoutKey>": { visible: { "DP-1": 4, … }, focus: 2 } }.
+    // Revenir à une configuration déjà vue (écran rallumé, rebranché) restaure la vue qu'elle avait.
     // Lu avant un changement d'écrans, car le compositeur redistribue lui-même les espaces d'un écran retiré
     // avant que la répartition ne s'applique. Mis à jour 300 ms après le dernier changement d'espaces, hors placement.
-    property var stableVisible: ({})
+    property var visibleByLayout: ({})
+    property string currentLayout: ""   // configuration à laquelle la vue mémorisée correspond
+    property var lastPlaced: ({})       // vue posée par le dernier placement : ce qui en diffère a été choisi par l'utilisateur
+
+    function remember(visible: var, focus: int): void {
+        const all = Object.assign({}, visibleByLayout);
+        all[currentLayout] = { visible: visible, focus: focus };
+        visibleByLayout = all;
+    }
 
     Timer {
         id: snapshot
@@ -96,7 +105,7 @@ Singleton {
             for (const w of Compositor.workspaces)
                 if (w.visible)
                     map[w.output] = w.number;
-            root.stableVisible = map;
+            root.remember(map, Compositor.workspaces.find(w => w.focused)?.number ?? 0);
         }
     }
 
@@ -159,31 +168,44 @@ Singleton {
         if (outs.length === 0)
             return;
         const workspaces = Compositor.workspaces;
-        const focused = workspaces.find(w => w.focused);
+        // Vue à retrouver, écran par écran : l'espace que l'utilisateur y a choisi depuis le dernier placement ;
+        // sinon la vue de cette configuration si elle a déjà existé (écran rallumé) ; sinon celle d'avant le changement.
+        // Le focus est celui d'avant le changement : le compositeur l'a peut-être déjà déplacé (écran focalisé retiré).
+        const previous = visibleByLayout[currentLayout];
+        const seen = visibleByLayout[layoutKey]?.visible ?? {};
+        const candidates = name => {
+            const before = previous?.visible?.[name];
+            const chosen = before !== undefined && before !== lastPlaced[name];
+            return (chosen ? [before, seen[name]] : [seen[name], before]).filter(n => n !== undefined);
+        };
+        currentLayout = layoutKey;
+        const focused = workspaces.find(w => w.number === previous?.focus) ?? workspaces.find(w => w.focused);
         const isOurs = n => homes[n] !== undefined;
 
         const moves = workspaces.filter(w => isOurs(w.number) && w.output !== homes[w.number])
             .map(w => ({ number: w.number, output: homes[w.number] }));
         const finalOutput = w => isOurs(w.number) ? homes[w.number] : w.output;
 
-        // Espace à afficher sur chaque écran : celui qui y était visible avant le changement s'il y est chez lui
-        // (recréé s'il était vide et a été détruit), sinon celui affiché maintenant s'il y reste,
+        // Espace à afficher sur chaque écran : le premier candidat ci-dessus qui y est chez lui (recréé s'il était vide
+        // et a été détruit) ; sans aucun souvenir de l'écran, celui qu'il affiche s'il y est chez lui ;
         // sinon le premier espace existant de son bloc, sinon le premier de son bloc (créé).
         const show = [];
         const intended = {};   // espace affiché sur chaque écran une fois le placement fait
         for (const o of outs) {
             const block = blockFor(o.name);
             const shownNow = workspaces.find(w => w.visible && w.output === o.name);
-            const remembered = stableVisible[o.name];
+            const remembered = candidates(o.name).find(n => homes[n] === o.name
+                || (!isOurs(n) && workspaces.some(w => w.number === n && w.output === o.name)));
             const existing = block.filter(n => workspaces.some(w => w.number === n)).sort((a, b) => a - b);
             let wanted;
-            if (remembered !== undefined && (homes[remembered] === o.name
-                    || (!isOurs(remembered) && workspaces.some(w => w.number === remembered && w.output === o.name))))
+            if (remembered !== undefined)
                 wanted = remembered;
-            else if (shownNow && finalOutput(shownNow) === o.name && (isOurs(shownNow.number) || block.length === 0))
-                wanted = shownNow.number;
-            else
+            else if (candidates(o.name).length === 0 && shownNow && homes[shownNow.number] === o.name)
+                wanted = shownNow.number;   // aucun souvenir de cet écran (démarrage, nouvel écran) : rien à changer
+            else if (block.length > 0)
                 wanted = existing[0] ?? block[0];
+            else if (shownNow)
+                wanted = shownNow.number;   // plus d'écrans que d'espaces : cet écran n'a pas de bloc
             // Un espace qui arrive sur cet écran ou qui en part (Sway le focalise d'abord ici pour le déplacer)
             // change l'espace affiché : il faut alors le rétablir.
             const disturbed = moves.some(m => m.output === o.name || workspaces.find(w => w.number === m.number)?.output === o.name);
@@ -195,7 +217,8 @@ Singleton {
         if (focused)
             intended[finalOutput(focused)] = focused.number;
         // Mémorisé tout de suite : un nouveau changement d'écrans peut arriver avant la prochaine lecture.
-        stableVisible = intended;
+        remember(intended, focused ? focused.number : 0);
+        lastPlaced = intended;
 
         if (moves.length === 0 && show.length === 0)
             return;

@@ -119,6 +119,12 @@ windows() {
         | .. | objects | select(.pid? != null) | {name, ws: $n}] | sort_by(.name)'
 }
 
+# Vue attendue d'une configuration déjà vue : celle qu'elle avait (même règle que Outputs.qml, sans choix de l'utilisateur).
+declare -A seen_views
+layout_key() {
+    swaymsg -t get_outputs | jq -r '[.[] | select(.active) | "\(.name)|\(.rect.x),\(.rect.y)|\(.rect.width)x\(.rect.height)"] | sort | join(";")'
+}
+
 initial_focus="$(focused_num)"
 initial_windows="$(windows)"
 
@@ -132,9 +138,14 @@ else
 fi
 prev_visible="$(visible_map)"
 
-# Écrans dont l'espace visible aurait dû le rester : écran toujours là, espace toujours chez lui sur cet écran.
+# Écrans dont l'espace visible attendu n'est pas affiché : vue de cette configuration si elle a déjà existé,
+# sinon vue d'avant le changement ; seulement pour les écrans présents dont cet espace est chez lui.
 lost_visible() {
-    jq -rn --argjson p "$prev_visible" --argjson now "$(visible_map)" --argjson e "$1" \
+    local key seen
+    key="$(layout_key)"
+    seen="${seen_views[$key]-}"
+    [[ -n "$seen" ]] || seen='{}'
+    jq -rn --argjson p "$(jq -c --argjson s "$seen" '. + $s' <<<"$prev_visible")" --argjson now "$(visible_map)" --argjson e "$1" \
         --argjson outs "$(swaymsg -t get_outputs | jq -c '[.[] | select(.active) | .name]')" \
         '[$p | to_entries[] | select((.key | IN($outs[]))
             and (if (.value >= 1 and .value <= 9) then $e[(.value | tostring)] == .key else true end)
@@ -166,6 +177,7 @@ check() {
         failures=$((failures + 1))
     fi
     prev_visible="$(visible_map)"
+    seen_views[$(layout_key)]="$prev_visible"
 }
 
 add_output() {
@@ -227,6 +239,20 @@ check "écran de gauche éteint aussi (1 écran)" "$(expected_rule)"
 swaymsg output "$left" enable >/dev/null
 swaymsg output "$right" enable >/dev/null
 check "écrans rallumés (retour à la référence)" "$initial_expected"
+
+# L'écran focalisé (et principal) s'éteint : le compositeur déplace le focus avant Quickshell ;
+# l'espace focalisé doit le rester, et la vue de chaque écran revenir au rallumage.
+reference_visible="$(visible_map)"
+swaymsg output "$center" disable >/dev/null
+check "écran du centre (principal, focalisé) éteint" "$(expected_rule)"
+swaymsg output "$center" enable >/dev/null
+check "écran du centre rallumé" "$initial_expected"
+if [[ "$(visible_map)" == "$reference_visible" ]]; then
+    echo "OK    vue retrouvée : $(jq -r 'to_entries | map("\(.key)=\(.value)") | join(" ")' <<<"$reference_visible")"
+else
+    echo "ÉCHEC vue après rallumage : $(visible_map) au lieu de $reference_visible"
+    failures=$((failures + 1))
+fi
 
 if [[ "$(windows)" == "$initial_windows" ]]; then
     echo "OK    fenêtres : $(jq length <<<"$initial_windows"), toutes dans leur espace d'origine"

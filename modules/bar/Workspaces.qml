@@ -41,7 +41,10 @@ Item {
                 required property var modelData
                 required property int index
 
-                readonly property color positionColor: index < Theme.module.workspaces.length ? Theme.module.workspaces[index] : Theme.module.workspaceOther
+                // Couleur propre à l'espace (1, 4, 7 → 1re ; 2, 5, 8 → 2e ; 3, 6, 9 → 3e) : elle le suit d'un écran à l'autre.
+                // Avec 3 écrans, identique à la couleur par position de Waybar.
+                readonly property color positionColor: modelData.number >= 1
+                    ? Theme.module.workspaces[(modelData.number - 1) % Theme.module.workspaces.length] : Theme.module.workspaceOther
                 readonly property color glyphColor: modelData.visible || hover.hovered || !modelData.empty ? positionColor : Theme.module.workspaceEmpty
 
                 width: glyph.implicitWidth + 2 * Theme.bar.workspacePadding
