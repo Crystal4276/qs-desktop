@@ -1,0 +1,6 @@
+# Dépendances liées au matériel ou à un module optionnel.
+# Le module correspondant se masque si la dépendance est absente.
+
+nvidia-utils    # nvidia-smi : module température GPU (machines Nvidia)
+brightnessctl   # réglage du rétroéclairage (laptop) ; non installé sur le desktop
+paru            # (AUR) commande de mise à jour lancée par le module updates ; sinon yay ou pacman
