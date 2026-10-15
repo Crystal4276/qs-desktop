@@ -62,6 +62,8 @@ Constats importants :
 
 - NordVPN : module natif proposé (binaire `nordvpn`, phase 5), icône officielle masquée à la bascule (`ARCHITECTURE.md` § 11.4).
 
+- GPU multi-constructeur (NVIDIA / AMD / Intel) en phase 4 ; fenêtre de statistiques système (équivalent btop) en fin de phase 8b (`ARCHITECTURE.md` § 11.5).
+
 ## Prochaine étape
 
 Phase 1 (squelette), après validation.

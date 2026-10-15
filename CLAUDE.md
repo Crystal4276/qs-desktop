@@ -261,7 +261,7 @@ Lire toute la config existante et produire :
 
 **Phase 3 — Écrans dynamiques.** Répartition automatique des espaces de travail ; sorties configurées nativement par le compositeur, par description d'écran (Kanshi écarté, `ARCHITECTURE.md` § 3.1). `scripts/test-outputs.sh` passe sur tous les scénarios avec écrans virtuels. Sur mon desktop à trois écrans, le résultat est strictement identique à l'attribution actuelle. Liste des tests à faire à la main (vrai câble, capot) dans le rapport.
 
-**Phase 4 — Barre : modules système.** Tous les autres modules inventoriés (audio, réseau, CPU/RAM/températures, GPU, MPRIS, modules custom…) avec leurs tooltips et actions. Modules matériels masqués si le matériel est absent ; prévoir dès maintenant batterie et luminosité pour le futur laptop si cela reste simple. Le tooltip calendrier devient une fenêtre Quickshell soignée.
+**Phase 4 — Barre : modules système.** Tous les autres modules inventoriés (audio, réseau, CPU/RAM/températures, GPU, MPRIS, modules custom…) avec leurs tooltips et actions. Modules matériels masqués si le matériel est absent ; prévoir dès maintenant batterie et luminosité pour le futur laptop si cela reste simple. Le tooltip calendrier devient une fenêtre Quickshell soignée. Module GPU multi-constructeur (NVIDIA via `nvidia-smi`, AMD et Intel via sysfs, masqué si aucune température lisible — `ARCHITECTURE.md` § 11.5).
 
 **Phase 5 — Tray, réseau, Bluetooth, disques.** Tray (icônes, menus contextuels, clics) ; menus natifs remplaçant `nm-applet`, `blueman` (appairage via un agent `bluetoothctl` piloté par Quickshell) et `udiskie` (`busctl` / `gdbus` / `udisksctl`) ; module NordVPN natif (binaire `nordvpn`) remplaçant son icône de tray — `ARCHITECTURE.md` § 10 et § 11.4.
 
@@ -271,7 +271,7 @@ Lire toute la config existante et produire :
 
 **Phase 8 — Menus custom et scripts.** Power menu, menu d'applications maison sur le modèle du menu Cinnamon (remplace nwg-menu), et tous les autres menus Rofi inventoriés ; application des décisions de `SCRIPTS.md` (scripts remplacés en QML, gardés et rapatriés dans `scripts/`, ou abandonnés après mon accord).
 
-**Phase 8b — Services de session et utilitaires.** Fond d'écran natif et utilitaire de changement de fond (`docs/WALLPAPERS.md`) ; écran de verrouillage natif au design entièrement refait (moderne, dans la charte) ; veille des écrans (`IdleMonitor`) ; agent polkit ; outil de capture d'écran (écran entier, un écran, une fenêtre, une zone — modèle de l'outil GNOME), d'abord sur `grim`/`slurp`.
+**Phase 8b — Services de session et utilitaires.** Fond d'écran natif et utilitaire de changement de fond (`docs/WALLPAPERS.md`) ; écran de verrouillage natif au design entièrement refait (moderne, dans la charte) ; veille des écrans (`IdleMonitor`) ; agent polkit ; outil de capture d'écran (écran entier, un écran, une fenêtre, une zone — modèle de l'outil GNOME), d'abord sur `grim`/`slurp` ; en dernier, fenêtre de statistiques système (équivalent de btop).
 
 **Phase 9 — Parité Hyprland.** Rejouer le protocole de vérification complet sous Hyprland, y compris `test-outputs.sh`.
 
