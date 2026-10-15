@@ -1,0 +1,45 @@
+# Paquets des dépôts officiels Arch (core/extra), un par ligne.
+# Installer : pacman -S --needed - < <(grep -v '^#' deps/arch-pacman.txt | cut -d'#' -f1 | xargs -n1)
+# Première version (phase 0) : tout ce que le bureau actuel utilise et que la config Quickshell reprendra.
+
+# --- Shell ---
+quickshell              # le shell lui-même (barre, notifications, lanceur, menus)
+qt6-svg                 # rendu des icônes et images SVG dans Quickshell
+
+# --- Compositeurs et sorties ---
+sway                    # compositeur principal
+hyprland                # compositeur secondaire
+kanshi                  # profils d'écrans communs à Sway et Hyprland (proposition ARCHITECTURE § 3.1)
+swaybg                  # fond d'écran (Hyprland ; Sway utilise son propre swaybg)
+swayidle                # extinction des écrans après 5 min (Sway)
+hypridle                # extinction des écrans après 5 min (Hyprland)
+swaylock                # verrouillage (power menu)
+
+# --- Polices et thèmes ---
+ttf-nerd-fonts-symbols-mono  # « Symbols Nerd Font Mono » : glyphes de la barre
+inter-font              # « Inter » : texte de la barre et du lanceur
+noto-fonts              # « Monospace » résolu en Noto Sans Mono : texte des notifications
+papirus-icon-theme      # thème d'icônes Papirus-Dark (notifications, lanceur, tray)
+
+# --- Audio / média ---
+pipewire                # serveur audio (Quickshell.Services.Pipewire)
+wireplumber             # gestionnaire de session PipeWire, wpctl
+pipewire-pulse          # compatibilité PulseAudio (cava, pavucontrol)
+pavucontrol             # clic droit sur le volume
+cava                    # visualiseur audio de la barre
+
+# --- Système ---
+upower                  # batterie (Quickshell.Services.UPower), utile sur laptop
+pacman-contrib          # checkupdates (module mises à jour)
+btop                    # clic sur CPU / mémoire
+nvtop                   # clic sur la température GPU
+gnome-terminal          # terminal lancé par les modules (configurable par machine)
+nwg-menu                # menu d'applications du bouton Arch (en attente de Q3)
+libnotify               # notify-send (tests, scripts)
+
+# --- Captures et outils de dev ---
+grim                    # captures d'écran (scripts/shot.sh, raccourcis)
+slurp                   # sélection de zone
+wl-clipboard            # copie des captures
+imagemagick             # scripts/crop.sh
+jq                      # scripts de test (lecture JSON swaymsg/hyprctl)

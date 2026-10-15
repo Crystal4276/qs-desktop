@@ -1,0 +1,6 @@
+.shots/
+*.log
+*.tmp
+*.swp
+*~
+.qmlls.ini
