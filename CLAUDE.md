@@ -263,7 +263,7 @@ Lire toute la config existante et produire :
 
 **Phase 4 — Barre : modules système.** Tous les autres modules inventoriés (audio, réseau, CPU/RAM/températures, GPU, MPRIS, modules custom…) avec leurs tooltips et actions. Modules matériels masqués si le matériel est absent ; prévoir dès maintenant batterie et luminosité pour le futur laptop si cela reste simple. Le tooltip calendrier devient une fenêtre Quickshell soignée.
 
-**Phase 5 — Tray, réseau, Bluetooth, disques.** Tray (icônes, menus contextuels, clics) ; menus natifs remplaçant `nm-applet`, `blueman` (appairage via un agent `bluetoothctl` piloté par Quickshell) et `udiskie` (`busctl` / `gdbus` / `udisksctl`) — `ARCHITECTURE.md` § 10.
+**Phase 5 — Tray, réseau, Bluetooth, disques.** Tray (icônes, menus contextuels, clics) ; menus natifs remplaçant `nm-applet`, `blueman` (appairage via un agent `bluetoothctl` piloté par Quickshell) et `udiskie` (`busctl` / `gdbus` / `udisksctl`) ; module NordVPN natif (binaire `nordvpn`) remplaçant son icône de tray — `ARCHITECTURE.md` § 10 et § 11.4.
 
 **Phase 6 — Notifications.** Popups conformes aux règles Dunst, actions, urgences, historique et équivalents des commandes `dunstctl` que j'utilise (via IPC). Les popups s'affichent sur l'écran prévu, avec un repli si cet écran a disparu.
 

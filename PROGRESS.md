@@ -60,6 +60,8 @@ Constats importants :
 
 - Polices Microsoft versionnées dans le dépôt privé `Crystal4276/fonts-ms` (optionnel) ; Tailscale et ZeroTier utilisés (hors shell) ; onduleur hors périmètre.
 
+- NordVPN : module natif proposé (binaire `nordvpn`, phase 5), icône officielle masquée à la bascule (`ARCHITECTURE.md` § 11.4).
+
 ## Prochaine étape
 
 Phase 1 (squelette), après validation.

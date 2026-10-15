@@ -356,3 +356,23 @@ Proposition : **dépôt privé séparé** `fonts-ms` (même principe que `wallpa
 (pas de `sudo`), **optionnel** ; jamais dans `qs-desktop`, qui doit rester partageable. Le bureau lui-même ne dépend pas de ces polices :
 `noto-fonts-cjk` reste la police de repli pour le japonais, le chinois et le coréen, afin qu'un PC sans ce dépôt (laptop) affiche correctement les titres.
 Alternative sans stockage : paquet AUR `ttf-ms-win11-auto`, qui extrait les polices d'une image ISO de Windows téléchargée à l'installation (plusieurs Go).
+
+### 11.4 NordVPN : module natif au lieu de l'icône du tray
+
+Aujourd'hui : icône NordVPN dans le tray (fournie par `norduserd`), raccourcis `$mod+u` (`nordvpn c Netherlands`) et `$mod+i` (`nordvpn d`),
+connexion à Netherlands au démarrage.
+
+Vérifié sur `nordvpn` 5.4.1 (lecture seule) :
+- `nordvpn status` : lignes `Clé: valeur` (Status, Server, Hostname, Country, City, Current technology, Transfer, Uptime…) ; pas de sortie JSON ni de flux d'événements → lecture périodique (toutes les quelques secondes) et immédiatement après chaque action ;
+- actions : `connect [pays | ville | code pays | serveur | groupe]`, `disconnect`, `pause 5m|15m|30m|1h|24h`, `countries`, `cities <pays>` ;
+- `nordvpn settings` → `Tray: enabled` : l'icône officielle se masque avec `nordvpn set tray off` (réversible) ; `Notify: enabled` : les notifications de NordVPN arriveront dans nos notifications.
+
+Proposition (phase 5, avec le réseau) : service `services/Vpn.qml` + widget dans la barre :
+- icône d'état (connecté / déconnecté / en pause), tooltip : pays, ville, serveur, durée, données échangées ;
+- clic : panneau dans la charte — connexion rapide (serveur recommandé, Netherlands), choix du pays puis de la ville avec recherche, pause, déconnexion ;
+- raccourcis `$mod+u` / `$mod+i` → `qs ipc call vpn connect|disconnect` (phase 10) ;
+- module masqué si `nordvpn` est absent ou si tu n'es pas connecté au compte (message « You are not logged in »).
+
+Points d'attention : le format texte de `nordvpn status` peut changer d'une version à l'autre (lecture centralisée dans le service, testée à chaque mise à jour) ;
+`nordvpn set tray off` modifie un réglage de NordVPN → appliqué seulement à la bascule (phase 10), avec ton accord.
+Emplacement du widget dans la barre : à décider en phase 5 (nouveau widget, sans équivalent dans la Waybar actuelle).
