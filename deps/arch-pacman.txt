@@ -47,3 +47,4 @@ slurp                   # sélection de zone
 wl-clipboard            # copie des captures
 imagemagick             # scripts/crop.sh
 jq                      # scripts de test (lecture JSON swaymsg/hyprctl)
+zenity                  # fenêtres de test (scripts/test-outputs.sh)

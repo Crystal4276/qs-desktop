@@ -97,7 +97,7 @@ puis `scripts/dev.sh stop; pkill -SIGUSR1 waybar`.
 
 Retour du 2026-10-15 : la pilule tray + power est native en QML ; le power menu pourra devenir un panneau de réglages rapides façon GNOME (BACKLOG, phase 8).
 
-## Phase 2 — Espaces de travail et horloge : faite, en attente de validation (2026-10-15)
+## Phase 2 — Espaces de travail et horloge : faite et validée (2026-10-15)
 
 Produit :
 - `services/Outputs.qml` : blocs d'espaces par écran (règle Q1 ou répartition imposée par la config machine), calculés seulement — appliqués en phase 3.
@@ -140,6 +140,45 @@ Notes de session :
 
 État laissé : Waybar et Dunst actifs, aucune instance `qs`, aucun écran virtuel, attribution des espaces identique.
 
+## Phase 3 — Écrans dynamiques : faite, en attente de validation (2026-10-15)
+
+Produit :
+- `services/Outputs.qml` : répartition appliquée (anti-rebond 500 ms ; aussi quand la config machine change), en une commande :
+  espaces mal placés déplacés, espace visible de chaque écran rétabli (recréé s'il était vide), focus rétabli ;
+  espace créé hors de son écran déplacé 100 ms plus tard (reste focalisé si c'était le cas) ; cible IPC `outputs` (`blocks`, `apply`).
+- `services/Compositor.qml` : `placeWorkspaces`, `moveFocusedWorkspace`, signal `workspaceCreated` (Sway) ; commandes tracées dans le journal.
+  Hyprland : à écrire en phase 9.
+- `scripts/test-outputs.sh` : session Sway isolée (headless) + instance Quickshell dédiée + fenêtres zenity ; 13 scénarios et contrôles.
+- `dotfiles/sway/hosts/terrier.conf` : règles d'écran par description, reprise exacte des lignes actuelles (pour la phase 10).
+
+Découvertes :
+- Sway 1.12 : la **première** attribution `workspace N output X` l'emporte, les suivantes ne la remplacent pas → aucune attribution,
+  placement par déplacements explicites (ARCHITECTURE § 3.2).
+- `swaymsg` et `Quickshell.I3` lisent `I3SOCK` avant `SWAYSOCK`.
+- Sway reconnaît les écrans par description : prouvé sans changement de mode (réglage `max_render_time` posé par description,
+  relu sur le bon connecteur, remis à `off`).
+
+Vérifié :
+- `test-outputs.sh` : 0 échec sur 3 passages consécutifs (3 → 4 → 5 écrans, création d'espace, désactivation / réactivation,
+  débranchement, 2 écrans, 1 écran, retour) ; focus et espaces visibles conservés, aucune fenêtre perdue, 15–17 commandes de placement.
+- Sur le desktop à trois écrans : répartition calculée = attribution actuelle (1-3 DP-2, 4-6 DP-1, 7-9 DP-3) ; au démarrage, rien à déplacer.
+- Répartition imposée par la config machine (`workspaceLayouts`) : testée avec les écrans réels + un virtuel (réussi), avant le passage en session isolée.
+
+Incidents de session (assumés) :
+- les premiers passages du test ont tourné **dans ta session** : tes espaces ont changé d'écran plusieurs fois pendant ~30 s
+  (toujours restaurés, vérifié) ; une fois par erreur après la réécriture du script ;
+- une fenêtre **Steam** (flottante, espace 9) a disparu pendant l'un de ces passages ; Steam tourne toujours (réouverture par son icône).
+  Lien avec le test probable mais non établi.
+
+À tester à la main :
+- vrai câble : débrancher / rebrancher un écran (fenêtres ouvertes), vérifier la répartition et que les espaces reviennent ;
+- éteindre un écran réel (`swaymsg output "LG Electronics 27GN950 207NTHMFY841" disable`, puis `enable`) — non fait sans ton accord ;
+- capot du laptop (futur laptop) ;
+- VRR (G-Sync) avec le pilote Nvidia : `swaymsg output "Dell Inc. Dell AW3418DW #ASPFPBQwWjbd" adaptive_sync on`, observer
+  (menu de l'écran, jeu ou vidéo), puis `adaptive_sync off` ; idem pour les LG. Résultat → BACKLOG.
+
+État laissé : Waybar et Dunst actifs, aucune instance `qs`, aucun écran virtuel, attribution des espaces inchangée.
+
 ## Prochaine étape
 
-Phase 3 (écrans dynamiques), après validation.
+Phase 4 (modules système de la barre), après validation.
