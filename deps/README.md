@@ -69,6 +69,29 @@ Les applications personnelles lancées au démarrage (Steam, Spotify, Thunderbir
 
 `grim`, `imagemagick` (captures et recadrage), `jq` (tests), `libnotify` (tests de notifications).
 
+## Prérequis système d'un nouveau PC (au-delà des paquets)
+
+Ce que `install.sh` (phase 11) devra installer, activer ou vérifier — relevé sur cette machine le 2026-10-15.
+
+| Élément | Pourquoi | Sur cette machine | Action sur un nouveau PC |
+|---|---|---|---|
+| Service `NetworkManager` | module réseau (`Quickshell.Networking`) | activé | `systemctl enable --now NetworkManager` (demande `sudo` : à confirmer) |
+| Service `bluetooth` | module Bluetooth | activé | `systemctl enable --now bluetooth` (`sudo`) ; module masqué si absent |
+| `upower`, `udisks2` | batterie, disques | activés à la demande par D-Bus | rien |
+| `polkit` | agent polkit natif, montage des disques sans mot de passe | actif (statique) | rien |
+| Services utilisateur `pipewire.socket`, `pipewire-pulse.socket`, `wireplumber` | audio, cava | activés | `systemctl --user enable --now …` |
+| Fichier PAM du verrouillage | `WlSessionLock` + `PamContext` vérifient le mot de passe ; aujourd'hui c'est `/etc/pam.d/swaylock` (installé par `swaylock`, qui sera retiré) | `swaylock`, `login`, `system-auth` présents | le dépôt fournit son propre fichier (`pam/qs-lock`, `auth include login`) lu via `PamContext.configDirectory`, sans rien écrire dans `/etc` **[à vérifier en phase 8b]** |
+| Police `Symbols Nerd Font Mono` | toutes les icônes de la barre | paquet | copiée depuis `assets/fonts/` dans `~/.local/share/fonts` + `fc-cache` |
+| Images `assets/*.svg` | bouton Arch, power menu | dans `~/.config/sway/assets/` | versionnées dans le dépôt (`THEME.md` § 12) |
+| Thème d'icônes `Papirus-Dark` | icônes d'applications | paquet | paquet + `//@ pragma IconTheme Papirus-Dark` dans `shell.qml` |
+| Curseur, thème GTK | apparence des applications et des tooltips | AUR | paquets AUR + `gtk-3.0/settings.ini` (à rapatrier en phase 10) |
+| Dépôt `wallpapers` | fonds d'écran | `~/Pictures/Wallpapers` | `git clone git@github.com:Crystal4276/wallpapers.git "$(xdg-user-dir PICTURES)/Wallpapers"` (dépôt privé : clé SSH GitHub nécessaire) ; facultatif |
+| Utilisateur dans le groupe `video` ou règles udev | `brightnessctl` sans `sudo` (laptop) | sans objet (pas de rétroéclairage) | fourni par le paquet `brightnessctl` (règles udev) ; à vérifier sur le laptop |
+
+Commandes dont `install.sh` vérifiera la présence après installation :
+`qs`, `cava`, `checkupdates`, `fakeroot`, `bluetoothctl`, `udisksctl`, `gdbus`, `busctl`, `grim`, `slurp`, `wl-copy`, `pavucontrol`, `btop`
+(+ optionnels : `nvidia-smi`, `nvtop`, `brightnessctl`, `paru`/`yay`, `nm-connection-editor`).
+
 ## Correspondance avec d'autres distributions
 
 Correspondances attendues, **non encore vérifiées** (phase 11).
@@ -89,6 +112,12 @@ Correspondances attendues, **non encore vérifiées** (phase 11).
 | pipewire / wireplumber / pipewire-pulse | idem (`pipewire-pulseaudio`) | idem | |
 | pavucontrol / cava | idem | idem | |
 | upower | upower | upower | |
+| networkmanager | NetworkManager | network-manager | |
+| bluez / bluez-utils | bluez | bluez (contient `bluetoothctl`) | |
+| udisks2 | udisks2 | udisks2 | |
+| glib2 (`gdbus`) | glib2 | libglib2.0-bin | souvent déjà présent |
+| systemd (`busctl`) | systemd | systemd | toujours présent |
+| network-manager-applet (`nm-connection-editor`, optionnel) | nm-connection-editor | network-manager-gnome | |
 | pacman-contrib + fakeroot | — | — | spécifique Arch : module mises à jour masqué |
 | btop / nvtop | idem | idem | |
 | gnome-terminal | idem | idem | |
