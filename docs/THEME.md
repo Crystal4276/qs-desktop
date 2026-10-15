@@ -136,9 +136,10 @@ on ne s'appuie sur aucun repli implicite.
 | Module | Couleur du texte |
 |---|---|
 | espaces : 1re / 2e / 3e position | `teal` / `sapphire` / `blue` |
-| espace vide | `surface1` |
+| espace en 4e position ou plus (rare : espace déplacé sur cet écran) | `text` (couleur par défaut de la barre, aucune règle `nth-child`) |
+| espace vide (aucune fenêtre, flottantes comprises), non visible | `surface1` (la règle `.visible:nth-child` l'emporte : un espace vide **visible** garde sa couleur de position) |
 | espace focalisé | sa couleur + halo `text-shadow 0 0 6px currentColor` |
-| espace survolé | fond `alpha(couleur, 0.1)`, rayon 20 px |
+| espace survolé | fond `alpha(couleur, 0.1)`, rayon 20 px, texte dans sa couleur de position même vide ; bouton = glyphe + 2 × 8 px, hauteur de la pilule moins la bordure |
 | `custom/updates` | `sapphire` |
 | `custom/nvidia` | `sky` |
 | `cpu` | `teal` |

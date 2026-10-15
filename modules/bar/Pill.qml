@@ -3,15 +3,15 @@ import QtQuick.Layouts
 import qs.config
 
 // Groupe de modules entouré d'une seule bordure arrondie (THEME.md § 3, « Groupes de pilules »).
+// Pas de padding ici : comme dans Waybar, chaque module porte le sien.
+// Masquée quand aucun de ses modules n'est affiché.
 Rectangle {
     id: root
 
-    // Noms des modules du groupe, tels que dans hosts/*.json
-    required property var modules
-
     default property alias content: row.data
 
-    implicitWidth: row.implicitWidth + 2 * (Theme.bar.modulePadding + border.width)
+    visible: row.implicitWidth > 0
+    implicitWidth: row.implicitWidth + 2 * border.width
     implicitHeight: Theme.bar.pillHeight
     radius: Theme.bar.pillRadius
     color: Theme.bar.pillColor
@@ -20,7 +20,9 @@ Rectangle {
 
     RowLayout {
         id: row
-        anchors.centerIn: parent
+        x: root.border.width
+        y: root.border.width
+        height: root.height - 2 * root.border.width
         spacing: 0
     }
 }
