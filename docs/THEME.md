@@ -67,7 +67,8 @@ Autres couleurs littérales :
 
 | Rôle | Police | Taille | Paquet |
 |---|---|---|---|
-| Défaut Waybar (icônes, espaces, volume) | `Symbols Nerd Font Mono` | selon module | `ttf-nerd-fonts-symbols-mono` |
+| Défaut Waybar (icônes, espaces, volume) | `Symbols Nerd Font Mono` | selon module | fournie par le dépôt (`assets/fonts/`) |
+| Icônes des modules texte | Hack Nerd Font, Font Awesome 7 Free / Brands, FontAwesome 4.7 (voir ci-dessous) | 26 px | fournies par le dépôt (`assets/fonts/`) |
 | Texte des modules Waybar (updates, nvidia, cpu, memory, clock, mpris, network) | `Inter` (Regular) | 26 px | `inter-font` |
 | cava | `Inter` demandé, mais les caractères `▁…█` viennent de **`DejaVu Sans`** (repli) | 20 px | `ttf-dejavu` |
 | Glyphes d'espaces de travail | `Symbols Nerd Font Mono` | 34 px | |
@@ -84,17 +85,33 @@ Les tooltips de Waybar suivent le thème GTK (`catppuccin-mocha-green-standard+d
 
 ### Police de chaque glyphe
 
-Vérifié caractère par caractère avec `fc-list ":charset=<code>"` : **toutes** les icônes de la barre, du power menu et du lanceur
-(planche `docs/reference/glyphs.png`) sont dans `Symbols Nerd Font Mono` (copie versionnée : `assets/fonts/SymbolsNerdFontMono-Regular.ttf` ; sur cette machine aussi `/usr/share/fonts/TTF/SymbolsNerdFontMono-Regular.ttf`,
-paquet `ttf-nerd-fonts-symbols-mono`, licence MIT). Aucune ne dépend d'un repli.
+*Corrigé en phase 2.* L'audit de phase 0 avait vérifié qu'un glyphe **existe** dans Symbols Nerd Font Mono, pas quelle police Waybar
+**utilise réellement**. Or dans les modules dont la CSS impose `font-family: Inter` (horloge, CPU, mémoire, GPU, réseau, mises à jour, mpris),
+Inter ne contient pas les icônes : Pango les prend dans la première police de repli de fontconfig qui les couvre.
+Relevé avec l'ordre de repli de `fc-match -s Inter`, puis confirmé en dessinant chaque candidat à côté des captures de référence :
 
-Exceptions :
-- barres cava `U+2581…U+2588` → `DejaVu Sans` (`ttf-dejavu`) ;
-- icônes batterie `U+F578…U+F583` (module inutilisé) → absentes de Nerd Fonts v3, à remplacer.
+| Glyphes | Module | Police réellement utilisée | Fichier embarqué |
+|---|---|---|---|
+| `U+E79A` … `U+F1B6` (espaces), `U+F026–F028`, `U+F466` (volume), `U+F011` (power), `U+E38D…` (rétroéclairage) | modules sans `font-family` → `*` | **Symbols Nerd Font Mono** | `assets/fonts/SymbolsNerdFontMono-Regular.ttf` |
+| `U+E385` horloge, `U+EC19` CPU, `U+F035B` mémoire, `U+F0379` GPU, `U+F01A7` mises à jour, `U+F1625` / `U+F1628` réseau | Inter → repli | **Hack Nerd Font** (Regular) | `assets/fonts/HackNerdFont-Regular.ttf` |
+| `U+F274` calendrier | Inter → repli | **Font Awesome 7 Free** (Regular 400, contour fin) | `assets/fonts/FontAwesome7Free-Regular-400.otf` |
+| `U+F1BC` Spotify | Inter → repli | **Font Awesome 7 Brands** | `assets/fonts/FontAwesome7Brands-Regular-400.otf` |
+| `U+F04C` pause | Inter → repli | **FontAwesome** (Font Awesome 4.7) | `assets/fonts/FontAwesome4-Regular.ttf` |
+| `U+2581…U+2588` barres cava | Inter → repli | **DejaVu Sans** | paquet `ttf-dejavu` |
 
-Règle pour `Theme.qml` : chaque texte nomme sa police explicitement (icônes → `Symbols Nerd Font Mono`, texte → `Inter`,
-barres cava → `DejaVu Sans`, notifications → `Noto Sans Mono`). Qt et GTK ne choisissent pas forcément la même police de repli :
-on ne s'appuie sur aucun repli implicite.
+Pourquoi ces polices exactes (parité exacte, choisie le 2026-10-15) :
+- Symbols Nerd Font Mono dessine les icônes de Hack environ 25 % plus grandes ;
+- Symbols Nerd Font (non Mono) a le **même dessin** que Hack Nerd Font, mais une avance plus large (19,5 px contre 15,65 px à 26 px) :
+  dans Hack, l'icône déborde sur l'espace qui suit, ce qui fixe la position du texte ;
+- le calendrier de Symbols a un bandeau plein (la référence a un contour fin), son Spotify et sa pause sont plus petits.
+
+Icônes batterie `U+F578…U+F583` (module inutilisé) : absentes de Nerd Fonts v3, à remplacer en phase 4.
+
+Règles pour Qt :
+- chaque texte nomme sa police explicitement (`Theme.font.*`) ; on ne s'appuie sur aucun repli implicite ;
+- une icône collée à du texte est mise en page **dans la même ligne de texte** (texte riche, une police par segment), comme le label Pango :
+  un `Text` séparé compterait le débordement du glyphe dans sa largeur (19,6 px au lieu de 15,65 px) et décalerait la suite ;
+- rendu du texte par FreeType (`//@ pragma NativeTextRendering`), comme Pango : graisse et crénage plus proches de la référence.
 
 ## 3. Barre (Waybar)
 
@@ -138,7 +155,7 @@ on ne s'appuie sur aucun repli implicite.
 | espaces : 1re / 2e / 3e position | `teal` / `sapphire` / `blue` |
 | espace en 4e position ou plus (rare : espace déplacé sur cet écran) | `text` (couleur par défaut de la barre, aucune règle `nth-child`) |
 | espace vide (aucune fenêtre, flottantes comprises), non visible | `surface1` (la règle `.visible:nth-child` l'emporte : un espace vide **visible** garde sa couleur de position) |
-| espace focalisé | sa couleur + halo `text-shadow 0 0 6px currentColor` |
+| espace focalisé | sa couleur + halo `text-shadow 0 0 6px currentColor`. Traduction Qt : copie du glyphe floutée (MultiEffect, `blurMax` 28) sous le glyphe net, calibrée contre la capture de référence (écart moyen 5/255 sur le bouton ; une ombre MultiEffect seule est deux fois trop faible) |
 | espace survolé | fond `alpha(couleur, 0.1)`, rayon 20 px, texte dans sa couleur de position même vide ; bouton = glyphe + 2 × 8 px, hauteur de la pilule moins la bordure |
 | `custom/updates` | `sapphire` |
 | `custom/nvidia` | `sky` |

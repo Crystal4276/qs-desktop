@@ -24,16 +24,16 @@ Chaque commande a été rattachée à son paquet sur cette machine avec `pacman 
 | Barre (toutes) | layer-shell Wayland | `quickshell`, `sway` ou `hyprland` | — | — | — |
 | Bouton Arch | natif (ouvre le menu d'applications maison, phase 8) | — | — | — | `assets/arch_linux_icon_green.svg`, `arch_linux_icon_mantle.svg` |
 | Espaces de travail | natif (`Quickshell.I3` / `Quickshell.Hyprland`) | — | — | Symbols Nerd Font Mono | — |
-| Média (mpris) | natif (`Services.Mpris`, D-Bus) | — | un lecteur MPRIS (Spotify, AUR, n'est pas une dépendance du bureau) | Inter, Symbols Nerd Font Mono | — |
+| Média (mpris) | natif (`Services.Mpris`, D-Bus) | — | un lecteur MPRIS (Spotify, AUR, n'est pas une dépendance du bureau) | Inter, Font Awesome 7 Brands, FontAwesome 4.7 | — |
 | cava | programme `cava` (sortie brute) | `cava` ; `pipewire-pulse` (source audio) | — | **DejaVu Sans** (barres `▁…█`) | config cava générée par le service |
 | Volume (icône + curseur) | natif (`Services.Pipewire`) | `pipewire`, `wireplumber` (services utilisateur actifs) | `pavucontrol` (clic droit) | Symbols Nerd Font Mono | — |
 | Sortie audio suivante (ex-`audio-toggle.sh`) | natif (`Services.Pipewire`) + notification interne | — | — | — | — |
-| Mises à jour | `checkupdates` | `pacman-contrib`, **`fakeroot`** (`checkupdates` échoue sans lui ; non déclaré par `pacman-contrib`) | `paru` ou `yay` (clic) ; terminal | Inter, Symbols Nerd Font Mono | — |
-| GPU | NVIDIA : `nvidia-smi` ; AMD / Intel : sysfs (natif) | — | `nvidia-utils` (NVIDIA uniquement) ; `nvtop` (clic, tous constructeurs) ; module masqué sans température lisible | Inter, Symbols Nerd Font Mono | — |
-| CPU | natif (`/proc/stat`) | — | `btop` (clic) | Inter, Symbols Nerd Font Mono | — |
-| Mémoire | natif (`/proc/meminfo`) | — | `btop` (clic) | Inter, Symbols Nerd Font Mono | — |
-| Horloge + fenêtre calendrier | natif (Qt) | `tzdata` (système) | — | Inter, Symbols Nerd Font Mono | — |
-| Réseau (débit) | natif (`/proc/net/dev`, `/proc/net/route`) | — | — | Inter, Symbols Nerd Font Mono | — |
+| Mises à jour | `checkupdates` | `pacman-contrib`, **`fakeroot`** (`checkupdates` échoue sans lui ; non déclaré par `pacman-contrib`) | `paru` ou `yay` (clic) ; terminal | Inter, Hack Nerd Font | — |
+| GPU | NVIDIA : `nvidia-smi` ; AMD / Intel : sysfs (natif) | — | `nvidia-utils` (NVIDIA uniquement) ; `nvtop` (clic, tous constructeurs) ; module masqué sans température lisible | Inter, Hack Nerd Font | — |
+| CPU | natif (`/proc/stat`) | — | `btop` (clic) | Inter, Hack Nerd Font | — |
+| Mémoire | natif (`/proc/meminfo`) | — | `btop` (clic) | Inter, Hack Nerd Font | — |
+| Horloge + fenêtre calendrier | natif (Qt) | `tzdata` (système) | — | Inter, Hack Nerd Font, Font Awesome 7 Free | — |
+| Réseau (débit) | natif (`/proc/net/dev`, `/proc/net/route`) | — | — | Inter, Hack Nerd Font | — |
 | Tray | natif (`Services.SystemTray` ; Quickshell fait aussi le rôle de « watcher ») | — | — | — | — |
 | Bouton power → power menu | natif | `systemd` (Reboot/Shutdown) ; Lock → verrouillage natif | — | Symbols Nerd Font Mono | `assets/{lock,logout,restart,shutdown}.svg` |
 | Batterie (laptop) | natif (`Services.UPower`) | — | `upower` (service système) | Symbols Nerd Font Mono | — |
@@ -88,7 +88,7 @@ Ce que `install.sh` (phase 11) devra installer, activer ou vérifier — relevé
 | `polkit` | agent polkit natif, montage des disques sans mot de passe | actif (statique) | rien |
 | Services utilisateur `pipewire.socket`, `pipewire-pulse.socket`, `wireplumber` | audio, cava | activés | `systemctl --user enable --now …` |
 | Fichier PAM du verrouillage | `WlSessionLock` + `PamContext` vérifient le mot de passe ; aujourd'hui c'est `/etc/pam.d/swaylock` (installé par `swaylock`, qui sera retiré) | `swaylock`, `login`, `system-auth` présents | le dépôt fournit son propre fichier (`pam/qs-lock`, `auth include login`) lu via `PamContext.configDirectory`, sans rien écrire dans `/etc` **[à vérifier en phase 8b]** |
-| Police `Symbols Nerd Font Mono` | toutes les icônes de la barre | paquet | copiée depuis `assets/fonts/` dans `~/.local/share/fonts` + `fc-cache` |
+| Polices d'icônes (Symbols Nerd Font Mono, Hack Nerd Font, Font Awesome 7 Free / Brands, FontAwesome 4.7) | icônes de la barre (`THEME.md` § 2) | paquets (`ttf-nerd-fonts-symbols-mono`, `ttf-hack-nerd`, `otf-font-awesome`, `awesome-terminal-fonts`) | copiées depuis `assets/fonts/` dans `~/.local/share/fonts` + `fc-cache` ; aucun paquet nécessaire |
 | Images `assets/*.svg` | bouton Arch, power menu | dans `~/.config/sway/assets/` | versionnées dans le dépôt depuis la phase 1 (`THEME.md` § 12) |
 | Lien `~/.config/quickshell/desktop` → dépôt | lancement par `qs -c desktop` | créé en phase 1 | créé par `install.sh` |
 | Thème d'icônes `Papirus-Dark` | icônes d'applications | paquet | paquet + `//@ pragma IconTheme Papirus-Dark` dans `shell.qml` (indispensable : le thème `breeze` de qt6ct n'est pas installé ici, `ARCHITECTURE.md` § 11.1) |
@@ -117,7 +117,7 @@ Correspondances attendues, **non encore vérifiées** (phase 11).
 | hyprland | hyprland | hyprland (Debian ≥ 13) | |
 | swaybg / swayidle / swaylock | idem | idem | |
 | hypridle | hypridle | — | à compiler |
-| *(Symbols Nerd Font Mono)* | — | — | fournie par le dépôt (`assets/fonts/`), aucun paquet nécessaire |
+| *(polices d'icônes : Symbols Nerd Font Mono, Hack Nerd Font, Font Awesome 7, FontAwesome 4.7)* | — | — | fournies par le dépôt (`assets/fonts/`), aucun paquet nécessaire |
 | inter-font | rsms-inter-fonts | fonts-inter | |
 | noto-fonts | google-noto-sans-mono-fonts | fonts-noto-mono | |
 | ttf-dejavu | dejavu-sans-fonts | fonts-dejavu-core | |
