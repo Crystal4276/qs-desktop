@@ -70,6 +70,12 @@ Les applications personnelles lancées au démarrage (Steam, Spotify, Thunderbir
 
 `grim`, `imagemagick` (captures et recadrage), `jq` (tests), `libnotify` (tests de notifications).
 
+| Script | Rôle | Commandes |
+|---|---|---|
+| `scripts/dev.sh [stop]` | (re)lance l'instance de dev depuis le dépôt, affiche les erreurs | `qs` |
+| `scripts/shot.sh <nom> [sortie\|géométrie]` | capture dans `.shots/` (ignoré par git) | `grim` |
+| `scripts/crop.sh <image> <géométrie> [sortie]` | recadre une capture | `magick` (`imagemagick`) |
+
 ## Prérequis système d'un nouveau PC (au-delà des paquets)
 
 Ce que `install.sh` (phase 11) devra installer, activer ou vérifier — relevé sur cette machine le 2026-10-15.
@@ -83,8 +89,9 @@ Ce que `install.sh` (phase 11) devra installer, activer ou vérifier — relevé
 | Services utilisateur `pipewire.socket`, `pipewire-pulse.socket`, `wireplumber` | audio, cava | activés | `systemctl --user enable --now …` |
 | Fichier PAM du verrouillage | `WlSessionLock` + `PamContext` vérifient le mot de passe ; aujourd'hui c'est `/etc/pam.d/swaylock` (installé par `swaylock`, qui sera retiré) | `swaylock`, `login`, `system-auth` présents | le dépôt fournit son propre fichier (`pam/qs-lock`, `auth include login`) lu via `PamContext.configDirectory`, sans rien écrire dans `/etc` **[à vérifier en phase 8b]** |
 | Police `Symbols Nerd Font Mono` | toutes les icônes de la barre | paquet | copiée depuis `assets/fonts/` dans `~/.local/share/fonts` + `fc-cache` |
-| Images `assets/*.svg` | bouton Arch, power menu | dans `~/.config/sway/assets/` | versionnées dans le dépôt (`THEME.md` § 12) |
-| Thème d'icônes `Papirus-Dark` | icônes d'applications | paquet | paquet + `//@ pragma IconTheme Papirus-Dark` dans `shell.qml` |
+| Images `assets/*.svg` | bouton Arch, power menu | dans `~/.config/sway/assets/` | versionnées dans le dépôt depuis la phase 1 (`THEME.md` § 12) |
+| Lien `~/.config/quickshell/desktop` → dépôt | lancement par `qs -c desktop` | créé en phase 1 | créé par `install.sh` |
+| Thème d'icônes `Papirus-Dark` | icônes d'applications | paquet | paquet + `//@ pragma IconTheme Papirus-Dark` dans `shell.qml` (indispensable : le thème `breeze` de qt6ct n'est pas installé ici, `ARCHITECTURE.md` § 11.1) |
 | Curseur, thème GTK | apparence des applications et des tooltips | AUR | paquets AUR + `gtk-3.0/settings.ini` (à rapatrier en phase 10) |
 | Dépôt `wallpapers` | fonds d'écran | `~/Pictures/Wallpapers` | `git clone git@github.com:Crystal4276/wallpapers.git "$(xdg-user-dir PICTURES)/Wallpapers"` (dépôt privé : clé SSH GitHub nécessaire) ; facultatif |
 | Commande de session Sway sur Nvidia | `WLR_RENDERER=vulkan sway --unsupported-gpu` | fichier `sway-vulkan.desktop` créé à la main pour SDDM | SDDM abandonné : la commande sera fournie par la config du greeter Quickshell (phase 12), selon la présence d'un GPU Nvidia |

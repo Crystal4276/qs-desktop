@@ -141,7 +141,7 @@ désactivation, vérification via `get_workspaces` / `hyprctl workspaces -j`, `t
   alimentation USB-C `ucsi-source-psy` qui n'est pas une batterie), rétroéclairage (`/sys/class/backlight`), GPU Nvidia
   (`nvidia-smi` présent), interface réseau (route par défaut), `checkupdates` présent.
 
-Format proposé :
+Format (implémenté en phase 1, `hosts/default.json`, `hosts/terrier.json`) :
 
 ```json
 {
@@ -154,9 +154,12 @@ Format proposé :
     }
   ],
   "bars": {
-    "primary":   { "left": ["menu", "workspaces", "media", "audio"], "right": ["updates", "system", "clock", "tray"] },
-    "secondary": { "left": ["workspaces", "audio"], "right": ["system", "clock"] },
-    "LG Electronics 27GN950 207NTHMFY841": { "left": ["workspaces", "audio"], "right": ["network", "clock"] }
+    "primary": {
+      "left":  [["menu"], ["workspaces"], ["mpris", "cava", "volume", "slider"]],
+      "right": [["updates"], ["gpu", "cpu", "memory"], ["clockDate"], ["tray", "power"]]
+    },
+    "secondary": { "left": [["workspaces"], ["volume", "slider"]], "right": [["gpu", "cpu", "memory"], ["clock"]] },
+    "LG Electronics 27GN950 207NTHMFY841": { "left": [["workspaces"], ["volume", "slider"]], "right": [["network"], ["clock"]] }
   },
   "notificationsOutput": "primary",
   "terminal": "gnome-terminal",
@@ -164,16 +167,26 @@ Format proposé :
 }
 ```
 
+- Fusion **au premier niveau** : une clé du fichier machine remplace entièrement celle de `default.json` (pas de fusion profonde : plus prévisible).
 - `bars` : par description d'écran, sinon par rôle (`primary` / `secondary`) — un écran inconnu reçoit donc toujours une barre.
+  Chaque côté est une liste de **pilules**, chaque pilule une liste de modules (`THEME.md` § 3, « Groupes de pilules ») :
+  la config décrit directement les groupes Waybar, sans noms de groupes intermédiaires.
+- Modules : `menu`, `workspaces`, `mpris`, `cava`, `volume`, `slider`, `updates`, `gpu`, `cpu`, `memory`, `clock` (heure seule),
+  `clockDate` (heure + date, barre principale), `network`, `tray`, `power`.
 - `default.json` : pas d'écran principal imposé, aucune répartition imposée, barre `primary` complète, `secondary` minimale.
-- Les noms (`system` = nvidia + cpu + memory, `media` = mpris + cava, `audio` = volume + curseur…) correspondent aux pilules de `THEME.md` § 3.
+- La description d'un écran est « marque modèle numéro de série » : sous Sway, recomposée depuis `make`, `model`, `serial` de `get_outputs` ;
+  sous Hyprland, champ `description`.
 - Les icônes d'espaces de travail font partie de la charte → `Theme.qml`, pas de la config machine.
+- Le fichier machine est relu à chaud (`FileView.watchChanges`) : la barre change sans redémarrer Quickshell (vérifié en phase 1).
 
 ## 5. Thème
 
 - La palette est **statique** (Catppuccin Mocha recopiée à la main dans 4 fichiers, aucun générateur) → `Theme.qml` la porte en dur.
 - Les couleurs propres à Rofi (`#1E1D2F`, `#D9E0EE`, `#FAE3B0`…) sont gardées sous leurs propres noms pour le lanceur et le power menu.
-- Thème d'icônes Qt : `//@ pragma IconTheme Papirus-Dark` dans `shell.qml` (pragma présent dans le binaire 0.3.2) **[à vérifier en phase 1]**.
+- Thème d'icônes Qt : `//@ pragma IconTheme Papirus-Dark` dans `shell.qml` — **vérifié en phase 1** (rendu réel comparé avec et sans le pragma, § 11.1).
+- `//@ pragma ShellId desktop` : la config est lancée tantôt depuis le dépôt (`qs -p .`), tantôt via `~/.config/quickshell/desktop` ;
+  un identifiant fixe garantit que `qs ipc` et les dossiers d'état visent la même instance dans les deux cas (doc Quickshell, « Advanced Options »).
+- Imports : modules Quickshell `qs.config`, `qs.services`, `qs.modules.bar` (dossiers du dépôt), sans `qmldir` écrit à la main.
 
 ## 6. Services (aperçu)
 
@@ -337,7 +350,14 @@ dans le service `Disks`. Les volumes système (`HintSystem`, `HintIgnore`) sont 
 
 `QT_QPA_PLATFORMTHEME=qt6ct` (`/etc/environment`) s'applique à Quickshell : style Kvantum, police par défaut et thème d'icônes `breeze` de qt6ct.
 Parades : `Theme.qml` nomme toujours la police (jamais la police par défaut) ; thème d'icônes forcé par `//@ pragma IconTheme Papirus-Dark` ;
-aucun contrôle Qt Quick Controls stylé par la plateforme (composants dessinés à la main). Vérifié en phase 1 en lançant Quickshell avec et sans la variable.
+aucun contrôle Qt Quick Controls stylé par la plateforme (composants dessinés à la main).
+
+**Vérifié en phase 1** (Quickshell lancé avec et sans la variable) :
+- police par défaut : `DejaVu LGC Sans 12pt` avec qt6ct, `Sans Serif 9pt` sans → confirme qu'aucun texte ne doit dépendre de la police par défaut ;
+  `Theme.qml` nomme donc toujours la famille **et** la taille ;
+- icônes : le thème `breeze` choisi dans qt6ct **n'est pas installé** sur cette machine. Sans le pragma, seules les icônes d'applications
+  présentes dans `hicolor` s'affichent (Firefox) ; `utilities-terminal`, `audio-volume-high`… manquent. Avec `//@ pragma IconTheme Papirus-Dark`,
+  toutes viennent de Papirus-Dark, que qt6ct soit actif ou non. Le pragma est donc indispensable, pas une précaution.
 
 ### 11.2 Un seul processus pour tout le bureau
 
