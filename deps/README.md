@@ -86,6 +86,10 @@ Ce que `install.sh` (phase 11) devra installer, activer ou vérifier — relevé
 | Thème d'icônes `Papirus-Dark` | icônes d'applications | paquet | paquet + `//@ pragma IconTheme Papirus-Dark` dans `shell.qml` |
 | Curseur, thème GTK | apparence des applications et des tooltips | AUR | paquets AUR + `gtk-3.0/settings.ini` (à rapatrier en phase 10) |
 | Dépôt `wallpapers` | fonds d'écran | `~/Pictures/Wallpapers` | `git clone git@github.com:Crystal4276/wallpapers.git "$(xdg-user-dir PICTURES)/Wallpapers"` (dépôt privé : clé SSH GitHub nécessaire) ; facultatif |
+| Commande de session Sway sur Nvidia | `WLR_RENDERER=vulkan sway --unsupported-gpu` | fichier `sway-vulkan.desktop` créé à la main pour SDDM | SDDM abandonné : la commande sera fournie par la config du greeter Quickshell (phase 12), selon la présence d'un GPU Nvidia |
+| `QT_QPA_PLATFORMTHEME=qt6ct` | thème des applications Qt (Kvantum `KvArcDark`) | dans `/etc/environment` | à reproduire (fichier système, `sudo`) ; Quickshell en hérite (`ARCHITECTURE.md` § 11.1) |
+| Réglages dconf (`text-scaling-factor 1.25`, thème GTK, icônes, polices, `prefer-dark`) | apparence des applications GTK | dconf | `gsettings set …` par `install.sh` (liste : `INVENTORY.md` § 11.2) |
+| Polices CJK | titres et notifications en japonais/chinois/coréen | polices MS copiées à la main (non portables) | `noto-fonts-cjk` |
 | Utilisateur dans le groupe `video` ou règles udev | `brightnessctl` sans `sudo` (laptop) | sans objet (pas de rétroéclairage) | fourni par le paquet `brightnessctl` (règles udev) ; à vérifier sur le laptop |
 
 Commandes dont `install.sh` vérifiera la présence après installation :
@@ -108,6 +112,8 @@ Correspondances attendues, **non encore vérifiées** (phase 11).
 | inter-font | rsms-inter-fonts | fonts-inter | |
 | noto-fonts | google-noto-sans-mono-fonts | fonts-noto-mono | |
 | ttf-dejavu | dejavu-sans-fonts | fonts-dejavu-core | |
+| noto-fonts-cjk | google-noto-sans-cjk-fonts | fonts-noto-cjk | |
+| noto-fonts-emoji | google-noto-color-emoji-fonts | fonts-noto-color-emoji | |
 | papirus-icon-theme | papirus-icon-theme | papirus-icon-theme | |
 | pipewire / wireplumber / pipewire-pulse | idem (`pipewire-pulseaudio`) | idem | |
 | pavucontrol / cava | idem | idem | |

@@ -16,6 +16,8 @@ hyprland                # compositeur secondaire
 inter-font              # « Inter » : texte de la barre et du lanceur
 noto-fonts              # « Monospace » résolu en Noto Sans Mono : texte des notifications
 ttf-dejavu              # « DejaVu Sans » : caractères ▁…█ des barres cava (absents d'Inter)
+noto-fonts-cjk          # japonais / chinois / coréen (titres MPRIS, notifications) — remplace les polices MS copiées à la main
+noto-fonts-emoji        # emojis en couleur (notifications)
 papirus-icon-theme      # thème d'icônes Papirus-Dark (notifications, lanceur, tray)
 
 # --- Audio / média ---

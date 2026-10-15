@@ -298,7 +298,7 @@ Proposition de placement dans les phases (CLAUDE.md n'est pas modifié sans ton 
 | R7 | Disques natifs (phase 5) — voir § 10.3. |
 | R8 | `grim`/`slurp` au départ ; **outil de capture en fenêtre Quickshell** (écran entier, un écran, une fenêtre, une zone ; modèle de l'outil de capture GNOME), phase 8b. |
 | R9 | Touches volume / média / luminosité via `qs ipc`, phase 10. |
-| R10 | Écran de connexion : **phase 12, tout à la fin**, à concevoir ensemble ; SDDM sera remplacé, idéalement par un greeter Quickshell (`Greetd`). |
+| R10 | Écran de connexion : **phase 12, tout à la fin**, à concevoir ensemble. **SDDM abandonné** : greeter Quickshell indépendant (`Greetd`), reprenant uniquement l'apparence du thème `catppuccin-mocha-green` (thème lui-même écrit en QML : `/usr/share/sddm/themes/catppuccin-mocha-green/`, paquet AUR `catppuccin-sddm-theme-mocha` ; fond `backgrounds/wall.png`, police Noto Sans 9, horloge, icônes power/reboot/sleep). Aperçu : `docs/reference/sddm-catppuccin-preview.png` (aperçu générique du paquet ; la variante installée est verte). |
 | R11 | Au démarrage : 1 / 4 / 7. |
 
 ### 10.2 Bluetooth : appairage et code PIN
@@ -330,3 +330,18 @@ Je m'étais trompé : Quickshell n'a pas d'accès D-Bus générique en QML, mais
 
 Dépendances : `udisks2` (déjà requis par udiskie), `glib2` (`gdbus`), `systemd` (`busctl`). Montage automatique à l'insertion et notifications reproduits
 dans le service `Disks`. Les volumes système (`HintSystem`, `HintIgnore`) sont ignorés, comme le fait udiskie.
+
+## 11. Risques relevés par la troisième passe
+
+### 11.1 Quickshell hérite de qt6ct
+
+`QT_QPA_PLATFORMTHEME=qt6ct` (`/etc/environment`) s'applique à Quickshell : style Kvantum, police par défaut et thème d'icônes `breeze` de qt6ct.
+Parades : `Theme.qml` nomme toujours la police (jamais la police par défaut) ; thème d'icônes forcé par `//@ pragma IconTheme Papirus-Dark` ;
+aucun contrôle Qt Quick Controls stylé par la plateforme (composants dessinés à la main). Vérifié en phase 1 en lançant Quickshell avec et sans la variable.
+
+### 11.2 Un seul processus pour tout le bureau
+
+Barre, notifications, verrouillage, agent polkit, agent Bluetooth et veille vivent dans le même processus `qs`. S'il plante :
+- tout disparaît en même temps → lancer `qs` comme **service systemd utilisateur avec redémarrage automatique** (plutôt qu'un simple `exec` du compositeur), à décider en phase 10 ;
+- **écran verrouillé** : le protocole `ext-session-lock` garde la session verrouillée si le verrouilleur meurt (c'est voulu, c'est sûr) ; il faut donc que le `qs` redémarré
+  puisse reprendre le verrouillage, et documenter un **retour de secours** depuis un TTY. À tester explicitement en phase 8b, sans risque pour ta session (écran virtuel ou session de test).
