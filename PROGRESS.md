@@ -47,6 +47,9 @@ Constats importants :
 - Fonds d'écran consolidés dans `~/Pictures/Wallpapers` (dépôt privé `Crystal4276/wallpapers`), configs Sway/Hyprland adaptées (non committées dans leurs dépôts),
   cache swww supprimé. Suppression des anciens originaux en attente (`WALLPAPERS.md` § État).
 
+- Images hors glyphes recensées (`THEME.md` § 12) ; prérequis système d'un nouveau PC (`deps/README.md`).
+- Dépôts `~/.config/sway` et `~/.config/hypr` : fonds d'écran + tes modifications en attente committés (non poussés).
+
 ## Prochaine étape
 
 Phase 1 (squelette), après validation.
