@@ -1,0 +1,17 @@
+{
+  "primaryOutput": "",
+  "workspaceLayouts": [],
+  "bars": {
+    "primary": {
+      "left": [["menu"], ["workspaces"], ["mpris", "cava", "volume", "slider"]],
+      "right": [["updates"], ["gpu", "cpu", "memory"], ["clockDate"], ["tray", "power"]]
+    },
+    "secondary": {
+      "left": [["workspaces"], ["volume", "slider"]],
+      "right": [["clock"]]
+    }
+  },
+  "notificationsOutput": "primary",
+  "terminal": "gnome-terminal",
+  "updateCommand": "paru -Syu"
+}

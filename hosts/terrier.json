@@ -1,0 +1,17 @@
+{
+  "primaryOutput": "Dell Inc. Dell AW3418DW #ASPFPBQwWjbd",
+  "bars": {
+    "primary": {
+      "left": [["menu"], ["workspaces"], ["mpris", "cava", "volume", "slider"]],
+      "right": [["updates"], ["gpu", "cpu", "memory"], ["clockDate"], ["tray", "power"]]
+    },
+    "secondary": {
+      "left": [["workspaces"], ["volume", "slider"]],
+      "right": [["gpu", "cpu", "memory"], ["clock"]]
+    },
+    "LG Electronics 27GN950 207NTHMFY841": {
+      "left": [["workspaces"], ["volume", "slider"]],
+      "right": [["network"], ["clock"]]
+    }
+  }
+}
