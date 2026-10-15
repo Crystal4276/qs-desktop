@@ -28,6 +28,32 @@ Variants {
         exclusiveZone: Theme.bar.exclusiveZone
         color: Theme.bar.background
 
+        // Nom de module (hosts/*.json) → composant. Les modules pas encore écrits n'affichent rien.
+        readonly property var modules: ({
+            workspaces: workspacesModule,
+            clock: clockModule,
+            clockDate: clockDateModule
+        })
+
+        Component {
+            id: workspacesModule
+            Workspaces {
+                output: bar.modelData?.name ?? ""
+            }
+        }
+
+        Component {
+            id: clockModule
+            Clock {}
+        }
+
+        Component {
+            id: clockDateModule
+            Clock {
+                showDate: true
+            }
+        }
+
         RowLayout {
             anchors {
                 left: parent.left
@@ -40,8 +66,18 @@ Variants {
             Repeater {
                 model: bar.layout.left
                 Pill {
+                    id: pill
+
                     required property var modelData
-                    modules: modelData
+
+                    Repeater {
+                        model: pill.modelData
+                        Loader {
+                            required property string modelData
+                            Layout.fillHeight: true
+                            sourceComponent: bar.modules[modelData] ?? null
+                        }
+                    }
                 }
             }
         }
@@ -58,8 +94,18 @@ Variants {
             Repeater {
                 model: bar.layout.right
                 Pill {
+                    id: pill
+
                     required property var modelData
-                    modules: modelData
+
+                    Repeater {
+                        model: pill.modelData
+                        Loader {
+                            required property string modelData
+                            Layout.fillHeight: true
+                            sourceComponent: bar.modules[modelData] ?? null
+                        }
+                    }
                 }
             }
         }

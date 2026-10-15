@@ -101,7 +101,9 @@ Singleton {
         readonly property int cavaPaddingTop: 12
         readonly property int workspaceHoverRadius: 20
         readonly property real workspaceHoverAlpha: 0.1
-        readonly property int workspaceGlowRadius: 6   // text-shadow 0 0 6px
+        // halo du focalisé, `text-shadow 0 0 6px currentColor` : copie du glyphe floutée par MultiEffect,
+        // rayon max mesuré contre la référence (THEME.md § 3)
+        readonly property int workspaceGlowBlur: 28
     }
 
     // § 3 — Curseur de volume
@@ -119,6 +121,7 @@ Singleton {
     // § 3 — Couleurs des modules
     readonly property QtObject module: QtObject {
         readonly property list<color> workspaces: [root.color.teal, root.color.sapphire, root.color.blue]  // par position
+        readonly property color workspaceOther: root.color.text   // 4e position ou plus
         readonly property color workspaceEmpty: root.color.surface1
         readonly property color updates: root.color.sapphire
         readonly property color gpu: root.color.sky
@@ -141,22 +144,22 @@ Singleton {
     // Glyphes (INVENTORY.md § 1, planche docs/reference/glyphs.png), police `font.icons`
     readonly property QtObject icon: QtObject {
         // par numéro d'espace de travail, 1 à 9
-        readonly property list<string> workspaces: ["", "", "", "\u{f043e}", "", "", "", "", ""]
-        readonly property string spotify: ""
-        readonly property string paused: ""
-        readonly property list<string> volume: ["", "", ""]  // 0–33, 34–66, 67–100 %
-        readonly property string muted: ""
+        readonly property list<string> workspaces: ["\ue79a", "\ue78c", "\uf32e", "\u{f043e}", "\uf1ff", "\uf1bc", "\uf043", "\uf0e0", "\uf1b6"]
+        readonly property string spotify: "\uf1bc"
+        readonly property string paused: "\uf04c"
+        readonly property list<string> volume: ["\uf026", "\uf027", "\uf028"]  // 0–33, 34–66, 67–100 %
+        readonly property string muted: "\uf466"
         readonly property string updates: "\u{f01a7}"
         readonly property string gpu: "\u{f0379}"
-        readonly property string cpu: ""
+        readonly property string cpu: "\uec19"
         readonly property string memory: "\u{f035b}"
-        readonly property string clock: ""
-        readonly property string calendar: ""
+        readonly property string clock: "\ue385"
+        readonly property string calendar: "\uf274"
         readonly property string download: "\u{f1625}"
         readonly property string upload: "\u{f1628}"
-        readonly property string power: ""
-        readonly property string search: ""
-        readonly property list<string> backlight: ["", "", "", "", "", "", "", "", ""]
+        readonly property string power: "\uf011"
+        readonly property string search: "\uf002"
+        readonly property list<string> backlight: ["\ue38d", "\ue3d3", "\ue3d1", "\ue3cf", "\ue3ce", "\ue3cd", "\ue3ca", "\ue3c8", "\ue39b"]
         // batterie : anciennes icônes retirées de Nerd Fonts v3, à choisir en phase 4
         readonly property list<string> cavaBars: ["▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"]  // police `font.bars`
     }
