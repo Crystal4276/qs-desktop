@@ -340,7 +340,7 @@ puis comparaison avec les types QML disponibles dans Quickshell 0.3.2 (`/usr/lib
 
 ### 10.1 Éléments du bureau et cible proposée
 
-« Natif » = remplacé par Quickshell sans programme externe. Les lignes marquées **?** attendent ta décision (`ARCHITECTURE.md` § 10).
+« Natif » = remplacé par Quickshell sans programme externe. Les **?** ont été tranchés : voir `ARCHITECTURE.md` § 10.1 (tout passe en natif, y compris disques et Bluetooth ; `grim`/`slurp` au départ pour les captures ; écran de connexion en phase 12).
 
 | Élément | Aujourd'hui | Ce que Quickshell 0.3.2 offre | Cible proposée |
 |---|---|---|---|

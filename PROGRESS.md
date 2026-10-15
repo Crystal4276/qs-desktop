@@ -39,6 +39,14 @@ Constats importants :
 - Dépendances par module : `deps/README.md` (ajout de `fakeroot`, requis par `checkupdates`).
 - `custom/updates` sur DP-3 : oubli de config, non repris.
 
+### Seconde passe et décisions (2026-10-15)
+
+- Seconde passe de tout le bureau : `INVENTORY.md` § 10. Décisions R1–R11 : `ARCHITECTURE.md` § 10.1 (fond, verrouillage refait, veille, polkit,
+  réseau, Bluetooth avec agent `bluetoothctl`, disques sans udiskie, outil de capture, greeter en phase 12, démarrage 1/4/7).
+- `CLAUDE.md` : phases 2, 3, 4, 5, 8, 10 précisées ; **phase 8b** (services de session et utilitaires) et **phase 12** (écran de connexion) ajoutées.
+- Fonds d'écran consolidés dans `~/Pictures/Wallpapers` (dépôt privé `Crystal4276/wallpapers`), configs Sway/Hyprland adaptées (non committées dans leurs dépôts),
+  cache swww supprimé. Suppression des anciens originaux en attente (`WALLPAPERS.md` § État).
+
 ## Prochaine étape
 
 Phase 1 (squelette), après validation.

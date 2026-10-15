@@ -9,10 +9,7 @@ qt6-svg                 # rendu des icônes et images SVG dans Quickshell
 # --- Compositeurs et sorties ---
 sway                    # compositeur principal
 hyprland                # compositeur secondaire
-swaybg                  # fond d'écran (Hyprland ; Sway utilise son propre swaybg)
-swayidle                # extinction des écrans après 5 min (Sway)
-hypridle                # extinction des écrans après 5 min (Hyprland)
-swaylock                # verrouillage (power menu)
+# (fond d'écran, veille, verrouillage : natifs Quickshell — swaybg, swayidle, hypridle, swaylock ne sont plus requis)
 
 # --- Polices et thèmes ---
 # « Symbols Nerd Font Mono » (glyphes) : versionnée dans assets/fonts/, installée par install.sh (ARCHITECTURE § 8.2)
@@ -30,6 +27,10 @@ cava                    # visualiseur audio de la barre
 
 # --- Système ---
 upower                  # batterie (Quickshell.Services.UPower), utile sur laptop
+networkmanager          # réseau (Quickshell.Networking s'appuie sur NetworkManager)
+bluez                   # Bluetooth (Quickshell.Bluetooth s'appuie sur BlueZ)
+bluez-utils             # bluetoothctl : agent d'appairage piloté par Quickshell (ARCHITECTURE § 10.2)
+udisks2                 # disques amovibles (busctl / gdbus / udisksctl, ARCHITECTURE § 10.3)
 pacman-contrib          # checkupdates (module mises à jour)
 fakeroot                # requis par checkupdates (non déclaré par pacman-contrib)
 btop                    # clic sur CPU / mémoire

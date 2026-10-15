@@ -284,3 +284,49 @@ Proposition de placement dans les phases (CLAUDE.md n'est pas modifié sans ton 
 - R5, R6, R7 : **phase 5 (tray)**, puisqu'ils remplacent des icônes du tray ;
 - R1, R2, R3, R4 : nouvelle **phase 8b — services de session**, après les menus ;
 - R9, R11 : **phase 10 (bascule)**.
+
+### 10.1 Décisions (2026-10-15)
+
+| # | Décision |
+|---|---|
+| R1 | Fond natif + utilitaire de changement de fond (phase 8b). Fonds consolidés : voir `WALLPAPERS.md`. |
+| R2 | Verrouillage natif (phase 8b), **design entièrement refait** : moderne, dans la charte (palette, polices). L'apparence de `swaylock.conf` (`THEME.md` § 11) n'est **pas** à reproduire. Maquette à valider avant implémentation. |
+| R3 | Veille des écrans native (`IdleMonitor`), phase 8b. |
+| R4 | Agent polkit natif, phase 8b. |
+| R5 | Réseau natif (phase 5), `nm-connection-editor` en repli pour l'édition des connexions. |
+| R6 | Bluetooth natif (phase 5) — voir § 10.2. |
+| R7 | Disques natifs (phase 5) — voir § 10.3. |
+| R8 | `grim`/`slurp` au départ ; **outil de capture en fenêtre Quickshell** (écran entier, un écran, une fenêtre, une zone ; modèle de l'outil de capture GNOME), phase 8b. |
+| R9 | Touches volume / média / luminosité via `qs ipc`, phase 10. |
+| R10 | Écran de connexion : **phase 12, tout à la fin**, à concevoir ensemble ; SDDM sera remplacé, idéalement par un greeter Quickshell (`Greetd`). |
+| R11 | Au démarrage : 1 / 4 / 7. |
+
+### 10.2 Bluetooth : appairage et code PIN
+
+Vérifié :
+- Quickshell 0.3.2 parle à BlueZ (`org.bluez.Adapter1`, `Device1`, `Battery1` : lister, connecter, appairer, oublier), mais **n'implémente pas d'agent
+  d'appairage** (`org.bluez.Agent1` absent du binaire).
+- `man 5 org.bluez.Device`, méthode `Pair()` : *« In case there is no application agent and also no default agent present, this method will fail. »*
+  Aujourd'hui c'est **blueman** qui fournit l'agent. Sans lui et sans autre agent, **aucun appairage ne fonctionne**, même sans code.
+  Se reconnecter à un appareil **déjà appairé** n'a pas besoin d'agent.
+
+Solution proposée (une dépendance officielle de plus, `bluez-utils`) : pendant un appairage seulement, Quickshell lance `bluetoothctl`
+comme agent (`agent KeyboardDisplay`, `default-agent`), lit ses demandes (« Confirm passkey 123456 (yes/no) », « Enter PIN code ») et les affiche
+dans une fenêtre de la charte ; la réponse est renvoyée à `bluetoothctl`. L'agent s'arrête à la fermeture de la fenêtre.
+
+Dangers et parades :
+- **Accepter automatiquement** (agent « oui à tout ») permettrait à un appareil à portée de s'appairer sans qu'on le voie → **jamais** d'acceptation
+  automatique ; chaque demande passe par la fenêtre.
+- **Agent permanent** : il accepterait aussi les demandes venues d'un téléphone à proximité → agent actif **uniquement** pendant un appairage lancé par toi.
+- **Format de sortie de `bluetoothctl`** susceptible de changer entre versions → messages attendus centralisés dans le service, testés en phase 5
+  avec un vrai appareil (code à confirmer et appareil sans code).
+
+### 10.3 Disques amovibles sans udiskie
+
+Je m'étais trompé : Quickshell n'a pas d'accès D-Bus générique en QML, mais trois outils système suffisent (vérifié en lecture sur cette machine) :
+- **état** : `busctl --system --json=short call org.freedesktop.UDisks2 … GetManagedObjects` → JSON directement lisible en QML (14 systèmes de fichiers vus) ;
+- **branchement / débranchement** : `gdbus monitor --system --dest org.freedesktop.UDisks2` (fonctionne sans droits ; `busctl monitor`, lui, exige root) ;
+- **actions** : `udisksctl mount | unmount | power-off | unlock` (déverrouillage LUKS : phrase de passe saisie dans une fenêtre de la charte).
+
+Dépendances : `udisks2` (déjà requis par udiskie), `glib2` (`gdbus`), `systemd` (`busctl`). Montage automatique à l'insertion et notifications reproduits
+dans le service `Disks`. Les volumes système (`HintSystem`, `HintIgnore`) sont ignorés, comme le fait udiskie.
