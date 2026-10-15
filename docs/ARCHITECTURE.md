@@ -156,7 +156,7 @@ Format proposé :
   "bars": {
     "primary":   { "left": ["menu", "workspaces", "media", "audio"], "right": ["updates", "system", "clock", "tray"] },
     "secondary": { "left": ["workspaces", "audio"], "right": ["system", "clock"] },
-    "LG Electronics 27GN950 207NTHMFY841": { "left": ["workspaces", "audio"], "right": ["updates", "network", "clock"] }
+    "LG Electronics 27GN950 207NTHMFY841": { "left": ["workspaces", "audio"], "right": ["network", "clock"] }
   },
   "notificationsOutput": "primary",
   "terminal": "gnome-terminal",
