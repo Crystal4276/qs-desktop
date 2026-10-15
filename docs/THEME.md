@@ -231,3 +231,18 @@ Quickshell (Qt) ne lit pas le thème d'icônes GTK : le thème `Papirus-Dark` de
 
 Aucune animation côté barre, notifications ou menus (Waybar `transition: none`, Dunst sans animation, Rofi sans animation).
 Les animations Hyprland concernent les fenêtres et les *layers* (fondu à l'ouverture/fermeture des surfaces layer-shell, donc aussi la future barre) : elles restent gérées par Hyprland.
+
+## 11. Écran de verrouillage (swaylock)
+
+Source : `~/.config/sway/swaylock.conf` (pas de capture : verrouiller la session pendant l'audit n'était pas souhaitable).
+
+| Élément | Valeur |
+|---|---|
+| Fond | `#1e1e2e` (`base`), opaque |
+| Anneau | rayon 100, épaisseur 20 ; repos `#b4befe` (`lavender`), effacement `#f5e0dc` (`rosewater`), verr. maj `#fab387` (`peach`), vérification `#89b4fa` (`blue`), erreur `#eba0ac` (`maroon`) |
+| Segment de frappe | `#a6e3a1` (`green`) ; retour arrière `#f5e0dc` (`rosewater`) |
+| Intérieur, lignes, séparateur | transparents |
+| Texte | `#cdd6f4` (`text`) ; mêmes variantes de couleur que l'anneau selon l'état |
+| Horloge | affichée : `%H:%M:%S` puis `%A, %d %B %Y` |
+| Police | `Symbols Nerd Font Mono` 32 (le texte retombe sur une police de repli) |
+| Divers | indicateur toujours visible, nombre d'échecs affiché, disposition clavier masquée |

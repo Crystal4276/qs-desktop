@@ -261,3 +261,26 @@ et vérifier que les calendriers Owl sont bien dans ce cache. Alternative plus p
   tu voudras peut-être le révoquer, puisque `~/.config/sway` et `~/.config/hypr` sont des dépôts git.
 - **Q8 — Dunst en phase 10** : Dunst est activé par D-Bus ; si Quickshell n'a pas encore pris le nom, D-Bus relancera Dunst. Il faudra
   désactiver son activation (`systemctl --user mask dunst`) au moment de la bascule — je demanderai à ce moment-là.
+
+## 10. Seconde passe : décisions à prendre
+
+Issue de `INVENTORY.md` § 10. Objectif rappelé : à terme, le bureau ne dépend que de Quickshell (plus le compositeur et le système).
+
+| # | Sujet | Recommandation | Pourquoi |
+|---|---|---|---|
+| R1 | Fond d'écran | **natif** (une image par écran, choisie par description dans la config machine) | trivial en QML ; supprime `swaybg` ; corrige l'écart Sway/Hyprland. Quelle série d'images garder ? |
+| R2 | Verrouillage | **natif** (`WlSessionLock` + PAM), apparence de `swaylock.conf` | supprime `swaylock` ; protocole sûr (si Quickshell plante, la session reste verrouillée) |
+| R3 | Veille écrans | **natif** (`IdleMonitor` 300 s → DPMS via le compositeur ; réveil échelonné repris de `hypridle`) | une seule implémentation pour Sway et Hyprland ; supprime `swayidle` et `hypridle`. Les règles `inhibit_idle` du compositeur restent respectées (`respectInhibitors`) **[à vérifier]** |
+| R4 | Agent polkit | **natif** (`PolkitAgent`) | fenêtre de mot de passe aux couleurs de la charte ; supprime `polkit-gnome` |
+| R5 | Réseau | **natif**, menu dans la barre, `nm-connection-editor` en repli pour l'édition | supprime `nm-applet` ; NordVPN a sa propre icône dans le tray |
+| R6 | Bluetooth | **natif**, avec test d'appairage en phase dédiée ; si l'appairage échoue, garder `blueman` pour ce seul usage | supprime `blueman` si le test passe |
+| R7 | Disques amovibles | **garder `udiskie`** (son icône apparaît dans le tray Quickshell) | aucun équivalent natif |
+| R8 | Captures d'écran | **garder `grim`/`slurp`** pour l'instant ; outil QML en `BACKLOG.md` | faisable (`ScreencopyView`) mais non prioritaire |
+| R9 | Touches volume / média / luminosité | **natif via `qs ipc`** (phase 10) | supprime `pactl`, `wpctl`, `playerctl` des raccourcis |
+| R10 | Écran de connexion (SDDM) | **hors périmètre** | demanderait greetd et des fichiers système (`sudo`) |
+| R11 | Espace affiché au démarrage | premier espace de chaque écran (1 / 4 / 7), géré par `Outputs` | Sway (9) et Hyprland (7) ne sont pas d'accord aujourd'hui |
+
+Proposition de placement dans les phases (CLAUDE.md n'est pas modifié sans ton accord) :
+- R5, R6, R7 : **phase 5 (tray)**, puisqu'ils remplacent des icônes du tray ;
+- R1, R2, R3, R4 : nouvelle **phase 8b — services de session**, après les menus ;
+- R9, R11 : **phase 10 (bascule)**.
