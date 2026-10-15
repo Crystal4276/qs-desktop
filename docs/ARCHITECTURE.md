@@ -37,54 +37,69 @@ L'attribution persistante d'un espace à un écran passera par `hyprctl eval 'hl
 
 Deux problèmes séparés, deux mécanismes séparés, **un seul** par problème.
 
-### 3.1 Configuration des sorties → **Kanshi**, pour les deux compositeurs
+### 3.1 Configuration des sorties → **le compositeur lui-même**, écrans identifiés par description
 
-Existant : positions/modes/échelles en dur par connecteur dans la config Sway et dans `lua/layout.lua` (Hyprland) ;
-Kanshi installé mais inutilisé (profil `qtile` obsolète).
+*Révisé le 2026-10-15 : la proposition initiale (Kanshi) est abandonnée, voir « Pourquoi pas Kanshi ».*
 
-Proposition : **Kanshi** gère seul les sorties, avec un profil par ensemble d'écrans, écrans identifiés par
-**description** (`"LG Electronics 27GN950 207NTLEFY824"`), jamais par connecteur.
+Existant : positions/modes/échelles/HDR en dur par **connecteur** dans la config Sway et dans `lua/layout.lua` (Hyprland) ;
+Kanshi installé mais inutilisé.
 
-Pourquoi :
-- un seul fichier (`dotfiles/kanshi/config`) pour Sway **et** Hyprland (les deux implémentent `wlr-output-management`) ;
-- profils conditionnels (« laptop seul », « laptop + externe », « desktop 3 écrans », « desktop sans DP-1 ») que ni Sway
-  ni les règles `monitor` de Hyprland ne savent exprimer ;
-- Quickshell 0.3.2 n'expose pas `wlr-output-management` : il ne peut pas faire ce travail lui-même.
+Proposition : chaque compositeur configure ses sorties **nativement**, avec des règles par **description** d'écran,
+jamais par connecteur. Ces règles s'appliquent automatiquement à chaque connexion de l'écran concerné.
 
-Conséquences (appliquées en phase 10, pas avant) :
-- Sway : plus de lignes `output … pos/mode/scale` (les fonds `output * bg` restent, ou passent par Kanshi) ;
-- Hyprland : ne garder qu'un repli générique `monitor = , preferred, auto, 1` ; `hypridle.conf` → `after_sleep_cmd`
-  ne doit plus faire `hyprctl reload` (qui remettrait le repli) mais `kanshictl reload` ;
-- capot du laptop : `bindswitch --locked lid:on output <interne> disable` (Sway) / `hl.bind("switch:on:Lid Switch", …)`
-  (Hyprland), dans la partie « machine » de la config compositeur ; Kanshi et Quickshell voient ensuite l'écran inactif.
+| | Sway 1.12 | Hyprland 0.56 (Lua) |
+|---|---|---|
+| Identification | `output "LG Electronics 27GN950 207NTLEFY824" …` (make model serial, `man 5 sway-output`) | `hl.monitor({ output = "desc:…", … })` **[syntaxe `desc:` en Lua à vérifier en phase 9]** |
+| Mode, position, échelle | `mode`, `pos`, `scale` | `mode`, `position`, `scale` |
+| HDR, profondeur | `hdr on/off/toggle`, `render_bit_depth 10` | `cm` (ex. `"hdr"`), `bitdepth` |
+| VRR (G-Sync) | `adaptive_sync on/off/toggle` | `vrr` |
+| Désactiver | `disable` | `disabled = true` |
+| Écran inconnu | placé automatiquement à droite, mode préféré | règle de repli `output = ""`, `mode = "preferred"`, `position = "auto"` |
+| Capot du laptop | `bindswitch --locked lid:on output <desc. interne> disable` / `lid:off … enable` | `hl.bind("switch:on:Lid Switch", …)` → `hl.monitor({ …, disabled = true })` |
 
-Profil de cette machine (reproduit l'existant) :
+Ces règles vivent dans la partie « machine » des configs compositeur (`dotfiles/sway/hosts/<hostname>.conf`,
+`dotfiles/hypr/hosts/<hostname>.lua`, phase 10). Le reste de la config compositeur est commun à toutes les machines.
+
+Pourquoi pas Kanshi :
+- **Kanshi ne gère pas le HDR ni la profondeur de couleur** (le protocole `wlr-output-management` ne les transporte pas). On aurait
+  donc **deux sources pour le même écran** : Kanshi pour mode/position, le compositeur pour le HDR. C'est exactement le risque de contradiction
+  à éviter, d'autant que Sway 1.12 gère maintenant le HDR lui-même.
+- Sous Hyprland, `hyprctl reload` (appelé par `hypridle` au réveil) réapplique les règles `monitor` et écraserait la configuration de Kanshi.
+- Un démon de moins.
+- Ce que Kanshi apporte en plus (des **profils conditionnels** : le même écran placé différemment selon les autres écrans présents)
+  ne correspond à aucun besoin actuel. Desktop, laptop seul, laptop + écran externe et capot fermé se règlent tous avec des règles fixes par écran.
+  Si un jour ce besoin apparaît (plusieurs docks avec des dispositions différentes), on réévaluera : noté dans `BACKLOG.md`.
+
+Prix à payer : les réglages d'écran d'une machine sont écrits deux fois, une fois par compositeur (3 lignes chacun ici).
+Les deux fichiers sont côte à côte dans le dépôt.
+
+Règles de cette machine (reproduisent l'existant, par description) :
 
 ```
-profile desktop {
-  output "LG Electronics 27GN950 207NTLEFY824" mode 3840x2160@60Hz position 0,0    scale 1.5
-  output "Dell Inc. Dell AW3418DW #ASPFPBQwWjbd" mode 3440x1440@100Hz position 2560,0 scale 1
-  output "LG Electronics 27GN950 207NTHMFY841" mode 3840x2160@60Hz position 6000,0 scale 1.5
-}
+# Sway
+output "LG Electronics 27GN950 207NTLEFY824"   mode 3840x2160@60Hz  pos 0 0    scale 1.5 hdr off render_bit_depth 10
+output "Dell Inc. Dell AW3418DW #ASPFPBQwWjbd" mode 3440x1440@100Hz pos 2560 0 scale 1
+output "LG Electronics 27GN950 207NTHMFY841"   mode 3840x2160@60Hz  pos 6000 0 scale 1.5 hdr off render_bit_depth 10
 ```
 
-(`hdr off` et `render_bit_depth 10` sont des options Sway que Kanshi ne gère pas : elles restent dans la config Sway, par description.)
+Le raccourci HDR (`$mod+d`) visera aussi les écrans par description (`output "LG …824" hdr toggle`).
+
+Les espaces de travail (§ 3.2) ne dépendent pas de ce choix : ils suivent la liste des écrans **actifs**, quelle que soit la façon dont ils ont été configurés.
 
 ### 3.2 Répartition des espaces de travail → **service Quickshell `services/Outputs.qml`**
 
-Pourquoi Quickshell plutôt qu'un `exec` de profil Kanshi :
+Pourquoi Quickshell :
 - Quickshell tourne déjà et connaît le compositeur : une seule implémentation pour Sway et Hyprland via `Compositor` ;
-- il réagit à **tout** changement de sorties actives, y compris un ensemble d'écrans sans profil Kanshi, ou un écran
-  éteint via `output … disable` / capot ;
+- il réagit à **tout** changement de sorties actives, y compris un écran éteint via `output … disable` ou le capot ;
 - la barre a de toute façon besoin de cette répartition pour n'afficher que les espaces de son écran : un seul
   calcul, une seule source de vérité ;
-- aucun profil Kanshi ne contiendra d'`exec` qui touche aux espaces (jamais deux mécanismes en concurrence).
+- les configs compositeur ne contiendront plus aucune ligne `workspace N output …` (jamais deux mécanismes en concurrence).
 
 Si Quickshell ne tourne pas, rien n'est perdu : Sway et Hyprland déplacent d'eux-mêmes les espaces d'un écran disparu.
 
 Algorithme :
 1. Source de vérité : sorties **actives** du compositeur (`swaymsg -t get_outputs` → `active: true` ; Hyprland : `monitors`, hors `disabled`).
-2. Anti-rebond : on recalcule 500 ms après le **dernier** événement de sortie (un branchement en produit plusieurs, et Kanshi reconfigure).
+2. Anti-rebond : on recalcule 500 ms après le **dernier** événement de sortie (un branchement en produit plusieurs, le temps que le compositeur applique ses règles d'écran).
 3. Si la config machine a une répartition imposée pour exactement cet ensemble de descriptions → on l'applique.
 4. Sinon, règle générale (§ 3.3).
 5. Application : attribution (`workspace N output X` sous Sway ; règle d'espace sous Hyprland) puis déplacement des espaces
@@ -191,7 +206,7 @@ Logout adapté au compositeur. Confirmation : aucune aujourd'hui → aucune (par
 | # | Décision |
 |---|---|
 | Q1 | Règle « principal d'abord, puis gauche → droite, reste sur les premiers » **validée**. |
-| Q2 | Kanshi **validé**, sous condition HDR / VRR — voir § 8.1. |
+| Q2 | Kanshi validé sous condition HDR / VRR, puis **remplacé** par la configuration native des compositeurs (Kanshi ne gère pas le HDR) — voir § 3.1 et § 8.1. |
 | Q3 | Phase 4 : nwg-menu gardé, lancé par le bouton QML (parité). **À terme : nouveau menu entièrement refait en QML, sur le modèle du menu de Cinnamon** (Cinnamon n'est pas installé : il faudra une capture de référence). Inscrit dans `BACKLOG.md`. |
 | Q4 | Parité : ni titre de fenêtre ni mode dans la barre (le service les expose quand même ; idée en `BACKLOG.md`). |
 | Q5 | `custom/logout`, `custom/reboot`, `custom/power` ignorés. |
@@ -201,17 +216,36 @@ Logout adapté au compositeur. Confirmation : aucune aujourd'hui → aucune (par
 ### 8.1 HDR et VRR (G-Sync)
 
 Vérifié dans `man 5 kanshi` (kanshi 1.9) :
-- **VRR** : oui, `adaptive_sync on|off` par sortie dans un profil Kanshi. Aujourd'hui il est **désactivé** (ligne `output * adaptive_sync on`
-  commentée dans la config Sway) ; les profils le gardent désactivé, l'activer revient à changer un mot. Le fonctionnement réel avec le pilote
-  Nvidia (G-Sync natif du Dell, « G-Sync Compatible » des LG) sera testé en phase 3.
+- **VRR** : oui, `adaptive_sync on|off` par sortie dans un profil Kanshi.
 - **HDR** : **non**. Le protocole utilisé par Kanshi (`wlr-output-management`) ne transporte ni le HDR ni la profondeur de couleur.
 
-Proposition pour le HDR : il reste géré par le compositeur, écran identifié par description :
-- Sway : `output "LG Electronics 27GN950 …" hdr off render_bit_depth 10` (comme aujourd'hui, mais par description au lieu de `DP-1`) ;
-  Sway applique ces réglages à chaque connexion de l'écran, en plus de ceux de Kanshi **[à vérifier en phase 3]** ;
-- raccourci `$mod+d` (bascule HDR) : même commande, par description ;
-- Hyprland : réglage HDR dans la règle `monitor` de l'écran **[à vérifier en phase 9 : syntaxe Lua, et absence de conflit avec Kanshi]**.
-  Si les règles Hyprland et Kanshi se contredisent, repli : Hyprland garde ses propres règles d'écran par description, Kanshi ne sert que sous Sway.
+Conséquence : avec Kanshi, le HDR aurait dû rester dans le compositeur, soit deux sources de configuration pour le même écran.
+Comme Sway 1.12 et Hyprland 0.56 gèrent nativement mode, position, échelle, HDR, profondeur de couleur et VRR, **tout** passe par le compositeur
+(§ 3.1) : une seule source par compositeur, pas de contradiction possible. Kanshi est retiré de `deps/`.
+
+VRR : aujourd'hui **désactivé** (ligne `output * adaptive_sync on` commentée dans la config Sway). Il reste désactivé ; l'activer revient à
+ajouter `adaptive_sync on` (Sway) ou `vrr = 1` (Hyprland) à la règle de l'écran. Le fonctionnement réel avec le pilote Nvidia
+(G-Sync natif du Dell, « G-Sync Compatible » des LG) sera testé en phase 3.
+
+### 8.2 Polices embarquées
+
+Décision : `Symbols Nerd Font Mono` (2,5 Mo, licence MIT, non empaquetée sur Fedora/Debian) est **versionnée dans le dépôt**
+(`assets/fonts/SymbolsNerdFontMono-Regular.ttf` + sa licence), et `install.sh` la copie dans `~/.local/share/fonts` sur toutes les distributions.
+Inter, DejaVu Sans et Noto Sans Mono restent des paquets (`deps/`). `install.sh` vérifie avec `fc-list` que chaque police de `THEME.md`
+est présente et s'arrête sinon. L'ajout du fichier se fait en phase 1, avec `Theme.qml`.
+
+### 8.3 Calendrier
+
+Décision : le tooltip calendrier de l'horloge devient une **fenêtre Quickshell** (popup soignée, aux couleurs de la charte), en phase 4.
+C'est une évolution assumée de la parité : même contenu (mois en cours, aujourd'hui mis en évidence), présentation plus riche.
+Ouverture : au clic sur l'horloge **[le survol ou le clic : à trancher en phase 4]**.
+
+Événements Thunderbird : faisable, mais **après la parité** (`BACKLOG.md`). Constat (types seulement, aucun contenu lu) : le profil Thunderbird
+a 6 calendriers — 3 CalDAV, 2 Owl (Exchange / Microsoft 365), 1 local. Thunderbird garde une copie locale des calendriers distants dans
+`calendar-data/cache.sqlite` (et le local dans `local.sqlite`), lisibles en lecture seule avec `sqlite3`. Difficultés à prévoir :
+lire la base sans gêner Thunderbird (WAL actif ; lecture `immutable` ou copie), dépliage des événements récurrents, fuseaux horaires,
+et vérifier que les calendriers Owl sont bien dans ce cache. Alternative plus propre pour les CalDAV : interroger directement le serveur
+— mais pas pour Owl/Exchange.
 
 ## 9. Questions d'origine (archivées)
 

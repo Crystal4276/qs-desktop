@@ -13,10 +13,9 @@ Le tableau de correspondance sera vérifié paquet par paquet en phase 11 (les n
 | qt6-svg | qt6-qtsvg | qt6-svg-plugins | |
 | sway | sway | sway | |
 | hyprland | hyprland | hyprland (Debian ≥ 13) | |
-| kanshi | kanshi | kanshi | |
 | swaybg / swayidle / swaylock | idem | idem | |
 | hypridle | hypridle | — | à compiler |
-| ttf-nerd-fonts-symbols-mono | — | — | télécharger `NerdFontsSymbolsOnly` depuis nerdfonts.com |
+| *(Symbols Nerd Font Mono)* | — | — | fournie par le dépôt (`assets/fonts/`), aucun paquet nécessaire |
 | inter-font | rsms-inter-fonts | fonts-inter | |
 | noto-fonts | google-noto-sans-mono-fonts | fonts-noto-mono | |
 | ttf-dejavu | dejavu-sans-fonts | fonts-dejavu-core | |

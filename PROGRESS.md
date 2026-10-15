@@ -13,7 +13,7 @@ Produit :
 - `docs/INVENTORY.md` — Waybar (3 barres, tous les modules), Dunst, Rofi, nwg-menu, tray, raccourcis, autostart, sorties, attribution des espaces, secrets repérés
 - `docs/THEME.md` — palette Catppuccin Mocha + couleurs Rofi, polices, géométrie mesurée de la barre (pilules 55 px, marges 10 px, rayon 16 px), notifications, lanceur, power menu, nwg-menu
 - `docs/SCRIPTS.md` — 9 scripts/commandes actifs, 11 scripts morts, hors périmètre
-- `docs/ARCHITECTURE.md` — proposition : Kanshi pour les sorties, `services/Outputs.qml` pour la répartition, règle « principal d'abord », format `hosts/*.json`, **8 questions ouvertes (Q1–Q8)**
+- `docs/ARCHITECTURE.md` — proposition : sorties configurées nativement par le compositeur (par description d'écran), `services/Outputs.qml` pour la répartition, règle « principal d'abord », format `hosts/*.json`, **8 questions ouvertes (Q1–Q8)**
 - `docs/reference/` — 10 captures (barres, lanceur, power menu, nwg-menu, notifications)
 - `deps/` — première version (pacman, AUR, optionnel, correspondances Fedora/Debian non vérifiées)
 - `BACKLOG.md`
@@ -28,7 +28,9 @@ Constats importants :
 
 ### Retours du 2026-10-15
 
-- Q1–Q8 tranchées (`docs/ARCHITECTURE.md` § 8). Kanshi validé : VRR possible, HDR non → reste côté compositeur (§ 8.1).
+- Q1–Q8 tranchées (`docs/ARCHITECTURE.md` § 8).
+- Kanshi abandonné : il ne gère pas le HDR → sorties configurées nativement par Sway / Hyprland, par description (§ 3.1, § 8.1).
+- Police Symbols Nerd Font Mono versionnée dans le dépôt (§ 8.2) ; calendrier en fenêtre Quickshell en phase 4, événements Thunderbird après la parité (§ 8.3).
 - Fiches détaillées par module Waybar ajoutées dans `INVENTORY.md` § 1 (états, défauts Waybar, tooltips, clics).
 - Polices vérifiées glyphe par glyphe : tout est dans Symbols Nerd Font Mono, sauf les barres cava (DejaVu Sans, ajoutée à `deps/`)
   et les icônes batterie (retirées de Nerd Fonts v3, à remplacer en phase 4).
