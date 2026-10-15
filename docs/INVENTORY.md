@@ -49,6 +49,7 @@ avec `gaps inner 10`).
 
 - Gauche : `sway/workspaces`, `hyprland/workspaces`, `pulseaudio`, `pulseaudio/slider`
 - Droite : `custom/updates`, `network`, `clock`
+  - `custom/updates` est placé ici mais **pas défini dans le bloc DP-3** (chaque barre Waybar a ses propres définitions) : sans commande, il ne devrait jamais rien afficher. Non vérifiable pour l'instant (aucune mise à jour en attente).
 
 Les modules `custom/maximized`, `backlight`, `battery` sont définis mais placés dans aucune barre
 (`backlight`/`battery` serviront pour le laptop ; `custom/maximized` est mort).
@@ -114,7 +115,7 @@ Locale : `en_US.UTF-8` (jours en anglais : `Thu`).
 - **Affichage** : rail horizontal (`crust`), partie remplie couleur `text`, bouton rond gris (`surface2`). Pas de texte.
 - **Interaction** : clic / glisser pour régler le volume (0–100), molette ±5 %, clic droit `pavucontrol`.
 
-#### `custom/updates` — mises à jour (DP-2, DP-3)
+#### `custom/updates` — mises à jour (DP-2 ; listé sur DP-3 mais non défini, cf. ci-dessus)
 
 - **Affichage** : `U+F01A7` + nombre de paquets à mettre à jour (`checkupdates | wc -l`). Couleur `sapphire`.
 - **Aucune mise à jour** : module **masqué** (sortie vide) — c'était le cas lors des captures.
