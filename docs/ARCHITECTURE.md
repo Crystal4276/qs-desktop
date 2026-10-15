@@ -248,6 +248,11 @@ Décision : `Symbols Nerd Font Mono` (2,5 Mo, licence MIT, non empaquetée sur F
 Inter, DejaVu Sans et Noto Sans Mono restent des paquets (`deps/`). `install.sh` vérifie avec `fc-list` que chaque police de `THEME.md`
 est présente et s'arrête sinon. L'ajout du fichier se fait en phase 1, avec `Theme.qml`.
 
+**Complété en phase 2** (parité exacte, choisie le 2026-10-15) : les icônes des modules texte viennent en réalité de polices de repli
+(`THEME.md` § 2). Sont aussi versionnées, même traitement : `HackNerdFont-Regular.ttf` (MIT + Bitstream Vera),
+`FontAwesome7Free-Regular-400.otf` et `FontAwesome7Brands-Regular-400.otf` (SIL OFL 1.1), `FontAwesome4-Regular.ttf` (Font Awesome 4.7, SIL OFL 1.1).
+Inventaire et licences : `assets/fonts/README.md`. Total 5,7 Mo.
+
 ### 8.3 Calendrier
 
 Décision : le tooltip calendrier de l'horloge devient une **fenêtre Quickshell** (popup soignée, aux couleurs de la charte), en phase 4.

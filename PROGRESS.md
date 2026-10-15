@@ -64,7 +64,7 @@ Constats importants :
 
 - GPU multi-constructeur (NVIDIA / AMD / Intel) en phase 4 ; fenêtre de statistiques système (équivalent btop) en fin de phase 8b (`ARCHITECTURE.md` § 11.5).
 
-## Phase 1 — Squelette : faite, en attente de validation (2026-10-15)
+## Phase 1 — Squelette : faite et validée (2026-10-15)
 
 Produit :
 - `shell.qml` (pragmas `IconTheme Papirus-Dark` et `ShellId desktop`), imports `qs.config` / `qs.services` / `qs.modules.bar`.
@@ -95,6 +95,51 @@ puis `scripts/dev.sh stop; pkill -SIGUSR1 waybar`.
 
 État laissé : Waybar et Dunst actifs, aucune instance `qs`, aucun écran virtuel.
 
+Retour du 2026-10-15 : la pilule tray + power est native en QML ; le power menu pourra devenir un panneau de réglages rapides façon GNOME (BACKLOG, phase 8).
+
+## Phase 2 — Espaces de travail et horloge : faite, en attente de validation (2026-10-15)
+
+Produit :
+- `services/Outputs.qml` : blocs d'espaces par écran (règle Q1 ou répartition imposée par la config machine), calculés seulement — appliqués en phase 3.
+- `services/Compositor.qml` : état vide des espaces (Sway : champ `focus`), titre de la fenêtre active (événements `window` + `get_tree`),
+  mode (`mode` + `get_binding_state` ; submap sous Hyprland). Exposés sans widget (Q4).
+- `modules/bar/Workspaces.qml` : espaces de l'écran + espaces persistants de son bloc (sémantique Waybar), couleurs par position,
+  vide / visible / survol, halo du focalisé, clic, molette (précédent / suivant avec bouclage, sans effet si le focus est sur un autre écran).
+- `modules/bar/Clock.qml` : `U+E385␣␣HH:mm` (+ `␣␣U+F274␣ddd-dd` sur la barre principale), locale et fuseau du système.
+- `Pill.qml` sans padding (chaque module porte le sien, comme Waybar), masquée si vide ; modules branchés par nom dans `Bar.qml`.
+- `//@ pragma NativeTextRendering` (texte rendu par FreeType, comme Pango).
+- `scripts/dev.sh` lit le journal en direct (`qs log`) ; `dev.sh log` le suit.
+
+**Correction d'audit — polices des icônes** (`THEME.md` § 2) : dans les modules en `Inter`, les icônes venaient de polices de repli
+(Hack Nerd Font, Font Awesome 7 Free / Brands, Font Awesome 4.7), pas de Symbols Nerd Font Mono. Décision : parité exacte →
+ces 4 polices sont versionnées dans `assets/fonts/` (licences MIT / Bitstream Vera / SIL OFL, `assets/fonts/README.md`).
+
+Vérifié (Sway, DP-2 à l'échelle 1, mêmes états que la référence) :
+- Pilule des espaces : glyphes à la même position que la référence (32×34+60+12) ; écart moyen 3/255 sur la pilule (ancien rendu),
+  5/255 sur le bouton focalisé avec le rendu natif. Halo calibré par mesure (`THEME.md` § 3).
+- Horloge (heure figée sur celle de la référence pour la mesure) : pilule de 247 px contre 245, caractères à 1–2 px de leur position,
+  calendrier à la même hauteur ; reste un écart d'anticrénelage (Qt et Pango ne hintent pas pareil).
+- DP-1 / DP-3 : espaces et horloge conformes.
+- Clic (crée et focalise un espace persistant), molette dans les deux sens, survol (couleur de position + fond 10 %) : testés par curseur simulé (`swaymsg seat - cursor`).
+- Titre de la fenêtre active : suit les changements de fenêtre et d'espace (vide sur un espace vide). L'état focalisé de Quickshell converge vers celui de Sway sur les trois écrans.
+- Changement d'écrans (écran virtuel) : barres et listes d'espaces suivent.
+
+Écarts restants (acceptés ou à trancher) :
+- horloge : +2 px de largeur, anticrénelage légèrement différent ;
+- un espace hors de 1–9 ou nommé affiche son nom ; un espace 1–9 déplacé sur un autre écran affiche son glyphe (Waybar afficherait son numéro, faute d'icône définie pour cette barre) ;
+- molette : active aussi sous Hyprland (Waybar l'y avait désactivée) — à trancher en phase 9 ;
+- mode Sway : non testé (ta config ne définit aucun mode) ;
+- avertissement « I3 event socket disconnected » à chaque démarrage : reconnexion interne de Quickshell, sans effet constaté.
+
+À tester à la main : clic, molette et survol à la vraie souris sur les trois barres.
+
+Notes de session :
+- les clics simulés (`swaymsg seat - cursor`) comptent comme une activité : swayidle rallume les écrans ;
+- écrans éteints par swayidle → `grim` bloque : utiliser un écran virtuel (`swaymsg output HEADLESS-N power on`) ;
+- `pkill -SIGUSR1 waybar` est une bascule : toujours vérifier par capture que Waybar est bien revenu.
+
+État laissé : Waybar et Dunst actifs, aucune instance `qs`, aucun écran virtuel, attribution des espaces identique.
+
 ## Prochaine étape
 
-Phase 2 (espaces de travail, horloge), après validation.
+Phase 3 (écrans dynamiques), après validation.
