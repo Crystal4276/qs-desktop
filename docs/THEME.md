@@ -67,7 +67,7 @@ Autres couleurs littérales :
 |---|---|---|---|
 | Défaut Waybar (icônes, espaces, volume) | `Symbols Nerd Font Mono` | selon module | `ttf-nerd-fonts-symbols-mono` |
 | Texte des modules Waybar (updates, nvidia, cpu, memory, clock, mpris, network) | `Inter` (Regular) | 26 px | `inter-font` |
-| cava | `Inter` | 20 px | `inter-font` |
+| cava | `Inter` demandé, mais les caractères `▁…█` viennent de **`DejaVu Sans`** (repli) | 20 px | `ttf-dejavu` |
 | Glyphes d'espaces de travail | `Symbols Nerd Font Mono` | 34 px | |
 | Icône volume (`pulseaudio`) | `Symbols Nerd Font Mono` | 26 px | |
 | Bouton power (`custom/powermenu`) | `Symbols Nerd Font Mono` | 28 px | |
@@ -79,6 +79,20 @@ Autres couleurs littérales :
 | GTK (applications, tooltips Waybar) | `Inter Light` | 12 pt | |
 
 Les tooltips de Waybar suivent le thème GTK (`catppuccin-mocha-green-standard+default`) et la police GTK.
+
+### Police de chaque glyphe
+
+Vérifié caractère par caractère avec `fc-list ":charset=<code>"` : **toutes** les icônes de la barre, du power menu et du lanceur
+(planche `docs/reference/glyphs.png`) sont dans `Symbols Nerd Font Mono` (`/usr/share/fonts/TTF/SymbolsNerdFontMono-Regular.ttf`,
+paquet `ttf-nerd-fonts-symbols-mono`, licence MIT). Aucune ne dépend d'un repli.
+
+Exceptions :
+- barres cava `U+2581…U+2588` → `DejaVu Sans` (`ttf-dejavu`) ;
+- icônes batterie `U+F578…U+F583` (module inutilisé) → absentes de Nerd Fonts v3, à remplacer.
+
+Règle pour `Theme.qml` : chaque texte nomme sa police explicitement (icônes → `Symbols Nerd Font Mono`, texte → `Inter`,
+barres cava → `DejaVu Sans`, notifications → `Noto Sans Mono`). Qt et GTK ne choisissent pas forcément la même police de repli :
+on ne s'appuie sur aucun repli implicite.
 
 ## 3. Barre (Waybar)
 

@@ -55,43 +55,123 @@ Les modules `custom/maximized`, `backlight`, `battery` sont définis mais placé
 
 ### Détail des modules
 
-| Module | Barres | Contenu / format | Intervalle | Tooltip | Clic / scroll |
-|---|---|---|---|---|---|
-| `custom/menu` | DP-2 | bouton image logo Arch (SVG vert ; SVG `mantle` sur fond vert quand survolé ou menu ouvert) | `once`, rafraîchi par signal RTMIN+1 | non | gauche : `nwg-menu-wrapper.sh` (ouvre **nwg-menu**) |
-| `sway/workspaces` | toutes | icône par espace (`format: {icon}`), espaces persistants : DP-2 → 1,2,3 ; DP-1 → 4,5,6 ; DP-3 → 7,8,9 | événements | non | clic : aller à l'espace ; scroll : espace suivant/précédent (`disable-scroll: false`) |
-| `hyprland/workspaces` | toutes | mêmes icônes, `sort-by-number`, pas de persistants côté Waybar (persistance dans la config Hyprland) | événements | non | clic (inopérant sous parseur Lua, bug Waybar #5008) ; scroll désactivé |
-| `mpris` | DP-2 | `{player_icon} {status_icon} {dynamic}` ; joueur **spotify** uniquement ; dynamic = artiste - titre, `dynamic-len 40`, `title-len 20`, ellipse `...` | événements | défaut Waybar | scroll haut/bas : `playerctld shift` / `unshift` |
-| `cava` | DP-2 | 12 barres `▁ ▂ ▃ ▄ ▅ ▆ ▇ █` (chaque glyphe suivi d'une espace), 100 fps, stéréo, `monstercat`, `waves`, `noise_reduction 0.77`, 50–10000 Hz, source pulse auto, **masqué en silence** | 100 fps | non | — |
-| `pulseaudio` | toutes | icône seule : volume bas/moyen/haut `U+F026 / U+F027 / U+F028`, muet `U+F466` | événements | défaut Waybar | gauche : `pamixer --toggle-mute` ; milieu : `audio-toggle.sh` ; droite : `pavucontrol` ; scroll : ±5 % |
-| `pulseaudio/slider` | toutes | curseur horizontal 0–100 | événements | — | droite : `pavucontrol` ; scroll ±5 % ; glisser |
-| `custom/updates` | DP-2, DP-3 | `U+F01A7` + nombre de mises à jour (`checkupdates \| wc -l`) ; **masqué quand 0** (sortie vide) | 8600 s, + signal RTMIN+8 | texte brut | gauche : `update-wrapper.sh` (terminal `paru -Syu`, puis rafraîchit) |
-| `custom/nvidia` | DP-2, DP-1 | `U+F0379` + `{}°C` (`nvidia-smi --query-gpu=temperature.gpu`) ; `critical-threshold 80` → `U+F0379 {}°C!` (*note : `critical-threshold`/`format-critical` ne sont pas des options de `custom/*` → probablement sans effet*) | 5 s | texte brut | gauche : `gnome-terminal -- sh -c 'nvtop'` |
-| `cpu` | DP-2, DP-1 | `U+EC19` + `{usage:2}%` | 5 s | non | gauche : `gnome-terminal -e btop` |
-| `memory` | DP-2, DP-1 | `U+F035B` + `{used:2.0f}G` | 5 s | `Memory: {used:0.1f}G / {total:0.1f}G\nSwap: {swapUsed:0.1f}G / {swapTotal:0.1f}G` | gauche : `gnome-terminal -e btop` |
-| `clock` | toutes | DP-2 : `U+E385 {:%H:%M}` + 3 espaces + `U+F274 {:%a-%d}` (ex. `17:46 Thu-15`) ; DP-1/DP-3 : `U+E385 {:%H:%M}` ; fuseau `Asia/Riyadh` (= fuseau système) | 60 s (défaut) | calendrier du mois : `<big>{:%Y %B}</big>` + `<tt><small>{calendar}</small></tt>` | — |
-| `network` | DP-3 | `U+F1625 {bandwidthDownBytes:>3}  U+F1628 {bandwidthUpBytes:>3}` (interface `eno2` en dur) | 5 s | défaut Waybar | — |
-| `tray` | DP-2 | `icon-size 32`, `spacing 5` | — | par élément | comportement par défaut Waybar (gauche : activer, droite : menu) |
-| `custom/powermenu` | DP-2 | `U+F011` (rouge) | — | non | gauche : `~/.config/rofi/bin/power-menu` |
+Chaque fiche distingue ce qui est **écrit dans ta config** de ce qui vient des **valeurs par défaut de Waybar 0.15**
+(relevées dans `man 5 waybar-<module>`), car la parité porte sur les deux.
+Toutes les icônes sont visibles sur la planche `docs/reference/glyphs.png` (police Symbols Nerd Font Mono).
+Locale : `en_US.UTF-8` (jours en anglais : `Thu`).
 
-Icônes d'espaces (format-icons, Symbols Nerd Font) :
+#### `custom/menu` — bouton Arch (DP-2)
 
-| Espace | Glyphe | Sens |
-|---|---|---|
-| 1 | `U+E79A` | (non commenté) |
-| 2 | `U+E78C` | (non commenté) |
-| 3 | `U+F32E` | (non commenté) |
-| 4 | `U+F043E` | (non commenté) |
-| 5 | `U+F1FF` | Discord |
-| 6 | `U+F1BC` | Spotify |
-| 7 | `U+F043` | Deluge |
-| 8 | `U+F0E0` | Thunderbird |
-| 9 | `U+F1B6` | Steam |
+- **Affichage** : pas de texte (une espace), uniquement une image de fond CSS : logo Arch **vert** (`arch_linux_icon_green.svg`) sur fond `mantle`.
+- **États** : survol **ou** menu ouvert → logo couleur `mantle` (`arch_linux_icon_mantle.svg`) sur fond **vert**. L'état « ouvert » est connu par le fichier `/tmp/nwg_menu_state` et un signal (RTMIN+1).
+- **Clic gauche** : ouvre **nwg-menu** (cf. § 4). Pas d'autre clic, pas de tooltip.
 
-Icônes de joueurs MPRIS : défaut `U+F04B`, spotify `U+F1BC`, discord `U+F1FF`, firefox `U+F269`,
-chromium `U+F268`, io `U+F03D` ; statut en pause `U+F04C` (aucune icône définie pour « playing »).
+#### `sway/workspaces` / `hyprland/workspaces` — espaces de travail (toutes)
 
-Modules définis mais inutilisés (gardés pour le laptop) : `backlight` (`intel_backlight`, 9 icônes
-`U+E38D…U+E39B`), `battery` (états warning 30 / critical 15, en charge/branché `U+F583`, 12 icônes `U+F582…U+F578`).
+- **Affichage** : un glyphe par espace, sans numéro. Espaces **persistants** : chaque barre montre toujours ses 3 espaces, même vides ou inexistants (Sway : `persistent-workspaces` de Waybar ; Hyprland : `persistent = true` côté compositeur).
+- **Glyphes** : 1 `U+E79A`, 2 `U+E78C`, 3 `U+F32E`, 4 `U+F043E`, 5 `U+F1FF` (Discord), 6 `U+F1BC` (Spotify), 7 `U+F043` (Deluge), 8 `U+F0E0` (Thunderbird), 9 `U+F1B6` (Steam).
+- **États** (style) :
+  - occupé : couleur de sa **position** dans la barre (1re teal, 2e sapphire, 3e blue) ;
+  - vide / inexistant : `surface1` (gris) ;
+  - visible sur son écran sans focus : même couleur que occupé, pas de marque supplémentaire ;
+  - focalisé : couleur + **halo** (`text-shadow 0 0 6px`) ;
+  - urgent : aucun style défini (rien de visible) ;
+  - survol : fond de la couleur à 10 % d'opacité, coins arrondis 16 px.
+- **Clic gauche** : aller à l'espace (défaut Waybar). Sous Hyprland en config Lua, le clic est inopérant (bug Waybar #5008).
+- **Molette** : Sway : espace précédent / suivant (défaut, avec bouclage) ; Hyprland : désactivée (`disable-scroll: true`).
+- **Tooltip** : aucun.
+
+#### `mpris` — lecture en cours (DP-2)
+
+- **Joueur suivi** : **Spotify uniquement** (`"player": "spotify"`). Spotify fermé → module **masqué** (et la pilule média commence alors au volume).
+- **Format** (identique en lecture, pause, arrêt) : `{player_icon} {status_icon} {dynamic}`.
+  - `player_icon` : spotify `U+F1BC` (seul utile, puisque seul Spotify est suivi ; les icônes discord/firefox/chromium/io/défaut sont définies mais inatteignables) ;
+  - `status_icon` : en pause `U+F04C` ; en lecture et à l'arrêt : **rien** (aucune icône définie) ;
+  - `dynamic` : `Artiste - Titre` (seuls ces deux champs), longueur totale max 40 caractères, titre max 20, troncature par `...` ; le **titre** est tronqué en premier.
+  - exemple capturé : `[spotify] [pause] Tricky - Aftermath`.
+- **Tooltip** (défaut Waybar) : `{player} ({status}) {dynamic}` sans limite de longueur, ex. `spotify (Paused) Tricky - Aftermath`.
+- **Clics** (défauts Waybar) : gauche lecture/pause, milieu piste **précédente**, droite piste **suivante**.
+- **Molette** : haut `playerctld shift`, bas `playerctld unshift` (change de joueur actif — sans effet visible puisque le module est fixé sur Spotify).
+
+#### `cava` — visualiseur (DP-2)
+
+- **Affichage** : 12 barres en caractères `▁▂▃▄▅▆▇█` (U+2581…U+2588, chacun suivi d'une espace), couleur `green`, 20 px. La CSS demande Inter, mais **Inter ne contient pas ces caractères** : ils sont dessinés par **DejaVu Sans** (repli fontconfig, vérifié avec `fc-match`).
+- **Réglages** : 100 images/s, stéréo, sensibilité auto (`autosens 1`, `sensitivity 2`), 50–10 000 Hz, lissage `monstercat` + `waves`, `noise_reduction 0.77`, source PulseAudio automatique.
+- **Silence** : module **masqué** (`hide_on_silence`).
+- Pas de clic, pas de tooltip.
+
+#### `pulseaudio` — icône de volume (toutes)
+
+- **Affichage** : icône seule, pas de pourcentage. Volume 0–33 % `U+F026`, 34–66 % `U+F027`, 67–100 % `U+F028` (3 paliers, défaut Waybar) ; muet `U+F466` (+ une espace).
+- **Clic gauche** : bascule muet (`pamixer --toggle-mute`).
+- **Clic milieu** : sortie audio suivante (`audio-toggle.sh` : cycle des sorties, volume remis à 60 %, notification « Audio Switch » + nom).
+- **Clic droit** : `pavucontrol`.
+- **Molette** : ±5 %, plafonné à 100 % (défaut `max-volume`).
+- **Tooltip** (défaut Waybar) : description du périphérique de sortie (ex. `SMSL USB AUDIO Pro`).
+
+#### `pulseaudio/slider` — curseur de volume (toutes)
+
+- **Affichage** : rail horizontal (`crust`), partie remplie couleur `text`, bouton rond gris (`surface2`). Pas de texte.
+- **Interaction** : clic / glisser pour régler le volume (0–100), molette ±5 %, clic droit `pavucontrol`.
+
+#### `custom/updates` — mises à jour (DP-2, DP-3)
+
+- **Affichage** : `U+F01A7` + nombre de paquets à mettre à jour (`checkupdates | wc -l`). Couleur `sapphire`.
+- **Aucune mise à jour** : module **masqué** (sortie vide) — c'était le cas lors des captures.
+- **Rafraîchissement** : toutes les 8600 s (≈ 2 h 23), et immédiatement après une mise à jour lancée depuis le module.
+- **Clic gauche** : terminal `paru -Syu`, attend Entrée, puis recompte.
+- **Tooltip** : aucun texte spécifique (sortie d'une seule ligne).
+
+#### `custom/nvidia` — température GPU (DP-2, DP-1)
+
+- **Affichage** : `U+F0379` + température en °C (`nvidia-smi --query-gpu=temperature.gpu`), ex. `39°C`. Couleur `sky`. Toutes les 5 s.
+- **Seuil critique** : la config demande `°C!` au-delà de 80 °C, mais ces options n'existent pas pour un module `custom` → **jamais affiché** aujourd'hui.
+- **Clic gauche** : `nvtop` dans un terminal. Tooltip : aucun texte spécifique.
+
+#### `cpu` — processeur (DP-2, DP-1)
+
+- **Affichage** : `U+EC19` + utilisation totale en % sur 2 caractères, ex. `10%`. Couleur `teal`. Toutes les 5 s.
+- **Clic gauche** : `btop` dans un terminal. **Tooltip désactivé**.
+
+#### `memory` — mémoire (DP-2, DP-1)
+
+- **Affichage** : `U+F035B` + mémoire utilisée en Gio, arrondie sans décimale, ex. `9G`. Couleur `green`. Toutes les 5 s.
+- **Tooltip** : deux lignes, une décimale — `Memory: <utilisée>G / <totale>G` puis `Swap: <utilisé>G / <total>G` (machine actuelle : 31 Gio de RAM, 15 Gio de swap).
+- **Clic gauche** : `btop` dans un terminal.
+
+#### `clock` — horloge (toutes)
+
+- **Affichage** :
+  - DP-2 : `U+E385 17:46` + 3 espaces + `U+F274 Thu-15` (heure 24 h, jour abrégé en anglais, jour du mois) ;
+  - DP-1, DP-3 : `U+E385 17:46` seulement.
+  - Couleur `yellow`. Mise à jour chaque minute. Fuseau `Asia/Riyadh` écrit en dur, identique au fuseau système.
+- **Tooltip** : titre `2026 October` en grand, puis le calendrier du mois en police à chasse fixe, petite taille, **aujourd'hui en gras souligné** (défaut Waybar), semaines non numérotées, semaine commençant le dimanche (locale `en_US`).
+- Pas de clic ni de molette configurés (le calendrier ne défile pas).
+
+#### `network` — débit réseau (DP-3)
+
+- **Affichage** : `U+F1625` + débit descendant, puis `U+F1628` + débit montant, en octets/s avec unité automatique, ex. `2.5MB/s  833.6kB/s`. Couleur `sky`. Toutes les 5 s.
+- **Interface** : `eno2` écrite en dur (aujourd'hui la route par défaut passe par `bridge0`).
+- **Tooltip** (défaut Waybar) : reprend le texte du module.
+- Pas de clic.
+
+#### `tray` — zone de notification (DP-2)
+
+- **Affichage** : icônes 32 px, espacées de 5 px ; éléments au statut « passif » **masqués** (défaut).
+- **Clics** (défauts Waybar) : gauche active l'application, milieu action secondaire, droit menu contextuel. Tooltip : celui fourni par chaque application.
+- Éléments observés : nm-applet, udiskie, blueman, WhatsDesk, NordVPN, Steam.
+
+#### `custom/powermenu` — bouton d'extinction (DP-2)
+
+- **Affichage** : `U+F011` en rouge (28 px), collé à droite du tray dans la même pilule.
+- **Clic gauche** : power menu Rofi (cf. § 3). Pas de tooltip.
+
+#### Modules définis mais placés dans aucune barre
+
+- `backlight` (`intel_backlight`, 9 icônes `U+E38D`…`U+E39B`, couleur `yellow`) et `battery` (seuils warning 30 % / critical 15 %, en charge et branché `U+F583`, 12 icônes `U+F582`…`U+F578`, vert, rouge en `warning` hors charge) : restes d'un laptop, **à reprendre pour le futur laptop**.
+  ⚠ Les icônes batterie `U+F578`…`U+F583` sont d'anciens codes Material Design **retirés de Nerd Fonts v3** : elles n'existent plus dans Symbols Nerd Font Mono (elles ne s'afficheraient aujourd'hui que par repli sur Font Awesome 7). Il faudra choisir leurs équivalents v3 (plage `U+F0079`…) en phase 4.
+- `custom/maximized` (état plein écran Hyprland) : mort.
+- Les définitions `network` de DP-2 et DP-1 (formats légèrement différents) ne sont utilisées par aucune barre.
 
 ### Particularités de style à reproduire (cf. `THEME.md`)
 

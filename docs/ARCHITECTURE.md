@@ -186,7 +186,34 @@ Un seul script utilise `rofi -dmenu` : le **power menu**. Il est réécrit en QM
 dmenu générique (aucun autre usage ; `dmenu` de Dunst n'est ni installé ni utilisé).
 Logout adapté au compositeur. Confirmation : aucune aujourd'hui → aucune (parité).
 
-## 8. Questions ouvertes (décisions à prendre par toi)
+## 8. Décisions (2026-10-15)
+
+| # | Décision |
+|---|---|
+| Q1 | Règle « principal d'abord, puis gauche → droite, reste sur les premiers » **validée**. |
+| Q2 | Kanshi **validé**, sous condition HDR / VRR — voir § 8.1. |
+| Q3 | Phase 4 : nwg-menu gardé, lancé par le bouton QML (parité). **À terme : nouveau menu entièrement refait en QML, sur le modèle du menu de Cinnamon** (Cinnamon n'est pas installé : il faudra une capture de référence). Inscrit dans `BACKLOG.md`. |
+| Q4 | Parité : ni titre de fenêtre ni mode dans la barre (le service les expose quand même ; idée en `BACKLOG.md`). |
+| Q5 | `custom/logout`, `custom/reboot`, `custom/power` ignorés. |
+| Q6 | Scripts morts abandonnés. |
+| Q8 | Dunst sera **désinstallé** au moment de la bascule (phase 10). |
+
+### 8.1 HDR et VRR (G-Sync)
+
+Vérifié dans `man 5 kanshi` (kanshi 1.9) :
+- **VRR** : oui, `adaptive_sync on|off` par sortie dans un profil Kanshi. Aujourd'hui il est **désactivé** (ligne `output * adaptive_sync on`
+  commentée dans la config Sway) ; les profils le gardent désactivé, l'activer revient à changer un mot. Le fonctionnement réel avec le pilote
+  Nvidia (G-Sync natif du Dell, « G-Sync Compatible » des LG) sera testé en phase 3.
+- **HDR** : **non**. Le protocole utilisé par Kanshi (`wlr-output-management`) ne transporte ni le HDR ni la profondeur de couleur.
+
+Proposition pour le HDR : il reste géré par le compositeur, écran identifié par description :
+- Sway : `output "LG Electronics 27GN950 …" hdr off render_bit_depth 10` (comme aujourd'hui, mais par description au lieu de `DP-1`) ;
+  Sway applique ces réglages à chaque connexion de l'écran, en plus de ceux de Kanshi **[à vérifier en phase 3]** ;
+- raccourci `$mod+d` (bascule HDR) : même commande, par description ;
+- Hyprland : réglage HDR dans la règle `monitor` de l'écran **[à vérifier en phase 9 : syntaxe Lua, et absence de conflit avec Kanshi]**.
+  Si les règles Hyprland et Kanshi se contredisent, repli : Hyprland garde ses propres règles d'écran par description, Kanshi ne sert que sous Sway.
+
+## 9. Questions d'origine (archivées)
 
 - **Q1 — Règle de répartition** (§ 3.3) : « principal d'abord, puis gauche → droite, reste sur les premiers » te convient-elle pour 2 et 4+ écrans ?
 - **Q2 — Kanshi** (§ 3.1) : d'accord pour que Kanshi devienne l'unique gestionnaire des sorties (Sway et Hyprland), à partir de la phase 3 pour les tests et de la phase 10 pour la bascule ?
