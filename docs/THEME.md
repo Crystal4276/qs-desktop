@@ -246,3 +246,38 @@ Source : `~/.config/sway/swaylock.conf` (pas de capture : verrouiller la session
 | Horloge | affichée : `%H:%M:%S` puis `%A, %d %B %Y` |
 | Police | `Symbols Nerd Font Mono` 32 (le texte retombe sur une police de repli) |
 | Divers | indicateur toujours visible, nombre d'échecs affiché, disposition clavier masquée |
+
+## 12. Images et icônes (hors glyphes de police)
+
+Recensement de toutes les références à des fichiers image dans les configs actives (Sway, Hyprland, Waybar, Rofi, Dunst, scripts).
+
+### Fichiers à embarquer dans le dépôt (`assets/`)
+
+| Fichier actuel | Taille | Usage | Remarque |
+|---|---|---|---|
+| `~/.config/sway/assets/arch_linux_icon_green.svg` | 2 Ko | bouton Arch, état normal (logo vert) | SVG simple, sans filtre ni dégradé |
+| `~/.config/sway/assets/arch_linux_icon_mantle.svg` | 2 Ko | bouton Arch, survol / menu ouvert (logo `mantle` sur fond vert) | idem |
+| `~/.config/sway/assets/lock.svg` | 4,5 Ko | power menu : Lock | dégradés + **un filtre `feGaussianBlur`** |
+| `~/.config/sway/assets/logout.svg` | 5 Ko | power menu : Logout | dégradés |
+| `~/.config/sway/assets/restart.svg` | 20 Ko | power menu : Reboot | dégradés + **un filtre `feGaussianBlur`** |
+| `~/.config/sway/assets/shutdown.svg` | 12 Ko | power menu : Shutdown | dégradés + **un filtre `feGaussianBlur`** |
+
+Aucun de ces SVG ne référence de fichier externe. Les 4 icônes du power menu existent à l'identique dans `~/.config/hypr/assets/`.
+Point à vérifier au moment de leur intégration (phase 8) : rendu du flou par Qt SVG (`qt6-svg`) comparé au rendu Rofi (librsvg), sur la capture de référence.
+
+Non repris : `~/.config/hypr/assets/layout/layout-{max,columns}.svg` (module mort `custom/maximized`), variantes `*_blur.svg`,
+`arch_linux_icon_{blue_pink,yellow,132588}.svg`, icônes de `bar_icons/` (non référencées).
+
+### Icônes venant d'un thème (pas de fichier à embarquer)
+
+| Usage | Thème | Paquet |
+|---|---|---|
+| Icônes d'applications : lanceur, futur menu d'applications, notifications, tray | `Papirus-Dark` (+ repli `hicolor`) | `papirus-icon-theme` ; `hicolor-icon-theme` (installé avec `quickshell`) |
+| Icônes propres aux applications installées (jeux Steam, web apps…) | `~/.local/share/icons/hicolor` | fournies par les applications elles-mêmes |
+| Curseur | `catppuccin-mocha-green-cursors`, taille 48 | `catppuccin-cursors-mocha` (AUR) |
+
+### Règle pour les nouveaux composants
+
+Les composants sans équivalent actuel (réseau, Bluetooth, disques, verrouillage, polkit, capture, sélecteur de fond, calendrier, menu d'applications)
+utiliseront des glyphes de `Symbols Nerd Font Mono` ou des icônes `Papirus-Dark`. Chaque icône ajoutée est inscrite ici et, si c'est un fichier,
+versionnée dans `assets/` dans le même commit.
