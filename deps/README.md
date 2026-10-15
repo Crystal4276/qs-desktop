@@ -56,6 +56,7 @@ Thème d'icônes des applications (tray, lanceur, notifications) : `papirus-icon
 | Réseau | `networkmanager` (natif, `Networking`) | `nm-connection-editor` (`network-manager-applet`) pour l'édition | Symbols Nerd Font Mono | — |
 | Bluetooth | `bluez` (natif, `Bluetooth`), `bluez-utils` (agent d'appairage) | — | Symbols Nerd Font Mono | — |
 | Disques amovibles | `udisks2`, `glib2` (`gdbus`), `systemd` (`busctl`) | — | Symbols Nerd Font Mono | — |
+| NordVPN | — | `nordvpn-bin` (AUR) + service `nordvpnd` + compte connecté (sinon module masqué) | Symbols Nerd Font Mono | — |
 | Outil de capture | `grim`, `slurp`, `wl-clipboard` (au départ) | — | à définir | — |
 | Événements Thunderbird (backlog) | `sqlite` | — | — | — |
 
