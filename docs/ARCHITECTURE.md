@@ -103,8 +103,12 @@ Algorithme (implémenté et testé en phase 3, Sway) :
 3. Si la config machine a une répartition imposée pour exactement cet ensemble de descriptions → on l'applique.
 4. Sinon, règle générale (§ 3.3).
 5. Application, en **une seule commande** au compositeur : chaque espace existant mal placé rejoint l'écran de son bloc ;
-   chaque écran affiche ensuite l'espace qu'il affichait avant le changement s'il y est chez lui (recréé s'il était vide),
-   sinon le premier espace existant de son bloc, sinon le premier de son bloc ; puis l'espace focalisé est refocalisé.
+   chaque écran affiche ensuite, parmi les candidats qui y sont chez eux (recréés s'ils étaient vides) :
+   l'espace que l'utilisateur y a choisi depuis le dernier placement ; sinon la vue de cette configuration d'écrans si elle a déjà
+   existé (un écran éteint puis rallumé retrouve exactement la vue d'avant) ; sinon celle d'avant le changement ;
+   sinon le premier espace existant de son bloc, sinon le premier de son bloc. Enfin, l'espace focalisé **avant** le changement
+   est refocalisé (le compositeur déplace le focus dès qu'un écran focalisé disparaît, avant Quickshell).
+   Mémoire : vue par configuration (`layoutKey`), relevée 300 ms après chaque changement d'espaces et à chaque placement.
 6. **Espace créé hors de son écran** (ex. `$mod+3` depuis l'écran de gauche, ou fenêtre envoyée vers un espace inexistant) :
    100 ms plus tard (focus à jour), il est déplacé sur son écran ; focalisé, il le reste ; créé en arrière-plan, le focus revient où il était.
    Aucune correction ne crée d'espace (pas de boucle possible).
