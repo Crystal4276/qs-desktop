@@ -9,14 +9,13 @@ qt6-svg                 # rendu des icônes et images SVG dans Quickshell
 # --- Compositeurs et sorties ---
 sway                    # compositeur principal
 hyprland                # compositeur secondaire
-kanshi                  # profils d'écrans communs à Sway et Hyprland (proposition ARCHITECTURE § 3.1)
 swaybg                  # fond d'écran (Hyprland ; Sway utilise son propre swaybg)
 swayidle                # extinction des écrans après 5 min (Sway)
 hypridle                # extinction des écrans après 5 min (Hyprland)
 swaylock                # verrouillage (power menu)
 
 # --- Polices et thèmes ---
-ttf-nerd-fonts-symbols-mono  # « Symbols Nerd Font Mono » : glyphes de la barre
+# « Symbols Nerd Font Mono » (glyphes) : versionnée dans assets/fonts/, installée par install.sh (ARCHITECTURE § 8.2)
 inter-font              # « Inter » : texte de la barre et du lanceur
 noto-fonts              # « Monospace » résolu en Noto Sans Mono : texte des notifications
 ttf-dejavu              # « DejaVu Sans » : caractères ▁…█ des barres cava (absents d'Inter)
