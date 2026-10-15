@@ -416,7 +416,7 @@ Incohérence relevée : `gtk-3.0/settings.ini` a `prefer-dark=1`, `gtk-4.0/setti
 
 | Texte | Police utilisée aujourd'hui | Problème |
 |---|---|---|
-| Japonais, chinois | MS Gothic | `/usr/share/fonts/MS_Fonts/` : **540 polices Microsoft copiées à la main**, aucun paquet → absentes d'un nouveau PC |
+| Japonais, chinois | MS Gothic | `/usr/share/fonts/MS_Fonts/` : **540 polices Microsoft (363 Mo) copiées depuis Windows en 2022**, aucun paquet → absentes d'un nouveau PC ; tu veux les garder (documents Word) : voir `ARCHITECTURE.md` § 11.3 |
 | Coréen | Malgun Gothic | idem |
 | Emojis | DejaVu Sans (monochrome), alors que `Noto Color Emoji` est installé | rendu à vérifier dans Quickshell (notifications Discord/WhatsApp, titres Spotify) |
 
@@ -426,9 +426,11 @@ Proposition : `noto-fonts-cjk` et `noto-fonts-emoji` dans `deps/` ; test en phas
 
 - **Portail de partage d'écran** (Sway) : `xdg-desktop-portal-wlr` choisit l'écran avec `slurp` → `slurp` reste une dépendance même avec un outil de capture natif.
 - **`gnome-screenshot`** et GNOME Shell sont installés : référence disponible pour l'outil de capture (phase 8b).
-- **Onduleur** : `apcupsd` actif mais `STATUS: COMMLOST` (onduleur non joignable). Rien à afficher aujourd'hui.
-- **VPN** installés : `networkmanager-openvpn`, `networkmanager-pptp`, `wireguard-tools`, `tailscale`, `zerotier-one`, NordVPN. Seul NordVPN a une icône (tray).
-  `Quickshell.Networking` n'expose pas les VPN → `nm-connection-editor` en repli.
+- **Onduleur** : `apcupsd` actif mais `STATUS: COMMLOST`. **Hors périmètre** (tu le règles séparément).
+- **VPN** : le seul VPN voulu est **NordVPN** (icône dans le tray). Restes encore installés : `networkmanager-openvpn`, `networkmanager-pptp`, `wireguard-tools`,
+  et surtout `tailscale` et `zerotier-one`, dont les **services sont activés et tournent** (`tailscaled`, `zerotier-one`). Attention : le montage
+  `gio mount ssh://…@<serveur>` de l'autostart Sway vise une adresse de type ZeroTier — à vérifier avant de désinstaller ZeroTier.
+  Aucun module VPN n'est prévu dans la barre ; leur désinstallation est hors projet (à ta main, `sudo`).
 - **Bluetooth** : `bluez-tools` (`bt-agent`) est installé, mais il n'est pas retenu comme agent : ses modes sans interaction acceptent tout (cf. `ARCHITECTURE.md` § 10.2).
 - **Autostart XDG** (`~/.config/autostart`) : rappel, Bitwarden ne démarre pas (rien n'exécute ces fichiers).
 - **Hors bureau, sans action** : `lightdm`, `gdm` (installés, inactifs), `picom`, `openbox`, `qtile`, `numlockx` (X11), `hyprpicker`, `autotiling`, `obs-studio`,

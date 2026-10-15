@@ -345,3 +345,14 @@ Barre, notifications, verrouillage, agent polkit, agent Bluetooth et veille vive
 - tout disparaît en même temps → lancer `qs` comme **service systemd utilisateur avec redémarrage automatique** (plutôt qu'un simple `exec` du compositeur), à décider en phase 10 ;
 - **écran verrouillé** : le protocole `ext-session-lock` garde la session verrouillée si le verrouilleur meurt (c'est voulu, c'est sûr) ; il faut donc que le `qs` redémarré
   puisse reprendre le verrouillage, et documenter un **retour de secours** depuis un TTY. À tester explicitement en phase 8b, sans risque pour ta session (écran virtuel ou session de test).
+
+### 11.3 Polices Microsoft — à décider
+
+Tu veux garder les 540 polices Microsoft (363 Mo, `/usr/share/fonts/MS_Fonts/`), utiles pour les documents Word.
+Ce sont des polices **propriétaires** : leur usage personnel avec ta licence Windows ne pose pas de problème, mais les versionner, c'est les
+stocker chez un tiers (GitHub), et elles ne doivent jamais être publiques.
+
+Proposition : **dépôt privé séparé** `fonts-ms` (même principe que `wallpapers`), cloné par `install.sh` dans `~/.local/share/fonts/MS_Fonts`
+(pas de `sudo`), **optionnel** ; jamais dans `qs-desktop`, qui doit rester partageable. Le bureau lui-même ne dépend pas de ces polices :
+`noto-fonts-cjk` reste la police de repli pour le japonais, le chinois et le coréen, afin qu'un PC sans ce dépôt (laptop) affiche correctement les titres.
+Alternative sans stockage : paquet AUR `ttf-ms-win11-auto`, qui extrait les polices d'une image ISO de Windows téléchargée à l'installation (plusieurs Go).
