@@ -26,6 +26,13 @@ Constats importants :
 
 État laissé : Waybar et Dunst actifs et inchangés, aucun écran virtuel, aucune instance `qs`, 3 notifications de test retirées de l'historique Dunst.
 
+### Retours du 2026-10-15
+
+- Q1–Q8 tranchées (`docs/ARCHITECTURE.md` § 8). Kanshi validé : VRR possible, HDR non → reste côté compositeur (§ 8.1).
+- Fiches détaillées par module Waybar ajoutées dans `INVENTORY.md` § 1 (états, défauts Waybar, tooltips, clics).
+- Polices vérifiées glyphe par glyphe : tout est dans Symbols Nerd Font Mono, sauf les barres cava (DejaVu Sans, ajoutée à `deps/`)
+  et les icônes batterie (retirées de Nerd Fonts v3, à remplacer en phase 4).
+
 ## Prochaine étape
 
-Réponses à Q1–Q8 (`docs/ARCHITECTURE.md` § 8), puis phase 1 (squelette).
+Phase 1 (squelette), après validation.

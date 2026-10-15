@@ -19,6 +19,7 @@ Le tableau de correspondance sera vérifié paquet par paquet en phase 11 (les n
 | ttf-nerd-fonts-symbols-mono | — | — | télécharger `NerdFontsSymbolsOnly` depuis nerdfonts.com |
 | inter-font | rsms-inter-fonts | fonts-inter | |
 | noto-fonts | google-noto-sans-mono-fonts | fonts-noto-mono | |
+| ttf-dejavu | dejavu-sans-fonts | fonts-dejavu-core | |
 | papirus-icon-theme | papirus-icon-theme | papirus-icon-theme | |
 | pipewire / wireplumber / pipewire-pulse | idem (`pipewire-pulseaudio`) | idem | |
 | pavucontrol / cava | idem | idem | |

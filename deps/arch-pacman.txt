@@ -19,6 +19,7 @@ swaylock                # verrouillage (power menu)
 ttf-nerd-fonts-symbols-mono  # « Symbols Nerd Font Mono » : glyphes de la barre
 inter-font              # « Inter » : texte de la barre et du lanceur
 noto-fonts              # « Monospace » résolu en Noto Sans Mono : texte des notifications
+ttf-dejavu              # « DejaVu Sans » : caractères ▁…█ des barres cava (absents d'Inter)
 papirus-icon-theme      # thème d'icônes Papirus-Dark (notifications, lanceur, tray)
 
 # --- Audio / média ---
