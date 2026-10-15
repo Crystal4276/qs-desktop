@@ -225,6 +225,7 @@ Logout adapté au compositeur. Confirmation : aucune aujourd'hui → aucune (par
 | Q5 | `custom/logout`, `custom/reboot`, `custom/power` ignorés. |
 | Q6 | Scripts morts abandonnés. |
 | Q8 | Dunst sera **désinstallé** au moment de la bascule (phase 10). |
+| Pilule tray + power | Sous Waybar, le bouton power collé au tray dans une même pilule est une astuce CSS. Le résultat visuel est à garder (une seule pilule `["tray", "power"]`), pas la technique : en QML, c'est simplement une pilule qui contient les deux modules. Le power menu pourra devenir un **panneau de réglages rapides façon GNOME** (`BACKLOG.md`), à discuter au début de la phase 8. |
 
 ### 8.1 HDR et VRR (G-Sync)
 
