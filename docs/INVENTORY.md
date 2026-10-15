@@ -332,3 +332,54 @@ Thunderbird → 8, Steam → 9, jeux Steam/gamescope → 3 ; fenêtres ouvertes 
 - Adresses de montage SSH (`gio mount ssh://…`) dans la config Sway et `mount_vps.desktop`.
 
 Ces lignes devront être retirées ou externalisées avant tout rapatriement en phase 10.
+
+## 10. Seconde passe (2026-10-15) — toute la couche shell
+
+Méthode : processus réellement lancés dans la session, paquets installés, **tous** les dossiers de `~/.config`, services utilisateur activés,
+puis comparaison avec les types QML disponibles dans Quickshell 0.3.2 (`/usr/lib/qt6/qml/Quickshell/**/*.qmltypes`).
+
+### 10.1 Éléments du bureau et cible proposée
+
+« Natif » = remplacé par Quickshell sans programme externe. Les lignes marquées **?** attendent ta décision (`ARCHITECTURE.md` § 10).
+
+| Élément | Aujourd'hui | Ce que Quickshell 0.3.2 offre | Cible proposée |
+|---|---|---|---|
+| Barres | Waybar | `PanelWindow` | natif (phases 1–5) |
+| Notifications | Dunst | `NotificationServer` | natif (phase 6) |
+| Lanceur | Rofi `drun` | `DesktopEntries` | natif (phase 7) |
+| Menu d'applications | nwg-menu | `DesktopEntries` | natif, modèle Cinnamon (phase 8) |
+| Power menu | Rofi `-dmenu` | — | natif (phase 8) |
+| Tray | Waybar | `SystemTray` | natif (phase 5) |
+| **Fond d'écran** | `swaybg` (Sway : `output … bg`, Hyprland : `swaybg` avec **d'autres images**) | `PanelWindow` sur la couche `Background` | **?** natif |
+| **Verrouillage** | `swaylock -C swaylock.conf` (power menu, nwg-menu) | `WlSessionLock` + `PamContext` | **?** natif |
+| **Veille écrans** | `swayidle` 300 s → `output * power off` (Sway) ; `hypridle` 300 s → DPMS off, réveil échelonné DP-1/DP-3 puis DP-2 après 3 s (Hyprland) | `IdleMonitor` (`timeout`, `respectInhibitors`) + commande DPMS au compositeur | **?** natif |
+| **Agent polkit** (fenêtre de mot de passe administrateur) | `polkit-gnome-authentication-agent-1` | `PolkitAgent` + `AuthFlow` | **?** natif |
+| **Réseau** (icône + menu) | `nm-applet --indicator` dans le tray | `Networking` (appareils, Wi-Fi, connexion/déconnexion) | **?** natif ; limites : pas de VPN ni d'édition des connexions (→ `nm-connection-editor` en repli) |
+| **Bluetooth** (icône + menu) | `blueman-applet` + `blueman-tray` | `Bluetooth` (adaptateurs, appareils, connecter, appairer, oublier) | **?** natif ; limite : pas d'agent d'appairage (code PIN) visible dans l'API → à tester |
+| **Disques amovibles** | `udiskie --appindicator` (montage auto + notifications + menu tray) | aucun équivalent (pas d'accès D-Bus générique en QML) | **?** garder `udiskie` |
+| **Captures d'écran** | `grim` + `slurp` (+ `screenshot-window.sh`) sous Sway, `hyprshot` sous Hyprland | `ScreencopyView` (capture) ; sélection et enregistrement à écrire | **?** garder `grim`/`slurp` |
+| **Touches volume / média / luminosité** | Sway : `pactl` ; Hyprland : `wpctl`, `playerctl`, `brightnessctl` | `Pipewire`, `Mpris` via `IpcHandler` | natif via `qs ipc` (phase 10) |
+| Configuration des écrans | Sway / Hyprland | — | compositeur (§ 3.1 d'ARCHITECTURE) |
+| Écran de connexion | SDDM (`catppuccin-sddm-theme-mocha`) | `Greetd` (exigerait greetd + config système) | **?** hors périmètre |
+| Thème GTK / curseur / icônes | paquets + `gtk-3.0/settings.ini` | — | paquets (deps) |
+| Portails XDG, trousseau | `xdg-desktop-portal-*`, `gnome-keyring` | — | hors périmètre (système) |
+
+### 10.2 Oublis du premier passage
+
+- **Tri du lanceur par fréquence d'utilisation** : Rofi garde un historique (`disable-history: false`) dans `~/.cache/rofi3.druncache`
+  (nombre de lancements par application). L'ordre de la capture (`Windows 10`, `Calculator`, `virt-manager`, `deluge`…) vient de là.
+  Le lanceur QML doit garder ce tri et peut importer cet historique une fois.
+- **Dépendances cachées des raccourcis** : `pactl` (paquet `libpulse`, touches volume Sway), `wpctl` (`wireplumber`), `playerctl` (touches média Hyprland),
+  `gsettings` (`glib2`, taille du curseur). Elles disparaissent si les touches passent par `qs ipc`.
+- **Autostart XDG inactif** : `~/.config/autostart/{bitwarden,mount_vps,nordvpn}.desktop` ne sont exécutés par personne
+  (Bitwarden ne tourne pas). Hors périmètre, mais à savoir.
+- **Espace affiché au démarrage** : Sway montre 1 / 4 / **9** (DP-2 / DP-1 / DP-3), Hyprland 1 / 4 / **7**.
+- **Fonds d'écran** : Sway utilise `~/Pictures/Wallpaper/3-screens/monitor_{left,center,right}_*.png`, Hyprland `swaybg_spread_*_DP-{1,2,3}.png` : images différentes.
+- **`DP-2` écrit en dur ailleurs** (à remplacer par « écran principal » ou par description en phase 10) : renvoi des fenêtres des espaces 7 et 8
+  vers DP-2 (Sway et Hyprland), `cursor.default_monitor = "DP-2"` (Hyprland), `monitor = 1` (Dunst), `-o DP-2` (nwg-menu).
+- **Dossier `~/.config/menus/`** : `cinnamon-applications.menu` + `applications-merged/` (applis Chrome, Wine) — catégories XDG personnalisées,
+  héritées de Cinnamon. À prendre en compte pour les catégories du futur menu d'applications.
+- **Restes sans effet** (aucune action) : `fontconfig/` (fichiers vides générés par Font Manager), `waypaper/`, `wpaperd/`, `azote/` (anciens gestionnaires
+  de fond d'écran, non lancés), `cinnamon/spices/*` (dossiers vides), `nwg-look` (outil qui écrit `gtk-3.0/settings.ini`), `qtile/`, `openbox/`, `xfce4/`.
+- **Applications personnelles** de `~/.local/share/applications` (132 fichiers : jeux Steam, web apps Chrome, Discord web…) : le lanceur et le menu
+  les lisent via `DesktopEntries`, rien à faire.
