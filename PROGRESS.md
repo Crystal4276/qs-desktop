@@ -201,11 +201,13 @@ Liste tenue à jour à chaque phase ; à dérouler une fois le projet terminé.
 - **Mise à jour réelle** (phase 4) : clic sur le module, confirmer avec `Y`, puis Entrée ; le compteur doit disparaître.
 - **VRR** (phase 3) : juger l'effet à l'œil (indicateur G-Sync de l'écran, scintillement) avant de l'activer.
 - **Débranchement physique d'un câble** sur le desktop (phase 3).
+- **Hyprland** (rappel demandé) : tu ouvres une session Hyprland, je prends la main et je déroule la liste de « Compatibilité Hyprland »
+  ci-dessous (barres, répartition des espaces, modules, calendrier) ; puis le protocole complet en phase 9.
 - **Laptop**, une fois installé : laptop seul, laptop + écrans externes, capot fermé (`bindswitch lid:on/off`), écran interne éteint,
   branchement à chaud avec fenêtres ouvertes (phase 3) ; batterie, rétroéclairage (`brightnessctl`), modules masqués selon le matériel,
   GPU AMD / Intel réels (phase 4).
 
-## Phase 4 — Modules système de la barre : faite, en attente de validation (2026-10-16)
+## Phase 4 — Modules système de la barre : faite et validée (2026-10-16)
 
 Produit :
 - Services : `Audio` (Pipewire : volume, muet, sortie suivante à 60 % + notification — remplace `audio-toggle.sh`), `Media` (Mpris, lecteur
@@ -294,4 +296,4 @@ Revu et complété d'après le code source d'Hyprland 0.56.2 et l'API Quickshell
 
 ## Prochaine étape
 
-Phase 5 (tray, réseau, Bluetooth, disques, NordVPN), après validation.
+Phase 5 (tray, réseau, Bluetooth, disques, NordVPN) : en cours.
