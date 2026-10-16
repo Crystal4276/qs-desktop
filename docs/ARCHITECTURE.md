@@ -383,6 +383,22 @@ Proposition de placement dans les phases (CLAUDE.md n'est pas modifié sans ton 
 | R10 | Écran de connexion : **phase 12, tout à la fin**, à concevoir ensemble. **SDDM abandonné** : greeter Quickshell indépendant (`Greetd`), reprenant uniquement l'apparence du thème `catppuccin-mocha-green` (thème lui-même écrit en QML : `/usr/share/sddm/themes/catppuccin-mocha-green/`, paquet AUR `catppuccin-sddm-theme-mocha` ; fond `backgrounds/wall.png`, police Noto Sans 9, horloge, icônes power/reboot/sleep). Aperçu : `docs/reference/sddm-catppuccin-preview.png` (aperçu générique du paquet ; la variante installée est verte). |
 | R11 | Au démarrage : 1 / 4 / 7. |
 
+### 10.1.1 Mise en œuvre de la phase 5 (2026-10-16)
+
+- **Placement** : modules natifs dans la pilule du tray, après les applications (NordVPN, réseau, disques, Bluetooth) ; un clic ouvre
+  leur **panneau** (`Panel.qml`, style du calendrier). Jusqu'à la bascule (phase 10), nm-applet, blueman, udiskie et norduserd tournent
+  encore : leurs icônes apparaissent aussi dans le tray Quickshell (pas de filtre, il serait inutile ensuite).
+- **Popups** : panneaux et menus du tray sont des popups « grab » (clavier pour la saisie) ; wlroots les ferme au clic sur une autre
+  application (ce clic n'est pas transmis, comme les menus GTK), un clic sur une barre les ferme (`BarState.closePopups`). Un popup
+  affiché ne se redimensionne pas proprement sous Sway : les menus n'apparaissent qu'avec leurs entrées, les panneaux ont une fenêtre de
+  taille fixe et une zone de clic (`mask`) limitée au cadre.
+- **Réseau** (R5) : `Quickshell.Networking` (filaire, Wi-Fi : interrupteur, réseaux, mot de passe, oubli) ; édition dans `nm-connection-editor`.
+- **Bluetooth** (R6) : `Quickshell.Bluetooth` ; appairage par `bluetoothctl` lancé pour l'occasion, son agent servant à sa propre commande
+  `pair` (l'agent par défaut de blueman n'est pas touché) ; demandes affichées dans le panneau, jamais acceptées automatiquement.
+- **Disques** (R7) : `busctl` / `gdbus monitor` / `udisksctl` ; règles et textes d'udiskie (montage automatique, notifications, images
+  disque en boucle prises en charge).
+- **NordVPN** (§ 11.4) : commande `nordvpn` ; derniers pays utilisés (historique local) et recherche sur tous les pays.
+
 ### 10.2 Bluetooth : appairage et code PIN
 
 Vérifié :

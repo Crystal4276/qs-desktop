@@ -34,7 +34,7 @@ Chaque commande a été rattachée à son paquet sur cette machine avec `pacman 
 | Mémoire | natif (`/proc/meminfo`) | — | `btop` (clic) | Inter, Hack Nerd Font | — |
 | Horloge + fenêtre calendrier | natif (Qt) | `tzdata` (système) | — | Inter, Hack Nerd Font, Font Awesome 7 Free | — |
 | Réseau (débit) | natif (`/proc/net/dev`, `/proc/net/route`) | — | — | Inter, Hack Nerd Font | — |
-| Tray | natif (`Services.SystemTray` ; Quickshell fait aussi le rôle de « watcher ») | — | — | — | — |
+| Tray | natif (`Services.SystemTray` ; Quickshell fait aussi le rôle de « watcher ») | — | — | Inter (menus) | — |
 | Bouton power → power menu | natif | `systemd` (Reboot/Shutdown) ; Lock → verrouillage natif | — | Symbols Nerd Font Mono | `assets/{lock,logout,restart,shutdown}.svg` |
 | Batterie (laptop) | natif (`Services.UPower`) | — | `upower` (service système) | Symbols Nerd Font Mono (icônes v3 `U+F0079`…) | — |
 | Luminosité (laptop) | `/sys/class/backlight` | — | `brightnessctl` (écriture sans root) | Symbols Nerd Font Mono | — |
@@ -54,9 +54,9 @@ Thème d'icônes des applications (tray, lanceur, notifications) : `papirus-icon
 | Agent polkit | — (natif, `PolkitAgent` ; `polkit` installé avec `quickshell`) | — | à définir | — |
 | Fond d'écran + utilitaire | — (natif) | — | à définir | dépôt `wallpapers` cloné dans `~/Pictures/Wallpapers` |
 | Réseau (tray) | `networkmanager` (natif, `Networking`) | `nm-connection-editor` pour l'édition des connexions | icônes Papirus-Dark (`nm-*`) | — |
-| Bluetooth | `bluez` (natif, `Bluetooth`), `bluez-utils` (agent d'appairage) | — | Symbols Nerd Font Mono | — |
-| Disques amovibles | `udisks2`, `glib2` (`gdbus`), `systemd` (`busctl`) | — | Symbols Nerd Font Mono | — |
-| NordVPN | — | `nordvpn-bin` (AUR) + service `nordvpnd` + compte connecté (sinon module masqué) | Symbols Nerd Font Mono | — |
+| Bluetooth (tray) | `bluez` (natif, `Bluetooth`), `bluez-utils` (agent d'appairage) | — | icônes Papirus-Dark (`blueman-tray*`) | — |
+| Disques amovibles (tray) | `udisks2`, `glib2` (`gdbus`), `systemd` (`busctl`), `xdg-utils` (ouvrir) | — | icônes Papirus-Dark | — |
+| NordVPN (tray) | — | `nordvpn-bin` (AUR) + service `nordvpnd` + compte connecté (sinon module masqué) ; icônes `nordvpn-tray-*` du paquet | — | historique des pays : `~/.local/state/quickshell/by-shell/desktop/vpn-recent.json` |
 | Outil de capture | `grim`, `slurp`, `wl-clipboard` (au départ) | — | à définir | — |
 | Événements Thunderbird (backlog) | `sqlite` | — | — | — |
 

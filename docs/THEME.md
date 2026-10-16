@@ -360,3 +360,9 @@ versionnée dans `assets/` dans le même commit.
 | Icône | Composant | Police |
 |---|---|---|
 | `U+F053` / `U+F054` (chevrons) | calendrier épinglé : mois précédent / suivant | Symbols Nerd Font Mono |
+| `nm-device-wired`, `nm-signal-{00,25,50,75,100}[-secure]`, `nm-no-connection` | module réseau (tray, lignes) — noms de nm-applet | Papirus-Dark |
+| `blueman-tray`, `blueman-tray-active`, `blueman-tray-disabled` | module Bluetooth (tray) — noms de blueman | Papirus-Dark |
+| icône fournie par BlueZ (`audio-headset`, `input-gaming`…), sinon `bluetooth` | lignes des appareils Bluetooth | Papirus-Dark |
+| `drive-removable-media-usb-panel` | module disques (tray) — icône d'udiskie | Papirus-Dark |
+| `drive-removable-media`, `changes-prevent` / `changes-allow` | lignes des volumes (chiffré verrouillé / déverrouillé) | Papirus-Dark |
+| `nordvpn-tray-blue` / `nordvpn-tray-gray` | module NordVPN (connecté / non) — icônes du paquet nordvpn | hicolor (`nordvpn-bin`) |

@@ -27,12 +27,11 @@ Item {
         Repeater {
             model: root.items
 
-            IconImage {
+            TrayIcon {
                 id: icon
 
                 required property SystemTrayItem modelData
 
-                implicitSize: Theme.bar.trayIconSize
                 source: modelData.icon
 
                 MouseArea {

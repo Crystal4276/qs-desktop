@@ -36,6 +36,7 @@ nm-connection-editor    # édition des connexions, ouverte depuis le panneau ré
 bluez                   # Bluetooth (Quickshell.Bluetooth s'appuie sur BlueZ)
 bluez-utils             # bluetoothctl : agent d'appairage piloté par Quickshell (ARCHITECTURE § 10.2)
 udisks2                 # disques amovibles (busctl / gdbus / udisksctl, ARCHITECTURE § 10.3)
+xdg-utils               # xdg-open : « Open » d'un disque monté dans le gestionnaire de fichiers
 pacman-contrib          # checkupdates (module mises à jour)
 fakeroot                # requis par checkupdates (non déclaré par pacman-contrib)
 btop                    # clic sur CPU / mémoire
