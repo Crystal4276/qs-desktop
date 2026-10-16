@@ -63,7 +63,7 @@ Reste à faire (suppression, bloquée par le garde-fou : à faire par toi ou à 
 5. **Fond d'écran natif** (phase 8b) : une surface Quickshell par écran sur la couche Background remplace `swaybg` (Sway et Hyprland).
    `swaybg` a une zone d'entrée vide : un clic sur le fond focalise l'espace de travail (et ferme ainsi le calendrier épinglé de l'horloge).
    La surface native devra garder ce comportement (zone d'entrée vide), ou recevoir le clic, fermer le calendrier
-   (`BarState.closeCalendar()`, ARCHITECTURE § 8.3) et focaliser l'espace de l'écran elle-même — ce qui couvrirait aussi le cas d'un clic
+   (`BarState.closePopups()`, ARCHITECTURE § 8.3) et focaliser l'espace de l'écran elle-même — ce qui couvrirait aussi le cas d'un clic
    juste après un clic dans le calendrier. À trancher en phase 8b.
 
 ## Décisions à prendre

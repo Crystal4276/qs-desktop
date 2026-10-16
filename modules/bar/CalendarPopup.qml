@@ -33,7 +33,7 @@ Item {
 
     Connections {
         target: BarState
-        function onCloseCalendar() {
+        function onClosePopups() {
             root.pinned = false;
         }
     }
@@ -75,7 +75,10 @@ Item {
 
     onPinnedChanged: {
         monthOffset = 0;
-        BarState.calendarPinned = pinned;
+        if (pinned)
+            BarState.popupOpened();
+        else
+            BarState.popupClosed();
         if (pinned)
             keys.forceActiveFocus();
         if (!pinned)

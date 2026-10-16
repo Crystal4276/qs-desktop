@@ -1,0 +1,88 @@
+import QtQuick
+import Quickshell
+import Quickshell.Services.SystemTray
+import Quickshell.Widgets
+import qs.config
+
+// Zone de notification (INVENTORY.md § 1, `tray`) : icônes 32 px espacées de 5 px, padding horizontal 6 px ;
+// éléments « passifs » masqués (défaut de Waybar). Ordre : celui d'enregistrement des applications.
+// Actions à l'appui, comme Waybar (sni/item.cpp) : gauche → Activate (ou le menu si l'application n'a qu'un menu),
+// milieu → SecondaryActivate, droit → menu (TrayMenu.qml) ou ContextMenu de l'application ; molette → Scroll(∓1).
+Item {
+    id: root
+
+    readonly property var items: SystemTray.items.values.filter(i => i.status !== Status.Passive)
+    readonly property bool shown: items.length > 0
+
+    implicitWidth: row.implicitWidth + 2 * Theme.bar.trayPadding
+    implicitHeight: Theme.bar.trayIconSize
+
+    Row {
+        id: row
+        x: Theme.bar.trayPadding
+        anchors.verticalCenter: parent.verticalCenter
+        spacing: Theme.bar.traySpacing
+
+        Repeater {
+            model: root.items
+
+            IconImage {
+                id: icon
+
+                required property SystemTrayItem modelData
+
+                implicitSize: Theme.bar.trayIconSize
+                source: modelData.icon
+
+                MouseArea {
+                    anchors.fill: parent
+                    acceptedButtons: Qt.LeftButton | Qt.MiddleButton | Qt.RightButton
+                    onPressed: mouse => {
+                        const item = icon.modelData;
+                        if ((mouse.button === Qt.LeftButton && item.onlyMenu) || mouse.button === Qt.RightButton) {
+                            if (item.hasMenu)
+                                menu.openAt(item.menu, icon, mouse.x, mouse.y);
+                            else {
+                                const p = icon.mapToItem(null, mouse.x, mouse.y);
+                                item.display(icon.QsWindow.window, p.x, p.y);
+                            }
+                        } else if (mouse.button === Qt.LeftButton) {
+                            item.activate();
+                        } else if (mouse.button === Qt.MiddleButton) {
+                            item.secondaryActivate();
+                        }
+                    }
+                }
+
+                WheelSteps {
+                    onStep: direction => icon.modelData.scroll(-direction, false)
+                }
+            }
+        }
+    }
+
+    // Un seul menu à la fois, ouvert au pointeur (coin haut-gauche), basculé s'il déborde de l'écran.
+    TrayMenu {
+        id: menu
+
+        function openAt(handle: var, item: Item, x: real, y: real): void {
+            open = false;
+            menu.menu = handle;
+            anchor.item = item;
+            anchor.rect.x = x;
+            anchor.rect.y = y;
+            open = true;
+        }
+
+        anchor.edges: Edges.Top | Edges.Left
+        anchor.gravity: Edges.Bottom | Edges.Right
+        onVisibleChanged: visible ? BarState.popupOpened() : BarState.popupClosed()
+
+        Connections {
+            target: BarState
+            function onClosePopups() {
+                menu.open = false;
+            }
+        }
+    }
+}

@@ -307,7 +307,7 @@ Mise en œuvre (Sway 1.12, code source lu) :
 - pendant le survol de l'horloge, sa barre accepte le clavier « à la demande » ; le clic qui épingle lui donne donc le focus (Échap, ←/→).
   Un clic sur une fenêtre le lui reprend → fermeture. Seul un clic donne durablement le focus à une surface « à la demande » :
   Sway le lui retire à chaque réarrangement des couches (`arrange_layers`), d'où l'échec des variantes avec une surface dédiée ;
-- un appui sur une barre (n'importe quel écran) ferme le calendrier puis est transmis au module (`BarState.closeCalendar`, appui non accepté) ;
+- un appui sur une barre (n'importe quel écran) ferme le calendrier puis est transmis au module (`BarState.closePopups`, appui non accepté) ;
 - un clic dans le calendrier, que Sway traite comme un clic sur l'espace de travail, retire aussi le focus à la barre : il ne ferme pas ;
   ensuite, c'est l'événement IPC « une fenêtre reçoit le focus » (`Compositor.windowFocused`, filtré sur `focused` : Sway l'envoie aussi à tort
   lors d'un clic sur un popup) qui ferme au clic sur une fenêtre ;
@@ -317,7 +317,7 @@ Clic sur le fond d'écran : `swaybg` déclare une zone d'entrée vide (code lu) 
 la barre perd le clavier et le calendrier se ferme (vérifié sur DP-2 et DP-1). Seule exception : juste après un clic dans le calendrier,
 le focus est déjà sur l'espace de travail et un clic sur le fond ne change rien → la fermeture automatique s'en charge.
 **Décidé le 2026-10-16** : pas d'ajout provisoire (une couche au-dessus de `swaybg` a été essayée puis retirée). En **phase 8b**, le fond
-d'écran natif pourra recevoir ce clic lui-même : fermer le calendrier (`BarState.closeCalendar()`) et focaliser l'espace de l'écran, comme
+d'écran natif pourra recevoir ce clic lui-même : fermer le calendrier (`BarState.closePopups()`) et focaliser l'espace de l'écran, comme
 `swaybg` le permet aujourd'hui (WALLPAPERS.md).
 
 **Tooltips** (décision du 2026-10-16) : aucun tooltip dans la barre Quickshell (`INVENTORY.md` § 1).
