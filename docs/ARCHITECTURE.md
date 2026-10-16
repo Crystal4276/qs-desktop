@@ -647,3 +647,19 @@ qu'aucun outil n'assure aujourd'hui. Tes choix :
 aucun ici, et celle des appareils Bluetooth est déjà dans leur panneau.
 Note de test : Spotify ignorait toute commande MPRIS ce jour-là (même envoyée directement par D-Bus) ; boutons et position vérifiés avec
 un faux lecteur MPRIS.
+
+### 12.3 Quatrième passe : actions au clavier et inventaire relu (2026-10-16)
+
+Chaque raccourci de Sway et d'Hyprland confronté aux commandes `qs ipc` (tous les raccourcis passeront par elles en phase 10) :
+- **VPN** (`$mod+u` = `nordvpn c Netherlands`, `$mod+i` = `nordvpn d`) : il manquait la commande → `qs ipc call vpn connect [pays]`
+  (sans pays : dernier pays utilisé) et `vpn disconnect`. Le choix entre « Netherlands » et « dernier pays » se fera en phase 10.
+- **HDR** (`$mod+d` nomme DP-1 et DP-3 en dur) : Sway indique les écrans compatibles (`features.hdr` : DP-1, DP-3 ; DP-2 non) et ceux
+  qui gèrent le VRR (`features.adaptive_sync`) → commandes `outputs toggleHdr` / VRR sur les écrans compatibles, sans nom en dur, qui
+  serviront aussi aux bascules de la fenêtre de réglages (phase 8 ; Hyprland en phase 9).
+- Les autres raccourcis sont du compositeur (espaces, fenêtres, applications) ou déjà prévus : lanceur (phase 7), power menu (phase 8),
+  captures (phase 8b), volume / micro / luminosité / média (faits), sortie audio suivante (`audio cycleSink`).
+
+Inventaire relu (§ 10.2, § 11.4 d'INVENTORY) — tes choix :
+- **Réseaux privés** : section « Private networks » dans le panneau réseau (fait) — Tailscale par `tailscale status --json` (sans
+  droits), ZeroTier par ses interfaces `zt*` (`zerotier-cli` exige le jeton de root) ; lecture seule, masquée si absents.
+- **Autostart XDG** (`~/.config/autostart`) : laissé tel quel (applications de démarrage dans la config du compositeur).

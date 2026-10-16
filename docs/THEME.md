@@ -401,5 +401,6 @@ versionnée dans `assets/` dans le même commit.
 | `U+F048` / `U+F04B` / `U+F04C` / `U+F051` (précédent, lecture, pause, suivant) | boutons de la carte média | Symbols Nerd Font Mono |
 | `network-wired-no-route`, `network-wireless-{0,20,40,60,80,100}-limited` | module réseau : connecté sans accès à Internet | Papirus-Dark (`16x16@2x/panel`) |
 | `audio-speakers`, `audio-input-microphone`, icône de l'application (sinon `audio-x-generic`) | lignes du panneau audio | Papirus-Dark |
+| `network-vpn` (Tailscale, Papirus n'a pas son icône) / `zerotier-gui` | section « Private networks » du panneau réseau | Papirus-Dark |
 | `battery-low` / `battery-caution` | notification de batterie faible / critique (laptop) | Papirus-Dark |
 | icônes de lecteurs `U+F04B` (défaut), `U+F1FF` Discord, `U+F269` Firefox, `U+F268` Chromium, `U+F03D` io | module média, lecteur choisi à la molette (`player-icons` de Waybar, enfin atteignables) | FontAwesome 4.7 (défaut, io), Hack Nerd Font (Discord), Font Awesome 7 Brands (Firefox, Chromium) — relevé avec Pango |

@@ -11,7 +11,8 @@ Idées notées pendant le travail. Rien ici n'est implémenté sans accord.
   redémarrer, éteindre, plus éventuellement volume, réseau, Bluetooth, NordVPN… Les menus réseau, Bluetooth et VPN de la phase 5 seront
   écrits comme des panneaux autonomes, pour pouvoir y être intégrés sans réécriture.
   **Demandé (2026-10-16)** : trois boutons de profil d'énergie (`PowerProfiles`), l'interrupteur « garder l'écran allumé » (`IdleInhibitor`),
-  les bascules **HDR** et **VRR**.
+  les bascules **HDR** et **VRR** (écrans compatibles détectés : `features.hdr` / `features.adaptive_sync` de Sway ; commandes `qs ipc`
+  aussi pour `$mod+d`).
 - Seuil critique de température GPU réellement appliqué (l'option `critical-threshold` de Waybar est sans effet sur un `custom/*`).
 - Raccourcis `XF86AudioPlay/Next/Prev` sous Sway (existants sous Hyprland seulement).
 - Passer DP-1 / DP-3 en 144 Hz (piste notée dans `~/.config/hypr/lua/layout.lua`).

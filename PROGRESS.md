@@ -479,6 +479,12 @@ Vérifié : carte affichée avec Spotify (pochette, titre, position) ; Spotify i
 direct), donc boutons, progression et avance dans le morceau vérifiés avec un faux lecteur MPRIS (Play, Next, Pause, SetPosition reçus) ;
 icône par défaut des lecteurs vue sur ce faux lecteur.
 
+### Quatrième passe (2026-10-16) : faite
+
+Bilan : `ARCHITECTURE.md` § 12.3. Fait : commande `qs ipc call vpn connect [pays] | disconnect` (vérifiée exposée, pas exécutée : une
+reconnexion couperait la session) ; section « Private networks » du panneau réseau (Tailscale : adresse, 8 appareils ; ZeroTier :
+interface et adresse — vérifié sur ta session). Planifié : commandes HDR / VRR sur les écrans compatibles (phase 8). Autostart XDG laissé tel quel.
+
 ## Prochaine étape
 
 Nouvelle passe de recherche (ta règle : tant qu'on trouve des choses, pas de phase 7), puis phase 7 (lanceur).
