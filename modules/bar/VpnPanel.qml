@@ -4,7 +4,7 @@ import Quickshell
 import qs.config
 import qs.services
 
-// Panneau NordVPN (ARCHITECTURE § 11.4) : interrupteur (serveur recommandé / déconnexion), détails de la connexion, pause,
+// Panneau NordVPN (ARCHITECTURE § 11.4) : interrupteur (dernier pays utilisé / déconnexion), détails de la connexion, pause,
 // choix d'un pays puis éventuellement d'une ville : derniers pays utilisés, ou tous les pays filtrés par la recherche.
 Panel {
     id: root
@@ -12,7 +12,7 @@ Panel {
     title: "NordVPN"
     hasSwitch: true
     switchChecked: Vpn.connected || Vpn.connecting
-    onSwitchToggled: checked => checked ? Vpn.connect() : Vpn.disconnect()
+    onSwitchToggled: checked => checked ? Vpn.connectLast() : Vpn.disconnect()
 
     property string expanded: ""   // pays dont les villes sont affichées
 

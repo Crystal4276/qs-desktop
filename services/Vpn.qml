@@ -75,6 +75,11 @@ Singleton {
         run(["connect", ...(target ?? [])]);
     }
 
+    // Reconnexion (interrupteur) : dernier pays utilisé, serveur recommandé s'il n'y a pas d'historique (ta demande du 2026-10-16).
+    function connectLast(): void {
+        connect(recent.length > 0 ? [recent[0]] : []);
+    }
+
     function disconnect(): void {
         run(["disconnect"]);
     }

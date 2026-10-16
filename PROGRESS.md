@@ -340,6 +340,8 @@ Vérifié (Sway, ta session ; Waybar masquée le temps des tests puis rétablie)
   avec les actions neutralisées ; puis, avec ton accord, actions réelles par le panneau (script détaché, restauration garantie) :
   interrupteur coupé → déconnecté, rallumé → serveur recommandé (Israël, Tel Aviv), pause 5 min → « Paused », clic sur « Netherlands »
   dans les derniers pays → reconnecté (Amsterdam #1301) ; historique mis à jour à chaque connexion.
+  Ta demande ensuite : l'interrupteur reconnecte au **dernier pays utilisé** (serveur recommandé seulement sans historique) ;
+  vérifié : coupé puis rallumé → Pays-Bas (Amsterdam #1259).
 
 Incident : pendant un test, un clic sur « Cities » a aussi été pris par la ligne du pays et a **connecté le VPN à l'Afghanistan** ;
 reconnecté aussitôt aux Pays-Bas (Amsterdam, serveur #1308 au lieu de #1284) ; cause corrigée (les boutons consomment leur clic).
@@ -353,7 +355,7 @@ reconnecté aussitôt aux Pays-Bas (Amsterdam, serveur #1308 au lieu de #1284) ;
 À tester à la main : voir « À faire par toi à la fin » (ajouts de la phase 5).
 
 État laissé : Waybar, Dunst et udiskie actifs, aucune instance `qs`, aucune image disque attachée, Wi-Fi activé, VPN connecté aux Pays-Bas
-(Amsterdam #1301 ; l'historique des pays contient désormais Israel, Netherlands, United Arab Emirates, laissés par le test).
+(Amsterdam #1259 ; l'historique des pays contient Netherlands, Israel, United Arab Emirates, laissés par les tests).
 
 ## Prochaine étape
 
