@@ -13,7 +13,7 @@ Item {
     id: root
 
     readonly property var items: SystemTray.items.values.filter(i => i.status !== Status.Passive)
-    readonly property bool shown: items.length > 0 || Network.managed || Bluez.available
+    readonly property bool shown: items.length > 0 || Network.managed || Disks.loaded || Bluez.available
 
     implicitWidth: row.implicitWidth + 2 * Theme.bar.trayPadding
     implicitHeight: Theme.bar.trayIconSize
@@ -69,6 +69,12 @@ Item {
         }
 
         TrayButton {
+            visible: Disks.loaded
+            icon: "drive-removable-media-usb-panel"   // icône d'udiskie, toujours affichée comme lui
+            panel: disksPanel
+        }
+
+        TrayButton {
             visible: Bluez.available
             icon: Bluez.icon
             panel: bluetoothPanel
@@ -77,6 +83,10 @@ Item {
 
     NetworkPanel {
         id: networkPanel
+    }
+
+    DisksPanel {
+        id: disksPanel
     }
 
     BluetoothPanel {
