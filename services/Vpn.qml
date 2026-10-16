@@ -86,6 +86,23 @@ Singleton {
         run(["pause", duration]);
     }
 
+    // Raccourcis (phase 10 ; aujourd'hui `$mod+u` = `nordvpn c Netherlands`, `$mod+i` = `nordvpn d`) : `qs ipc call vpn …`.
+    IpcHandler {
+        target: "vpn"
+
+        // Pays donné (ex. "Netherlands"), sinon le dernier pays utilisé, comme l'interrupteur du panneau.
+        function connect(country: string): void {
+            if (country !== "")
+                root.connect([country]);
+            else
+                root.connectLast();
+        }
+
+        function disconnect(): void {
+            root.disconnect();
+        }
+    }
+
     function loadCountries(): void {
         if (countries.length === 0)
             countriesProcess.running = true;

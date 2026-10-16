@@ -126,6 +126,66 @@ Singleton {
         Networking.wifiEnabled = enabled;
     }
 
+    // --- Réseaux privés (ton choix du 2026-10-16) : Tailscale et ZeroTier, en lecture seule, relus toutes les 5 s pendant que le
+    // panneau est ouvert. Tailscale : `tailscale status --json` (lisible sans droits) ; ZeroTier : `zerotier-cli` exige le jeton de
+    // root, donc seules ses interfaces `zt*` et leurs adresses sont lues (`ip -j addr`). Section masquée si aucun des deux n'existe.
+
+    // { state ("Running", "Stopped", "NeedsLogin"…), address, peers } ou null si Tailscale est absent.
+    property var tailscale: null
+    // [{ name, address }] : interfaces ZeroTier ayant une adresse.
+    property var zerotier: []
+
+    Timer {
+        running: root.scanning
+        triggeredOnStart: true
+        interval: root.interval
+        repeat: true
+        onTriggered: {
+            tailscaleQuery.running = true;
+            addressQuery.running = true;
+        }
+    }
+
+    Process {
+        id: tailscaleQuery
+        command: ["tailscale", "status", "--json"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    const d = JSON.parse(text);
+                    root.tailscale = {
+                        state: d.BackendState ?? "",
+                        address: (d.Self?.TailscaleIPs ?? []).find(a => !a.includes(":")) ?? "",
+                        peers: Object.keys(d.Peer ?? {}).length
+                    };
+                } catch (e) {
+                    root.tailscale = null;
+                }
+            }
+        }
+        onExited: code => {
+            if (code !== 0 && code !== 1)   // 1 : arrêté (« Tailscale is stopped »), sortie JSON quand même
+                root.tailscale = null;
+        }
+    }
+
+    Process {
+        id: addressQuery
+        command: ["ip", "-j", "addr"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    root.zerotier = JSON.parse(text).filter(i => i.ifname.startsWith("zt")).map(i => ({
+                        name: i.ifname,
+                        address: (i.addr_info ?? []).find(a => a.family === "inet")?.local ?? ""
+                    })).filter(i => i.address !== "");
+                } catch (e) {
+                    root.zerotier = [];
+                }
+            }
+        }
+    }
+
     // Édition des connexions : `nm-connection-editor` (repli, ARCHITECTURE R5).
     function openEditor(): void {
         Quickshell.execDetached(["nm-connection-editor"]);

@@ -134,6 +134,40 @@ Panel {
         }
     }
 
+    // --- Réseaux privés (Tailscale, ZeroTier), en lecture seule ---
+    PanelSection {
+        visible: Network.tailscale !== null || Network.zerotier.length > 0
+        text: "Private networks"
+    }
+
+    PanelRow {
+        visible: Network.tailscale !== null
+        clickable: false
+        icon: "network-vpn"
+        text: "Tailscale"
+        subtext: Network.tailscale?.state === "Running"
+            ? [Network.tailscale.address, `${Network.tailscale.peers} devices`].filter(s => s).join(" · ")
+            : (Network.tailscale?.state ?? "")
+        active: Network.tailscale?.state === "Running"
+    }
+
+    Repeater {
+        model: ScriptModel {
+            values: Network.zerotier
+            objectProp: "name"
+        }
+
+        PanelRow {
+            required property var modelData
+
+            clickable: false
+            icon: "zerotier-gui"
+            text: "ZeroTier"
+            subtext: `${modelData.name} · ${modelData.address}`
+            active: true
+        }
+    }
+
     // Mot de passe d'un réseau protégé inconnu.
     PanelSection {
         visible: root.passwordFor !== null
