@@ -14,7 +14,15 @@ Rectangle {
     implicitHeight: label.implicitHeight + 2 * Theme.panel.buttonPaddingV
     radius: Theme.panel.rowRadius
     color: hover.hovered ? Theme.panel.buttonHover : Theme.panel.button
-    opacity: enabled ? 1 : 0.5
+    opacity: enabled ? 1 : Theme.panel.disabledOpacity
+
+    // Clavier (Tab, flèches) : Entrée ou Espace activent ; liseré quand l'élément est choisi.
+    activeFocusOnTab: enabled
+    border.width: activeFocus ? Theme.panel.border : 0
+    border.color: Theme.panel.focusRing
+    Keys.onReturnPressed: root.clicked()
+    Keys.onEnterPressed: root.clicked()
+    Keys.onSpacePressed: root.clicked()
 
     Text {
         id: label

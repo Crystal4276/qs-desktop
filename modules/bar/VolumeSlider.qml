@@ -52,6 +52,20 @@ Item {
         }
     }
 
+    // Clavier : Gauche / Droite ±5 % (comme la molette) ; liseré quand le curseur est choisi.
+    activeFocusOnTab: true
+    Keys.onLeftPressed: root.emit(Math.round(100 * root.value - 5) / 100)
+    Keys.onRightPressed: root.emit(Math.round(100 * root.value + 5) / 100)
+
+    Rectangle {
+        anchors.fill: parent
+        visible: root.activeFocus
+        color: "transparent"
+        radius: height / 2
+        border.width: Theme.panel.border
+        border.color: Theme.panel.focusRing
+    }
+
     WheelSteps {
         onStep: direction => root.emit(Math.round(100 * root.value + 5 * direction) / 100)
     }

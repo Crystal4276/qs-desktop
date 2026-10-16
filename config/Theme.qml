@@ -152,6 +152,9 @@ Singleton {
         readonly property color itemHover: Qt.rgba(0.937, 0.945, 0.961, 0.08)
         readonly property real disabledOpacity: 0.5
         readonly property color separator: Qt.rgba(0.937, 0.945, 0.961, 0.12)
+        readonly property int outlineWidth: 1         // liseré extérieur
+        readonly property int frameWidth: 1           // bordure intérieure
+        readonly property int separatorHeight: 1
         readonly property int separatorMargin: 4
         readonly property int toggleSize: 16          // place réservée avant le texte (case, radio ou icône)
         readonly property int toggleSpacing: 2        // texte à 18 px du bord intérieur de l'élément (mesuré)
@@ -197,6 +200,10 @@ Singleton {
         readonly property color fieldBackground: root.color.base
         readonly property color fieldBorder: root.color.overlay0
         readonly property color fieldFocus: root.color.green
+        // Élément choisi au clavier (Tab, flèches) : liseré de la largeur de la bordure des panneaux, en `text` pour rester
+        // visible sur une bascule activée (fond `green`). Nouveau, à valider.
+        readonly property color focusRing: root.color.text
+        readonly property real disabledOpacity: 0.5   // bouton indisponible, niveau coupé (THEME.md § 3 et § 4)
         readonly property int maxListHeight: 400            // au-delà, la liste défile
     }
 

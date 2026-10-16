@@ -20,7 +20,7 @@ Rectangle {
     implicitHeight: input.implicitHeight + 2 * Theme.panel.rowPadding
     radius: Theme.panel.rowRadius
     color: Theme.panel.fieldBackground
-    border.width: 1
+    border.width: Theme.panel.border
     border.color: input.activeFocus ? Theme.panel.fieldFocus : Theme.panel.fieldBorder
 
     TextInput {

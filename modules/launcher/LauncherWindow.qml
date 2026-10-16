@@ -342,8 +342,12 @@ PanelWindow {
                     width: parent.width
                     spacing: Theme.launcher.listSpacing
 
+                    // ScriptModel : une application qui reste dans la page garde sa ligne (et son icône chargée) d'une frappe à l'autre.
                     Repeater {
-                        model: root.results.slice(root.pageStart, root.pageStart + root.rows)
+                        model: ScriptModel {
+                            values: root.results.slice(root.pageStart, root.pageStart + root.rows)
+                            objectProp: "id"
+                        }
 
                         Rectangle {
                             id: row

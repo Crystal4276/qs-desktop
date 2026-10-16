@@ -11,6 +11,9 @@ import qs.config
 PopupWindow {
     id: root
 
+    // Du bord de la fenêtre au contenu : liseré extérieur, bordure intérieure, marge.
+    readonly property int inset: Theme.trayMenu.outlineWidth + Theme.trayMenu.frameWidth + Theme.trayMenu.padding
+
     // Menu à afficher (SystemTrayItem.menu ou entrée parente d'un sous-menu).
     property QsMenuHandle menu
     // Menu principal (racine) : c'est lui que l'on ferme quand un élément est choisi.
@@ -93,8 +96,8 @@ PopupWindow {
         id: frame
 
         // Liseré extérieur 1 px, puis cadre (fond, bordure intérieure) — mesurés sur le menu GTK.
-        implicitWidth: column.implicitWidth + 2 * (Theme.trayMenu.padding + 2)
-        implicitHeight: column.implicitHeight + 2 * (Theme.trayMenu.padding + 2)
+        implicitWidth: column.implicitWidth + 2 * root.inset
+        implicitHeight: column.implicitHeight + 2 * root.inset
         radius: Theme.trayMenu.radius + 1
         color: Theme.trayMenu.outline
 
@@ -112,18 +115,18 @@ PopupWindow {
 
         Rectangle {
             anchors.fill: parent
-            anchors.margins: 1
+            anchors.margins: Theme.trayMenu.outlineWidth
             radius: Theme.trayMenu.radius
             color: Theme.trayMenu.background
-            border.width: 1
+            border.width: Theme.trayMenu.frameWidth
             border.color: Qt.tint(Theme.trayMenu.background, Theme.trayMenu.frame)
         }
 
         // Largeur commune : celle de l'élément le plus large.
         ColumnLayout {
             id: column
-            x: Theme.trayMenu.padding + 2
-            y: Theme.trayMenu.padding + 2
+            x: root.inset
+            y: root.inset
             spacing: 0
 
             Repeater {
@@ -150,7 +153,7 @@ PopupWindow {
                         visible: row.modelData.isSeparator
                         anchors.verticalCenter: parent.verticalCenter
                         width: parent.width
-                        height: 1
+                        height: Theme.trayMenu.separatorHeight
                         color: Theme.trayMenu.separator
                     }
 
@@ -274,8 +277,8 @@ PopupWindow {
             item.rootMenu = Qt.binding(() => root.rootMenu);
             item.menu = Qt.binding(() => root.submenuEntry);
             item.anchor.item = root.submenuItem;
-            item.anchor.rect.x = root.submenuItem.width + Theme.trayMenu.padding + 2;
-            item.anchor.rect.y = -(Theme.trayMenu.padding + 2);
+            item.anchor.rect.x = root.submenuItem.width + root.inset;
+            item.anchor.rect.y = -root.inset;
             item.anchor.edges = Edges.Top | Edges.Left;
             item.anchor.gravity = Edges.Bottom | Edges.Right;
             item.closeRequested.connect(() => root.submenuEntry = null);

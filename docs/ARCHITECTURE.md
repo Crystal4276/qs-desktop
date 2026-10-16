@@ -482,10 +482,13 @@ Vérifié :
   Se reconnecter à un appareil **déjà appairé** n'a pas besoin d'agent.
 
 Solution proposée (une dépendance officielle de plus, `bluez-utils`) : pendant un appairage seulement, Quickshell lance `bluetoothctl`
-comme agent (`agent KeyboardDisplay`, `default-agent`), lit ses demandes (« Confirm passkey 123456 (yes/no) », « Enter PIN code ») et les affiche
+comme agent (`agent KeyboardDisplay`, sans `default-agent` : BlueZ utilise l'agent de la session qui lance `pair`, l'agent par
+défaut n'est pas touché), lit ses demandes (« [agent] Confirm passkey 123456 (yes/no) », « [agent] Enter PIN code ») et les affiche
 dans une fenêtre de la charte ; la réponse est renvoyée à `bluetoothctl`. L'agent s'arrête à la fermeture de la fenêtre.
 
 Dangers et parades :
+- **Nom d'appareil piégé** : seules les lignes `[agent] …` et les résultats de `pair` en début de ligne sont lus ; les lignes
+  `[NEW]` / `[CHG]` portent les noms des appareils voisins, qui pourraient imiter une question (revue de code du 2026-10-16).
 - **Accepter automatiquement** (agent « oui à tout ») permettrait à un appareil à portée de s'appairer sans qu'on le voie → **jamais** d'acceptation
   automatique ; chaque demande passe par la fenêtre.
 - **Agent permanent** : il accepterait aussi les demandes venues d'un téléphone à proximité → agent actif **uniquement** pendant un appairage lancé par toi.
@@ -707,7 +710,7 @@ Chaque raccourci de Sway et d'Hyprland confronté aux commandes `qs ipc` (tous l
 - **VPN** (`$mod+u` = `nordvpn c Netherlands`, `$mod+i` = `nordvpn d`) : il manquait la commande → `qs ipc call vpn connect [pays]`
   (sans pays : dernier pays utilisé) et `vpn disconnect`. Le choix entre « Netherlands » et « dernier pays » se fera en phase 10.
 - **HDR** (`$mod+d` nomme DP-1 et DP-3 en dur) : Sway indique les écrans compatibles (`features.hdr` : DP-1, DP-3 ; DP-2 non) et ceux
-  qui gèrent le VRR (`features.adaptive_sync`) → commandes `outputs toggleHdr` / VRR sur les écrans compatibles, sans nom en dur, qui
+  qui gèrent le VRR (`features.adaptive_sync`) → commandes `qs ipc call display toggleHdr` / `toggleVrr` sur les écrans compatibles, sans nom en dur, qui
   serviront aussi aux bascules de la fenêtre de réglages (phase 8 ; Hyprland en phase 9).
 - Les autres raccourcis sont du compositeur (espaces, fenêtres, applications) ou déjà prévus : lanceur (phase 7), power menu (phase 8),
   captures (phase 8b), volume / micro / luminosité / média (faits), sortie audio suivante (`audio cycleSink`).

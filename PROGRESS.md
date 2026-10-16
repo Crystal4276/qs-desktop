@@ -583,6 +583,25 @@ Les 10 corrections de la première passe ont été revérifiées ; deux étaient
 Vérifié : suite `test-outputs.sh` complète (0 échec), relance de cava, image en « ne pas déranger » (Dunst arrêté puis relancé),
 deux listes de villes demandées coup sur coup (VPN resté connecté), image LUKS déverrouillée affichée montée puis détachée.
 
+### Revue de code, troisième passe (2026-10-16) : autres catégories, 10 problèmes, tous corrigés
+
+Sécurité, performance, conventions, documentation, portabilité, clavier.
+1. **Injection de commande** : la valeur `TryExec` des fichiers `.desktop` passait dans une chaîne exécutée par un shell (au démarrage,
+   sans clic). Vérifiée maintenant en argument ; fichiers piégés de test sans effet ; même liste masquée qu'avant sur ta machine (43).
+2. Bluetooth : un appareil voisin ne peut plus imiter une question ou une réussite d'appairage par son nom.
+3. Barre par défaut (laptop sans fichier machine) : batterie et rétroéclairage ajoutés (masqués sans le matériel).
+4. Notifications : icônes locales seulement (une adresse http faisait télécharger l'image à chaque affichage).
+5. Panneau de réglages et panneaux du tray utilisables au clavier : Tab / ↑ / ↓, Entrée / Espace, ← / → sur les curseurs, liseré `text`.
+6. Carte média : position relue seulement centre de notifications ouvert.
+7. GPU Nvidia sans `nvidia-smi` (nouveau) : capteur du noyau à la place, plus de sondage inutile.
+8. Documentation remise d'accord avec le code (IPC `display`, agent Bluetooth, `vpn.json`, police des notifications).
+9. Lanceur : champs de recherche en minuscules calculés une fois ; lignes gardées d'une frappe à l'autre.
+10. Opacité « indisponible » et épaisseurs des menus du tray dans `Theme.qml`.
+Vérifié : script des filtres extrait et lancé sur des fichiers piégés ; tri des lignes de bluetoothctl ; sources d'icônes ; repli GPU
+(config de test, faux sysfs, sans puis avec un `nvidia-smi` en échec : 47 °C lus) ; recherche du lanceur (config de test, 233
+applications) et rendu ; clavier dans le panneau de réglages (volume +5 % puis rétabli). Deux recherches `find /` laissées par les
+agents de revue ont été arrêtées ; l'historique du lanceur recréé par un test a été supprimé (reprise de Rofi gardée pour la phase 10).
+
 ### Reste à faire
 
 Menu d'applications (modèle Cinnamon, remplace nwg-menu) : en pause à ta demande, après la séance de débogage. Référence :

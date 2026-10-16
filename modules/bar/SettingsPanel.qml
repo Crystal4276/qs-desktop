@@ -330,7 +330,7 @@ PanelWindow {
         VolumeSlider {
             Layout.fillWidth: true
             inset: Theme.slider.knobSize / 2
-            opacity: line.muted ? 0.5 : 1   // comme l'OSD
+            opacity: line.muted ? Theme.panel.disabledOpacity : 1   // comme l'OSD
             value: line.value
             onMoved: v => line.moved(v)
         }
