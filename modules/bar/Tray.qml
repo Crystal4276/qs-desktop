@@ -3,6 +3,7 @@ import Quickshell
 import Quickshell.Services.SystemTray
 import Quickshell.Widgets
 import qs.config
+import qs.services
 
 // Zone de notification (INVENTORY.md § 1, `tray`) : icônes 32 px espacées de 5 px, padding horizontal 6 px ;
 // éléments « passifs » masqués (défaut de Waybar). Ordre : celui d'enregistrement des applications.
@@ -12,7 +13,7 @@ Item {
     id: root
 
     readonly property var items: SystemTray.items.values.filter(i => i.status !== Status.Passive)
-    readonly property bool shown: items.length > 0
+    readonly property bool shown: items.length > 0 || Network.managed
 
     implicitWidth: row.implicitWidth + 2 * Theme.bar.trayPadding
     implicitHeight: Theme.bar.trayIconSize
@@ -59,6 +60,17 @@ Item {
                 }
             }
         }
+
+        // Modules natifs, après les applications (remplacent nm-applet, udiskie, blueman, l'icône NordVPN ; phase 5).
+        TrayButton {
+            visible: Network.managed
+            icon: Network.icon
+            panel: networkPanel
+        }
+    }
+
+    NetworkPanel {
+        id: networkPanel
     }
 
     // Un seul menu à la fois, ouvert au pointeur (coin haut-gauche), basculé s'il déborde de l'écran.

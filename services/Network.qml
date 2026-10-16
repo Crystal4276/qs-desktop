@@ -3,8 +3,11 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import Quickshell.Networking
 
-// Débit réseau (INVENTORY.md § 1, module `network`), toutes les 5 s comme Waybar.
+// Réseau : débit (module `network`) et connexions NetworkManager (module natif du tray, remplace nm-applet ; ARCHITECTURE R5).
+//
+// Débit (INVENTORY.md § 1, module `network`), toutes les 5 s comme Waybar.
 // Interface : celle de la route par défaut (/proc/net/route), au lieu du nom écrit en dur dans Waybar (`eno2`).
 // Octets de /proc/net/dev, différence divisée par l'intervalle nominal (network.cpp de Waybar 0.15).
 Singleton {
@@ -77,5 +80,46 @@ Singleton {
             route.reload();
             dev.reload();
         }
+    }
+
+    // --- Connexions (Quickshell.Networking, NetworkManager) ---
+
+    readonly property bool managed: Networking.backend === NetworkBackendType.NetworkManager
+    readonly property var wiredDevices: Networking.devices.values.filter(d => d.type === DeviceType.Wired)
+    readonly property var wifiDevices: Networking.devices.values.filter(d => d.type === DeviceType.Wifi)
+    readonly property var wifi: wifiDevices[0] ?? null
+    readonly property bool wifiEnabled: Networking.wifiEnabled
+    // Réseaux Wi-Fi visibles : connecté d'abord, puis enregistrés, puis par force du signal.
+    readonly property var wifiNetworks: wifi ? wifi.networks.values.slice().sort((a, b) =>
+        (b.connected - a.connected) || (b.known - a.known) || (b.signalStrength - a.signalStrength)) : []
+    readonly property var connectedWifi: wifiNetworks.find(n => n.connected) ?? null
+    readonly property bool wiredConnected: wiredDevices.some(d => d.connected)
+
+    // Icône du tray, mêmes noms que nm-applet (thème Papirus-Dark) : filaire, force du signal Wi-Fi, ou aucune connexion.
+    readonly property string icon: wiredConnected ? "nm-device-wired"
+        : connectedWifi ? `nm-signal-${signalStep(connectedWifi.signalStrength)}${connectedWifi.security === WifiSecurityType.Open ? "" : "-secure"}`
+        : "nm-no-connection"
+
+    // Palier d'icône : 0, 25, 50, 75, 100 (force 0–1).
+    function signalStep(strength: real): string {
+        return ["00", "25", "50", "75", "100"][Math.min(4, Math.round(strength * 4))];
+    }
+
+    // Recherche des réseaux Wi-Fi tant que le panneau est ouvert.
+    property bool scanning: false
+    Binding {
+        when: root.wifi !== null
+        target: root.wifi
+        property: "scannerEnabled"
+        value: root.scanning
+    }
+
+    function setWifiEnabled(enabled: bool): void {
+        Networking.wifiEnabled = enabled;
+    }
+
+    // Édition des connexions : `nm-connection-editor` (repli, ARCHITECTURE R5).
+    function openEditor(): void {
+        Quickshell.execDetached(["nm-connection-editor"]);
     }
 }
