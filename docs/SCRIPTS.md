@@ -27,7 +27,7 @@ Rien n'est supprimé ni modifié dans `~/.config` : les décisions s'appliquent 
 | Appelé par | `$mod+Escape` (Sway), `on-click` de `custom/powermenu` (Waybar DP-2) |
 | Rôle | `rofi -dmenu` avec 4 entrées à icône SVG : Lock (`swaylock -C ~/.config/sway/swaylock.conf`), Logout (`swaymsg exit`), Reboot (`systemctl reboot`), Shutdown (`systemctl poweroff`). Sans confirmation. |
 | Dépendances | `rofi`, `swaylock`, `systemd`, `sway` ; icônes `~/.config/sway/assets/{lock,logout,restart,shutdown}.svg` |
-| Décision | **QML natif** — `modules/menus/PowerMenu.qml` (phase 8), IPC `qs ipc call powermenu toggle`. Logout adapté au compositeur (`swaymsg exit` / `hl.dsp.exit()`), ce qui corrige le bug sous Hyprland. Les 4 SVG sont copiés dans le dépôt (`assets/`). |
+| Décision | **QML natif** — actions reprises dans le panneau de réglages façon GNOME (phase 8, `ARCHITECTURE.md` § 10.1.4 ; plus de power menu séparé), ouvert par le bouton engrenage et `$mod+Escape`. Logout adapté au compositeur (`swaymsg exit` / `hl.dsp.exit()`), ce qui corrige le bug sous Hyprland. Les 4 SVG sont copiés dans le dépôt (`assets/`). |
 
 ### `~/.config/sway/scripts/audio-toggle.sh`
 

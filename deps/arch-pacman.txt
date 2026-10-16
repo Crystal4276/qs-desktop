@@ -13,6 +13,9 @@ sway                    # compositeur principal
 hyprland                # compositeur secondaire
 # (fond d'écran, veille, verrouillage : natifs Quickshell — swaybg, swayidle, hypridle, swaylock ne sont plus requis)
 
+# --- Panneau de réglages (phase 8) ---
+wlsunset                # veilleuse (Night Light) : écran plus chaud le soir, Sway et Hyprland (wlr-gamma-control)
+
 # --- Énergie ---
 power-profiles-daemon   # profils d'énergie (économie / équilibré / performance) : 3 boutons de la fenêtre de réglages (phase 8),
                         # via UPower.PowerProfiles ; service système à activer (install.sh) ; fonctionne aussi sur le desktop (intel_pstate)
