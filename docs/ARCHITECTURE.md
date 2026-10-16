@@ -401,6 +401,25 @@ Proposition de placement dans les phases (CLAUDE.md n'est pas modifié sans ton 
 - **NordVPN** (§ 11.4) : commande `nordvpn` ; derniers pays utilisés (historique local) et recherche sur tous les pays ; l'interrupteur
   reconnecte au dernier pays utilisé.
 
+### 10.1.2 Mise en œuvre de la phase 6 (2026-10-16)
+
+- **Serveur** : `services/Notifs.qml` (`Quickshell.Services.Notifications`), comportement relu dans le code de Dunst 1.13.2 :
+  délais (celui de l'application, sinon 10 s basse / normale, jamais critique), suspendus sous le pointeur ; tri urgence puis arrivée ;
+  doublons « (N) » ; étiquettes de pile (`x-dunst-stack-tag`, `x-canonical-private-synchronous`…) ; remplacement par identifiant ;
+  indicateurs `(A)` `(U)` ; âge au-delà de 60 s ; markup Pango traduit pour Qt (`<a>` et `<img>` réduits à leur texte, balises inconnues
+  ignorées). Capacités annoncées : celles de Dunst.
+- **Écran** : `notificationsOutput` de la config machine (`primary` ou description d'écran), l'écran principal à défaut (vérifié : écran
+  désactivé → les notifications passent sur l'écran restant). Dunst choisissait un **numéro** d'écran (`monitor = 1`), qui change quand
+  l'ordre des écrans change (constaté après les tests de la phase 3 : notifications sur DP-1 jusqu'à la prochaine session Sway).
+- **Souris** (dunstrc) : gauche ferme, milieu lance l'action `default` (ou l'unique action, ou ouvre l'unique lien) puis ferme, droit ferme
+  tout. Ajout : **boutons** pour les actions nommées (Dunst ne les montrait pas ; son menu `dmenu` n'était pas installé).
+- **Historique et centre de notifications** (ta demande) : les 20 dernières notifications fermées (`history_length`), en mémoire comme
+  Dunst ; cloche du tray (`NotificationsPanel.qml`) ; « ne pas déranger » : seules les critiques s'affichent, les autres vont dans le centre.
+- **IPC** (`qs ipc call notifications …`) : `close`, `closeAll`, `historyPop`, `count` — équivalents de `dunstctl close`, `close-all`,
+  `history-pop`, `count` ; aucun raccourci ne les appelle aujourd'hui (INVENTORY § 2).
+- **Coexistence** : tant que Dunst tourne, il garde le nom D-Bus ; Quickshell le prend dès que Dunst s'arrête (et le rendrait si Quickshell
+  s'arrête, Dunst étant activé par D-Bus). `notify-send` (audio, disques, NordVPN) passe par le serveur actif.
+
 ### 10.2 Bluetooth : appairage et code PIN
 
 Vérifié :

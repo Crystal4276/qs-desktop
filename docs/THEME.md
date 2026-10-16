@@ -240,9 +240,17 @@ Remplace le tooltip calendrier. Aucune valeur nouvelle : tout est repris de la b
 | Rayon | 15 px |
 | Padding | vertical 16 px, horizontal 8 px ; icône → texte : 32 px |
 | Icône | à gauche, 100x100 px, thème `Papirus-Dark` |
-| Texte | `<b>titre</b>` puis corps, aligné à gauche, centré verticalement, police Noto Sans Mono 16 |
-| Barre de progression | hauteur 20, cadre 4, largeur 150–300 |
+| Texte | `<b>titre</b>` puis corps, aligné à gauche, centré verticalement, police Noto Sans Mono 16 → **Inter 16 pt** dans Quickshell (police homogène, ta demande) |
+| Barre de progression | hauteur 20, cadre 4 (couleur du cadre de la notification), largeur 150–300, centrée ; remplissage non fixé dans dunstrc (défauts Dunst `#1745d1` / `#7f7fff` / `#ff6666`, hors palette) → **`blue`** (ton choix du 2026-10-16) |
 | Opacité | 100 % |
+| Largeur réelle | 603 px cadre compris (Dunst ajoute 3 × le cadre à `width`, `draw.c`) |
+| Boutons d'action (ajout, ton choix du 2026-10-16) | sous le texte, aligné sur lui, un par action nommée (l'action `default` reste au clic milieu) ; style des boutons de panneau (§ 3) |
+
+### Centre de notifications (nouveau composant, ta demande du 2026-10-16)
+
+Cloche dans le tray, après les modules natifs ; panneau au style des panneaux (§ 3). Interrupteur du titre : notifications affichées /
+« ne pas déranger ». Lignes : icône de la notification (sinon `preferences-desktop-notification`), titre, puis « heure · application · corps »
+en texte secondaire ; non vues (expirées sans toi, ou reçues pendant « ne pas déranger ») en `green` ; bouton « Clear » par ligne, « Clear all ».
 
 ## 5. Lanceur (Rofi)
 
@@ -366,3 +374,5 @@ versionnée dans `assets/` dans le même commit.
 | `drive-removable-media-usb-panel` | module disques (tray) — icône d'udiskie | Papirus-Dark |
 | `drive-removable-media`, `changes-prevent` / `changes-allow` | lignes des volumes (chiffré verrouillé / déverrouillé) | Papirus-Dark |
 | `nordvpn-tray-blue` / `nordvpn-tray-gray` | module NordVPN (connecté / non) — icônes du paquet nordvpn | hicolor (`nordvpn-bin`) |
+| `notification-inactive` / `notification-active` / `notification-disabled` | cloche du centre de notifications (rien de nouveau / non vues / ne pas déranger) | Papirus-Dark (`16x16@2x/panel`) |
+| `preferences-desktop-notification` | ligne du centre pour une notification sans icône | Papirus-Dark |
