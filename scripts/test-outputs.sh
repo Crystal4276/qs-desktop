@@ -13,7 +13,7 @@
 # Tout est arrêté à la fin, même en cas d'échec.
 #
 # Usage : scripts/test-outputs.sh [-v]     (-v : garde les journaux de la session de test)
-# Dépendances : sway, jq, zenity, quickshell.
+# Dépendances : sway, jq, zenity, quickshell, dbus (`dbus-run-session`).
 set -euo pipefail
 
 repo="$(cd "$(dirname "$0")/.." && pwd)"
@@ -22,10 +22,12 @@ verbose="${1:-}"
 failures=0
 sway_pid=""
 qs_pid=""
+bus_pid=""
 
 cleanup() {
     set +e
     [[ -n "$qs_pid" ]] && kill "$qs_pid" 2>/dev/null
+    [[ -n "$bus_pid" ]] && kill "$bus_pid" 2>/dev/null
     [[ -n "$sway_pid" ]] && kill "$sway_pid" 2>/dev/null
     wait 2>/dev/null
     if [[ "$verbose" == "-v" ]]; then
@@ -54,6 +56,8 @@ for _ in $(seq 1 50); do [[ -S "$SWAYSOCK" ]] && break; sleep 0.1; done
 swaymsg "exec echo \$WAYLAND_DISPLAY > $work/wayland" >/dev/null
 for _ in $(seq 1 50); do [[ -s "$work/wayland" ]] && break; sleep 0.1; done
 wayland="$(cat "$work/wayland")"
+# Sans lui, Quickshell retomberait sur wayland-0, peut-être ta session.
+[[ -n "$wayland" ]] || { echo "Socket Wayland de la session de test introuvable : arrêt." >&2; exit 2; }
 
 # Disposition du bureau de référence.
 mapfile -t outputs < <(swaymsg -t get_outputs | jq -r '.[].name' | sort)
@@ -61,10 +65,14 @@ swaymsg output "${outputs[0]}" mode 3840x2160 scale 1.5 pos 0 0 >/dev/null
 swaymsg output "${outputs[1]}" mode 3440x1440 scale 1 pos 2560 0 >/dev/null
 swaymsg output "${outputs[2]}" mode 3840x2160 scale 1.5 pos 6000 0 >/dev/null
 
-# Quickshell sur cette session.
+# Quickshell sur cette session, avec son propre bus de session (notifications, tray, lecteurs : rien n'atteint les tiens)
+# et sans montage automatique (le bus système, lui, est le vrai).
 (cd "$repo" && exec env -u HYPRLAND_INSTANCE_SIGNATURE WAYLAND_DISPLAY="$wayland" SWAYSOCK="$SWAYSOCK" I3SOCK="$SWAYSOCK" \
-    qs -p "$repo" >"$work/qs.log" 2>&1) &
-qs_pid=$!
+    QS_NO_AUTOMOUNT=1 dbus-run-session -- qs -p "$repo" >"$work/qs.log" 2>&1) &
+bus_pid=$!
+# Quickshell est l'enfant de dbus-run-session : c'est son PID que `qs ipc --pid` attend.
+for _ in $(seq 1 50); do qs_pid="$(pgrep -P "$bus_pid" -x qs || true)"; [[ -n "$qs_pid" ]] && break; sleep 0.1; done
+[[ -n "$qs_pid" ]] || { echo "Quickshell n'a pas démarré :" >&2; cat "$work/qs.log" >&2; exit 2; }
 for _ in $(seq 1 50); do qs ipc --pid "$qs_pid" call outputs blocks >/dev/null 2>&1 && break; sleep 0.2; done
 qs ipc --pid "$qs_pid" call outputs blocks >/dev/null 2>&1 || { echo "Quickshell n'a pas démarré :" >&2; cat "$work/qs.log" >&2; exit 2; }
 # Garde-fou : l'instance de test doit voir les écrans de la session de test, pas ceux de ta session.
@@ -240,6 +248,31 @@ swaymsg output "$left" enable >/dev/null
 swaymsg output "$right" enable >/dev/null
 check "écrans rallumés (retour à la référence)" "$initial_expected"
 
+# Seule fenêtre d'un espace envoyée vers un espace inexistant d'un autre écran (cas le plus courant) : l'espace naît en
+# arrière-plan sur l'écran focalisé et doit rejoindre le sien sans détruire l'espace de départ, devenu vide, ni changer la vue
+# de l'écran d'arrivée, ni créer d'espace parasite (revue de code du 2026-10-16, reproduit avant correction).
+swaymsg "focus output $left" >/dev/null
+sleep 0.5
+from_ws="$(focused_num)"
+count_before="$(swaymsg -t get_workspaces | jq length)"
+placed_before="$(qs log --pid "$qs_pid" | grep -c "placement des espaces" || true)"
+prev_visible="$(visible_map)"
+swaymsg "[title=\"^qs-test-$from_ws\$\"] move container to workspace number 3" >/dev/null
+check "fenêtre seule de l'espace $from_ws envoyée vers 3 (centre)" "$initial_expected" "$from_ws"
+sleep 0.5
+count_after="$(swaymsg -t get_workspaces | jq length)"
+placed_after="$(qs log --pid "$qs_pid" | grep -c "placement des espaces" || true)"
+if [[ "$count_after" == "$((count_before + 1))" && "$placed_after" == "$((placed_before + 1))" ]]; then
+    echo "OK    une seule correction, aucun espace parasite ($count_after espaces : les $count_before d'avant + 3)"
+else
+    echo "ÉCHEC $((placed_after - placed_before)) correction(s) au lieu d'une, $count_after espaces au lieu de $((count_before + 1))"
+    failures=$((failures + 1))
+fi
+swaymsg "[title=\"^qs-test-$from_ws\$\"] move container to workspace number $from_ws" >/dev/null
+swaymsg workspace number "$initial_focus" >/dev/null
+sleep 0.5
+prev_visible="$(visible_map)"
+
 # L'écran focalisé (et principal) s'éteint : le compositeur déplace le focus avant Quickshell ;
 # l'espace focalisé doit le rester, et la vue de chaque écran revenir au rallumage.
 reference_visible="$(visible_map)"
@@ -263,7 +296,7 @@ else
     failures=$((failures + 1))
 fi
 
-# Pas de boucle : une répartition par changement d'écrans, plus quelques corrections à la création.
+# Pas de boucle : une répartition par changement d'écrans, plus une correction par espace créé ailleurs.
 placements="$(qs log --pid "$qs_pid" | grep -c "placement des espaces" || true)"
 if [[ "$placements" -le 30 ]]; then
     echo "OK    commandes de placement envoyées : $placements"
