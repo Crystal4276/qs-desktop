@@ -423,5 +423,6 @@ les tests sont arrivées dans les instances de test (ex. une notification « Vid
 Phase 7 (lanceur).
 
 Rappel pour la phase 12 (ta précision du 2026-10-16) : **greetd remplace SDDM**, l'écran de connexion est un greeter Quickshell en QML
-(apparence du thème SDDM reprise, thème SDDM non utilisé). Paquets à installer par toi à ce moment-là : `greetd`, `greetd-agreety`
-(`ARCHITECTURE.md` § 10.4, `deps/`).
+(apparence du thème SDDM reprise, thème SDDM non utilisé). Paquets `greetd` et `greetd-agreety` : dans `deps/`, donc installés par
+`install.sh` ; mise en place du greeter (config, PAM, service) ajoutée à `install.sh` (ta demande : une installation neuve d'Arch + le
+script = tout le bureau). Sur ce desktop, tu les installes au début de la phase 12 (`ARCHITECTURE.md` § 10.4).

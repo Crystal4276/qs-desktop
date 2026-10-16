@@ -467,8 +467,11 @@ dans le service `Disks`. Les volumes système (`HintSystem`, `HintIgnore`) sont 
 - **Retour arrière** : `systemctl disable greetd` puis `systemctl enable sddm`. SDDM et son thème restent installés tant que tu n'as pas validé.
   Le greeter console `greetd-agreety` sert de secours si le greeter Quickshell ne démarre pas.
 - **Dépendances** (`deps/arch-pacman.txt`, section « Écran de connexion ») : `greetd` et `greetd-agreety`, tous deux du dépôt `extra`,
-  **à installer par toi** au début de la phase 12. `greetd` exige un paquet qui fournit `greetd-greeter` : pacman proposera
-  `greetd-agreety`.
+  installés par `install.sh` comme toutes les autres (sur ce desktop : par toi, au début de la phase 12). `greetd` exige un paquet qui
+  fournit `greetd-greeter` : `greetd-agreety`, listé explicitement pour que l'installation ne pose pas la question.
+- **Déploiement** : `install.sh` installe aussi les fichiers système ci-dessus, après confirmation et avec sauvegarde, puis active
+  greetd à la place de l'ancien gestionnaire ; `--uninstall` rétablit l'ancien. Sur une installation neuve d'Arch (laptop), le script
+  suffit pour arriver sur l'écran de connexion du bureau.
 
 ## 11. Risques relevés par la troisième passe
 
