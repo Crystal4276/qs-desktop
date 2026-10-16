@@ -5,6 +5,8 @@
 # --- Shell ---
 quickshell              # le shell lui-même (barre, notifications, lanceur, menus)
 qt6-svg                 # rendu des icônes et images SVG dans Quickshell
+# Outils supposés présents (paquet `base` d'Arch, à installer ailleurs) : sh, coreutils, sed, grep, gawk, findutils
+# (listes d'icônes, filtres des applications du lanceur).
 
 # --- Compositeurs et sorties ---
 sway                    # compositeur principal

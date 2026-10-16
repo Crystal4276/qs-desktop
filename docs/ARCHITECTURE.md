@@ -420,6 +420,33 @@ Proposition de placement dans les phases (CLAUDE.md n'est pas modifié sans ton 
 - **Coexistence** : tant que Dunst tourne, il garde le nom D-Bus ; Quickshell le prend dès que Dunst s'arrête (et le rendrait si Quickshell
   s'arrête, Dunst étant activé par D-Bus). `notify-send` (audio, disques, NordVPN) passe par le serveur actif.
 
+### 10.1.3 Mise en œuvre de la phase 7 : lanceur (2026-10-16)
+
+Comportement relu dans le code de Rofi 2.0.0 (`modes/drun.c`, `history.c`, `helper.c`, `keyb.c`, `widgets/listview.c`).
+
+- **Service** `services/Apps.qml` : `DesktopEntries.applications`, plus les filtres de Rofi que Quickshell n'applique pas — `OnlyShowIn` /
+  `NotShowIn` selon `XDG_CURRENT_DESKTOP` (`sway` ici : réglages GNOME, Yelp, Tweaks… masqués), `TryExec` introuvable, `Exec` absent.
+  Les clés sont lues par un court script `find` + `awk` (première entrée par identifiant, priorité XDG), relancé quand les applications changent.
+- **Ordre** : historique (du plus lancé au moins lancé), puis le reste par nom. Historique comme Rofi : +1 par lancement, tri stable,
+  compteurs ramenés au plus petit, 25 entrées. Stocké dans `launcher.json` (état local de Quickshell, hors du dépôt, `JsonAdapter`) ;
+  **repris de Rofi** (`~/.cache/rofi3.druncache`, `rofi-entry-history.txt`) quand ce fichier n'existe pas encore.
+- **Recherche** (`-drun-match-fields all`) : mots séparés par des espaces, tous requis, sans casse, dans nom, nom générique, `Exec`,
+  catégories, mots-clés, commentaire ; « -mot » exclut. Pas de tri par pertinence (`sort: false`).
+- **Lancement** : commande de l'entrée (codes `%f`… retirés par Quickshell), dossier `Path`, dans `Settings.terminal` si `Terminal=true`
+  (Rofi : `gnome-terminal -e`). Texte saisi sans résultat, ou Ctrl+Entrée : lancé comme commande (`sh -c`) ; Maj+Entrée sans résultat
+  et Ctrl+Maj+Entrée : dans un terminal.
+- **Fenêtre** (`modules/launcher/`) : surface Overlay couvrant la zone utile de l'écran focalisé (comme Rofi, qui centre sa surface dans
+  la zone utile), clavier exclusif, cadre centré arrondi vers le haut et la gauche ; clic à côté ou sur une barre = fermeture
+  (`click-to-exit`). Liste par pages entières (`scroll-method 0`), sans boucle (`cycle: false`). Chargée à la première ouverture
+  (`LazyLoader`). IPC `qs ipc call launcher toggle|open|close`.
+- **Clavier** (défauts de Rofi) : Entrée / Ctrl+J / Ctrl+M ; Haut / Bas / Ctrl+P / Ctrl+N / Tab / Maj+Tab ; Pages ; Début / Fin
+  (sélection, pas curseur) ; Ctrl+Haut / Ctrl+Bas : textes saisis précédemment (20, enregistrés à la fermeture) ; Maj+Suppr : retire
+  de l'historique ; édition Emacs (Ctrl+A/E/B/F/H/D/K/U/W, Alt+B/F, Ctrl+Alt+H/D) ; Échap. **Souris** : clic = sélection, double clic =
+  lancement, molette = ligne suivante / précédente.
+- **Non repris** : modes `run` et `ssh` (`SCRIPTS.md`), actions des applications (désactivées dans ta config Rofi).
+- **Petit écart voulu** : après Maj+Suppr, Rofi retire l'application de la liste jusqu'à la prochaine ouverture ; ici elle reprend sa place
+  alphabétique.
+
 ### 10.2 Bluetooth : appairage et code PIN
 
 Vérifié :
@@ -557,9 +584,9 @@ Légende : **utilisé** (déjà dans le code), **prévu** (phase indiquée), **a
 | Module | Types | Statut |
 |---|---|---|
 | `Quickshell` (cœur) | `ShellRoot`, `Singleton`, `Variants`, `PanelWindow`, `PopupWindow`, `Region`, `PopupAnchor`/`PopupAdjustment`, `Edges`, `ExclusionMode`, `ShellScreen`, `SystemClock`, `QsMenuOpener`/`QsMenuEntry`/`QsMenuHandle` | **utilisé** |
-| | `DesktopEntries`, `DesktopEntry`, `DesktopAction` | **prévu** : lanceur (phase 7), menu d'applications (phase 8) |
+| | `DesktopEntries`, `DesktopEntry`, `DesktopAction` | **utilisé** : lanceur (phase 7, `services/Apps.qml`) ; prévu : menu d'applications (phase 8). `DesktopAction` non affiché (`-no-drun-show-actions`) |
 | | `FloatingWindow` | **prévu** : fenêtre de statistiques, sélecteur de fond (phase 8b) |
-| | `LazyLoader` | **ajouté** : composants lourds chargés seulement à l'ouverture (lanceur, menu d'applications, statistiques, capture) |
+| | `LazyLoader` | **utilisé** : panneau audio, lanceur ; prévu : menu d'applications, statistiques, capture |
 | | `ScriptModel` | **utilisé** : listes construites en JavaScript (espaces de travail, tray, réseaux, appareils Bluetooth, disques, pays VPN, notifications, centre) — délégués conservés, données mises à jour sur place |
 | | `PersistentProperties` | **utilisé** : historique des notifications (en texte JSON : un tableau JavaScript ne passe pas d'un moteur QML au suivant, « JSValue can't be reassigned to another engine ») et « ne pas déranger » conservés au rechargement de la config |
 | | `ObjectModel`, `Reloadable`, `Scope`, `Retainable`/`RetainableLock`, `BoundComponent`, `TransformWatcher`, `Intersection`, `QuickshellSettings` | utilisés indirectement ou au besoin ; aucun usage propre identifié |

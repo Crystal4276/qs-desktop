@@ -214,6 +214,7 @@ Liste tenue à jour à chaque phase ; à dérouler une fois le projet terminé.
   (boutons), emojis ; clic milieu sur une notification qui contient un seul lien (ouverture dans le navigateur, non cliqué ici) ;
   Échap dans le centre de notifications.
 - **Troisième passe** : carte média avec Spotify qui répond (lecture, pause, suivant, avance dans le morceau).
+- **Phase 7** : `$mod+w` une fois branché (phase 10) ; lanceur avec ta vraie souris (molette, double clic) et ton clavier au quotidien.
 - **Deuxième passe** : vraie touche de volume / micro une fois les raccourcis branchés (phase 10) ; connexion limitée (Wi-Fi d'hôtel avec
   portail, ou câble sans Internet) ; sur le laptop : OSD de luminosité et alerte de batterie à 30 % et 15 %.
 - **Hyprland** (rappel demandé) : tu ouvres une session Hyprland, je prends la main et je déroule la liste de « Compatibilité Hyprland »
@@ -490,9 +491,39 @@ interface et adresse — vérifié sur ta session). Planifié : commandes HDR / 
 Modules du code source = ceux de la documentation ; singleton `Quickshell` : seulement deux points pour la phase 10 (`reload()` en IPC
 pour `$mod+Ctrl+W`, fenêtre « config rechargée » à garder ou masquer). `ARCHITECTURE.md` § 12.4.
 
+## Phase 7 — Lanceur : faite, en attente de validation (2026-10-16)
+
+Produit :
+- `services/Apps.qml` : applications, filtres de Rofi (`OnlyShowIn` / `NotShowIn` / `TryExec`), tri par fréquence, recherche, lancement,
+  historique (`launcher.json`, état local, repris de Rofi à la première ouverture).
+- `modules/launcher/Launcher.qml` (IPC `launcher` : `toggle`, `open`, `close` ; `LazyLoader`) et `LauncherWindow.qml` (thème `launcher.rasi`).
+- `Theme.qml` / `THEME.md` § 5 : taille en **points** (20 pt = 26,67 px, mesuré), espacement 2 px, glyphe du prompt `U+F444`.
+- Comportement détaillé : `ARCHITECTURE.md` § 10.1.3 (code de Rofi 2.0.0 lu).
+
+Vérifié (Sway, ta session ; instance de test limitée au lanceur, puis instance complète avec Waybar masquée puis rétablie) :
+- rendu comparé à la capture Rofi : même position (1470, 252 sur DP-2), mêmes 17 lignes dans le **même ordre** (historique Rofi repris),
+  mêmes couleurs, icônes et tailles ; 2 % de pixels différents (lissage des polices) ; aussi sur DP-1 (échelle 1.5) ;
+- clavier, par un clavier virtuel (uinput) et seulement lanceur ouvert : recherche (« fire », « lib calc », « lib -calc »), Bas / Haut /
+  Tab / Ctrl+N / Ctrl+P, Pages et Fin (pagination par 17), Début, édition Ctrl+A/E/B/H/K/U/W, Alt+B, Ctrl+Alt+H, Ctrl+Haut / Ctrl+Bas
+  (textes saisis), Maj+Suppr (retiré de l'historique), Échap ;
+- lancements : Calculatrice (Entrée, puis double clic ; compteur +1), htop dans `gnome-terminal` (`Terminal=true`), commande saisie par
+  Ctrl+Entrée, par Entrée sans résultat, et dans un terminal par Ctrl+Maj+Entrée — fenêtres de test refermées ;
+- souris : clic = sélection, molette (souris virtuelle) dans les deux sens, clic à côté et clic sur une barre = fermeture ;
+- IPC `launcher toggle|open|close` sur l'instance complète ; ouverture sur l'écran focalisé (DP-1 puis retour du focus sur DP-2).
+
+Écarts restants :
+- glyphe du prompt : Qt lui donne une avance plus large que Pango, la largeur est donc calée sur une cellule Hack (même position mesurée) ;
+- après Maj+Suppr, l'application reprend sa place alphabétique (Rofi la cachait jusqu'à la prochaine ouverture) ;
+- l'historique Rofi est repris à la **première ouverture** du lanceur Quickshell : d'ici la bascule (phase 10), Rofi reste ton lanceur et
+  son historique continue d'évoluer ; le fichier de test a été effacé pour que la reprise se fasse au moment de la bascule.
+
+À tester à la main : voir « À faire par toi à la fin » (ajout de la phase 7).
+
+État laissé : Waybar et Dunst actifs, aucune instance `qs`, focus sur DP-2.
+
 ## Prochaine étape
 
-Phase 7 (lanceur), après ton accord (les passes ne trouvent plus rien de nouveau).
+Validation de la phase 7, puis phase 8 (power menu, menu d'applications, autres menus Rofi, scripts, fenêtre de réglages).
 
 Rappel pour la phase 12 (ta précision du 2026-10-16) : **greetd remplace SDDM**, l'écran de connexion est un greeter Quickshell en QML
 (apparence du thème SDDM reprise, thème SDDM non utilisé). Paquets `greetd` et `greetd-agreety` : dans `deps/`, donc installés par

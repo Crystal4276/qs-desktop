@@ -73,8 +73,8 @@ Singleton {
         readonly property int defaultIcon: 20     // modules sans taille dans style.css (batterie, rétroéclairage) : texte GTK, 12 pt × 1,25
         readonly property int cava: 20
         readonly property int notificationPt: 16   // points (Pango), titre en gras
-        readonly property int launcher: 20
-        readonly property int launcherSearchIcon: 20
+        readonly property int launcherPt: 20             // points (Pango) = 26,67 px : pas de ligne de 53 px, majuscules de 20 px (mesuré)
+        readonly property int launcherSearchIconPt: 20   // points
         readonly property int powerMenuLabel: 12   // gras
         readonly property int appMenu: 20
         readonly property int appMenuSearch: 24
@@ -257,6 +257,7 @@ Singleton {
         readonly property string clock: "\ue385"
         readonly property string download: "\u{f1625}"
         readonly property string upload: "\u{f1628}"
+        readonly property string launcherPrompt: "\uf444"   // prompt du lanceur (`display-drun`), Inter → Hack Nerd Font par repli
 
         // font.awesome / awesomeBrands / awesome4
         readonly property string calendar: "\uf274"   // font.awesome
@@ -348,6 +349,7 @@ Singleton {
         readonly property int itemRadius: 4
         readonly property int itemIconSize: 24
         readonly property int itemTextMargin: 2
+        readonly property int itemSpacing: 2      // icône → texte, et entre bouton loupe, prompt et champ : espacement par défaut des boîtes Rofi
         readonly property color text: root.rofi.fg
         readonly property color selected: root.color.green
         readonly property color selectedText: root.rofi.sel
