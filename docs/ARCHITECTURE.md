@@ -206,6 +206,9 @@ Format (implémenté en phase 1, `hosts/default.json`, `hosts/terrier.json`) :
 - `terminal` *(phase 4)* : préfixe qui lance une commande dans un terminal **et attend sa fin** (le module mises à jour recompte à la fermeture) ;
   une liste, car chaque terminal a sa syntaxe (`foot`, `kitty` : pas de `--`).
 - `mediaPlayer` *(phase 4)* : lecteur suivi par le module mpris, nom D-Bus après `org.mpris.MediaPlayer2.` (option `player` de Waybar).
+- `updateCommand` *(phase 4)* : commande de mise à jour du module mises à jour ; absente (`default.json`) : `paru`, sinon `yay`, sinon
+  `sudo pacman -Syu` (revue de code : `paru` n'est pas forcément installé sur une nouvelle machine).
+- `nightLight` *(phase 8)* : veilleuse, `{ "from": "20:00", "to": "06:00", "temperature": 3239 }` (`default.json` : tes réglages GNOME).
 
 - Fusion **au premier niveau** : une clé du fichier machine remplace entièrement celle de `default.json` (pas de fusion profonde : plus prévisible).
 - `bars` : par description d'écran, sinon par rôle (`primary` / `secondary`) — un écran inconnu reçoit donc toujours une barre.

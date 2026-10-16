@@ -17,10 +17,14 @@ Singleton {
         check.running = true;
     }
 
+    // Sans commande dans la config machine : paru, sinon yay, sinon pacman (SCRIPTS.md, update-wrapper.sh).
+    readonly property string fallbackCommand: "if command -v paru >/dev/null; then paru -Syu; elif command -v yay >/dev/null; then yay -Syu; else sudo pacman -Syu; fi"
+
     function update(): void {
-        if (upgrade.running || Settings.updateCommand === "")
+        if (upgrade.running)
             return;
-        upgrade.command = [...Settings.terminal, "bash", "-c", `${Settings.updateCommand}; echo -e "\\nPress Enter to close..."; read`];
+        const command = Settings.updateCommand || fallbackCommand;
+        upgrade.command = [...Settings.terminal, "bash", "-c", `${command}; echo -e "\\nPress Enter to close..."; read`];
         upgrade.running = true;
     }
 

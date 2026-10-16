@@ -14,6 +14,5 @@
   "notificationsOutput": "primary",
   "terminal": ["gnome-terminal", "--wait", "--"],
   "mediaPlayer": "spotify",
-  "updateCommand": "paru -Syu",
   "nightLight": { "from": "20:00", "to": "06:00", "temperature": 3239 }
 }

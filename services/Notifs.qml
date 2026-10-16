@@ -63,6 +63,12 @@ Singleton {
         }
     }
 
+    function lockImage(n: Notification): int {
+        const key = ++persist.nextKey;
+        imageLocks = Object.assign({}, imageLocks, { [key]: imageLock.createObject(root, { object: n }) });
+        return key;
+    }
+
     function pruneImages(): void {
         const used = new Set([...history.map(h => h.imageKey), ...popups.map(e => e.saved?.imageKey)].filter(k => k));
         const kept = {};
@@ -146,14 +152,24 @@ Singleton {
     // --- Arrivée ---
 
     function add(n: Notification): void {
-        // Ne pas déranger : directement dans l'historique, non suivie (Quickshell la ferme aussitôt).
+        // Ne pas déranger : directement dans l'historique, non suivie (Quickshell la ferme aussitôt). Avec une image en données,
+        // elle est suivie juste le temps d'être retenue puis fermée : une notification non suivie est détruite sur-le-champ,
+        // verrou ou non.
         if (doNotDisturb && n.urgency !== NotificationUrgency.Critical) {
+            let imageKey = 0;
+            if (n.image.startsWith("image://")) {
+                n.tracked = true;
+                imageKey = lockImage(n);
+                Qt.callLater(() => n.expire());
+            }
             archive({
                 appName: n.appName,
                 summary: n.summary,
                 body: n.body,
                 urgency: n.urgency,
                 icon: iconSource(n.image, n.appIcon),
+                imageKey,
+                fallbackIcon: iconSource("", n.appIcon),
                 progress: progressOf(n.hints),
                 hasActions: n.actions.length > 0,
                 dupCount: 0,
@@ -199,10 +215,8 @@ Singleton {
             return;
         popups = popups.filter(e => e !== entry);
         let imageKey = entry.saved?.imageKey ?? 0;
-        if (entry.notification && entry.notification.image.startsWith("image://")) {
-            imageKey = ++persist.nextKey;
-            imageLocks = Object.assign({}, imageLocks, { [imageKey]: imageLock.createObject(root, { object: entry.notification }) });
-        }
+        if (entry.notification && entry.notification.image.startsWith("image://"))
+            imageKey = lockImage(entry.notification);
         archive({
             appName: entry.appName,
             summary: entry.summary,

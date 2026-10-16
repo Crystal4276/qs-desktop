@@ -160,12 +160,24 @@ Singleton {
                 root.hidden = map;
             }
         }
+        onExited: {
+            if (root.filtersAgain) {
+                root.filtersAgain = false;
+                Qt.callLater(() => filters.running = true);
+            }
+        }
     }
+
+    // Applications changées pendant le calcul des filtres : recalculés à la fin (sinon le changement serait perdu).
+    property bool filtersAgain: false
 
     Connections {
         target: DesktopEntries
         function onApplicationsChanged() {
-            filters.running = true;
+            if (filters.running)
+                root.filtersAgain = true;
+            else
+                filters.running = true;
         }
     }
 }
