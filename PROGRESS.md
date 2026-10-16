@@ -273,6 +273,25 @@ Limites connues du calendrier : juste après un clic dans le calendrier, Échap 
 
 État laissé : Waybar et Dunst actifs, aucune instance `qs`, volume 0,46 non muet, notification de test retirée de l'historique Dunst.
 
+## Compatibilité Hyprland (2026-10-16, à ta demande)
+
+Tests isolés impossibles ici : un Hyprland imbriqué dans Sway exige `xdg_wm_base` v6 (Sway 1.12 : v5) ; en headless ou imbriqué dans
+mutter headless, il démarre mais n'alloue aucune image sur la carte Nvidia (`GBM: Failed to allocate a GBM buffer`). Traces effacées.
+→ Tests à faire **ensemble dans une session Hyprland** (tu la lances, je prends la main).
+
+Revu et complété d'après le code source d'Hyprland 0.56.2 et l'API Quickshell 0.3.2 :
+- `Compositor` : écrans (description recomposée comme sous Sway, taille logique avec rotation), placement des espaces en une requête Lua,
+  espace focalisé déplacé, création d'espace (`createworkspacev2`), focus de fenêtre (`activewindowv2`), submap, titre ;
+- barre, modules, calendrier : rien de propre à Sway, hors le mécanisme de focus du calendrier (à vérifier sous Hyprland).
+
+À vérifier dans la session Hyprland :
+- barres sur les 3 écrans (rendu identique à Sway), espaces de chaque écran, clic et molette sur les espaces (Waybar avait désactivé la
+  molette sous Hyprland : à trancher) ;
+- répartition des espaces : écrans virtuels (`hyprctl output create headless`), désactivation, création d'espace hors de son bloc,
+  focus conservé, règles `persistent` de la config actuelle ;
+- modules (volume, média, cava, mises à jour, GPU, CPU, mémoire, réseau) : identiques, rien de propre au compositeur ;
+- calendrier : survol, épinglage, fermeture par clic sur une fenêtre / un module / le fond, Échap, focus rendu à la fenêtre.
+
 ## Prochaine étape
 
 Phase 5 (tray, réseau, Bluetooth, disques, NordVPN), après validation.
