@@ -38,7 +38,7 @@ Item {
     }
 
     TapHandler {
-        onTapped: calendar.pinned = !calendar.pinned
+        onTapped: calendar.toggle()
     }
 
     CalendarPopup {

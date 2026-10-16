@@ -19,6 +19,10 @@ Variants {
 
         screen: modelData
         WlrLayershell.namespace: "quickshell-bar"
+        // Clavier « à la demande » seulement pendant le survol de l'horloge ou l'épinglage du calendrier (CalendarPopup.qml) :
+        // le clic qui épingle donne alors le focus à la barre, sans le prendre aux fenêtres le reste du temps.
+        WlrLayershell.keyboardFocus: BarState.keyboardScreen !== "" && BarState.keyboardScreen === (modelData?.name ?? "")
+            ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
         anchors {
             top: true
             left: true
@@ -179,6 +183,19 @@ Variants {
             anchors.right: parent.right
             anchors.rightMargin: Theme.bar.marginSide
             pills: bar.layout.right
+        }
+
+        // Calendrier épinglé : un appui n'importe où sur la barre le ferme ; l'appui n'est pas accepté, il atteint donc
+        // le module situé dessous (et un clic sur l'horloge ferme sans rouvrir : CalendarPopup.toggle).
+        MouseArea {
+            anchors.fill: parent
+            z: 1
+            enabled: BarState.calendarPinned
+            acceptedButtons: Qt.AllButtons
+            onPressed: mouse => {
+                BarState.closeCalendar();
+                mouse.accepted = false;
+            }
         }
     }
 }
