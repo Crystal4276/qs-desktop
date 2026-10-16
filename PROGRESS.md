@@ -268,8 +268,8 @@ Vérifié (Sway, écrans réels, Waybar masquée le temps des captures puis rét
 - avertissements Qt `QWaylandTextInputv3::disableSurface` à la fermeture du calendrier épinglé : sans effet.
 
 À tester à la main : voir « À faire par toi à la fin » (molette réelle, glisser le curseur, clavier du calendrier, mise à jour confirmée, laptop).
-Limites connues du calendrier : après un clic dans le calendrier, Échap ne marche plus et un clic sur le fond d'écran vide ne ferme pas
-(la fermeture automatique s'en charge) ; sous Hyprland, à revoir en phase 9.
+Limites connues du calendrier : juste après un clic dans le calendrier, Échap ne marche plus et un clic sur le fond d'écran ne ferme pas
+(la fermeture automatique s'en charge ; fond natif en phase 8b : WALLPAPERS.md). Sinon, un clic sur le fond ferme (`swaybg` laisse passer les clics).
 
 État laissé : Waybar et Dunst actifs, aucune instance `qs`, volume 0,46 non muet, notification de test retirée de l'historique Dunst.
 

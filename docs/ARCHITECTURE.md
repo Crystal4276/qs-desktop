@@ -305,8 +305,13 @@ Mise en œuvre (Sway 1.12, code source lu) :
   ensuite, c'est l'événement IPC « une fenêtre reçoit le focus » (`Compositor.windowFocused`, filtré sur `focused` : Sway l'envoie aussi à tort
   lors d'un clic sur un popup) qui ferme au clic sur une fenêtre ;
 - à la fermeture, la barre repasse sans clavier : Sway rend le focus à la fenêtre qui l'avait.
-Limites : après un clic dans le calendrier, Échap ne marche plus (focus perdu) et un clic sur le fond d'écran vide ne ferme pas (le fond est une
-surface sans clavier) — la fermeture automatique (5 s) s'en charge.
+Limites : après un clic dans le calendrier, Échap ne marche plus (focus perdu) ; la fermeture automatique (5 s) s'en charge.
+Clic sur le fond d'écran : `swaybg` déclare une zone d'entrée vide (code lu) ; le clic atteint l'espace de travail, Sway le focalise,
+la barre perd le clavier et le calendrier se ferme (vérifié sur DP-2 et DP-1). Seule exception : juste après un clic dans le calendrier,
+le focus est déjà sur l'espace de travail et un clic sur le fond ne change rien → la fermeture automatique s'en charge.
+**Décidé le 2026-10-16** : pas d'ajout provisoire (une couche au-dessus de `swaybg` a été essayée puis retirée). En **phase 8b**, le fond
+d'écran natif pourra recevoir ce clic lui-même : fermer le calendrier (`BarState.closeCalendar()`) et focaliser l'espace de l'écran, comme
+`swaybg` le permet aujourd'hui (WALLPAPERS.md).
 
 **Tooltips** (décision du 2026-10-16) : aucun tooltip dans la barre Quickshell (`INVENTORY.md` § 1).
 

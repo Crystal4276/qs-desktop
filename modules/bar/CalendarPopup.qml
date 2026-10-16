@@ -13,7 +13,8 @@ import qs.services
 //    qui épingle lui donne donc le focus (Échap, ←/→). Un clic sur une fenêtre le lui reprend : le calendrier se ferme.
 //    Un appui sur une barre le ferme directement (Bar.qml), tout comme le passage du focus à une fenêtre (événement du
 //    compositeur : nécessaire après un clic dans le calendrier, que Sway traite comme un clic sur l'espace de travail). À la fermeture, la barre repasse sans clavier et Sway rend
-//    le focus à la fenêtre précédente. (Sway retire le focus à une surface « à la demande » à chaque réarrangement des
+//    le focus à la fenêtre précédente. Un clic sur le fond d'écran traverse `swaybg` et focalise l'espace de travail : il ferme
+//    aussi, sauf juste après un clic dans le calendrier (focus déjà sur l'espace) ; [phase 8b] voir WALLPAPERS.md. (Sway retire le focus à une surface « à la demande » à chaque réarrangement des
 //    couches : seul un clic le lui donne durablement ; un popup `grabFocus` n'est pas fermé au clic extérieur.)
 // Semaine selon la locale du système (dimanche en premier pour en_US, comme Waybar).
 Item {
@@ -55,6 +56,13 @@ Item {
         }
     }
 
+    // Le pointeur a quitté l'horloge : l'aperçu peut de nouveau s'afficher.
+    onHoveredChanged: {
+        if (!hovered)
+            hoverSuppressed = false;
+    }
+
+    // Pointeur sur le calendrier (le HoverHandler du cadre ne voit pas le survol d'un enfant qui a le sien).
     readonly property bool popupHovered: frameHover.hovered || previousHover.hovered || nextHover.hovered || titleHover.hovered
     readonly property string screenName: anchorItem.QsWindow.window?.screen?.name ?? ""
     readonly property bool wantsKeyboard: pinned || hovered
