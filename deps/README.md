@@ -53,7 +53,7 @@ Thème d'icônes des applications (tray, lanceur, notifications) : `papirus-icon
 | Veille des écrans | — (natif, `IdleMonitor` + commande DPMS au compositeur) | — | — | — |
 | Agent polkit | — (natif, `PolkitAgent` ; `polkit` installé avec `quickshell`) | — | à définir | — |
 | Fond d'écran + utilitaire | — (natif) | — | à définir | dépôt `wallpapers` cloné dans `~/Pictures/Wallpapers` |
-| Réseau | `networkmanager` (natif, `Networking`) | `nm-connection-editor` (`network-manager-applet`) pour l'édition | Symbols Nerd Font Mono | — |
+| Réseau (tray) | `networkmanager` (natif, `Networking`) | `nm-connection-editor` pour l'édition des connexions | icônes Papirus-Dark (`nm-*`) | — |
 | Bluetooth | `bluez` (natif, `Bluetooth`), `bluez-utils` (agent d'appairage) | — | Symbols Nerd Font Mono | — |
 | Disques amovibles | `udisks2`, `glib2` (`gdbus`), `systemd` (`busctl`) | — | Symbols Nerd Font Mono | — |
 | NordVPN | — | `nordvpn-bin` (AUR) + service `nordvpnd` + compte connecté (sinon module masqué) | Symbols Nerd Font Mono | — |
@@ -134,7 +134,7 @@ Correspondances attendues, **non encore vérifiées** (phase 11).
 | udisks2 | udisks2 | udisks2 | |
 | glib2 (`gdbus`) | glib2 | libglib2.0-bin | souvent déjà présent |
 | systemd (`busctl`) | systemd | systemd | toujours présent |
-| network-manager-applet (`nm-connection-editor`, optionnel) | nm-connection-editor | network-manager-gnome | |
+| nm-connection-editor (optionnel) | nm-connection-editor | network-manager-gnome | |
 | pacman-contrib + fakeroot | — | — | spécifique Arch : module mises à jour masqué |
 | btop / nvtop | idem | idem | |
 | gnome-terminal | idem | idem | |
