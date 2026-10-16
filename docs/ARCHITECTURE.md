@@ -120,7 +120,14 @@ ne pourrait donc plus être corrigée pour 4. La création au bon endroit est as
 `$mod+N` passeront par `qs ipc` et focaliseront directement le bon écran (`focus output X; workspace number N`), sans détour visible.
 
 Les commandes envoyées sont écrites dans le journal (`Compositor: placement des espaces : …`).
-Hyprland : `Compositor.placeWorkspaces` / `moveFocusedWorkspace` restent à écrire en phase 9 (avertissement dans le journal d'ici là).
+Hyprland *(écrit le 2026-10-16, d'après le code source d'Hyprland 0.56.2 ; à tester dans une session Hyprland)* :
+- placement en **une seule requête** : `hyprctl dispatch X` exécute `hl.dispatch(X)`, qui accepte une fonction Lua ; `Compositor` envoie
+  `function() hl.dispatch(hl.dsp.workspace.move({ workspace = N, monitor = "X" })) … hl.dispatch(hl.dsp.focus({ monitor = "X" }))
+  hl.dispatch(hl.dsp.focus({ workspace = N })) … end` (même séquence que sous Sway ; Lua vérifié avec `luac` et exécuté avec un faux `hl`) ;
+- espace focalisé déplacé : `hl.dsp.workspace.move({ monitor = "X" })` ; création d'espace : événement `createworkspacev2` ;
+- config Hyprland non-Lua : placement non pris en charge (avertissement) — seule la config Lua est utilisée ;
+- tant que la config actuelle (`lua/workspaces.lua`) attache les espaces aux écrans par des règles `persistent`, elles peuvent contrarier
+  le placement : elles disparaissent à la bascule (phase 10), comme les lignes `workspace N output` de Sway.
 
 ### 3.3 Règle générale — validée (Q1)
 
@@ -208,8 +215,8 @@ Format (implémenté en phase 1, `hosts/default.json`, `hosts/terrier.json`) :
   `clockDate` (heure + date, barre principale), `network`, `tray`, `power`, `battery`, `backlight` (laptop).
   Un module dont la donnée ou le matériel manque se masque ; une pilule dont tous les modules sont masqués disparaît.
 - `default.json` : pas d'écran principal imposé, aucune répartition imposée, barre `primary` complète, `secondary` minimale.
-- La description d'un écran est « marque modèle numéro de série » : sous Sway, recomposée depuis `make`, `model`, `serial` de `get_outputs` ;
-  sous Hyprland, champ `description`.
+- La description d'un écran est « marque modèle numéro de série », recomposée depuis `make`, `model`, `serial` sous les deux compositeurs
+  (`swaymsg -t get_outputs`, `hyprctl monitors`) : les mêmes clés valent pour Sway et Hyprland.
 - Les icônes d'espaces de travail font partie de la charte → `Theme.qml`, pas de la config machine.
 - Le fichier machine est relu à chaud (`FileView.watchChanges`) : la barre change sans redémarrer Quickshell (vérifié en phase 1).
 

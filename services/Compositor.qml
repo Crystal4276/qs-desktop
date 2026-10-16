@@ -29,15 +29,21 @@ Singleton {
                 focused: m.focused
             }));
         if (isHyprland)
-            return Hyprland.monitors.values.filter(m => !m.lastIpcObject.disabled).map(m => ({
-                name: m.name,
-                description: m.description,
-                x: m.x, y: m.y,
-                // taille du mode en px physiques → logiques [rotation : à vérifier en phase 9]
-                width: Math.round(m.width / m.scale), height: Math.round(m.height / m.scale),
-                scale: m.scale,
-                focused: m.focused
-            }));
+            return Hyprland.monitors.values.filter(m => !m.lastIpcObject.disabled).map(m => {
+                const o = m.lastIpcObject;
+                // Taille du mode en px physiques → logiques ; transformations impaires (90°, 270°…) : largeur et hauteur échangées.
+                const w = Math.round(m.width / m.scale), h = Math.round(m.height / m.scale);
+                const rotated = (o.transform ?? 0) % 2 === 1;
+                return {
+                    name: m.name,
+                    // Même composition que sous Sway (make, model, serial de `hyprctl monitors`) : mêmes clés dans hosts/*.json.
+                    description: [o.make, o.model, o.serial].filter(s => s).join(" "),
+                    x: m.x, y: m.y,
+                    width: rotated ? h : w, height: rotated ? w : h,
+                    scale: m.scale,
+                    focused: m.focused
+                };
+            });
         return [];
     }
 
@@ -102,9 +108,28 @@ Singleton {
                 I3.dispatch(commands.join("; "));
             }
         } else if (isHyprland) {
-            // [phase 9] règles d'espaces et déplacement sous Hyprland (ARCHITECTURE § 2)
-            console.warn("Compositor: placement des espaces pas encore écrit pour Hyprland (phase 9)");
+            const calls = [];
+            for (const m of moves)
+                calls.push(`hl.dsp.workspace.move({ workspace = ${m.number}, monitor = "${m.output}" })`);
+            for (const s of show)
+                calls.push(`hl.dsp.focus({ monitor = "${s.output}" })`, `hl.dsp.focus({ workspace = ${s.number} })`);
+            if (focus > 0)
+                calls.push(`hl.dsp.focus({ workspace = ${focus} })`);
+            hyprlandBatch(calls);
         }
+    }
+
+    // Hyprland en config Lua (la seule prise en charge pour le placement) : `hyprctl dispatch X` exécute `hl.dispatch(X)`,
+    // qui accepte une fonction ; une seule requête enchaîne donc toutes les actions dans l'ordre (code d'Hyprland 0.56 lu).
+    function hyprlandBatch(calls: var): void {
+        if (calls.length === 0)
+            return;
+        if (!Hyprland.usingLua) {
+            console.warn("Compositor: placement des espaces écrit pour une config Hyprland en Lua seulement");
+            return;
+        }
+        console.info("Compositor: placement des espaces :", calls.join("; "));
+        Hyprland.dispatch(`function() ${calls.map(c => `hl.dispatch(${c})`).join(" ")} end`);
     }
 
     // Déplace l'espace focalisé sur une autre sortie ; il y reste focalisé.
@@ -113,7 +138,7 @@ Singleton {
             console.info("Compositor: placement des espaces :", `move workspace to output "${output}"`);
             I3.dispatch(`move workspace to output "${output}"`);
         } else if (isHyprland) {
-            console.warn("Compositor: placement des espaces pas encore écrit pour Hyprland (phase 9)");
+            hyprlandBatch([`hl.dsp.workspace.move({ monitor = "${output}" })`]);
         }
     }
 
@@ -223,6 +248,12 @@ Singleton {
         function onRawEvent(event) {
             if (event.name === "submap")
                 hyprland.submap = event.data;
+            else if (event.name === "createworkspacev2") {
+                // « ID,NOM » ; l'écran n'est connu qu'après relecture : "" laisse Outputs vérifier 100 ms plus tard.
+                const id = parseInt(event.data);
+                if (id > 0)
+                    root.workspaceCreated(id, Hyprland.workspaces.values.find(w => w.id === id)?.monitor?.name ?? "");
+            }
             else if (event.name === "activewindowv2" && event.data !== "")
                 root.windowFocused();
         }
