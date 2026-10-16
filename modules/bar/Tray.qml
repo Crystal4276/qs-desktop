@@ -33,7 +33,9 @@ Item {
         spacing: Theme.bar.traySpacing
 
         Repeater {
-            model: root.items
+            model: ScriptModel {
+                values: root.items
+            }
 
             TrayIcon {
                 id: icon

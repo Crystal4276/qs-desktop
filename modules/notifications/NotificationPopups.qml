@@ -42,7 +42,9 @@ PanelWindow {
         spacing: Theme.notification.gap
 
         Repeater {
-            model: Notifs.popups
+            model: ScriptModel {
+                values: [...Notifs.popups]
+            }
 
             NotificationCard {}
         }

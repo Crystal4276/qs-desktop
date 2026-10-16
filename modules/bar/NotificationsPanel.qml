@@ -61,11 +61,13 @@ Panel {
             spacing: 0
 
             Repeater {
-                model: [...Notifs.history].reverse()
+                model: ScriptModel {
+                    values: [...Notifs.history].reverse()
+                    objectProp: "key"
+                }
 
                 PanelRow {
                     required property var modelData
-                    required property int index
 
                     clickable: false
                     icon: modelData.icon || "preferences-desktop-notification"   // sans icône : icône générique (alignement)
@@ -76,7 +78,7 @@ Panel {
 
                     PanelButton {
                         text: "Clear"
-                        onClicked: Notifs.removeHistory(Notifs.history.length - 1 - index)   // liste affichée à l'envers
+                        onClicked: Notifs.removeHistory(modelData.key)
                     }
                 }
             }

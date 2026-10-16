@@ -23,3 +23,5 @@ Idées notées pendant le travail. Rien ici n'est implémenté sans accord.
 - Notifications (phase 6) : raccourcis clavier pour le centre et « ne pas déranger » (IPC à ajouter) ; historique et « ne pas déranger »
   conservés après un redémarrage de Quickshell (en mémoire aujourd'hui, comme Dunst) ; menu pour choisir parmi plusieurs liens d'une
   notification (Dunst passait par `dmenu`, absent) ; couleurs par notification (`fgcolor`, `bgcolor`… : ignorées).
+- **Animations** (ta demande du 2026-10-16) : aucune dans la première version (parité) ; à ajouter ensuite, au fur et à mesure
+  (ouverture des panneaux, menus et notifications, changement d'espace de travail…), avec `EasingCurve` et les animations de Qt Quick.

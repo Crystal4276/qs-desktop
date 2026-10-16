@@ -22,9 +22,9 @@ Singleton {
 
     // Derniers pays utilisés, du plus récent au plus ancien (ta demande du 2026-10-16) : NordVPN ne garde pas d'historique,
     // chaque connexion observée (panneau, raccourci, ligne de commande) est enregistrée dans l'état local de Quickshell
-    // (~/.local/state/quickshell/…/vpn-recent.json, propre à la machine, hors du dépôt).
+    // (~/.local/state/quickshell/…/vpn.json, propre à la machine, hors du dépôt ; lu et écrit par JsonAdapter).
     readonly property int recentCount: 5
-    property var recent: []
+    readonly property var recent: recentJson.recent
     property bool recentLoaded: false   // l'historique n'est modifié qu'après lecture du fichier (sinon il serait écrasé)
     onStatusChanged: remember()
     onRecentLoadedChanged: remember()
@@ -36,23 +36,20 @@ Singleton {
         const key = country.replace(/ /g, "_");
         if (recent[0] === key)
             return;
-        recent = [key, ...recent.filter(c => c !== key)].slice(0, recentCount);
-        recentFile.setText(JSON.stringify(recent));
+        recentJson.recent = [key, ...recent.filter(c => c !== key)].slice(0, recentCount);
     }
 
     FileView {
-        id: recentFile
-        path: Quickshell.statePath("vpn-recent.json")
+        path: Quickshell.statePath("vpn.json")
         printErrors: false
-        onLoaded: {
-            try {
-                const list = JSON.parse(text());
-                if (Array.isArray(list))
-                    root.recent = list.slice(0, root.recentCount);
-            } catch (e) {}
-            root.recentLoaded = true;
+        onAdapterUpdated: writeAdapter()
+        onLoaded: root.recentLoaded = true
+        onLoadFailed: root.recentLoaded = true   // pas encore d'historique : le fichier sera créé à la première connexion
+
+        JsonAdapter {
+            id: recentJson
+            property list<string> recent: []
         }
-        onLoadFailed: root.recentLoaded = true   // pas encore d'historique
     }
 
     // Icône du tray, celles du paquet nordvpn : bleue connecté, grise sinon.

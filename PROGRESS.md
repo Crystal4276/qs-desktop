@@ -431,9 +431,23 @@ Ajouts au plan :
 - phase 9 : `HyprlandFocusGrab` pour fermer panneaux et calendrier sous Hyprland ;
 - laptop : `PowerProfiles` (`power-profiles-daemon`, dépendance optionnelle).
 
+### Mise à niveau faite (2026-10-16)
+
+- `ScriptModel` sur toutes les listes construites en JavaScript (espaces de travail, tray, réseaux, Bluetooth, disques, pays VPN,
+  notifications, centre) ; une entrée du centre est retirée par sa clé.
+- `PersistentProperties` : historique des notifications et « ne pas déranger » gardés au rechargement (historique en texte JSON).
+- `JsonAdapter` : derniers pays VPN dans `vpn.json` ; ton historique (Netherlands, Israel, United_Arab_Emirates) converti, ancien fichier supprimé.
+- `WindowManager` : **non migré** après essai sous Sway (couverture partielle, voir `ARCHITECTURE.md` § 12) ; gardé en réserve pour Hyprland.
+- Corrigé au passage : dégradé des espaces avec un index -1 (bouton en cours de retrait).
+
+Vérifié (Sway, ta session ; Waybar masquée et Dunst arrêté le temps des tests, puis rétablis) : barre et espaces (changement d'espace) ;
+panneaux VPN (derniers pays relus du nouveau fichier, réécrits dans le bon ordre), réseau, Bluetooth ; disques (image ext4 de test montée
+automatiquement, puis détachée et supprimée) ; notifications : historique conservé après un rechargement, notification affichée conservée,
+« Clear » retire l'entrée visée.
+
 ## Prochaine étape
 
-Mise à niveau ci-dessus (Sway), puis phase 7 (lanceur).
+Phase 7 (lanceur).
 
 Rappel pour la phase 12 (ta précision du 2026-10-16) : **greetd remplace SDDM**, l'écran de connexion est un greeter Quickshell en QML
 (apparence du thème SDDM reprise, thème SDDM non utilisé). Paquets `greetd` et `greetd-agreety` : dans `deps/`, donc installés par

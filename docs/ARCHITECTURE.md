@@ -560,21 +560,22 @@ Légende : **utilisé** (déjà dans le code), **prévu** (phase indiquée), **a
 | | `DesktopEntries`, `DesktopEntry`, `DesktopAction` | **prévu** : lanceur (phase 7), menu d'applications (phase 8) |
 | | `FloatingWindow` | **prévu** : fenêtre de statistiques, sélecteur de fond (phase 8b) |
 | | `LazyLoader` | **ajouté** : composants lourds chargés seulement à l'ouverture (lanceur, menu d'applications, statistiques, capture) |
-| | `ScriptModel` | **ajouté** : modèles des listes construites en JavaScript (notifications, centre, tray, panneaux) — les délégués ne sont plus recréés à chaque changement |
-| | `PersistentProperties` | **ajouté** : historique des notifications, « ne pas déranger » et dernier pays VPN conservés lors d'un rechargement de la config |
+| | `ScriptModel` | **utilisé** : listes construites en JavaScript (espaces de travail, tray, réseaux, appareils Bluetooth, disques, pays VPN, notifications, centre) — délégués conservés, données mises à jour sur place |
+| | `PersistentProperties` | **utilisé** : historique des notifications (en texte JSON : un tableau JavaScript ne passe pas d'un moteur QML au suivant, « JSValue can't be reassigned to another engine ») et « ne pas déranger » conservés au rechargement de la config |
 | | `ObjectModel`, `Reloadable`, `Scope`, `Retainable`/`RetainableLock`, `BoundComponent`, `TransformWatcher`, `Intersection`, `QuickshellSettings` | utilisés indirectement ou au besoin ; aucun usage propre identifié |
 | | `QsMenuAnchor`, `QsMenuButtonType` | **écarté** : menus du tray dessinés par nous (copie des menus GTK, phase 5) |
 | | `ColorQuantizer` | **écarté** : couleurs tirées d'une image, contraire à la charte (aucune couleur inventée) |
-| | `EasingCurve`, `ElapsedTimer` | **écarté** : aucune animation dans la charte (THEME § 10) ; pas de mesure de durée utile |
+| | `EasingCurve` | **après la première version** : pas d'animation pour la parité (THEME § 10) ; animations à ajouter ensuite, au fur et à mesure (ta demande, `BACKLOG.md`) |
+| | `ElapsedTimer` | **écarté** : pas de mesure de durée utile |
 | `Quickshell.Io` | `Process`, `FileView`, `SplitParser`, `StdioCollector`, `IpcHandler` | **utilisé** |
-| | `JsonAdapter`, `JsonObject` | **ajouté** : fichiers d'état JSON (derniers pays VPN) ; la config machine reste lue à la main (fusion `default.json` + machine) |
+| | `JsonAdapter`, `JsonObject` | **utilisé** : derniers pays VPN (`vpn.json`, ancien `vpn-recent.json` converti) ; la config machine reste lue à la main (fusion `default.json` + machine) |
 | | `Socket`, `SocketServer`, `DataStream`, `DataStreamParser` | **écarté** : les raccourcis passent par `IpcHandler` |
 | `Quickshell.I3` | `I3`, `I3IpcListener`, `I3Monitor`, `I3Workspace` | **utilisé** (Sway) |
 | `Quickshell.Hyprland` | `Hyprland`, `HyprlandMonitor`, `HyprlandWorkspace`, `HyprlandEvent` | **utilisé** (écrit, à tester) |
 | | `HyprlandFocusGrab` | **ajouté** (phase 9) : sous Hyprland, fermeture des panneaux et du calendrier par un clic ailleurs, sans le mécanisme de contournement de Sway |
 | | `HyprlandToplevel`, `HyprlandWindow` | au besoin, via `Toplevel` (ci-dessous) |
 | | `GlobalShortcut` | **écarté** : raccourcis par `qs ipc` sur les deux compositeurs (un seul mécanisme) |
-| `Quickshell.WindowManager` | `WindowManager`, `Windowset`, `WindowsetProjection`, `ScreenProjection` | **ajouté** (avant la session Hyprland) : espaces de travail par le protocole commun `ext-workspace` (Sway 1.12 et Hyprland 0.56 : activer, déplacer vers un écran) à la place du code propre à chaque compositeur dans `Compositor.qml` — supprime le placement en Lua sous Hyprland. Restent par compositeur : écran focalisé, focus de fenêtre, titre, mode. `scripts/test-outputs.sh` rejoué. |
+| `Quickshell.WindowManager` | `WindowManager`, `Windowset`, `WindowsetProjection`, `ScreenProjection` | **évalué, en réserve** (sonde sous Sway, 2026-10-16) : le protocole commun `ext-workspace` déplace et active bien un espace, mais n'indique ni l'espace focalisé, ni l'état vide, ni ne crée d'espace (pas d'API de création dans Quickshell), et son déplacement ne garde pas le focus comme la commande Sway sur laquelle la répartition validée est réglée. Migrer obligerait à mélanger deux sources pour le même état : pas de gain net. Gardé pour Hyprland si le placement en Lua échoue pendant la session de test, ou pour une config Hyprland non-Lua. Note : la liste n'est remplie qu'après le premier accès (initialisation paresseuse). |
 | `Quickshell.Wayland` | `WlrLayershell`, `WlrLayer`, `WlrKeyboardFocus` | **utilisé** |
 | | `WlSessionLock`, `WlSessionLockSurface` | **prévu** : verrouillage (phase 8b) |
 | | `IdleMonitor` | **prévu** : veille des écrans (phase 8b), `respectInhibitors` |

@@ -56,7 +56,9 @@ Panel {
     }
 
     Repeater {
-        model: Network.wiredDevices
+        model: ScriptModel {
+            values: Network.wiredDevices
+        }
 
         PanelRow {
             required property NM.NetworkDevice modelData
@@ -96,7 +98,9 @@ Panel {
             spacing: 0
 
             Repeater {
-                model: Network.wifiNetworks
+                model: ScriptModel {
+                    values: Network.wifiNetworks
+                }
 
                 PanelRow {
                     required property NM.WifiNetwork modelData

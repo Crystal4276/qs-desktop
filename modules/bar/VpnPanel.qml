@@ -88,8 +88,10 @@ Panel {
             spacing: 0
 
             Repeater {
-                model: search.text === "" ? Vpn.recent
-                    : Vpn.countries.filter(c => root.label(c).toLowerCase().includes(search.text.toLowerCase()))
+                model: ScriptModel {
+                    values: search.text === "" ? Vpn.recent
+                        : Vpn.countries.filter(c => root.label(c).toLowerCase().includes(search.text.toLowerCase()))
+                }
 
                 ColumnLayout {
                     id: country

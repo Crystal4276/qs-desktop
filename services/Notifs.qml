@@ -24,7 +24,29 @@ Singleton {
     // ou si elle est arrivée pendant « ne pas déranger » (point bleu sur la cloche jusqu'à l'ouverture du centre).
     property var history: []
     readonly property bool unseen: history.some(h => !h.seen)
-    property bool doNotDisturb: false
+    property alias doNotDisturb: persist.doNotDisturb
+
+    // Historique et « ne pas déranger » gardés quand la config se recharge (les notifications affichées le sont par le serveur).
+    // L'historique y est en texte JSON : un tableau JavaScript ne passe pas d'un moteur QML au suivant.
+    PersistentProperties {
+        id: persist
+        reloadableId: "notifs"
+
+        property string history: "[]"
+        property bool doNotDisturb: false
+        property int nextKey: 0
+        property bool ready: false
+
+        onLoaded: {
+            root.history = JSON.parse(history);
+            ready = true;
+        }
+    }
+
+    onHistoryChanged: {
+        if (persist.ready)
+            persist.history = JSON.stringify(history);
+    }
     // Pointeur sur les notifications (NotificationPopups.qml) : délais suspendus.
     property bool hovered: false
     // Horloge à la seconde, pour l'âge affiché.
@@ -164,8 +186,9 @@ Singleton {
         entry.destroy();
     }
 
+    // `key` : identifiant de l'entrée (liste du centre de notifications).
     function archive(item, seen: bool): void {
-        history = [...history, Object.assign(item, { seen })].slice(-historyLength);
+        history = [...history, Object.assign(item, { seen, key: ++persist.nextKey })].slice(-historyLength);
     }
 
     function close(entry): void {
@@ -228,8 +251,8 @@ Singleton {
             history = history.map(h => Object.assign({}, h, { seen: true }));
     }
 
-    function removeHistory(index: int): void {
-        history = history.filter((h, i) => i !== index);
+    function removeHistory(key: int): void {
+        history = history.filter(h => h.key !== key);
     }
 
     function clearHistory(): void {
