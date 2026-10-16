@@ -19,10 +19,14 @@ Singleton {
     // Silence : toutes les barres à zéro (Waybar : échantillons d'entrée nuls ; écart accepté, PROGRESS phase 4).
     readonly property bool silent: bars.every(v => v === 0)
 
+    // Lancé et arrêté selon `users`, sans liaison sur `running` : la relance après un arrêt l'écraserait, et cava ne s'arrêterait
+    // plus quand plus aucun module ne l'affiche.
+    onUsersChanged: cava.running = users > 0
+    Component.onCompleted: cava.running = users > 0
+
     Process {
         id: cava
         command: ["cava", "-p", Quickshell.shellPath("config/cava.conf")]
-        running: root.users > 0
         stdout: SplitParser {
             onRead: line => root.frame = line
         }

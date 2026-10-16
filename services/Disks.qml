@@ -259,6 +259,9 @@ Singleton {
 
     // --- Lecture et suivi ---
 
+    // Changement signalé pendant une lecture : relu à la fin de celle-ci (sinon il serait perdu).
+    property bool queryAgain: false
+
     Process {
         id: query
         command: ["busctl", "--system", "--json=short", "call", "org.freedesktop.UDisks2", "/org/freedesktop/UDisks2",
@@ -267,12 +270,23 @@ Singleton {
         stdout: StdioCollector {
             onStreamFinished: root.parse(text)
         }
+        onExited: {
+            if (root.queryAgain) {
+                root.queryAgain = false;
+                Qt.callLater(() => query.running = true);
+            }
+        }
     }
 
     Timer {
         id: refresh
         interval: 300
-        onTriggered: query.running = true
+        onTriggered: {
+            if (query.running)
+                root.queryAgain = true;
+            else
+                query.running = true;
+        }
     }
 
     // Tout signal d'UDisks2 (ajout, retrait, montage…) déclenche une relecture. Relancé s'il s'arrête.

@@ -43,6 +43,9 @@ Singleton {
     // --- Appairage ---
 
     property BluetoothDevice pairingDevice: null
+    // Adresse de l'appareil en cours d'appairage : gardée même si le panneau se ferme (cancelPairing vide pairingDevice)
+    // alors que bluetoothctl annonce encore la réussite.
+    property string pairingAddress: ""
     // Demande en cours : "" | "confirm" (code à vérifier) | "authorize" | "pin" | "passkey" (à saisir) | "display" (code à taper
     // sur l'appareil) ; `request` : texte du code affiché.
     property string requestType: ""
@@ -53,6 +56,7 @@ Singleton {
         if (agent.running)
             return;
         pairingDevice = device;
+        pairingAddress = device.address;
         requestType = "";
         request = "";
         pairingError = "";
@@ -113,9 +117,14 @@ Singleton {
             requestType = "display";
             request = m[1];
         } else if (line.match(/Pairing successful/i)) {
-            pairingDevice.trusted = true;   // reconnexion automatique, comme blueman
-            agent.write(`connect ${pairingDevice.address}\n`);
-            agent.write("quit\n");
+            // Reconnexion automatique, comme blueman ; l'appareil est retrouvé par son adresse si le panneau a été fermé entre-temps.
+            const device = pairingDevice ?? Bluetooth.devices.values.find(d => d.address === pairingAddress);
+            if (device)
+                device.trusted = true;
+            if (agent.running) {
+                agent.write(`connect ${pairingAddress}\n`);
+                agent.write("quit\n");
+            }
             requestType = "";
         } else if ((m = line.match(/Failed to pair: (.*)/i))) {
             pairingError = m[1].replace(/^org\.bluez\.Error\./, "");

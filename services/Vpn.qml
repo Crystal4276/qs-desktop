@@ -5,7 +5,8 @@ import Quickshell
 import Quickshell.Io
 
 // NordVPN (module natif du tray, remplace l'icône de norduserd ; ARCHITECTURE § 11.4). Aucune API : commande `nordvpn`,
-// statut relu toutes les 5 s et après chaque action. Masqué si `nordvpn` est absent ou si tu n'es pas connecté au compte.
+// statut relu toutes les 5 s et après chaque action. Masqué si `nordvpn` est absent ou si tu n'es pas connecté au compte
+// (revérifié toutes les 30 s).
 // Format lu (nordvpn 5.4) : lignes « Clé: valeur » (Status, Server, Hostname, Country, City, Current technology, Transfer, Uptime).
 Singleton {
     id: root
@@ -108,9 +109,16 @@ Singleton {
             countriesProcess.running = true;
     }
 
+    // Villes demandées pendant qu'une autre liste se charge : chargées ensuite (seule la dernière demande compte).
+    property string pendingCities: ""
+
     function loadCities(country: string): void {
-        if (cities[country] !== undefined || citiesProcess.running)
+        if (cities[country] !== undefined)
             return;
+        if (citiesProcess.running) {
+            pendingCities = country;
+            return;
+        }
         citiesProcess.country = country;
         citiesProcess.command = ["nordvpn", "cities", country];
         citiesProcess.running = true;
@@ -142,9 +150,11 @@ Singleton {
         }
     }
 
+    // Statut toutes les 5 s ; module masqué (démon pas encore prêt à l'ouverture de session, compte connecté plus tard) :
+    // nouvel essai toutes les 30 s, sans quoi il resterait masqué jusqu'au prochain rechargement.
     Timer {
-        interval: 5000
-        running: root.available
+        interval: root.available ? 5000 : 30000
+        running: true
         repeat: true
         onTriggered: root.refresh()
     }
@@ -180,6 +190,12 @@ Singleton {
                 copy[citiesProcess.country] = root.names(text);
                 root.cities = copy;
             }
+        }
+        onExited: {
+            const next = root.pendingCities;
+            root.pendingCities = "";
+            if (next !== "")
+                Qt.callLater(() => root.loadCities(next));
         }
     }
 }

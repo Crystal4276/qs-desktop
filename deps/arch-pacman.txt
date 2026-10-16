@@ -12,12 +12,13 @@ qt6-svg                 # rendu des icônes et images SVG dans Quickshell
 # --- Compositeurs et sorties ---
 sway                    # compositeur principal
 hyprland                # compositeur secondaire
-# (fond d'écran, veille, verrouillage : natifs Quickshell — swaybg, swayidle, hypridle, swaylock ne sont plus requis)
+# (fond d'écran, veille, verrouillage : natifs Quickshell en phase 8b — swaybg, swayidle, hypridle ne sont plus requis ;
+#  swaylock reste requis jusqu'à l'écran de verrouillage natif, voir plus bas)
 
 # --- Panneau de réglages (phase 8) ---
 wlsunset                # veilleuse (Night Light) : écran plus chaud le soir, Sway et Hyprland (wlr-gamma-control)
 xdg-user-dirs           # dossier Images des captures (`xdg-user-dir PICTURES`, repli sur ~/Pictures)
-# Verrouillage : `swaylock` en attendant l'écran de verrouillage natif (phase 8b) — déjà installé, non listé (retiré à la bascule).
+swaylock                # verrouiller (panneau de réglages) en attendant l'écran de verrouillage natif (phase 8b) ; retiré à ce moment-là
 
 # --- Énergie ---
 power-profiles-daemon   # profils d'énergie (économie / équilibré / performance) : 3 boutons de la fenêtre de réglages (phase 8),
