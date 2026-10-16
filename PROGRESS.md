@@ -485,9 +485,14 @@ Bilan : `ARCHITECTURE.md` § 12.3. Fait : commande `qs ipc call vpn connect [pay
 reconnexion couperait la session) ; section « Private networks » du panneau réseau (Tailscale : adresse, 8 appareils ; ZeroTier :
 interface et adresse — vérifié sur ta session). Planifié : commandes HDR / VRR sur les écrans compatibles (phase 8). Autostart XDG laissé tel quel.
 
+### Cinquième passe (2026-10-16) : rien de nouveau
+
+Modules du code source = ceux de la documentation ; singleton `Quickshell` : seulement deux points pour la phase 10 (`reload()` en IPC
+pour `$mod+Ctrl+W`, fenêtre « config rechargée » à garder ou masquer). `ARCHITECTURE.md` § 12.4.
+
 ## Prochaine étape
 
-Nouvelle passe de recherche (ta règle : tant qu'on trouve des choses, pas de phase 7), puis phase 7 (lanceur).
+Phase 7 (lanceur), après ton accord (les passes ne trouvent plus rien de nouveau).
 
 Rappel pour la phase 12 (ta précision du 2026-10-16) : **greetd remplace SDDM**, l'écran de connexion est un greeter Quickshell en QML
 (apparence du thème SDDM reprise, thème SDDM non utilisé). Paquets `greetd` et `greetd-agreety` : dans `deps/`, donc installés par
