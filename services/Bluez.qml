@@ -101,22 +101,28 @@ Singleton {
     }
 
     function onAgentLine(raw: string): void {
-        const line = raw.replace(/\x1b\[[0-9;]*[A-Za-z]/g, "").replace(/\r/g, "");
+        // Sans couleurs ni invite (« [bluetooth]# »). Seules les lignes de l'agent (« [agent] … ») et les résultats de `pair`
+        // en début de ligne sont lus : les lignes [NEW] / [CHG] / [DEL] portent les noms des appareils voisins, qu'un appareil
+        // pourrait choisir pour imiter une question ou un résultat (« Pairing successful »…) — revue de code.
+        const line = raw.replace(/\x1b\[[0-9;]*[A-Za-z]/g, "").replace(/\r/g, "").replace(/^(\[(?!agent\])[^\]]*\][#>]\s*)+/, "").trim();
+        if (/^\[(NEW|CHG|DEL)\]/.test(line))
+            return;
+        const agentLine = /^\[agent\][#>]?\s/.test(line);
         let m;
-        if ((m = line.match(/Confirm passkey (\d+)/i))) {
+        if (agentLine && (m = line.match(/Confirm passkey (\d+)/i))) {
             requestType = "confirm";
             request = m[1];
-        } else if (line.match(/Authorize service|Accept pairing/i)) {
+        } else if (agentLine && line.match(/Authorize service|Accept pairing/i)) {
             requestType = "authorize";
             request = "";
-        } else if (line.match(/Enter PIN code/i)) {
+        } else if (agentLine && line.match(/Enter PIN code/i)) {
             requestType = "pin";
-        } else if (line.match(/Enter passkey/i)) {
+        } else if (agentLine && line.match(/Enter passkey/i)) {
             requestType = "passkey";
-        } else if ((m = line.match(/(?:Passkey|PIN code):\s*(\d+)/i))) {
+        } else if (agentLine && (m = line.match(/(?:Passkey|PIN code):\s*(\d+)/i))) {
             requestType = "display";
             request = m[1];
-        } else if (line.match(/Pairing successful/i)) {
+        } else if (/^Pairing successful$/i.test(line)) {
             // Reconnexion automatique, comme blueman ; l'appareil est retrouvé par son adresse si le panneau a été fermé entre-temps.
             const device = pairingDevice ?? Bluetooth.devices.values.find(d => d.address === pairingAddress);
             if (device)
@@ -126,7 +132,7 @@ Singleton {
                 agent.write("quit\n");
             }
             requestType = "";
-        } else if ((m = line.match(/Failed to pair: (.*)/i))) {
+        } else if ((m = line.match(/^Failed to pair: (.*)$/i))) {
             pairingError = m[1].replace(/^org\.bluez\.Error\./, "");
             requestType = "";
             agent.write("quit\n");
