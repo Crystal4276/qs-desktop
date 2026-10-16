@@ -24,10 +24,14 @@ Singleton {
     readonly property list<string> inputs: state.inputs
     property bool importRofi: false
 
+    // Applications affichables, sans ordre : base des listes du lanceur (par historique) et du menu (par nom, par catégorie), pour
+    // que le tri par nom et les catégories ne soient pas recalculés à chaque lancement (l'historique change).
+    readonly property var available: DesktopEntries.applications.values.filter(e => !hidden[e.id] && e.execString !== "")
+
     readonly property var entries: {
         const rank = {};
         history.forEach((h, i) => rank[h.id] = i);
-        return DesktopEntries.applications.values.filter(e => !hidden[e.id] && e.execString !== "").sort((a, b) => {
+        return [...available].sort((a, b) => {
             const ra = rank[a.id] ?? -1, rb = rank[b.id] ?? -1;
             if (ra < 0 && rb < 0)
                 return a.name.localeCompare(b.name);
@@ -53,11 +57,12 @@ Singleton {
     ]
 
     // Toutes les applications par nom (« All Applications »), puis par catégorie : { clé: [DesktopEntry] }, « Other » pour le reste.
-    readonly property var byName: [...entries].sort((a, b) => a.name.localeCompare(b.name))
+    readonly property var byName: [...available].sort((a, b) => a.name.localeCompare(b.name))
     readonly property var byCategory: {
         const map = {};
         for (const e of byName) {
-            const key = categoryList.find(c => c.match.some(m => e.categories.includes(m)))?.key ?? "Other";
+            const categories = e.categories;   // liste Qt convertie une fois par application
+            const key = categoryList.find(c => c.match.some(m => categories.includes(m)))?.key ?? "Other";
             (map[key] = map[key] ?? []).push(e);
         }
         return map;
@@ -66,7 +71,7 @@ Singleton {
     // Favoris du menu d'applications (identifiants, dans l'ordre d'ajout), fichier d'état local. Au premier démarrage, reprise
     // des applications épinglées de nwg-menu (~/.cache/nwg-pin-cache : « <identifiant>.desktop » par ligne).
     readonly property list<string> favoriteIds: favorites.ids
-    readonly property var favoriteEntries: favoriteIds.map(id => entries.find(e => e.id === id)).filter(e => e)
+    readonly property var favoriteEntries: favoriteIds.map(id => available.find(e => e.id === id)).filter(e => e)
     property bool importPins: false
 
     function isFavorite(entry: DesktopEntry): bool {

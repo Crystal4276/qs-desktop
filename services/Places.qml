@@ -76,18 +76,37 @@ Singleton {
                 });
             }
             root.parsed = list.sort((a, b) => b.time - a.time);
-            exists.command = ["sh", "-c", `for f; do [ -e "$f" ] && printf '%s\\n' "$f"; done; exit 0`, "sh", ...root.parsed.map(f => f.path)];
-            exists.running = true;
+            root.checkExists();
         }
     }
 
-    // Fichiers encore présents (supprimés, déplacés, disque démonté : omis).
+    // Fichiers encore présents (supprimés, déplacés, disque démonté : omis). Liste relue pendant une vérification : le résultat en
+    // cours, qui porte sur l'ancienne liste, est ignoré et la vérification reprend sur la nouvelle.
+    property bool existsAgain: false
+
+    function checkExists(): void {
+        if (exists.running) {
+            existsAgain = true;
+            return;
+        }
+        exists.command = ["sh", "-c", `for f; do [ -e "$f" ] && printf '%s\\n' "$f"; done; exit 0`, "sh", ...parsed.map(f => f.path)];
+        exists.running = true;
+    }
+
     Process {
         id: exists
         stdout: StdioCollector {
             onStreamFinished: {
+                if (root.existsAgain)
+                    return;
                 const present = new Set(text.split("\n"));
                 root.recent = root.parsed.filter(f => present.has(f.path));
+            }
+        }
+        onExited: {
+            if (root.existsAgain) {
+                root.existsAgain = false;
+                Qt.callLater(root.checkExists);
             }
         }
     }
