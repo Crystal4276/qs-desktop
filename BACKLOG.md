@@ -10,12 +10,13 @@ Idées notées pendant le travail. Rien ici n'est implémenté sans accord.
 - **Power menu → panneau de réglages rapides façon GNOME** (idée du 2026-10-15, à discuter au début de la phase 8) : verrouiller, déconnexion,
   redémarrer, éteindre, plus éventuellement volume, réseau, Bluetooth, NordVPN… Les menus réseau, Bluetooth et VPN de la phase 5 seront
   écrits comme des panneaux autonomes, pour pouvoir y être intégrés sans réécriture.
+  **Demandé (2026-10-16)** : trois boutons de profil d'énergie (`PowerProfiles`), et l'interrupteur « garder l'écran allumé » (`IdleInhibitor`).
 - Seuil critique de température GPU réellement appliqué (l'option `critical-threshold` de Waybar est sans effet sur un `custom/*`).
 - Raccourcis `XF86AudioPlay/Next/Prev` sous Sway (existants sous Hyprland seulement).
 - Passer DP-1 / DP-3 en 144 Hz (piste notée dans `~/.config/hypr/lua/layout.lua`).
 - Thème d'icônes Qt (`qt6ct` : breeze) différent du thème GTK (Papirus-Dark) : à harmoniser ?
 - Informations des anciens tooltips Waybar (non repris, décision du 2026-10-16) : swap, nom de la sortie audio, titre complet du morceau —
-  à placer dans la fenêtre de statistiques (phase 8b) ou un futur panneau audio.
+  à placer dans la fenêtre de statistiques (phase 8b) ou le panneau audio (nom de la sortie : fait).
 - Panneaux natifs (phase 5), fonctions des applets non reprises : nm-applet (« Enable Networking » global, connexions VPN de NetworkManager,
   réseau Wi-Fi caché, création d'un point d'accès, fenêtre d'informations), blueman (envoi de fichiers, gestion des adaptateurs),
   udiskie (« Mount disc image », interrupteurs montage automatique / notifications), NordVPN (réglages, compte).
@@ -25,3 +26,4 @@ Idées notées pendant le travail. Rien ici n'est implémenté sans accord.
   notification (Dunst passait par `dmenu`, absent) ; couleurs par notification (`fgcolor`, `bgcolor`… : ignorées).
 - **Animations** (ta demande du 2026-10-16) : aucune dans la première version (parité) ; à ajouter ensuite, au fur et à mesure
   (ouverture des panneaux, menus et notifications, changement d'espace de travail…), avec `EasingCurve` et les animations de Qt Quick.
+- Partage d'écran : choix de l'écran par une fenêtre Quickshell au lieu de `slurp` (`chooser_cmd` de `xdg-desktop-portal-wlr`).

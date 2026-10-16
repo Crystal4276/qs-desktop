@@ -238,6 +238,8 @@ Singleton {
         readonly property list<string> workspaces: ["\ue79a", "\ue78c", "\uf32e", "\u{f043e}", "\uf1ff", "\uf1bc", "\uf043", "\uf0e0", "\uf1b6"]  // par numéro, 1 à 9
         readonly property list<string> volume: ["\uf026", "\uf027", "\uf028"]  // 0–33, 34–66, 67–100 %
         readonly property string muted: "\uf466"
+        readonly property string microphone: "\uf130"        // OSD (nouveau, 2026-10-16) : nf-fa-microphone
+        readonly property string microphoneMuted: "\uf131"   // nf-fa-microphone_slash
         readonly property string power: "\uf011"
         readonly property string search: "\uf002"
         readonly property list<string> backlight: ["\ue38d", "\ue3d3", "\ue3d1", "\ue3cf", "\ue3ce", "\ue3cd", "\ue3ca", "\ue3c8", "\ue39b"]
@@ -259,7 +261,16 @@ Singleton {
         // font.awesome / awesomeBrands / awesome4
         readonly property string calendar: "\uf274"   // font.awesome
         readonly property string spotify: "\uf1bc"    // font.awesomeBrands
-        readonly property var players: ({ spotify: spotify })   // icône par lecteur suivi (Settings.mediaPlayer)
+        // Icône par lecteur (`player-icons` de Waybar), avec la police où Pango la trouvait (pango-view, 2026-10-16) ;
+        // clé : nom MPRIS du lecteur (sans instance), `default` sinon.
+        readonly property var players: ({
+            default: { font: root.font.awesome4, glyph: "\uf04b" },
+            spotify: { font: root.font.awesomeBrands, glyph: spotify },
+            discord: { font: root.font.inlineIcons, glyph: "\uf1ff" },
+            firefox: { font: root.font.awesomeBrands, glyph: "\uf269" },
+            chromium: { font: root.font.awesomeBrands, glyph: "\uf268" },
+            io: { font: root.font.awesome4, glyph: "\uf03d" }
+        })
         readonly property string paused: "\uf04c"     // font.awesome4
 
         // font.bars (DejaVu Sans)
@@ -297,6 +308,13 @@ Singleton {
         readonly property int progressMinWidth: 150
         readonly property int progressMaxWidth: 300
         readonly property color progressFill: root.color.blue   // non fixé dans dunstrc (défauts Dunst hors palette) : `blue`, ton choix du 2026-10-16
+    }
+
+    // § 4 — OSD (nouveau composant, 2026-10-16 ; cadre des panneaux) — position et durée proposées, à valider
+    readonly property QtObject osd: QtObject {
+        readonly property int marginBottom: root.bar.exclusiveZone             // au bas de l'écran, même écart que la zone de la barre en haut
+        readonly property int levelWidth: root.notification.progressMaxWidth   // comme la barre de progression des notifications
+        readonly property int duration: 1500                                   // ms, comme l'OSD de GNOME (osdWindow.js)
     }
 
     // § 5 — Lanceur

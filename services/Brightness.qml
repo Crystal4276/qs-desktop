@@ -18,10 +18,35 @@ Singleton {
     property int current: 0
     readonly property int percent: max > 0 ? Math.round(100 * current / max) : 0
 
-    // Molette : ±1 %, pas par défaut du module `backlight` de Waybar.
+    // Changement fait au clavier (IPC ci-dessous) : affiché par l'OSD (modules/osd).
+    signal changedByKey
+
+    // Molette : ±1 %, pas par défaut du module `backlight` de Waybar. Valeur relue dès la fin de la commande (OSD à jour).
     function step(points: int): void {
-        if (available)
-            Quickshell.execDetached(["brightnessctl", "--device", device, "set", `${Math.abs(points)}%${points > 0 ? "+" : "-"}`]);
+        if (!available || setter.running)
+            return;
+        setter.command = ["brightnessctl", "--device", device, "set", `${Math.abs(points)}%${points > 0 ? "+" : "-"}`];
+        setter.running = true;
+    }
+
+    Process {
+        id: setter
+        onExited: currentFile.reload()
+    }
+
+    // Touches de luminosité (raccourcis, phase 10 ; Sway : brightnessctl ±5 %) : `qs ipc call brightness up|down`.
+    IpcHandler {
+        target: "brightness"
+
+        function up(): void {
+            root.step(5);
+            root.changedByKey();
+        }
+
+        function down(): void {
+            root.step(-5);
+            root.changedByKey();
+        }
     }
 
     Process {

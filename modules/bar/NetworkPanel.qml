@@ -49,6 +49,13 @@ Panel {
         network.connect();
     }
 
+    // Accès limité (Network.limited) : en `red`, comme les autres avertissements des panneaux.
+    PanelSection {
+        visible: Network.limited
+        text: Network.connectivity === NM.NetworkConnectivity.Portal ? "Sign-in required: captive portal" : "Connected without Internet access"
+        color: Theme.panel.warning
+    }
+
     // --- Filaire ---
     PanelSection {
         visible: Network.wiredDevices.length > 0

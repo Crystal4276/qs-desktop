@@ -24,7 +24,7 @@ Chaque commande a été rattachée à son paquet sur cette machine avec `pacman 
 | Barre (toutes) | layer-shell Wayland | `quickshell`, `sway` ou `hyprland` | — | — | — |
 | Bouton Arch | natif (ouvre le menu d'applications maison, phase 8) | — | — | — | `assets/arch_linux_icon_green.svg`, `arch_linux_icon_mantle.svg` |
 | Espaces de travail | natif (`Quickshell.I3` / `Quickshell.Hyprland`) | — | — | Symbols Nerd Font Mono | — |
-| Média (mpris) | natif (`Services.Mpris`, D-Bus) | — | un lecteur MPRIS (Spotify, AUR, n'est pas une dépendance du bureau) ; `playerctl` (`playerctld shift` à la molette) | Inter, Font Awesome 7 Brands, FontAwesome 4.7 | — |
+| Média (mpris) | natif (`Services.Mpris`, D-Bus) | — | un lecteur MPRIS (Spotify, AUR, n'est pas une dépendance du bureau) ; choix du lecteur à la molette natif (plus de `playerctl`) | Inter, Font Awesome 7 Brands, FontAwesome 4.7 | — |
 | cava | programme `cava` (sortie brute) | `cava` ; `pipewire-pulse` (source audio) | — | **DejaVu Sans** (barres `▁…█`) | `config/cava.conf` |
 | Volume (icône + curseur) | natif (`Services.Pipewire`) | `pipewire`, `wireplumber` (services utilisateur actifs) | `pavucontrol` (clic droit) | Symbols Nerd Font Mono | — |
 | Sortie audio suivante (ex-`audio-toggle.sh`) | natif (`Services.Pipewire`) + `notify-send` (phase 6 : notification interne) | `libnotify` | — | — | — |
@@ -128,7 +128,6 @@ Correspondances attendues, **non encore vérifiées** (phase 11).
 | papirus-icon-theme | papirus-icon-theme | papirus-icon-theme | |
 | pipewire / wireplumber / pipewire-pulse | idem (`pipewire-pulseaudio`) | idem | |
 | pavucontrol / cava | idem | idem | |
-| playerctl | playerctl | playerctl | |
 | upower | upower | upower | |
 | networkmanager | NetworkManager | network-manager | |
 | bluez / bluez-utils | bluez | bluez (contient `bluetoothctl`) | |

@@ -596,7 +596,7 @@ Légende : **utilisé** (déjà dans le code), **prévu** (phase indiquée), **a
 | | `PwLink`, `PwLinkGroup`, `PwNodeLinkTracker` | **écarté** : pas de routage audio dans le bureau |
 | `Quickshell.Services.SystemTray` | tous | **utilisé** |
 | `Quickshell.Services.UPower` | `UPower`, `UPowerDevice` | **utilisé** (batterie, laptop) |
-| | `PowerProfiles` | **ajouté** (laptop) : profil d'énergie (économie / équilibré / performance) ; nécessite `power-profiles-daemon` (dépendance optionnelle) |
+| | `PowerProfiles` | **ajouté** (ta demande) : **trois boutons** de profil d'énergie (économie / équilibré / performance) dans la fenêtre de réglages (phase 8), sur toutes les machines ; nécessite `power-profiles-daemon` (dépendance principale, service à activer) |
 | `Quickshell.Services.Polkit` | `PolkitAgent`, `AuthFlow` | **prévu** : agent polkit (phase 8b) |
 | `Quickshell.Services.Pam` | `PamContext` | **prévu** : verrouillage (8b), greeter (12) |
 | `Quickshell.Services.Greetd` | `Greetd` | **prévu** : écran de connexion (phase 12, § 10.4) |
@@ -604,3 +604,25 @@ Légende : **utilisé** (déjà dans le code), **prévu** (phase indiquée), **a
 Restent hors Quickshell, faute d'équivalent : `nvidia-smi` (GPU), `checkupdates`, `cava` (spectre), `nordvpn`, `busctl` / `gdbus` /
 `udisksctl` (UDisks2 : pas d'accès D-Bus générique en QML), `bluetoothctl` (agent d'appairage), `notify-send` (envoi, indépendant du serveur).
 `grim` reste un outil de développement (`scripts/shot.sh`) ; `slurp` reste pour le portail de partage d'écran (`xdg-desktop-portal-wlr`).
+
+### 12.1 Deuxième passe : outils externes et manques couverts par Quickshell (2026-10-16)
+
+Chaque commande lancée par le code, chaque élément de l'inventaire (autostart, raccourcis, § 10.1 d'INVENTORY) confronté à l'API.
+Tes choix (tous retenus), faits avant la phase 7 :
+
+| Élément | Avant | Natif |
+|---|---|---|
+| Clic droit sur le volume | `pavucontrol` | **panneau audio** (`Pipewire` : sortie, entrée, volume par application, micro) ; `pavucontrol` gardé derrière un bouton « Advanced… » |
+| Molette sur le module média | `playerctld shift / unshift` (sans effet visible : le module suit Spotify) | **choix du lecteur** parmi les lecteurs MPRIS (`Mpris.players`) ; le module et les touches média suivent le lecteur choisi ; `playerctl` n'est plus une dépendance |
+| Touches volume / luminosité | aucun retour visuel | **OSD** (fenêtre temporaire, style des panneaux), déclenché par `qs ipc` |
+| Icône réseau | nm-applet ne signale pas l'absence d'Internet | **connexion limitée** (`Networking.connectivity`) : icônes Papirus `*-limited` / `*-no-route` |
+| Batterie (laptop) | aucune alerte | **notification** aux seuils bas et critique (`UPower`) |
+
+Restent externes, avec la raison :
+- `nm-connection-editor` (édition complète des connexions : `NMSettings` ne couvre pas tout), `btop` / `nvtop` (remplacés par la fenêtre
+  de statistiques en phase 8b), `brightnessctl` (écriture du rétroéclairage : pas d'accès D-Bus générique ni de droits en QML),
+  `xdg-open`, `notify-send` (envoi indépendant du serveur), `wl-copy` (le presse-papiers de Quickshell, `clipboardText`, ne gère que le
+  texte : les captures copient des images) ;
+- hors shell : bascule HDR (commande du compositeur ; interrupteur possible dans le futur panneau de réglages rapides, phase 8),
+  autostart des applications (compositeur), choix de l'écran pour le partage d'écran (`slurp` pour `xdg-desktop-portal-wlr` ;
+  `BACKLOG.md`), commandes `sh` qui listent des fichiers (icônes, rétroéclairage).
