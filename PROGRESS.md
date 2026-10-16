@@ -203,7 +203,7 @@ Liste tenue à jour à chaque phase ; à dérouler une fois le projet terminé.
 - **Débranchement physique d'un câble** sur le desktop (phase 3).
 - **Phase 5** : saisie au clavier dans les panneaux (mot de passe d'un nouveau réseau Wi-Fi, phrase de passe d'un disque chiffré,
   recherche de pays NordVPN), Échap et ↑/↓/Entrée dans les menus du tray ; **appairage d'un nouvel appareil Bluetooth** (code à confirmer) ;
-  **vraie clé USB** (montage automatique, éjection) ; actions NordVPN (interrupteur, pause, connexion à un pays) si je ne les ai pas faites.
+  **vraie clé USB** (montage automatique, éjection).
 - **Hyprland** (rappel demandé) : tu ouvres une session Hyprland, je prends la main et je déroule la liste de « Compatibilité Hyprland »
   ci-dessous (barres, répartition des espaces, modules, calendrier) ; puis le protocole complet en phase 9.
 - **Laptop**, une fois installé : laptop seul, laptop + écrans externes, capot fermé (`bindswitch lid:on/off`), écran interne éteint,
@@ -337,7 +337,9 @@ Vérifié (Sway, ta session ; Waybar masquée le temps des tests puis rétablie)
   (nemo), Detach ; volume chiffré : mauvaise phrase → « Job failed », bonne → « Device unlocked », Lock → « Device locked » ;
   notifications de test retirées de l'historique de Dunst ;
 - NordVPN : état réel, liste, villes, derniers pays (ordre, doublons, limite de 5 vérifiés par simulation) ; clics sur pays / ville vérifiés
-  avec les actions neutralisées.
+  avec les actions neutralisées ; puis, avec ton accord, actions réelles par le panneau (script détaché, restauration garantie) :
+  interrupteur coupé → déconnecté, rallumé → serveur recommandé (Israël, Tel Aviv), pause 5 min → « Paused », clic sur « Netherlands »
+  dans les derniers pays → reconnecté (Amsterdam #1301) ; historique mis à jour à chaque connexion.
 
 Incident : pendant un test, un clic sur « Cities » a aussi été pris par la ligne du pays et a **connecté le VPN à l'Afghanistan** ;
 reconnecté aussitôt aux Pays-Bas (Amsterdam, serveur #1308 au lieu de #1284) ; cause corrigée (les boutons consomment leur clic).
@@ -350,7 +352,8 @@ reconnecté aussitôt aux Pays-Bas (Amsterdam, serveur #1308 au lieu de #1284) ;
 
 À tester à la main : voir « À faire par toi à la fin » (ajouts de la phase 5).
 
-État laissé : Waybar, Dunst et udiskie actifs, aucune instance `qs`, aucune image disque attachée, Wi-Fi activé, VPN connecté aux Pays-Bas.
+État laissé : Waybar, Dunst et udiskie actifs, aucune instance `qs`, aucune image disque attachée, Wi-Fi activé, VPN connecté aux Pays-Bas
+(Amsterdam #1301 ; l'historique des pays contient désormais Israel, Netherlands, United Arab Emirates, laissés par le test).
 
 ## Prochaine étape
 

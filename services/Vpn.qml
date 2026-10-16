@@ -14,6 +14,7 @@ Singleton {
     property var status: ({})
     readonly property string state: status["Status"] ?? ""
     readonly property bool connected: state === "Connected"
+    readonly property bool paused: state === "Paused"
     readonly property bool connecting: state === "Connecting" || busy
     property bool busy: false
     property var countries: []
