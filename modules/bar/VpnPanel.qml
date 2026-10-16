@@ -5,7 +5,7 @@ import qs.config
 import qs.services
 
 // Panneau NordVPN (ARCHITECTURE § 11.4) : interrupteur (serveur recommandé / déconnexion), détails de la connexion, pause,
-// choix d'un pays (recherche) puis éventuellement d'une ville.
+// choix d'un pays puis éventuellement d'une ville : derniers pays utilisés, ou tous les pays filtrés par la recherche.
 Panel {
     id: root
 
@@ -69,6 +69,11 @@ Panel {
         placeholder: "Search countries"
     }
 
+    PanelSection {
+        visible: search.text === ""
+        text: Vpn.recent.length > 0 ? "Recent countries" : "No recent countries · type to search"
+    }
+
     Flickable {
         Layout.fillWidth: true
         Layout.preferredHeight: Math.min(list.implicitHeight, Theme.panel.maxListHeight)
@@ -82,7 +87,8 @@ Panel {
             spacing: 0
 
             Repeater {
-                model: Vpn.countries.filter(c => root.label(c).toLowerCase().includes(search.text.toLowerCase()))
+                model: search.text === "" ? Vpn.recent
+                    : Vpn.countries.filter(c => root.label(c).toLowerCase().includes(search.text.toLowerCase()))
 
                 ColumnLayout {
                     id: country
