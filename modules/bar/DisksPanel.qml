@@ -35,7 +35,10 @@ Panel {
     }
 
     Repeater {
-        model: Disks.drives
+        model: ScriptModel {
+            values: Disks.drives
+            objectProp: "key"
+        }
 
         ColumnLayout {
             id: drive
@@ -61,7 +64,10 @@ Panel {
 
             Repeater {
                 // Volumes déchiffrés affichés à la place de leur volume chiffré une fois déverrouillé.
-                model: Disks.volumes.filter(v => v.driveKey === drive.modelData.key && !v.backing)
+                model: ScriptModel {
+                    values: Disks.volumes.filter(v => v.driveKey === drive.modelData.key && !v.backing)
+                    objectProp: "path"
+                }
 
                 PanelRow {
                     required property var modelData

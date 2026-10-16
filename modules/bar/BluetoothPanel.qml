@@ -49,7 +49,9 @@ Panel {
     }
 
     Repeater {
-        model: Bluez.enabled ? Bluez.paired : []
+        model: ScriptModel {
+            values: Bluez.enabled ? Bluez.paired : []
+        }
 
         PanelRow {
             required property BluetoothDevice modelData
@@ -93,7 +95,9 @@ Panel {
             spacing: 0
 
             Repeater {
-                model: Bluez.others
+                model: ScriptModel {
+                    values: Bluez.others
+                }
 
                 PanelRow {
                     required property BluetoothDevice modelData

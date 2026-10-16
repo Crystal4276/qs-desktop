@@ -1,4 +1,5 @@
 import QtQuick
+import Quickshell
 import QtQuick.Effects
 import qs.config
 import qs.services
@@ -28,7 +29,7 @@ Item {
     // Couleur au point t (0 → 1) du dégradé linéaire passant par les couleurs de Theme.module.workspaces.
     function gradient(t: real): color {
         const stops = Theme.module.workspaces;
-        const x = t * (stops.length - 1);
+        const x = Math.max(0, Math.min(1, t)) * (stops.length - 1);   // index -1 : bouton en cours de retrait (ScriptModel)
         const i = Math.min(Math.floor(x), stops.length - 2);
         const a = stops[i], b = stops[i + 1], f = x - i;
         return Qt.rgba(a.r + (b.r - a.r) * f, a.g + (b.g - a.g) * f, a.b + (b.b - a.b) * f, 1);
@@ -42,7 +43,11 @@ Item {
         height: parent.height
 
         Repeater {
-            model: root.shown
+            // ScriptModel : boutons conservés d'un changement à l'autre (survol gardé), données mises à jour sur place.
+            model: ScriptModel {
+                values: root.shown
+                objectProp: "number"
+            }
 
             Item {
                 id: button
