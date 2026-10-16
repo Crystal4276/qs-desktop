@@ -36,12 +36,34 @@ Singleton {
         settingsButtons = settingsButtons.filter(b => b !== button);
     }
 
+    // Boutons Arch des barres (MenuButton.qml) : `qs ipc call menu toggle` ouvre le menu d'applications sous celui de l'écran
+    // focalisé, sinon sous le premier.
+    property var menuButtons: []
+
+    function registerMenu(button: Item): void {
+        menuButtons = [...menuButtons, button];
+    }
+
+    function unregisterMenu(button: Item): void {
+        menuButtons = menuButtons.filter(b => b !== button);
+    }
+
     // Tests (scripts/test-outputs.sh) : popups inscrits et écran au clavier « à la demande », en JSON.
     IpcHandler {
         target: "bar"
 
         function state(): string {
             return JSON.stringify({ openPopups: root.openPopups, keyboardScreen: root.keyboardScreen });
+        }
+    }
+
+    IpcHandler {
+        target: "menu"
+
+        function toggle(): void {
+            const buttons = root.menuButtons;
+            const button = buttons.find(b => b.QsWindow.window?.screen?.name === Compositor.focusedOutput) ?? buttons[0];
+            button?.toggle();
         }
     }
 
