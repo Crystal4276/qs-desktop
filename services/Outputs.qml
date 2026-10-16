@@ -16,7 +16,8 @@ Singleton {
     // Principal : celui de la config machine s'il est actif, sinon le plus grand en surface logique (égalité : le plus à gauche).
     readonly property var primary: {
         const outs = Compositor.outputs;
-        const configured = outs.find(o => o.description === Settings.primaryOutput);
+        // Pas de principal configuré ("" par défaut) : ne surtout pas élire un écran qui ne donne ni marque ni modèle.
+        const configured = Settings.primaryOutput !== "" ? outs.find(o => o.description === Settings.primaryOutput) : null;
         if (configured)
             return configured;
         return outs.reduce((best, o) => {
@@ -127,7 +128,8 @@ Singleton {
 
     // Espace créé hors de son écran : traité 100 ms plus tard, quand le focus est à jour.
     // Focalisé (`$mod+N`) : simplement déplacé, il reste focalisé. Créé en arrière-plan (fenêtre envoyée vers
-    // un espace inexistant) : déplacé, puis le focus revient où il était. Aucune correction ne crée d'espace.
+    // un espace inexistant) : déplacé, son écran d'arrivée garde l'espace qu'il affichait, et le focus revient où il était.
+    // Aucune correction ne crée d'espace.
     property var pendingCreated: []
 
     Connections {
@@ -154,10 +156,14 @@ Singleton {
                 const w = workspaces.find(w => w.number === n);
                 if (!w || w.output === root.homes[n])
                     continue;
-                if (w.focused)
+                if (w.focused) {
                     Compositor.moveFocusedWorkspace(root.homes[n]);
-                else
-                    Compositor.placeWorkspaces([{ number: n, output: root.homes[n] }], [], focused ? focused.number : 0);
+                } else {
+                    // Sway affiche l'espace qu'il vient de déplacer : l'écran d'arrivée reprend celui qu'il montrait.
+                    const shown = workspaces.find(x => x.visible && x.output === root.homes[n]);
+                    Compositor.placeWorkspaces([{ number: n, output: root.homes[n] }],
+                        shown ? [{ number: shown.number, output: root.homes[n] }] : [], focused ? focused.number : 0);
+                }
             }
         }
     }
