@@ -121,6 +121,8 @@ Singleton {
 
     // Identifiants que Rofi n'afficherait pas : la première entrée trouvée pour un identifiant compte (priorité XDG),
     // seules les clés du groupe [Desktop Entry] sont lues. Relancé quand les applications changent.
+    // Sécurité : les valeurs lues dans les fichiers ne passent jamais dans une chaîne exécutée par un shell (`system()` d'awk
+    // l'aurait fait pour TryExec : revue de code).
     Process {
         id: filters
         running: true
@@ -148,10 +150,16 @@ Singleton {
                     m = split(notIn, l, ";")
                     for (i = 1; i <= m; i++) for (j = 1; j <= n; j++) if (l[i] == desk[j]) hide = 1
                 }
-                if (!hide && tryExec != "")
-                    hide = system(tryExec ~ /^\\// ? "test -x \\"" tryExec "\\"" : "command -v \\"" tryExec "\\" >/dev/null 2>&1") != 0
-                if (hide) print id
-            }'`, "sh", Quickshell.env("XDG_DATA_HOME") || `${Quickshell.env("HOME")}/.local/share`,
+                # TryExec : vérifié plus bas par le shell, en argument (jamais réinterprété : il vient de fichiers tiers).
+                if (hide) print "H\t" id
+                else if (tryExec != "") print "T\t" id "\t" tryExec
+            }' | while IFS="$(printf '\t')" read -r kind id try; do
+                if [ "$kind" = H ]; then echo "$id"
+                else case "$try" in
+                    /*) [ -x "$try" ] || echo "$id" ;;
+                    *) command -v -- "$try" >/dev/null 2>&1 || echo "$id" ;;
+                esac; fi
+            done`, "sh", Quickshell.env("XDG_DATA_HOME") || `${Quickshell.env("HOME")}/.local/share`,
             ...(Quickshell.env("XDG_DATA_DIRS") || "/usr/local/share:/usr/share").split(":")]
         stdout: StdioCollector {
             onStreamFinished: {
