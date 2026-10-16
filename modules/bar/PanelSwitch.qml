@@ -22,7 +22,8 @@ Rectangle {
         color: root.checked ? Theme.panel.switchKnobOn : Theme.panel.switchKnobOff
     }
 
-    TapHandler {
-        onTapped: root.toggled(!root.checked)
+    MouseArea {
+        anchors.fill: parent
+        onClicked: root.toggled(!root.checked)
     }
 }

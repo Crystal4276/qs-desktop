@@ -13,7 +13,7 @@ Item {
     id: root
 
     readonly property var items: SystemTray.items.values.filter(i => i.status !== Status.Passive)
-    readonly property bool shown: items.length > 0 || Network.managed || Disks.loaded || Bluez.available
+    readonly property bool shown: items.length > 0 || Vpn.available || Network.managed || Disks.loaded || Bluez.available
 
     implicitWidth: row.implicitWidth + 2 * Theme.bar.trayPadding
     implicitHeight: Theme.bar.trayIconSize
@@ -61,7 +61,13 @@ Item {
             }
         }
 
-        // Modules natifs, après les applications (remplacent nm-applet, udiskie, blueman, l'icône NordVPN ; phase 5).
+        // Modules natifs, après les applications (remplacent l'icône NordVPN, nm-applet, udiskie, blueman ; phase 5).
+        TrayButton {
+            visible: Vpn.available
+            icon: Vpn.icon
+            panel: vpnPanel
+        }
+
         TrayButton {
             visible: Network.managed
             icon: Network.icon
@@ -79,6 +85,10 @@ Item {
             icon: Bluez.icon
             panel: bluetoothPanel
         }
+    }
+
+    VpnPanel {
+        id: vpnPanel
     }
 
     NetworkPanel {

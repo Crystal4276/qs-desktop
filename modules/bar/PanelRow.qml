@@ -21,6 +21,13 @@ Rectangle {
     radius: Theme.panel.rowRadius
     color: clickable && hover.hovered ? Theme.panel.rowHover : "transparent"
 
+    // Sous le contenu : reçoit les clics hors des boutons (qui consomment les leurs, PanelButton.qml).
+    MouseArea {
+        anchors.fill: parent
+        enabled: root.clickable
+        onClicked: root.clicked()
+    }
+
     RowLayout {
         anchors {
             fill: parent
@@ -72,8 +79,5 @@ Rectangle {
         enabled: root.clickable
     }
 
-    TapHandler {
-        enabled: root.clickable
-        onTapped: root.clicked()
-    }
+
 }
