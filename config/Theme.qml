@@ -110,9 +110,10 @@ Singleton {
         readonly property int cavaPaddingTop: 12
         readonly property int workspaceHoverRadius: 20
         readonly property real workspaceHoverAlpha: 0.1
-        // halo du focalisé, `text-shadow 0 0 6px currentColor` : copie du glyphe floutée par MultiEffect,
-        // rayon max mesuré contre la référence (THEME.md § 3)
-        readonly property int workspaceGlowBlur: 28
+        // halo de l'espace affiché, `text-shadow 0 0 6px currentColor` : ombre floue d'un Canvas (Workspaces.qml), shadowBlur mesuré
+        // contre la référence (écart moyen 1,3/255) ; marge du Canvas autour du glyphe, assez large pour toute l'ombre
+        readonly property real workspaceGlowBlur: 10
+        readonly property int workspaceGlowMargin: 17
     }
 
     // § 3 — Calendrier de l'horloge (nouveau composant, ARCHITECTURE § 8.3) : valeurs reprises de la barre et du lanceur

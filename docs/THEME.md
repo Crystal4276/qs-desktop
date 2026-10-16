@@ -161,7 +161,7 @@ Règles pour Qt :
 |---|---|
 | espaces | dégradé linéaire `teal` → `sapphire` → `blue`, selon la **position** dans la barre (1er espace `teal`, dernier `blue`, interpolation RGB entre les deux). Avec 3 espaces par barre, identique à Waybar (couleur par position, `nth-child`). Décision du 2026-10-16 : quand des blocs se regroupent (2 écrans, 1 écran), les couleurs se répartissent en dégradé au lieu de se répéter. Les espaces nommés suivent la même règle |
 | espace vide (aucune fenêtre, flottantes comprises), non visible | `surface1` (la règle `.visible:nth-child` l'emporte : un espace vide **visible** garde sa couleur de position) |
-| espace focalisé | sa couleur + halo `text-shadow 0 0 6px currentColor`. Traduction Qt : copie du glyphe floutée (MultiEffect, `blurMax` 28) sous le glyphe net, calibrée contre la capture de référence (écart moyen 5/255 sur le bouton ; une ombre MultiEffect seule est deux fois trop faible) |
+| espace affiché sur l'écran | sa couleur + halo `text-shadow 0 0 6px currentColor` (Waybar : l'espace focalisé seul ; ton choix du 2026-10-16 : l'espace affiché de chaque écran). Traduction Qt : ombre floue d'un Canvas (`shadowBlur` 10) sous le glyphe net, calibrée contre la capture de référence (écart moyen 1,3/255 sur le bouton) ; coupée aux limites du module, pour ne pas déborder de la pilule |
 | espace survolé | fond `alpha(couleur, 0.1)`, rayon 20 px, texte dans sa couleur de position même vide ; bouton = glyphe + 2 × 8 px, hauteur de la pilule moins la bordure |
 | `custom/updates` | `sapphire` ; survol (ta demande du 2026-10-16) : contrastes inversés comme le bouton Arch — fond `sapphire` (arrondi intérieur de la pilule), texte `mantle`, sans transition |
 | `custom/nvidia` | `sky` |

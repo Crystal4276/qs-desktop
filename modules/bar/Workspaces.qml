@@ -1,6 +1,5 @@
 import QtQuick
 import Quickshell
-import QtQuick.Effects
 import qs.config
 import qs.services
 
@@ -37,6 +36,7 @@ Item {
 
     implicitWidth: row.implicitWidth
     implicitHeight: row.implicitHeight
+    clip: true   // halo de l'espace focalisé
 
     Row {
         id: row
@@ -70,20 +70,41 @@ Item {
                     color: Qt.alpha(button.positionColor, Theme.bar.workspaceHoverAlpha)
                 }
 
-                // Focalisé : halo `text-shadow 0 0 6px currentColor`, reproduit par une copie floutée
-                // du glyphe sous le glyphe net (une ombre MultiEffect seule est deux fois trop faible).
-                Text {
-                    visible: button.modelData.focused
-                    anchors.centerIn: parent
-                    text: glyph.text
-                    font: glyph.font
-                    color: button.glyphColor
-                    layer.enabled: visible
-                    layer.effect: MultiEffect {
-                        blurEnabled: true
-                        blur: 1
-                        blurMax: Theme.bar.workspaceGlowBlur
-                        autoPaddingEnabled: true
+                // Espace affiché sur cet écran (Waybar : seulement le focalisé ; ton choix du 2026-10-16 : un par écran) :
+                // halo `text-shadow 0 0 6px currentColor` de Waybar, reproduit par l'ombre floue (shadowBlur) du glyphe
+                // dessiné dans un Canvas (le flou de MultiEffect, approché par paliers, faisait un carré visible autour).
+                // Coupé aux limites du module (clip de root), pour ne pas déborder de la pilule sur le fond d'écran.
+                Canvas {
+                    id: glow
+
+                    readonly property int margin: Theme.bar.workspaceGlowMargin
+
+                    visible: button.modelData.visible
+                    x: glyph.x - margin
+                    y: glyph.y - margin
+                    width: glyph.width + 2 * margin
+                    height: glyph.height + 2 * margin
+
+                    onVisibleChanged: requestPaint()
+                    onAvailableChanged: requestPaint()
+                    onWidthChanged: requestPaint()
+                    onHeightChanged: requestPaint()
+
+                    Connections {
+                        target: button
+                        function onGlyphColorChanged() {
+                            glow.requestPaint();
+                        }
+                    }
+
+                    onPaint: {
+                        const ctx = getContext("2d");
+                        ctx.reset();
+                        ctx.font = `${glyph.font.pixelSize}px "${glyph.font.family}"`;
+                        ctx.fillStyle = button.glyphColor;
+                        ctx.shadowColor = button.glyphColor;
+                        ctx.shadowBlur = Theme.bar.workspaceGlowBlur;
+                        ctx.fillText(glyph.text, margin, margin + glyph.baselineOffset);
                     }
                 }
 
