@@ -343,7 +343,8 @@ Incident : pendant un test, un clic sur « Cities » a aussi été pris par la l
 reconnecté aussitôt aux Pays-Bas (Amsterdam, serveur #1308 au lieu de #1284) ; cause corrigée (les boutons consomment leur clic).
 
 Écarts restants :
-- jusqu'à la bascule (phase 10), nm-applet, blueman, udiskie et norduserd tournent encore : leurs icônes apparaissent en plus des modules natifs ;
+- jusqu'à la bascule (phase 10), nm-applet, blueman, udiskie et norduserd tournent encore ; leurs icônes sont masquées dans le tray
+  Quickshell tant que le module natif correspondant est présent (doublons retirés à ta demande) ;
 - ordre des icônes d'applications : celui de leur enregistrement auprès de Quickshell (Waybar avait le sien) ;
 - fonctions des applets non reprises : `BACKLOG.md`.
 
