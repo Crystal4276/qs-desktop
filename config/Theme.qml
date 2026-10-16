@@ -64,7 +64,7 @@ Singleton {
         readonly property string awesome4: "FontAwesome"               // Font Awesome 4.7
         readonly property string text: "Inter"
         readonly property string bars: "DejaVu Sans"          // ▁…█ de cava
-        readonly property string notification: "Noto Sans Mono"
+        readonly property string notification: "Inter"   // Dunst : Noto Sans Mono ; Inter à ta demande (police homogène)
 
         readonly property int barText: 26          // texte des modules
         readonly property int workspaceGlyph: 34
@@ -296,6 +296,7 @@ Singleton {
         readonly property int progressFrame: 4
         readonly property int progressMinWidth: 150
         readonly property int progressMaxWidth: 300
+        readonly property color progressFill: root.color.blue   // non fixé dans dunstrc (défauts Dunst hors palette) : `blue`, ton choix du 2026-10-16
     }
 
     // § 5 — Lanceur
