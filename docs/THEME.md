@@ -318,6 +318,14 @@ Fond `mantle`, bordure 1 px `overlay0`, rayon 20 px ; listes internes fond `base
 recherche : soulignement 1 px `overlay2`, rayon 10 px, 24 px ; barre de défilement 25 px, curseur `overlay0` (survol `overlay1`) ;
 boutons lock/logout/reboot/power : survol `rgba(255,255,255,0.1)` + bordure `overlay0`. Icônes : catégories 48 px, éléments 24 px.
 
+Menu QML (phase 8, disposition de Cinnamon) : texte Inter 20 px, recherche 24 px, descriptions 16 px `subtext0` ; cadre : padding et
+écarts des panneaux (15 / 10 px) ; colonne des applications : largeur du lanceur (500 px) ; boutons de session : tes SVG en 32 px (comme
+le panneau de réglages) ; curseur de défilement du thème GTK : gouttière 25 px, bordure transparente 4 px, au moins 24 px de haut.
+**Proposé, à valider** : les deux tailles d'icônes de nwg-menu réparties sur la disposition de Cinnamon — **48 px pour les applications**
+(nom + description sur deux lignes), **24 px pour les catégories, dossiers et favoris** (nwg-menu : 48 px pour ses catégories).
+Icônes Papirus : `applications-*` pour les catégories, `preferences-desktop` (Preferences), `applications-all`, `document-open-recent`,
+`user-home` et `folder-*` pour les dossiers, icônes des types de fichiers pour les récents.
+
 ## 8. Fenêtres (compositeur, pour mémoire)
 
 | | Sway | Hyprland |

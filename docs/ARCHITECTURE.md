@@ -451,6 +451,30 @@ Comportement relu dans le code de Rofi 2.0.0 (`modes/drun.c`, `history.c`, `help
 - **Petit écart voulu** : après Maj+Suppr, Rofi retire l'application de la liste jusqu'à la prochaine ouverture ; ici elle reprend sa place
   alphabétique.
 
+### 10.1.5 Menu d'applications (phase 8, remplace nwg-menu)
+
+Disposition du menu de Cinnamon (référence : `docs/reference/cinnamon-menu.png`), style de nwg-menu (`THEME.md` § 7). Code écrit pour
+ce projet, **sans dépendance ni emprunt à Cinnamon** (ta consigne) : catégories tirées directement des fichiers `.desktop`.
+
+- **Ouverture** : bouton Arch de la barre (vert tant que le menu est ouvert) ou `qs ipc call menu toggle` (bouton de l'écran focalisé) ;
+  surface Overlay (clavier exclusif), cadre sous le bouton, aligné sur sa pilule, 10 px sous la barre (`-mt 10` de nwg-menu). Chargé à
+  la première ouverture (`LazyLoader`). Fermeture : Échap, clic à côté, sur une barre ou sur un autre écran, lancement.
+- **Colonne de gauche** (tes choix du 2026-10-17) : dossier personnel et dossiers XDG (Documents, Téléchargements, Musique, Images,
+  Vidéos, via `xdg-user-dir`) ; favoris ; verrouiller, se déconnecter, redémarrer, éteindre (tes 4 SVG, sans confirmation).
+- **Favoris** : clic droit sur une application → « Add to favorites » / « Remove from favorites » ; état local
+  (`app-menu.json`), repris au premier démarrage des applications épinglées de nwg-menu (`~/.cache/nwg-pin-cache`).
+- **Catégories** (au survol, ton choix) : « All Applications », puis les catégories principales freedesktop non vides — une application
+  va dans la première qu'elle déclare dans l'ordre Administration (`System`), Preferences (`Settings`), Programming, Games, Graphics,
+  Sound & Video, Internet, Office, Education, Science, Accessories (`Utility`) ; sinon « Other » —, puis « Recent Files » (ton choix :
+  fichiers locaux de `recently-used.xbel`, du plus récent au plus ancien).
+- **Recherche** en bas : la saisie va toujours au champ ; même recherche que le lanceur (`Apps.filter`). **Le survol n'efface jamais la
+  recherche** (défaut de nwg-menu, ta demande) : pendant une recherche, survoler une catégorie ne fait rien ; seul un clic la quitte.
+- **Applications** : nom + description (commentaire, sinon nom générique), par nom ; clic ou Entrée : lancement (`Apps.launch`, compté
+  dans l'historique du lanceur) ; dossiers et fichiers : `xdg-open`.
+- **Clavier** : Haut / Bas, Pages : sélection ; Gauche (hors recherche) : colonne des catégories, que Haut / Bas parcourent ; Droite ou
+  Entrée : retour aux applications ; Échap : ferme le menu contextuel, puis le menu.
+- Services : `Apps` (catégories, favoris, `iconSource` partagé avec le lanceur), `Places` (dossiers, fichiers récents, ouverture).
+
 ### 10.1.4 Panneau de réglages façon GNOME (phase 8, décidé le 2026-10-16)
 
 Remplace le power menu Rofi. Base : les réglages rapides de GNOME 51 (code de gnome-shell lu : `js/ui/panel.js`, `js/ui/status/*`).
@@ -613,9 +637,9 @@ Légende : **utilisé** (déjà dans le code), **prévu** (phase indiquée), **a
 | Module | Types | Statut |
 |---|---|---|
 | `Quickshell` (cœur) | `ShellRoot`, `Singleton`, `Variants`, `PanelWindow`, `PopupWindow`, `Region`, `PopupAnchor`/`PopupAdjustment`, `Edges`, `ExclusionMode`, `ShellScreen`, `SystemClock`, `QsMenuOpener`/`QsMenuEntry`/`QsMenuHandle` | **utilisé** |
-| | `DesktopEntries`, `DesktopEntry`, `DesktopAction` | **utilisé** : lanceur (phase 7, `services/Apps.qml`) ; prévu : menu d'applications (phase 8). `DesktopAction` non affiché (`-no-drun-show-actions`) |
+| | `DesktopEntries`, `DesktopEntry`, `DesktopAction` | **utilisé** : lanceur (phase 7, `services/Apps.qml`), menu d'applications (phase 8). `DesktopAction` non affiché (`-no-drun-show-actions`) |
 | | `FloatingWindow` | **prévu** : fenêtre de statistiques, sélecteur de fond (phase 8b) |
-| | `LazyLoader` | **utilisé** : panneau audio, lanceur ; prévu : menu d'applications, statistiques, capture |
+| | `LazyLoader` | **utilisé** : panneau audio, lanceur, panneau de réglages, menu d'applications ; prévu : statistiques, capture |
 | | `ScriptModel` | **utilisé** : listes construites en JavaScript (espaces de travail, tray, réseaux, appareils Bluetooth, disques, pays VPN, notifications, centre) — délégués conservés, données mises à jour sur place |
 | | `PersistentProperties` | **utilisé** : historique des notifications (en texte JSON : un tableau JavaScript ne passe pas d'un moteur QML au suivant, « JSValue can't be reassigned to another engine ») et « ne pas déranger » conservés au rechargement de la config |
 | | `RetainableLock` | **utilisé** (revue de code) : garde l'image en données d'une notification dans l'historique |

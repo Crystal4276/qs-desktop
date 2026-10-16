@@ -224,6 +224,8 @@ Liste tenue à jour à chaque phase ; à dérouler une fois le projet terminé.
   (l'appareil doit se connecter et rester approuvé) ; NordVPN qui apparaît dans le tray quand le démon démarre après la session.
 - **Deuxième passe** : vraie touche de volume / micro une fois les raccourcis branchés (phase 10) ; connexion limitée (Wi-Fi d'hôtel avec
   portail, ou câble sans Internet) ; sur le laptop : OSD de luminosité et alerte de batterie à 30 % et 15 %.
+- **Menu d'applications (2026-10-17)** : avec ta vraie souris — molette dans la liste, survol rapide des catégories, clic droit ;
+  verrouiller / se déconnecter / redémarrer / éteindre depuis le menu (non cliqués ici) ; rendu sur tes écrans (testé en session isolée).
 - **Séance de débogage (2026-10-16)** : musique Spotify à bas volume (cava doit rester affiché) ; vidéo YouTube dans Chromium avec
   Spotify en pause (la barre passe sur Chromium), puis Spotify relancé (retour sur Spotify) ; halo des espaces à l'œil sur les trois écrans.
 - **Hyprland** (rappel demandé) : tu ouvres une session Hyprland, je prends la main et je déroule la liste de « Compatibilité Hyprland »
@@ -530,7 +532,7 @@ Vérifié (Sway, ta session ; instance de test limitée au lanceur, puis instanc
 
 État laissé : Waybar et Dunst actifs, aucune instance `qs`, focus sur DP-2.
 
-## Phase 8 — Menus et scripts : en cours
+## Phase 8 — Menus et scripts : faite, à valider (2026-10-17)
 
 ### Panneau de réglages façon GNOME : fait (2026-10-16)
 
@@ -624,14 +626,29 @@ cava lancé pendant la lecture et arrêté après. Dans la vraie barre : cava vi
 Incident de développement : une version du halo qui relisait les pixels du Canvas bloquait l'instance (100 % CPU, `qs kill` sans effet,
 trois instances empilées) ; abandonnée, instances arrêtées.
 
+### Menu d'applications (remplace nwg-menu) : fait (2026-10-17)
+
+- `modules/menus/AppMenu.qml` (disposition de Cinnamon, style de nwg-menu, code propre sans dépendance à Cinnamon : `ARCHITECTURE.md`
+  § 10.1.5), ouvert par le bouton Arch (vert tant qu'il est ouvert) ou `qs ipc call menu toggle`.
+- Tes choix : dossiers XDG ; les 4 boutons de session ; catégories au survol ; « Recent Files ». Ta demande : **le survol n'efface jamais
+  la recherche** (défaut de nwg-menu) — pendant une recherche, le survol des catégories ne fait rien, seul un clic la quitte.
+- Favoris : clic droit → ajouter / retirer ; tes 4 épinglés de nwg-menu repris (Files, Geany, Windows 10, Windows 10 - QXL).
+- Services : `Apps` (catégories freedesktop, favoris), nouveau `Places` (dossiers XDG, fichiers récents, `xdg-open`).
+- Vérifié dans un Sway isolé sans écran (tes écrans étaient en veille ; pointeur et clavier virtuels propres à cette session, outil de
+  test hors dépôt) : rendu en échelle 1 et 1.5 ; survol des catégories, dossiers, boutons ; **recherche « image » puis survol de trois
+  catégories et des applications : recherche et résultats intacts** ; clavier (Gauche, Bas, Droite, Bas) ; « calc » + Entrée lance la
+  Calculatrice et ferme le menu ; clic sur Documents ouvre le gestionnaire de fichiers ; ajout puis retrait d'un favori (fichier revenu
+  à tes 4 favoris) ; Échap, clic à côté, bouton Arch (ouvre / ferme) ; Recent Files rempli (vérifié sans regarder la liste) ;
+  rechargement à chaud menu ouvert. Boutons de session non cliqués.
+- Écart à valider : tailles d'icônes (48 px applications, 24 px le reste, `THEME.md` § 7).
+
 ### Reste à faire
 
-Menu d'applications (modèle Cinnamon, remplace nwg-menu) : en pause à ta demande, après la séance de débogage. Référence :
-`docs/reference/cinnamon-menu.png` (Linux Mint 22.3).
+Phase 8 : rien d'autre au programme ; à valider par toi (rapport du 2026-10-17).
 
 ## Prochaine étape
 
-Phase 8 : séance de débogage du panneau de réglages avec toi, puis menu d'applications.
+Validation de la phase 8 (menu d'applications), puis phase 8b (fond d'écran, verrouillage, veille, polkit, capture, statistiques).
 
 Décidé le 2026-10-16 pour la phase 8 (`ARCHITECTURE.md` § 10.1.4) : **plus de power menu séparé** ; le bouton power devient un
 **engrenage blanc** (`U+F013`) qui ouvre un panneau de réglages façon GNOME : capture d'écran, tes 4 icônes d'alimentation (sans veille ni

@@ -17,7 +17,7 @@ hyprland                # compositeur secondaire
 
 # --- Panneau de réglages (phase 8) ---
 wlsunset                # veilleuse (Night Light) : écran plus chaud le soir, Sway et Hyprland (wlr-gamma-control)
-xdg-user-dirs           # dossier Images des captures (`xdg-user-dir PICTURES`, repli sur ~/Pictures)
+xdg-user-dirs           # dossier Images des captures, dossiers du menu d'applications (`xdg-user-dir`)
 swaylock                # verrouiller (panneau de réglages) en attendant l'écran de verrouillage natif (phase 8b) ; retiré à ce moment-là
 
 # --- Énergie ---
@@ -37,7 +37,7 @@ noto-fonts              # police de repli (caractères absents d'Inter) ; Dunst 
 ttf-dejavu              # « DejaVu Sans » : caractères ▁…█ des barres cava (absents d'Inter)
 noto-fonts-cjk          # japonais / chinois / coréen (titres MPRIS, notifications) — remplace les polices MS copiées à la main
 noto-fonts-emoji        # emojis en couleur (notifications)
-papirus-icon-theme      # thème d'icônes Papirus-Dark (notifications, lanceur, tray)
+papirus-icon-theme      # thème d'icônes Papirus-Dark (notifications, lanceur, menu d'applications, tray)
 
 # --- Audio / média ---
 pipewire                # serveur audio (Quickshell.Services.Pipewire)
@@ -53,7 +53,7 @@ nm-connection-editor    # édition des connexions, ouverte depuis le panneau ré
 bluez                   # Bluetooth (Quickshell.Bluetooth s'appuie sur BlueZ)
 bluez-utils             # bluetoothctl : agent d'appairage piloté par Quickshell (ARCHITECTURE § 10.2)
 udisks2                 # disques amovibles (busctl / gdbus / udisksctl, ARCHITECTURE § 10.3)
-xdg-utils               # xdg-open : « Open » d'un disque monté dans le gestionnaire de fichiers
+xdg-utils               # xdg-open : « Open » d'un disque monté, dossiers et fichiers récents du menu d'applications
 pacman-contrib          # checkupdates (module mises à jour)
 fakeroot                # requis par checkupdates (non déclaré par pacman-contrib)
 btop                    # clic sur CPU / mémoire

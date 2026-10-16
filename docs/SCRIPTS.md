@@ -72,7 +72,7 @@ Rien n'est supprimé ni modifié dans `~/.config` : les décisions s'appliquent 
 | Appelé par | `on-click` / `exec` de `custom/menu` |
 | Rôle | Pose `/tmp/nwg_menu_state`, signale Waybar (bouton vert), lance `nwg-menu` (options : cf. INVENTORY § 4) sur DP-2, puis retire l'état. `menu-state-check.sh` lit ce fichier pour la classe CSS. |
 | Dépendances | `nwg-menu`, `procps` (`pkill`) |
-| Décision | **QML natif** : le bouton et le menu sont remplacés par le menu d'applications maison (`modules/menus/AppMenu.qml`, modèle Cinnamon, phase 8). L'état « menu ouvert » est une propriété QML : plus de fichier `/tmp`, de signal ni de nwg-menu. |
+| Décision | **QML natif — fait (phase 8)** : le bouton et le menu sont remplacés par le menu d'applications maison (`modules/menus/AppMenu.qml`, disposition de Cinnamon, `ARCHITECTURE.md` § 10.1.5). L'état « menu ouvert » est une propriété QML : plus de fichier `/tmp`, de signal ni de nwg-menu. Favoris repris de `~/.cache/nwg-pin-cache`. |
 
 ### `nvidia-smi` (commande inline de `custom/nvidia`)
 
