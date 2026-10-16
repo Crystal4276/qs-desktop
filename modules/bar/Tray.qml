@@ -21,7 +21,7 @@ Item {
         "NordVPN": Vpn.available
     })
     readonly property var items: SystemTray.items.values.filter(i => i.status !== Status.Passive && !replaced[i.id])
-    readonly property bool shown: items.length > 0 || Vpn.available || Network.managed || Disks.loaded || Bluez.available
+    readonly property bool shown: true   // la cloche des notifications est toujours là
 
     implicitWidth: row.implicitWidth + 2 * Theme.bar.trayPadding
     implicitHeight: Theme.bar.trayIconSize
@@ -92,6 +92,12 @@ Item {
             icon: Bluez.icon
             panel: bluetoothPanel
         }
+
+        // Centre de notifications (Papirus : cloche, point bleu si non vues, barrée en « ne pas déranger »).
+        TrayButton {
+            icon: Notifs.doNotDisturb ? "notification-disabled" : Notifs.unseen ? "notification-active" : "notification-inactive"
+            panel: notificationsPanel
+        }
     }
 
     VpnPanel {
@@ -108,6 +114,10 @@ Item {
 
     BluetoothPanel {
         id: bluetoothPanel
+    }
+
+    NotificationsPanel {
+        id: notificationsPanel
     }
 
     // Un seul menu à la fois, ouvert au pointeur (coin haut-gauche), basculé s'il déborde de l'écran.
