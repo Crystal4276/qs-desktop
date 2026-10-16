@@ -62,13 +62,11 @@ PanelWindow {
     color: "transparent"
 
     onVisibleChanged: {
-        if (visible) {
-            BarState.popupOpened();
-        } else {
-            BarState.popupClosed();
+        BarState.setPopupOpen(root, visible);
+        if (!visible)
             expanded = "";
-        }
     }
+    Component.onDestruction: BarState.setPopupOpen(root, false)
 
     Connections {
         target: BarState

@@ -137,7 +137,8 @@ Item {
 
         anchor.edges: Edges.Top | Edges.Left
         anchor.gravity: Edges.Bottom | Edges.Right
-        onVisibleChanged: visible ? BarState.popupOpened() : BarState.popupClosed()
+        onVisibleChanged: BarState.setPopupOpen(menu, visible)
+        Component.onDestruction: BarState.setPopupOpen(menu, false)
 
         Connections {
             target: BarState

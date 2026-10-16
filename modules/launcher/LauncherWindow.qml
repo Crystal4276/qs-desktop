@@ -181,7 +181,8 @@ PanelWindow {
     exclusiveZone: 0
     color: "transparent"
 
-    onVisibleChanged: visible ? BarState.popupOpened() : BarState.popupClosed()
+    onVisibleChanged: BarState.setPopupOpen(root, visible)
+    Component.onDestruction: BarState.setPopupOpen(root, false)
 
     Connections {
         target: BarState
