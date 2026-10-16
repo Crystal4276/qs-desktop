@@ -28,7 +28,9 @@ Rectangle {
         id: hover
     }
 
-    TapHandler {
-        onTapped: root.clicked()
+    // MouseArea (et non TapHandler) : le clic est consommé ici et n'atteint pas la ligne qui contient le bouton.
+    MouseArea {
+        anchors.fill: parent
+        onClicked: root.clicked()
     }
 }
