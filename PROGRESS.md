@@ -491,7 +491,7 @@ interface et adresse — vérifié sur ta session). Planifié : commandes HDR / 
 Modules du code source = ceux de la documentation ; singleton `Quickshell` : seulement deux points pour la phase 10 (`reload()` en IPC
 pour `$mod+Ctrl+W`, fenêtre « config rechargée » à garder ou masquer). `ARCHITECTURE.md` § 12.4.
 
-## Phase 7 — Lanceur : faite, en attente de validation (2026-10-16)
+## Phase 7 — Lanceur : faite et validée (2026-10-16)
 
 Produit :
 - `services/Apps.qml` : applications, filtres de Rofi (`OnlyShowIn` / `NotShowIn` / `TryExec`), tri par fréquence, recherche, lancement,
@@ -523,11 +523,11 @@ Vérifié (Sway, ta session ; instance de test limitée au lanceur, puis instanc
 
 ## Prochaine étape
 
-Validation de la phase 7, puis phase 8 (panneau de réglages façon GNOME, menu d'applications, autres menus Rofi, scripts).
+Phase 8 (panneau de réglages façon GNOME, menu d'applications, autres menus Rofi, scripts).
 
 Décidé le 2026-10-16 pour la phase 8 (`ARCHITECTURE.md` § 10.1.4) : **plus de power menu séparé** ; le bouton power devient un
 **engrenage blanc** (`U+F013`) qui ouvre un panneau de réglages façon GNOME : capture d'écran, tes 4 icônes d'alimentation (sans veille ni
-confirmation), son, micro, luminosité (laptop), profil d'énergie, ne pas déranger, écran allumé, VRR, HDR, veilleuse (`wlsunset`, à
+confirmation), son, micro, luminosité (laptop), profil d'énergie, ne pas déranger, écran allumé, VRR, HDR, veilleuse (`wlsunset`, installé
 installer), mode avion (laptop). Tray inchangé (réseau, Bluetooth, NordVPN, disques, cloche).
 
 Rappel pour la phase 12 (ta précision du 2026-10-16) : **greetd remplace SDDM**, l'écran de connexion est un greeter Quickshell en QML
