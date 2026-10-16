@@ -25,6 +25,15 @@ Item {
         return [...here, ...persistent].sort((a, b) => a.number - b.number);
     }
 
+    // Couleur au point t (0 → 1) du dégradé linéaire passant par les couleurs de Theme.module.workspaces.
+    function gradient(t: real): color {
+        const stops = Theme.module.workspaces;
+        const x = t * (stops.length - 1);
+        const i = Math.min(Math.floor(x), stops.length - 2);
+        const a = stops[i], b = stops[i + 1], f = x - i;
+        return Qt.rgba(a.r + (b.r - a.r) * f, a.g + (b.g - a.g) * f, a.b + (b.b - a.b) * f, 1);
+    }
+
     implicitWidth: row.implicitWidth
     implicitHeight: row.implicitHeight
 
@@ -41,10 +50,9 @@ Item {
                 required property var modelData
                 required property int index
 
-                // Couleur propre à l'espace (1, 4, 7 → 1re ; 2, 5, 8 → 2e ; 3, 6, 9 → 3e) : elle le suit d'un écran à l'autre.
-                // Avec 3 écrans, identique à la couleur par position de Waybar.
-                readonly property color positionColor: modelData.number >= 1
-                    ? Theme.module.workspaces[(modelData.number - 1) % Theme.module.workspaces.length] : Theme.module.workspaceOther
+                // Couleur par position dans la barre, en dégradé sur les couleurs du thème (THEME.md § 3) :
+                // avec 3 espaces, exactement teal / sapphire / blue comme Waybar.
+                readonly property color positionColor: root.gradient(root.shown.length > 1 ? index / (root.shown.length - 1) : 0)
                 readonly property color glyphColor: modelData.visible || hover.hovered || !modelData.empty ? positionColor : Theme.module.workspaceEmpty
 
                 width: glyph.implicitWidth + 2 * Theme.bar.workspacePadding
