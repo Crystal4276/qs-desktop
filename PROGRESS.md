@@ -201,6 +201,9 @@ Liste tenue à jour à chaque phase ; à dérouler une fois le projet terminé.
 - **Mise à jour réelle** (phase 4) : clic sur le module, confirmer avec `Y`, puis Entrée ; le compteur doit disparaître.
 - **VRR** (phase 3) : juger l'effet à l'œil (indicateur G-Sync de l'écran, scintillement) avant de l'activer.
 - **Débranchement physique d'un câble** sur le desktop (phase 3).
+- **Phase 5** : saisie au clavier dans les panneaux (mot de passe d'un nouveau réseau Wi-Fi, phrase de passe d'un disque chiffré,
+  recherche de pays NordVPN), Échap et ↑/↓/Entrée dans les menus du tray ; **appairage d'un nouvel appareil Bluetooth** (code à confirmer) ;
+  **vraie clé USB** (montage automatique, éjection) ; actions NordVPN (interrupteur, pause, connexion à un pays) si je ne les ai pas faites.
 - **Hyprland** (rappel demandé) : tu ouvres une session Hyprland, je prends la main et je déroule la liste de « Compatibilité Hyprland »
   ci-dessous (barres, répartition des espaces, modules, calendrier) ; puis le protocole complet en phase 9.
 - **Laptop**, une fois installé : laptop seul, laptop + écrans externes, capot fermé (`bindswitch lid:on/off`), écran interne éteint,
@@ -294,21 +297,60 @@ Revu et complété d'après le code source d'Hyprland 0.56.2 et l'API Quickshell
 - modules (volume, média, cava, mises à jour, GPU, CPU, mémoire, réseau) : identiques, rien de propre au compositeur ;
 - calendrier : survol, épinglage, fermeture par clic sur une fenêtre / un module / le fond, Échap, focus rendu à la fenêtre.
 
-## Phase 5 — Tray, réseau, Bluetooth, disques, NordVPN : en cours
+## Phase 5 — Tray, réseau, Bluetooth, disques, NordVPN : faite, en attente de validation (2026-10-16)
 
-Décisions (2026-10-16) : modules natifs **dans la pilule du tray** (mêmes icônes Papirus que les applets) ; leurs fenêtres sont des
-**panneaux modernes** (style du calendrier) ; menus du clic droit des applications : **copie des menus GTK**, texte en **Inter**
-(police homogène : ta demande, appliquée désormais à tout texte de Quickshell).
+Décisions (2026-10-16) : modules natifs **dans la pilule du tray** (mêmes icônes que les applets) ; leurs fenêtres sont des
+**panneaux modernes** (style du calendrier, `THEME.md` § 3 « Panneaux ») ; menus du clic droit des applications : **copie des menus GTK**,
+texte en **Inter** (police homogène : ta demande, désormais appliquée à tout texte de Quickshell) ; NordVPN : **derniers pays utilisés**
+au lieu de la liste complète, recherche sur tous les pays (ta demande).
 
-Fait :
-- `Tray.qml` : icônes 32 px, espacement 5, padding 6, éléments passifs masqués ; actions à l'appui comme Waybar (gauche Activate ou menu,
-  milieu SecondaryActivate, droit menu ou ContextMenu, molette Scroll ∓1).
-- `TrayMenu.qml` : copie des menus GTK (cadre, survol, séparateurs, cases et radios du thème, icônes, sous-menus au survol, clavier) ;
-  ouvert au pointeur et basculé s'il déborde ; affiché seulement une fois les entrées D-Bus reçues (sinon Sway étire une image vide).
-  Fermeture : clic sur une autre application (wlroots ferme les popups « grab »), clic sur une barre (`BarState.closePopups`), Échap.
-- Vérifié sur ta session : menus Steam, nm-applet (sous-menu des réseaux Wi-Fi, « Connection Information » ouvert puis refermé), udiskie ;
-  Activate sur WhatsDesk (masquée puis réaffichée, revenue sur l'espace 5) ; fermeture par clic sur la barre.
+Produit :
+- `Tray.qml` + `TrayMenu.qml` : tray (actions à l'appui comme Waybar) et menus copiés de GTK (cadre, survol, séparateurs, cases et radios
+  du thème, icônes, sous-menus, clavier) ; `TrayIcon.qml` + `services/Icons.qml` : icônes choisies comme GTK (Papirus `16x16@2x/panel`
+  pour 32 px), même taille que Waybar.
+- Panneaux (`Panel.qml` et composants `PanelRow`, `PanelButton`, `PanelSwitch`, `PanelField`, `PanelSection`) :
+  - `NetworkPanel` + `services/Network.qml` : filaire, Wi-Fi (interrupteur, réseaux, mot de passe, oubli), `nm-connection-editor` ;
+  - `BluetoothPanel` + `services/Bluez.qml` : interrupteur, appareils, recherche, appairage via un agent `bluetoothctl` (jamais d'acceptation
+    automatique, agent par défaut de blueman non touché) ;
+  - `DisksPanel` + `services/Disks.qml` : volumes (monter, démonter, ouvrir, déverrouiller, verrouiller), éjection ; montage automatique et
+    notifications avec les règles et les textes d'udiskie ;
+  - `VpnPanel` + `services/Vpn.qml` : état, interrupteur, pause, derniers pays (historique local), recherche, villes.
+- `BarState` : popups ouverts depuis la barre, fermés par un appui sur une barre.
+
+Découvertes :
+- Sway (wlroots) ferme un popup « grab » seulement au clic sur une **autre** application ; GTK gère lui-même les clics sur ses propres
+  surfaces, Quickshell non → fermeture par la barre (`BarState.closePopups`).
+- Un popup affiché ne se redimensionne pas proprement (Sway étire l'ancienne image) : menus affichés une fois leurs entrées reçues,
+  panneaux à taille fixe avec zone de clic limitée au cadre (`mask`).
+- `SIGUSR1` de Waybar : en mode masqué, la barre reste dessinée sous les fenêtres ; l'indicateur fiable est la zone réservée (y = 75 / 10).
+- UDisks2 marque les images disque en boucle comme « système » ; udiskie les gère quand même (règle reprise).
+- Le moteur JavaScript de Qt ne connaît pas le drapeau `s` des expressions régulières (corrigé, `eb7abee` et `85c3a50` suivent un commit cassé
+  pendant quelques minutes).
+
+Vérifié (Sway, ta session ; Waybar masquée le temps des tests puis rétablie) :
+- tray : menus Steam, nm-applet (sous-menu Wi-Fi, « Connection Information » ouvert puis refermé), udiskie ; Activate (WhatsDesk masquée
+  puis réaffichée sur l'espace 5) ; fermeture par clic sur la barre ou sur une autre application ; icônes à la taille de Waybar ;
+- réseau : panneau, Wi-Fi coupé puis rallumé (panneau mis à jour sans artefact), fermeture par clic sur une fenêtre ;
+- Bluetooth : panneau, recherche (appareils à proximité), connexion des écouteurs tentée (échec par délai : ils ne répondaient pas ;
+  sortie audio inchangée), chaîne d'appairage jusqu'à l'erreur « AlreadyExists » sur un appareil déjà appairé ;
+- disques (images de test, udiskie arrêté le temps du test puis relancé) : montage automatique + « Device mounted », Unmount, Mount, Open
+  (nemo), Detach ; volume chiffré : mauvaise phrase → « Job failed », bonne → « Device unlocked », Lock → « Device locked » ;
+  notifications de test retirées de l'historique de Dunst ;
+- NordVPN : état réel, liste, villes, derniers pays (ordre, doublons, limite de 5 vérifiés par simulation) ; clics sur pays / ville vérifiés
+  avec les actions neutralisées.
+
+Incident : pendant un test, un clic sur « Cities » a aussi été pris par la ligne du pays et a **connecté le VPN à l'Afghanistan** ;
+reconnecté aussitôt aux Pays-Bas (Amsterdam, serveur #1308 au lieu de #1284) ; cause corrigée (les boutons consomment leur clic).
+
+Écarts restants :
+- jusqu'à la bascule (phase 10), nm-applet, blueman, udiskie et norduserd tournent encore : leurs icônes apparaissent en plus des modules natifs ;
+- ordre des icônes d'applications : celui de leur enregistrement auprès de Quickshell (Waybar avait le sien) ;
+- fonctions des applets non reprises : `BACKLOG.md`.
+
+À tester à la main : voir « À faire par toi à la fin » (ajouts de la phase 5).
+
+État laissé : Waybar, Dunst et udiskie actifs, aucune instance `qs`, aucune image disque attachée, Wi-Fi activé, VPN connecté aux Pays-Bas.
 
 ## Prochaine étape
 
-Phase 5 : modules natifs réseau, Bluetooth, disques, NordVPN.
+Phase 6 (notifications), après validation.
