@@ -380,7 +380,7 @@ Proposition de placement dans les phases (CLAUDE.md n'est pas modifié sans ton 
 | R7 | Disques natifs (phase 5) — voir § 10.3. |
 | R8 | `grim`/`slurp` au départ ; **outil de capture en fenêtre Quickshell** (écran entier, un écran, une fenêtre, une zone ; modèle de l'outil de capture GNOME), phase 8b. |
 | R9 | Touches volume / média / luminosité via `qs ipc`, phase 10. |
-| R10 | Écran de connexion : **phase 12, tout à la fin**, à concevoir ensemble. **SDDM abandonné** : greeter Quickshell indépendant (`Greetd`), reprenant uniquement l'apparence du thème `catppuccin-mocha-green` (thème lui-même écrit en QML : `/usr/share/sddm/themes/catppuccin-mocha-green/`, paquet AUR `catppuccin-sddm-theme-mocha` ; fond `backgrounds/wall.png`, police Noto Sans 9, horloge, icônes power/reboot/sleep). Aperçu : `docs/reference/sddm-catppuccin-preview.png` (aperçu générique du paquet ; la variante installée est verte). |
+| R10 | Écran de connexion : **phase 12, tout à la fin**, à concevoir ensemble. **SDDM abandonné, remplacé par greetd** (§ 10.4) : greeter Quickshell indépendant (`Greetd`), reprenant uniquement l'apparence du thème `catppuccin-mocha-green` (thème lui-même écrit en QML : `/usr/share/sddm/themes/catppuccin-mocha-green/`, paquet AUR `catppuccin-sddm-theme-mocha` ; fond `backgrounds/wall.png`, police Noto Sans 9, horloge, icônes power/reboot/sleep). Aperçu : `docs/reference/sddm-catppuccin-preview.png` (aperçu générique du paquet ; la variante installée est verte). |
 | R11 | Au démarrage : 1 / 4 / 7. |
 
 ### 10.1.1 Mise en œuvre de la phase 5 (2026-10-16)
@@ -449,6 +449,26 @@ Je m'étais trompé : Quickshell n'a pas d'accès D-Bus générique en QML, mais
 
 Dépendances : `udisks2` (déjà requis par udiskie), `glib2` (`gdbus`), `systemd` (`busctl`). Montage automatique à l'insertion et notifications reproduits
 dans le service `Disks`. Les volumes système (`HintSystem`, `HintIgnore`) sont ignorés, comme le fait udiskie.
+
+### 10.4 Écran de connexion : greetd au lieu de SDDM (phase 12, précisé le 2026-10-16)
+
+- **greetd remplace SDDM** comme gestionnaire de connexion. L'écran de connexion est un **greeter Quickshell** écrit en QML
+  (`Quickshell.Services.Greetd`, présent dans Quickshell 0.3.2), au style repris du thème SDDM `catppuccin-mocha-green`. Le thème SDDM
+  lui-même n'est ni modifié ni réutilisé.
+- **Compositeur du greeter** : greetd lance le greeter sous l'utilisateur `greeter`, qui a besoin d'un compositeur Wayland. Proposition :
+  **Sway**, déjà installé et connu pour marcher sur cette carte Nvidia (`WLR_RENDERER=vulkan sway --unsupported-gpu`), avec une config
+  minimale qui lance `qs` puis quitte. `cage` (compositeur kiosque, dépôt `extra`) serait un paquet de plus, non testé sur Nvidia ici.
+- **Fichiers système** (`sudo`, avec ton accord, au moment de la phase 12) :
+  - `/etc/greetd/config.toml` (commande du greeter) ;
+  - config Quickshell du greeter lisible par l'utilisateur `greeter` (ton dossier personnel ne l'est pas), ainsi que les polices du dépôt ;
+  - `/etc/pam.d/greetd` : lignes `pam_gnome_keyring.so` reprises de `/etc/pam.d/sddm` (auth, password, session), pour déverrouiller le trousseau ;
+  - bascule `systemctl disable sddm` puis `systemctl enable greetd`.
+- **Sessions proposées** : fichiers de `/usr/share/wayland-sessions/` (dont `sway-vulkan.desktop`, créé à la main pour SDDM).
+- **Retour arrière** : `systemctl disable greetd` puis `systemctl enable sddm`. SDDM et son thème restent installés tant que tu n'as pas validé.
+  Le greeter console `greetd-agreety` sert de secours si le greeter Quickshell ne démarre pas.
+- **Dépendances** (`deps/arch-pacman.txt`, section « Écran de connexion ») : `greetd` et `greetd-agreety`, tous deux du dépôt `extra`,
+  **à installer par toi** au début de la phase 12. `greetd` exige un paquet qui fournit `greetd-greeter` : pacman proposera
+  `greetd-agreety`.
 
 ## 11. Risques relevés par la troisième passe
 

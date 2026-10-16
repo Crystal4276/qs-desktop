@@ -305,6 +305,8 @@ Revu et complété d'après le code source d'Hyprland 0.56.2 et l'API Quickshell
   focus conservé, règles `persistent` de la config actuelle ;
 - modules (volume, média, cava, mises à jour, GPU, CPU, mémoire, réseau) : identiques, rien de propre au compositeur ;
 - calendrier : survol, épinglage, fermeture par clic sur une fenêtre / un module / le fond, Échap, focus rendu à la fenêtre.
+- notifications (phase 6) : écran choisi par description, repli si l'écran disparaît, survol, clics, boutons d'action ; centre de
+  notifications (cloche, panneau, « ne pas déranger »).
 
 ## Phase 5 — Tray, réseau, Bluetooth, disques, NordVPN : faite et validée (2026-10-16)
 
@@ -366,7 +368,7 @@ reconnecté aussitôt aux Pays-Bas (Amsterdam, serveur #1308 au lieu de #1284) ;
 État laissé : Waybar, Dunst et udiskie actifs, aucune instance `qs`, aucune image disque attachée, Wi-Fi activé, VPN connecté aux Pays-Bas
 (Amsterdam #1259 ; l'historique des pays contient Netherlands, Israel, United Arab Emirates, laissés par les tests).
 
-## Phase 6 — Notifications : faite (2026-10-16), en attente de validation
+## Phase 6 — Notifications : faite et validée (2026-10-16)
 
 Décisions (2026-10-16) : texte en **Inter** (police homogène) ; barre de progression remplie en **`blue`** (Dunst : couleurs par défaut hors
 palette) ; **boutons d'action** en plus de la parité ; **centre de notifications** (ta demande en cours de phase) avec cloche dans le tray
@@ -418,4 +420,8 @@ les tests sont arrivées dans les instances de test (ex. une notification « Vid
 
 ## Prochaine étape
 
-Phase 7 (lanceur) après ta validation de la phase 6.
+Phase 7 (lanceur).
+
+Rappel pour la phase 12 (ta précision du 2026-10-16) : **greetd remplace SDDM**, l'écran de connexion est un greeter Quickshell en QML
+(apparence du thème SDDM reprise, thème SDDM non utilisé). Paquets à installer par toi à ce moment-là : `greetd`, `greetd-agreety`
+(`ARCHITECTURE.md` § 10.4, `deps/`).
