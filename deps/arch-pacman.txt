@@ -32,6 +32,7 @@ playerctl               # playerctld shift / unshift : molette sur le module mpr
 # --- Système ---
 upower                  # batterie (Quickshell.Services.UPower), utile sur laptop
 networkmanager          # réseau (Quickshell.Networking s'appuie sur NetworkManager)
+nm-connection-editor    # édition des connexions, ouverte depuis le panneau réseau (repli, ARCHITECTURE R5)
 bluez                   # Bluetooth (Quickshell.Bluetooth s'appuie sur BlueZ)
 bluez-utils             # bluetoothctl : agent d'appairage piloté par Quickshell (ARCHITECTURE § 10.2)
 udisks2                 # disques amovibles (busctl / gdbus / udisksctl, ARCHITECTURE § 10.3)
