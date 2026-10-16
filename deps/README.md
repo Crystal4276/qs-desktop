@@ -36,11 +36,12 @@ Chaque commande a été rattachée à son paquet sur cette machine avec `pacman 
 | Réseau (débit) | natif (`/proc/net/dev`, `/proc/net/route`) | — | — | Inter, Hack Nerd Font | — |
 | Tray | natif (`Services.SystemTray` ; Quickshell fait aussi le rôle de « watcher ») | — | — | Inter (menus) | — |
 | Engrenage → panneau de réglages (remplace le power menu) | natif (`Pipewire`, `UPower`, `PowerProfiles`, `IdleInhibitor`, IPC du compositeur pour HDR / VRR) | `systemd` (redémarrer, éteindre), `wlsunset` (veilleuse), `util-linux` (`rfkill`, mode avion), `grim` + `slurp` + `wl-clipboard` + `xdg-user-dirs` (capture, jusqu'à la phase 8b) ; verrouiller → `swaylock` jusqu'à la phase 8b | `power-profiles-daemon` (3 boutons masqués sans lui) ; `brightnessctl` (luminosité, laptop) | Inter, Symbols Nerd Font Mono | `assets/{lock,logout,restart,shutdown}.svg` |
+| Bouton Arch → menu d'applications (remplace nwg-menu) | natif (`DesktopEntries`) | `xdg-user-dirs` (dossiers), `xdg-utils` (ouvrir dossiers et fichiers) ; boutons de session comme le panneau de réglages | — | Inter, Symbols Nerd Font Mono | `assets/{lock,logout,restart,shutdown}.svg`, icônes Papirus-Dark |
 | Batterie (laptop) | natif (`Services.UPower`) | — | `upower` (service système) | Symbols Nerd Font Mono (icônes v3 `U+F0079`…) | — |
 | Luminosité (laptop) | `/sys/class/backlight` | — | `brightnessctl` (écriture sans root) | Symbols Nerd Font Mono | — |
 
 Rendu de tous les SVG : `qt6-svg` (installé avec `quickshell`).
-Thème d'icônes des applications (tray, lanceur, notifications) : `papirus-icon-theme` (`Papirus-Dark`).
+Thème d'icônes des applications (tray, lanceur, menu d'applications, notifications) : `papirus-icon-theme` (`Papirus-Dark`).
 
 ### Autres composants (phases suivantes, à compléter)
 
