@@ -140,7 +140,7 @@ Notes de session :
 
 État laissé : Waybar et Dunst actifs, aucune instance `qs`, aucun écran virtuel, attribution des espaces identique.
 
-## Phase 3 — Écrans dynamiques : faite, en attente de validation (2026-10-15)
+## Phase 3 — Écrans dynamiques : faite et validée (2026-10-16)
 
 Produit :
 - `services/Outputs.qml` : répartition appliquée (anti-rebond 500 ms ; aussi quand la config machine change), en une commande :
@@ -177,8 +177,9 @@ Tests sur les écrans réels (à ta demande, le 2026-10-15), instance de dev sur
 - Ces tests ont révélé et fait corriger : la couleur des espaces regroupés sur une barre (blanc au-delà de 3, cf. ci-dessous),
   la vue d'un écran rallumé (mémoire par configuration d'écrans) et le focus perdu quand l'écran focalisé s'éteint.
   Les deux derniers cas ont été ajoutés à `test-outputs.sh` (18 contrôles, 0 échec sur 3 passages).
-- **Couleurs** (ton retour) : la couleur suit l'espace (1, 4, 7 sarcelle ; 2, 5, 8 saphir ; 3, 6, 9 bleu), identique à Waybar avec 3 écrans
-  (`THEME.md` § 3).
+- **Couleurs** (ton retour) : d'abord la couleur suivait l'espace (1, 4, 7 sarcelle ; 2, 5, 8 saphir ; 3, 6, 9 bleu) ; à la validation,
+  remplacée par un **dégradé** teal → sapphire → blue selon la position dans la barre (identique à Waybar avec 3 espaces par barre,
+  `THEME.md` § 3). Vérifié par capture en session isolée avec 5, 4 et 9 espaces sur une barre.
 - **VRR** : `adaptive_sync on` accepté par Sway + Nvidia sur les trois écrans (statut `enabled`, aucune erreur), puis remis à `off`.
   L'effet réel (indicateur G-Sync de l'écran, absence de scintillement) demande un œil humain.
 
@@ -187,6 +188,14 @@ peut changer, d'où l'identification par description), fermer un capot (pas de l
 
 État laissé : Waybar et Dunst actifs, aucune instance `qs`, aucun écran virtuel, attribution des espaces inchangée.
 
+Retour du 2026-10-16 : phase validée ; tests reportés (voir « Tests différés »).
+
+## Tests différés
+
+- **Débranchement physique d'un câble** sur le desktop (phase 3) : à faire avec toi plus tard.
+- **Laptop** (phase 3, puis modules batterie / luminosité de la phase 4) : quand il sera installé — laptop seul, laptop + écrans externes,
+  capot fermé (`bindswitch lid:on/off`), écran interne éteint, branchement à chaud avec fenêtres ouvertes.
+
 ## Prochaine étape
 
-Phase 4 (modules système de la barre), après validation.
+Phase 4 (modules système de la barre).

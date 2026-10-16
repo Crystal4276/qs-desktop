@@ -125,8 +125,7 @@ Singleton {
 
     // § 3 — Couleurs des modules
     readonly property QtObject module: QtObject {
-        readonly property list<color> workspaces: [root.color.teal, root.color.sapphire, root.color.blue]  // espaces 1,4,7 / 2,5,8 / 3,6,9
-        readonly property color workspaceOther: root.color.text   // espace nommé (sans numéro)
+        readonly property list<color> workspaces: [root.color.teal, root.color.sapphire, root.color.blue]  // dégradé par position dans la barre
         readonly property color workspaceEmpty: root.color.surface1
         readonly property color updates: root.color.sapphire
         readonly property color gpu: root.color.sky
