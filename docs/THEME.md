@@ -260,6 +260,13 @@ Clic droit sur le volume ou le curseur (pavucontrol dans Waybar). Style des pann
 sections Output / Input / Applications ; périphérique par défaut en `green` ; sous chacun, curseur de volume (style du curseur de la
 barre), pourcentage, bouton Mute ; bouton « Advanced… » (pavucontrol).
 
+### Carte média (nouveau composant, ton choix du 2026-10-16)
+
+En tête du centre de notifications, pour le lecteur suivi par le module média : pochette 100 px (taille des images de notification,
+coins 10 px des lignes de panneau), titre Inter 20 px `text`, artiste Inter 16 px `subtext0`, position dessinée comme le curseur de
+volume, temps « m:ss / m:ss » Inter 16 px, boutons de panneau à glyphes Symbols Nerd Font Mono (précédent `U+F048`, lecture `U+F04B`,
+pause `U+F04C`, suivant `U+F051`) ; bouton indisponible à 50 % d'opacité.
+
 ### Centre de notifications (nouveau composant, ta demande du 2026-10-16)
 
 Cloche dans le tray, après les modules natifs ; panneau au style des panneaux (§ 3). Interrupteur du titre : notifications affichées /
@@ -391,6 +398,7 @@ versionnée dans `assets/` dans le même commit.
 | `notification-inactive` / `notification-active` / `notification-disabled` | cloche du centre de notifications (rien de nouveau / non vues / ne pas déranger) | Papirus-Dark (`16x16@2x/panel`) |
 | `preferences-desktop-notification` | ligne du centre pour une notification sans icône | Papirus-Dark |
 | `U+F130` / `U+F131` (micro / micro coupé) | OSD du micro | Symbols Nerd Font Mono |
+| `U+F048` / `U+F04B` / `U+F04C` / `U+F051` (précédent, lecture, pause, suivant) | boutons de la carte média | Symbols Nerd Font Mono |
 | `network-wired-no-route`, `network-wireless-{0,20,40,60,80,100}-limited` | module réseau : connecté sans accès à Internet | Papirus-Dark (`16x16@2x/panel`) |
 | `audio-speakers`, `audio-input-microphone`, icône de l'application (sinon `audio-x-generic`) | lignes du panneau audio | Papirus-Dark |
 | `battery-low` / `battery-caution` | notification de batterie faible / critique (laptop) | Papirus-Dark |

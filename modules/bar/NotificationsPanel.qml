@@ -7,7 +7,7 @@ import qs.services
 // Centre de notifications (ta demande du 2026-10-16) : cloche du tray. Historique (20 dernières, la plus récente en haut),
 // effacement une par une ou tout ; interrupteur : notifications affichées, ou « ne pas déranger » (seules les critiques
 // s'affichent, les autres arrivent ici). Non vues (expirées sans toi, ou reçues pendant « ne pas déranger ») : en `green`,
-// et point bleu sur la cloche jusqu'à la fermeture du centre.
+// et point bleu sur la cloche jusqu'à la fermeture du centre. En tête : carte du média en cours (MediaCard.qml).
 Panel {
     id: root
 
@@ -26,6 +26,9 @@ Panel {
         return text.replace(/<br\s*\/?>/gi, " ").replace(/<[^>]*>/g, "").replace(/\s+/g, " ")
             .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, "\"").replace(/&apos;/g, "'").replace(/&amp;/g, "&").trim();
     }
+
+    // Lecture en cours (lecteur suivi par le module média).
+    MediaCard {}
 
     PanelSection {
         visible: Notifs.doNotDisturb
