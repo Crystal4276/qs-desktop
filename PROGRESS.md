@@ -201,9 +201,15 @@ Liste tenue à jour à chaque phase ; à dérouler une fois le projet terminé.
 - **Mise à jour réelle** (phase 4) : clic sur le module, confirmer avec `Y`, puis Entrée ; le compteur doit disparaître.
 - **VRR** (phase 3) : juger l'effet à l'œil (indicateur G-Sync de l'écran, scintillement) avant de l'activer.
 - **Débranchement physique d'un câble** sur le desktop (phase 3).
-- **Phase 5** : saisie au clavier dans les panneaux (mot de passe d'un nouveau réseau Wi-Fi, phrase de passe d'un disque chiffré,
-  recherche de pays NordVPN), Échap et ↑/↓/Entrée dans les menus du tray ; **appairage d'un nouvel appareil Bluetooth** (code à confirmer) ;
-  **vraie clé USB** (montage automatique, éjection).
+- **Phase 5** :
+  - saisie au clavier dans les panneaux (mot de passe d'un nouveau réseau Wi-Fi, phrase de passe d'un disque chiffré, recherche de pays
+    NordVPN), Échap dans les panneaux, Échap et ↑/↓/Entrée/→/← dans les menus du tray ;
+  - **appairage d'un nouvel appareil Bluetooth** (code à confirmer, PIN) ; **connexion / déconnexion d'un appareil qui répond**
+    (écouteurs sortis du boîtier, manette allumée) ;
+  - boutons non cliqués volontairement : « Disconnect » du filaire (couperait le réseau), « Forget » d'un réseau Wi-Fi et d'un appareil
+    Bluetooth (effaceraient tes réglages) ;
+  - clic milieu (SecondaryActivate) et molette sur une icône d'application du tray ;
+  - **vraie clé USB** (montage automatique, notifications, éjection / extinction).
 - **Hyprland** (rappel demandé) : tu ouvres une session Hyprland, je prends la main et je déroule la liste de « Compatibilité Hyprland »
   ci-dessous (barres, répartition des espaces, modules, calendrier) ; puis le protocole complet en phase 9.
 - **Laptop**, une fois installé : laptop seul, laptop + écrans externes, capot fermé (`bindswitch lid:on/off`), écran interne éteint,
@@ -297,7 +303,7 @@ Revu et complété d'après le code source d'Hyprland 0.56.2 et l'API Quickshell
 - modules (volume, média, cava, mises à jour, GPU, CPU, mémoire, réseau) : identiques, rien de propre au compositeur ;
 - calendrier : survol, épinglage, fermeture par clic sur une fenêtre / un module / le fond, Échap, focus rendu à la fenêtre.
 
-## Phase 5 — Tray, réseau, Bluetooth, disques, NordVPN : faite, en attente de validation (2026-10-16)
+## Phase 5 — Tray, réseau, Bluetooth, disques, NordVPN : faite et validée (2026-10-16)
 
 Décisions (2026-10-16) : modules natifs **dans la pilule du tray** (mêmes icônes que les applets) ; leurs fenêtres sont des
 **panneaux modernes** (style du calendrier, `THEME.md` § 3 « Panneaux ») ; menus du clic droit des applications : **copie des menus GTK**,
@@ -359,4 +365,7 @@ reconnecté aussitôt aux Pays-Bas (Amsterdam, serveur #1308 au lieu de #1284) ;
 
 ## Prochaine étape
 
-Phase 6 (notifications), après validation.
+Phase 6 (notifications). Points déjà connus : texte en **Inter** (ta préférence de police homogène) plutôt que Noto Sans Mono de Dunst,
+à te proposer ; Dunst à arrêter pendant les tests puis relancer (`CLAUDE.md`, « Coexistence ») ; `Audio.cycleSink`, `Disks` et `Vpn`
+utilisent `notify-send`, qui passera par le serveur natif. Aides de test dans le dossier temporaire de session (non versionnées) :
+`wb.sh` (Waybar masquée / affichée, vérifiée par la zone réservée), sessions isolées `iso.sh`, copie de test du dépôt.
