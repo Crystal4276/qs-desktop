@@ -37,6 +37,11 @@ Singleton {
         objects: [...root.sinks, ...root.sources, ...root.streams]
     }
 
+    // Nom affiché d'un périphérique : surnom, sinon description, sinon nom technique.
+    function nodeName(node: PwNode): string {
+        return node.nickname || node.description || node.name;
+    }
+
     function setDefaultSink(node: PwNode): void {
         Pipewire.preferredDefaultAudioSink = node;
     }

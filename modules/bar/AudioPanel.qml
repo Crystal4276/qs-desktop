@@ -18,10 +18,6 @@ Panel {
             Audio.toggleMute();
     }
 
-    function nodeName(node: PwNode): string {
-        return node.nickname || node.description || node.name;
-    }
-
     function appName(node: PwNode): string {
         return node.properties["application.name"] || node.description || node.name;
     }
@@ -33,29 +29,12 @@ Panel {
         return Quickshell.iconPath(name, "audio-x-generic");
     }
 
-    function percentText(node: PwNode): string {
-        return node?.audio ? `${Math.round(node.audio.volume * 100)} %` : "";
-    }
-
     // --- Sortie ---
     PanelSection {
         text: "Output"
     }
 
-    Repeater {
-        model: ScriptModel {
-            values: Audio.sinks
-        }
-
-        PanelRow {
-            required property PwNode modelData
-
-            icon: "audio-speakers"
-            text: root.nodeName(modelData)
-            active: modelData.id === Audio.sink?.id
-            onClicked: Audio.setDefaultSink(modelData)
-        }
-    }
+    AudioDevices {}
 
     VolumeLine {
         node: Audio.sink
@@ -67,19 +46,8 @@ Panel {
         text: "Input"
     }
 
-    Repeater {
-        model: ScriptModel {
-            values: Audio.sources
-        }
-
-        PanelRow {
-            required property PwNode modelData
-
-            icon: "audio-input-microphone"
-            text: root.nodeName(modelData)
-            active: modelData.id === Audio.source?.id
-            onClicked: Audio.setDefaultSource(modelData)
-        }
+    AudioDevices {
+        input: true
     }
 
     VolumeLine {
@@ -119,20 +87,8 @@ Panel {
         }
     }
 
-    RowLayout {
-        Layout.fillWidth: true
-
-        Item {
-            Layout.fillWidth: true
-        }
-
-        PanelButton {
-            text: "Advanced…"
-            onClicked: {
-                root.visible = false;
-                Audio.openMixer();
-            }
-        }
+    MixerButton {
+        onOpened: root.visible = false
     }
 
     // Volume d'un nœud : curseur, pourcentage, bouton muet.
@@ -157,19 +113,8 @@ Panel {
             }
         }
 
-        PanelSection {
-            Layout.fillWidth: false
-            Layout.preferredWidth: widest.implicitWidth   // largeur de « 100 % » : pourcentages alignés
-            horizontalAlignment: Text.AlignRight
-            text: root.percentText(line.node)
-        }
-
-        // Mesure de « 100 % » rendue comme le pourcentage (TextMetrics ne suit pas le rendu natif du texte).
-        PanelSection {
-            id: widest
-            visible: false
-            Layout.fillWidth: false
-            text: "100 %"
+        PercentLabel {
+            value: line.node?.audio?.volume ?? 0
         }
 
         PanelButton {

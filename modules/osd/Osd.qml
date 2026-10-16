@@ -94,19 +94,8 @@ PanelWindow {
                 value: root.level
             }
 
-            PanelSection {
-                Layout.fillWidth: false
-                Layout.preferredWidth: widest.implicitWidth
-                horizontalAlignment: Text.AlignRight
-                text: `${Math.round(root.level * 100)} %`
-            }
-
-            // Mesure de « 100 % » rendue comme le pourcentage (TextMetrics ne suit pas le rendu natif du texte).
-            PanelSection {
-                id: widest
-                visible: false
-                Layout.fillWidth: false
-                text: "100 %"
+            PercentLabel {
+                value: root.level
             }
         }
     }
