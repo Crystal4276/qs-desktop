@@ -33,7 +33,8 @@ Panel {
     PanelRow {
         clickable: false
         icon: Vpn.icon
-        text: Vpn.connecting && !Vpn.connected ? "Connecting…" : Vpn.connected ? `${Vpn.status["Country"] ?? ""}, ${Vpn.status["City"] ?? ""}` : "Not connected"
+        text: Vpn.connecting && !Vpn.connected ? "Connecting…" : Vpn.connected ? `${Vpn.status["Country"] ?? ""}, ${Vpn.status["City"] ?? ""}`
+            : Vpn.paused ? "Paused" : "Not connected"
         subtext: Vpn.connected ? [Vpn.status["Server"], Vpn.status["Current technology"], Vpn.status["Uptime"]].filter(s => s).join(" · ") : ""
         active: Vpn.connected
     }
