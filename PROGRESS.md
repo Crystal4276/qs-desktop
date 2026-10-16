@@ -224,6 +224,8 @@ Liste tenue à jour à chaque phase ; à dérouler une fois le projet terminé.
   (l'appareil doit se connecter et rester approuvé) ; NordVPN qui apparaît dans le tray quand le démon démarre après la session.
 - **Deuxième passe** : vraie touche de volume / micro une fois les raccourcis branchés (phase 10) ; connexion limitée (Wi-Fi d'hôtel avec
   portail, ou câble sans Internet) ; sur le laptop : OSD de luminosité et alerte de batterie à 30 % et 15 %.
+- **Séance de débogage (2026-10-16)** : musique Spotify à bas volume (cava doit rester affiché) ; vidéo YouTube dans Chromium avec
+  Spotify en pause (la barre passe sur Chromium), puis Spotify relancé (retour sur Spotify) ; halo des espaces à l'œil sur les trois écrans.
 - **Hyprland** (rappel demandé) : tu ouvres une session Hyprland, je prends la main et je déroule la liste de « Compatibilité Hyprland »
   ci-dessous (barres, répartition des espaces, modules, calendrier) ; puis le protocole complet en phase 9.
 - **Laptop**, une fois installé : laptop seul, laptop + écrans externes, capot fermé (`bindswitch lid:on/off`), écran interne éteint,
@@ -601,6 +603,26 @@ Vérifié : script des filtres extrait et lancé sur des fichiers piégés ; tri
 (config de test, faux sysfs, sans puis avec un `nvidia-smi` en échec : 47 °C lus) ; recherche du lanceur (config de test, 233
 applications) et rendu ; clavier dans le panneau de réglages (volume +5 % puis rétabli). Deux recherches `find /` laissées par les
 agents de revue ont été arrêtées ; l'historique du lanceur recréé par un test a été supprimé (reprise de Rofi gardée pour la phase 10).
+
+### Séance de débogage (2026-10-16, tes retours)
+
+1. **Halo de l'espace actif** : le flou de MultiEffect (approché par paliers) faisait un carré diffus qui sortait de la pilule. Remplacé
+   par l'ombre floue (`shadowBlur` 10) du glyphe dessiné dans un Canvas, mesurée contre la capture Waybar : écart moyen 1,3/255 (avant :
+   6/255). Le halo est coupé aux limites du module : plus rien au-dessus de la pilule ni à gauche du premier espace (vérifié au pixel,
+   DP-2 en échelle 1 et DP-1 en échelle 1.5).
+2. **Halo sur chaque écran** (ta demande) : l'espace affiché sur chaque écran a son halo, plus seulement celui qui a le focus (Waybar :
+   le focalisé seul). Vérifié sur les trois barres et au changement d'espace.
+3. **cava** (ta demande) : affiché et lancé pendant toute lecture MPRIS, même à bas niveau ; masqué et arrêté quand rien ne joue (plus
+   de détection du silence).
+4. **Lecteur suivi** (ta demande) : Spotify s'il joue, sinon le lecteur qui joue (Chromium…), sinon Spotify. Un choix fait à la molette
+   tient jusqu'au prochain démarrage d'une lecture.
+5. Carte média : `root.QsWindow` valait `undefined` (erreur dans le journal depuis la troisième passe) : propriété attachée lue sur
+   l'Item lui-même.
+Vérifié : faux lecteurs MPRIS (script Gio) dans une instance de test dont le lecteur préféré est un faux — autre lecteur seul → suivi ;
+préféré qui démarre → préféré ; préféré en pause → l'autre ; molette vers un lecteur en pause puis lecture ailleurs → lecteur qui joue ;
+cava lancé pendant la lecture et arrêté après. Dans la vraie barre : cava visible pendant une lecture de 5 s, puis retour sur Spotify.
+Incident de développement : une version du halo qui relisait les pixels du Canvas bloquait l'instance (100 % CPU, `qs kill` sans effet,
+trois instances empilées) ; abandonnée, instances arrêtées.
 
 ### Reste à faire
 

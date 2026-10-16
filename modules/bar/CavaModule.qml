@@ -2,13 +2,13 @@ import QtQuick
 import qs.config
 import qs.services
 
-// Visualiseur (INVENTORY.md § 1, `cava`) : 12 barres `▁`…`█`, chacune suivie d'une espace ; masqué en silence.
+// Visualiseur (INVENTORY.md § 1, `cava`) : 12 barres `▁`…`█`, chacune suivie d'une espace ; affiché pendant une lecture.
 // Barres en DejaVu Sans, espaces en Inter (la CSS demande Inter, qui n'a pas ces caractères : THEME.md § 2).
 // Padding : 10 px à gauche et à droite, 12 px en haut, 10 px en bas (style.css).
 Item {
     id: root
 
-    readonly property bool shown: !Cava.silent
+    readonly property bool shown: Cava.active
 
     implicitWidth: label.implicitWidth + 2 * Theme.bar.modulePadding
     implicitHeight: label.implicitHeight + Theme.bar.cavaPaddingTop + Theme.bar.modulePadding
