@@ -279,14 +279,14 @@ en texte secondaire ; non vues (expirées sans toi, ou reçues pendant « ne pas
 |---|---|
 | Fenêtre | 500 x 1000 px, centrée dans la zone utile de l'écran focalisé (mesuré sur DP-2 : x 1470, y 252), fond `#1E1D2F`, bordure 1 px `overlay0`, rayon 20 px |
 | Boîte principale | padding 15 px, espacement 15 px |
-| Barre de saisie | bouton loupe (`U+F002`) + prompt + champ |
-| Bouton loupe | rond (rayon 100 %), fond `#1E1E2E`, padding 8/12 px, police Symbols Nerd Font Mono 20 |
-| Prompt | texte `#FAE3B0`, padding 8 px |
+| Barre de saisie | bouton loupe (`U+F002`) + prompt + champ, espacés de 2 px (espacement par défaut des boîtes Rofi) ; chacun prend toute la hauteur de la barre, texte en haut |
+| Bouton loupe | rond (rayon 100 %), fond `#1E1E2E`, padding 8/12 px, police Symbols Nerd Font Mono 20 pt |
+| Prompt | glyphe `U+F444` (`display-drun`), Inter 20 pt → **Hack Nerd Font** par repli, texte `#FAE3B0`, padding 8 px ; largeur d'une cellule Hack (0,6 em), l'avance que Pango lui donne |
 | Champ | placeholder « Search... » couleur `#D9E0EE`, soulignement 2 px `overlay0`, rayon 10 px, padding 8 px |
 | Liste | 1 colonne, espacement 4 px, pas de cycle |
-| Élément | padding 6 px, rayon 4 px, icône 24 px, texte marge 2 px |
+| Élément | padding 6 px, rayon 4 px, icône 24 px, texte marge 2 px, 2 px entre icône et texte (défaut Rofi) ; hauteur mesurée 49 px, pas de 53 px |
 | Élément sélectionné | fond `green` (`#a6e3a1`), texte `#1E1E2E`, rayon 10 px |
-| Police | Inter Regular 20 |
+| Police | Inter Regular **20 pt** (taille Pango) = 26,67 px : vérifié sur la capture (majuscules de 20 px, lignes de 53 px) ; à ne pas confondre avec les 20 px des panneaux |
 
 ## 6. Power menu (Rofi)
 
