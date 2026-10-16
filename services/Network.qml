@@ -95,9 +95,17 @@ Singleton {
     readonly property var connectedWifi: wifiNetworks.find(n => n.connected) ?? null
     readonly property bool wiredConnected: wiredDevices.some(d => d.connected)
 
-    // Icône du tray, mêmes noms que nm-applet (thème Papirus-Dark) : filaire, force du signal Wi-Fi, ou aucune connexion.
-    readonly property string icon: wiredConnected ? "nm-device-wired"
-        : connectedWifi ? `nm-signal-${signalStep(connectedWifi.signalStrength)}${connectedWifi.security === WifiSecurityType.Open ? "" : "-secure"}`
+    // Connecté sans accès à Internet (vérification de connectivité de NetworkManager ; ajout du 2026-10-16, nm-applet ne le
+    // signalait pas) : portail captif, accès limité ou aucun. « Unknown » (vérification désactivée) compte comme un accès complet.
+    readonly property int connectivity: Networking.connectivity
+    readonly property bool limited: (wiredConnected || connectedWifi !== null)
+        && [NetworkConnectivity.None, NetworkConnectivity.Portal, NetworkConnectivity.Limited].includes(connectivity)
+
+    // Icône du tray, mêmes noms que nm-applet (thème Papirus-Dark) : filaire, force du signal Wi-Fi, ou aucune connexion ;
+    // accès limité : icônes Papirus `network-wired-no-route` / `network-wireless-<0…100>-limited`.
+    readonly property string icon: wiredConnected ? (limited ? "network-wired-no-route" : "nm-device-wired")
+        : connectedWifi ? (limited ? `network-wireless-${Math.round(connectedWifi.signalStrength * 5) * 20}-limited`
+            : `nm-signal-${signalStep(connectedWifi.signalStrength)}${connectedWifi.security === WifiSecurityType.Open ? "" : "-secure"}`)
         : "nm-no-connection"
 
     // Palier d'icône : 0, 25, 50, 75, 100 (force 0–1).

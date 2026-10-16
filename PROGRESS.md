@@ -213,6 +213,8 @@ Liste tenue à jour à chaque phase ; à dérouler une fois le projet terminé.
 - **Phase 6** : notifications de vraies applications (WhatsApp, Thunderbird, Chromium, Spotify…) : icônes et images, actions proposées
   (boutons), emojis ; clic milieu sur une notification qui contient un seul lien (ouverture dans le navigateur, non cliqué ici) ;
   Échap dans le centre de notifications.
+- **Deuxième passe** : vraie touche de volume / micro une fois les raccourcis branchés (phase 10) ; connexion limitée (Wi-Fi d'hôtel avec
+  portail, ou câble sans Internet) ; sur le laptop : OSD de luminosité et alerte de batterie à 30 % et 15 %.
 - **Hyprland** (rappel demandé) : tu ouvres une session Hyprland, je prends la main et je déroule la liste de « Compatibilité Hyprland »
   ci-dessous (barres, répartition des espaces, modules, calendrier) ; puis le protocole complet en phase 9.
 - **Laptop**, une fois installé : laptop seul, laptop + écrans externes, capot fermé (`bindswitch lid:on/off`), écran interne éteint,
@@ -444,6 +446,28 @@ Vérifié (Sway, ta session ; Waybar masquée et Dunst arrêté le temps des tes
 panneaux VPN (derniers pays relus du nouveau fichier, réécrits dans le bon ordre), réseau, Bluetooth ; disques (image ext4 de test montée
 automatiquement, puis détachée et supprimée) ; notifications : historique conservé après un rechargement, notification affichée conservée,
 « Clear » retire l'entrée visée.
+
+### Deuxième passe (2026-10-16) : faite
+
+Bilan : `ARCHITECTURE.md` § 12.1. Tes choix, tous faits :
+- **panneau audio** (clic droit sur le volume ou le curseur ; `pavucontrol` derrière « Advanced… ») : sortie, entrée, volume par application ;
+- **molette du média** : passe d'un lecteur MPRIS à l'autre (`playerctld` exclu : simple relais) ; icônes de lecteurs de ta config Waybar ;
+  `qs ipc call media playPause|next|previous` pour les touches ; `playerctl` retiré des dépendances ;
+- **OSD** volume / micro / luminosité : `qs ipc call audio volumeUp|volumeDown|toggleMute|toggleMicMute|cycleSink`,
+  `qs ipc call brightness up|down` (raccourcis branchés en phase 10) ; position et durée **à valider** (`THEME.md` « OSD ») ;
+- **connexion limitée** : icônes Papirus `*-limited` / `*-no-route` et message dans le panneau réseau ;
+- **alerte batterie** : notifications à 30 % et 15 % (seuils de ta config Waybar), une fois par décharge.
+Ta demande en cours de route : **trois boutons de profil d'énergie** dans la future fenêtre de réglages (phase 8) ;
+`power-profiles-daemon` ajouté aux dépendances principales (service à activer).
+
+Découvertes : Quickshell n'expose pas `media.class` des nœuds Pipewire ; une lecture est de type `AudioOutStream` (Audio | Stream | Sink),
+un enregistrement (cava) `Audio | Stream | Source`. `TextMetrics` ne mesure pas comme le rendu natif du texte (largeurs mesurées avec un
+texte invisible).
+
+Vérifié (Sway, ta session, Waybar masquée puis rétablie) : OSD volume (+5 % puis −5 %, retour à 0,41) et micro (coupé puis rétabli) ;
+panneau audio (sortie, entrée, Spotify avec son icône ; muet et curseur de Spotify, volume remis à 100 %) ; molette du média dans les deux
+sens (Spotify, deux Chromium). Incident : pendant le premier essai de molette, le module rétréci a laissé le pointeur sur le curseur de
+volume, monté de 0,41 à 0,51 ; remis à 0,41.
 
 ## Prochaine étape
 

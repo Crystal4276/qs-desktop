@@ -9,8 +9,10 @@
 import Quickshell
 import qs.modules.bar
 import qs.modules.notifications
+import qs.modules.osd
 
 ShellRoot {
     Bar {}
     NotificationPopups {}
+    Osd {}
 }

@@ -246,6 +246,20 @@ Remplace le tooltip calendrier. Aucune valeur nouvelle : tout est repris de la b
 | Largeur réelle | 603 px cadre compris (Dunst ajoute 3 × le cadre à `width`, `draw.c`) |
 | Boutons d'action (ajout, ton choix du 2026-10-16) | sous le texte, aligné sur lui, un par action nommée (l'action `default` reste au clic milieu) ; style des boutons de panneau (§ 3) |
 
+### OSD (nouveau composant, ton choix du 2026-10-16)
+
+Volume, micro ou luminosité changés au clavier. Cadre des panneaux (§ 3), icône du module de la barre (Symbols Nerd Font Mono 26 px,
+`text` ; luminosité `yellow`), niveau dessiné comme le curseur de volume (rail `crust`, partie remplie `text`, bouton `surface2`) sur
+300 px (largeur de la barre de progression des notifications), pourcentage en Inter 16 px `subtext0` ; muet : niveau à 50 % d'opacité
+(comme un bouton désactivé). **Proposé, à valider** : centré en bas de l'écran focalisé, à 65 px du bord (même écart que la zone de la
+barre en haut), affiché 1,5 s (durée de l'OSD de GNOME).
+
+### Panneau audio (nouveau composant, ton choix du 2026-10-16)
+
+Clic droit sur le volume ou le curseur (pavucontrol dans Waybar). Style des panneaux (§ 3) ; interrupteur du titre : son (muet) ;
+sections Output / Input / Applications ; périphérique par défaut en `green` ; sous chacun, curseur de volume (style du curseur de la
+barre), pourcentage, bouton Mute ; bouton « Advanced… » (pavucontrol).
+
 ### Centre de notifications (nouveau composant, ta demande du 2026-10-16)
 
 Cloche dans le tray, après les modules natifs ; panneau au style des panneaux (§ 3). Interrupteur du titre : notifications affichées /
@@ -376,3 +390,8 @@ versionnée dans `assets/` dans le même commit.
 | `nordvpn-tray-blue` / `nordvpn-tray-gray` | module NordVPN (connecté / non) — icônes du paquet nordvpn | hicolor (`nordvpn-bin`) |
 | `notification-inactive` / `notification-active` / `notification-disabled` | cloche du centre de notifications (rien de nouveau / non vues / ne pas déranger) | Papirus-Dark (`16x16@2x/panel`) |
 | `preferences-desktop-notification` | ligne du centre pour une notification sans icône | Papirus-Dark |
+| `U+F130` / `U+F131` (micro / micro coupé) | OSD du micro | Symbols Nerd Font Mono |
+| `network-wired-no-route`, `network-wireless-{0,20,40,60,80,100}-limited` | module réseau : connecté sans accès à Internet | Papirus-Dark (`16x16@2x/panel`) |
+| `audio-speakers`, `audio-input-microphone`, icône de l'application (sinon `audio-x-generic`) | lignes du panneau audio | Papirus-Dark |
+| `battery-low` / `battery-caution` | notification de batterie faible / critique (laptop) | Papirus-Dark |
+| icônes de lecteurs `U+F04B` (défaut), `U+F1FF` Discord, `U+F269` Firefox, `U+F268` Chromium, `U+F03D` io | module média, lecteur choisi à la molette (`player-icons` de Waybar, enfin atteignables) | FontAwesome 4.7 (défaut, io), Hack Nerd Font (Discord), Font Awesome 7 Brands (Firefox, Chromium) — relevé avec Pango |

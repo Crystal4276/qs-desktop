@@ -2,15 +2,24 @@ pragma Singleton
 
 import QtQuick
 import Quickshell
+import Quickshell.Io
 import Quickshell.Services.Mpris
 import qs.config
 
-// Lecteur suivi par le module `mpris` (INVENTORY.md § 1) : un seul, choisi par son nom D-Bus
-// (`org.mpris.MediaPlayer2.<Settings.mediaPlayer>`, comme l'option `player` de Waybar). Absent → module masqué.
+// Lecteur suivi par le module `mpris` et les touches média (INVENTORY.md § 1). Waybar ne suivait que Spotify (`player`) et sa
+// molette lançait `playerctld shift`, sans effet visible ; ici (ton choix du 2026-10-16) la molette passe d'un lecteur MPRIS
+// à l'autre. Lecteur suivi : celui choisi à la molette s'il existe encore, sinon le lecteur préféré (`Settings.mediaPlayer`),
+// sinon le premier présent. Aucun lecteur → module masqué.
 Singleton {
     id: root
 
-    readonly property MprisPlayer player: Mpris.players.values.find(p => p.dbusName === `org.mpris.MediaPlayer2.${Settings.mediaPlayer}`) ?? null
+    // `playerctld` (paquet playerctl) n'est qu'un relais qui recopie le lecteur actif : exclu, sinon il compterait en double.
+    readonly property var players: Mpris.players.values.filter(p => p.dbusName !== "org.mpris.MediaPlayer2.playerctld")
+    property string selected: ""   // nom D-Bus choisi à la molette
+    readonly property MprisPlayer player: players.find(p => p.dbusName === selected)
+        ?? players.find(p => p.dbusName === `org.mpris.MediaPlayer2.${Settings.mediaPlayer}`) ?? players[0] ?? null
+    // Nom du lecteur sans le préfixe ni l'instance (« chromium.instance1234 » → « chromium ») : clé de son icône.
+    readonly property string playerName: (player?.dbusName ?? "").replace("org.mpris.MediaPlayer2.", "").split(".")[0]
     readonly property bool paused: player?.playbackState === MprisPlaybackState.Paused
 
     // « Artiste - Titre » tronqué comme Waybar 0.15 (mpris.cpp, getDynamicStr) :
@@ -50,9 +59,29 @@ Singleton {
             player.next();
     }
 
-    // Molette : `playerctld shift` / `unshift`, comme la config Waybar (sans effet visible : le module suit un seul lecteur).
+    // Molette : lecteur suivant (vers le haut) ou précédent, en boucle.
     function shift(up: bool): void {
-        Quickshell.execDetached(["playerctld", up ? "shift" : "unshift"]);
+        if (players.length < 2)
+            return;
+        const i = Math.max(0, players.indexOf(player));
+        selected = players[(i + (up ? 1 : players.length - 1)) % players.length].dbusName;
+    }
+
+    // Touches média (raccourcis, phase 10) : `qs ipc call media <fonction>`, sur le lecteur suivi.
+    IpcHandler {
+        target: "media"
+
+        function playPause(): void {
+            root.togglePlaying();
+        }
+
+        function next(): void {
+            root.next();
+        }
+
+        function previous(): void {
+            root.previous();
+        }
     }
 
     // Largeur en colonnes : caractères larges (CJK, emojis) comptent 2, marques combinantes 0.

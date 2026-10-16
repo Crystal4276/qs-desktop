@@ -4,7 +4,7 @@ import qs.services
 
 // Lecture en cours (INVENTORY.md § 1, `mpris`) : `{player_icon} {status_icon} {dynamic}`, identique en lecture, pause et arrêt ;
 // icône d'état seulement en pause. Lecteur absent → masqué.
-// Clic gauche : lecture / pause ; milieu : précédent ; droit : suivant ; molette : playerctld shift / unshift.
+// Clic gauche : lecture / pause ; milieu : précédent ; droit : suivant ; molette : lecteur suivant / précédent (Media.qml).
 Item {
     id: root
 
@@ -13,6 +13,8 @@ Item {
     implicitWidth: label.implicitWidth + 2 * Theme.bar.modulePadding
     implicitHeight: label.implicitHeight + 2 * Theme.bar.modulePadding
 
+    readonly property var icon: Theme.icon.players[Media.playerName] ?? Theme.icon.players.default
+
     RichLabel {
         id: label
         anchors.centerIn: parent
@@ -20,11 +22,11 @@ Item {
         // Pango (relevé avec `pango-view --serialize-to`) : l'espace entre deux icônes garde la police de la première
         // (13 px en Font Awesome 7 Brands contre 7 en Inter) ; les espaces suivies de texte sont en Inter.
         segments: Media.paused ? [
-            [Theme.font.awesomeBrands, (Theme.icon.players[Settings.mediaPlayer] ?? "") + " "],
+            [root.icon.font, root.icon.glyph + " "],
             [Theme.font.awesome4, Theme.icon.paused],
             [Theme.font.text, " " + Media.dynamic]
         ] : [
-            [Theme.font.awesomeBrands, Theme.icon.players[Settings.mediaPlayer] ?? ""],
+            [root.icon.font, root.icon.glyph],
             [Theme.font.text, "  " + Media.dynamic]
         ]
     }
