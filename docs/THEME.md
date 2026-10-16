@@ -267,6 +267,16 @@ coins 10 px des lignes de panneau), titre Inter 20 px `text`, artiste Inter 16 p
 volume, temps « m:ss / m:ss » Inter 16 px, boutons de panneau à glyphes Symbols Nerd Font Mono (précédent `U+F048`, lecture `U+F04B`,
 pause `U+F04C`, suivant `U+F051`) ; bouton indisponible à 50 % d'opacité.
 
+### Panneau de réglages façon GNOME (nouveau composant, phase 8, ton choix du 2026-10-16)
+
+Remplace le power menu (§ 6). Cadre des panneaux (§ 3), sans titre. Ligne du haut : boutons de panneau carrés (fond `surface0`, survol
+`surface1`, coins 10 px, padding 6 px) avec tes 4 SVG en **32 px** (taille des icônes du tray ; 48 dans Rofi) ou un glyphe 24 px.
+Curseurs : glyphe 24 px (`text` ; luminosité `yellow`), curseur de volume, pourcentage Inter 16 px `subtext0`, flèche (bouton de panneau,
+`U+F054` / `U+F078`). Bascules en 2 colonnes : bouton de panneau, glyphe 24 px, titre Inter 20 px, sous-titre Inter 16 px `subtext0` ;
+activée : fond `green`, texte `mantle` (contraste inversé, comme la sélection du lanceur). Profils d'énergie : trois bascules sur une
+ligne, glyphe au-dessus du titre (16 px). **Proposé, à valider** : ces tailles reprennent celles de la charte, aucune n'est inventée,
+mais leur combinaison est nouvelle.
+
 ### Centre de notifications (nouveau composant, ta demande du 2026-10-16)
 
 Cloche dans le tray, après les modules natifs ; panneau au style des panneaux (§ 3). Interrupteur du titre : notifications affichées /
@@ -403,4 +413,6 @@ versionnée dans `assets/` dans le même commit.
 | `audio-speakers`, `audio-input-microphone`, icône de l'application (sinon `audio-x-generic`) | lignes du panneau audio | Papirus-Dark |
 | `network-vpn` (Tailscale, Papirus n'a pas son icône) / `zerotier-gui` | section « Private networks » du panneau réseau | Papirus-Dark |
 | `battery-low` / `battery-caution` | notification de batterie faible / critique (laptop) | Papirus-Dark |
+| `U+F013` (engrenage) | bouton du panneau de réglages (remplace power `U+F011`), couleur `text` | Symbols Nerd Font Mono |
+| `U+F0100` caméra, `U+F032A` feuille, `U+F05D1` balance, `U+F04C5` compteur, `U+F009B` cloche barrée, `U+F0176` café, `U+F0594` lune, `U+F0D7D` HDR, `U+F1104` écran (VRR), `U+F001D` avion, `U+F078` chevron bas | panneau de réglages : capture, économie / équilibré / performance, ne pas déranger, écran allumé, veilleuse, HDR, VRR, mode avion, liste dépliée | Symbols Nerd Font Mono |
 | icônes de lecteurs `U+F04B` (défaut), `U+F1FF` Discord, `U+F269` Firefox, `U+F268` Chromium, `U+F03D` io | module média, lecteur choisi à la molette (`player-icons` de Waybar, enfin atteignables) | FontAwesome 4.7 (défaut, io), Hack Nerd Font (Discord), Font Awesome 7 Brands (Firefox, Chromium) — relevé avec Pango |

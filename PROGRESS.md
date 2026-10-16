@@ -215,6 +215,12 @@ Liste tenue à jour à chaque phase ; à dérouler une fois le projet terminé.
   Échap dans le centre de notifications.
 - **Troisième passe** : carte média avec Spotify qui répond (lecture, pause, suivant, avance dans le morceau).
 - **Phase 7** : `$mod+w` une fois branché (phase 10) ; lanceur avec ta vraie souris (molette, double clic) et ton clavier au quotidien.
+- **Phase 8 (panneau de réglages)** : verrouiller, se déconnecter, redémarrer, éteindre (non cliqués ici) ; « Keep Screen On » (l'écran
+  ne doit pas s'éteindre après 5 min) ; veilleuse le soir (après 20:00, écran plus chaud) ; trois boutons de profil d'énergie une fois
+  `power-profiles-daemon` installé ; `$mod+Escape` et `$mod+d` une fois branchés (phase 10) ; glisser les curseurs ; sur le laptop :
+  luminosité, batterie, mode avion.
+- **Revue de code (2026-10-16)** : ↑ dans un menu du tray ouvert sans sélection (la dernière entrée doit être choisie) ; vraie clé USB
+  chiffrée : déverrouiller, verrouiller, éjecter.
 - **Deuxième passe** : vraie touche de volume / micro une fois les raccourcis branchés (phase 10) ; connexion limitée (Wi-Fi d'hôtel avec
   portail, ou câble sans Internet) ; sur le laptop : OSD de luminosité et alerte de batterie à 30 % et 15 %.
 - **Hyprland** (rappel demandé) : tu ouvres une session Hyprland, je prends la main et je déroule la liste de « Compatibilité Hyprland »
@@ -521,9 +527,50 @@ Vérifié (Sway, ta session ; instance de test limitée au lanceur, puis instanc
 
 État laissé : Waybar et Dunst actifs, aucune instance `qs`, focus sur DP-2.
 
+## Phase 8 — Menus et scripts : en cours
+
+### Panneau de réglages façon GNOME : fait (2026-10-16)
+
+- Bouton engrenage (`SettingsButton.qml`, module `settings` de hosts/*.json, ex-`power`) ; panneau `SettingsPanel.qml` : surface de la
+  couche Overlay (ouvrable au clavier : `qs ipc call settings toggle`), fermée par Échap, un clic à côté, sur une barre ou sur un autre
+  écran (`OutsideClick.qml`, aussi utilisé par le lanceur).
+- Contenu : batterie (laptop), capture d'une zone (grim + slurp en attendant la phase 8b), verrouiller / se déconnecter / redémarrer /
+  éteindre (tes 4 SVG en 32 px, sans confirmation) ; curseurs son et micro (clic sur l'icône : muet ; flèche : choix du périphérique,
+  toujours affichée, puis « Advanced… »), luminosité (laptop) ; profils d'énergie (masqués sans `power-profiles-daemon`) ; bascules
+  ne pas déranger, écran allumé (`IdleInhibitor` sur les barres), veilleuse (`wlsunset`, 20:00 – 06:00, 3239 K : tes réglages GNOME),
+  HDR et VRR (tous les écrans compatibles, Sway ; Hyprland en phase 9), mode avion (laptop, `rfkill`).
+- Services : `Session`, `Displays` (IPC `display toggleHdr|toggleVrr`), `NightLight`, `Profiles`, `Rfkill` ; composants partagés avec le
+  panneau audio et l'OSD : `AudioDevices`, `MixerButton`, `PercentLabel`, `PanelFrame`.
+- Vérifié (Sway, ta session) : ouverture par l'engrenage et par IPC ; fermetures ; ne pas déranger (cloche barrée) ; veilleuse (`wlsunset`
+  lancé avec les bons réglages, relancé après un rechargement) ; HDR sur DP-1 et DP-3 puis rétabli ; VRR sur les trois écrans puis
+  rétabli ; volume, muet, choix de la sortie (avec une sortie de test) et de l'entrée ; capture d'une zone (fichier et presse-papiers,
+  supprimés ensuite).
+- Non vérifiable ici : voir « À faire par toi à la fin ».
+
+### Revue de code complète (2026-10-16, à ta demande) : 10 problèmes, tous corrigés
+
+1. Clé chiffrée : le volume déchiffré n'avait pas de disque parent (affiché « locked », jamais démonté ni verrouillé avant l'éjection).
+2. Verrouillage : démontage puis verrouillage l'un après l'autre (ils partaient en même temps).
+3. Éjection : démonter, verrouiller, éteindre en séquence, arrêt à la première erreur (une éjection ratée éteignait le disque plus tard).
+4. Lanceur : fermé par un clic sur un autre écran (il gardait le clavier).
+5. Espace créé en arrière-plan sur le mauvais écran : l'écran d'arrivée garde l'espace qu'il affichait.
+6. Popups ouverts suivis par une liste, retirés quand leur barre disparaît (écran retiré).
+7. Menus du tray : ↑ sans sélection choisit la dernière entrée.
+8. Notifications : une image envoyée en données reste dans l'historique (objet retenu par `RetainableLock`).
+9. Écran principal : jamais élu sur une description vide.
+10. Code en double entre le panneau audio, le panneau de réglages et l'OSD : composants partagés.
+Vérifié sur ta session : image LUKS de test (déverrouiller, verrouiller, détacher, éjection d'un volume occupé), espace 3 créé sur DP-3
+avec une règle provisoire (rétablie), écran virtuel retiré calendrier épinglé (`qs ipc call bar state` revient à zéro), notification de
+test avec image (Dunst arrêté puis relancé).
+
+### Reste à faire
+
+Menu d'applications (modèle Cinnamon, remplace nwg-menu) : en pause à ta demande, après la séance de débogage. Référence :
+`docs/reference/cinnamon-menu.png` (Linux Mint 22.3).
+
 ## Prochaine étape
 
-Phase 8 (panneau de réglages façon GNOME, menu d'applications, autres menus Rofi, scripts).
+Phase 8 : séance de débogage du panneau de réglages avec toi, puis menu d'applications.
 
 Décidé le 2026-10-16 pour la phase 8 (`ARCHITECTURE.md` § 10.1.4) : **plus de power menu séparé** ; le bouton power devient un
 **engrenage blanc** (`U+F013`) qui ouvre un panneau de réglages façon GNOME : capture d'écran, tes 4 icônes d'alimentation (sans veille ni

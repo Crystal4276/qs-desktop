@@ -463,6 +463,11 @@ Remplace le power menu Rofi. Base : les réglages rapides de GNOME 51 (code de g
 - **Tray inchangé** : réseau, Bluetooth, NordVPN, disques et cloche gardent leur icône et leur panneau ; ils ne sont pas dupliqués dans
   le panneau de réglages.
 - Repris de GNOME mais écarté : style sombre (thème toujours sombre), Réglages GNOME, veille, confirmation.
+- **Mise en œuvre** : surface de la couche Overlay plutôt que popup (un popup Wayland ne peut pas prendre le clavier sans clic, donc pas
+  d'ouverture par `$mod+Escape`) ; surfaces transparentes sur les autres écrans pendant qu'il est ouvert (`OutsideClick.qml`), sinon un
+  clic ailleurs laisserait le clavier bloqué sur lui. Flèche du choix de périphérique toujours affichée (avec un seul périphérique, GNOME
+  la cache : tu ne la voyais pas). Veilleuse : `wlsunset` lancé par le shell, réglages de `hosts/*.json` (`nightLight`), état dans un
+  fichier d'état local. HDR / VRR : commandes `output` de Sway ; Hyprland en phase 9 (sa config Lua n'a pas d'équivalent sûr connu).
 
 ### 10.2 Bluetooth : appairage et code PIN
 
@@ -606,7 +611,8 @@ Légende : **utilisé** (déjà dans le code), **prévu** (phase indiquée), **a
 | | `LazyLoader` | **utilisé** : panneau audio, lanceur ; prévu : menu d'applications, statistiques, capture |
 | | `ScriptModel` | **utilisé** : listes construites en JavaScript (espaces de travail, tray, réseaux, appareils Bluetooth, disques, pays VPN, notifications, centre) — délégués conservés, données mises à jour sur place |
 | | `PersistentProperties` | **utilisé** : historique des notifications (en texte JSON : un tableau JavaScript ne passe pas d'un moteur QML au suivant, « JSValue can't be reassigned to another engine ») et « ne pas déranger » conservés au rechargement de la config |
-| | `ObjectModel`, `Reloadable`, `Scope`, `Retainable`/`RetainableLock`, `BoundComponent`, `TransformWatcher`, `Intersection`, `QuickshellSettings` | utilisés indirectement ou au besoin ; aucun usage propre identifié |
+| | `RetainableLock` | **utilisé** (revue de code) : garde l'image en données d'une notification dans l'historique |
+| | `ObjectModel`, `Reloadable`, `Scope`, `Retainable`, `BoundComponent`, `TransformWatcher`, `Intersection`, `QuickshellSettings` | utilisés indirectement ou au besoin ; aucun usage propre identifié |
 | | `QsMenuAnchor`, `QsMenuButtonType` | **écarté** : menus du tray dessinés par nous (copie des menus GTK, phase 5) |
 | | `ColorQuantizer` | **écarté** : couleurs tirées d'une image, contraire à la charte (aucune couleur inventée) |
 | | `EasingCurve` | **après la première version** : pas d'animation pour la parité (THEME § 10) ; animations à ajouter ensuite, au fur et à mesure (ta demande, `BACKLOG.md`) |
@@ -623,7 +629,7 @@ Légende : **utilisé** (déjà dans le code), **prévu** (phase indiquée), **a
 | `Quickshell.Wayland` | `WlrLayershell`, `WlrLayer`, `WlrKeyboardFocus` | **utilisé** |
 | | `WlSessionLock`, `WlSessionLockSurface` | **prévu** : verrouillage (phase 8b) |
 | | `IdleMonitor` | **prévu** : veille des écrans (phase 8b), `respectInhibitors` |
-| | `IdleInhibitor` | **ajouté** : interrupteur « garder l'écran allumé » (emplacement à décider en phase 8, panneau de réglages rapides) |
+| | `IdleInhibitor` | **utilisé** (phase 8) : bascule « garder l'écran allumé » du panneau de réglages, posée sur chaque barre |
 | | `ScreencopyView`, `ToplevelManager`, `Toplevel` | **ajouté** (phase 8b) : outil de capture **entièrement natif** (aperçu figé de l'écran, sélection de zone, choix d'une fenêtre avec aperçu, enregistrement par `grabToImage`) au lieu de `grim`/`slurp` ; liste des fenêtres pour le menu d'applications si utile |
 | | `ShortcutInhibitor` | **écarté** : le verrouillage bloque déjà les raccourcis (protocole de verrouillage) |
 | | `BackgroundEffect` | **écarté** : flou d'arrière-plan absent de la charte, et Sway 1.12 ne le prend pas en charge |
@@ -640,7 +646,7 @@ Légende : **utilisé** (déjà dans le code), **prévu** (phase indiquée), **a
 | | `PwLink`, `PwLinkGroup`, `PwNodeLinkTracker` | **écarté** : pas de routage audio dans le bureau |
 | `Quickshell.Services.SystemTray` | tous | **utilisé** |
 | `Quickshell.Services.UPower` | `UPower`, `UPowerDevice` | **utilisé** (batterie, laptop) |
-| | `PowerProfiles` | **ajouté** (ta demande) : **trois boutons** de profil d'énergie (économie / équilibré / performance) dans la fenêtre de réglages (phase 8), sur toutes les machines ; nécessite `power-profiles-daemon` (dépendance principale, service à activer) |
+| | `PowerProfiles` | **utilisé** (phase 8, ta demande) : **trois boutons** de profil d'énergie (économie / équilibré / performance) dans la fenêtre de réglages (phase 8), sur toutes les machines ; nécessite `power-profiles-daemon` (dépendance principale, service à activer) |
 | `Quickshell.Services.Polkit` | `PolkitAgent`, `AuthFlow` | **prévu** : agent polkit (phase 8b) |
 | `Quickshell.Services.Pam` | `PamContext` | **prévu** : verrouillage (8b), greeter (12) |
 | `Quickshell.Services.Greetd` | `Greetd` | **prévu** : écran de connexion (phase 12, § 10.4) |
