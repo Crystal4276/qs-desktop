@@ -90,7 +90,7 @@ Locale : `en_US.UTF-8` (jours en anglais : `Thu`).
   - `status_icon` : en pause `U+F04C` ; en lecture et à l'arrêt : **rien** (aucune icône définie) ;
   - `dynamic` : `Artiste - Titre` (seuls ces deux champs), longueur totale max 40 caractères, titre max 20, troncature par `...` ; le **titre** est tronqué en premier.
   - exemple capturé : `[spotify] [pause] Tricky - Aftermath`.
-- **Tooltip** (défaut Waybar) : `{player} ({status}) {dynamic}` sans limite de longueur, ex. `spotify (Paused) Tricky - Aftermath`.
+- **Tooltip** (défaut Waybar) : `{player} ({status}) {dynamic}` sans limite de longueur, ex. `spotify (paused): Tricky - Aftermath` (*relevé en phase 4* : statut en minuscules, deux-points).
 - **Clics** (défauts Waybar) : gauche lecture/pause, milieu piste **précédente**, droite piste **suivante**.
 - **Molette** : haut `playerctld shift`, bas `playerctld unshift` (change de joueur actif — sans effet visible puisque le module est fixé sur Spotify).
 
@@ -103,7 +103,7 @@ Locale : `en_US.UTF-8` (jours en anglais : `Thu`).
 
 #### `pulseaudio` — icône de volume (toutes)
 
-- **Affichage** : icône seule, pas de pourcentage. Volume 0–33 % `U+F026`, 34–66 % `U+F027`, 67–100 % `U+F028` (3 paliers, défaut Waybar) ; muet `U+F466` (+ une espace).
+- **Affichage** : icône seule, pas de pourcentage. Volume 0–32 % `U+F026`, 33–65 % `U+F027`, 66–100 % `U+F028` (3 paliers, défaut Waybar ; *corrigé en phase 4* d'après `ALabel::getIcon` : indice = volume / (100 / 3 en entier = 33)) ; muet `U+F466` (+ une espace).
 - **Clic gauche** : bascule muet (`pamixer --toggle-mute`).
 - **Clic milieu** : sortie audio suivante (`audio-toggle.sh` : cycle des sorties, volume remis à 60 %, notification « Audio Switch » + nom).
 - **Clic droit** : `pavucontrol`.
@@ -174,6 +174,15 @@ Locale : `en_US.UTF-8` (jours en anglais : `Thu`).
   ⚠ Les icônes batterie `U+F578`…`U+F583` sont d'anciens codes Material Design **retirés de Nerd Fonts v3** : elles n'existent plus dans Symbols Nerd Font Mono (elles ne s'afficheraient aujourd'hui que par repli sur Font Awesome 7). Il faudra choisir leurs équivalents v3 (plage `U+F0079`…) en phase 4.
 - `custom/maximized` (état plein écran Hyprland) : mort.
 - Les définitions `network` de DP-2 et DP-1 (formats légèrement différents) ne sont utilisées par aucune barre.
+
+### Tooltips (décision du 2026-10-16)
+
+Les tooltips de Waybar **ne sont pas repris** : le calendrier devient une fenêtre au survol (ARCHITECTURE § 8.3) et les autres
+n'apportaient que peu d'information. Perdus : swap (mémoire), nom de la sortie audio (volume), titre complet du morceau (mpris) ;
+ils pourront revenir dans la fenêtre de statistiques (phase 8b) ou un panneau audio (`BACKLOG.md`).
+Relevé fait avant la décision (captures en phase 4, pour mémoire) : fond `rgba(11, 11, 18, 0.9)`, texte `#eff1f5`, rayon 6 px, padding 4 / 8 px,
+Noto Sans Mono 20 px (repli de `* { font-family: Symbols Nerd Font Mono }` pour le latin), interligne 28 px ;
+centré 20 px à droite du pointeur, 44 px sous lui.
 
 ### Particularités de style à reproduire (cf. `THEME.md`)
 

@@ -14,3 +14,5 @@ Idées notées pendant le travail. Rien ici n'est implémenté sans accord.
 - Raccourcis `XF86AudioPlay/Next/Prev` sous Sway (existants sous Hyprland seulement).
 - Passer DP-1 / DP-3 en 144 Hz (piste notée dans `~/.config/hypr/lua/layout.lua`).
 - Thème d'icônes Qt (`qt6ct` : breeze) différent du thème GTK (Papirus-Dark) : à harmoniser ?
+- Informations des anciens tooltips Waybar (non repris, décision du 2026-10-16) : swap, nom de la sortie audio, titre complet du morceau —
+  à placer dans la fenêtre de statistiques (phase 8b) ou un futur panneau audio.

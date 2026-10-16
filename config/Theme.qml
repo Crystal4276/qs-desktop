@@ -70,6 +70,7 @@ Singleton {
         readonly property int workspaceGlyph: 34
         readonly property int volumeIcon: 26
         readonly property int powerIcon: 28
+        readonly property int defaultIcon: 20     // modules sans taille dans style.css (batterie, rétroéclairage) : texte GTK, 12 pt × 1,25
         readonly property int cava: 20
         readonly property int notificationPt: 16   // points (Pango), titre en gras
         readonly property int launcher: 20
@@ -109,6 +110,27 @@ Singleton {
         // halo du focalisé, `text-shadow 0 0 6px currentColor` : copie du glyphe floutée par MultiEffect,
         // rayon max mesuré contre la référence (THEME.md § 3)
         readonly property int workspaceGlowBlur: 28
+    }
+
+    // § 3 — Calendrier de l'horloge (nouveau composant, ARCHITECTURE § 8.3) : valeurs reprises de la barre et du lanceur
+    readonly property QtObject calendar: QtObject {
+        readonly property int gap: 10                    // sous la pilule, à la hauteur du haut des fenêtres (gaps 10)
+        readonly property color background: root.color.mantle
+        readonly property int border: 1
+        readonly property color borderColor: root.color.overlay0
+        readonly property int radius: 20
+        readonly property int padding: 15
+        readonly property int spacing: 10
+        readonly property int titleSize: 26
+        readonly property int fontSize: 20
+        readonly property int cell: 40
+        readonly property int todayRadius: 10
+        readonly property color title: root.color.yellow   // couleur de l'horloge
+        readonly property color text: root.color.text
+        readonly property color weekday: root.color.subtext0
+        readonly property color otherMonth: root.color.surface2
+        readonly property color today: root.color.green
+        readonly property color todayText: root.color.mantle
     }
 
     // § 3 — Curseur de volume
@@ -154,7 +176,11 @@ Singleton {
         readonly property string power: "\uf011"
         readonly property string search: "\uf002"
         readonly property list<string> backlight: ["\ue38d", "\ue3d3", "\ue3d1", "\ue3cf", "\ue3ce", "\ue3cd", "\ue3ca", "\ue3c8", "\ue39b"]
-        // batterie : anciennes icônes retirées de Nerd Fonts v3, à choisir en phase 4
+        // batterie : codes v2 de la config Waybar (U+F578…U+F583) transposés en Nerd Fonts v3 (+0xEFA89), même dessin
+        readonly property list<string> battery: ["\u{f0083}", "\u{f007a}", "\u{f007b}", "\u{f007c}", "\u{f007d}", "\u{f007e}", "\u{f007e}", "\u{f007f}", "\u{f0080}", "\u{f0081}", "\u{f0082}", "\u{f0079}"]
+        readonly property string batteryCharging: "\u{f0084}"
+        readonly property string previous: "\uf053"   // calendrier épinglé : mois précédent
+        readonly property string next: "\uf054"       // mois suivant
 
         // font.inlineIcons (Hack Nerd Font)
         readonly property string updates: "\u{f01a7}"
@@ -168,6 +194,7 @@ Singleton {
         // font.awesome / awesomeBrands / awesome4
         readonly property string calendar: "\uf274"   // font.awesome
         readonly property string spotify: "\uf1bc"    // font.awesomeBrands
+        readonly property var players: ({ spotify: spotify })   // icône par lecteur suivi (Settings.mediaPlayer)
         readonly property string paused: "\uf04c"     // font.awesome4
 
         // font.bars (DejaVu Sans)
@@ -280,6 +307,16 @@ Singleton {
         readonly property int categoryIconSize: 48
         readonly property int itemIconSize: 24
     }
+
+    // Polices embarquées (assets/fonts, ARCHITECTURE § 8.2) chargées depuis le dépôt : prioritaires sur une copie système
+    // du même nom, qui peut différer (ex. `fa-brands-400.woff2` du paquet woff2-font-awesome).
+    readonly property list<FontLoader> embeddedFonts: [
+        FontLoader { source: Quickshell.shellPath("assets/fonts/SymbolsNerdFontMono-Regular.ttf") },
+        FontLoader { source: Quickshell.shellPath("assets/fonts/HackNerdFont-Regular.ttf") },
+        FontLoader { source: Quickshell.shellPath("assets/fonts/FontAwesome7Free-Regular-400.otf") },
+        FontLoader { source: Quickshell.shellPath("assets/fonts/FontAwesome7Brands-Regular-400.otf") },
+        FontLoader { source: Quickshell.shellPath("assets/fonts/FontAwesome4-Regular.ttf") }
+    ]
 
     // § 9 — Thèmes système
     readonly property string iconTheme: "Papirus-Dark"   // imposé par `//@ pragma IconTheme` dans shell.qml

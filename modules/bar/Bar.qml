@@ -28,86 +28,157 @@ Variants {
         exclusiveZone: Theme.bar.exclusiveZone
         color: Theme.bar.background
 
-        // Nom de module (hosts/*.json) → composant. Les modules pas encore écrits n'affichent rien.
+        // Nom de module (hosts/*.json, ARCHITECTURE § 4) → composant. Les modules pas encore écrits (tray : phase 5) n'affichent rien.
+        // Un module peut se masquer (`shown` faux) ; une pilule dont tous les modules sont masqués disparaît.
         readonly property var modules: ({
+            menu: menuModule,
             workspaces: workspacesModule,
+            mpris: mprisModule,
+            cava: cavaModule,
+            volume: volumeModule,
+            slider: sliderModule,
+            updates: updatesModule,
+            gpu: gpuModule,
+            cpu: cpuModule,
+            memory: memoryModule,
             clock: clockModule,
-            clockDate: clockDateModule
+            clockDate: clockDateModule,
+            network: networkModule,
+            power: powerModule,
+            battery: batteryModule,
+            backlight: backlightModule
         })
 
+        Component {
+            id: menuModule
+            MenuButton {}
+        }
         Component {
             id: workspacesModule
             Workspaces {
                 output: bar.modelData?.name ?? ""
             }
         }
-
+        Component {
+            id: mprisModule
+            Mpris {}
+        }
+        Component {
+            id: cavaModule
+            CavaModule {}
+        }
+        Component {
+            id: volumeModule
+            Volume {}
+        }
+        Component {
+            id: sliderModule
+            Slider {}
+        }
+        Component {
+            id: updatesModule
+            UpdatesModule {}
+        }
+        Component {
+            id: gpuModule
+            GpuModule {}
+        }
+        Component {
+            id: cpuModule
+            Cpu {}
+        }
+        Component {
+            id: memoryModule
+            Memory {}
+        }
         Component {
             id: clockModule
             Clock {}
         }
-
         Component {
             id: clockDateModule
             Clock {
                 showDate: true
             }
         }
+        Component {
+            id: networkModule
+            NetworkModule {}
+        }
+        Component {
+            id: powerModule
+            PowerButton {}
+        }
+        Component {
+            id: batteryModule
+            BatteryModule {}
+        }
+        Component {
+            id: backlightModule
+            Backlight {}
+        }
 
-        RowLayout {
-            anchors {
-                left: parent.left
-                top: parent.top
-                leftMargin: Theme.bar.marginSide
-                topMargin: Theme.bar.marginTop
-            }
+        component Side: RowLayout {
+            id: side
+
+            property var pills: []
+
+            anchors.top: parent.top
+            anchors.topMargin: Theme.bar.marginTop
             spacing: Theme.bar.spacing
 
             Repeater {
-                model: bar.layout.left
+                model: side.pills
+
                 Pill {
                     id: pill
 
                     required property var modelData
 
+                    // Visible si l'un de ses modules veut s'afficher. Pas d'après la largeur de la rangée : une pilule
+                    // cachée rend ses modules invisibles pour la mise en page, elle ne réapparaîtrait jamais.
+                    visible: Array.from({ length: pillModules.count }, (_, i) => pillModules.itemAt(i)).some(l => l?.wanted)
+
                     Repeater {
+                        id: pillModules
                         model: pill.modelData
+
                         Loader {
+                            id: slot
+
                             required property string modelData
+                            required property int index
+
                             Layout.fillHeight: true
+                            // Le module veut s'afficher (`visible` lu ici serait la visibilité effective, fausse si la pilule est cachée).
+                            readonly property bool wanted: item !== null && item.shown !== false
+
                             sourceComponent: bar.modules[modelData] ?? null
+                            visible: wanted
+
+                            // Premier module affiché de la pilule (le volume n'a de padding gauche qu'en tête : style.css).
+                            Binding {
+                                when: slot.item !== null && slot.item.leading !== undefined
+                                target: slot.item
+                                property: "leading"
+                                value: !Array.from({ length: slot.index }, (_, i) => pillModules.itemAt(i)).some(l => l?.wanted)
+                            }
                         }
                     }
                 }
             }
         }
 
-        RowLayout {
-            anchors {
-                right: parent.right
-                top: parent.top
-                rightMargin: Theme.bar.marginSide
-                topMargin: Theme.bar.marginTop
-            }
-            spacing: Theme.bar.spacing
+        Side {
+            anchors.left: parent.left
+            anchors.leftMargin: Theme.bar.marginSide
+            pills: bar.layout.left
+        }
 
-            Repeater {
-                model: bar.layout.right
-                Pill {
-                    id: pill
-
-                    required property var modelData
-
-                    Repeater {
-                        model: pill.modelData
-                        Loader {
-                            required property string modelData
-                            Layout.fillHeight: true
-                            sourceComponent: bar.modules[modelData] ?? null
-                        }
-                    }
-                }
-            }
+        Side {
+            anchors.right: parent.right
+            anchors.rightMargin: Theme.bar.marginSide
+            pills: bar.layout.right
         }
     }
 }

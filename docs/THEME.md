@@ -81,7 +81,7 @@ Autres couleurs littérales :
 | nwg-menu | `Symbols Nerd Font Mono` (texte en repli monospace) | 20 px ; recherche 24 px | |
 | GTK (applications, tooltips Waybar) | `Inter Light` | 12 pt | |
 
-Les tooltips de Waybar suivent le thème GTK (`catppuccin-mocha-green-standard+default`) et la police GTK.
+Les tooltips de Waybar suivent le thème GTK (`catppuccin-mocha-green-standard+default`) et la police GTK. Ils ne sont pas repris (décision du 2026-10-16, `INVENTORY.md` § 1, « Tooltips »).
 
 ### Police de chaque glyphe
 
@@ -105,13 +105,20 @@ Pourquoi ces polices exactes (parité exacte, choisie le 2026-10-15) :
   dans Hack, l'icône déborde sur l'espace qui suit, ce qui fixe la position du texte ;
 - le calendrier de Symbols a un bandeau plein (la référence a un contour fin), son Spotify et sa pause sont plus petits.
 
-Icônes batterie `U+F578…U+F583` (module inutilisé) : absentes de Nerd Fonts v3, à remplacer en phase 4.
+Icônes batterie `U+F578…U+F583` (module du laptop) : codes Material Design v2 absents de Nerd Fonts v3. *Phase 4* : transposés à l'identique
+dans la plage v3 (code v2 − `U+F500` + `U+F0001`, même dessin vérifié par rendu) : `U+F0083` (alerte), `U+F007A`…`U+F0082` (10 à 90 %),
+`U+F0079` (pleine), `U+F0084` (en charge). La config Waybar répète `U+F57D` (50 %) deux fois dans ses 12 paliers : repris tel quel.
 
 Règles pour Qt :
 - chaque texte nomme sa police explicitement (`Theme.font.*`) ; on ne s'appuie sur aucun repli implicite ;
 - une icône collée à du texte est mise en page **dans la même ligne de texte** (texte riche, une police par segment), comme le label Pango :
   un `Text` séparé compterait le débordement du glyphe dans sa largeur (19,6 px au lieu de 15,65 px) et décalerait la suite ;
-- rendu du texte par FreeType (`//@ pragma NativeTextRendering`), comme Pango : graisse et crénage plus proches de la référence.
+- rendu du texte par FreeType (`//@ pragma NativeTextRendering`), comme Pango : graisse et crénage plus proches de la référence ;
+- *phase 4* — espaces : Pango (relevé avec `pango-view --serialize-to`) dessine une espace **située entre deux icônes** dans la police de la
+  première icône (ex. Spotify `U+F1BC` + espace + pause : espace en Font Awesome 7 Brands, 13 px au lieu de 7) ; une espace suivie de texte reste en Inter ;
+- *phase 4* — les polices de `assets/fonts/` sont chargées depuis le dépôt (`FontLoader` dans `Theme.qml`) : une copie système du même nom peut différer
+  (ici `fa-brands-400.woff2` n'a pas l'espace de 13 px, l'écart faisait 6 px) ;
+- modules sans taille dans `style.css` (batterie, rétroéclairage) : taille du texte GTK, 12 pt × 1,25 (`text-scaling-factor`) = **20 px**.
 
 ## 3. Barre (Waybar)
 
@@ -166,11 +173,25 @@ Règles pour Qt :
 | `mpris` | `text` (défaut) |
 | `cava` | `green` |
 | `custom/powermenu` | `red` |
-| `battery` (laptop) | `green` ; `warning` hors charge : `red` |
+| `battery` (laptop) | `green` ; `warning` hors charge : `red`. Waybar ne passe à `critical` (≤ 15 %) qu'en quittant `warning`, sans style : la batterie redevenait verte sous 15 %. Ici, rouge dès 30 % et en dessous (écart assumé, phase 4) |
 | `backlight` (laptop) | `yellow` |
 | bouton Arch | logo `green` sur `mantle` ; actif/survol : logo `mantle` sur fond `green` |
 
 Transitions : aucune (`transition: none` sur le bouton menu et les espaces vides).
+
+### Calendrier de l'horloge (nouveau composant, phase 4 — ARCHITECTURE § 8.3)
+
+Remplace le tooltip calendrier. Aucune valeur nouvelle : tout est repris de la barre, du lanceur et de la palette.
+
+| Élément | Valeur | Origine |
+|---|---|---|
+| Position | centré sous l'horloge, 10 px sous la pilule (à la hauteur du haut des fenêtres) | marge haute de la barre / `gaps inner 10` |
+| Cadre | fond `mantle`, bordure 1 px `overlay0`, rayon 20 px, padding 15 px, espacement 10 px | pilules ; padding du lanceur |
+| Titre | `2026 October` (format du tooltip Waybar), Inter 26 px, `yellow` | texte de la barre, couleur de l'horloge |
+| Jours de la semaine | 2 lettres selon la locale (`Su Mo …`), Inter 20 px, `subtext0` | taille du lanceur |
+| Jours | Inter 20 px, `text` ; mois voisins `surface2` ; cases de 40 px | taille min. du bouton Arch |
+| Aujourd'hui | fond `green`, texte `mantle` en gras, rayon 10 px | sélection du lanceur et de nwg-menu |
+| Flèches (épinglé) | `U+F053` / `U+F054`, Symbols Nerd Font Mono 20 px, `text`, `yellow` au survol | — |
 
 ## 4. Notifications (Dunst)
 
@@ -300,3 +321,7 @@ Non repris : `~/.config/hypr/assets/layout/layout-{max,columns}.svg` (module mor
 Les composants sans équivalent actuel (réseau, Bluetooth, disques, verrouillage, polkit, capture, sélecteur de fond, calendrier, menu d'applications)
 utiliseront des glyphes de `Symbols Nerd Font Mono` ou des icônes `Papirus-Dark`. Chaque icône ajoutée est inscrite ici et, si c'est un fichier,
 versionnée dans `assets/` dans le même commit.
+
+| Icône | Composant | Police |
+|---|---|---|
+| `U+F053` / `U+F054` (chevrons) | calendrier épinglé : mois précédent / suivant | Symbols Nerd Font Mono |

@@ -27,6 +27,7 @@ wireplumber             # gestionnaire de session PipeWire, wpctl
 pipewire-pulse          # compatibilité PulseAudio (cava, pavucontrol)
 pavucontrol             # clic droit sur le volume
 cava                    # visualiseur audio de la barre
+playerctl               # playerctld shift / unshift : molette sur le module mpris
 
 # --- Système ---
 upower                  # batterie (Quickshell.Services.UPower), utile sur laptop
@@ -39,7 +40,7 @@ fakeroot                # requis par checkupdates (non déclaré par pacman-cont
 btop                    # clic sur CPU / mémoire
 nvtop                   # clic sur la température GPU
 gnome-terminal          # terminal lancé par les modules (configurable par machine)
-libnotify               # notify-send (tests, scripts)
+libnotify               # notify-send (sortie audio suivante, tests)
 
 # --- Captures et outils de dev ---
 grim                    # captures d'écran (scripts/shot.sh, raccourcis)

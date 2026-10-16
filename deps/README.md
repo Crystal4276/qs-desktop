@@ -24,10 +24,10 @@ Chaque commande a été rattachée à son paquet sur cette machine avec `pacman 
 | Barre (toutes) | layer-shell Wayland | `quickshell`, `sway` ou `hyprland` | — | — | — |
 | Bouton Arch | natif (ouvre le menu d'applications maison, phase 8) | — | — | — | `assets/arch_linux_icon_green.svg`, `arch_linux_icon_mantle.svg` |
 | Espaces de travail | natif (`Quickshell.I3` / `Quickshell.Hyprland`) | — | — | Symbols Nerd Font Mono | — |
-| Média (mpris) | natif (`Services.Mpris`, D-Bus) | — | un lecteur MPRIS (Spotify, AUR, n'est pas une dépendance du bureau) | Inter, Font Awesome 7 Brands, FontAwesome 4.7 | — |
-| cava | programme `cava` (sortie brute) | `cava` ; `pipewire-pulse` (source audio) | — | **DejaVu Sans** (barres `▁…█`) | config cava générée par le service |
+| Média (mpris) | natif (`Services.Mpris`, D-Bus) | — | un lecteur MPRIS (Spotify, AUR, n'est pas une dépendance du bureau) ; `playerctl` (`playerctld shift` à la molette) | Inter, Font Awesome 7 Brands, FontAwesome 4.7 | — |
+| cava | programme `cava` (sortie brute) | `cava` ; `pipewire-pulse` (source audio) | — | **DejaVu Sans** (barres `▁…█`) | `config/cava.conf` |
 | Volume (icône + curseur) | natif (`Services.Pipewire`) | `pipewire`, `wireplumber` (services utilisateur actifs) | `pavucontrol` (clic droit) | Symbols Nerd Font Mono | — |
-| Sortie audio suivante (ex-`audio-toggle.sh`) | natif (`Services.Pipewire`) + notification interne | — | — | — | — |
+| Sortie audio suivante (ex-`audio-toggle.sh`) | natif (`Services.Pipewire`) + `notify-send` (phase 6 : notification interne) | `libnotify` | — | — | — |
 | Mises à jour | `checkupdates` | `pacman-contrib`, **`fakeroot`** (`checkupdates` échoue sans lui ; non déclaré par `pacman-contrib`) | `paru` ou `yay` (clic) ; terminal | Inter, Hack Nerd Font | — |
 | GPU | NVIDIA : `nvidia-smi` ; AMD / Intel : sysfs (natif) | — | `nvidia-utils` (NVIDIA uniquement) ; `nvtop` (clic, tous constructeurs) ; module masqué sans température lisible | Inter, Hack Nerd Font | — |
 | CPU | natif (`/proc/stat`) | — | `btop` (clic) | Inter, Hack Nerd Font | — |
@@ -36,7 +36,7 @@ Chaque commande a été rattachée à son paquet sur cette machine avec `pacman 
 | Réseau (débit) | natif (`/proc/net/dev`, `/proc/net/route`) | — | — | Inter, Hack Nerd Font | — |
 | Tray | natif (`Services.SystemTray` ; Quickshell fait aussi le rôle de « watcher ») | — | — | — | — |
 | Bouton power → power menu | natif | `systemd` (Reboot/Shutdown) ; Lock → verrouillage natif | — | Symbols Nerd Font Mono | `assets/{lock,logout,restart,shutdown}.svg` |
-| Batterie (laptop) | natif (`Services.UPower`) | — | `upower` (service système) | Symbols Nerd Font Mono | — |
+| Batterie (laptop) | natif (`Services.UPower`) | — | `upower` (service système) | Symbols Nerd Font Mono (icônes v3 `U+F0079`…) | — |
 | Luminosité (laptop) | `/sys/class/backlight` | — | `brightnessctl` (écriture sans root) | Symbols Nerd Font Mono | — |
 
 Rendu de tous les SVG : `qt6-svg` (installé avec `quickshell`).
@@ -127,6 +127,7 @@ Correspondances attendues, **non encore vérifiées** (phase 11).
 | papirus-icon-theme | papirus-icon-theme | papirus-icon-theme | |
 | pipewire / wireplumber / pipewire-pulse | idem (`pipewire-pulseaudio`) | idem | |
 | pavucontrol / cava | idem | idem | |
+| playerctl | playerctl | playerctl | |
 | upower | upower | upower | |
 | networkmanager | NetworkManager | network-manager | |
 | bluez / bluez-utils | bluez | bluez (contient `bluetoothctl`) | |
