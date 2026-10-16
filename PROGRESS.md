@@ -210,6 +210,9 @@ Liste tenue à jour à chaque phase ; à dérouler une fois le projet terminé.
     Bluetooth (effaceraient tes réglages) ;
   - clic milieu (SecondaryActivate) et molette sur une icône d'application du tray ;
   - **vraie clé USB** (montage automatique, notifications, éjection / extinction).
+- **Phase 6** : notifications de vraies applications (WhatsApp, Thunderbird, Chromium, Spotify…) : icônes et images, actions proposées
+  (boutons), emojis ; clic milieu sur une notification qui contient un seul lien (ouverture dans le navigateur, non cliqué ici) ;
+  Échap dans le centre de notifications.
 - **Hyprland** (rappel demandé) : tu ouvres une session Hyprland, je prends la main et je déroule la liste de « Compatibilité Hyprland »
   ci-dessous (barres, répartition des espaces, modules, calendrier) ; puis le protocole complet en phase 9.
 - **Laptop**, une fois installé : laptop seul, laptop + écrans externes, capot fermé (`bindswitch lid:on/off`), écran interne éteint,
@@ -363,9 +366,56 @@ reconnecté aussitôt aux Pays-Bas (Amsterdam, serveur #1308 au lieu de #1284) ;
 État laissé : Waybar, Dunst et udiskie actifs, aucune instance `qs`, aucune image disque attachée, Wi-Fi activé, VPN connecté aux Pays-Bas
 (Amsterdam #1259 ; l'historique des pays contient Netherlands, Israel, United Arab Emirates, laissés par les tests).
 
+## Phase 6 — Notifications : faite (2026-10-16), en attente de validation
+
+Décisions (2026-10-16) : texte en **Inter** (police homogène) ; barre de progression remplie en **`blue`** (Dunst : couleurs par défaut hors
+palette) ; **boutons d'action** en plus de la parité ; **centre de notifications** (ta demande en cours de phase) avec cloche dans le tray
+et « ne pas déranger ».
+
+Produit :
+- `services/Notifs.qml` : serveur de notifications, comportement de Dunst 1.13.2 (code lu) — délais, pause au survol, tri, doublons,
+  étiquettes de pile, remplacement, indicateurs, âge, markup, historique de 20 ; « ne pas déranger » ; IPC `notifications`
+  (`close`, `closeAll`, `historyPop`, `count`).
+- `modules/notifications/` : `NotificationPopups.qml` (coin bas-droit de l'écran de `notificationsOutput`, repli sur l'écran principal),
+  `NotificationCard.qml` (géométrie de Dunst, `draw.c`).
+- `modules/bar/NotificationsPanel.qml` + cloche dans `Tray.qml` (icônes Papirus `notification-inactive` / `-active` / `-disabled`).
+- Charte (`THEME.md` § 4, § 12), architecture (§ 10.1.2), références `docs/reference/dunst-cases-{1,2}.png`, `BACKLOG.md`.
+
+Découvertes :
+- **Dunst affiche ses notifications sur DP-1 depuis les tests d'écrans de la phase 3** : `monitor = 1` est un numéro d'écran, et l'ordre a
+  changé. Rétabli à ta prochaine session Sway ; la version Quickshell choisit l'écran par description.
+- Le moteur JavaScript de Qt n'a pas `String.matchAll` ; `transient`, `escape` et `close` ne peuvent pas servir de noms en QML (mot réservé
+  ou méthode existante).
+- Un `HoverHandler` posé directement dans une `PanelWindow` ne reçoit rien ; dans un élément, si.
+- Le `modelData` d'un `Repeater` sur un tableau JavaScript est une copie : pas de comparaison par identité.
+- swayidle éteint les écrans après 5 min sans activité ; grim attend alors indéfiniment.
+- Session isolée (headless) : pas de pointeur, donc clics et survol testés sur ta session.
+
+Vérifié (Dunst arrêté le temps des tests puis relancé ; captures dans une session isolée ou sur tes écrans, Waybar masquée puis rétablie) :
+- rendu comparé à Dunst (références d'origine et nouvelles) : position (coin bas-droit, 4 px), largeur 603 px, écart 20 px, cadre
+  `overlay2` / `peach` en critique, coins 15, icône 100 px à 8 px du bord, texte à 32 px de l'icône, barre de progression centrée,
+  indicateurs `(AU)` / `(U)`, doublon `(1)`, markup (italique, souligné, gras, barré ; `<span>` ignoré, texte gardé), image d'un fichier,
+  emojis et CJK, âge `(1m 3s old)`, texte long renvoyé à la ligne, texte trop long coupé à 600 px ;
+- délais : 3 s (`-t 3000`), 10 s (basse, normale), aucun (critique) ; survol : délai suspendu, puis 10 s après le départ du pointeur ;
+- souris : gauche ferme, milieu lance l'action `default` (reçue par `notify-send -A`), droit ferme tout ; bouton « Marquer comme lu » →
+  action `read` reçue ;
+- remplacement par identifiant (progression 10 → 80 % en place), étiquette de pile, `CloseNotification` de l'application,
+  `historyPop` (rappelée, elle reste affichée) ;
+- centre : point bleu après une expiration, liste (la plus récente en haut, non vues en vert), « Clear », « Clear all », point retiré à la
+  fermeture ; « ne pas déranger » : cloche barrée, notification normale directement dans le centre, critique affichée ;
+- écran : session isolée à deux écrans, écran principal désactivé → la notification passe sur l'autre.
+
+Écarts restants :
+- hauteur des notifications : une ligne d'Inter est moins haute qu'une ligne de Noto Sans Mono (2 lignes : 86 px au lieu de 94) ;
+- icône `audio-volume-high` : trouvée par Quickshell, pas par Dunst (la notification de référence n'avait pas d'icône) ;
+- jusqu'à la bascule (phase 10), Dunst reste le serveur actif ; Quickshell prend le relais dès qu'il s'arrête.
+
+À tester à la main : voir « À faire par toi à la fin » (ajouts de la phase 6).
+
+État laissé : Waybar et Dunst actifs, aucune instance `qs`. L'arrêt de Dunst a vidé son historique (en mémoire) ; il est sauvegardé hors
+du dépôt dans le dossier temporaire de session (`notif/dunst-history-backup*.json`). Les notifications reçues de tes applications pendant
+les tests sont arrivées dans les instances de test (ex. une notification « Video (0:06) ») et ne sont plus consultables.
+
 ## Prochaine étape
 
-Phase 6 (notifications). Points déjà connus : texte en **Inter** (ta préférence de police homogène) plutôt que Noto Sans Mono de Dunst,
-à te proposer ; Dunst à arrêter pendant les tests puis relancer (`CLAUDE.md`, « Coexistence ») ; `Audio.cycleSink`, `Disks` et `Vpn`
-utilisent `notify-send`, qui passera par le serveur natif. Aides de test dans le dossier temporaire de session (non versionnées) :
-`wb.sh` (Waybar masquée / affichée, vérifiée par la zone réservée), sessions isolées `iso.sh`, copie de test du dépôt.
+Phase 7 (lanceur) après ta validation de la phase 6.

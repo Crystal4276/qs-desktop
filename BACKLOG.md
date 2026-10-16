@@ -20,3 +20,6 @@ Idées notées pendant le travail. Rien ici n'est implémenté sans accord.
   réseau Wi-Fi caché, création d'un point d'accès, fenêtre d'informations), blueman (envoi de fichiers, gestion des adaptateurs),
   udiskie (« Mount disc image », interrupteurs montage automatique / notifications), NordVPN (réglages, compte).
 - Panneau NordVPN : focus direct dans la recherche à l'ouverture (taper sans cliquer).
+- Notifications (phase 6) : raccourcis clavier pour le centre et « ne pas déranger » (IPC à ajouter) ; historique et « ne pas déranger »
+  conservés après un redémarrage de Quickshell (en mémoire aujourd'hui, comme Dunst) ; menu pour choisir parmi plusieurs liens d'une
+  notification (Dunst passait par `dmenu`, absent) ; couleurs par notification (`fgcolor`, `bgcolor`… : ignorées).
