@@ -466,7 +466,12 @@ ce projet, **sans dépendance ni emprunt à Cinnamon** (ta consigne) : catégori
 - **Catégories** (au survol, ton choix) : « All Applications », puis les catégories principales freedesktop non vides — une application
   va dans la première qu'elle déclare dans l'ordre Administration (`System`), Preferences (`Settings`), Programming, Games, Graphics,
   Sound & Video, Internet, Office, Education, Science, Accessories (`Utility`) ; sinon « Other » —, puis « Recent Files » (ton choix :
-  fichiers locaux de `recently-used.xbel`, du plus récent au plus ancien).
+  fichiers locaux de `recently-used.xbel` encore présents, du plus récent au plus ancien ; fichier lu à l'ouverture du menu seulement).
+- **Visée** (principe du menu de Cinnamon, code propre) : un pointeur qui va d'une catégorie vers la liste des applications, entre les
+  coins haut et bas de cette liste, ne change pas de catégorie en traversant les autres ; dès qu'il s'arrête (30 ms), la catégorie sous
+  lui est prise. Le survol d'une application ne la sélectionne que si la souris a bougé depuis la dernière touche : une liste qui
+  défile ou change sous un pointeur immobile ne vole pas la sélection du clavier.
+- **Hauteur** : au plus celle de l'écran sous la barre ; au-delà, chaque colonne défile (petit écran de laptop).
 - **Recherche** en bas : la saisie va toujours au champ ; même recherche que le lanceur (`Apps.filter`). **Le survol n'efface jamais la
   recherche** (défaut de nwg-menu, ta demande) : pendant une recherche, survoler une catégorie ne fait rien ; seul un clic la quitte.
 - **Applications** : nom + description (commentaire, sinon nom générique), par nom ; clic ou Entrée : lancement (`Apps.launch`, compté

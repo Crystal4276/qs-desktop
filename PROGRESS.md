@@ -642,6 +642,25 @@ trois instances empilées) ; abandonnée, instances arrêtées.
   rechargement à chaud menu ouvert. Boutons de session non cliqués.
 - Écart à valider : tailles d'icônes (48 px applications, 24 px le reste, `THEME.md` § 7).
 
+### Revue de code du menu (2026-10-17, `/code-review`) : 10 problèmes, tous corrigés
+
+1. Survol d'une application : ne sélectionne plus que si la souris a bougé (une liste qui défile ou change sous un pointeur immobile
+   volait la sélection du clavier ; Entrée lançait la ligne sous le pointeur).
+2. Hauteur limitée à l'écran ; colonnes défilantes (petit écran de laptop).
+3. `recently-used.xbel` (610 Ko, ~1000 entrées ici) : lu à l'ouverture du menu seulement, plus à chaque réécriture par GTK.
+4. Icônes des fichiers récents : cherchées pour les lignes affichées, une fois par type.
+5. Liste remise en haut seulement sur une action (saisie, catégorie), plus quand les données changent d'elles-mêmes.
+6. Pages : nombre de lignes juste (espacement compté, comme le lanceur).
+7. Entités XML : `&amp;` décodé en dernier.
+8. Fichiers récents absents et dossiers XDG inexistants omis (ici 447 fichiers présents sur 994).
+9. Visée vers la liste des applications : les catégories traversées en diagonale ne sont plus prises.
+10. Tailles de police du menu : celles de `Theme.font` (doublons retirés).
+Vérifié dans le Sway isolé : diagonale Games → une application du bas (Games gardé), descente verticale (catégorie prise à l'arrêt) ;
+saisie et 9 × Bas sous un pointeur immobile (sélection du clavier respectée) ; écran de 500 px de haut (cadre limité, colonnes qui
+défilent à la molette, recherche et boutons visibles) ; Recent Files rempli.
+Remarqué au passage, hors menu : sur un écran de 1280 px de large, les modules du centre de la barre principale chevauchent ceux de
+gauche — à traiter avec la config laptop (phase 11).
+
 ### Reste à faire
 
 Phase 8 : rien d'autre au programme ; à valider par toi (rapport du 2026-10-17).
