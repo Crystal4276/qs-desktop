@@ -15,6 +15,14 @@ Rectangle {
     radius: Theme.panel.rowRadius
     color: hover.hovered ? Theme.panel.buttonHover : Theme.panel.button
 
+    // Clavier (Tab, flèches) : Entrée ou Espace activent ; liseré quand l'élément est choisi.
+    activeFocusOnTab: true
+    border.width: activeFocus ? Theme.panel.border : 0
+    border.color: Theme.panel.focusRing
+    Keys.onReturnPressed: root.clicked()
+    Keys.onEnterPressed: root.clicked()
+    Keys.onSpacePressed: root.clicked()
+
     Image {
         anchors.centerIn: parent
         visible: root.glyph === ""

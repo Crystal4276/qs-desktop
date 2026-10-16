@@ -46,7 +46,7 @@ Thème d'icônes des applications (tray, lanceur, notifications) : `papirus-icon
 
 | Composant | Paquets requis | Optionnel | Polices | Fichiers du dépôt |
 |---|---|---|---|---|
-| Notifications | — (natif) | `libnotify` (tests `notify-send`) | Noto Sans Mono (`noto-fonts`) | — |
+| Notifications | — (natif) | `libnotify` (tests `notify-send`) | Inter (police homogène ; Dunst : Noto Sans Mono) | — |
 | Lanceur | — (natif, `DesktopEntries`) | terminal pour les applis `Terminal=true` | Inter, Symbols Nerd Font Mono | — |
 | Menu d'applications (modèle Cinnamon, remplace nwg-menu) | — (natif, `DesktopEntries`) | à préciser en phase 8 (ex. ouverture de dossiers → gestionnaire de fichiers par défaut via `xdg-open`) | à préciser | — |
 | Verrouillage (design refait) | — (natif, `WlSessionLock` + PAM, `pam` installé avec `quickshell`) | — | à définir | — |
@@ -56,7 +56,7 @@ Thème d'icônes des applications (tray, lanceur, notifications) : `papirus-icon
 | Réseau (tray) | `networkmanager` (natif, `Networking`) | `nm-connection-editor` pour l'édition des connexions | icônes Papirus-Dark (`nm-*`) | — |
 | Bluetooth (tray) | `bluez` (natif, `Bluetooth`), `bluez-utils` (agent d'appairage) | — | icônes Papirus-Dark (`blueman-tray*`) | — |
 | Disques amovibles (tray) | `udisks2`, `glib2` (`gdbus`), `systemd` (`busctl`), `xdg-utils` (ouvrir) | — | icônes Papirus-Dark | — |
-| NordVPN (tray) | — | `nordvpn-bin` (AUR) + service `nordvpnd` + compte connecté (sinon module masqué) ; icônes `nordvpn-tray-*` du paquet | — | historique des pays : `~/.local/state/quickshell/by-shell/desktop/vpn-recent.json` |
+| NordVPN (tray) | — | `nordvpn-bin` (AUR) + service `nordvpnd` + compte connecté (sinon module masqué) ; icônes `nordvpn-tray-*` du paquet | — | historique des pays : `~/.local/state/quickshell/by-shell/desktop/vpn.json` |
 | Outil de capture | `grim`, `slurp`, `wl-clipboard` (au départ) | — | à définir | — |
 | Événements Thunderbird (backlog) | `sqlite` | — | — | — |
 

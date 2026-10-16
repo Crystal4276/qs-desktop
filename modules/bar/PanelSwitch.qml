@@ -13,6 +13,14 @@ Rectangle {
     radius: height / 2
     color: checked ? Theme.panel.switchOn : Theme.panel.switchOff
 
+    // Clavier (Tab, flèches) : Entrée ou Espace activent ; liseré quand l'élément est choisi.
+    activeFocusOnTab: true
+    border.width: activeFocus ? Theme.panel.border : 0
+    border.color: Theme.panel.focusRing
+    Keys.onReturnPressed: root.toggled(!root.checked)
+    Keys.onEnterPressed: root.toggled(!root.checked)
+    Keys.onSpacePressed: root.toggled(!root.checked)
+
     Rectangle {
         width: parent.height - 6
         height: width

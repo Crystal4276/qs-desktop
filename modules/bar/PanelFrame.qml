@@ -27,6 +27,9 @@ Rectangle {
     focus: true
     Component.onCompleted: forceActiveFocus()
     Keys.onEscapePressed: root.closeRequested()
+    // Haut / Bas : élément précédent / suivant, comme Tab (touches que les éléments eux-mêmes n'utilisent pas).
+    Keys.onUpPressed: (Window.activeFocusItem ?? root).nextItemInFocusChain(false)?.forceActiveFocus()
+    Keys.onDownPressed: (Window.activeFocusItem ?? root).nextItemInFocusChain(true)?.forceActiveFocus()
 
     ColumnLayout {
         id: column

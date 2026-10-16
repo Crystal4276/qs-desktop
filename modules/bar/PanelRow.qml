@@ -21,6 +21,14 @@ Rectangle {
     radius: Theme.panel.rowRadius
     color: clickable && hover.hovered ? Theme.panel.rowHover : "transparent"
 
+    // Clavier (Tab, flèches) : Entrée ou Espace activent ; liseré quand l'élément est choisi.
+    activeFocusOnTab: clickable
+    border.width: activeFocus ? Theme.panel.border : 0
+    border.color: Theme.panel.focusRing
+    Keys.onReturnPressed: root.clicked()
+    Keys.onEnterPressed: root.clicked()
+    Keys.onSpacePressed: root.clicked()
+
     // Sous le contenu : reçoit les clics hors des boutons (qui consomment les leurs, PanelButton.qml).
     MouseArea {
         anchors.fill: parent

@@ -90,7 +90,7 @@ PanelWindow {
                 Layout.preferredWidth: Theme.osd.levelWidth
                 inset: Theme.slider.knobSize / 2
                 enabled: false
-                opacity: root.mutedNow ? 0.5 : 1
+                opacity: root.mutedNow ? Theme.panel.disabledOpacity : 1
                 value: root.level
             }
 

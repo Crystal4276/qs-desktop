@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
+import Quickshell
 import Quickshell.Widgets
 import qs.config
 import qs.services
@@ -22,9 +23,10 @@ RowLayout {
         return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
     }
 
-    // La position n'est pas signalée en continu (documentation de MprisPlayer) : relue chaque seconde pendant la lecture.
+    // La position n'est pas signalée en continu (documentation de MprisPlayer) : relue chaque seconde pendant la lecture, et
+    // seulement panneau ouvert (dans un panneau fermé, `visible` de la carte reste vrai : c'est la fenêtre qui est cachée).
     Timer {
-        running: root.visible && (root.player?.isPlaying ?? false)
+        running: root.visible && (root.QsWindow.window?.visible ?? false) && (root.player?.isPlaying ?? false)
         interval: 1000
         repeat: true
         onTriggered: root.player.positionChanged()

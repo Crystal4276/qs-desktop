@@ -39,13 +39,21 @@ Singleton {
         return history.some(h => h.id === entry.id);
     }
 
+    // Champs de recherche de chaque application, en minuscules : calculés une fois quand la liste change, pas à chaque frappe.
+    readonly property var searchFields: {
+        const map = {};
+        for (const e of entries)
+            map[e.id] = [e.name, e.genericName, e.execString, ...e.categories, ...e.keywords, e.comment]
+                .filter(f => f).map(f => f.toLowerCase());
+        return map;
+    }
+
     function filter(query: string): var {
         const tokens = query.toLowerCase().split(" ").filter(t => t !== "");
         if (tokens.length === 0)
             return entries;
         return entries.filter(e => {
-            const fields = [e.name, e.genericName, e.execString, ...e.categories, ...e.keywords, e.comment]
-                .filter(f => f).map(f => f.toLowerCase());
+            const fields = searchFields[e.id] ?? [];
             return tokens.every(t => {
                 const invert = t.startsWith("-");
                 const word = invert ? t.slice(1) : t;

@@ -24,6 +24,14 @@ Rectangle {
     radius: Theme.panel.rowRadius
     color: checked ? Theme.quickSettings.checked : hover.hovered ? Theme.panel.buttonHover : Theme.panel.button
 
+    // Clavier (Tab, flèches) : Entrée ou Espace activent ; liseré quand l'élément est choisi.
+    activeFocusOnTab: true
+    border.width: activeFocus ? Theme.panel.border : 0
+    border.color: Theme.panel.focusRing
+    Keys.onReturnPressed: root.clicked()
+    Keys.onEnterPressed: root.clicked()
+    Keys.onSpacePressed: root.clicked()
+
     GridLayout {
         id: content
         anchors {

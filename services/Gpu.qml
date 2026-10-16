@@ -15,7 +15,9 @@ Singleton {
 
     readonly property string sysfs: Quickshell.env("QS_SYSFS_ROOT") || "/sys"
     property string vendor: ""        // "nvidia", "amd", "intel" ou ""
-    property string sensorPath: ""    // AMD / Intel : fichier temp*_input
+    property string sensorPath: ""    // capteur du noyau (fichier temp*_input) : AMD, Intel, Nvidia sans nvidia-smi (nouveau)
+    // Nvidia : nvidia-smi s'il est installé et répond ; sinon le capteur du noyau, comme les autres cartes.
+    property bool useSmi: false
     property int temperature: -1      // °C
     readonly property bool available: temperature >= 0
 
@@ -41,14 +43,16 @@ Singleton {
                 [ -z "$sensor" ] && sensor="$input"
                 [ "$(cat "\${input%_input}_label" 2>/dev/null)" = edge ] && { sensor="$input"; break; }
             done
-            echo "$(cat "$chosen/device/vendor") $sensor"`, "sh", root.sysfs]
+            smi=0; command -v nvidia-smi >/dev/null 2>&1 && smi=1
+            echo "$(cat "$chosen/device/vendor") $smi $sensor"`, "sh", root.sysfs]
         stdout: StdioCollector {
             onStreamFinished: {
-                const [id, sensor] = text.trim().split(" ");
+                const [id, smi, sensor] = text.trim().split(" ");
                 root.vendor = ({ "0x10de": "nvidia", "0x1002": "amd", "0x8086": "intel" })[id] ?? "";
                 root.sensorPath = sensor ?? "";
-                poll.running = root.vendor === "nvidia" || root.sensorPath !== "";
-                console.info(`Gpu: carte ${id || "aucune"} (${root.vendor || "inconnue"}), capteur ${root.vendor === "nvidia" ? "nvidia-smi" : root.sensorPath || "aucun"}`);
+                root.useSmi = root.vendor === "nvidia" && smi === "1";
+                poll.running = root.useSmi || root.sensorPath !== "";
+                console.info(`Gpu: carte ${id || "aucune"} (${root.vendor || "inconnue"}), capteur ${root.useSmi ? "nvidia-smi" : root.sensorPath || "aucun"}`);
             }
         }
     }
@@ -59,7 +63,7 @@ Singleton {
         repeat: true
         triggeredOnStart: true
         onTriggered: {
-            if (root.vendor === "nvidia") {
+            if (root.useSmi) {
                 nvidiaSmi.running = true;
             } else {
                 sensor.reload();
@@ -76,10 +80,15 @@ Singleton {
                 root.temperature = isNaN(value) ? -1 : value;
             }
         }
-        // nvidia-smi absent ou en échec : module masqué.
+        // nvidia-smi en échec (pilote propriétaire absent) : capteur du noyau à la place ; sans capteur, plus de sondage
+        // (module masqué).
         onExited: code => {
-            if (code !== 0)
-                root.temperature = -1;
+            if (code === 0)
+                return;
+            root.temperature = -1;
+            root.useSmi = false;
+            poll.running = root.sensorPath !== "";
+            console.info(`Gpu: nvidia-smi en échec, capteur ${root.sensorPath || "aucun"}`);
         }
     }
 
