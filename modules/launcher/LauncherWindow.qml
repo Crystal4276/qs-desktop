@@ -30,6 +30,7 @@ PanelWindow {
     property int inputIndex: 0
 
     function open(): void {
+        BarState.closePopups();   // jamais deux surfaces au clavier exclusif l'une sur l'autre
         screen = Quickshell.screens.find(s => s.name === Compositor.focusedOutput) ?? Quickshell.screens[0];
         inputHistory = [...Apps.inputs, ""];
         inputIndex = inputHistory.length - 1;

@@ -661,6 +661,24 @@ défilent à la molette, recherche et boutons visibles) ; Recent Files rempli.
 Remarqué au passage, hors menu : sur un écran de 1280 px de large, les modules du centre de la barre principale chevauchent ceux de
 gauche — à traiter avec la config laptop (phase 11).
 
+### Revue de code du menu, seconde passe (2026-10-17) : 10 problèmes, tous corrigés
+
+1. Raccourci du menu (et des réglages) : ferme le panneau ouvert sur n'importe quel écran, au lieu d'en ouvrir un second ailleurs.
+2. Ouvrir le menu, les réglages ou le lanceur ferme les autres popups : plus deux surfaces au clavier exclusif empilées.
+3. Menu contextuel fermé quand la liste change (catégorie, saisie, défilement) ; son survol ne passe plus aux lignes dessous.
+4. Pages dans la colonne des catégories : première / dernière catégorie (ne déplaçaient plus la sélection cachée des applications).
+5. Fichiers récents relus pendant la vérification de leur présence : résultat périmé ignoré, vérification relancée.
+6. Curseur de défilement : reste dans sa gouttière en bas de liste ; se fait glisser.
+7. Colonne de gauche limitée à 270 px (`THEME.md` § 7, à valider) ; le cadre reste dans l'écran si sa largeur change.
+8. Code commun du menu et du panneau de réglages dans `OverlayPopup.qml` ; recherche du bouton commune dans `BarState.toggleFrom`.
+9. `Apps` : tri par nom et catégories calculés sur les applications, plus refaits à chaque lancement (l'historique change).
+10. Largeur de la colonne des applications liée à celle du lanceur, comme documenté.
+Trouvé en testant et corrigé : juste après l'ouverture, la première ligne survolée n'était pas sélectionnée.
+Vérifié dans le Sway isolé : raccourci deux fois (ouvre, ferme) ; réglages puis menu, lanceur puis menu (un seul popup ouvert) ;
+clic droit puis survol d'une catégorie (menu contextuel fermé, catégorie prise) ; premier survol après l'ouverture ; saisie sous un
+pointeur immobile ; Pages dans les catégories ; glissement du curseur jusqu'en bas sur un écran de 500 px ; six ouvertures rapides
+puis Recent Files rempli.
+
 ### Reste à faire
 
 Phase 8 : rien d'autre au programme ; à valider par toi (rapport du 2026-10-17).

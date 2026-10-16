@@ -8,6 +8,8 @@ import qs.config
 Item {
     id: root
 
+    readonly property bool open: panel.item?.visible ?? false
+
     implicitWidth: label.implicitWidth + Theme.bar.modulePadding
     implicitHeight: label.implicitHeight + 2 * Theme.bar.modulePadding
 

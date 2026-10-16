@@ -10,7 +10,8 @@ import qs.modules.menus
 Item {
     id: root
 
-    readonly property bool active: hover.hovered || (menu.item?.visible ?? false)
+    readonly property bool open: menu.item?.visible ?? false
+    readonly property bool active: hover.hovered || open
 
     function toggle(): void {
         menu.active = true;

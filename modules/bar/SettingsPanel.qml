@@ -14,19 +14,15 @@ import qs.services
 //   périphérique : la liste montre lequel est utilisé), puis « Advanced… » (pavucontrol) ;
 // - profils d'énergie (3 boutons) ; bascules en 2 colonnes : ne pas déranger, écran allumé, veilleuse, HDR, VRR, mode avion.
 // Ce qui a sa place dans le tray (réseau, Bluetooth, VPN, disques, notifications) n'est pas repris.
-PanelWindow {
+OverlayPopup {
     id: root
 
     property string expanded: ""   // "sink", "source" ou "" : liste de périphériques dépliée
-    property real closedAt: 0
 
-    // Sous le bouton, centré, sans dépasser les marges de la barre (comme les panneaux du tray). Un appui sur l'engrenage
-    // pendant que le panneau est ouvert : la barre l'a déjà fermé (Bar.qml), il ne se rouvre pas.
+    // Sous le bouton, centré, sans dépasser les marges de la barre (comme les panneaux du tray).
     function toggle(button: Item): void {
-        if (visible || Date.now() - closedAt < 400) {
-            close();
+        if (!beginOpen())
             return;
-        }
         const window = button.QsWindow.window;
         screen = window.screen;
         const x = button.mapToItem(null, 0, 0).x;
@@ -35,61 +31,10 @@ PanelWindow {
         frame.forceActiveFocus();
     }
 
-    function close(): void {
-        if (visible)
-            closedAt = Date.now();
-        visible = false;
-    }
-
-    function run(action: var): void {
-        close();
-        action();
-    }
-
-    // Surface de la couche Overlay sur la zone utile de l'écran (sous les barres), comme le lanceur : ouvrable au clavier
-    // (un popup ne peut pas prendre le clavier sans clic), clavier réservé (Échap), un clic à côté ou sur une barre ferme.
-    visible: false
+    // Surface de la couche Overlay sur tout l'écran (OverlayPopup) : clavier réservé (Échap), un clic à côté ou sur une barre ferme.
     WlrLayershell.namespace: "quickshell-settings"
-    WlrLayershell.layer: WlrLayer.Overlay
-    WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
-    anchors {
-        top: true
-        bottom: true
-        left: true
-        right: true
-    }
-    exclusiveZone: 0
-    color: "transparent"
-
-    onVisibleChanged: {
-        BarState.setPopupOpen(root, visible);
-        if (!visible)
-            expanded = "";
-    }
-    Component.onDestruction: BarState.setPopupOpen(root, false)
-
-    Connections {
-        target: BarState
-        function onClosePopups() {
-            root.close();
-        }
-    }
-
-    // Appui à côté du cadre : fermeture.
-    MouseArea {
-        anchors.fill: parent
-        acceptedButtons: Qt.AllButtons
-        onPressed: mouse => {
-            if (!frame.contains(mapToItem(frame, mouse.x, mouse.y)))
-                root.close();
-        }
-    }
-
-    OutsideClick {
-        active: root.visible
-        screen: root.screen
-        onPressed: root.close()
-    }
+    frameItem: frame
+    onVisibleChanged: if (!visible) expanded = ""
 
     PanelFrame {
         id: frame

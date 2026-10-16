@@ -57,13 +57,19 @@ Singleton {
         }
     }
 
+    // Raccourci : un panneau ouvert (sur n'importe quel écran) se ferme ; sinon celui du bouton de l'écran focalisé, ou du premier,
+    // s'ouvre. Chaque barre a son propre panneau : sans ce premier test, un second s'ouvrirait sur un autre écran.
+    function toggleFrom(buttons: var): void {
+        const button = buttons.find(b => b.open) ?? buttons.find(b => b.QsWindow.window?.screen?.name === Compositor.focusedOutput)
+            ?? buttons[0];
+        button?.toggle();
+    }
+
     IpcHandler {
         target: "menu"
 
         function toggle(): void {
-            const buttons = root.menuButtons;
-            const button = buttons.find(b => b.QsWindow.window?.screen?.name === Compositor.focusedOutput) ?? buttons[0];
-            button?.toggle();
+            root.toggleFrom(root.menuButtons);
         }
     }
 
@@ -71,9 +77,7 @@ Singleton {
         target: "settings"
 
         function toggle(): void {
-            const buttons = root.settingsButtons;
-            const button = buttons.find(b => b.QsWindow.window?.screen?.name === Compositor.focusedOutput) ?? buttons[0];
-            button?.toggle();
+            root.toggleFrom(root.settingsButtons);
         }
     }
 }

@@ -19,20 +19,21 @@ import qs.modules.bar
 // Souris : le survol d'une application la sélectionne seulement si la souris a bougé (une liste qui défile ou change sous un pointeur
 // immobile ne déplace pas la sélection) ; en allant d'une catégorie vers la liste des applications en diagonale, les catégories
 // traversées ne sont pas prises (visée : `aiming`) — celle sous le pointeur l'est dès qu'il s'arrête.
-PanelWindow {
+OverlayPopup {
     id: root
 
     property string category: "all"
     property string pane: "apps"    // colonne pilotée par Haut / Bas : "apps" ou "categories"
     property int selected: 0
     property var contextEntry: null // application du menu contextuel (clic droit), null : fermé
-    property real closedAt: 0
+    property real anchorX: 0        // bord gauche voulu du cadre (pilule du bouton) ; le cadre reste dans l'écran
 
     // Souris (voir l'en-tête) : dernière position dans le cadre, déplacement depuis la dernière touche, visée vers les applications.
     property point pointer: Qt.point(-1, -1)
     property bool mouseMoved: false
     property bool aiming: false
     property string hoveredCategory: ""
+    property int hoveredApp: -1     // ligne d'application sous le pointeur (-1 : aucune)
     property var mimeIconCache: ({})
 
     readonly property var categories: [
@@ -61,6 +62,7 @@ PanelWindow {
 
     // Nouvelle liste demandée (saisie, catégorie) : première ligne choisie et visible, une fois la vue mise à jour.
     function resetList(): void {
+        contextEntry = null;
         selected = 0;
         Qt.callLater(() => list.positionViewAtBeginning());
     }
@@ -96,6 +98,11 @@ PanelWindow {
         pointer = p;
         mouseMoved = true;
         aimStop.restart();
+        // Ligne survolée avant que ce mouvement soit vu (ordre des événements) ou sous un pointeur resté immobile : prise maintenant.
+        if (hoveredApp >= 0 && (pane !== "apps" || selected !== hoveredApp)) {
+            pane = "apps";
+            selected = hoveredApp;
+        }
     }
 
     function hoverCategory(key: string, hovered: bool): void {
@@ -108,17 +115,12 @@ PanelWindow {
             setCategory(key);
     }
 
-    // Sous le bouton, aligné sur le bord gauche de sa pilule (nwg-menu : 10 px sous la barre). Un appui sur le bouton pendant
-    // que le menu est ouvert : la barre l'a déjà fermé (Bar.qml), il ne se rouvre pas.
+    // Sous le bouton, aligné sur le bord gauche de sa pilule (nwg-menu : 10 px sous la barre).
     function toggle(button: Item): void {
-        if (visible || Date.now() - closedAt < 400) {
-            close();
+        if (!beginOpen())
             return;
-        }
-        const window = button.QsWindow.window;
-        screen = window.screen;
-        const x = button.mapToItem(null, 0, 0).x - Theme.bar.pillBorder;
-        frame.x = Math.max(Theme.bar.marginSide, Math.min(x, window.width - Theme.bar.marginSide - frame.width));
+        screen = button.QsWindow.window.screen;
+        anchorX = button.mapToItem(null, 0, 0).x - Theme.bar.pillBorder;
         search.text = "";
         category = "all";
         pane = "apps";
@@ -127,17 +129,12 @@ PanelWindow {
         mouseMoved = false;
         aiming = false;
         hoveredCategory = "";
+        hoveredApp = -1;
         pointer = Qt.point(-1, -1);
         Places.refreshRecent();
         list.positionViewAtBeginning();
         visible = true;
         search.forceActiveFocus();
-    }
-
-    function close(): void {
-        if (visible)
-            closedAt = Date.now();
-        visible = false;
     }
 
     function setCategory(key: string): void {
@@ -159,11 +156,6 @@ PanelWindow {
         else
             Places.open(item.path);
         close();
-    }
-
-    function run(action: var): void {
-        close();
-        action();
     }
 
     function handleKey(event: var): bool {
@@ -190,6 +182,8 @@ PanelWindow {
                 setCategory(categories[Math.max(0, Math.min(i + step, categories.length - 1))].key);
             } else
                 select(selected + step);
+        } else if ((k === Qt.Key_PageUp || k === Qt.Key_PageDown) && pane === "categories") {
+            setCategory(categories[k === Qt.Key_PageUp ? 0 : categories.length - 1].key);
         } else if (k === Qt.Key_PageUp || k === Qt.Key_PageDown) {
             const rows = Math.max(1, Math.floor((list.height + list.spacing) / (largeRow.height + list.spacing)));
             select(selected + (k === Qt.Key_PageUp ? -rows : rows));
@@ -198,41 +192,9 @@ PanelWindow {
         return true;
     }
 
-    visible: false
+    // Surface de la couche Overlay sur tout l'écran (OverlayPopup) : clavier réservé, un clic à côté ou sur une barre ferme.
     WlrLayershell.namespace: "quickshell-menu"
-    WlrLayershell.layer: WlrLayer.Overlay
-    WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
-    anchors {
-        top: true
-        bottom: true
-        left: true
-        right: true
-    }
-    exclusiveZone: 0
-    color: "transparent"
-
-    onVisibleChanged: BarState.setPopupOpen(root, visible)
-    Component.onDestruction: BarState.setPopupOpen(root, false)
-
-    Connections {
-        target: BarState
-        function onClosePopups() {
-            root.close();
-        }
-    }
-
-    OutsideClick {
-        active: root.visible
-        screen: root.screen
-        onPressed: root.close()
-    }
-
-    // Appui à côté du cadre : fermeture.
-    MouseArea {
-        anchors.fill: parent
-        acceptedButtons: Qt.AllButtons
-        onPressed: root.close()
-    }
+    frameItem: frame
 
     // Ligne de liste (style nwg-menu) : icône, nom, description facultative ; survol ou sélection : fond `green`, texte `mantle`.
     component MenuRow: Rectangle {
@@ -364,6 +326,7 @@ PanelWindow {
     Rectangle {
         id: frame
 
+        x: Math.max(Theme.bar.marginSide, Math.min(root.anchorX, root.width - Theme.bar.marginSide - width))
         y: Theme.panel.gap
         width: layout.implicitWidth + 2 * (Theme.appMenu.border + Theme.appMenu.padding)
         // Au plus la hauteur de l'écran sous la barre : au-delà, les colonnes défilent.
@@ -415,7 +378,8 @@ PanelWindow {
             // --- Colonne de gauche : dossiers, favoris, session ---
             ColumnLayout {
                 Layout.fillHeight: true
-                Layout.preferredWidth: Math.max(places.implicitWidth, favorites.implicitWidth, session.implicitWidth)
+                Layout.preferredWidth: Math.min(Theme.appMenu.sidebarMaxWidth,
+                    Math.max(places.implicitWidth, favorites.implicitWidth, session.implicitWidth))
                 spacing: Theme.appMenu.spacing
 
                 ListBox {
@@ -546,6 +510,7 @@ PanelWindow {
                             currentIndex: root.selected
                             highlightFollowsCurrentItem: false
                             onCurrentIndexChanged: positionViewAtIndex(currentIndex, ListView.Contain)
+                            onContentYChanged: root.contextEntry = null
 
                             model: ScriptModel {
                                 values: root.items
@@ -562,9 +527,15 @@ PanelWindow {
                                 label: modelData.name
                                 description: modelData.description ?? ""
                                 highlighted: root.pane === "apps" && root.selected === index
-                                onHoveredChanged: if (hovered && root.mouseMoved) {
-                                    root.pane = "apps";
-                                    root.selected = index;
+                                onHoveredChanged: {
+                                    if (hovered)
+                                        root.hoveredApp = index;
+                                    else if (root.hoveredApp === index)
+                                        root.hoveredApp = -1;
+                                    if (hovered && root.mouseMoved) {
+                                        root.pane = "apps";
+                                        root.selected = index;
+                                    }
                                 }
                                 onClicked: root.activate(modelData)
                                 onRightClicked: (x, y) => {
@@ -574,19 +545,43 @@ PanelWindow {
                             }
                         }
 
-                        // Curseur de défilement (thème GTK) : dans une gouttière de 25 px, bordure transparente de 4 px.
+                        // Curseur de défilement (thème GTK) : dans une gouttière de 25 px, bordure transparente de 4 px, au moins
+                        // 24 px de haut ; se fait glisser.
                         Rectangle {
-                            visible: list.overflows
+                            id: thumb
+
                             readonly property real track: list.height - 2 * Theme.appMenu.scrollbarInset
+                            readonly property real range: list.contentHeight - list.height   // défilement possible
+                            readonly property real fraction: range > 0 ? (list.contentY - list.originY) / range : 0
+
+                            visible: list.overflows
                             x: parent.width - Theme.appMenu.itemPadding - Theme.appMenu.scrollbarWidth + Theme.appMenu.scrollbarInset
-                            y: list.y + Theme.appMenu.scrollbarInset + list.visibleArea.yPosition * track
+                            y: list.y + Theme.appMenu.scrollbarInset + Math.max(0, Math.min(1, fraction)) * (track - height)
                             width: Theme.appMenu.scrollbarWidth - 2 * Theme.appMenu.scrollbarInset
                             height: Math.max(Theme.appMenu.scrollbarMinLength, list.visibleArea.heightRatio * track)
                             radius: width / 2
-                            color: sliderHover.hovered ? Theme.appMenu.scrollbarHover : Theme.appMenu.scrollbar
+                            color: sliderHover.hovered || drag.pressed ? Theme.appMenu.scrollbarHover : Theme.appMenu.scrollbar
 
                             HoverHandler {
                                 id: sliderHover
+                            }
+
+                            MouseArea {
+                                id: drag
+
+                                property real startY
+                                property real startFraction
+
+                                anchors.fill: parent
+                                onPressed: mouse => {
+                                    startY = mapToItem(null, mouse.x, mouse.y).y;
+                                    startFraction = thumb.fraction;
+                                }
+                                onPositionChanged: mouse => {
+                                    const free = thumb.track - thumb.height;
+                                    const f = startFraction + (free > 0 ? (mapToItem(null, mouse.x, mouse.y).y - startY) / free : 0);
+                                    list.contentY = list.originY + Math.max(0, Math.min(1, f)) * thumb.range;
+                                }
                             }
                         }
                     }
@@ -650,6 +645,11 @@ PanelWindow {
 
             visible: root.contextEntry !== null
             z: 1
+
+            // Le survol du menu contextuel ne passe pas aux lignes et catégories situées dessous.
+            HoverHandler {
+                blocking: true
+            }
 
             MenuRow {
                 Layout.fillWidth: true
