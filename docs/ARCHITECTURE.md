@@ -398,7 +398,8 @@ Proposition de placement dans les phases (CLAUDE.md n'est pas modifié sans ton 
   `pair` (l'agent par défaut de blueman n'est pas touché) ; demandes affichées dans le panneau, jamais acceptées automatiquement.
 - **Disques** (R7) : `busctl` / `gdbus monitor` / `udisksctl` ; règles et textes d'udiskie (montage automatique, notifications, images
   disque en boucle prises en charge).
-- **NordVPN** (§ 11.4) : commande `nordvpn` ; derniers pays utilisés (historique local) et recherche sur tous les pays.
+- **NordVPN** (§ 11.4) : commande `nordvpn` ; derniers pays utilisés (historique local) et recherche sur tous les pays ; l'interrupteur
+  reconnecte au dernier pays utilisé.
 
 ### 10.2 Bluetooth : appairage et code PIN
 
