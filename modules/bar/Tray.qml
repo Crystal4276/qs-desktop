@@ -12,7 +12,15 @@ import qs.services
 Item {
     id: root
 
-    readonly property var items: SystemTray.items.values.filter(i => i.status !== Status.Passive)
+    // Applications remplacées par un module natif (identifiant StatusNotifier → module présent) : leur icône est masquée tant
+    // que le module natif est là (ta demande du 2026-10-16 : pas de doublon ; ces applications tournent encore jusqu'à la phase 10).
+    readonly property var replaced: ({
+        "nm-applet": Network.managed,
+        "blueman": Bluez.available,
+        "udiskie": Disks.loaded,
+        "NordVPN": Vpn.available
+    })
+    readonly property var items: SystemTray.items.values.filter(i => i.status !== Status.Passive && !replaced[i.id])
     readonly property bool shown: items.length > 0 || Vpn.available || Network.managed || Disks.loaded || Bluez.available
 
     implicitWidth: row.implicitWidth + 2 * Theme.bar.trayPadding
