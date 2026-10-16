@@ -71,6 +71,17 @@ Singleton {
             if (loop)
                 loops[path] = { path, label: decode(value(loop, "BackingFile")), device, canPowerOff: false, removable: true, isLoop: true };
         }
+        // Disque d'un volume. Un volume déchiffré n'a pas de Drive (« / » pour un périphérique dm) : il hérite de celui de son
+        // volume chiffré, donc il est géré comme lui et l'éjection du disque le démonte et le verrouille.
+        function parentOf(path: string): var {
+            const ifs = objects[path] ?? {};
+            const b = ifs["org.freedesktop.UDisks2.Block"];
+            const backing = value(b, "CryptoBackingDevice");
+            if (backing && backing !== "/")
+                return parentOf(backing);
+            const partition = ifs["org.freedesktop.UDisks2.Partition"];
+            return drivesByPath[value(b, "Drive")] ?? loops[partition ? value(partition, "Table") : path];
+        }
         const list = [];
         for (const [path, ifs] of Object.entries(objects)) {
             const b = ifs["org.freedesktop.UDisks2.Block"];
@@ -78,8 +89,7 @@ Singleton {
                 continue;
             // Comme udiskie (mount.py) : une image disque en boucle est gérée même si UDisks2 la dit « système »,
             // sauf images du système (snaps, extensions).
-            const partition = ifs["org.freedesktop.UDisks2.Partition"];
-            const parent = drivesByPath[value(b, "Drive")] ?? loops[partition ? value(partition, "Table") : path];
+            const parent = parentOf(path);
             const userLoop = parent?.isLoop && parent.label !== "" && !/^\/var\/lib\/(extensions|confexts|snapd)\//.test(parent.label);
             if (value(b, "HintSystem") && !userLoop)
                 continue;
@@ -114,9 +124,6 @@ Singleton {
         drives = [...Object.values(drivesByPath), ...Object.values(loops)].filter(d => list.some(v => v.driveKey === d.path))
             .map(d => ({ key: d.path, label: d.label, device: d.device, canPowerOff: d.canPowerOff, isLoop: d.isLoop ?? false }));
         loaded = true;
-        const ejecting = drives.find(d => d.key === pendingEject);
-        if (ejecting && !list.some(v => v.driveKey === ejecting.key && v.mounted))
-            eject(ejecting);
     }
 
     // --- Notifications et montage automatique (udiskie : notify.py, automount) ---
@@ -153,46 +160,59 @@ Singleton {
 
     // --- Actions (udisksctl) ---
 
-    function run(action: string, device: string, args: var, input: string): void {
-        const p = actionProcess.createObject(root, { action, device, command: ["udisksctl", ...args], input });
+    // `next` : appelé seulement si l'action réussit (enchaînements : démonter puis verrouiller, puis éteindre).
+    function run(action: string, device: string, args: var, input: string, next: var): void {
+        const p = actionProcess.createObject(root, { action, device, command: ["udisksctl", ...args], input, next: next ?? null });
         p.running = true;
     }
 
+    // Étapes { action, device, args } l'une après l'autre ; la première qui échoue arrête la suite (notification « Job failed »).
+    function sequence(steps: var): void {
+        if (steps.length === 0)
+            return;
+        const [step, ...rest] = steps;
+        run(step.action, step.device, step.args, "", () => sequence(rest));
+    }
+
+    function unmountStep(v): var {
+        return { action: "unmount", device: v.device, args: ["unmount", "--no-user-interaction", "-b", v.device] };
+    }
+
+    function lockStep(v): var {
+        return { action: "lock", device: v.device, args: ["lock", "--no-user-interaction", "-b", v.device] };
+    }
+
     function mount(v): void {
-        run("mount", v.device, ["mount", "--no-user-interaction", "-b", v.device], "");
+        run("mount", v.device, ["mount", "--no-user-interaction", "-b", v.device], "", null);
     }
 
     function unmount(v): void {
-        run("unmount", v.device, ["unmount", "--no-user-interaction", "-b", v.device], "");
+        sequence([unmountStep(v)]);
     }
 
     function unlock(v, passphrase: string): void {
-        run("unlock", v.device, ["unlock", "--no-user-interaction", "-b", v.device, "--key-file", "/dev/stdin"], passphrase);
+        run("unlock", v.device, ["unlock", "--no-user-interaction", "-b", v.device, "--key-file", "/dev/stdin"], passphrase, null);
     }
 
+    // Verrouiller : démonter d'abord le volume déchiffré s'il est monté, puis verrouiller une fois le démontage fini.
     function lock(v): void {
         const clear = volumes.find(c => c.path === v.cleartext);
-        if (clear?.mounted)
-            unmount(clear);
-        run("lock", v.device, ["lock", "--no-user-interaction", "-b", v.device], "");
+        sequence([...(clear?.mounted ? [unmountStep(clear)] : []), lockStep(v)]);
     }
 
-    // Éjecter : démonter les volumes du disque, puis (à la relecture suivante, une fois tout démonté) l'éteindre
-    // ou détacher l'image disque.
-    property string pendingEject: ""
+    // Éjecter, comme udiskie : démonter les volumes du disque, verrouiller ses volumes chiffrés, puis l'éteindre (ou détacher
+    // l'image disque). Une étape qui échoue (volume occupé) arrête tout : rien ne reste en attente.
     function eject(drive): void {
-        const mounted = volumes.filter(v => v.driveKey === drive.key && v.mounted);
-        if (mounted.length > 0) {
-            pendingEject = drive.key;
-            for (const v of mounted)
-                unmount(v);
-            return;
-        }
-        pendingEject = "";
+        const own = volumes.filter(v => v.driveKey === drive.key);
+        const steps = [
+            ...own.filter(v => v.mounted).map(unmountStep),
+            ...own.filter(v => v.isCrypto && v.cleartext !== "/").map(lockStep)
+        ];
         if (drive.isLoop)
-            run("detach", drive.device, ["loop-delete", "--no-user-interaction", "-b", drive.device], "");
+            steps.push({ action: "detach", device: drive.device, args: ["loop-delete", "--no-user-interaction", "-b", drive.device] });
         else if (drive.canPowerOff)
-            run("power off", drive.device, ["power-off", "--no-user-interaction", "-b", drive.device], "");
+            steps.push({ action: "power off", device: drive.device, args: ["power-off", "--no-user-interaction", "-b", drive.device] });
+        sequence(steps);
     }
 
     function browse(v): void {
@@ -207,6 +227,7 @@ Singleton {
             required property string action
             required property string device
             property string input: ""
+            property var next: null
 
             stdinEnabled: input !== ""
             stdout: StdioCollector {}
@@ -224,6 +245,8 @@ Singleton {
                     // « Error unlocking …: GDBus.Error:org.freedesktop.UDisks2.Error.Failed: Error unlocking …: <cause> » → dernière partie.
                     const message = errors.text.trim().replace(/^[\s\S]*GDBus\.Error:\S+\s*/, "");
                     root.notify("Job failed", message ? `failed to ${action} ${device}:\n${message}` : `failed to ${action} device ${device}.`);
+                } else if (next) {
+                    next();
                 }
                 refresh.restart();
                 destroy();
