@@ -1,14 +1,20 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
-import Quickshell.Wayland
 import qs.config
+import qs.services
 
 // Calendrier de l'horloge (ARCHITECTURE.md § 8.3, THEME.md § 3 « Calendrier ») : remplace le tooltip calendrier de Waybar.
 //  - survol de l'horloge : aperçu du mois en cours, fermé quand le pointeur quitte l'horloge ;
 //  - clic : calendrier épinglé ; flèches (clic ou clavier) et molette changent de mois, clic sur le titre : retour au mois en cours.
-//    Fermeture : Échap, ou clic n'importe où ailleurs (horloge comprise), capté par une couche transparente sur chaque écran.
-//    (Un popup `grabFocus` ne convient pas : Sway ne le ferme pas au clic extérieur, et il bloque le clic sur l'horloge.)
+//    Fermeture : Échap, clic n'importe où ailleurs (il atteint aussi ce qui est dessous : fenêtre, module de la barre),
+//    ou pointeur resté hors du calendrier et de l'horloge pendant Theme.calendar.autoCloseDelay.
+//    Mécanisme (ARCHITECTURE § 8.3) : pendant le survol de l'horloge, sa barre accepte le clavier « à la demande » ; le clic
+//    qui épingle lui donne donc le focus (Échap, ←/→). Un clic sur une fenêtre le lui reprend : le calendrier se ferme.
+//    Un appui sur une barre le ferme directement (Bar.qml), tout comme le passage du focus à une fenêtre (événement du
+//    compositeur : nécessaire après un clic dans le calendrier, que Sway traite comme un clic sur l'espace de travail). À la fermeture, la barre repasse sans clavier et Sway rend
+//    le focus à la fenêtre précédente. (Sway retire le focus à une surface « à la demande » à chaque réarrangement des
+//    couches : seul un clic le lui donne durablement ; un popup `grabFocus` n'est pas fermé au clic extérieur.)
 // Semaine selon la locale du système (dimanche en premier pour en_US, comme Waybar).
 Item {
     id: root
@@ -21,15 +27,51 @@ Item {
 
     // Mois affiché : décalage par rapport au mois en cours.
     property int monthOffset: 0
+    // Heure de la dernière fermeture : le clic sur l'horloge qui a fermé le calendrier ne doit pas le rouvrir.
+    property real closedAt: 0
 
-    onHoveredChanged: {
-        if (!hovered)
-            hoverSuppressed = false;
+    Connections {
+        target: BarState
+        function onCloseCalendar() {
+            root.pinned = false;
+        }
     }
+
+    Connections {
+        target: Compositor
+        function onWindowFocused() {
+            root.pinned = false;
+        }
+    }
+
+    // Clic sur l'horloge.
+    function toggle(): void {
+        // Épinglé, l'appui sur la barre l'a déjà fermé (Bar.qml) : ce clic ne fait que bloquer l'aperçu.
+        if (pinned || Date.now() - closedAt < 400) {
+            pinned = false;
+            hoverSuppressed = true;   // pas d'aperçu tant que le pointeur reste sur l'horloge
+        } else {
+            pinned = true;
+        }
+    }
+
+    readonly property bool popupHovered: frameHover.hovered || previousHover.hovered || nextHover.hovered || titleHover.hovered
+    readonly property string screenName: anchorItem.QsWindow.window?.screen?.name ?? ""
+    readonly property bool wantsKeyboard: pinned || hovered
+    onWantsKeyboardChanged: {
+        if (wantsKeyboard)
+            BarState.keyboardScreen = screenName;
+        else if (BarState.keyboardScreen === screenName)
+            BarState.keyboardScreen = "";
+    }
+
     onPinnedChanged: {
         monthOffset = 0;
+        BarState.calendarPinned = pinned;
+        if (pinned)
+            keys.forceActiveFocus();
         if (!pinned)
-            hoverSuppressed = true;
+            closedAt = Date.now();
     }
 
     SystemClock {
@@ -74,6 +116,10 @@ Item {
             border.width: Theme.calendar.border
             border.color: Theme.calendar.borderColor
 
+            HoverHandler {
+                id: frameHover
+            }
+
             WheelSteps {
                 enabled: root.pinned
                 onStep: direction => root.monthOffset -= direction
@@ -109,6 +155,9 @@ Item {
                         font.family: Theme.font.text
                         font.pixelSize: Theme.calendar.titleSize
                         color: Theme.calendar.title
+                        HoverHandler {
+                            id: titleHover
+                        }
                         TapHandler {
                             enabled: root.pinned
                             onTapped: root.monthOffset = 0
@@ -183,36 +232,24 @@ Item {
         }
     }
 
-    // Calendrier épinglé : couche transparente sur chaque écran, au-dessus des fenêtres et de la barre (le popup reste
-    // au-dessus d'elle) ; elle prend le clavier pour Échap et les flèches.
-    Variants {
-        model: root.pinned ? Quickshell.screens : []
+    // Fermeture automatique : pointeur hors du calendrier et de l'horloge pendant un moment.
+    Timer {
+        interval: Theme.calendar.autoCloseDelay
+        running: root.pinned && !root.hovered && !root.popupHovered
+        onTriggered: root.pinned = false
+    }
 
-        PanelWindow {
-            required property ShellScreen modelData
+    // Reçoit le clavier de la barre quand le calendrier est épinglé ; la perte du focus (clic sur une fenêtre) le ferme.
+    Item {
+        id: keys
 
-            screen: modelData
-            WlrLayershell.namespace: "quickshell-dismiss"
-            WlrLayershell.layer: WlrLayer.Top
-            WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
-            exclusionMode: ExclusionMode.Ignore
-            anchors {
-                top: true
-                bottom: true
-                left: true
-                right: true
-            }
-            color: "transparent"
-
-            MouseArea {
-                anchors.fill: parent
-                acceptedButtons: Qt.AllButtons
-                focus: true
-                onPressed: root.pinned = false
-                Keys.onEscapePressed: root.pinned = false
-                Keys.onLeftPressed: root.monthOffset--
-                Keys.onRightPressed: root.monthOffset++
-            }
+        Keys.onEscapePressed: root.pinned = false
+        Keys.onLeftPressed: root.monthOffset--
+        Keys.onRightPressed: root.monthOffset++
+        onActiveFocusChanged: {
+            // Un clic dans le calendrier retire aussi le focus à la barre : il ne doit pas le fermer.
+            if (!activeFocus && root.pinned && !root.popupHovered)
+                root.pinned = false;
         }
     }
 }

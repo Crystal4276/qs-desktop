@@ -163,7 +163,7 @@ Règles pour Qt :
 | espace vide (aucune fenêtre, flottantes comprises), non visible | `surface1` (la règle `.visible:nth-child` l'emporte : un espace vide **visible** garde sa couleur de position) |
 | espace focalisé | sa couleur + halo `text-shadow 0 0 6px currentColor`. Traduction Qt : copie du glyphe floutée (MultiEffect, `blurMax` 28) sous le glyphe net, calibrée contre la capture de référence (écart moyen 5/255 sur le bouton ; une ombre MultiEffect seule est deux fois trop faible) |
 | espace survolé | fond `alpha(couleur, 0.1)`, rayon 20 px, texte dans sa couleur de position même vide ; bouton = glyphe + 2 × 8 px, hauteur de la pilule moins la bordure |
-| `custom/updates` | `sapphire` |
+| `custom/updates` | `sapphire` ; survol (ta demande du 2026-10-16) : contrastes inversés comme le bouton Arch — fond `sapphire` (arrondi intérieur de la pilule), texte `mantle`, sans transition |
 | `custom/nvidia` | `sky` |
 | `cpu` | `teal` |
 | `memory` | `green` |
@@ -192,6 +192,7 @@ Remplace le tooltip calendrier. Aucune valeur nouvelle : tout est repris de la b
 | Jours | Inter 20 px, `text` ; mois voisins `surface2` ; cases de 40 px | taille min. du bouton Arch |
 | Aujourd'hui | fond `green`, texte `mantle` en gras, rayon 10 px | sélection du lanceur et de nwg-menu |
 | Flèches (épinglé) | `U+F053` / `U+F054`, Symbols Nerd Font Mono 20 px, `text`, `yellow` au survol | — |
+| Fermeture automatique (épinglé) | pointeur hors du calendrier et de l'horloge pendant **5 s** | ta demande du 2026-10-16 (durée choisie par moi, à ajuster) |
 
 ## 4. Notifications (Dunst)
 

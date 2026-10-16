@@ -11,6 +11,9 @@ Item {
     property bool shown: true
     property int horizontalPadding: Theme.bar.modulePadding
     property int minWidth: 0
+    // Survol : contrastes inversés, comme le bouton Arch (fond de la couleur du module, texte `mantle`).
+    property bool highlightOnHover: false
+    readonly property bool highlighted: highlightOnHover && hover.hovered
 
     signal clicked
 
@@ -20,10 +23,22 @@ Item {
     // `segments` de RichLabel : [[police, texte], …]
     property alias segments: label.segments
 
+    Rectangle {
+        anchors.fill: parent
+        visible: root.highlighted
+        // Le fond suit l'arrondi intérieur de la pilule (module seul dans sa pilule).
+        radius: Theme.bar.pillRadius - Theme.bar.pillBorder
+        color: root.color
+    }
+
     RichLabel {
         id: label
         anchors.centerIn: parent
-        color: root.color
+        color: root.highlighted ? Theme.module.highlightText : root.color
+    }
+
+    HoverHandler {
+        id: hover
     }
 
     TapHandler {

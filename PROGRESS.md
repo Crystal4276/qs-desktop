@@ -188,13 +188,22 @@ peut changer, d'où l'identification par description), fermer un capot (pas de l
 
 État laissé : Waybar et Dunst actifs, aucune instance `qs`, aucun écran virtuel, attribution des espaces inchangée.
 
-Retour du 2026-10-16 : phase validée ; tests reportés (voir « Tests différés »).
+Retour du 2026-10-16 : phase validée ; tests reportés (voir « À faire par toi à la fin »).
 
-## Tests différés
+## À faire par toi à la fin (tests impossibles d'ici)
 
-- **Débranchement physique d'un câble** sur le desktop (phase 3) : à faire avec toi plus tard.
-- **Laptop** (phase 3, puis modules batterie / luminosité de la phase 4) : quand il sera installé — laptop seul, laptop + écrans externes,
-  capot fermé (`bindswitch lid:on/off`), écran interne éteint, branchement à chaud avec fenêtres ouvertes.
+Liste tenue à jour à chaque phase ; à dérouler une fois le projet terminé.
+
+- **Souris réelle** (phases 2 et 4) : clic, survol et molette sur les trois barres ; molette au pavé tactile ; molette sur le volume,
+  le curseur, les espaces de travail, le module média et le calendrier épinglé (les crans simulés valent 1 au lieu de 120).
+- **Glisser le curseur de volume** (phase 4) : Sway ne transmet pas les déplacements simulés pendant un appui.
+- **Clavier dans le calendrier épinglé** (phase 4) : Échap, ←/→ (aucun outil d'injection clavier installé).
+- **Mise à jour réelle** (phase 4) : clic sur le module, confirmer avec `Y`, puis Entrée ; le compteur doit disparaître.
+- **VRR** (phase 3) : juger l'effet à l'œil (indicateur G-Sync de l'écran, scintillement) avant de l'activer.
+- **Débranchement physique d'un câble** sur le desktop (phase 3).
+- **Laptop**, une fois installé : laptop seul, laptop + écrans externes, capot fermé (`bindswitch lid:on/off`), écran interne éteint,
+  branchement à chaud avec fenêtres ouvertes (phase 3) ; batterie, rétroéclairage (`brightnessctl`), modules masqués selon le matériel,
+  GPU AMD / Intel réels (phase 4).
 
 ## Phase 4 — Modules système de la barre : faite, en attente de validation (2026-10-16)
 
@@ -207,8 +216,9 @@ Produit :
 - Modules : bouton Arch (survol ; n'ouvre rien avant la phase 8), mpris, cava, volume, curseur, mises à jour, GPU, CPU, mémoire, réseau,
   bouton power (n'ouvre rien avant la phase 8), batterie et rétroéclairage (laptop) ; `RichLabel` (une ligne, une police par segment),
   `InfoModule` (modules texte), `WheelSteps` (molette par crans de 120, aussi pour les espaces de travail).
-- **Calendrier** (`CalendarPopup.qml`) : survol = aperçu, clic = épinglé (flèches, molette, ←/→, titre = mois en cours ; Échap ou clic ailleurs
-  ferme, via une couche transparente sur chaque écran). Style : `THEME.md` § 3 « Calendrier », valeurs reprises de la charte.
+- **Calendrier** (`CalendarPopup.qml`) : survol = aperçu, clic = épinglé (flèches, molette, ←/→, titre = mois en cours). Fermeture :
+  Échap, clic ailleurs **transmis à ce qui est dessous** (ton retour), ou 5 s hors du calendrier (ta demande). Mécanisme : ARCHITECTURE § 8.3.
+  Style : `THEME.md` § 3 « Calendrier », valeurs reprises de la charte.
 - Config machine : `terminal` devient une liste (préfixe avec attente), `mediaPlayer` ajouté (ARCHITECTURE § 4).
 - Pilules : visibles si l'un de leurs modules veut s'afficher (corrige une pilule qui ne réapparaissait jamais).
 - Polices de `assets/fonts/` chargées depuis le dépôt (`FontLoader`).
@@ -224,7 +234,9 @@ Découvertes :
 - Pango dessine une espace placée entre deux icônes dans la police de la première (`pango-view --serialize-to` reproduit Waybar exactement) ;
   la copie système `fa-brands-400.woff2` n'a pas cette espace → 6 px d'écart, corrigé en chargeant les polices du dépôt.
 - `FileView.reload()` est asynchrone : les calculs se font dans `onLoaded` (sinon le CPU restait à 0 %).
-- Sous Sway, un `PopupWindow` avec `grabFocus` n'est pas fermé par un clic extérieur et bloque le clic sur l'horloge → couche de fermeture.
+- Sous Sway, un `PopupWindow` avec `grabFocus` n'est pas fermé par un clic extérieur et bloque le clic sur l'horloge ; une surface
+  « clavier à la demande » perd le focus à chaque réarrangement des couches (code de Sway 1.12 lu) ; un clic sur un popup de barre
+  focalise l'espace de travail et émet un faux événement « focus » de fenêtre → mécanisme décrit en ARCHITECTURE § 8.3.
 - `swaymsg seat - cursor press button4` envoie un pas de molette de 1 (un cran réel vaut 120) : tests faits avec 60 pressions = 1 cran.
 
 Vérifié (Sway, écrans réels, Waybar masquée le temps des captures puis rétablie) :
@@ -235,8 +247,15 @@ Vérifié (Sway, écrans réels, Waybar masquée le temps des captures puis rét
 - Clics GPU / CPU / mémoire / mises à jour : commandes `nvtop`, `btop`, `btop`, `bash -c <mise à jour>` reçues par un terminal factice
   (copie de test du dépôt) ; recomptage après la mise à jour.
 - Molette sur les espaces de travail : précédent / suivant avec bouclage, un cran = un espace.
-- Calendrier : aperçu au survol, fermeture en quittant l'horloge, épinglage, cran haut / bas, flèches, titre, fermeture par clic sur l'horloge
-  (sans réouverture immédiate de l'aperçu), sur DP-2 et sur un autre écran.
+- Calendrier (fenêtre de test zenity sur un espace vide) : aperçu au survol, épinglage, crans, flèches, titre, clic sur un jour (reste ouvert) ;
+  fermeture par clic sur la fenêtre (elle reçoit le clic et le focus), sur le volume (qui passe en muet), sur l'horloge (pas de réouverture
+  immédiate, un 2e clic rouvre), sur la barre d'un autre écran, par focus d'une fenêtre au raccourci, et après 5 s hors du calendrier
+  (le délai repart si le pointeur revient) ; après un clic dans le calendrier, le clic sur la fenêtre ferme toujours ; le focus revient
+  à la fenêtre qui l'avait.
+- Module média (Spotify, ta permission) : clic gauche lecture / pause, droit suivant, milieu précédent, molette `playerctld shift` / `unshift`
+  (lecteur actif Spotify → Chromium → Spotify) ; rendu en lecture identique à Waybar à 1–3 px ; Spotify remis en pause sur le même morceau.
+- Mise à jour réelle (ta permission) : clic → terminal → `paru -Syu` (5 paquets, attend la confirmation) ; terminal fermé sans rien installer
+  (verrou pacman libéré) → nouveau comptage (journal `Updates:`).
 - Session isolée : cava alimenté par un signal de test (barres 4–5, masqué au silence) ; GPU AMD simulé (capteur `edge`, 52 °C), Intel sans capteur
   et aucune carte → module masqué ; rétroéclairage simulé (42 %) ; batterie absente → masquée ; écran secondaire : pilule volume présente.
 - `test-outputs.sh` : 0 échec.
@@ -248,12 +267,9 @@ Vérifié (Sway, écrans réels, Waybar masquée le temps des captures puis rét
   sans route par défaut, le module se masque (Waybar affichait un texte « déconnecté ») ;
 - avertissements Qt `QWaylandTextInputv3::disableSurface` à la fermeture du calendrier épinglé : sans effet.
 
-À tester à la main :
-- molette réelle (souris et pavé tactile) sur le volume, le curseur, les espaces, le calendrier épinglé ;
-- clics mpris (gauche lecture / pause, milieu précédent, droit suivant) et molette mpris — non testés pour ne pas lancer ta musique ;
-- Échap et ←/→ dans le calendrier épinglé (pas d'outil d'injection clavier installé) ;
-- clic sur les mises à jour avec `paru -Syu` réel ; glisser le curseur de volume ;
-- laptop (tests différés) : batterie, rétroéclairage (`brightnessctl`), modules masqués selon le matériel ; GPU AMD / Intel réels.
+À tester à la main : voir « À faire par toi à la fin » (molette réelle, glisser le curseur, clavier du calendrier, mise à jour confirmée, laptop).
+Limites connues du calendrier : après un clic dans le calendrier, Échap ne marche plus et un clic sur le fond d'écran vide ne ferme pas
+(la fermeture automatique s'en charge) ; sous Hyprland, à revoir en phase 9.
 
 État laissé : Waybar et Dunst actifs, aucune instance `qs`, volume 0,46 non muet, notification de test retirée de l'historique Dunst.
 

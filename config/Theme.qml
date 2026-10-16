@@ -131,6 +131,7 @@ Singleton {
         readonly property color otherMonth: root.color.surface2
         readonly property color today: root.color.green
         readonly property color todayText: root.color.mantle
+        readonly property int autoCloseDelay: 5000       // ms : épinglé, pointeur hors du calendrier et de l'horloge → fermeture
     }
 
     // § 3 — Curseur de volume
@@ -165,6 +166,7 @@ Singleton {
         readonly property color menuLogo: root.color.green
         readonly property color menuBackground: root.color.mantle
         readonly property color menuActiveBackground: root.color.green
+        readonly property color highlightText: root.color.mantle   // survol en contrastes inversés (bouton Arch, mises à jour)
     }
 
     // Glyphes (INVENTORY.md § 1, planche docs/reference/glyphs.png), avec leur police

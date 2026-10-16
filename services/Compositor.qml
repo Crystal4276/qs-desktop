@@ -81,6 +81,8 @@ Singleton {
 
     // Création d'un espace (événement du compositeur) : numéro et sortie où il est né.
     signal workspaceCreated(int number, string output)
+    // Une fenêtre reçoit le focus (clic, raccourci…).
+    signal windowFocused
 
     // Placement des espaces (docs/ARCHITECTURE.md § 3.2), en une seule commande :
     //   moves : [{ number, output }]  espaces existants à déplacer ;
@@ -148,6 +150,9 @@ Singleton {
             // Ouverture, fermeture, déplacement : l'état vide des espaces change, I3 ne le relit pas de lui-même.
             if (["new", "close", "move", "floating"].includes(data.change))
                 I3.refreshWorkspaces();
+            // Sway envoie aussi « focus » pour une fenêtre qui ne le reçoit pas (clic sur un popup de barre) : on vérifie.
+            if (data.change === "focus" && data.container?.focused)
+                root.windowFocused();
             if ((data.change === "focus" || data.change === "title") && data.container?.focused)
                 sway.title = data.container.name ?? "";
             else
@@ -218,6 +223,8 @@ Singleton {
         function onRawEvent(event) {
             if (event.name === "submap")
                 hyprland.submap = event.data;
+            else if (event.name === "activewindowv2" && event.data !== "")
+                root.windowFocused();
         }
     }
 }
