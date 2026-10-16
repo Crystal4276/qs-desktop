@@ -159,6 +159,44 @@ Singleton {
         readonly property int fontSize: 20            // texte GTK : 12 pt × 1,25
     }
 
+    // § 3 — Panneaux des modules natifs (réseau, Bluetooth, disques, NordVPN) : nouveau composant, style du calendrier,
+    // valeurs reprises de la barre, du calendrier et du lanceur (THEME.md § 3 « Panneaux »).
+    readonly property QtObject panel: QtObject {
+        readonly property int gap: 10                       // sous la pilule, comme le calendrier
+        readonly property int width: 500                    // largeur du lanceur
+        readonly property color background: root.color.mantle
+        readonly property int border: 1
+        readonly property color borderColor: root.color.overlay0
+        readonly property int radius: 20
+        readonly property int padding: 15
+        readonly property int spacing: 10
+        readonly property int fontSize: 20                  // texte principal (lanceur)
+        readonly property int smallFontSize: 16             // texte secondaire, titres de section
+        readonly property int iconSize: 24                  // icônes des lignes (lanceur)
+        readonly property color text: root.color.text
+        readonly property color secondaryText: root.color.subtext0
+        readonly property color title: root.color.yellow   // comme le titre du calendrier
+        readonly property color accent: root.color.green   // connecté, actif
+        readonly property color warning: root.color.red
+        readonly property int rowPadding: 8
+        readonly property int rowRadius: 10                 // sélection du lanceur
+        readonly property color rowHover: root.color.surface0
+        readonly property color button: root.color.surface0
+        readonly property color buttonHover: root.color.surface1
+        readonly property int buttonPaddingV: 6
+        readonly property int buttonPaddingH: 12
+        readonly property int switchWidth: 44
+        readonly property int switchHeight: 24
+        readonly property color switchOn: root.color.green
+        readonly property color switchOff: root.color.surface1
+        readonly property color switchKnobOn: root.color.mantle
+        readonly property color switchKnobOff: root.color.overlay2
+        readonly property color fieldBackground: root.color.base
+        readonly property color fieldBorder: root.color.overlay0
+        readonly property color fieldFocus: root.color.green
+        readonly property int maxListHeight: 400            // au-delà, la liste défile
+    }
+
     // § 3 — Curseur de volume
     readonly property QtObject slider: QtObject {
         readonly property int minWidth: 50

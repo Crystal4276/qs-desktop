@@ -195,6 +195,24 @@ Copie des menus GTK de Waybar (thème `catppuccin-mocha-green-standard+default`,
 | Séparateur | 1 px `#eff1f5` à 12 %, marges 4 px |
 | Fermeture | clic sur une autre application (géré par wlroots), clic sur une barre, Échap, choix d'un élément |
 
+### Panneaux des modules natifs (nouveau composant, phase 5)
+
+Réseau, Bluetooth, disques, NordVPN (choix du 2026-10-16 : « panneaux modernes », pensés pour rejoindre plus tard un panneau de réglages
+rapides façon GNOME). Style du calendrier ; valeurs reprises de la charte sauf mention.
+
+| Élément | Valeur | Origine |
+|---|---|---|
+| Position | sous l'icône, 10 px sous la pilule, glissé pour rester dans l'écran ; ouvert au clic (gauche ou droit) | calendrier |
+| Cadre | fond `mantle`, bordure 1 px `overlay0`, coins 20 px, padding 15 px, espacement 10 px, largeur 500 px | calendrier ; largeur du lanceur |
+| Titre | Inter 20 px gras, `yellow` ; interrupteur à droite (Wi-Fi, Bluetooth) | couleur du titre du calendrier |
+| Texte | Inter 20 px `text` ; secondaire et titres de section **Inter 16 px** `subtext0` | 20 : lanceur ; **16 : nouvelle taille** |
+| Ligne | padding 8 px, coins 10 px, survol `surface0`, icône 24 px ; état actif (connecté, monté) en `green` | lanceur |
+| Bouton | fond `surface0`, survol `surface1`, coins 10 px, padding 6 / 12 px, Inter 16 px | — |
+| Interrupteur | 44 × 24 px, rond ; activé : fond `green`, bouton `mantle` ; désactivé : fond `surface1`, bouton `overlay2` | — |
+| Champ de saisie | fond `base`, bordure 1 px `overlay0` (`green` quand il a le focus), coins 10 px, Inter 20 px | soulignement du lanceur |
+| Liste longue | au-delà de 400 px, elle défile | — |
+| Fermeture | clic sur une autre application ou sur une barre, Échap ; un clic à côté n'est pas transmis (popup « grab », nécessaire pour la saisie au clavier) | — |
+
 ### Calendrier de l'horloge (nouveau composant, phase 4 — ARCHITECTURE § 8.3)
 
 Remplace le tooltip calendrier. Aucune valeur nouvelle : tout est repris de la barre, du lanceur et de la palette.
