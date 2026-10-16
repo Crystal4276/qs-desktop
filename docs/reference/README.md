@@ -15,3 +15,4 @@ Prises le 2026-10-15 sous Sway, trois écrans, Waybar visible. Pixels **physique
 | `dunst-cases-2.png` | âge `(1m 4s old)` (critique gardée 64 s), texte long renvoyé à la ligne | idem |
 | `glyphs.png` | planche de toutes les icônes utilisées (barre, power menu, lanceur), avec leur code | rendue avec `Symbols Nerd Font Mono` (`scripts` non requis : ImageMagick) |
 | `sddm-catppuccin-preview.png` | aperçu du thème SDDM `catppuccin-mocha-green` (référence cosmétique du futur greeter, phase 12) | copié depuis `/usr/share/sddm/themes/catppuccin-mocha-green/preview.png` ; aperçu générique du paquet, la variante installée est verte |
+| `cinnamon-menu.png` | menu d'applications de Cinnamon (Linux Mint 22.3, Cinnamon 6.6) : modèle du futur menu du bouton Arch (phase 8) | recadrée depuis « Linux Mint Cinnamon 22.3.png », Wikimedia Commons, auteur Breno Martins de Oliveira Vasconcelos, licence GPLv3 ; Cinnamon n'est pas installé ici |
