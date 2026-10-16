@@ -220,7 +220,8 @@ Liste tenue à jour à chaque phase ; à dérouler une fois le projet terminé.
   `power-profiles-daemon` installé ; `$mod+Escape` et `$mod+d` une fois branchés (phase 10) ; glisser les curseurs ; sur le laptop :
   luminosité, batterie, mode avion.
 - **Revue de code (2026-10-16)** : ↑ dans un menu du tray ouvert sans sélection (la dernière entrée doit être choisie) ; vraie clé USB
-  chiffrée : déverrouiller, verrouiller, éjecter.
+  chiffrée : déverrouiller, verrouiller, éjecter ; appairage Bluetooth en fermant le panneau juste après avoir confirmé le code
+  (l'appareil doit se connecter et rester approuvé) ; NordVPN qui apparaît dans le tray quand le démon démarre après la session.
 - **Deuxième passe** : vraie touche de volume / micro une fois les raccourcis branchés (phase 10) ; connexion limitée (Wi-Fi d'hôtel avec
   portail, ou câble sans Internet) ; sur le laptop : OSD de luminosité et alerte de batterie à 30 % et 15 %.
 - **Hyprland** (rappel demandé) : tu ouvres une session Hyprland, je prends la main et je déroule la liste de « Compatibilité Hyprland »
@@ -562,6 +563,25 @@ Vérifié (Sway, ta session ; instance de test limitée au lanceur, puis instanc
 Vérifié sur ta session : image LUKS de test (déverrouiller, verrouiller, détacher, éjection d'un volume occupé), espace 3 créé sur DP-3
 avec une règle provisoire (rétablie), écran virtuel retiré calendrier épinglé (`qs ipc call bar state` revient à zéro), notification de
 test avec image (Dunst arrêté puis relancé).
+
+### Revue de code, seconde passe (2026-10-16) : 10 problèmes, tous corrigés
+
+Les 10 corrections de la première passe ont été revérifiées ; deux étaient incomplètes (1 et 3 ci-dessous).
+1. Espace créé en arrière-plan, cas courant (seule fenêtre envoyée vers un espace d'un autre écran) : l'espace de départ était détruit
+   puis recréé ailleurs. Sous Sway, les espaces qui ont des fenêtres sont maintenant déplacés par critère, sans s'y rendre. Nouveau
+   scénario dans `scripts/test-outputs.sh` (il échoue avec l'ancien code : 2 corrections au lieu d'une ; 0 échec avec le nouveau).
+2. cava : ne s'arrêtait plus quand plus aucun module ne l'affichait, après une relance.
+3. Images en données des notifications reçues en « ne pas déranger » : gardées aussi.
+4. NordVPN : module revérifié toutes les 30 s s'il est masqué (démon pas prêt à l'ouverture de session).
+5. `scripts/test-outputs.sh` : instance de test sur son propre bus de session, sans montage automatique de tes disques, arrêt si la
+   session de test est introuvable.
+6. Bluetooth : appairage réussi après fermeture du panneau : appareil quand même approuvé et connecté.
+7. Disques et filtres du lanceur : un changement pendant une lecture déclenche une nouvelle lecture (il était perdu).
+8. NordVPN : liste de villes demandée pendant qu'une autre se charge : chargée ensuite.
+9. `swaylock` ajouté aux dépendances jusqu'à l'écran de verrouillage natif.
+10. Commande de mise à jour par défaut : `paru`, sinon `yay`, sinon `sudo pacman -Syu` (paru n'est pas forcément installé).
+Vérifié : suite `test-outputs.sh` complète (0 échec), relance de cava, image en « ne pas déranger » (Dunst arrêté puis relancé),
+deux listes de villes demandées coup sur coup (VPN resté connecté), image LUKS déverrouillée affichée montée puis détachée.
 
 ### Reste à faire
 
