@@ -9,7 +9,7 @@ import qs.modules.bar
 
 // Fenêtre du lanceur : thème `launcher.rasi` (THEME.md § 5) et comportement de Rofi 2.0.0 (code lu, ARCHITECTURE § 10.1.3).
 // Surface de la couche Overlay qui couvre la zone utile de l'écran focalisé (hors barres) : le cadre y est centré comme Rofi,
-// le clavier lui est réservé, un clic à côté du cadre ou sur une barre le ferme (`click-to-exit`).
+// le clavier lui est réservé, un clic à côté du cadre, sur une barre ou sur un autre écran le ferme (`click-to-exit`).
 // Clavier : Entrée lance (sans résultat : le texte comme commande ; Maj+Entrée : dans un terminal), Ctrl+Entrée lance le texte,
 // Ctrl+Maj+Entrée dans un terminal, Haut/Bas/Tab/Pages/Début/Fin pour la sélection, Ctrl+Haut/Bas pour les textes déjà saisis,
 // Maj+Suppr retire de l'historique, raccourcis d'édition Emacs de Rofi, Échap ferme.
@@ -188,6 +188,13 @@ PanelWindow {
         function onClosePopups() {
             root.close();
         }
+    }
+
+    // Clic sur un autre écran : fermeture (sinon le lanceur garderait le clavier).
+    OutsideClick {
+        active: root.visible
+        screen: root.screen
+        onPressed: root.close()
     }
 
     // Clic à côté du cadre : fermeture.

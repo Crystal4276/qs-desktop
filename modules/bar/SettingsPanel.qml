@@ -10,7 +10,8 @@ import qs.services
 // Panneau de réglages façon GNOME (ARCHITECTURE § 10.1.4) : ouvert par l'engrenage de la barre ou `qs ipc call settings toggle`.
 // Remplace le power menu Rofi. De haut en bas, dans l'ordre des réglages rapides de GNOME 51 :
 // - batterie (laptop), capture d'écran ; à droite verrouiller, se déconnecter, redémarrer, éteindre (sans confirmation) ;
-// - curseurs : sortie son, micro, luminosité (laptop) ; flèche : choix du périphérique ;
+// - curseurs : sortie son, micro, luminosité (laptop) ; flèche : choix du périphérique (toujours affichée, même avec un seul
+//   périphérique : la liste montre lequel est utilisé), puis « Advanced… » (pavucontrol) ;
 // - profils d'énergie (3 boutons) ; bascules en 2 colonnes : ne pas déranger, écran allumé, veilleuse, HDR, VRR, mode avion.
 // Ce qui a sa place dans le tray (réseau, Bluetooth, VPN, disques, notifications) n'est pas repris.
 PanelWindow {
@@ -43,10 +44,6 @@ PanelWindow {
     function run(action: var): void {
         close();
         action();
-    }
-
-    function nodeName(node: PwNode): string {
-        return node.nickname || node.description || node.name;
     }
 
     // Surface de la couche Overlay sur la zone utile de l'écran (sous les barres), comme le lanceur : ouvrable au clavier
@@ -88,6 +85,12 @@ PanelWindow {
             if (!frame.contains(mapToItem(frame, mouse.x, mouse.y)))
                 root.close();
         }
+    }
+
+    OutsideClick {
+        active: root.visible
+        screen: root.screen
+        onPressed: root.close()
     }
 
     PanelFrame {
@@ -160,26 +163,20 @@ PanelWindow {
             icon: Audio.muted ? Theme.icon.muted : Theme.level(Theme.icon.volume, Audio.percent)
             value: Audio.volume
             muted: Audio.muted
-            expandable: Audio.sinks.length > 1
+            expandable: Audio.sinks.length > 0
             expanded: root.expanded === "sink"
             onMoved: v => Audio.setVolume(v)
             onIconClicked: Audio.toggleMute()
             onExpandClicked: root.expanded = expanded ? "" : "sink"
         }
 
-        Repeater {
-            model: ScriptModel {
-                values: root.expanded === "sink" ? Audio.sinks : []
-            }
+        AudioDevices {
+            visible: root.expanded === "sink"
+        }
 
-            PanelRow {
-                required property PwNode modelData
-
-                icon: "audio-speakers"
-                text: root.nodeName(modelData)
-                active: modelData.id === Audio.sink?.id
-                onClicked: Audio.setDefaultSink(modelData)
-            }
+        MixerButton {
+            visible: root.expanded === "sink"
+            onOpened: root.close()
         }
 
         QuickSlider {
@@ -187,26 +184,21 @@ PanelWindow {
             icon: Audio.micMuted ? Theme.icon.microphoneMuted : Theme.icon.microphone
             value: Audio.source?.audio?.volume ?? 0
             muted: Audio.micMuted
-            expandable: Audio.sources.length > 1
+            expandable: Audio.sources.length > 0
             expanded: root.expanded === "source"
             onMoved: v => Audio.source.audio.volume = v
             onIconClicked: Audio.toggleMicMute()
             onExpandClicked: root.expanded = expanded ? "" : "source"
         }
 
-        Repeater {
-            model: ScriptModel {
-                values: root.expanded === "source" ? Audio.sources : []
-            }
+        AudioDevices {
+            visible: root.expanded === "source"
+            input: true
+        }
 
-            PanelRow {
-                required property PwNode modelData
-
-                icon: "audio-input-microphone"
-                text: root.nodeName(modelData)
-                active: modelData.id === Audio.source?.id
-                onClicked: Audio.setDefaultSource(modelData)
-            }
+        MixerButton {
+            visible: root.expanded === "source"
+            onOpened: root.close()
         }
 
         QuickSlider {
@@ -345,22 +337,11 @@ PanelWindow {
             onMoved: v => line.moved(v)
         }
 
-        PanelSection {
-            Layout.fillWidth: false
-            Layout.preferredWidth: widest.implicitWidth
-            horizontalAlignment: Text.AlignRight
-            text: `${Math.round(line.value * 100)} %`
+        PercentLabel {
+            value: line.value
         }
 
-        // Mesure de « 100 % » rendue comme le pourcentage (TextMetrics ne suit pas le rendu natif du texte).
-        PanelSection {
-            id: widest
-            visible: false
-            Layout.fillWidth: false
-            text: "100 %"
-        }
-
-        // Toujours là (invisible sans choix) : curseurs et pourcentages alignés d'une ligne à l'autre.
+        // Toujours là (invisible sans liste : luminosité) : curseurs et pourcentages alignés d'une ligne à l'autre.
         PanelButton {
             opacity: line.expandable ? 1 : 0
             enabled: line.expandable
