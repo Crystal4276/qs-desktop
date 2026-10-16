@@ -66,19 +66,26 @@ Item {
     readonly property bool popupHovered: frameHover.hovered || previousHover.hovered || nextHover.hovered || titleHover.hovered
     readonly property string screenName: anchorItem.QsWindow.window?.screen?.name ?? ""
     readonly property bool wantsKeyboard: pinned || hovered
+    property string claimedScreen: ""   // écran dont ce calendrier a demandé le clavier
     onWantsKeyboardChanged: {
-        if (wantsKeyboard)
+        if (wantsKeyboard) {
+            claimedScreen = screenName;
             BarState.keyboardScreen = screenName;
-        else if (BarState.keyboardScreen === screenName)
+        } else if (BarState.keyboardScreen === claimedScreen) {
+            BarState.keyboardScreen = "";
+        }
+    }
+
+    // Barre détruite (écran retiré) calendrier ouvert ou survolé : rien ne doit rester inscrit.
+    Component.onDestruction: {
+        BarState.setPopupOpen(root, false);
+        if (wantsKeyboard && BarState.keyboardScreen === claimedScreen)
             BarState.keyboardScreen = "";
     }
 
     onPinnedChanged: {
         monthOffset = 0;
-        if (pinned)
-            BarState.popupOpened();
-        else
-            BarState.popupClosed();
+        BarState.setPopupOpen(root, pinned);
         if (pinned)
             keys.forceActiveFocus();
         if (!pinned)
