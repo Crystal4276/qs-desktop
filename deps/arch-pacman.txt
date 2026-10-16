@@ -6,7 +6,8 @@
 quickshell              # le shell lui-même (barre, notifications, lanceur, menus)
 qt6-svg                 # rendu des icônes et images SVG dans Quickshell
 # Outils supposés présents (paquet `base` d'Arch, à installer ailleurs) : sh, coreutils, sed, grep, gawk, findutils
-# (listes d'icônes, filtres des applications du lanceur).
+# (listes d'icônes, filtres des applications du lanceur), util-linux (`rfkill` : mode avion du panneau de réglages),
+# systemd (`systemctl reboot|poweroff` du panneau de réglages).
 
 # --- Compositeurs et sorties ---
 sway                    # compositeur principal
@@ -15,6 +16,8 @@ hyprland                # compositeur secondaire
 
 # --- Panneau de réglages (phase 8) ---
 wlsunset                # veilleuse (Night Light) : écran plus chaud le soir, Sway et Hyprland (wlr-gamma-control)
+xdg-user-dirs           # dossier Images des captures (`xdg-user-dir PICTURES`, repli sur ~/Pictures)
+# Verrouillage : `swaylock` en attendant l'écran de verrouillage natif (phase 8b) — déjà installé, non listé (retiré à la bascule).
 
 # --- Énergie ---
 power-profiles-daemon   # profils d'énergie (économie / équilibré / performance) : 3 boutons de la fenêtre de réglages (phase 8),

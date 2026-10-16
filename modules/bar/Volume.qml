@@ -23,7 +23,7 @@ Item {
         anchors.verticalCenter: parent.verticalCenter
         x: root.paddingLeft + (Math.max(Theme.bar.volumeIconMinWidth, implicitWidth) - implicitWidth) / 2
         text: Audio.muted ? Theme.icon.muted + " "
-            : Theme.icon.volume[Math.min(Math.floor(Audio.percent / Math.floor(100 / Theme.icon.volume.length)), Theme.icon.volume.length - 1)]
+            : Theme.level(Theme.icon.volume, Audio.percent)
         font.family: Theme.font.icons
         font.pixelSize: Theme.font.volumeIcon
         color: Theme.module.volume

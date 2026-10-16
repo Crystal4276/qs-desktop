@@ -2,6 +2,8 @@ pragma Singleton
 
 import QtQuick
 import Quickshell
+import Quickshell.Io
+import qs.services
 
 // État partagé entre les barres de tous les écrans : popups ouverts depuis la barre (calendrier, menus du tray, panneaux).
 Singleton {
@@ -21,5 +23,27 @@ Singleton {
 
     function popupClosed(): void {
         openPopups = Math.max(0, openPopups - 1);
+    }
+
+    // Boutons des réglages des barres (SettingsButton.qml) : `qs ipc call settings toggle` (`$mod+Escape`, phase 10) ouvre le
+    // panneau sous celui de l'écran focalisé, sinon sous le premier (la barre principale en a un, hosts/*.json).
+    property var settingsButtons: []
+
+    function registerSettings(button: Item): void {
+        settingsButtons = [...settingsButtons, button];
+    }
+
+    function unregisterSettings(button: Item): void {
+        settingsButtons = settingsButtons.filter(b => b !== button);
+    }
+
+    IpcHandler {
+        target: "settings"
+
+        function toggle(): void {
+            const buttons = root.settingsButtons;
+            const button = buttons.find(b => b.QsWindow.window?.screen?.name === Compositor.focusedOutput) ?? buttons[0];
+            button?.toggle();
+        }
     }
 }

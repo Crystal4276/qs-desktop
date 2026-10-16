@@ -15,7 +15,7 @@ Item {
         id: label
         anchors.centerIn: parent
         text: Battery.charging ? Theme.icon.batteryCharging
-            : Theme.icon.battery[Math.min(Math.floor(Battery.percent / Math.floor(100 / Theme.icon.battery.length)), Theme.icon.battery.length - 1)]
+            : Theme.level(Theme.icon.battery, Battery.percent)
         font.family: Theme.font.icons
         font.pixelSize: Theme.font.defaultIcon
         color: Battery.warning && !Battery.charging ? Theme.module.batteryWarning : Theme.module.battery

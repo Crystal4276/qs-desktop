@@ -191,7 +191,7 @@ Format (implémenté en phase 1, `hosts/default.json`, `hosts/terrier.json`) :
   "bars": {
     "primary": {
       "left":  [["menu"], ["workspaces"], ["mpris", "cava", "volume", "slider"]],
-      "right": [["updates"], ["gpu", "cpu", "memory"], ["clockDate"], ["tray", "power"]]
+      "right": [["updates"], ["gpu", "cpu", "memory"], ["clockDate"], ["tray", "settings"]]
     },
     "secondary": { "left": [["workspaces"], ["volume", "slider"]], "right": [["gpu", "cpu", "memory"], ["clock"]] },
     "LG Electronics 27GN950 207NTHMFY841": { "left": [["workspaces"], ["volume", "slider"]], "right": [["network"], ["clock"]] }
@@ -212,7 +212,7 @@ Format (implémenté en phase 1, `hosts/default.json`, `hosts/terrier.json`) :
   Chaque côté est une liste de **pilules**, chaque pilule une liste de modules (`THEME.md` § 3, « Groupes de pilules ») :
   la config décrit directement les groupes Waybar, sans noms de groupes intermédiaires.
 - Modules : `menu`, `workspaces`, `mpris`, `cava`, `volume`, `slider`, `updates`, `gpu`, `cpu`, `memory`, `clock` (heure seule),
-  `clockDate` (heure + date, barre principale), `network`, `tray`, `power`, `battery`, `backlight` (laptop).
+  `clockDate` (heure + date, barre principale), `network`, `tray`, `settings` (engrenage, ex-`power`), `battery`, `backlight` (laptop).
   Un module dont la donnée ou le matériel manque se masque ; une pilule dont tous les modules sont masqués disparaît.
 - `default.json` : pas d'écran principal imposé, aucune répartition imposée, barre `primary` complète, `secondary` minimale.
 - La description d'un écran est « marque modèle numéro de série », recomposée depuis `make`, `model`, `serial` sous les deux compositeurs

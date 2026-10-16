@@ -29,9 +29,31 @@ Singleton {
         setter.running = true;
     }
 
+    // Curseur du panneau de réglages : valeur absolue en %. Pendant un glissement, seule la dernière valeur demandée est appliquée.
+    property int pending: -1
+
+    function setPercent(p: int): void {
+        if (!available)
+            return;
+        pending = Math.max(1, Math.min(100, p));   // jamais 0 : écran noir
+        if (!setter.running)
+            applyPending();
+    }
+
+    function applyPending(): void {
+        setter.command = ["brightnessctl", "--device", device, "set", `${pending}%`];
+        pending = -1;
+        setter.running = true;
+    }
+
     Process {
         id: setter
-        onExited: currentFile.reload()
+        onExited: {
+            if (root.pending >= 0)
+                root.applyPending();
+            else
+                currentFile.reload();
+        }
     }
 
     // Touches de luminosité (raccourcis, phase 10 ; Sway : brightnessctl ±5 %) : `qs ipc call brightness up|down`.

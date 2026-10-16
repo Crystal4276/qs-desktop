@@ -4,7 +4,7 @@
   "bars": {
     "primary": {
       "left": [["menu"], ["workspaces"], ["mpris", "cava", "volume", "slider"]],
-      "right": [["updates"], ["gpu", "cpu", "memory"], ["clockDate"], ["tray", "power"]]
+      "right": [["updates"], ["gpu", "cpu", "memory"], ["clockDate"], ["tray", "settings"]]
     },
     "secondary": {
       "left": [["workspaces"], ["volume", "slider"]],
@@ -14,5 +14,6 @@
   "notificationsOutput": "primary",
   "terminal": ["gnome-terminal", "--wait", "--"],
   "mediaPlayer": "spotify",
-  "updateCommand": "paru -Syu"
+  "updateCommand": "paru -Syu",
+  "nightLight": { "from": "20:00", "to": "06:00", "temperature": 3239 }
 }
