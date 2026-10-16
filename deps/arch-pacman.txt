@@ -11,6 +11,10 @@ sway                    # compositeur principal
 hyprland                # compositeur secondaire
 # (fond d'écran, veille, verrouillage : natifs Quickshell — swaybg, swayidle, hypridle, swaylock ne sont plus requis)
 
+# --- Écran de connexion (phase 12, ARCHITECTURE § 10.4 ; remplace SDDM — à installer seulement à ce moment-là) ---
+greetd                  # gestionnaire de connexion ; lance le greeter Quickshell (module Greetd)
+greetd-agreety          # greeter console : fournit `greetd-greeter` (requis par greetd) et sert de secours
+
 # --- Polices et thèmes ---
 # Polices d'icônes (Symbols Nerd Font Mono, Hack Nerd Font, Font Awesome 7 Free/Brands, FontAwesome 4.7) :
 # versionnées dans assets/fonts/, installées par install.sh (ARCHITECTURE § 8.2, THEME § 2) — aucun paquet

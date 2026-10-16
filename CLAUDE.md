@@ -288,7 +288,7 @@ Suppression des anciens paquets seulement quand je le décide.
 
 **Phase 11 — Portabilité.** `install.sh` complet (`--dry-run`, `--uninstall`), finalisation de `deps/` (y compris correspondances Fedora/Debian), `README.md` d'installation, test dans un conteneur Arch si possible, et une config machine par défaut pour un laptop à écran unique. Vérifier qu'aucun chemin ou nom d'écran personnel ne reste en dur (`grep -rn "/home/\|DP-2"` hors `hosts/`).
 
-**Phase 12 — Écran de connexion (tout à la fin).** SDDM ne sera plus utilisé : greeter **Quickshell indépendant** (module `Greetd`), qui reprend seulement l'apparence du thème SDDM actuel `catppuccin-mocha-green` (référence : `docs/reference/sddm-catppuccin-preview.png`). Doit lancer la session Sway Nvidia (`WLR_RENDERER=vulkan sway --unsupported-gpu`) et déverrouiller `gnome-keyring` (PAM). À concevoir ensemble ; touche aux fichiers système, donc rien sans mon accord explicite.
+**Phase 12 — Écran de connexion (tout à la fin).** SDDM ne sera plus utilisé : **greetd** le remplace, avec un greeter **Quickshell indépendant** (module `Greetd`, écrit en QML ; `ARCHITECTURE.md` § 10.4), qui reprend seulement l'apparence du thème SDDM actuel `catppuccin-mocha-green` (référence : `docs/reference/sddm-catppuccin-preview.png`). Doit lancer la session Sway Nvidia (`WLR_RENDERER=vulkan sway --unsupported-gpu`) et déverrouiller `gnome-keyring` (PAM). À concevoir ensemble ; touche aux fichiers système, donc rien sans mon accord explicite. Dépendances (greetd…) listées dans `deps/` à l'avance : c'est moi qui les installe.
 
 ## Git
 
