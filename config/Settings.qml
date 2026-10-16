@@ -17,8 +17,11 @@ Singleton {
     readonly property var workspaceLayouts: config.workspaceLayouts ?? []
     readonly property var bars: config.bars ?? ({})
     readonly property string notificationsOutput: config.notificationsOutput ?? "primary"
-    readonly property string terminal: config.terminal ?? ""
+    // Préfixe qui lance une commande dans un terminal et attend sa fin, ex. ["gnome-terminal", "--wait", "--"].
+    readonly property var terminal: config.terminal ?? []
     readonly property string updateCommand: config.updateCommand ?? ""
+    // Lecteur suivi par le module `mpris` : nom D-Bus après `org.mpris.MediaPlayer2.` (option `player` de Waybar).
+    readonly property string mediaPlayer: config.mediaPlayer ?? ""
 
     // Pilules d'une barre : par description d'écran, sinon par rôle.
     // Renvoie { left: [[module, …], …], right: […] }.

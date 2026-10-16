@@ -105,15 +105,12 @@ Item {
 
     // Molette : espace précédent (haut) / suivant (bas) parmi ceux de cette barre, avec bouclage ;
     // sans effet si l'espace focalisé n'est pas sur cet écran (comportement de Waybar).
-    WheelHandler {
-        acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
-        onWheel: event => {
+    WheelSteps {
+        onStep: direction => {
             const list = root.shown;
             const i = list.findIndex(w => w.focused);
-            if (i < 0 || event.angleDelta.y === 0)
-                return;
-            const step = event.angleDelta.y > 0 ? -1 : 1;
-            Compositor.focusWorkspace(list[(i + step + list.length) % list.length].number);
+            if (i >= 0)
+                Compositor.focusWorkspace(list[(i - direction + list.length) % list.length].number);
         }
     }
 }

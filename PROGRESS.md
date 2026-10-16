@@ -196,6 +196,67 @@ Retour du 2026-10-16 : phase validée ; tests reportés (voir « Tests différé
 - **Laptop** (phase 3, puis modules batterie / luminosité de la phase 4) : quand il sera installé — laptop seul, laptop + écrans externes,
   capot fermé (`bindswitch lid:on/off`), écran interne éteint, branchement à chaud avec fenêtres ouvertes.
 
+## Phase 4 — Modules système de la barre : faite, en attente de validation (2026-10-16)
+
+Produit :
+- Services : `Audio` (Pipewire : volume, muet, sortie suivante à 60 % + notification — remplace `audio-toggle.sh`), `Media` (Mpris, lecteur
+  choisi par `mediaPlayer`, troncature `Artiste - Titre` copiée de Waybar 0.15), `Cava` (`cava` en sortie brute, `config/cava.conf`,
+  ne tourne que si un module l'affiche), `SystemStats` (`/proc/stat`, `/proc/meminfo`), `Gpu` (NVIDIA `nvidia-smi`, AMD / Intel hwmon,
+  carte `boot_vga`), `Network` (interface de la route par défaut, `/proc/net/dev`), `Updates` (`checkupdates` toutes les 8600 s, mise à jour
+  dans un terminal puis recomptage), `Battery` (UPower), `Brightness` (sysfs + `brightnessctl`).
+- Modules : bouton Arch (survol ; n'ouvre rien avant la phase 8), mpris, cava, volume, curseur, mises à jour, GPU, CPU, mémoire, réseau,
+  bouton power (n'ouvre rien avant la phase 8), batterie et rétroéclairage (laptop) ; `RichLabel` (une ligne, une police par segment),
+  `InfoModule` (modules texte), `WheelSteps` (molette par crans de 120, aussi pour les espaces de travail).
+- **Calendrier** (`CalendarPopup.qml`) : survol = aperçu, clic = épinglé (flèches, molette, ←/→, titre = mois en cours ; Échap ou clic ailleurs
+  ferme, via une couche transparente sur chaque écran). Style : `THEME.md` § 3 « Calendrier », valeurs reprises de la charte.
+- Config machine : `terminal` devient une liste (préfixe avec attente), `mediaPlayer` ajouté (ARCHITECTURE § 4).
+- Pilules : visibles si l'un de leurs modules veut s'afficher (corrige une pilule qui ne réapparaissait jamais).
+- Polices de `assets/fonts/` chargées depuis le dépôt (`FontLoader`).
+
+Décisions :
+- **Pas de tooltips** (ton retour du 2026-10-16) ; relevé de leur style conservé pour mémoire dans `INVENTORY.md` § 1, infos perdues en `BACKLOG.md`.
+- Calendrier : survol + clic (ton choix).
+- Icônes batterie : codes v2 transposés à l'identique en Nerd Fonts v3 (`THEME.md` § 2).
+
+Découvertes :
+- Waybar 0.15 (source lue) : paliers du volume à 33 / 66 % (l'inventaire disait 34 / 67, corrigé) ; tooltip mpris `spotify (paused): …` ;
+  la batterie repassait au vert sous 15 % (état `critical` sans style) → ici rouge dès 30 % et en dessous (écart assumé).
+- Pango dessine une espace placée entre deux icônes dans la police de la première (`pango-view --serialize-to` reproduit Waybar exactement) ;
+  la copie système `fa-brands-400.woff2` n'a pas cette espace → 6 px d'écart, corrigé en chargeant les polices du dépôt.
+- `FileView.reload()` est asynchrone : les calculs se font dans `onLoaded` (sinon le CPU restait à 0 %).
+- Sous Sway, un `PopupWindow` avec `grabFocus` n'est pas fermé par un clic extérieur et bloque le clic sur l'horloge → couche de fermeture.
+- `swaymsg seat - cursor press button4` envoie un pas de molette de 1 (un cran réel vaut 120) : tests faits avec 60 pressions = 1 cran.
+
+Vérifié (Sway, écrans réels, Waybar masquée le temps des captures puis rétablie) :
+- Rendu comparé à Waybar sur les trois écrans : mêmes modules, couleurs, polices, positions ; pilules à +1 / +2 px sur DP-2 (anticrénelage,
+  comme l'horloge en phase 2) ; pilule média à 1 px ; DP-1 / DP-3 identiques à l'œil (bordure un peu plus nette que le rendu GTK ×2 réduit).
+- Volume : molette ±5 % sur l'icône et le curseur (plafond 100 %), clic gauche muet / rétabli, clic sur le rail (10 %, 84 %), clic milieu
+  (sortie suivante, volume 60 %, notification), clic droit pavucontrol (icône et curseur) ; paliers d'icône à 32/33 et 65/66 %, icône muette.
+- Clics GPU / CPU / mémoire / mises à jour : commandes `nvtop`, `btop`, `btop`, `bash -c <mise à jour>` reçues par un terminal factice
+  (copie de test du dépôt) ; recomptage après la mise à jour.
+- Molette sur les espaces de travail : précédent / suivant avec bouclage, un cran = un espace.
+- Calendrier : aperçu au survol, fermeture en quittant l'horloge, épinglage, cran haut / bas, flèches, titre, fermeture par clic sur l'horloge
+  (sans réouverture immédiate de l'aperçu), sur DP-2 et sur un autre écran.
+- Session isolée : cava alimenté par un signal de test (barres 4–5, masqué au silence) ; GPU AMD simulé (capteur `edge`, 52 °C), Intel sans capteur
+  et aucune carte → module masqué ; rétroéclairage simulé (42 %) ; batterie absente → masquée ; écran secondaire : pilule volume présente.
+- `test-outputs.sh` : 0 échec.
+
+Écarts restants :
+- tray absent (phase 5) : le bouton power est seul dans sa pilule, sans padding gauche (comme dans Waybar, où le tray le précède) ;
+- silence de cava : décidé sur les barres à zéro (Waybar : échantillons d'entrée nuls) — différence seulement pour un son très faible ;
+- réseau : interface de la route par défaut (`bridge0` ici) au lieu de `eno2` écrit en dur ; débits quasi identiques (même lien physique) ;
+  sans route par défaut, le module se masque (Waybar affichait un texte « déconnecté ») ;
+- avertissements Qt `QWaylandTextInputv3::disableSurface` à la fermeture du calendrier épinglé : sans effet.
+
+À tester à la main :
+- molette réelle (souris et pavé tactile) sur le volume, le curseur, les espaces, le calendrier épinglé ;
+- clics mpris (gauche lecture / pause, milieu précédent, droit suivant) et molette mpris — non testés pour ne pas lancer ta musique ;
+- Échap et ←/→ dans le calendrier épinglé (pas d'outil d'injection clavier installé) ;
+- clic sur les mises à jour avec `paru -Syu` réel ; glisser le curseur de volume ;
+- laptop (tests différés) : batterie, rétroéclairage (`brightnessctl`), modules masqués selon le matériel ; GPU AMD / Intel réels.
+
+État laissé : Waybar et Dunst actifs, aucune instance `qs`, volume 0,46 non muet, notification de test retirée de l'historique Dunst.
+
 ## Prochaine étape
 
-Phase 4 (modules système de la barre).
+Phase 5 (tray, réseau, Bluetooth, disques, NordVPN), après validation.

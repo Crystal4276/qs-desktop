@@ -190,17 +190,23 @@ Format (implémenté en phase 1, `hosts/default.json`, `hosts/terrier.json`) :
     "LG Electronics 27GN950 207NTHMFY841": { "left": [["workspaces"], ["volume", "slider"]], "right": [["network"], ["clock"]] }
   },
   "notificationsOutput": "primary",
-  "terminal": "gnome-terminal",
+  "terminal": ["gnome-terminal", "--wait", "--"],
+  "mediaPlayer": "spotify",
   "updateCommand": "paru -Syu"
 }
 ```
+
+- `terminal` *(phase 4)* : préfixe qui lance une commande dans un terminal **et attend sa fin** (le module mises à jour recompte à la fermeture) ;
+  une liste, car chaque terminal a sa syntaxe (`foot`, `kitty` : pas de `--`).
+- `mediaPlayer` *(phase 4)* : lecteur suivi par le module mpris, nom D-Bus après `org.mpris.MediaPlayer2.` (option `player` de Waybar).
 
 - Fusion **au premier niveau** : une clé du fichier machine remplace entièrement celle de `default.json` (pas de fusion profonde : plus prévisible).
 - `bars` : par description d'écran, sinon par rôle (`primary` / `secondary`) — un écran inconnu reçoit donc toujours une barre.
   Chaque côté est une liste de **pilules**, chaque pilule une liste de modules (`THEME.md` § 3, « Groupes de pilules ») :
   la config décrit directement les groupes Waybar, sans noms de groupes intermédiaires.
 - Modules : `menu`, `workspaces`, `mpris`, `cava`, `volume`, `slider`, `updates`, `gpu`, `cpu`, `memory`, `clock` (heure seule),
-  `clockDate` (heure + date, barre principale), `network`, `tray`, `power`.
+  `clockDate` (heure + date, barre principale), `network`, `tray`, `power`, `battery`, `backlight` (laptop).
+  Un module dont la donnée ou le matériel manque se masque ; une pilule dont tous les modules sont masqués disparaît.
 - `default.json` : pas d'écran principal imposé, aucune répartition imposée, barre `primary` complète, `secondary` minimale.
 - La description d'un écran est « marque modèle numéro de série » : sous Sway, recomposée depuis `make`, `model`, `serial` de `get_outputs` ;
   sous Hyprland, champ `description`.
@@ -285,7 +291,13 @@ Inventaire et licences : `assets/fonts/README.md`. Total 5,7 Mo.
 
 Décision : le tooltip calendrier de l'horloge devient une **fenêtre Quickshell** (popup soignée, aux couleurs de la charte), en phase 4.
 C'est une évolution assumée de la parité : même contenu (mois en cours, aujourd'hui mis en évidence), présentation plus riche.
-Ouverture : au clic sur l'horloge **[le survol ou le clic : à trancher en phase 4]**.
+Ouverture — **tranché le 2026-10-16 : survol + clic**. Le survol montre le mois en cours et se ferme quand le pointeur quitte l'horloge ;
+un clic l'épingle (navigation : flèches, molette, clavier ←/→ ; clic sur le titre : mois en cours) ; Échap ou un clic n'importe où le ferme.
+Mise en œuvre : `PopupWindow` attaché à l'horloge, sans `grabFocus` (Sway ne ferme pas un tel popup au clic extérieur et il bloque le clic sur
+l'horloge, vérifié) ; pendant l'épinglage, une couche transparente plein écran sur chaque écran (layer-shell `Top`, clavier exclusif)
+capte le clic de fermeture et Échap. Ce clic de fermeture ne parvient pas à la fenêtre située dessous (comme les menus de GNOME).
+
+**Tooltips** (décision du 2026-10-16) : aucun tooltip dans la barre Quickshell (`INVENTORY.md` § 1).
 
 Événements Thunderbird : faisable, mais **après la parité** (`BACKLOG.md`). Constat (types seulement, aucun contenu lu) : le profil Thunderbird
 a 6 calendriers — 3 CalDAV, 2 Owl (Exchange / Microsoft 365), 1 local. Thunderbird garde une copie locale des calendriers distants dans

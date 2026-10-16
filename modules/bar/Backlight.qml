@@ -1,0 +1,25 @@
+import QtQuick
+import qs.config
+import qs.services
+
+// Rétroéclairage (INVENTORY.md § 1, `backlight`, pour le laptop) : 9 paliers (getIcon de Waybar), jaune.
+// Molette : ±1 %. Masqué sans rétroéclairage. Taille : celle du texte GTK par défaut (THEME.md § 3).
+Item {
+    readonly property bool shown: Brightness.available
+
+    implicitWidth: label.implicitWidth + 2 * Theme.bar.modulePadding
+    implicitHeight: label.implicitHeight + 2 * Theme.bar.modulePadding
+
+    Text {
+        id: label
+        anchors.centerIn: parent
+        text: Theme.icon.backlight[Math.min(Math.floor(Brightness.percent / Math.floor(100 / Theme.icon.backlight.length)), Theme.icon.backlight.length - 1)]
+        font.family: Theme.font.icons
+        font.pixelSize: Theme.font.defaultIcon
+        color: Theme.module.backlight
+    }
+
+    WheelSteps {
+        onStep: direction => Brightness.step(direction)
+    }
+}

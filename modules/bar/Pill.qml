@@ -4,13 +4,12 @@ import qs.config
 
 // Groupe de modules entouré d'une seule bordure arrondie (THEME.md § 3, « Groupes de pilules »).
 // Pas de padding ici : comme dans Waybar, chaque module porte le sien.
-// Masquée quand aucun de ses modules n'est affiché.
+// Sa visibilité est décidée par Bar.qml (masquée quand aucun de ses modules ne veut s'afficher).
 Rectangle {
     id: root
 
     default property alias content: row.data
 
-    visible: row.implicitWidth > 0
     implicitWidth: row.implicitWidth + 2 * border.width
     implicitHeight: Theme.bar.pillHeight
     radius: Theme.bar.pillRadius
