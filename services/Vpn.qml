@@ -19,6 +19,41 @@ Singleton {
     property var countries: []
     property var cities: ({})    // pays → villes, chargées à la demande
 
+    // Derniers pays utilisés, du plus récent au plus ancien (ta demande du 2026-10-16) : NordVPN ne garde pas d'historique,
+    // chaque connexion observée (panneau, raccourci, ligne de commande) est enregistrée dans l'état local de Quickshell
+    // (~/.local/state/quickshell/…/vpn-recent.json, propre à la machine, hors du dépôt).
+    readonly property int recentCount: 5
+    property var recent: []
+    property bool recentLoaded: false   // l'historique n'est modifié qu'après lecture du fichier (sinon il serait écrasé)
+    onStatusChanged: remember()
+    onRecentLoadedChanged: remember()
+
+    function remember(): void {
+        const country = status["Country"];
+        if (!recentLoaded || !connected || !country)
+            return;
+        const key = country.replace(/ /g, "_");
+        if (recent[0] === key)
+            return;
+        recent = [key, ...recent.filter(c => c !== key)].slice(0, recentCount);
+        recentFile.setText(JSON.stringify(recent));
+    }
+
+    FileView {
+        id: recentFile
+        path: Quickshell.statePath("vpn-recent.json")
+        printErrors: false
+        onLoaded: {
+            try {
+                const list = JSON.parse(text());
+                if (Array.isArray(list))
+                    root.recent = list.slice(0, root.recentCount);
+            } catch (e) {}
+            root.recentLoaded = true;
+        }
+        onLoadFailed: root.recentLoaded = true   // pas encore d'historique
+    }
+
     // Icône du tray, celles du paquet nordvpn : bleue connecté, grise sinon.
     readonly property string icon: connected ? "nordvpn-tray-blue" : "nordvpn-tray-gray"
 
