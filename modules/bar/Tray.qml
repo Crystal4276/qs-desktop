@@ -13,7 +13,7 @@ Item {
     id: root
 
     readonly property var items: SystemTray.items.values.filter(i => i.status !== Status.Passive)
-    readonly property bool shown: items.length > 0 || Network.managed
+    readonly property bool shown: items.length > 0 || Network.managed || Bluez.available
 
     implicitWidth: row.implicitWidth + 2 * Theme.bar.trayPadding
     implicitHeight: Theme.bar.trayIconSize
@@ -67,10 +67,20 @@ Item {
             icon: Network.icon
             panel: networkPanel
         }
+
+        TrayButton {
+            visible: Bluez.available
+            icon: Bluez.icon
+            panel: bluetoothPanel
+        }
     }
 
     NetworkPanel {
         id: networkPanel
+    }
+
+    BluetoothPanel {
+        id: bluetoothPanel
     }
 
     // Un seul menu à la fois, ouvert au pointeur (coin haut-gauche), basculé s'il déborde de l'écran.
