@@ -16,3 +16,7 @@ Idées notées pendant le travail. Rien ici n'est implémenté sans accord.
 - Thème d'icônes Qt (`qt6ct` : breeze) différent du thème GTK (Papirus-Dark) : à harmoniser ?
 - Informations des anciens tooltips Waybar (non repris, décision du 2026-10-16) : swap, nom de la sortie audio, titre complet du morceau —
   à placer dans la fenêtre de statistiques (phase 8b) ou un futur panneau audio.
+- Panneaux natifs (phase 5), fonctions des applets non reprises : nm-applet (« Enable Networking » global, connexions VPN de NetworkManager,
+  réseau Wi-Fi caché, création d'un point d'accès, fenêtre d'informations), blueman (envoi de fichiers, gestion des adaptateurs),
+  udiskie (« Mount disc image », interrupteurs montage automatique / notifications), NordVPN (réglages, compte).
+- Panneau NordVPN : focus direct dans la recherche à l'ouverture (taper sans cliquer).
