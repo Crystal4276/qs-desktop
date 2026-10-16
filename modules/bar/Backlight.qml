@@ -13,7 +13,7 @@ Item {
     Text {
         id: label
         anchors.centerIn: parent
-        text: Theme.icon.backlight[Math.min(Math.floor(Brightness.percent / Math.floor(100 / Theme.icon.backlight.length)), Theme.icon.backlight.length - 1)]
+        text: Theme.level(Theme.icon.backlight, Brightness.percent)
         font.family: Theme.font.icons
         font.pixelSize: Theme.font.defaultIcon
         color: Theme.module.backlight

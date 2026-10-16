@@ -52,7 +52,10 @@ Singleton {
 
     // § 1 — Autres couleurs littérales
     readonly property color hoverWhite: Qt.rgba(1, 1, 1, 0.1)   // power menu, nwg-menu
-    readonly property color slurpBackground: "#ffffff20"
+    // Sélection de zone des captures (`slurp -b ffffff20 -c f5c2e7 -w 4`, touche Impr.) ; slurp lit #RRGGBBAA, QML #AARRGGBB.
+    readonly property color slurpBackground: Qt.rgba(1, 1, 1, 0x20 / 255)
+    readonly property color slurpSelection: root.color.pink
+    readonly property int slurpBorder: 4
 
     // § 2 — Polices : chaque texte nomme la sienne, aucun repli implicite
     readonly property QtObject font: QtObject {
@@ -222,7 +225,7 @@ Singleton {
         readonly property color volume: root.color.text
         readonly property color media: root.color.text
         readonly property color cava: root.color.green
-        readonly property color power: root.color.red
+        readonly property color settings: root.color.text    // engrenage (ton choix du 2026-10-16 ; power : `red`)
         readonly property color battery: root.color.green
         readonly property color batteryWarning: root.color.red
         readonly property color backlight: root.color.yellow
@@ -247,7 +250,20 @@ Singleton {
         readonly property list<string> battery: ["\u{f0083}", "\u{f007a}", "\u{f007b}", "\u{f007c}", "\u{f007d}", "\u{f007e}", "\u{f007e}", "\u{f007f}", "\u{f0080}", "\u{f0081}", "\u{f0082}", "\u{f0079}"]
         readonly property string batteryCharging: "\u{f0084}"
         readonly property string previous: "\uf053"   // calendrier épinglé : mois précédent
-        readonly property string next: "\uf054"       // mois suivant
+        readonly property string next: "\uf054"       // mois suivant ; panneau de réglages : liste repliée
+        // Panneau de réglages façon GNOME (nouveau, 2026-10-16)
+        readonly property string settings: "\uf013"            // nf-fa-gear : bouton de la barre (remplace power)
+        readonly property string expanded: "\uf078"            // nf-fa-chevron_down : liste dépliée
+        readonly property string screenshot: "\u{f0100}"       // nf-md-camera
+        readonly property string powerSaver: "\u{f032a}"       // nf-md-leaf
+        readonly property string balanced: "\u{f05d1}"         // nf-md-scale_balance
+        readonly property string performance: "\u{f04c5}"     // nf-md-speedometer
+        readonly property string doNotDisturb: "\u{f009b}"     // nf-md-bell_off
+        readonly property string keepAwake: "\u{f0176}"        // nf-md-coffee
+        readonly property string nightLight: "\u{f0594}"       // nf-md-weather_night
+        readonly property string hdr: "\u{f0d7d}"              // nf-md-hdr
+        readonly property string vrr: "\u{f1104}"              // nf-md-monitor_shimmer
+        readonly property string airplane: "\u{f001d}"         // nf-md-airplane
 
         // font.inlineIcons (Hack Nerd Font)
         readonly property string updates: "\u{f01a7}"
@@ -291,6 +307,16 @@ Singleton {
         readonly property url logout: Quickshell.shellPath("assets/logout.svg")
         readonly property url restart: Quickshell.shellPath("assets/restart.svg")
         readonly property url shutdown: Quickshell.shellPath("assets/shutdown.svg")
+    }
+
+    // § 3 — Panneau de réglages façon GNOME (style des panneaux)
+    readonly property QtObject quickSettings: QtObject {
+        readonly property int imageSize: root.bar.trayIconSize        // icônes SVG du power menu : 32 px (48 dans Rofi)
+        readonly property int glyphSize: root.panel.iconSize          // glyphes des boutons et des bascules : 24 px
+        readonly property int buttonPadding: root.panel.buttonPaddingV
+        readonly property int columns: 2                              // bascules en 2 colonnes, comme GNOME
+        readonly property color checked: root.panel.accent            // bascule activée : fond `green`…
+        readonly property color checkedText: root.module.highlightText   // …texte `mantle` (contraste inversé, comme le lanceur)
     }
 
     // § 4 — Notifications
@@ -408,6 +434,11 @@ Singleton {
         FontLoader { source: Quickshell.shellPath("assets/fonts/FontAwesome7Brands-Regular-400.otf") },
         FontLoader { source: Quickshell.shellPath("assets/fonts/FontAwesome4-Regular.ttf") }
     ]
+
+    // Glyphe d'un niveau (0–100 %) dans une liste de paliers, comme `getIcon` de Waybar : palier = floor(p / floor(100 / n)).
+    function level(icons: var, percent: int): string {
+        return icons[Math.min(Math.floor(percent / Math.floor(100 / icons.length)), icons.length - 1)];
+    }
 
     // § 9 — Thèmes système
     readonly property string iconTheme: "Papirus-Dark"   // imposé par `//@ pragma IconTheme` dans shell.qml

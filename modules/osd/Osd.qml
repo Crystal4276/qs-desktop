@@ -24,10 +24,10 @@ PanelWindow {
         : kind === "mic" ? (Audio.source?.audio?.volume ?? 0) : Audio.volume
     readonly property bool mutedNow: kind === "mic" ? Audio.micMuted : kind === "volume" && Audio.muted
     readonly property string glyph: kind === "brightness"
-        ? Theme.icon.backlight[Math.min(Math.floor(Brightness.percent / Math.floor(100 / Theme.icon.backlight.length)), Theme.icon.backlight.length - 1)]
+        ? Theme.level(Theme.icon.backlight, Brightness.percent)
         : kind === "mic" ? (Audio.micMuted ? Theme.icon.microphoneMuted : Theme.icon.microphone)
         : Audio.muted ? Theme.icon.muted
-        : Theme.icon.volume[Math.min(Math.floor(Audio.percent / Math.floor(100 / Theme.icon.volume.length)), Theme.icon.volume.length - 1)]
+        : Theme.level(Theme.icon.volume, Audio.percent)
 
     screen: Quickshell.screens.find(s => s.name === Compositor.focusedOutput) ?? null
     visible: false

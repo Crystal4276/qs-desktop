@@ -49,7 +49,7 @@ Variants {
             clockDate: clockDateModule,
             network: networkModule,
             tray: trayModule,
-            power: powerModule,
+            settings: settingsModule,
             battery: batteryModule,
             backlight: backlightModule
         })
@@ -115,8 +115,8 @@ Variants {
             Tray {}
         }
         Component {
-            id: powerModule
-            PowerButton {}
+            id: settingsModule
+            SettingsButton {}
         }
         Component {
             id: batteryModule
@@ -188,6 +188,13 @@ Variants {
             anchors.right: parent.right
             anchors.rightMargin: Theme.bar.marginSide
             pills: bar.layout.right
+        }
+
+        // « Garder l'écran allumé » (panneau de réglages) : les barres sont toujours affichées, le compositeur respecte donc
+        // l'inhibiteur tant qu'au moins un écran est allumé.
+        IdleInhibitor {
+            window: bar
+            enabled: Session.keepAwake
         }
 
         // Popup ouvert (calendrier épinglé, menu du tray…) : un appui n'importe où sur une barre le ferme ; l'appui n'est pas

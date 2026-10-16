@@ -17,8 +17,9 @@ Singleton {
     readonly property bool isSway: type === "sway"
     readonly property bool isHyprland: type === "hyprland"
 
-    // Sorties actives : { name, description, x, y, width, height, scale, focused }
+    // Sorties actives : { name, description, x, y, width, height, scale, focused, hdrCapable, hdr, vrrCapable, vrr }
     // x, y, width, height en px logiques. description = « marque modèle numéro de série ».
+    // HDR et VRR (bascules du panneau de réglages) : Sway seulement pour l'instant, Hyprland en phase 9.
     readonly property var outputs: {
         if (isSway)
             return I3.monitors.values.filter(m => m.lastIpcObject.active !== false).map(m => ({
@@ -26,7 +27,11 @@ Singleton {
                 description: [m.lastIpcObject.make, m.lastIpcObject.model, m.lastIpcObject.serial].filter(s => s).join(" "),
                 x: m.x, y: m.y, width: m.width, height: m.height,
                 scale: m.scale,
-                focused: m.focused
+                focused: m.focused,
+                hdrCapable: m.lastIpcObject.features?.hdr === true,
+                hdr: m.lastIpcObject.hdr === true,
+                vrrCapable: m.lastIpcObject.features?.adaptive_sync === true,
+                vrr: m.lastIpcObject.adaptive_sync_status === "enabled"
             }));
         if (isHyprland)
             return Hyprland.monitors.values.filter(m => !m.lastIpcObject.disabled).map(m => {
@@ -41,7 +46,11 @@ Singleton {
                     x: m.x, y: m.y,
                     width: rotated ? h : w, height: rotated ? w : h,
                     scale: m.scale,
-                    focused: m.focused
+                    focused: m.focused,
+                    hdrCapable: false,
+                    hdr: false,
+                    vrrCapable: false,
+                    vrr: false
                 };
             });
         return [];
@@ -140,6 +149,25 @@ Singleton {
         } else if (isHyprland) {
             hyprlandBatch([`hl.dsp.workspace.move({ monitor = "${output}" })`]);
         }
+    }
+
+    // HDR / VRR sur une liste de sorties (Sway : `output X hdr on|off`, `adaptive_sync on|off`, comme ton `$mod+d`).
+    function setHdr(names: var, on: bool): void {
+        if (isSway && names.length > 0)
+            I3.dispatch(names.map(n => `output "${n}" hdr ${on ? "on" : "off"}`).join("; "));
+    }
+
+    function setVrr(names: var, on: bool): void {
+        if (isSway && names.length > 0)
+            I3.dispatch(names.map(n => `output "${n}" adaptive_sync ${on ? "on" : "off"}`).join("; "));
+    }
+
+    // Quitte la session (Logout) : `swaymsg exit`, `hl.dsp.exit()` (le power menu Rofi appelait swaymsg même sous Hyprland).
+    function exit(): void {
+        if (isSway)
+            I3.dispatch("exit");
+        else if (isHyprland)
+            Hyprland.dispatch(Hyprland.usingLua ? "hl.dsp.exit()" : "exit");
     }
 
     function focusWorkspace(n: int): void {

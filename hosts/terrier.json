@@ -3,7 +3,7 @@
   "bars": {
     "primary": {
       "left": [["menu"], ["workspaces"], ["mpris", "cava", "volume", "slider"]],
-      "right": [["updates"], ["gpu", "cpu", "memory"], ["clockDate"], ["tray", "power"]]
+      "right": [["updates"], ["gpu", "cpu", "memory"], ["clockDate"], ["tray", "settings"]]
     },
     "secondary": {
       "left": [["workspaces"], ["volume", "slider"]],

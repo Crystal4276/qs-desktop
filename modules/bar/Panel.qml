@@ -17,7 +17,7 @@ PopupWindow {
     property bool switchChecked: false
     signal switchToggled(bool checked)
 
-    default property alias content: body.data
+    default property alias content: frame.content
 
     function toggle(item: Item): void {
         if (visible) {
@@ -55,55 +55,15 @@ PopupWindow {
         }
     }
 
-    Rectangle {
+    PanelFrame {
         id: frame
 
         width: parent.width
-        height: Math.min(column.implicitHeight + 2 * Theme.panel.padding, parent.height)
-        clip: true
-        radius: Theme.panel.radius
-        color: Theme.panel.background
-        border.width: Theme.panel.border
-        border.color: Theme.panel.borderColor
-
-        focus: true
-        Component.onCompleted: forceActiveFocus()
-        Keys.onEscapePressed: root.visible = false
-
-        ColumnLayout {
-            id: column
-            anchors {
-                left: parent.left
-                right: parent.right
-                top: parent.top
-                margins: Theme.panel.padding
-            }
-            spacing: Theme.panel.spacing
-
-            RowLayout {
-                Layout.fillWidth: true
-
-                Text {
-                    Layout.fillWidth: true
-                    text: root.title
-                    font.family: Theme.font.text
-                    font.pixelSize: Theme.panel.fontSize
-                    font.bold: true
-                    color: Theme.panel.title
-                }
-
-                PanelSwitch {
-                    visible: root.hasSwitch
-                    checked: root.switchChecked
-                    onToggled: checked => root.switchToggled(checked)
-                }
-            }
-
-            ColumnLayout {
-                id: body
-                Layout.fillWidth: true
-                spacing: Theme.panel.spacing
-            }
-        }
+        maxHeight: parent.height
+        title: root.title
+        hasSwitch: root.hasSwitch
+        switchChecked: root.switchChecked
+        onSwitchToggled: checked => root.switchToggled(checked)
+        onCloseRequested: root.visible = false
     }
 }
