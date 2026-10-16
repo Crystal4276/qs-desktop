@@ -11,7 +11,8 @@ sway                    # compositeur principal
 hyprland                # compositeur secondaire
 # (fond d'écran, veille, verrouillage : natifs Quickshell — swaybg, swayidle, hypridle, swaylock ne sont plus requis)
 
-# --- Écran de connexion (phase 12, ARCHITECTURE § 10.4 ; remplace SDDM — à installer seulement à ce moment-là) ---
+# --- Écran de connexion (phase 12, ARCHITECTURE § 10.4 ; remplace SDDM) ---
+# Installés par install.sh comme le reste ; inactifs tant que le service greetd n'est pas activé (étape système d'install.sh).
 greetd                  # gestionnaire de connexion ; lance le greeter Quickshell (module Greetd)
 greetd-agreety          # greeter console : fournit `greetd-greeter` (requis par greetd) et sert de secours
 

@@ -156,8 +156,10 @@ Le dépôt doit devenir **la source unique de mon bureau** :
   2. sauvegarde toute config existante avant de la remplacer (`~/.config/<x>.bak-<date>`) ;
   3. crée les liens symboliques (`~/.config/quickshell/desktop`, configs Sway/Hyprland/Kanshi, scripts dans `~/.local/bin`) ;
   4. génère le fichier de config machine s'il n'existe pas pour ce hostname ;
-  5. option `--dry-run` qui affiche tout sans rien modifier ;
-  6. option `--uninstall` qui retire les liens et restaure les sauvegardes.
+  5. met en place les fichiers système du bureau, après confirmation (`sudo`) et avec sauvegarde : écran de connexion greetd + greeter Quickshell (config greetd, PAM avec déverrouillage de `gnome-keyring`, activation du service à la place de l'ancien gestionnaire) — ajouté en phase 12 ;
+  6. option `--dry-run` qui affiche tout sans rien modifier ;
+  7. option `--uninstall` qui retire les liens et restaure les sauvegardes (y compris l'ancien gestionnaire de connexion).
+- But : sur une installation neuve d'Arch (ex. le laptop), cloner le dépôt et lancer `install.sh` suffit à déployer tout le bureau, écran de connexion compris.
 - Si `podman` ou `docker` est disponible, tester `install.sh --dry-run` et la résolution des paquets dans un conteneur `archlinux` propre. On ne peut pas y tester Wayland, mais on vérifie que les noms de paquets existent.
 
 ## Structure du dépôt
@@ -288,7 +290,7 @@ Suppression des anciens paquets seulement quand je le décide.
 
 **Phase 11 — Portabilité.** `install.sh` complet (`--dry-run`, `--uninstall`), finalisation de `deps/` (y compris correspondances Fedora/Debian), `README.md` d'installation, test dans un conteneur Arch si possible, et une config machine par défaut pour un laptop à écran unique. Vérifier qu'aucun chemin ou nom d'écran personnel ne reste en dur (`grep -rn "/home/\|DP-2"` hors `hosts/`).
 
-**Phase 12 — Écran de connexion (tout à la fin).** SDDM ne sera plus utilisé : **greetd** le remplace, avec un greeter **Quickshell indépendant** (module `Greetd`, écrit en QML ; `ARCHITECTURE.md` § 10.4), qui reprend seulement l'apparence du thème SDDM actuel `catppuccin-mocha-green` (référence : `docs/reference/sddm-catppuccin-preview.png`). Doit lancer la session Sway Nvidia (`WLR_RENDERER=vulkan sway --unsupported-gpu`) et déverrouiller `gnome-keyring` (PAM). À concevoir ensemble ; touche aux fichiers système, donc rien sans mon accord explicite. Dépendances (greetd…) listées dans `deps/` à l'avance : c'est moi qui les installe.
+**Phase 12 — Écran de connexion (tout à la fin).** SDDM ne sera plus utilisé : **greetd** le remplace, avec un greeter **Quickshell indépendant** (module `Greetd`, écrit en QML ; `ARCHITECTURE.md` § 10.4), qui reprend seulement l'apparence du thème SDDM actuel `catppuccin-mocha-green` (référence : `docs/reference/sddm-catppuccin-preview.png`). Doit lancer la session Sway Nvidia (`WLR_RENDERER=vulkan sway --unsupported-gpu`) et déverrouiller `gnome-keyring` (PAM). À concevoir ensemble ; touche aux fichiers système, donc rien sans mon accord explicite. Dépendances (greetd…) listées dans `deps/` comme toutes les autres, donc installées par `install.sh` ; sur ce desktop, je les installe moi-même au début de la phase. La mise en place du greeter est ajoutée à `install.sh`.
 
 ## Git
 
