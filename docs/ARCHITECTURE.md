@@ -626,3 +626,24 @@ Restent externes, avec la raison :
 - hors shell : bascule HDR (commande du compositeur ; interrupteur possible dans le futur panneau de réglages rapides, phase 8),
   autostart des applications (compositeur), choix de l'écran pour le partage d'écran (`slurp` pour `xdg-desktop-portal-wlr` ;
   `BACKLOG.md`), commandes `sh` qui listent des fichiers (icônes, rétroéclairage).
+
+### 12.2 Troisième passe : propriétés inutilisées, programmes installés, fonctions sans équivalent (2026-10-16)
+
+Angles nouveaux : membres des types déjà utilisés (`MprisPlayer`, `Notification`, `UPowerDevice`, `Toplevel`…), paquets de bureau
+installés mais absents de l'inventaire (`hyprpicker`, `colorpicker`, `wdisplays`, `wpaperd`, `azote`, `nwg-look`, `lightdm`), et fonctions
+qu'aucun outil n'assure aujourd'hui. Tes choix :
+
+| Ajout | Moyen | Quand |
+|---|---|---|
+| **Carte média** dans le centre de notifications : pochette, titre, artiste, position cliquable, précédent / lecture / suivant | `MprisPlayer` (`trackArtUrl`, `position`, `length`, `canSeek`…), `ClippingRectangle` | fait |
+| **Sélecteur de couleur** (remplace `hyprpicker`, lancé à la main, Hyprland seulement) : écran figé, loupe, code `#rrggbb` copié | `ScreencopyView`, `Quickshell.clipboardText` | phase 8b (avec la capture) |
+| **Verrouillage avant la veille**, **sur laptop seulement** (ta précision) | signal `PrepareForSleep` de logind suivi par `gdbus monitor` (comme UDisks2) ; actif si une batterie de laptop est détectée, réglable par la config machine | phase 8b |
+| **Bascules HDR et VRR** dans la fenêtre de réglages (en plus de `$mod+d` pour le HDR) | commandes du compositeur (Sway : `output … hdr`, `adaptive_sync` ; Hyprland : règles d'écran) | phase 8 |
+| **Vue des fenêtres** (aperçus en direct, clic pour y aller, façon « Activités » de GNOME) | `ToplevelManager`, `Toplevel`, `ScreencopyView` | après la première version (`BACKLOG.md`) |
+
+Écartés : réponse directe dans les notifications (`inlineReply`) — WhatsApp et Discord tournent dans Chromium, qui ne la propose pas ;
+`wdisplays` (disposition des écrans) — Quickshell n'a pas d'API de configuration des sorties ; historique du presse-papiers —
+`clipboardText` ne lit le presse-papiers que lorsqu'une fenêtre Quickshell a le focus ; batteries des périphériques — UPower n'en voit
+aucun ici, et celle des appareils Bluetooth est déjà dans leur panneau.
+Note de test : Spotify ignorait toute commande MPRIS ce jour-là (même envoyée directement par D-Bus) ; boutons et position vérifiés avec
+un faux lecteur MPRIS.

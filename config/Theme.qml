@@ -272,6 +272,11 @@ Singleton {
             io: { font: root.font.awesome4, glyph: "\uf03d" }
         })
         readonly property string paused: "\uf04c"     // font.awesome4
+        // Carte média du centre de notifications (nouveau, 2026-10-16), font.icons
+        readonly property string mediaPrevious: "\uf048"
+        readonly property string mediaPlay: "\uf04b"
+        readonly property string mediaPause: "\uf04c"
+        readonly property string mediaNext: "\uf051"
 
         // font.bars (DejaVu Sans)
         readonly property list<string> cavaBars: ["▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"]

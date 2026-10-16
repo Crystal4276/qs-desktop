@@ -7,6 +7,7 @@ Rectangle {
 
     property string text: ""
     property color textColor: Theme.panel.text
+    property string fontFamily: Theme.font.text   // Theme.font.icons pour un bouton à glyphe (carte média)
     signal clicked
 
     implicitWidth: label.implicitWidth + 2 * Theme.panel.buttonPaddingH
@@ -19,7 +20,7 @@ Rectangle {
         id: label
         anchors.centerIn: parent
         text: root.text
-        font.family: Theme.font.text
+        font.family: root.fontFamily
         font.pixelSize: Theme.panel.smallFontSize
         color: root.textColor
     }

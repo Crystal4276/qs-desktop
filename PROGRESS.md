@@ -213,6 +213,7 @@ Liste tenue à jour à chaque phase ; à dérouler une fois le projet terminé.
 - **Phase 6** : notifications de vraies applications (WhatsApp, Thunderbird, Chromium, Spotify…) : icônes et images, actions proposées
   (boutons), emojis ; clic milieu sur une notification qui contient un seul lien (ouverture dans le navigateur, non cliqué ici) ;
   Échap dans le centre de notifications.
+- **Troisième passe** : carte média avec Spotify qui répond (lecture, pause, suivant, avance dans le morceau).
 - **Deuxième passe** : vraie touche de volume / micro une fois les raccourcis branchés (phase 10) ; connexion limitée (Wi-Fi d'hôtel avec
   portail, ou câble sans Internet) ; sur le laptop : OSD de luminosité et alerte de batterie à 30 % et 15 %.
 - **Hyprland** (rappel demandé) : tu ouvres une session Hyprland, je prends la main et je déroule la liste de « Compatibilité Hyprland »
@@ -469,9 +470,18 @@ panneau audio (sortie, entrée, Spotify avec son icône ; muet et curseur de Spo
 sens (Spotify, deux Chromium). Incident : pendant le premier essai de molette, le module rétréci a laissé le pointeur sur le curseur de
 volume, monté de 0,41 à 0,51 ; remis à 0,41.
 
+### Troisième passe (2026-10-16) : faite
+
+Bilan : `ARCHITECTURE.md` § 12.2. **Carte média** faite (centre de notifications). Planifiés : sélecteur de couleur et verrouillage avant
+la veille (laptop seulement) en phase 8b ; bascules HDR et VRR dans la fenêtre de réglages (phase 8) ; vue des fenêtres après la
+première version.
+Vérifié : carte affichée avec Spotify (pochette, titre, position) ; Spotify ignorait toute commande MPRIS ce jour-là (même par D-Bus
+direct), donc boutons, progression et avance dans le morceau vérifiés avec un faux lecteur MPRIS (Play, Next, Pause, SetPosition reçus) ;
+icône par défaut des lecteurs vue sur ce faux lecteur.
+
 ## Prochaine étape
 
-Phase 7 (lanceur).
+Nouvelle passe de recherche (ta règle : tant qu'on trouve des choses, pas de phase 7), puis phase 7 (lanceur).
 
 Rappel pour la phase 12 (ta précision du 2026-10-16) : **greetd remplace SDDM**, l'écran de connexion est un greeter Quickshell en QML
 (apparence du thème SDDM reprise, thème SDDM non utilisé). Paquets `greetd` et `greetd-agreety` : dans `deps/`, donc installés par
