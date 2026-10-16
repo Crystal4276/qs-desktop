@@ -63,10 +63,12 @@ PopupWindow {
 
     readonly property var entries: opener.children.values
 
+    // Rien de sélectionné (-1) : Bas part du début, Haut de la fin (comme GTK).
     function move(step: int): void {
         const n = entries.length;
+        const start = current >= 0 ? current : step > 0 ? -1 : n;
         for (let k = 1; k <= n; k++) {
-            const i = (current + step * k + n * k) % n;
+            const i = ((start + step * k) % n + n) % n;
             if (!entries[i].isSeparator && entries[i].enabled) {
                 current = i;
                 return;

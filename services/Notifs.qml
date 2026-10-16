@@ -37,8 +37,9 @@ Singleton {
         property int nextKey: 0
         property bool ready: false
 
+        // Images envoyées en données (avatars…) : perdues au rechargement (voir imageLocks), icône de l'application à la place.
         onLoaded: {
-            root.history = JSON.parse(history);
+            root.history = JSON.parse(history).map(h => h.imageKey ? Object.assign(h, { icon: h.fallbackIcon ?? "", imageKey: 0 }) : h);
             ready = true;
         }
     }
@@ -46,6 +47,32 @@ Singleton {
     onHistoryChanged: {
         if (persist.ready)
             persist.history = JSON.stringify(history);
+        pruneImages();
+    }
+
+    // Image envoyée en données (indice image-data) : Quickshell la sert depuis l'objet Notification, détruit à la fermeture.
+    // Comme Dunst, qui la garde dans son historique, l'objet est retenu (RetainableLock) tant qu'une entrée de l'historique
+    // ou une notification rappelée l'affiche. { imageKey: verrou }, en mémoire seulement.
+    property var imageLocks: ({})
+
+    Component {
+        id: imageLock
+
+        RetainableLock {
+            locked: true
+        }
+    }
+
+    function pruneImages(): void {
+        const used = new Set([...history.map(h => h.imageKey), ...popups.map(e => e.saved?.imageKey)].filter(k => k));
+        const kept = {};
+        for (const [key, lock] of Object.entries(imageLocks)) {
+            if (used.has(Number(key)))
+                kept[key] = lock;
+            else
+                lock.destroy();
+        }
+        imageLocks = kept;
     }
     // Pointeur sur les notifications (NotificationPopups.qml) : délais suspendus.
     property bool hovered: false
@@ -171,12 +198,19 @@ Singleton {
         if (!popups.includes(entry))
             return;
         popups = popups.filter(e => e !== entry);
+        let imageKey = entry.saved?.imageKey ?? 0;
+        if (entry.notification && entry.notification.image.startsWith("image://")) {
+            imageKey = ++persist.nextKey;
+            imageLocks = Object.assign({}, imageLocks, { [imageKey]: imageLock.createObject(root, { object: entry.notification }) });
+        }
         archive({
             appName: entry.appName,
             summary: entry.summary,
             body: entry.body,
             urgency: entry.urgency,
             icon: entry.icon,
+            imageKey,
+            fallbackIcon: entry.notification ? iconSource("", entry.notification.appIcon) : (entry.saved?.fallbackIcon ?? ""),
             progress: entry.progress,
             hasActions: entry.hasActions,
             dupCount: entry.dupCount,
@@ -234,7 +268,6 @@ Singleton {
         if (history.length === 0)
             return;
         const saved = history[history.length - 1];
-        history = history.slice(0, -1);
         const entry = entryComponent.createObject(root, {
             saved,
             redisplayed: true,
@@ -242,7 +275,8 @@ Singleton {
             dupCount: saved.dupCount,
             timestamp: saved.timestamp
         });
-        show(entry);
+        show(entry);   // avant de la retirer de l'historique : son image reste retenue
+        history = history.slice(0, -1);
     }
 
     // Centre de notifications ouvert : tout est vu.
