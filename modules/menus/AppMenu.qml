@@ -16,6 +16,9 @@ import qs.modules.bar
 // - applications de la catégorie (nom + description), recherche en bas (taper filtre toutes les applications, comme le lanceur).
 // Clavier : la saisie va à la recherche ; Haut / Bas, Pages : sélection ; Gauche : catégories (Haut / Bas les parcourent),
 // Droite : retour aux applications ; Entrée lance ; Échap ferme.
+// Souris : le survol d'une application la sélectionne seulement si la souris a bougé (une liste qui défile ou change sous un pointeur
+// immobile ne déplace pas la sélection) ; en allant d'une catégorie vers la liste des applications en diagonale, les catégories
+// traversées ne sont pas prises (visée : `aiming`) — celle sous le pointeur l'est dès qu'il s'arrête.
 PanelWindow {
     id: root
 
@@ -25,11 +28,18 @@ PanelWindow {
     property var contextEntry: null // application du menu contextuel (clic droit), null : fermé
     property real closedAt: 0
 
+    // Souris (voir l'en-tête) : dernière position dans le cadre, déplacement depuis la dernière touche, visée vers les applications.
+    property point pointer: Qt.point(-1, -1)
+    property bool mouseMoved: false
+    property bool aiming: false
+    property string hoveredCategory: ""
+    property var mimeIconCache: ({})
+
     readonly property var categories: [
         { key: "all", name: "All Applications", icon: Theme.appMenu.allIcon },
         ...[...Apps.categoryList, { key: "Other", name: "Other" }].filter(c => (Apps.byCategory[c.key] ?? []).length > 0)
             .map(c => ({ key: c.key, name: c.name, icon: Theme.appMenu.categoryIcons[c.key] })),
-        ...(Places.recent.length > 0 ? [{ key: "recent", name: "Recent Files", icon: Theme.appMenu.recentIcon }] : [])
+        { key: "recent", name: "Recent Files", icon: Theme.appMenu.recentIcon }
     ]
 
     readonly property var items: {
@@ -40,14 +50,17 @@ PanelWindow {
                 id: `file:${f.path}`,
                 name: f.name,
                 description: f.path.slice(0, f.path.length - f.name.length - 1),
-                icon: mimeIcon(f.mime),
+                mime: f.mime,   // icône cherchée par la ligne affichée (mimeIcon), pas pour toute la liste
                 path: f.path
             }));
         return (category === "all" ? Apps.byName : Apps.byCategory[category] ?? []).map(appItem);
     }
 
-    // Nouvelle liste (saisie, catégorie) : première ligne choisie et visible, une fois la vue mise à jour.
-    onItemsChanged: {
+    // Liste changée d'elle-même (applications installées, fichiers récents relus) : sélection gardée, ramenée dans la liste.
+    onItemsChanged: selected = Math.max(0, Math.min(selected, items.length - 1))
+
+    // Nouvelle liste demandée (saisie, catégorie) : première ligne choisie et visible, une fois la vue mise à jour.
+    function resetList(): void {
         selected = 0;
         Qt.callLater(() => list.positionViewAtBeginning());
     }
@@ -56,14 +69,43 @@ PanelWindow {
         return { id: entry.id, name: entry.name, description: entry.comment || entry.genericName, icon: Apps.iconSource(entry.icon), entry: entry };
     }
 
-    // Icône d'un type de fichier (« text/plain » → text-plain, sinon text-x-generic, sinon l'icône de fichier générique).
+    // Icône d'un type de fichier (« text/plain » → text-plain, sinon text-x-generic, sinon l'icône de fichier générique), une
+    // recherche par type.
     function mimeIcon(mime: string): string {
+        if (mime in mimeIconCache)
+            return mimeIconCache[mime];
+        let found = "";
         for (const name of [mime.replace("/", "-"), `${mime.split("/")[0]}-x-generic`, Theme.appMenu.fileIcon]) {
-            const path = name.startsWith("-") ? "" : Quickshell.iconPath(name, true);
-            if (path !== "")
-                return path;
+            found = name.startsWith("-") ? "" : Quickshell.iconPath(name, true);
+            if (found !== "")
+                break;
         }
-        return "";
+        mimeIconCache[mime] = found;
+        return found;
+    }
+
+    // Mouvement de la souris dans le cadre. Visée : le déplacement va vers la gauche de la liste des applications, entre ses coins
+    // haut et bas vus de la position précédente ; elle tombe quand le pointeur s'arrête (aimStop).
+    function movePointer(p: point): void {
+        if (p.x === pointer.x && p.y === pointer.y)
+            return;
+        const box = appsBox.mapToItem(frame, 0, 0);
+        const dx = p.x - pointer.x, dy = p.y - pointer.y, ahead = box.x - pointer.x;
+        aiming = pointer.x >= 0 && dx > 0 && ahead > 0 && dy / dx >= (box.y - pointer.y) / ahead
+            && dy / dx <= (box.y + appsBox.height - pointer.y) / ahead;
+        pointer = p;
+        mouseMoved = true;
+        aimStop.restart();
+    }
+
+    function hoverCategory(key: string, hovered: bool): void {
+        if (hovered)
+            hoveredCategory = key;
+        else if (hoveredCategory === key)
+            hoveredCategory = "";
+        // Jamais pendant une recherche : le survol ne l'efface pas (défaut de nwg-menu, à ne pas reproduire).
+        if (hovered && search.text === "" && !aiming)
+            setCategory(key);
     }
 
     // Sous le bouton, aligné sur le bord gauche de sa pilule (nwg-menu : 10 px sous la barre). Un appui sur le bouton pendant
@@ -82,6 +124,11 @@ PanelWindow {
         pane = "apps";
         selected = 0;
         contextEntry = null;
+        mouseMoved = false;
+        aiming = false;
+        hoveredCategory = "";
+        pointer = Qt.point(-1, -1);
+        Places.refreshRecent();
         list.positionViewAtBeginning();
         visible = true;
         search.forceActiveFocus();
@@ -96,6 +143,7 @@ PanelWindow {
     function setCategory(key: string): void {
         search.text = "";
         category = key;
+        resetList();
     }
 
     function select(index: int): void {
@@ -120,6 +168,7 @@ PanelWindow {
 
     function handleKey(event: var): bool {
         const k = event.key;
+        mouseMoved = false;
         if (k === Qt.Key_Escape) {
             if (contextEntry)
                 contextEntry = null;
@@ -142,7 +191,7 @@ PanelWindow {
             } else
                 select(selected + step);
         } else if (k === Qt.Key_PageUp || k === Qt.Key_PageDown) {
-            const rows = Math.max(1, Math.floor(list.height / largeRow.height));
+            const rows = Math.max(1, Math.floor((list.height + list.spacing) / (largeRow.height + list.spacing)));
             select(selected + (k === Qt.Key_PageUp ? -rows : rows));
         } else
             return false;
@@ -224,7 +273,7 @@ PanelWindow {
                     Layout.fillWidth: true
                     text: row.label
                     font.family: Theme.font.text
-                    font.pixelSize: Theme.appMenu.fontSize
+                    font.pixelSize: Theme.font.appMenu
                     color: row.highlighted ? Theme.appMenu.selectedText : Theme.appMenu.text
                     elide: Text.ElideRight
                 }
@@ -263,11 +312,21 @@ PanelWindow {
         border.color: Theme.appMenu.borderColor
         radius: Theme.appMenu.radius
 
-        ColumnLayout {
-            id: column
+        // Défile si le cadre est limité par la hauteur de l'écran (petit écran de laptop).
+        Flickable {
+            id: flick
             anchors.fill: parent
             anchors.margins: Theme.appMenu.itemPadding + Theme.appMenu.itemMargin
-            spacing: 2 * Theme.appMenu.itemMargin
+            clip: true
+            contentHeight: column.implicitHeight
+            interactive: contentHeight > height
+            boundsBehavior: Flickable.StopAtBounds
+
+            ColumnLayout {
+                id: column
+                width: flick.width
+                spacing: 2 * Theme.appMenu.itemMargin
+            }
         }
     }
 
@@ -307,7 +366,9 @@ PanelWindow {
 
         y: Theme.panel.gap
         width: layout.implicitWidth + 2 * (Theme.appMenu.border + Theme.appMenu.padding)
-        height: layout.implicitHeight + 2 * (Theme.appMenu.border + Theme.appMenu.padding)
+        // Au plus la hauteur de l'écran sous la barre : au-delà, les colonnes défilent.
+        height: Math.min(layout.implicitHeight + 2 * (Theme.appMenu.border + Theme.appMenu.padding),
+            root.height - Theme.panel.gap - Theme.bar.marginSide)
         color: Theme.appMenu.background
         border.width: Theme.appMenu.border
         border.color: Theme.appMenu.borderColor
@@ -318,6 +379,22 @@ PanelWindow {
             anchors.fill: parent
             acceptedButtons: Qt.AllButtons
             onPressed: root.contextEntry = null
+        }
+
+        HoverHandler {
+            id: frameHover
+            onPointChanged: root.movePointer(point.position)
+        }
+
+        // Pointeur arrêté (intervalle de suivi du pointeur de Cinnamon, 30 ms) : fin de la visée, catégorie survolée prise.
+        Timer {
+            id: aimStop
+            interval: 30
+            onTriggered: {
+                root.aiming = false;
+                if (root.hoveredCategory !== "" && root.hoveredCategory !== root.category && search.text === "")
+                    root.setCategory(root.hoveredCategory);
+            }
         }
 
         // Hauteur d'une ligne d'application, pour le défilement par page.
@@ -344,6 +421,8 @@ PanelWindow {
                 ListBox {
                     id: places
                     Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    Layout.maximumHeight: implicitHeight
 
                     Repeater {
                         model: Places.folders
@@ -361,6 +440,8 @@ PanelWindow {
                 ListBox {
                     id: favorites
                     Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    Layout.maximumHeight: implicitHeight
                     visible: Apps.favoriteEntries.length > 0
 
                     Repeater {
@@ -421,6 +502,8 @@ PanelWindow {
                     ListBox {
                         id: categoryBox
                         Layout.alignment: Qt.AlignTop
+                        Layout.fillHeight: true
+                        Layout.maximumHeight: implicitHeight
 
                         Repeater {
                             model: root.categories
@@ -432,9 +515,8 @@ PanelWindow {
                                 icon: Quickshell.iconPath(modelData.icon, true)
                                 label: modelData.name
                                 highlighted: search.text === "" && root.category === modelData.key
-                                // Survol : change de catégorie hors recherche seulement ; il n'efface jamais la recherche (défaut de
-                                // nwg-menu, à ne pas reproduire). Un clic, lui, quitte la recherche.
-                                onHoveredChanged: if (hovered && search.text === "") root.setCategory(modelData.key)
+                                // Survol : hors recherche et hors visée (hoverCategory) ; un clic, lui, quitte la recherche.
+                                onHoveredChanged: root.hoverCategory(modelData.key, hovered)
                                 onClicked: root.setCategory(modelData.key)
                             }
                         }
@@ -442,6 +524,7 @@ PanelWindow {
 
                     // Applications : liste défilante, de la hauteur des catégories.
                     Rectangle {
+                        id: appsBox
                         Layout.fillHeight: true
                         Layout.preferredWidth: Theme.appMenu.appsWidth
                         color: Theme.appMenu.listBackground
@@ -475,11 +558,11 @@ PanelWindow {
                                 required property int index
                                 width: list.width
                                 iconSize: Theme.appMenu.largeIconSize
-                                icon: modelData.icon
+                                icon: modelData.icon ?? root.mimeIcon(modelData.mime)
                                 label: modelData.name
                                 description: modelData.description ?? ""
                                 highlighted: root.pane === "apps" && root.selected === index
-                                onHoveredChanged: if (hovered) {
+                                onHoveredChanged: if (hovered && root.mouseMoved) {
                                     root.pane = "apps";
                                     root.selected = index;
                                 }
@@ -530,9 +613,13 @@ PanelWindow {
                         width: parent.width - 2 * Theme.appMenu.itemPadding - searchGlyph.width - Theme.appMenu.spacing
                         clip: true
                         font.family: Theme.font.text
-                        font.pixelSize: Theme.appMenu.searchFontSize
+                        font.pixelSize: Theme.font.appMenuSearch
                         color: Theme.appMenu.text
-                        onTextChanged: root.pane = "apps"
+                        onTextChanged: {
+                            root.pane = "apps";
+                            root.mouseMoved = false;
+                            root.resetList();
+                        }
                         Keys.onPressed: event => event.accepted = root.handleKey(event)
                     }
 
@@ -543,7 +630,7 @@ PanelWindow {
                         anchors.verticalCenter: search.verticalCenter
                         text: Theme.icon.search
                         font.family: Theme.font.icons
-                        font.pixelSize: Theme.appMenu.fontSize
+                        font.pixelSize: Theme.font.appMenu
                         color: Theme.appMenu.text
                     }
                 }
