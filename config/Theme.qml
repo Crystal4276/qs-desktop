@@ -435,8 +435,6 @@ Singleton {
         readonly property int largeIconSize: 48
         readonly property int smallIconSize: 24
         readonly property int sessionIconSize: root.quickSettings.imageSize   // tes 4 SVG, comme dans le panneau de réglages
-        readonly property int fontSize: 20                                    // nwg-menu : 20 px
-        readonly property int searchFontSize: 24                              // nwg-menu : champ de recherche 24 px
         readonly property int descriptionFontSize: root.panel.smallFontSize
         readonly property color description: root.panel.secondaryText
         readonly property int padding: root.panel.padding
