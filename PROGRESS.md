@@ -294,6 +294,21 @@ Revu et complété d'après le code source d'Hyprland 0.56.2 et l'API Quickshell
 - modules (volume, média, cava, mises à jour, GPU, CPU, mémoire, réseau) : identiques, rien de propre au compositeur ;
 - calendrier : survol, épinglage, fermeture par clic sur une fenêtre / un module / le fond, Échap, focus rendu à la fenêtre.
 
+## Phase 5 — Tray, réseau, Bluetooth, disques, NordVPN : en cours
+
+Décisions (2026-10-16) : modules natifs **dans la pilule du tray** (mêmes icônes Papirus que les applets) ; leurs fenêtres sont des
+**panneaux modernes** (style du calendrier) ; menus du clic droit des applications : **copie des menus GTK**, texte en **Inter**
+(police homogène : ta demande, appliquée désormais à tout texte de Quickshell).
+
+Fait :
+- `Tray.qml` : icônes 32 px, espacement 5, padding 6, éléments passifs masqués ; actions à l'appui comme Waybar (gauche Activate ou menu,
+  milieu SecondaryActivate, droit menu ou ContextMenu, molette Scroll ∓1).
+- `TrayMenu.qml` : copie des menus GTK (cadre, survol, séparateurs, cases et radios du thème, icônes, sous-menus au survol, clavier) ;
+  ouvert au pointeur et basculé s'il déborde ; affiché seulement une fois les entrées D-Bus reçues (sinon Sway étire une image vide).
+  Fermeture : clic sur une autre application (wlroots ferme les popups « grab »), clic sur une barre (`BarState.closePopups`), Échap.
+- Vérifié sur ta session : menus Steam, nm-applet (sous-menu des réseaux Wi-Fi, « Connection Information » ouvert puis refermé), udiskie ;
+  Activate sur WhatsDesk (masquée puis réaffichée, revenue sur l'espace 5) ; fermeture par clic sur la barre.
+
 ## Prochaine étape
 
-Phase 5 (tray, réseau, Bluetooth, disques, NordVPN) : en cours.
+Phase 5 : modules natifs réseau, Bluetooth, disques, NordVPN.

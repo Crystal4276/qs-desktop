@@ -134,6 +134,31 @@ Singleton {
         readonly property int autoCloseDelay: 5000       // ms : épinglé, pointeur hors du calendrier et de l'horloge → fermeture
     }
 
+    // § 3 — Menus du tray : copie des menus GTK du thème catppuccin-mocha-green (gtk-3.0/gtk-dark.css), mesurée sur capture ;
+    // texte en Inter (ta demande : police homogène) au lieu du repli monospace de Waybar.
+    readonly property QtObject trayMenu: QtObject {
+        readonly property color gtkForeground: "#eff1f5"           // couleur de texte du thème GTK
+        readonly property color background: root.color.surface0     // #313244
+        readonly property color frame: Qt.rgba(0.937, 0.945, 0.961, 0.1)    // bordure intérieure 1 px, #eff1f5 à 10 %
+        readonly property color outline: Qt.rgba(0.067, 0.067, 0.106, 0.8)  // liseré extérieur 1 px (crust), mesuré
+        readonly property int radius: 12
+        readonly property int padding: 6
+        readonly property int itemPaddingV: 4
+        readonly property int itemPaddingH: 8
+        readonly property int itemRadius: 6
+        readonly property color itemHover: Qt.rgba(0.937, 0.945, 0.961, 0.08)
+        readonly property real disabledOpacity: 0.5
+        readonly property color separator: Qt.rgba(0.937, 0.945, 0.961, 0.12)
+        readonly property int separatorMargin: 4
+        readonly property int toggleSize: 16          // place réservée avant le texte (case, radio ou icône)
+        readonly property int toggleSpacing: 2        // texte à 18 px du bord intérieur de l'élément (mesuré)
+        readonly property color toggleBackground: Qt.rgba(0.937, 0.945, 0.961, 0.12)
+        readonly property color toggleChecked: root.color.green
+        readonly property color toggleMark: Qt.rgba(0.067, 0.067, 0.106, 0.87)
+        readonly property int arrowMargin: 8          // flèche de sous-menu : 16 px, 8 px après le texte
+        readonly property int fontSize: 20            // texte GTK : 12 pt × 1,25
+    }
+
     // § 3 — Curseur de volume
     readonly property QtObject slider: QtObject {
         readonly property int minWidth: 50

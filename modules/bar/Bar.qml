@@ -32,7 +32,7 @@ Variants {
         exclusiveZone: Theme.bar.exclusiveZone
         color: Theme.bar.background
 
-        // Nom de module (hosts/*.json, ARCHITECTURE § 4) → composant. Les modules pas encore écrits (tray : phase 5) n'affichent rien.
+        // Nom de module (hosts/*.json, ARCHITECTURE § 4) → composant.
         // Un module peut se masquer (`shown` faux) ; une pilule dont tous les modules sont masqués disparaît.
         readonly property var modules: ({
             menu: menuModule,
@@ -48,6 +48,7 @@ Variants {
             clock: clockModule,
             clockDate: clockDateModule,
             network: networkModule,
+            tray: trayModule,
             power: powerModule,
             battery: batteryModule,
             backlight: backlightModule
@@ -108,6 +109,10 @@ Variants {
         Component {
             id: networkModule
             NetworkModule {}
+        }
+        Component {
+            id: trayModule
+            Tray {}
         }
         Component {
             id: powerModule
@@ -185,15 +190,15 @@ Variants {
             pills: bar.layout.right
         }
 
-        // Calendrier épinglé : un appui n'importe où sur la barre le ferme ; l'appui n'est pas accepté, il atteint donc
-        // le module situé dessous (et un clic sur l'horloge ferme sans rouvrir : CalendarPopup.toggle).
+        // Popup ouvert (calendrier épinglé, menu du tray…) : un appui n'importe où sur une barre le ferme ; l'appui n'est pas
+        // accepté, il atteint donc le module situé dessous (un clic sur l'horloge ferme sans rouvrir : CalendarPopup.toggle).
         MouseArea {
             anchors.fill: parent
             z: 1
-            enabled: BarState.calendarPinned
+            enabled: BarState.openPopups > 0
             acceptedButtons: Qt.AllButtons
             onPressed: mouse => {
-                BarState.closeCalendar();
+                BarState.closePopups();
                 mouse.accepted = false;
             }
         }

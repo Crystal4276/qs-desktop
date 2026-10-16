@@ -179,6 +179,22 @@ Règles pour Qt :
 
 Transitions : aucune (`transition: none` sur le bouton menu et les espaces vides).
 
+### Menus du tray (phase 5)
+
+Copie des menus GTK de Waybar (thème `catppuccin-mocha-green-standard+default`, `gtk-3.0/gtk-dark.css`), mesurée sur capture (DP-2, échelle 1) :
+
+| Élément | Valeur |
+|---|---|
+| Position | au pointeur (coin haut-gauche), basculé à gauche ou en haut s'il déborde de l'écran ; ouvert à l'appui du bouton |
+| Cadre | fond `surface0` (`#313244`), coins 12 px, bordure intérieure 1 px `#eff1f5` à 10 %, liseré extérieur 1 px `crust` à 80 % (mesuré), padding 6 px |
+| Élément | padding 4 / 8 px, coins 6 px, survol `#eff1f5` à 8 % ; désactivé : opacité 50 % |
+| Texte | `#eff1f5` ; **Inter 20 px** (ta demande du 2026-10-16 : police homogène ; Waybar donnait Noto Sans Mono par repli) |
+| Marge gauche | 16 px réservés (case, radio ou icône de l'application) + 2 px avant le texte |
+| Case / radio | 16 px, rond, fond `#eff1f5` à 12 % ; cochée : fond `green`, marque `crust` à 87 % (tracés `small-checkbox-checked-symbolic.svg` / `small-radio-checked-symbolic.svg` du thème) |
+| Sous-menu | flèche 16 px (`pan-end-symbolic`) 8 px après le texte ; ouvert au survol, à droite de l'élément |
+| Séparateur | 1 px `#eff1f5` à 12 %, marges 4 px |
+| Fermeture | clic sur une autre application (géré par wlroots), clic sur une barre, Échap, choix d'un élément |
+
 ### Calendrier de l'horloge (nouveau composant, phase 4 — ARCHITECTURE § 8.3)
 
 Remplace le tooltip calendrier. Aucune valeur nouvelle : tout est repris de la barre, du lanceur et de la palette.
