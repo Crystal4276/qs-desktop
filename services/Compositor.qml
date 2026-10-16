@@ -106,8 +106,15 @@ Singleton {
     function placeWorkspaces(moves: var, show: var, focus: int): void {
         if (isSway) {
             const commands = [];
-            for (const m of moves)
-                commands.push(`workspace number ${m.number}`, `move workspace to output "${m.output}"`);
+            // Espace qui a des fenêtres : déplacé par un critère sur elles, sans s'y rendre d'abord. `workspace number N` puis
+            // `move workspace` détruirait l'espace focalisé s'il est vide (fenêtre qu'on vient d'envoyer ailleurs), et le retour
+            // du focus le recréerait sur le mauvais écran (vérifié dans un Sway isolé). Espace vide : il faut s'y rendre.
+            for (const m of moves) {
+                if (workspaces.find(w => w.number === m.number)?.empty === false)
+                    commands.push(`[workspace="^${m.number}(:|$)"] move workspace to output "${m.output}"`);
+                else
+                    commands.push(`workspace number ${m.number}`, `move workspace to output "${m.output}"`);
+            }
             for (const s of show)
                 commands.push(`focus output "${s.output}"`, `workspace number ${s.number}`);
             if (focus > 0)
