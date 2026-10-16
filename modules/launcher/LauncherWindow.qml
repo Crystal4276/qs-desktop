@@ -162,12 +162,6 @@ PanelWindow {
         return true;
     }
 
-    function iconSource(icon: string): string {
-        if (icon === "")
-            return "";
-        return icon.startsWith("/") ? `file://${icon}` : Quickshell.iconPath(icon, true);
-    }
-
     visible: false
     WlrLayershell.namespace: "quickshell-launcher"
     WlrLayershell.layer: WlrLayer.Overlay
@@ -370,7 +364,7 @@ PanelWindow {
                                 IconImage {
                                     anchors.verticalCenter: parent.verticalCenter
                                     implicitSize: Theme.launcher.itemIconSize
-                                    source: root.iconSource(row.modelData.icon)
+                                    source: Apps.iconSource(row.modelData.icon)
                                 }
 
                                 Text {

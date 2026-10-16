@@ -5,7 +5,7 @@ import Quickshell
 import Quickshell.Io
 import qs.config
 
-// Applications du lanceur (remplace `rofi -show drun`, INVENTORY § 3) : comportement de Rofi 2.0.0, code lu (modes/drun.c, history.c).
+// Applications du lanceur (remplace `rofi -show drun`, INVENTORY § 3) et du menu d'applications (catégories, favoris) : comportement de Rofi 2.0.0, code lu (modes/drun.c, history.c).
 // - Liste : DesktopEntries, plus les filtres de Rofi que Quickshell n'applique pas (OnlyShowIn / NotShowIn selon
 //   XDG_CURRENT_DESKTOP, TryExec introuvable, Exec absent).
 // - Ordre : historique d'abord (du plus lancé au moins lancé), puis le reste par nom.
@@ -33,6 +33,73 @@ Singleton {
                 return a.name.localeCompare(b.name);
             return (ra < 0 ? Infinity : ra) - (rb < 0 ? Infinity : rb);
         });
+    }
+
+    // Catégories du menu d'applications (modules/menus/AppMenu.qml), d'après les catégories principales de la norme freedesktop
+    // (Desktop Menu Specification) : une application va dans la première catégorie de cette liste qu'elle déclare (« System »
+    // avant « Settings » : un outil d'administration n'est pas une préférence) ; aucune → « Other ». Catégories vides masquées.
+    readonly property var categoryList: [
+        { key: "System", name: "Administration", match: ["System"] },
+        { key: "Settings", name: "Preferences", match: ["Settings"] },
+        { key: "Development", name: "Programming", match: ["Development"] },
+        { key: "Game", name: "Games", match: ["Game"] },
+        { key: "Graphics", name: "Graphics", match: ["Graphics"] },
+        { key: "AudioVideo", name: "Sound & Video", match: ["AudioVideo", "Audio", "Video"] },
+        { key: "Network", name: "Internet", match: ["Network"] },
+        { key: "Office", name: "Office", match: ["Office"] },
+        { key: "Education", name: "Education", match: ["Education"] },
+        { key: "Science", name: "Science", match: ["Science"] },
+        { key: "Utility", name: "Accessories", match: ["Utility"] }
+    ]
+
+    // Toutes les applications par nom (« All Applications »), puis par catégorie : { clé: [DesktopEntry] }, « Other » pour le reste.
+    readonly property var byName: [...entries].sort((a, b) => a.name.localeCompare(b.name))
+    readonly property var byCategory: {
+        const map = {};
+        for (const e of byName) {
+            const key = categoryList.find(c => c.match.some(m => e.categories.includes(m)))?.key ?? "Other";
+            (map[key] = map[key] ?? []).push(e);
+        }
+        return map;
+    }
+
+    // Favoris du menu d'applications (identifiants, dans l'ordre d'ajout), fichier d'état local. Au premier démarrage, reprise
+    // des applications épinglées de nwg-menu (~/.cache/nwg-pin-cache : « <identifiant>.desktop » par ligne).
+    readonly property list<string> favoriteIds: favorites.ids
+    readonly property var favoriteEntries: favoriteIds.map(id => entries.find(e => e.id === id)).filter(e => e)
+    property bool importPins: false
+
+    function isFavorite(entry: DesktopEntry): bool {
+        return favoriteIds.includes(entry.id);
+    }
+
+    function toggleFavorite(entry: DesktopEntry): void {
+        favorites.ids = isFavorite(entry) ? favoriteIds.filter(id => id !== entry.id) : [...favoriteIds, entry.id];
+    }
+
+    FileView {
+        path: Quickshell.statePath("app-menu.json")
+        printErrors: false
+        onAdapterUpdated: writeAdapter()
+        onLoadFailed: root.importPins = true
+
+        JsonAdapter {
+            id: favorites
+            property list<string> ids: []
+        }
+    }
+
+    FileView {
+        path: root.importPins ? `${root.cacheDir}/nwg-pin-cache` : ""
+        printErrors: false
+        onLoaded: favorites.ids = text().split("\n").filter(l => l.endsWith(".desktop")).map(l => l.slice(0, -".desktop".length))
+    }
+
+    // Icône d'une application : chemin absolu ou nom d'icône du thème.
+    function iconSource(icon: string): string {
+        if (icon === "")
+            return "";
+        return icon.startsWith("/") ? `file://${icon}` : Quickshell.iconPath(icon, true);
     }
 
     function inHistory(entry: DesktopEntry): bool {
@@ -111,10 +178,10 @@ Singleton {
         }
     }
 
-    readonly property string rofiCache: Quickshell.env("XDG_CACHE_HOME") || `${Quickshell.env("HOME")}/.cache`
+    readonly property string cacheDir: Quickshell.env("XDG_CACHE_HOME") || `${Quickshell.env("HOME")}/.cache`
 
     FileView {
-        path: root.importRofi ? `${root.rofiCache}/rofi3.druncache` : ""
+        path: root.importRofi ? `${root.cacheDir}/rofi3.druncache` : ""
         printErrors: false
         // « <nombre> <identifiant>.desktop » par ligne, déjà trié
         onLoaded: state.history = text().split("\n").map(l => l.match(/^(\d+) (.+)\.desktop$/)).filter(m => m)
@@ -122,7 +189,7 @@ Singleton {
     }
 
     FileView {
-        path: root.importRofi ? `${root.rofiCache}/rofi-entry-history.txt` : ""
+        path: root.importRofi ? `${root.cacheDir}/rofi-entry-history.txt` : ""
         printErrors: false
         onLoaded: root.saveInputs(text().split("\n"))
     }

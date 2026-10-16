@@ -429,8 +429,48 @@ Singleton {
         readonly property color scrollbar: root.color.overlay0
         readonly property color scrollbarHover: root.color.overlay1
         readonly property color buttonHover: root.hoverWhite
-        readonly property int categoryIconSize: 48
-        readonly property int itemIconSize: 24
+        readonly property color buttonHoverBorder: root.color.overlay0
+        // Tailles d'icônes de nwg-menu (-isl 48, -iss 24), réparties sur la disposition de Cinnamon (proposé, à valider) :
+        // 48 px pour les applications (nom + description sur deux lignes), 24 px pour les catégories, dossiers et favoris.
+        readonly property int largeIconSize: 48
+        readonly property int smallIconSize: 24
+        readonly property int sessionIconSize: root.quickSettings.imageSize   // tes 4 SVG, comme dans le panneau de réglages
+        readonly property int fontSize: 20                                    // nwg-menu : 20 px
+        readonly property int searchFontSize: 24                              // nwg-menu : champ de recherche 24 px
+        readonly property int descriptionFontSize: root.panel.smallFontSize
+        readonly property color description: root.panel.secondaryText
+        readonly property int padding: root.panel.padding
+        readonly property int spacing: root.panel.spacing
+        readonly property int appsWidth: root.panel.width                     // colonne des applications : largeur du lanceur
+        // Curseur de défilement du thème GTK (catppuccin) : bordure transparente de 4 px, au moins 24 px de haut, arrondi complet.
+        readonly property int scrollbarInset: 4
+        readonly property int scrollbarMinLength: 24
+        // Icônes du thème (Papirus-Dark) : catégories (clés de Apps.categoryList), dossiers (clés de Places.folders), fichiers.
+        readonly property string allIcon: "applications-all"
+        readonly property string recentIcon: "document-open-recent"
+        readonly property var categoryIcons: ({
+            System: "applications-system",
+            Settings: "preferences-desktop",
+            Development: "applications-development",
+            Game: "applications-games",
+            Graphics: "applications-graphics",
+            AudioVideo: "applications-multimedia",
+            Network: "applications-internet",
+            Office: "applications-office",
+            Education: "applications-education",
+            Science: "applications-science",
+            Utility: "applications-accessories",
+            Other: "applications-other"
+        })
+        readonly property var placeIcons: ({
+            HOME: "user-home",
+            DOCUMENTS: "folder-documents",
+            DOWNLOAD: "folder-download",
+            MUSIC: "folder-music",
+            PICTURES: "folder-pictures",
+            VIDEOS: "folder-videos"
+        })
+        readonly property string fileIcon: "text-x-generic"
     }
 
     // Polices embarquées (assets/fonts, ARCHITECTURE § 8.2) chargées depuis le dépôt : prioritaires sur une copie système
