@@ -663,3 +663,13 @@ Inventaire relu (§ 10.2, § 11.4 d'INVENTORY) — tes choix :
 - **Réseaux privés** : section « Private networks » dans le panneau réseau (fait) — Tailscale par `tailscale status --json` (sans
   droits), ZeroTier par ses interfaces `zt*` (`zerotier-cli` exige le jeton de root) ; lecture seule, masquée si absents.
 - **Autostart XDG** (`~/.config/autostart`) : laissé tel quel (applications de démarrage dans la config du compositeur).
+
+### 12.4 Cinquième passe : modules du code source et singleton `Quickshell` (2026-10-16)
+
+- Les modules installés (0.3.2) sont exactement ceux de la page 0.3.0, plus `Quickshell.X11` (sans objet sous Wayland) : aucun module
+  non documenté à exploiter.
+- Singleton `Quickshell` : `reload()` → commande `qs ipc` pour remplacer `$mod+Ctrl+W` (`killall waybar && waybar`) à la bascule
+  (phase 10) ; `inhibitReloadPopup()` → garder ou masquer la fenêtre « config rechargée » sur le bureau final (décision en phase 10) ;
+  `cachePath` / `dataPath` → miniatures du sélecteur de fond (phase 8b) ; le reste est déjà utilisé (`env`, `execDetached`, `iconPath`,
+  `shellPath`, `statePath`, `screens`, `clipboardText`).
+- **Aucune fonction nouvelle trouvée** : les passes convergent.
