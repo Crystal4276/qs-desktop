@@ -418,9 +418,22 @@ Vérifié (Dunst arrêté le temps des tests puis relancé ; captures dans une s
 du dépôt dans le dossier temporaire de session (`notif/dunst-history-backup*.json`). Les notifications reçues de tes applications pendant
 les tests sont arrivées dans les instances de test (ex. une notification « Video (0:06) ») et ne sont plus consultables.
 
+## Revue de l'API Quickshell (2026-10-16, à ta demande)
+
+Tous les types de la documentation 0.3.0 passés en revue : `ARCHITECTURE.md` § 12 (utilisé / prévu / ajouté / écarté, avec la raison).
+Ajouts au plan :
+- **avant la phase 7**, mise à niveau du code déjà fait : `ScriptModel` (listes), `PersistentProperties` (historique des notifications,
+  « ne pas déranger »), `JsonAdapter` (derniers pays VPN), et **`WindowManager`** (protocole `ext-workspace`, commun à Sway et Hyprland)
+  pour les espaces de travail à la place du code propre à chaque compositeur — `scripts/test-outputs.sh` rejoué sur Sway ;
+- phase 7-8 : `LazyLoader` (lanceur, menu d'applications) ; `IdleInhibitor` (« garder l'écran allumé », emplacement à décider en phase 8) ;
+  `NMSettings` (connexions enregistrées dans le panneau réseau) ;
+- phase 8b : outil de capture entièrement natif (`ScreencopyView`, `Toplevel`) au lieu de `grim`/`slurp` ;
+- phase 9 : `HyprlandFocusGrab` pour fermer panneaux et calendrier sous Hyprland ;
+- laptop : `PowerProfiles` (`power-profiles-daemon`, dépendance optionnelle).
+
 ## Prochaine étape
 
-Phase 7 (lanceur).
+Mise à niveau ci-dessus (Sway), puis phase 7 (lanceur).
 
 Rappel pour la phase 12 (ta précision du 2026-10-16) : **greetd remplace SDDM**, l'écran de connexion est un greeter Quickshell en QML
 (apparence du thème SDDM reprise, thème SDDM non utilisé). Paquets `greetd` et `greetd-agreety` : dans `deps/`, donc installés par

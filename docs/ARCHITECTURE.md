@@ -378,7 +378,7 @@ Proposition de placement dans les phases (CLAUDE.md n'est pas modifié sans ton 
 | R5 | Réseau natif (phase 5), `nm-connection-editor` en repli pour l'édition des connexions. |
 | R6 | Bluetooth natif (phase 5) — voir § 10.2. |
 | R7 | Disques natifs (phase 5) — voir § 10.3. |
-| R8 | `grim`/`slurp` au départ ; **outil de capture en fenêtre Quickshell** (écran entier, un écran, une fenêtre, une zone ; modèle de l'outil de capture GNOME), phase 8b. |
+| R8 | **Outil de capture en fenêtre Quickshell** (écran entier, un écran, une fenêtre, une zone ; modèle de l'outil de capture GNOME), phase 8b, **entièrement natif** (`ScreencopyView`, `Toplevel` : § 12, revue du 2026-10-16) au lieu de `grim`/`slurp`. |
 | R9 | Touches volume / média / luminosité via `qs ipc`, phase 10. |
 | R10 | Écran de connexion : **phase 12, tout à la fin**, à concevoir ensemble. **SDDM abandonné, remplacé par greetd** (§ 10.4) : greeter Quickshell indépendant (`Greetd`), reprenant uniquement l'apparence du thème `catppuccin-mocha-green` (thème lui-même écrit en QML : `/usr/share/sddm/themes/catppuccin-mocha-green/`, paquet AUR `catppuccin-sddm-theme-mocha` ; fond `backgrounds/wall.png`, police Noto Sans 9, horloge, icônes power/reboot/sleep). Aperçu : `docs/reference/sddm-catppuccin-preview.png` (aperçu générique du paquet ; la variante installée est verte). |
 | R11 | Au démarrage : 1 / 4 / 7. |
@@ -547,3 +547,59 @@ Clic : `nvtop` (gère AMD, Intel et NVIDIA). Ce desktop n'a qu'un GPU NVIDIA : l
 **Moniteur système** : au départ, les clics CPU / mémoire ouvrent `btop` (parité). Ensuite, une **fenêtre Quickshell de statistiques système**
 (équivalent de btop : CPU par cœur, mémoire et swap, températures, GPU, disques, réseau, processus) — ajoutée à la phase 8b, en dernier.
 Les données viennent de `/proc` et `/sys` (déjà lus par les services de la barre) ; la liste des processus et l'arrêt d'un processus sont à concevoir à ce moment-là.
+
+## 12. Couverture de l'API Quickshell (revue du 2026-10-16, à ta demande : « utiliser au maximum ce que Quickshell propose »)
+
+Référence : liste des types de la documentation 0.3.0 (https://quickshell.org/docs/v0.3.0/types/), comparée aux fichiers `qmltypes`
+de la version installée (0.3.2) et au code source de Quickshell, Sway 1.12 et Hyprland 0.56.2 (protocoles réellement pris en charge).
+Légende : **utilisé** (déjà dans le code), **prévu** (phase indiquée), **ajouté** (nouvel usage décidé par cette revue), **écarté** (raison).
+
+| Module | Types | Statut |
+|---|---|---|
+| `Quickshell` (cœur) | `ShellRoot`, `Singleton`, `Variants`, `PanelWindow`, `PopupWindow`, `Region`, `PopupAnchor`/`PopupAdjustment`, `Edges`, `ExclusionMode`, `ShellScreen`, `SystemClock`, `QsMenuOpener`/`QsMenuEntry`/`QsMenuHandle` | **utilisé** |
+| | `DesktopEntries`, `DesktopEntry`, `DesktopAction` | **prévu** : lanceur (phase 7), menu d'applications (phase 8) |
+| | `FloatingWindow` | **prévu** : fenêtre de statistiques, sélecteur de fond (phase 8b) |
+| | `LazyLoader` | **ajouté** : composants lourds chargés seulement à l'ouverture (lanceur, menu d'applications, statistiques, capture) |
+| | `ScriptModel` | **ajouté** : modèles des listes construites en JavaScript (notifications, centre, tray, panneaux) — les délégués ne sont plus recréés à chaque changement |
+| | `PersistentProperties` | **ajouté** : historique des notifications, « ne pas déranger » et dernier pays VPN conservés lors d'un rechargement de la config |
+| | `ObjectModel`, `Reloadable`, `Scope`, `Retainable`/`RetainableLock`, `BoundComponent`, `TransformWatcher`, `Intersection`, `QuickshellSettings` | utilisés indirectement ou au besoin ; aucun usage propre identifié |
+| | `QsMenuAnchor`, `QsMenuButtonType` | **écarté** : menus du tray dessinés par nous (copie des menus GTK, phase 5) |
+| | `ColorQuantizer` | **écarté** : couleurs tirées d'une image, contraire à la charte (aucune couleur inventée) |
+| | `EasingCurve`, `ElapsedTimer` | **écarté** : aucune animation dans la charte (THEME § 10) ; pas de mesure de durée utile |
+| `Quickshell.Io` | `Process`, `FileView`, `SplitParser`, `StdioCollector`, `IpcHandler` | **utilisé** |
+| | `JsonAdapter`, `JsonObject` | **ajouté** : fichiers d'état JSON (derniers pays VPN) ; la config machine reste lue à la main (fusion `default.json` + machine) |
+| | `Socket`, `SocketServer`, `DataStream`, `DataStreamParser` | **écarté** : les raccourcis passent par `IpcHandler` |
+| `Quickshell.I3` | `I3`, `I3IpcListener`, `I3Monitor`, `I3Workspace` | **utilisé** (Sway) |
+| `Quickshell.Hyprland` | `Hyprland`, `HyprlandMonitor`, `HyprlandWorkspace`, `HyprlandEvent` | **utilisé** (écrit, à tester) |
+| | `HyprlandFocusGrab` | **ajouté** (phase 9) : sous Hyprland, fermeture des panneaux et du calendrier par un clic ailleurs, sans le mécanisme de contournement de Sway |
+| | `HyprlandToplevel`, `HyprlandWindow` | au besoin, via `Toplevel` (ci-dessous) |
+| | `GlobalShortcut` | **écarté** : raccourcis par `qs ipc` sur les deux compositeurs (un seul mécanisme) |
+| `Quickshell.WindowManager` | `WindowManager`, `Windowset`, `WindowsetProjection`, `ScreenProjection` | **ajouté** (avant la session Hyprland) : espaces de travail par le protocole commun `ext-workspace` (Sway 1.12 et Hyprland 0.56 : activer, déplacer vers un écran) à la place du code propre à chaque compositeur dans `Compositor.qml` — supprime le placement en Lua sous Hyprland. Restent par compositeur : écran focalisé, focus de fenêtre, titre, mode. `scripts/test-outputs.sh` rejoué. |
+| `Quickshell.Wayland` | `WlrLayershell`, `WlrLayer`, `WlrKeyboardFocus` | **utilisé** |
+| | `WlSessionLock`, `WlSessionLockSurface` | **prévu** : verrouillage (phase 8b) |
+| | `IdleMonitor` | **prévu** : veille des écrans (phase 8b), `respectInhibitors` |
+| | `IdleInhibitor` | **ajouté** : interrupteur « garder l'écran allumé » (emplacement à décider en phase 8, panneau de réglages rapides) |
+| | `ScreencopyView`, `ToplevelManager`, `Toplevel` | **ajouté** (phase 8b) : outil de capture **entièrement natif** (aperçu figé de l'écran, sélection de zone, choix d'une fenêtre avec aperçu, enregistrement par `grabToImage`) au lieu de `grim`/`slurp` ; liste des fenêtres pour le menu d'applications si utile |
+| | `ShortcutInhibitor` | **écarté** : le verrouillage bloque déjà les raccourcis (protocole de verrouillage) |
+| | `BackgroundEffect` | **écarté** : flou d'arrière-plan absent de la charte, et Sway 1.12 ne le prend pas en charge |
+| `Quickshell.Widgets` | `IconImage` | **utilisé** |
+| | `ClippingRectangle`, `WrapperRectangle`, `WrapperItem`, `WrapperMouseArea`, `MarginWrapperManager`… | au besoin (image arrondie : pochette, avatar du verrouillage / greeter) |
+| `Quickshell.DBusMenu` | `DBusMenuHandle`, `DBusMenuItem` | **utilisé** (menus du tray) |
+| `Quickshell.Bluetooth` | tous | **utilisé** (phase 5) |
+| `Quickshell.Networking` | `Networking`, `NetworkDevice`, `WifiDevice`, `WifiNetwork`… | **utilisé** (phase 5) |
+| | `NMSettings` | **ajouté** : connexions enregistrées de NetworkManager (dont VPN NetworkManager, noté au BACKLOG) dans le panneau réseau |
+| `Quickshell.Services.Mpris` | tous | **utilisé** |
+| `Quickshell.Services.Notifications` | tous | **utilisé** (phase 6) |
+| `Quickshell.Services.Pipewire` | `Pipewire`, `PwNode`, `PwNodeAudio`, `PwObjectTracker` | **utilisé** |
+| | `PwNodePeakMonitor` | **écarté** pour cava : il donne un niveau, pas un spectre ; utilisable plus tard pour un indicateur de micro actif |
+| | `PwLink`, `PwLinkGroup`, `PwNodeLinkTracker` | **écarté** : pas de routage audio dans le bureau |
+| `Quickshell.Services.SystemTray` | tous | **utilisé** |
+| `Quickshell.Services.UPower` | `UPower`, `UPowerDevice` | **utilisé** (batterie, laptop) |
+| | `PowerProfiles` | **ajouté** (laptop) : profil d'énergie (économie / équilibré / performance) ; nécessite `power-profiles-daemon` (dépendance optionnelle) |
+| `Quickshell.Services.Polkit` | `PolkitAgent`, `AuthFlow` | **prévu** : agent polkit (phase 8b) |
+| `Quickshell.Services.Pam` | `PamContext` | **prévu** : verrouillage (8b), greeter (12) |
+| `Quickshell.Services.Greetd` | `Greetd` | **prévu** : écran de connexion (phase 12, § 10.4) |
+
+Restent hors Quickshell, faute d'équivalent : `nvidia-smi` (GPU), `checkupdates`, `cava` (spectre), `nordvpn`, `busctl` / `gdbus` /
+`udisksctl` (UDisks2 : pas d'accès D-Bus générique en QML), `bluetoothctl` (agent d'appairage), `notify-send` (envoi, indépendant du serveur).
+`grim` reste un outil de développement (`scripts/shot.sh`) ; `slurp` reste pour le portail de partage d'écran (`xdg-desktop-portal-wlr`).

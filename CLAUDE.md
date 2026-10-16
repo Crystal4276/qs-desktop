@@ -199,7 +199,7 @@ Adapter si l'inventaire le justifie, mais documenter le changement dans `ARCHITE
 - Aucune couleur, police ou taille codée en dur hors de `Theme.qml`.
 - Multi-écran via `Variants { model: Quickshell.screens }` : une barre par écran actif, créée et détruite à chaud. Les modules affichés sur chaque écran viennent de la config machine, avec un repli raisonnable pour un écran inconnu.
 - **Compositeur** : `services/Compositor.qml` expose une interface unique (espaces de travail, fenêtre active, mode, sortie focalisée, liste des sorties) et s'appuie sur `Quickshell.I3` sous Sway et `Quickshell.Hyprland` sous Hyprland. Détection via `SWAYSOCK` / `HYPRLAND_INSTANCE_SIGNATURE`.
-- Préférer les services natifs de Quickshell aux scripts externes : `Quickshell.Services.Pipewire` (audio), `.SystemTray`, `.Notifications`, `.Mpris`, `.UPower`, `DesktopEntries`, etc. Garder un script externe seulement si aucun équivalent natif n'existe (ex. `nvidia-smi` pour le GPU).
+- Utiliser au maximum ce que Quickshell propose (revue complète des types : `ARCHITECTURE.md` § 12, à tenir à jour). Préférer les services natifs de Quickshell aux scripts externes : `Quickshell.Services.Pipewire` (audio), `.SystemTray`, `.Notifications`, `.Mpris`, `.UPower`, `DesktopEntries`, etc. Garder un script externe seulement si aucun équivalent natif n'existe (ex. `nvidia-smi` pour le GPU).
 - Tout ce qui doit être déclenché par un raccourci clavier passe par un `IpcHandler` (`qs ipc call <target> <fonction>`).
 - Commentaires courts, en anglais ou en français, mais cohérents dans un même fichier.
 
@@ -273,7 +273,7 @@ Lire toute la config existante et produire :
 
 **Phase 8 — Menus custom et scripts.** Power menu, menu d'applications maison sur le modèle du menu Cinnamon (remplace nwg-menu), et tous les autres menus Rofi inventoriés ; application des décisions de `SCRIPTS.md` (scripts remplacés en QML, gardés et rapatriés dans `scripts/`, ou abandonnés après mon accord).
 
-**Phase 8b — Services de session et utilitaires.** Fond d'écran natif et utilitaire de changement de fond (`docs/WALLPAPERS.md`) ; écran de verrouillage natif au design entièrement refait (moderne, dans la charte) ; veille des écrans (`IdleMonitor`) ; agent polkit ; outil de capture d'écran (écran entier, un écran, une fenêtre, une zone — modèle de l'outil GNOME), d'abord sur `grim`/`slurp` ; en dernier, fenêtre de statistiques système (équivalent de btop).
+**Phase 8b — Services de session et utilitaires.** Fond d'écran natif et utilitaire de changement de fond (`docs/WALLPAPERS.md`) ; écran de verrouillage natif au design entièrement refait (moderne, dans la charte) ; veille des écrans (`IdleMonitor`) ; agent polkit ; outil de capture d'écran (écran entier, un écran, une fenêtre, une zone — modèle de l'outil GNOME), natif (`ScreencopyView`, `Toplevel`) ; en dernier, fenêtre de statistiques système (équivalent de btop).
 
 **Phase 9 — Parité Hyprland.** Rejouer le protocole de vérification complet sous Hyprland, y compris `test-outputs.sh`.
 

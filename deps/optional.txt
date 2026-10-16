@@ -5,3 +5,4 @@ nvidia-utils    # nvidia-smi : module température GPU (machines Nvidia)
 brightnessctl   # réglage du rétroéclairage (laptop) ; non installé sur le desktop
 paru            # (AUR) commande de mise à jour lancée par le module updates ; sinon yay ou pacman
 nordvpn-bin     # (AUR) module NordVPN (connexion, pays, pause) ; masqué si absent
+power-profiles-daemon   # profils d'énergie (laptop) lus et changés par Quickshell (UPower.PowerProfiles) ; masqué si absent
