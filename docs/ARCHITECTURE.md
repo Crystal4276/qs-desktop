@@ -251,9 +251,9 @@ Les widgets ne lisent que ces services ; aucun `Process` dans l'UI.
 
 ## 7. Menus et scripts `rofi -dmenu`
 
-Un seul script utilise `rofi -dmenu` : le **power menu**. Il est réécrit en QML (`modules/menus/PowerMenu.qml`), pas de remplaçant
-dmenu générique (aucun autre usage ; `dmenu` de Dunst n'est ni installé ni utilisé).
-Logout adapté au compositeur. Confirmation : aucune aujourd'hui → aucune (parité).
+Un seul script utilise `rofi -dmenu` : le **power menu**. Il n'est pas réécrit tel quel : ses actions passent dans le **panneau de
+réglages** façon GNOME (§ 10.1.4, ta décision du 2026-10-16). Pas de remplaçant dmenu générique (aucun autre usage ; `dmenu` de Dunst
+n'est ni installé ni utilisé). Logout adapté au compositeur. Confirmation : aucune aujourd'hui → aucune (parité, confirmé).
 
 ## 8. Décisions (2026-10-15)
 
@@ -446,6 +446,23 @@ Comportement relu dans le code de Rofi 2.0.0 (`modes/drun.c`, `history.c`, `help
 - **Non repris** : modes `run` et `ssh` (`SCRIPTS.md`), actions des applications (désactivées dans ta config Rofi).
 - **Petit écart voulu** : après Maj+Suppr, Rofi retire l'application de la liste jusqu'à la prochaine ouverture ; ici elle reprend sa place
   alphabétique.
+
+### 10.1.4 Panneau de réglages façon GNOME (phase 8, décidé le 2026-10-16)
+
+Remplace le power menu Rofi. Base : les réglages rapides de GNOME 51 (code de gnome-shell lu : `js/ui/panel.js`, `js/ui/status/*`).
+
+- **Bouton** : le bouton power du bout de la barre devient un **engrenage** `U+F013` (Symbols Nerd Font Mono, 28 px, couleur `text`) ;
+  il ouvre le panneau, au style des panneaux du tray (`THEME.md` § 3). `$mod+Escape` l'ouvrira aussi (IPC).
+- **Ligne du haut** : à gauche la batterie en % (laptop), le bouton **capture d'écran** (outil natif de la phase 8b) ; à droite tes
+  **4 icônes SVG** du power menu, redimensionnées : verrouiller, se déconnecter, redémarrer, éteindre. **Pas de veille, pas de
+  confirmation** (comme Rofi). Pas de bouton Réglages GNOME.
+- **Curseurs** : sortie son (flèche → choix de la sortie, contenu du panneau audio), micro, luminosité (laptop).
+- **Bascules** (grille de 2 colonnes, comme GNOME) : profil d'énergie (Performance / Équilibré / Économie, ta demande de trois boutons),
+  ne pas déranger, garder l'écran allumé (`IdleInhibitor`), VRR et HDR (écrans compatibles seulement), **veilleuse** (`wlsunset`),
+  **mode avion** (laptop seulement, `rfkill`).
+- **Tray inchangé** : réseau, Bluetooth, NordVPN, disques et cloche gardent leur icône et leur panneau ; ils ne sont pas dupliqués dans
+  le panneau de réglages.
+- Repris de GNOME mais écarté : style sombre (thème toujours sombre), Réglages GNOME, veille, confirmation.
 
 ### 10.2 Bluetooth : appairage et code PIN
 

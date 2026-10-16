@@ -6,13 +6,9 @@ Idées notées pendant le travail. Rien ici n'est implémenté sans accord.
 - Activer le VRR (`adaptive_sync on` / `vrr = 1`) dans les règles d'écran : accepté par Sway + Nvidia sur les 3 écrans (phase 3) ; reste à juger l'effet à l'œil.
 - **Événements Thunderbird dans la fenêtre calendrier** (lecture seule de `calendar-data/cache.sqlite` / `local.sqlite` ; 3 CalDAV, 2 Owl, 1 local). Voir ARCHITECTURE § 8.3.
 - Réévaluer Kanshi si un jour le même écran doit être placé différemment selon les autres écrans présents (plusieurs docks).
-- Confirmation avant Reboot / Shutdown dans le power menu.
-- **Power menu → panneau de réglages rapides façon GNOME** (idée du 2026-10-15, à discuter au début de la phase 8) : verrouiller, déconnexion,
-  redémarrer, éteindre, plus éventuellement volume, réseau, Bluetooth, NordVPN… Les menus réseau, Bluetooth et VPN de la phase 5 seront
-  écrits comme des panneaux autonomes, pour pouvoir y être intégrés sans réécriture.
-  **Demandé (2026-10-16)** : trois boutons de profil d'énergie (`PowerProfiles`), l'interrupteur « garder l'écran allumé » (`IdleInhibitor`),
-  les bascules **HDR** et **VRR** (écrans compatibles détectés : `features.hdr` / `features.adaptive_sync` de Sway ; commandes `qs ipc`
-  aussi pour `$mod+d`).
+- Confirmation avant Reboot / Shutdown (écartée pour la phase 8, le 2026-10-16 : comme Rofi).
+- ~~Power menu → panneau de réglages façon GNOME~~ : **décidé le 2026-10-16, fait en phase 8** (`ARCHITECTURE.md` § 10.1.4). Commandes
+  `qs ipc` pour le HDR et le VRR aussi (`$mod+d`).
 - Seuil critique de température GPU réellement appliqué (l'option `critical-threshold` de Waybar est sans effet sur un `custom/*`).
 - Raccourcis `XF86AudioPlay/Next/Prev` sous Sway (existants sous Hyprland seulement).
 - Passer DP-1 / DP-3 en 144 Hz (piste notée dans `~/.config/hypr/lua/layout.lua`).
