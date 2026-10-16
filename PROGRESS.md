@@ -324,8 +324,8 @@ Découvertes :
   panneaux à taille fixe avec zone de clic limitée au cadre (`mask`).
 - `SIGUSR1` de Waybar : en mode masqué, la barre reste dessinée sous les fenêtres ; l'indicateur fiable est la zone réservée (y = 75 / 10).
 - UDisks2 marque les images disque en boucle comme « système » ; udiskie les gère quand même (règle reprise).
-- Le moteur JavaScript de Qt ne connaît pas le drapeau `s` des expressions régulières (corrigé, `eb7abee` et `85c3a50` suivent un commit cassé
-  pendant quelques minutes).
+- Le moteur JavaScript de Qt ne connaît pas le drapeau `s` des expressions régulières : le commit `99292c4` ne se chargeait pas,
+  corrigé juste après (`5163895`).
 
 Vérifié (Sway, ta session ; Waybar masquée le temps des tests puis rétablie) :
 - tray : menus Steam, nm-applet (sous-menu Wi-Fi, « Connection Information » ouvert puis refermé), udiskie ; Activate (WhatsDesk masquée
