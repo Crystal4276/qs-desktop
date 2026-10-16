@@ -13,6 +13,8 @@ RowLayout {
 
     readonly property var player: Media.player
     readonly property real length: player?.lengthSupported ? player.length : 0
+    // Fenêtre du panneau affichée (propriété attachée lue sur l'Item lui-même : `root.QsWindow` vaut undefined).
+    readonly property bool windowShown: QsWindow.window?.visible ?? false
 
     visible: player !== null
     Layout.fillWidth: true
@@ -26,7 +28,7 @@ RowLayout {
     // La position n'est pas signalée en continu (documentation de MprisPlayer) : relue chaque seconde pendant la lecture, et
     // seulement panneau ouvert (dans un panneau fermé, `visible` de la carte reste vrai : c'est la fenêtre qui est cachée).
     Timer {
-        running: root.visible && (root.QsWindow.window?.visible ?? false) && (root.player?.isPlaying ?? false)
+        running: root.visible && root.windowShown && (root.player?.isPlaying ?? false)
         interval: 1000
         repeat: true
         onTriggered: root.player.positionChanged()

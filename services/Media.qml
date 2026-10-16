@@ -8,16 +8,30 @@ import qs.config
 
 // Lecteur suivi par le module `mpris` et les touches média (INVENTORY.md § 1). Waybar ne suivait que Spotify (`player`) et sa
 // molette lançait `playerctld shift`, sans effet visible ; ici (ton choix du 2026-10-16) la molette passe d'un lecteur MPRIS
-// à l'autre. Lecteur suivi : celui choisi à la molette s'il existe encore, sinon le lecteur préféré (`Settings.mediaPlayer`),
-// sinon le premier présent. Aucun lecteur → module masqué.
+// à l'autre. Lecteur suivi (ton choix du 2026-10-16) : celui choisi à la molette, jusqu'au prochain démarrage d'une lecture ;
+// sinon le lecteur préféré (`Settings.mediaPlayer`) s'il joue, sinon un lecteur qui joue (ex. Chromium seul en lecture),
+// sinon le lecteur préféré, sinon le premier présent. Aucun lecteur → module masqué.
 Singleton {
     id: root
 
     // `playerctld` (paquet playerctl) n'est qu'un relais qui recopie le lecteur actif : exclu, sinon il compterait en double.
     readonly property var players: Mpris.players.values.filter(p => p.dbusName !== "org.mpris.MediaPlayer2.playerctld")
+    // Lecteurs en lecture ; non vide → le visualiseur cava est affiché (Cava.qml).
+    readonly property var playing: players.filter(p => p.isPlaying)
     property string selected: ""   // nom D-Bus choisi à la molette
+    readonly property string preferred: `org.mpris.MediaPlayer2.${Settings.mediaPlayer}`
     readonly property MprisPlayer player: players.find(p => p.dbusName === selected)
-        ?? players.find(p => p.dbusName === `org.mpris.MediaPlayer2.${Settings.mediaPlayer}`) ?? players[0] ?? null
+        ?? playing.find(p => p.dbusName === preferred) ?? playing[0]
+        ?? players.find(p => p.dbusName === preferred) ?? players[0] ?? null
+
+    // Une lecture qui démarre annule le choix fait à la molette : le lecteur qui joue reprend la main.
+    property var lastPlaying: []
+    onPlayingChanged: {
+        const names = playing.map(p => p.dbusName);
+        if (names.some(n => !lastPlaying.includes(n)))
+            selected = "";
+        lastPlaying = names;
+    }
     // Nom du lecteur sans le préfixe ni l'instance (« chromium.instance1234 » → « chromium ») : clé de son icône.
     readonly property string playerName: (player?.dbusName ?? "").replace("org.mpris.MediaPlayer2.", "").split(".")[0]
     readonly property bool paused: player?.playbackState === MprisPlaybackState.Paused
