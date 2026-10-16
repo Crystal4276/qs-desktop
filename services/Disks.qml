@@ -222,7 +222,7 @@ Singleton {
             onExited: code => {
                 if (code !== 0) {
                     // « Error unlocking …: GDBus.Error:org.freedesktop.UDisks2.Error.Failed: Error unlocking …: <cause> » → dernière partie.
-                    const message = errors.text.trim().replace(/^.*GDBus\.Error:\S+\s*/s, "");
+                    const message = errors.text.trim().replace(/^[\s\S]*GDBus\.Error:\S+\s*/, "");
                     root.notify("Job failed", message ? `failed to ${action} ${device}:\n${message}` : `failed to ${action} device ${device}.`);
                 }
                 refresh.restart();
