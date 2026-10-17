@@ -642,7 +642,7 @@ trois instances empilées) ; abandonnée, instances arrêtées.
   Calculatrice et ferme le menu ; clic sur Documents ouvre le gestionnaire de fichiers ; ajout puis retrait d'un favori (fichier revenu
   à tes 4 favoris) ; Échap, clic à côté, bouton Arch (ouvre / ferme) ; Recent Files rempli (vérifié sans regarder la liste) ;
   rechargement à chaud menu ouvert. Boutons de session non cliqués.
-- Écart à valider : tailles d'icônes (48 px applications, 24 px le reste, `THEME.md` § 7).
+- Tailles d'icônes validées le 2026-10-17 : 48 px applications, 24 px le reste (`THEME.md` § 7).
 
 ### Revue de code du menu (2026-10-17, `/code-review`) : 10 problèmes, tous corrigés
 
@@ -751,7 +751,7 @@ Passe 2 : 10 points.
   liste change sous un pointeur immobile) ; position du menu contextuel recalculée avec sa taille ; chemins d'icônes encodés
   (`Icons.fileUrl`, partagé avec les notifications et le tray) ; exception de `closePopups` passée en argument (plus d'état global).
 - Gardé : les deux protections de la vérification des fichiers récents (le numéro protège de l'ordre des signaux).
-- Tailles d'icônes du menu : à te demander (fin de boucle).
+- Tailles d'icônes du menu : validées (48 / 24 px).
 Vérifié (Sway isolé, deux barres) : Arch, clic droit sur Arch (fermé), engrenage, clic droit sur l'engrenage (fermé), horloge ×2,
 Arch ×2 ; cloche du tray ×3 et clic droit ; clic sur une autre ligne, menu contextuel ouvert (fermé, rien lancé) ; diagonale (Games
 gardé) ; descente (Internet) ; saisie sous un pointeur immobile (première ligne) puis Bas ×2.
