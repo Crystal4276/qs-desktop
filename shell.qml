@@ -22,5 +22,5 @@ ShellRoot {
     NotificationPopups {}
     Osd {}
     Launcher {}
-    Menus {}
+    Panels {}
 }

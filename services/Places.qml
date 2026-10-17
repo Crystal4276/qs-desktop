@@ -80,41 +80,42 @@ Singleton {
         }
     }
 
-    // Fichiers encore présents (supprimés, déplacés, disque démonté : omis). Chaque vérification porte sur sa propre liste
-    // (`checking`). Une nouvelle ne démarre qu'une fois la précédente entièrement finie (sortie lue et processus terminé, dans
-    // n'importe quel ordre) : `checking` ne change donc jamais avant que son résultat soit appliqué.
-    property var checking: []
+    // Fichiers encore présents (supprimés, déplacés, disque démonté : omis). Chaque vérification est numérotée : sa sortie commence
+    // par son numéro et ne filtre que la liste qu'elle a vérifiée (`checks`), quel que soit l'ordre des signaux. Liste relue pendant
+    // une vérification : une autre suit dès que le processus est fini.
+    property int checkNumber: 0
+    property var checks: ({})
     property bool existsAgain: false
-    property bool existsRead: true
 
     function checkExists(): void {
-        if (exists.running || !existsRead) {
+        if (exists.running) {
             existsAgain = true;
             return;
         }
-        checking = parsed;
-        existsRead = false;
-        exists.command = ["sh", "-c", `for f; do [ -e "$f" ] && printf '%s\\n' "$f"; done; exit 0`, "sh", ...checking.map(f => f.path)];
+        checkNumber++;
+        checks = { [checkNumber]: parsed };   // une seule vérification à la fois : les précédentes sont oubliées
+        exists.command = ["sh", "-c", `printf '%s\\n' "$0"; for f; do [ -e "$f" ] && printf '%s\\n' "$f"; done; exit 0`,
+            String(checkNumber), ...parsed.map(f => f.path)];
         exists.running = true;
-    }
-
-    function existsDone(): void {
-        if (existsAgain && existsRead && !exists.running) {
-            existsAgain = false;
-            Qt.callLater(checkExists);
-        }
     }
 
     Process {
         id: exists
         stdout: StdioCollector {
             onStreamFinished: {
-                const present = new Set(text.split("\n"));
-                root.recent = root.checking.filter(f => present.has(f.path));
-                root.existsRead = true;
-                root.existsDone();
+                const lines = text.split("\n");
+                const checked = root.checks[lines[0]];
+                if (!checked)
+                    return;
+                const present = new Set(lines.slice(1));
+                root.recent = checked.filter(f => present.has(f.path));
             }
         }
-        onExited: root.existsDone()
+        onExited: {
+            if (root.existsAgain) {
+                root.existsAgain = false;
+                Qt.callLater(root.checkExists);
+            }
+        }
     }
 }

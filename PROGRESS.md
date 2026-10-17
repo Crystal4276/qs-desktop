@@ -711,6 +711,19 @@ Vérifié dans le Sway isolé, deux écrans, copie de config avec bouton Arch et
 bouton (ouvert, fermé, ouvert) ; Échap puis clic immédiat (rouvert) ; menu ouvert sur l'écran 2 puis écran débranché (fermé, rien
 sur l'écran 1) ; « fir » sous le pointeur puis retour arrière et un pixel de mouvement (ligne réellement sous le pointeur choisie).
 
+### Revue de code du menu, cinquième passe (2026-10-17) : 6 problèmes, tous corrigés
+
+1. Fichiers récents : vérifications numérotées (la sortie porte son numéro) ; un échec de lancement ne bloque plus les suivantes.
+2. Calendrier : même mécanisme que les panneaux (`BarState.pressClosed`) au lieu de son délai de 400 ms ; l'horloge réagit à
+   l'appui (comme les boutons), sinon l'appui sur la barre était oublié avant le clic.
+3. Lanceur : fermé si son écran change pendant qu'il est ouvert (écran retiré), comme les panneaux.
+4. Ligne survolée : référence à la ligne elle-même, remise à vide à sa destruction (plus d'identifiant ni d'indice à synchroniser).
+5. `BarState` : types de panneaux ou de boutons inconnus acceptés (listes vides par défaut).
+6. Menu et panneau de réglages créés et inscrits de la même façon, par `modules/menus/Panels.qml` (ex-`Menus.qml`).
+Vérifié dans le Sway isolé, deux écrans : menu puis réglages par raccourci ; lanceur ouvert sur l'écran 2 puis écran débranché
+(fermé) ; calendrier épinglé, Échap puis clic immédiat (épinglé), clic (fermé, pas rouvert), clic (épinglé) ; recherche qui retire la
+ligne survolée puis la rétablit (ligne sous le pointeur choisie) ; Recent Files rempli.
+
 ### Reste à faire
 
 Phase 8 : rien d'autre au programme ; à valider par toi (rapport du 2026-10-17).

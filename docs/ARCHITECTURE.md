@@ -477,12 +477,14 @@ ce projet, **sans dépendance ni emprunt à Cinnamon** (ta consigne) : catégori
   `BarState.closePopups`). Le menu et le panneau de réglages existent **en un seul exemplaire**, placé sous le bouton qui l'ouvre,
   sur son écran : un clic sur le bouton d'un autre écran l'y déplace ; le raccourci (`qs ipc call menu toggle`, de même pour
   `settings`) le ferme s'il est ouvert, où qu'il soit, sinon l'ouvre sous le bouton de l'écran focalisé (`BarState.toggle`,
-  `toggleFromShortcut`). Le panneau de réglages est chargé par `BarState`, le menu par `modules/menus/Menus.qml` (depuis
-  `shell.qml`, qui l'inscrit dans `BarState` : pas d'import circulaire entre les deux modules).
-- **Appui sur le bouton d'un panneau ouvert** : la barre ferme les popups avant que le bouton ne reçoive l'appui ; `BarState`
-  retient, le temps de cet appui, ceux qu'il a fermés (`pressClosed`), et le bouton ne rouvre pas le sien. Pas de délai : un appui
+  `toggleFromShortcut`). Les deux sont créés par `modules/menus/Panels.qml` (depuis `shell.qml`), qui inscrit leurs LazyLoader
+  dans `BarState` : pas d'import circulaire entre les modules de la barre et des menus.
+- **Appui sur le bouton d'un panneau ouvert** (ou sur l'horloge, calendrier épinglé) : la barre ferme les popups avant que le
+  bouton ne reçoive l'appui ; `BarState` retient, le temps de cet appui, ceux qu'il a fermés (`pressClosed`), et le bouton ne rouvre
+  pas le sien. Pas de délai : un appui
   suivant, Échap puis un clic, ou un raccourci rouvrent toujours.
-- **Écran ou bouton disparu** (écran débranché ou éteint) : le panneau ouvert se ferme.
+- **Écran ou bouton disparu** (écran débranché ou éteint) : le panneau ouvert se ferme (lanceur compris : tout changement d'écran
+  d'un panneau ouvert le ferme).
 - Base commune du menu, du panneau de réglages et du lanceur : `modules/bar/OverlayPopup.qml` (surface Overlay plein écran, clavier
   exclusif, fermeture par un appui à côté, sur une barre ou sur un autre écran ; signal `closing`).
 - **Recherche** en bas : la saisie va toujours au champ ; même recherche que le lanceur (`Apps.filter`). **Le survol n'efface jamais la
