@@ -38,8 +38,15 @@ Singleton {
         path: `${Quickshell.env("XDG_CONFIG_HOME") || `${root.home}/.config`}/user-dirs.dirs`
         printErrors: false
         watchChanges: true
-        onFileChanged: folderList.running = true
+        onFileChanged: {
+            if (folderList.running)
+                root.foldersAgain = true;   // relu dès la fin de la lecture en cours
+            else
+                folderList.running = true;
+        }
     }
+
+    property bool foldersAgain: false
 
     Process {
         id: folderList
@@ -56,13 +63,21 @@ Singleton {
                 root.folders = list;
             }
         }
+        onExited: {
+            if (root.foldersAgain) {
+                root.foldersAgain = false;
+                Qt.callLater(() => folderList.running = true);
+            }
+        }
     }
 
     FileView {
         id: recentFile
         path: root.recentWanted ? `${Quickshell.env("XDG_DATA_HOME") || `${root.home}/.local/share`}/recently-used.xbel` : ""
         printErrors: false
-        onLoadFailed: {   // fichier supprimé (historique effacé) : plus de fichiers récents
+        onLoadFailed: {   // fichier supprimé (historique effacé) : plus de fichiers récents, vérification en cours ignorée
+            root.checkNumber++;
+            root.existsAgain = false;
             root.parsed = [];
             root.recent = [];
         }

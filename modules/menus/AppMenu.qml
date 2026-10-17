@@ -49,6 +49,17 @@ OverlayPopup {
         return (category === "all" ? Apps.byName : Apps.byCategory[category] ?? []).map(appItem);
     }
 
+    // Liste des catégories recréée (applications relues) : une ligne détruite sous le pointeur ne signale pas sa sortie.
+    onCategoriesChanged: hoveredCategory = ""
+
+    // Applications relues (paquet installé ou retiré) : le menu contextuel pourrait viser une entrée disparue.
+    Connections {
+        target: DesktopEntries
+        function onApplicationsChanged() {
+            root.contextEntry = null;
+        }
+    }
+
     // Élément sélectionné : la sélection le suit quand la liste change d'elle-même (fichiers récents relus, applications installées).
     property string selectedId: ""
     onSelectedChanged: {
@@ -335,7 +346,9 @@ OverlayPopup {
 
         x: BarState.panelLeft(root.anchorX, width, root.width)
         y: Theme.panel.gap
-        width: layout.implicitWidth + 2 * (Theme.appMenu.border + Theme.appMenu.padding)
+        // Au plus la largeur de l'écran moins les marges de la barre : au-delà, la colonne des applications se resserre.
+        width: Math.min(layout.implicitWidth + 2 * (Theme.appMenu.border + Theme.appMenu.padding),
+            root.width - 2 * Theme.bar.marginSide)
         // Au plus la hauteur de l'écran sous la barre : au-delà, les colonnes défilent.
         height: Math.min(layout.implicitHeight + 2 * (Theme.appMenu.border + Theme.appMenu.padding),
             root.height - Theme.panel.gap - Theme.bar.marginSide)
@@ -496,6 +509,7 @@ OverlayPopup {
                     Rectangle {
                         id: appsBox
                         Layout.fillHeight: true
+                        Layout.fillWidth: true
                         Layout.preferredWidth: Theme.appMenu.appsWidth
                         color: Theme.appMenu.listBackground
                         border.width: Theme.appMenu.border
