@@ -430,7 +430,7 @@ Singleton {
         readonly property color scrollbarHover: root.color.overlay1
         readonly property color buttonHover: root.hoverWhite
         readonly property color buttonHoverBorder: root.color.overlay0
-        // Tailles d'icônes de nwg-menu (-isl 48, -iss 24), réparties sur la disposition de Cinnamon (proposé, à valider) :
+        // Tailles d'icônes de nwg-menu (-isl 48, -iss 24), réparties sur la disposition de Cinnamon (ton choix du 2026-10-17) :
         // 48 px pour les applications (nom + description sur deux lignes), 24 px pour les catégories, dossiers et favoris.
         readonly property int largeIconSize: 48
         readonly property int smallIconSize: 24
