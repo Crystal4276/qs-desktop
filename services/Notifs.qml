@@ -337,7 +337,7 @@ Singleton {
         if (appIcon === "" || (appIcon.includes("://") && !appIcon.startsWith("file:")))
             return "";
         if (appIcon.startsWith("/"))
-            return `file://${appIcon}`;
+            return Icons.fileUrl(appIcon);
         if (appIcon.startsWith("file:"))
             return appIcon;
         return Quickshell.iconPath(appIcon, true);

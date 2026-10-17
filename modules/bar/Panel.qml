@@ -49,10 +49,15 @@ PopupWindow {
     onVisibleChanged: BarState.setPopupOpen(root, visible)
     Component.onDestruction: BarState.setPopupOpen(root, false)
 
+    // Appui sur l'icône du panneau ouvert : la barre le laisse, l'icône le ferme (TrayButton accepte les deux boutons).
+    readonly property Item owner: visible ? anchor.item : null
+    readonly property int ownerButtons: Qt.LeftButton | Qt.RightButton
+
     Connections {
         target: BarState
-        function onClosePopups() {
-            root.visible = false;
+        function onClosePopups(keep) {
+            if (!keep.includes(root))
+                root.visible = false;
         }
     }
 

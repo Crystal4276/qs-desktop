@@ -18,9 +18,9 @@ OverlayPopup {
     property var contextEntry: null // application du menu contextuel (clic droit), null : fermé
     property real anchorX: 0        // bord gauche voulu du cadre (pilule du bouton) ; le cadre reste dans l'écran
 
-    // Souris (voir l'en-tête) : dernière position dans le cadre, déplacement depuis la dernière touche, visée vers les applications.
+    // Souris : dernière position dans le cadre (-1 : aucune depuis l'ouverture), visée vers la liste des applications.
     property point pointer: Qt.point(-1, -1)
-    property bool mouseMoved: false
+    property int moves: 0   // vrais mouvements depuis l'ouverture (une liste recréée sous le pointeur n'en est pas un)
     property bool aiming: false
     property string hoveredCategory: ""
     // Ligne d'application sous le pointeur (null : aucune ; remise à null d'elle-même quand la ligne est détruite). Son indice suit
@@ -92,7 +92,7 @@ OverlayPopup {
         aiming = dx > 0 && ahead > 0 && dy / dx >= (box.y - pointer.y) / ahead
             && dy / dx <= (box.y + appsBox.height - pointer.y) / ahead;
         pointer = p;
-        mouseMoved = true;
+        moves++;
         aimStop.restart();
         // Ligne survolée sous un pointeur jusque-là immobile : prise maintenant.
         const row = hoveredRow;
@@ -102,14 +102,28 @@ OverlayPopup {
         }
     }
 
+    // Survol d'une ligne : décidé après l'événement, une fois le mouvement vu par le cadre (qui le reçoit après ses lignes) ; sans
+    // mouvement (liste recréée ou défilée sous un pointeur immobile), rien ne change.
+    function afterMove(action: var): void {
+        const before = moves;
+        Qt.callLater(() => {
+            if (moves !== before)
+                action();
+        });
+    }
+
     function hoverCategory(key: string, hovered: bool): void {
-        if (hovered)
-            hoveredCategory = key;
-        else if (hoveredCategory === key)
-            hoveredCategory = "";
-        // Pointeur qui a bougé, hors visée, jamais pendant une recherche (le survol ne l'efface pas).
-        if (hovered && mouseMoved && search.text === "" && !aiming)
-            setCategory(key);
+        if (!hovered) {
+            if (hoveredCategory === key)
+                hoveredCategory = "";
+            return;
+        }
+        hoveredCategory = key;
+        // Hors visée, jamais pendant une recherche (le survol ne l'efface pas) ; sinon prise à l'arrêt du pointeur (aimStop).
+        afterMove(() => {
+            if (hoveredCategory === key && search.text === "" && !aiming)
+                setCategory(key);
+        });
     }
 
     // Sous le bouton, aligné sur le bord gauche de sa pilule (nwg-menu : 10 px sous la barre).
@@ -123,11 +137,11 @@ OverlayPopup {
         pane = "apps";
         selected = 0;
         contextEntry = null;
-        mouseMoved = false;
         aiming = false;
         hoveredCategory = "";
         hoveredRow = null;
         pointer = Qt.point(-1, -1);
+        moves = 0;
         list.positionViewAtBeginning();
         visible = true;
         search.forceActiveFocus();
@@ -158,7 +172,6 @@ OverlayPopup {
 
     function handleKey(event: var): bool {
         const k = event.key;
-        mouseMoved = false;
         // Menu contextuel ouvert : Entrée valide son action, Échap le ferme, les flèches et Pages ne touchent pas la liste derrière.
         if (contextEntry && [Qt.Key_Return, Qt.Key_Enter, Qt.Key_Up, Qt.Key_Down, Qt.Key_PageUp, Qt.Key_PageDown, Qt.Key_Left,
                 Qt.Key_Right].includes(k)) {
@@ -538,10 +551,13 @@ OverlayPopup {
                                         root.hoveredRow = appRow;
                                     else if (root.hoveredRow === appRow)
                                         root.hoveredRow = null;
-                                    if (hovered && root.mouseMoved) {
-                                        root.pane = "apps";
-                                        root.selected = index;
-                                    }
+                                    if (hovered)
+                                        root.afterMove(() => {
+                                            if (root.hoveredRow === appRow) {
+                                                root.pane = "apps";
+                                                root.selected = index;
+                                            }
+                                        });
                                 }
                                 onClicked: root.activate(modelData)
                                 onRightClicked: (x, y) => {
@@ -618,7 +634,6 @@ OverlayPopup {
                         color: Theme.appMenu.text
                         onTextChanged: {
                             root.pane = "apps";
-                            root.mouseMoved = false;
                             root.resetList();
                         }
                         Keys.onPressed: event => event.accepted = root.handleKey(event)
@@ -638,27 +653,28 @@ OverlayPopup {
             }
         }
 
-        // Sous le menu contextuel (bordure, marges) : les appuis ne passent pas aux lignes situées dessous.
+        // Menu contextuel ouvert : un appui ailleurs dans le cadre (ou sur sa bordure) le ferme seulement, sans agir dessous.
         MouseArea {
+            anchors.fill: parent
             visible: root.contextEntry !== null
-            x: context.x
-            y: context.y
-            width: context.width
-            height: context.height
             z: 1
             acceptedButtons: Qt.AllButtons
+            onPressed: root.contextEntry = null
         }
 
         // Menu contextuel d'une application (clic droit) : ajouter aux favoris ou en retirer.
         ListBox {
             id: context
 
+            property point at   // point du clic droit ; la position suit la taille du menu et du cadre
+
             function show(entry: var, from: Item, x: real, y: real): void {
-                const p = from.mapToItem(frame, x, y);
+                at = from.mapToItem(frame, x, y);
                 root.contextEntry = entry;
-                context.x = Math.min(p.x, frame.width - context.width - Theme.appMenu.border);
-                context.y = Math.min(p.y, frame.height - context.height - Theme.appMenu.border);
             }
+
+            x: Math.min(at.x, frame.width - width - Theme.appMenu.border)
+            y: Math.min(at.y, frame.height - height - Theme.appMenu.border)
 
             visible: root.contextEntry !== null
             z: 1

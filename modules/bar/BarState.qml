@@ -16,18 +16,14 @@ Singleton {
     // Écran dont la barre accepte le clavier « à la demande » ("" : aucune) : celle de l'horloge survolée ou du calendrier épinglé.
     property string keyboardScreen: ""
 
-    // Fermeture de tous les popups (ouverture d'un autre, appui sur une barre).
-    signal closePopups
+    // Fermeture des popups (ouverture d'un autre, appui sur une barre), sauf ceux de `keep`.
+    signal closePopups(var keep)
 
-    // Appui sur une barre, popup ouvert (Bar.qml) : les popups se ferment, sauf celui dont le bouton (`owner`) est sous l'appui,
-    // que ce bouton ferme lui-même ; l'appui continue vers le module visé.
-    property var keepOpen: []
-
-    function closeFromBarPress(area: Item, x: real, y: real): void {
-        keepOpen = openList.filter(p => p.owner && p.owner.QsWindow.window === area.QsWindow.window
-            && p.owner.contains(p.owner.mapFromItem(area, x, y)));
-        closePopups();
-        keepOpen = [];
+    // Appui sur une barre, popup ouvert (Bar.qml) : les popups se ferment, sauf celui dont le bouton (`owner`) est sous l'appui et
+    // gère ce bouton de souris (`ownerButtons`) : ce bouton le ferme lui-même. L'appui continue vers le module visé.
+    function closeFromBarPress(area: Item, x: real, y: real, button: int): void {
+        closePopups(openList.filter(p => p.owner && (p.ownerButtons & button) && p.owner.QsWindow.window === area.QsWindow.window
+            && p.owner.contains(p.owner.mapFromItem(area, x, y))));
     }
 
     function setPopupOpen(popup: QtObject, open: bool): void {

@@ -13,11 +13,16 @@ Singleton {
 
     property var panelIcons: ({})   // nom → chemin du fichier SVG
 
+    // URL d'un fichier local, chemin encodé (« # », « % », espaces…).
+    function fileUrl(path: string): string {
+        return `file://${path.split("/").map(encodeURIComponent).join("/")}`;
+    }
+
     // Source à afficher pour un nom d'icône ou une URL d'application (image://icon/<nom>?path=…, image://qspixmap/…).
     function trayIcon(source: string): string {
         const name = source.startsWith("image://icon/") ? source.slice(13).split("?")[0] : source.includes(":") ? "" : source;
         if (name !== "" && panelIcons[name])
-            return `file://${panelIcons[name]}`;
+            return fileUrl(panelIcons[name]);
         return source.includes(":") ? source : `image://icon/${source}`;
     }
 

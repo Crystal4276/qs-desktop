@@ -30,11 +30,12 @@ Item {
     property int monthOffset: 0
 
     readonly property Item owner: pinned ? anchorItem : null   // appui sur l'horloge : la barre la laisse fermer le calendrier
+    readonly property int ownerButtons: Qt.LeftButton          // clic de l'horloge (TapHandler)
 
     Connections {
         target: BarState
-        function onClosePopups() {
-            if (!BarState.keepOpen.includes(root))
+        function onClosePopups(keep) {
+            if (!keep.includes(root))
                 root.pinned = false;
         }
     }
