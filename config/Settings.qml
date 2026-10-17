@@ -27,6 +27,10 @@ Singleton {
     // rien n'a été choisi dans l'utilitaire : { kind: "simple" | "panorama" | "triptych", path: chemin relatif au dossier }.
     readonly property string wallpapersDir: config.wallpapersDir ?? ""
     readonly property var wallpaper: config.wallpaper ?? null
+    // Veille des écrans (services/Idle.qml) : `timeout` en secondes (0 : jamais) ; `primaryWakeDelay` : secondes avant de rallumer
+    // l'écran principal après les autres (contournement d'un écran lent à se réveiller, repris de hypridle) ; `lockBeforeSleep` :
+    // verrouiller avant la mise en veille du système (null : seulement sur une machine avec batterie).
+    readonly property var idle: Object.assign({ timeout: 300, primaryWakeDelay: 0, lockBeforeSleep: null }, config.idle ?? {})
     readonly property var nightLight: Object.assign({ from: "20:00", to: "06:00", temperature: 3239 }, config.nightLight ?? {})
 
     // Pilules d'une barre : par description d'écran, sinon par rôle.

@@ -18,7 +18,7 @@ import qs.services
 
 ShellRoot {
     // Services qui travaillent sans être affichés : créés dès le démarrage (un singleton ne l'est qu'à sa première lecture).
-    readonly property var background: [NightLight]
+    readonly property var background: [NightLight, Idle]
 
     Background {}
     Bar {}

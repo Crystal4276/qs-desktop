@@ -19,8 +19,9 @@ Singleton {
         property bool keepAwake: false
     }
 
-    // Verrouillage natif (modules/lock/LockScreen.qml, qui écoute ce signal) ; aussi `qs ipc call lock lock`.
+    // Verrouillage natif (modules/lock/LockScreen.qml, qui écoute ce signal et tient `locked` à jour) ; aussi `qs ipc call lock lock`.
     signal lockRequested
+    property bool locked: false   // écran verrouillé et confirmé par le compositeur
 
     function lock(): void {
         lockRequested();
