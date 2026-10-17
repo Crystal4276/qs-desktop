@@ -224,6 +224,8 @@ Liste tenue à jour à chaque phase ; à dérouler une fois le projet terminé.
   (l'appareil doit se connecter et rester approuvé) ; NordVPN qui apparaît dans le tray quand le démon démarre après la session.
 - **Deuxième passe** : vraie touche de volume / micro une fois les raccourcis branchés (phase 10) ; connexion limitée (Wi-Fi d'hôtel avec
   portail, ou câble sans Internet) ; sur le laptop : OSD de luminosité et alerte de batterie à 30 % et 15 %.
+- **Polkit (phase 8b)** : après la bascule (polkit-gnome retiré), une action administrateur (ex. `pkexec true`) : la fenêtre,
+  ton mot de passe, une erreur puis le bon.
 - **Veille (phase 8b)** : écrans éteints après 5 min sans activité, rallumés (principal 3 s après) ; sur le laptop, verrouillage
   avant la mise en veille (fermer le capot, rouvrir : écran verrouillé).
 - **Verrouillage (phase 8b)** : verrouiller depuis le panneau de réglages, déverrouiller avec ton vrai mot de passe (une erreur
@@ -855,6 +857,14 @@ outil de capture ; fenêtre de statistiques système.
   et corrigé : le délai lu dans la config machine n'était pas pris en compte (suivi relancé quand il change).
 - Non testable ici : verrouillage avant la mise en veille (laptop, liste « À faire par toi ») ; tant que swayidle tourne (avant la
   phase 10), les deux éteignent les écrans, sans conflit.
+
+### Agent polkit : fait (2026-10-17)
+
+- `modules/polkit/PolkitDialog.qml` (`ARCHITECTURE.md` § 10.1.9) : remplace polkit-gnome à la bascule.
+- Vérifié : polkit-gnome arrêté une minute, agent de la session isolée enregistré, `pkexec true` → fenêtre affichée dans la session
+  isolée (aucune sur tes écrans), Échap → demande annulée (`pkexec` : « Request dismissed », code 126). polkit-gnome relancé
+  ensuite (la première relance avait échoué — `pgrep -f` voyait sa propre commande — puis refaite et vérifiée). Aucun mot de passe
+  tapé (une erreur compterait dans faillock).
 
 ## Prochaine étape
 
