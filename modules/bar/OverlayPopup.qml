@@ -2,34 +2,29 @@ import QtQuick
 import Quickshell
 import Quickshell.Wayland
 
-// Base des panneaux ouverts par un bouton de barre ou un raccourci (panneau de réglages, menu d'applications, lanceur) : surface de la couche
-// Overlay sur tout l'écran, ouvrable au clavier (un popup ne peut pas prendre le clavier sans clic), clavier réservé.
-// Fermeture : un appui hors de `frameItem`, sur une barre (BarState.closePopups) ou sur un autre écran (OutsideClick).
-// À l'ouverture (`beginOpen`), les autres popups se ferment : jamais deux surfaces au clavier exclusif l'une sur l'autre.
+// Base des panneaux ouverts par un bouton ou un raccourci (réglages, menu d'applications, lanceur) : surface Overlay sur la zone
+// utile de l'écran (sous les barres : `exclusiveZone` 0), clavier exclusif. Fermée par un appui à côté du cadre, sur une barre
+// ou sur un autre écran ; un seul popup ouvert à la fois.
 PanelWindow {
     id: root
 
     property Item frameItem    // cadre visible du panneau
     property Item button       // bouton sous lequel il est (ou a été) ouvert
+    readonly property Item owner: visible ? button : null   // appui sur ce bouton : la barre laisse le bouton le fermer
 
     signal closing   // juste avant la fermeture (lanceur : enregistre la saisie)
 
-    // Ouverture demandée sous `from` : false si le panneau était ouvert (il se ferme, quel que soit son écran) ou si l'appui sur
-    // ce même bouton vient de le fermer en passant par la barre (`fromPress` : BarState.pressClosed ; jamais pour un raccourci).
-    // Sinon les autres popups se ferment et le panneau peut s'ouvrir.
-    function beginOpen(from: Item, fromPress: bool): bool {
+    // Ouvert : se ferme (false). Sinon prépare l'ouverture sous `from` (true).
+    function beginOpen(from: Item): bool {
         if (visible) {
             close();
             return false;
         }
-        if (fromPress && from === button && BarState.pressClosed.includes(root))
-            return false;
         prepareOpen(from);
         return true;
     }
 
-    // Avant de s'afficher : les autres popups se ferment (pas celui-ci s'il est déjà ouvert). `from` : bouton d'ancrage, ou null
-    // (lanceur, sans bouton).
+    // Les autres popups se ferment ; `from` : bouton d'ancrage, ou null (lanceur).
     function prepareOpen(from: Item): void {
         if (!visible)
             BarState.closePopups();
@@ -71,14 +66,12 @@ PanelWindow {
     Connections {
         target: BarState
         function onClosePopups() {
-            root.close();
+            if (!BarState.keepOpen.includes(root))
+                root.close();
         }
     }
 
-    // Écran ou bouton disparu pendant que le panneau est ouvert (écran débranché ou éteint) : il se ferme, au lieu de rester au
-    // clavier sur un autre écran.
-    // Le panneau ne change d'écran qu'avant de s'afficher : un changement pendant qu'il est ouvert vient de Quickshell (écran
-    // retiré, fenêtre déplacée ailleurs) ; c'est le seul cas pour le lanceur, qui n'a pas de bouton.
+    // Écran retiré ou bouton détruit pendant l'ouverture : fermé (l'écran ne change sinon qu'avant l'affichage).
     onButtonChanged: if (!button && visible) close()
     onScreenChanged: if (visible) close()
     Connections {

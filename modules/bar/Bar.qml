@@ -197,15 +197,16 @@ Variants {
             enabled: Session.keepAwake
         }
 
-        // Popup ouvert (calendrier épinglé, menu du tray…) : un appui n'importe où sur une barre le ferme ; l'appui n'est pas
-        // accepté, il atteint donc le module situé dessous (un clic sur l'horloge ferme sans rouvrir : CalendarPopup.toggle).
+        // Popup ouvert : un appui sur une barre le ferme, sauf sur son propre bouton (qui le ferme lui-même) ; l'appui n'est
+        // pas accepté et atteint le module dessous.
         MouseArea {
+            id: closeArea
             anchors.fill: parent
             z: 1
             enabled: BarState.openPopups > 0
             acceptedButtons: Qt.AllButtons
             onPressed: mouse => {
-                BarState.closeFromBarPress();
+                BarState.closeFromBarPress(closeArea, mouse.x, mouse.y);
                 mouse.accepted = false;
             }
         }

@@ -29,10 +29,13 @@ Item {
     // Mois affiché : décalage par rapport au mois en cours.
     property int monthOffset: 0
 
+    readonly property Item owner: pinned ? anchorItem : null   // appui sur l'horloge : la barre la laisse fermer le calendrier
+
     Connections {
         target: BarState
         function onClosePopups() {
-            root.pinned = false;
+            if (!BarState.keepOpen.includes(root))
+                root.pinned = false;
         }
     }
 
@@ -45,8 +48,8 @@ Item {
 
     // Clic sur l'horloge.
     function toggle(): void {
-        // Épinglé, l'appui sur la barre l'a déjà fermé (Bar.qml, BarState.pressClosed) : ce clic ne fait que bloquer l'aperçu.
-        if (pinned || BarState.pressClosed.includes(root)) {
+        // Épinglé (la barre le laisse ouvert pour l'appui sur l'horloge, `owner`) : ce clic le ferme et bloque l'aperçu.
+        if (pinned) {
             pinned = false;
             hoverSuppressed = true;   // pas d'aperçu tant que le pointeur reste sur l'horloge
         } else {

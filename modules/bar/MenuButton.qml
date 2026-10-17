@@ -35,7 +35,7 @@ Item {
 
     MouseArea {
         anchors.fill: parent
-        onPressed: BarState.toggle("menu", root, true)
+        onPressed: BarState.toggle("menu", root)
     }
 
     Component.onCompleted: BarState.register("menu", root)

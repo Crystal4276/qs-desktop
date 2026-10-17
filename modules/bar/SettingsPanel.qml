@@ -20,8 +20,8 @@ OverlayPopup {
     property string expanded: ""   // "sink", "source" ou "" : liste de périphériques dépliée
 
     // Sous le bouton, centré, sans dépasser les marges de la barre (comme les panneaux du tray).
-    function toggle(from: Item, fromPress: bool): void {
-        if (!beginOpen(from, fromPress))
+    function toggle(from: Item): void {
+        if (!beginOpen(from))
             return;
         const window = from.QsWindow.window;
         screen = window.screen;
@@ -31,7 +31,6 @@ OverlayPopup {
         frame.forceActiveFocus();
     }
 
-    // Surface de la couche Overlay sur tout l'écran (OverlayPopup) : clavier réservé (Échap), un clic à côté ou sur une barre ferme.
     WlrLayershell.namespace: "quickshell-settings"
     frameItem: frame
     onVisibleChanged: if (!visible) expanded = ""
