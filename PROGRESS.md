@@ -763,6 +763,13 @@ Vérifié (Sway isolé) : calendrier épinglé puis appui long (fermé), puis ap
 sur la catégorie choisie (sélection gardée) ; menu contextuel d'un favori puis passage sur les catégories (gardé) ; recherche puis
 Pages (sélection visible).
 
+Passe 4 : 8 points, tous corrigés : sélection qui suit son élément quand la liste change d'elle-même (et plus son numéro de ligne) ;
+vérification des fichiers récents limitée à 5 s (gvfs ou montage réseau qui ne répond plus : liste montrée sans filtre) ; index de
+recherche du lanceur plus refait à chaque lancement ; dossiers XDG relus à chaque ouverture ; règle « catégorie survolée prise » en
+un seul endroit ; position sous un bouton partagée (`BarState.panelLeft`, menu, réglages, panneaux du tray) ; cache d'icônes par
+type sans paramètre ambigu ; boutons de session du menu = `QuickButton` (style de nwg-menu, accessibles au clavier).
+Vérifié (Sway isolé) : rendu, survol du bouton d'extinction, Recent Files, recherche et Pages, panneau de réglages inchangé.
+
 ### Reste à faire
 
 Phase 8 : rien d'autre au programme ; à valider par toi (rapport du 2026-10-17).

@@ -26,7 +26,7 @@ OverlayPopup {
         const window = from.QsWindow.window;
         screen = window.screen;
         const x = from.mapToItem(null, 0, 0).x;
-        frame.x = Math.max(Theme.bar.marginSide, Math.min(x + (from.width - frame.width) / 2, window.width - Theme.bar.marginSide - frame.width));
+        frame.x = BarState.panelLeft(x + (from.width - frame.width) / 2, frame.width, window.width);
         visible = true;
         frame.forceActiveFocus();
     }

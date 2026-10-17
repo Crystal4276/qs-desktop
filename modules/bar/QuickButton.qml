@@ -1,24 +1,29 @@
 import QtQuick
 import qs.config
 
-// Bouton carré de la ligne du haut du panneau de réglages : image SVG (verrouiller, déconnexion, redémarrer, éteindre) ou
-// glyphe (capture d'écran), sur un bouton de panneau (fond `surface0`, survol `surface1`, coins 10 px).
+// Bouton carré à image SVG (verrouiller, déconnexion, redémarrer, éteindre) ou glyphe (capture d'écran). Par défaut, bouton de
+// panneau (fond `surface0`, survol `surface1`, coins 10 px) ; le menu d'applications lui donne le style de nwg-menu.
 Rectangle {
     id: root
 
     property string glyph: ""
     property url image: ""
+    property int imageSize: Theme.quickSettings.imageSize
+    property int padding: Theme.quickSettings.buttonPadding
+    property color background: Theme.panel.button
+    property color hoverBackground: Theme.panel.buttonHover
+    property color hoverBorder: "transparent"
     signal clicked
 
-    implicitWidth: Theme.quickSettings.imageSize + 2 * Theme.quickSettings.buttonPadding
+    implicitWidth: imageSize + 2 * padding
     implicitHeight: implicitWidth
     radius: Theme.panel.rowRadius
-    color: hover.hovered ? Theme.panel.buttonHover : Theme.panel.button
+    color: hover.hovered ? hoverBackground : background
 
     // Clavier (Tab, flèches) : Entrée ou Espace activent ; liseré quand l'élément est choisi.
     activeFocusOnTab: true
-    border.width: activeFocus ? Theme.panel.border : 0
-    border.color: Theme.panel.focusRing
+    border.width: activeFocus || (hover.hovered && hoverBorder.a > 0) ? Theme.panel.border : 0
+    border.color: activeFocus ? Theme.panel.focusRing : hoverBorder
     Keys.onReturnPressed: root.clicked()
     Keys.onEnterPressed: root.clicked()
     Keys.onSpacePressed: root.clicked()
@@ -27,8 +32,8 @@ Rectangle {
         anchors.centerIn: parent
         visible: root.glyph === ""
         source: root.image
-        sourceSize.width: Theme.quickSettings.imageSize
-        sourceSize.height: Theme.quickSettings.imageSize
+        sourceSize.width: root.imageSize
+        sourceSize.height: root.imageSize
     }
 
     Text {

@@ -3,6 +3,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import qs.config
 import qs.services
 
 // État partagé entre les barres de tous les écrans : popups ouverts depuis la barre (calendrier, menus du tray, panneaux).
@@ -53,6 +54,11 @@ Singleton {
     function openedUnder(kind: string): Item {
         const item = loaders[kind]?.item;
         return item?.visible ? item.button : null;
+    }
+
+    // Bord gauche d'un panneau de largeur `width` voulu en `x`, gardé dans les marges de la barre d'une fenêtre de `available` px.
+    function panelLeft(x: real, width: real, available: real): real {
+        return Math.max(Theme.bar.marginSide, Math.min(x, available - Theme.bar.marginSide - width));
     }
 
     function toggle(kind: string, button: Item): void {
