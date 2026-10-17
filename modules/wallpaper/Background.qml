@@ -12,7 +12,7 @@ Variants {
         id: window
 
         required property ShellScreen modelData
-        readonly property var output: Compositor.output(modelData.name)
+        readonly property var output: Compositor.output(modelData?.name ?? "")
         readonly property var shown: Wallpapers.forOutput(output, Compositor.outputs)
 
         screen: modelData

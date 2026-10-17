@@ -550,6 +550,15 @@ Voir `WALLPAPERS.md` § « Mise en œuvre ». Remplace `swaybg` (Sway) et le fon
   le protocole d'inhibition, que `IdleMonitor` respecte.
 - IPC de test : `qs ipc call idle state`.
 
+### 10.1.9 Phase 8b : agent polkit (2026-10-17)
+
+- `modules/polkit/PolkitDialog.qml` : `PolkitAgent` + fenêtre au style des panneaux (`OverlayPopup`, centrée sur l'écran focalisé,
+  clavier exclusif) : icône et message de l'application, champ (masqué si polkit le demande), message d'erreur, Cancel /
+  Authenticate. Entrée valide, Échap, un clic à côté, sur une barre ou sur un autre écran annulent.
+- Un seul agent par session : tant que `polkit-gnome` tourne (lancé par Sway jusqu'à la bascule), l'enregistrement de Quickshell
+  échoue (avertissement dans le journal, sans effet). À la phase 10, `polkit-gnome` sort de l'autostart.
+- Identité (utilisateur) non affichée : le type `Identity` est opaque dans l'API installée (pas de propriété documentée).
+
 ### 10.2 Bluetooth : appairage et code PIN
 
 Vérifié :

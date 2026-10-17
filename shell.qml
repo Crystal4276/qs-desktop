@@ -13,6 +13,7 @@ import qs.modules.lock
 import qs.modules.menus
 import qs.modules.notifications
 import qs.modules.osd
+import qs.modules.polkit
 import qs.modules.wallpaper
 import qs.services
 
@@ -28,4 +29,5 @@ ShellRoot {
     Panels {}
     WallpaperPicker {}
     LockScreen {}
+    PolkitDialog {}
 }
