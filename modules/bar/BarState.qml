@@ -4,7 +4,6 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import qs.services
-import qs.modules.menus
 
 // État partagé entre les barres de tous les écrans : popups ouverts depuis la barre (calendrier, menus du tray, panneaux).
 Singleton {
@@ -17,67 +16,71 @@ Singleton {
     // Écran dont la barre accepte le clavier « à la demande » ("" : aucune) : celle de l'horloge survolée ou du calendrier épinglé.
     property string keyboardScreen: ""
 
-    // Appui sur une barre pendant qu'un popup est ouvert : tous se ferment, et le clic continue vers le module visé.
+    // Fermeture de tous les popups (ouverture d'un autre, appui sur une barre).
     signal closePopups
+
+    // Appui sur une barre pendant qu'un popup est ouvert (Bar.qml) : tous se ferment, et l'appui continue vers le module visé.
+    // `pressClosed` garde, le temps de cet appui, les popups qu'il a fermés : le bouton d'un panneau qu'il vient de fermer ne le
+    // rouvre pas (OverlayPopup.beginOpen) ; un appui suivant, un raccourci ou un autre bouton l'ouvrent normalement.
+    property var pressClosed: []
+
+    function closeFromBarPress(): void {
+        pressClosed = [...openList];
+        closePopups();
+        Qt.callLater(() => pressClosed = []);
+    }
 
     function setPopupOpen(popup: QtObject, open: bool): void {
         const others = openList.filter(p => p !== popup);
         openList = open ? [...others, popup] : others;
     }
 
-    // Panneau de réglages et menu d'applications : un seul exemplaire de chacun pour toutes les barres, placé sous le bouton qui
-    // l'ouvre (sur son écran), chargé à la première ouverture. Ouvrir l'un sur un autre écran le déplace ; jamais deux à la fois.
+    // Panneaux ouverts par un bouton de barre : un seul exemplaire de chacun pour toutes les barres, placé sous le bouton qui
+    // l'ouvre (sur son écran), chargé à la première ouverture ; ouvrir l'un sur un autre écran le déplace.
+    //   "settings" : panneau de réglages (chargé ici) ; "menu" : menu d'applications (chargé par modules/menus/Menus.qml, qui
+    //   inscrit son LazyLoader : ce module n'importe pas celui des menus, qui dépend de lui).
     LazyLoader {
         id: settingsLoader
 
         SettingsPanel {}
     }
 
-    LazyLoader {
-        id: menuLoader
+    property var loaders: ({ settings: settingsLoader })
+    // Boutons des barres par panneau (inscrits par SettingsButton.qml et MenuButton.qml).
+    property var buttons: ({ settings: [], menu: [] })
 
-        AppMenu {}
+    function registerLoader(kind: string, loader: var): void {
+        loaders = Object.assign({}, loaders, { [kind]: loader });
     }
 
-    // Bouton sous lequel chaque panneau est ouvert (null : fermé) : le bouton se colore tant que son panneau est ouvert.
-    readonly property Item settingsButton: settingsLoader.item?.visible ? settingsLoader.item.button : null
-    readonly property Item menuButton: menuLoader.item?.visible ? menuLoader.item.button : null
-
-    // `fromPress` : appui sur le bouton (la barre a déjà fermé le panneau ouvert sous ce même bouton : il ne se rouvre pas).
-    function toggleSettings(button: Item, fromPress: bool): void {
-        settingsLoader.active = true;
-        settingsLoader.item.toggle(button, fromPress);
+    function register(kind: string, button: Item): void {
+        buttons = Object.assign({}, buttons, { [kind]: [...buttons[kind], button] });
     }
 
-    function toggleMenu(button: Item, fromPress: bool): void {
-        menuLoader.active = true;
-        menuLoader.item.toggle(button, fromPress);
+    function unregister(kind: string, button: Item): void {
+        buttons = Object.assign({}, buttons, { [kind]: buttons[kind].filter(b => b !== button) });
     }
 
-    // Boutons des barres : `qs ipc call settings toggle` (`$mod+Escape`, phase 10) et `qs ipc call menu toggle` passent par celui de
-    // l'écran focalisé, sinon par le premier (la barre principale en a un, hosts/*.json). Un panneau ouvert se ferme, quel que
-    // soit son écran (un seul exemplaire).
-    property var settingsButtons: []
-    property var menuButtons: []
-
-    function focusedButton(buttons: var): Item {
-        return buttons.find(b => b.QsWindow.window?.screen?.name === Compositor.focusedOutput) ?? buttons[0] ?? null;
+    // Bouton sous lequel le panneau est ouvert (null : fermé) : le bouton Arch se colore tant que le menu est ouvert sous lui.
+    function openedUnder(kind: string): Item {
+        const item = loaders[kind]?.item;
+        return item?.visible ? item.button : null;
     }
 
-    function registerSettings(button: Item): void {
-        settingsButtons = [...settingsButtons, button];
+    // `fromPress` : appui sur le bouton (OverlayPopup.beginOpen) ; false pour un raccourci.
+    function toggle(kind: string, button: Item, fromPress: bool): void {
+        const loader = loaders[kind];
+        if (!loader || !button)
+            return;
+        loader.active = true;
+        loader.item.toggle(button, fromPress);
     }
 
-    function unregisterSettings(button: Item): void {
-        settingsButtons = settingsButtons.filter(b => b !== button);
-    }
-
-    function registerMenu(button: Item): void {
-        menuButtons = [...menuButtons, button];
-    }
-
-    function unregisterMenu(button: Item): void {
-        menuButtons = menuButtons.filter(b => b !== button);
+    // Raccourcis `qs ipc call settings toggle` (`$mod+Escape`, phase 10) et `qs ipc call menu toggle` : bouton de l'écran focalisé,
+    // sinon le premier (la barre principale en a un, hosts/*.json). Un panneau ouvert se ferme, quel que soit son écran.
+    function toggleFromShortcut(kind: string): void {
+        const list = buttons[kind];
+        toggle(kind, list.find(b => b.QsWindow.window?.screen?.name === Compositor.focusedOutput) ?? list[0] ?? null, false);
     }
 
     // Tests (scripts/test-outputs.sh) : popups inscrits et écran au clavier « à la demande », en JSON.
@@ -93,9 +96,7 @@ Singleton {
         target: "menu"
 
         function toggle(): void {
-            const button = root.focusedButton(root.menuButtons);
-            if (button)
-                root.toggleMenu(button, false);
+            root.toggleFromShortcut("menu");
         }
     }
 
@@ -103,9 +104,7 @@ Singleton {
         target: "settings"
 
         function toggle(): void {
-            const button = root.focusedButton(root.settingsButtons);
-            if (button)
-                root.toggleSettings(button, false);
+            root.toggleFromShortcut("settings");
         }
     }
 }

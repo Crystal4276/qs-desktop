@@ -81,18 +81,28 @@ Singleton {
     }
 
     // Fichiers encore présents (supprimés, déplacés, disque démonté : omis). Chaque vérification porte sur sa propre liste
-    // (`checking`) et ne filtre qu'elle ; une liste relue pendant ce temps est vérifiée juste après.
+    // (`checking`). Une nouvelle ne démarre qu'une fois la précédente entièrement finie (sortie lue et processus terminé, dans
+    // n'importe quel ordre) : `checking` ne change donc jamais avant que son résultat soit appliqué.
     property var checking: []
     property bool existsAgain: false
+    property bool existsRead: true
 
     function checkExists(): void {
-        if (exists.running) {
+        if (exists.running || !existsRead) {
             existsAgain = true;
             return;
         }
         checking = parsed;
+        existsRead = false;
         exists.command = ["sh", "-c", `for f; do [ -e "$f" ] && printf '%s\\n' "$f"; done; exit 0`, "sh", ...checking.map(f => f.path)];
         exists.running = true;
+    }
+
+    function existsDone(): void {
+        if (existsAgain && existsRead && !exists.running) {
+            existsAgain = false;
+            Qt.callLater(checkExists);
+        }
     }
 
     Process {
@@ -101,13 +111,10 @@ Singleton {
             onStreamFinished: {
                 const present = new Set(text.split("\n"));
                 root.recent = root.checking.filter(f => present.has(f.path));
+                root.existsRead = true;
+                root.existsDone();
             }
         }
-        onExited: {
-            if (root.existsAgain) {
-                root.existsAgain = false;
-                Qt.callLater(root.checkExists);
-            }
-        }
+        onExited: root.existsDone()
     }
 }

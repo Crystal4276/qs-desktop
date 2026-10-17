@@ -8,7 +8,7 @@ import qs.config
 Item {
     id: root
 
-    readonly property bool active: hover.hovered || BarState.menuButton === root
+    readonly property bool active: hover.hovered || BarState.openedUnder("menu") === root
 
     implicitWidth: Theme.bar.menuButtonMin + 2 * Theme.bar.menuButtonPadding
     implicitHeight: Theme.bar.menuButtonMin
@@ -35,9 +35,9 @@ Item {
 
     MouseArea {
         anchors.fill: parent
-        onPressed: BarState.toggleMenu(root, true)
+        onPressed: BarState.toggle("menu", root, true)
     }
 
-    Component.onCompleted: BarState.registerMenu(root)
-    Component.onDestruction: BarState.unregisterMenu(root)
+    Component.onCompleted: BarState.register("menu", root)
+    Component.onDestruction: BarState.unregister("menu", root)
 }

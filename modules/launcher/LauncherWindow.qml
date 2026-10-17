@@ -29,11 +29,12 @@ OverlayPopup {
     property var inputHistory: []
     property int inputIndex: 0
 
-    // Déjà ouvert : remis à zéro sur place (sans se fermer, ce qui enregistrerait la saisie en cours).
+    // Sur l'écran focalisé ; déjà ouvert : remis à zéro sur place (sans se fermer, ce qui enregistrerait la saisie en cours, ni
+    // changer d'écran).
     function open(): void {
         if (!visible)
-            BarState.closePopups();   // jamais deux surfaces au clavier exclusif l'une sur l'autre
-        screen = Quickshell.screens.find(s => s.name === Compositor.focusedOutput) ?? Quickshell.screens[0];
+            screen = Quickshell.screens.find(s => s.name === Compositor.focusedOutput) ?? Quickshell.screens[0];
+        prepareOpen(null);   // les autres popups se ferment (OverlayPopup)
         inputHistory = [...Apps.inputs, ""];
         inputIndex = inputHistory.length - 1;
         input.text = "";

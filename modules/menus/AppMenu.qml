@@ -33,8 +33,10 @@ OverlayPopup {
     property bool mouseMoved: false
     property bool aiming: false
     property string hoveredCategory: ""
-    property string hoveredApp: ""  // identifiant de l'application ou du fichier sous le pointeur ("" : aucun) ; pas l'indice,
-                                    // qui change quand la liste change sous un pointeur immobile
+    // Ligne sous le pointeur : identifiant ("" : aucune) et indice, tenu à jour par la ligne quand la liste change sous elle ;
+    // l'identifiant vérifie l'indice (ligne retirée : effacés à sa destruction).
+    property string hoveredApp: ""
+    property int hoveredIndex: -1
     property var mimeIconCache: ({})
 
     readonly property var categories: [
@@ -100,10 +102,9 @@ OverlayPopup {
         mouseMoved = true;
         aimStop.restart();
         // Ligne survolée avant que ce mouvement soit vu (ordre des événements) ou sous un pointeur resté immobile : prise maintenant.
-        const hovered = hoveredApp === "" ? -1 : items.findIndex(item => item.id === hoveredApp);
-        if (hovered >= 0 && (pane !== "apps" || selected !== hovered)) {
+        if (hoveredApp !== "" && items[hoveredIndex]?.id === hoveredApp && (pane !== "apps" || selected !== hoveredIndex)) {
             pane = "apps";
-            selected = hovered;
+            selected = hoveredIndex;
         }
     }
 
@@ -529,10 +530,13 @@ OverlayPopup {
                                 label: modelData.name
                                 description: modelData.description ?? ""
                                 highlighted: root.pane === "apps" && root.selected === index
+                                onIndexChanged: if (root.hoveredApp === modelData.id) root.hoveredIndex = index
+                                Component.onDestruction: if (root.hoveredApp === modelData.id) root.hoveredApp = ""
                                 onHoveredChanged: {
-                                    if (hovered)
+                                    if (hovered) {
                                         root.hoveredApp = modelData.id;
-                                    else if (root.hoveredApp === modelData.id)
+                                        root.hoveredIndex = index;
+                                    } else if (root.hoveredApp === modelData.id)
                                         root.hoveredApp = "";
                                     if (hovered && root.mouseMoved) {
                                         root.pane = "apps";

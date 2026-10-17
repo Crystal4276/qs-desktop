@@ -694,6 +694,23 @@ rapides (ouvert, fermé, ouvert) ; menu ouvert à la souris puis raccourci (ferm
 sous un pointeur immobile puis un pixel de mouvement (la ligne sous le pointeur est prise). Historique du lanceur recréé par
 l'instance de test supprimé (reprise de Rofi gardée).
 
+### Revue de code du menu, quatrième passe (2026-10-17) : 10 problèmes, tous corrigés
+
+1. Panneau ouvert sur un écran qui disparaît : il se ferme (il serait resté au clavier sur un autre écran).
+2. Plus d'import circulaire entre `modules/bar` et `modules/menus` : le menu est créé par `Menus.qml` (depuis `shell.qml`).
+3. Lanceur déjà ouvert : `open` ne change plus son écran.
+4. Ligne survolée retirée de la liste (filtrée par la recherche) : oubliée, plus de sélection d'une ligne absente du pointeur.
+5. Vérification des fichiers récents : une nouvelle ne démarre qu'une fois la précédente lue et terminée (sans dépendre de l'ordre).
+6. Garde de 400 ms remplacée par l'ordre réel des événements (`BarState.pressClosed`) : Échap puis un clic rapide rouvre.
+7. Le lanceur passe aussi par `OverlayPopup.prepareOpen` (règle « un seul popup » à un seul endroit).
+8. `BarState.settingsButton` inutilisé : retiré.
+9. Doublons menu / réglages de `BarState` regroupés (`toggle`, `register`, `openedUnder`, `toggleFromShortcut` par type).
+10. Ligne survolée vérifiée par son indice tenu à jour (plus de parcours de la liste à chaque mouvement).
+Trouvé en testant et corrigé : `Menus.qml` sans `import QtQuick` (`Component.onCompleted` indisponible).
+Vérifié dans le Sway isolé, deux écrans, copie de config avec bouton Arch et engrenage sur les deux barres : trois clics sur le même
+bouton (ouvert, fermé, ouvert) ; Échap puis clic immédiat (rouvert) ; menu ouvert sur l'écran 2 puis écran débranché (fermé, rien
+sur l'écran 1) ; « fir » sous le pointeur puis retour arrière et un pixel de mouvement (ligne réellement sous le pointeur choisie).
+
 ### Reste à faire
 
 Phase 8 : rien d'autre au programme ; à valider par toi (rapport du 2026-10-17).
