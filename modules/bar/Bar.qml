@@ -205,7 +205,7 @@ Variants {
             enabled: BarState.openPopups > 0
             acceptedButtons: Qt.AllButtons
             onPressed: mouse => {
-                BarState.closePopups();
+                BarState.closeFromBarPress();
                 mouse.accepted = false;
             }
         }

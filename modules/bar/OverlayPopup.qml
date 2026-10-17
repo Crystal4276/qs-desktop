@@ -11,30 +11,35 @@ PanelWindow {
 
     property Item frameItem    // cadre visible du panneau
     property Item button       // bouton sous lequel il est (ou a été) ouvert
-    property real closedAt: 0
 
     signal closing   // juste avant la fermeture (lanceur : enregistre la saisie)
 
-    // Ouverture demandée sous `from` : false si le panneau était ouvert (il se ferme, quel que soit son écran) ou si c'est l'appui
-    // sur ce même bouton qui vient de le fermer (la barre ferme les popups avant que le bouton ne reçoive l'appui : `fromPress`,
-    // jamais pour un raccourci). Sinon les autres popups se ferment et le panneau peut s'ouvrir.
+    // Ouverture demandée sous `from` : false si le panneau était ouvert (il se ferme, quel que soit son écran) ou si l'appui sur
+    // ce même bouton vient de le fermer en passant par la barre (`fromPress` : BarState.pressClosed ; jamais pour un raccourci).
+    // Sinon les autres popups se ferment et le panneau peut s'ouvrir.
     function beginOpen(from: Item, fromPress: bool): bool {
         if (visible) {
             close();
             return false;
         }
-        if (fromPress && from === button && Date.now() - closedAt < 400)   // ms
+        if (fromPress && from === button && BarState.pressClosed.includes(root))
             return false;
-        BarState.closePopups();
-        button = from;
+        prepareOpen(from);
         return true;
     }
 
+    // Avant de s'afficher : les autres popups se ferment (pas celui-ci s'il est déjà ouvert). `from` : bouton d'ancrage, ou null
+    // (lanceur, sans bouton).
+    function prepareOpen(from: Item): void {
+        if (!visible)
+            BarState.closePopups();
+        if (from)
+            button = from;
+    }
+
     function close(): void {
-        if (visible) {
-            closedAt = Date.now();
+        if (visible)
             closing();
-        }
         visible = false;
     }
 
@@ -67,6 +72,17 @@ PanelWindow {
         target: BarState
         function onClosePopups() {
             root.close();
+        }
+    }
+
+    // Écran ou bouton disparu pendant que le panneau est ouvert (écran débranché ou éteint) : il se ferme, au lieu de rester au
+    // clavier sur un autre écran.
+    onButtonChanged: if (!button && visible) close()
+    Connections {
+        target: Quickshell
+        function onScreensChanged() {
+            if (root.visible && !Quickshell.screens.includes(root.screen))
+                root.close();
         }
     }
 

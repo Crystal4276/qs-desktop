@@ -23,9 +23,9 @@ Item {
     MouseArea {
         anchors.fill: parent
         acceptedButtons: Qt.LeftButton | Qt.RightButton
-        onPressed: BarState.toggleSettings(root, true)
+        onPressed: BarState.toggle("settings", root, true)
     }
 
-    Component.onCompleted: BarState.registerSettings(root)
-    Component.onDestruction: BarState.unregisterSettings(root)
+    Component.onCompleted: BarState.register("settings", root)
+    Component.onDestruction: BarState.unregister("settings", root)
 }

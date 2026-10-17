@@ -9,6 +9,7 @@
 import Quickshell
 import qs.modules.bar
 import qs.modules.launcher
+import qs.modules.menus
 import qs.modules.notifications
 import qs.modules.osd
 import qs.services
@@ -21,4 +22,5 @@ ShellRoot {
     NotificationPopups {}
     Osd {}
     Launcher {}
+    Menus {}
 }
