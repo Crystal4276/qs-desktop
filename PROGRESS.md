@@ -817,6 +817,18 @@ Phase 8 : rien d'autre au programme ; à valider par toi (rapport du 2026-10-17)
 Ordre : fond d'écran natif et utilitaire de changement de fond ; verrouillage (maquette à valider d'abord) ; veille ; agent polkit ;
 outil de capture ; fenêtre de statistiques système.
 
+### Fond d'écran natif et utilitaire : fait (2026-10-17)
+
+- `modules/wallpaper/Background.qml` + `services/Wallpapers.qml` : une surface par écran (couche Background, sans zone d'entrée,
+  comme swaybg) ; images simples, panoramas découpés selon la position réelle des écrans, triptyques à 3 écrans. Choix mémorisé
+  localement ; départ : `wallpaper` de la config machine (ici le triptyque green-storm, comme Sway).
+- Utilitaire `modules/wallpaper/PickerWindow.qml` (`qs ipc call wallpaper-picker toggle`) : onglets, vignettes, application
+  immédiate, un écran ou tous (`WALLPAPERS.md` § « Mise en œuvre »). `PanelButton` a un état « choisi » (onglets).
+- Vérifié dans un Sway isolé à 3 écrans (2560 / 3440 / 2560) : triptyque green-storm (gauche / centre / droite), panorama étalé
+  sans coupure (comparé au fichier), utilitaire (onglets, triptyque choisi, image pour un écran, clavier, Échap), clic sur le fond
+  d'un autre écran (focus déplacé, comme swaybg). État de test effacé : retour au triptyque.
+- À valider : taille des vignettes (240 × 135, `THEME.md` § 7 bis) ; accès à l'utilitaire (raccourci en phase 10, bouton ?).
+
 ## Prochaine étape
 
 Phase 8b (voir ci-dessus).

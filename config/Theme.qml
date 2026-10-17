@@ -474,6 +474,19 @@ Singleton {
         readonly property string fileIcon: "text-x-generic"
     }
 
+    // Utilitaire de changement de fond (nouveau composant) : style des panneaux ; vignette choisie entourée de `green` (sélection
+    // du menu d'applications). Taille des vignettes : proposée, à valider.
+    readonly property QtObject wallpaperPicker: QtObject {
+        readonly property int thumbWidth: 240
+        readonly property int thumbHeight: 135      // 16:9
+        readonly property int columns: 4
+        readonly property int rows: 3               // visibles ; au-delà, la grille défile
+        readonly property int selectionPadding: root.appMenu.itemPadding
+        readonly property color selection: root.appMenu.selected
+        readonly property color hover: root.panel.rowHover
+        readonly property int radius: root.panel.rowRadius
+    }
+
     // Polices embarquées (assets/fonts, ARCHITECTURE § 8.2) chargées depuis le dépôt : prioritaires sur une copie système
     // du même nom, qui peut différer (ex. `fa-brands-400.woff2` du paquet woff2-font-awesome).
     readonly property list<FontLoader> embeddedFonts: [

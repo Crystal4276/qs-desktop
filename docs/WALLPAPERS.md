@@ -66,6 +66,22 @@ Reste à faire (suppression, bloquée par le garde-fou : à faire par toi ou à 
    (`BarState.closePopups()`, ARCHITECTURE § 8.3) et focaliser l'espace de l'écran elle-même — ce qui couvrirait aussi le cas d'un clic
    juste après un clic dans le calendrier. À trancher en phase 8b.
 
+## Mise en œuvre (phase 8b, 2026-10-17)
+
+- **Fond natif** (`modules/wallpaper/Background.qml`, service `services/Wallpapers.qml`) : une surface par écran sur la couche
+  Background, **sans zone d'entrée** (point 5 tranché : comme `swaybg`, un clic sur le fond va au compositeur, qui focalise l'écran
+  et l'espace — vérifié dans un Sway isolé). Image simple : couvre l'écran, décodée à sa taille. Panorama : couvre le rectangle
+  englobant tous les écrans, chaque écran en montre sa part (positions réelles, logiques). Triptyque : gauche / centre / droite
+  selon la position, à 3 écrans ; sinon le centre partout. Panorama sur un seul écran : image simple.
+- **Choix** : état local (`wallpaper.json`, hors dépôt) : un fond pour tous les écrans, plus une image simple par écran (clé :
+  description de l'écran, comme la config machine). Rien de choisi : `wallpaper` de la config machine (ici le triptyque
+  green-storm, comme Sway aujourd'hui) ; sinon aucune image. Dossier : `wallpapersDir` de la config machine, sinon « Wallpapers »
+  dans le dossier Images XDG.
+- **Utilitaire** (`modules/wallpaper/PickerWindow.qml`, `qs ipc call wallpaper-picker toggle`) : onglets Images, Panoramas (plusieurs
+  écrans), Triptychs (trois écrans) ; vignettes ; fond actuel entouré de vert ; clic ou Entrée : appliqué tout de suite, fenêtre
+  gardée ouverte ; rangée « All screens » / un écran pour les images simples ; flèches, Échap, clic à côté.
+- IPC de test : `qs ipc call wallpaper state` (JSON) et `qs ipc call wallpaper set <kind> <chemin>`.
+
 ## Décisions à prendre
 
 | # | Question | Recommandation |
