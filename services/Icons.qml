@@ -30,6 +30,13 @@ Singleton {
         return found;
     }
 
+    // Icône d'application ou de notification : chemin absolu ou nom d'icône du thème.
+    function iconSource(icon: string): string {
+        if (icon === "")
+            return "";
+        return icon.startsWith("/") ? fileUrl(icon) : Quickshell.iconPath(icon, true);
+    }
+
     // URL d'un fichier local, chemin encodé (« # », « % », espaces…).
     function fileUrl(path: string): string {
         return `file://${path.split("/").map(encodeURIComponent).join("/")}`;

@@ -33,7 +33,7 @@ Singleton {
             recentWanted = true;
     }
 
-    // Relus quand user-dirs.dirs change (dossiers XDG redéfinis).
+    // Relus quand user-dirs.dirs change (dossiers XDG redéfinis) et à chaque ouverture du menu (refreshFolders).
     FileView {
         path: `${Quickshell.env("XDG_CONFIG_HOME") || `${root.home}/.config`}/user-dirs.dirs`
         printErrors: false
@@ -47,6 +47,12 @@ Singleton {
     }
 
     property bool foldersAgain: false
+
+    // À chaque ouverture du menu : dossier créé ou supprimé depuis (user-dirs.dirs inchangé).
+    function refreshFolders(): void {
+        if (!folderList.running)
+            folderList.running = true;
+    }
 
     Process {
         id: folderList
