@@ -13,6 +13,23 @@ Singleton {
 
     property var panelIcons: ({})   // nom → chemin du fichier SVG
 
+    // Icône du thème pour un type de fichier (« text/plain » → text-plain, sinon text-x-generic, sinon `fallback`), cherchée une
+    // fois par type.
+    property var mimeIcons: ({})
+
+    function mimeIcon(mime: string, fallback: string): string {
+        if (mime in mimeIcons)
+            return mimeIcons[mime];
+        let found = "";
+        for (const name of [mime.replace("/", "-"), `${mime.split("/")[0]}-x-generic`, fallback]) {
+            found = name === "" || name.startsWith("-") ? "" : Quickshell.iconPath(name, true);
+            if (found !== "")
+                break;
+        }
+        mimeIcons[mime] = found;
+        return found;
+    }
+
     // URL d'un fichier local, chemin encodé (« # », « % », espaces…).
     function fileUrl(path: string): string {
         return `file://${path.split("/").map(encodeURIComponent).join("/")}`;

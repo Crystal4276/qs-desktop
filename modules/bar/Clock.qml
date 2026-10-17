@@ -37,8 +37,17 @@ Item {
         id: hover
     }
 
+    // Calendrier épinglé : fermé dès l'appui (même long ou glissé) ; sinon épinglé au clic.
     TapHandler {
-        onTapped: calendar.toggle()
+        property bool closedOnPress: false
+        onPressedChanged: {
+            if (!pressed)
+                return;
+            closedOnPress = calendar.pinned;
+            if (closedOnPress)
+                calendar.toggle();
+        }
+        onTapped: if (!closedOnPress) calendar.toggle()
     }
 
     CalendarPopup {

@@ -126,9 +126,10 @@ Item {
     TrayMenu {
         id: menu
 
-        // Clic droit sur l'icône dont le menu est ouvert : la barre le laisse, ce clic le ferme.
+        // Clic qui ouvre ce menu (droit, ou gauche pour une icône sans autre action) sur son icône : la barre le laisse, ce clic
+        // le ferme.
         readonly property Item owner: open ? anchor.item : null
-        readonly property int ownerButtons: Qt.RightButton
+        readonly property int ownerButtons: Qt.RightButton | (anchor.item?.modelData?.onlyMenu ? Qt.LeftButton : 0)
 
         function openAt(handle: var, item: Item, x: real, y: real): void {
             if (open && anchor.item === item) {
