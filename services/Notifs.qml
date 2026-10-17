@@ -328,12 +328,14 @@ Singleton {
 
     // --- Lecture des notifications ---
 
-    // Icône : image fournie (données ou chemin), sinon icône de l'application (chemin ou nom dans le thème).
+    // Icône : image fournie (données, chemin ou nom d'icône), sinon icône de l'application (chemin ou nom dans le thème).
     // Fichiers locaux, images servies par Quickshell et icônes du thème seulement, comme Dunst : une adresse http(s) envoyée
     // par une application ferait télécharger l'image à chaque affichage (pixel espion ; revue de code).
     function iconSource(image: string, appIcon: string): string {
         if (image.startsWith("image://") || image.startsWith("file:"))
             return image;
+        if (image !== "" && !image.includes("://"))
+            return Icons.iconSource(image);   // chemin absolu ou nom d'icône du thème (image-path de la spécification)
         if (appIcon === "" || (appIcon.includes("://") && !appIcon.startsWith("file:")))
             return "";
         if (appIcon.startsWith("file:"))
