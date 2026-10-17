@@ -264,6 +264,11 @@ Singleton {
         readonly property string expanded: "\uf078"            // nf-fa-chevron_down : liste dépliée
         readonly property string screenshot: "\u{f0100}"       // nf-md-camera
         readonly property string wallpaper: "\u{f0e09}"        // nf-md-wallpaper : utilitaire de changement de fond (2026-10-17)
+        // Outil de capture (nouveau, 2026-10-17) : modes zone / écran / fenêtre, fermer
+        readonly property string captureArea: "\u{f0a6d}"      // nf-md-selection_drag
+        readonly property string captureScreen: "\u{f0379}"    // nf-md-monitor
+        readonly property string captureWindow: "\u{f0614}"    // nf-md-application_outline
+        readonly property string close: "\u{f0156}"            // nf-md-close
         readonly property string powerSaver: "\u{f032a}"       // nf-md-leaf
         readonly property string balanced: "\u{f05d1}"         // nf-md-scale_balance
         readonly property string performance: "\u{f04c5}"     // nf-md-speedometer
@@ -486,6 +491,19 @@ Singleton {
         readonly property color selection: root.appMenu.selected
         readonly property color hover: root.panel.rowHover
         readonly property int radius: root.panel.rowRadius
+    }
+
+    // Outil de capture (nouveau, phase 8b) : voile et cadre de ta sélection actuelle (slurp), barre d'outils au style des panneaux ;
+    // bouton de capture : anneau `text` autour d'un disque `text` (modèle de l'outil de GNOME).
+    readonly property QtObject screenshot: QtObject {
+        readonly property color veil: root.slurpBackground          // hors de la sélection
+        readonly property color selection: root.slurpSelection
+        readonly property int border: root.slurpBorder
+        readonly property int handle: 3 * root.slurpBorder          // poignées des coins de la zone
+        readonly property color hover: Qt.alpha(root.slurpSelection, 0.25)   // écran ou fenêtre sous le pointeur
+        readonly property int buttonSize: root.quickSettings.imageSize + 2 * root.quickSettings.buttonPadding
+        readonly property int captureSize: 2 * root.quickSettings.imageSize   // bouton de capture
+        readonly property int gap: root.panel.gap                   // barre d'outils : distance au bas de l'écran
     }
 
     // Écran de verrouillage (nouveau design, ARCHITECTURE § 10.1 R2) : fond d'écran de chaque écran flouté et assombri, horloge, date ;
