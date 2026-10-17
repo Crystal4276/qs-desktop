@@ -866,6 +866,14 @@ outil de capture ; fenêtre de statistiques système.
   ensuite (la première relance avait échoué — `pgrep -f` voyait sa propre commande — puis refaite et vérifiée). Aucun mot de passe
   tapé (une erreur compterait dans faillock).
 
+### Outil de capture : écrit, à vérifier sur tes écrans (2026-10-17)
+
+- `services/Screenshot.qml` + `modules/screenshot/ScreenshotTool.qml` (`ARCHITECTURE.md` § 10.1.10) ; le bouton du panneau de
+  réglages l'ouvre (plus de grim / slurp).
+- Non vérifié : `ScreencopyView` ne reçoit pas d'image dans un Sway isolé sans GPU (configuration minimale comprise), et tes écrans
+  étaient en veille. Vérification prévue quand ils seront allumés : ouverture et sélection par IPC, fichier comparé
+  numériquement à `grim` sur la même zone (sans regarder l'image), puis supprimé.
+
 ## Prochaine étape
 
 Phase 8b (voir ci-dessus).

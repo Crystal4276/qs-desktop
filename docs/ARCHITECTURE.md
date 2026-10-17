@@ -559,6 +559,19 @@ Voir `WALLPAPERS.md` § « Mise en œuvre ». Remplace `swaybg` (Sway) et le fon
   échoue (avertissement dans le journal, sans effet). À la phase 10, `polkit-gnome` sort de l'autostart.
 - Identité (utilisateur) non affichée : le type `Identity` est opaque dans l'API installée (pas de propriété documentée).
 
+### 10.1.10 Phase 8b : outil de capture (2026-10-17)
+
+- `services/Screenshot.qml` + `modules/screenshot/ScreenshotTool.qml` (modèle de l'outil de GNOME) : image figée de chaque écran
+  (`ScreencopyView` en continu jusqu'à la première image, puis arrêtée : une capture demandée à la création échoue, « no recording
+  context ») ; voile `#ffffff20` et cadre rose de 4 px (ta sélection slurp actuelle) ; modes zone (tracer, déplacer, coins), écran,
+  fenêtre (rectangles des fenêtres des espaces affichés donnés par le compositeur : `Toplevel` ne fournit pas leur position) ; barre
+  d'outils en bas de l'écran de départ ; Entrée / Espace capturent, Échap ferme.
+- Capture : découpe de l'image figée (`ShaderEffectSource`) à la résolution réelle de l'écran, enregistrée dans
+  `Images/screenshot/AAAA-MM-JJ-HHMMSS.png` (comme ta touche Impr.) et copiée dans le presse-papiers (`wl-copy`).
+- Ouvert par le bouton du panneau de réglages (mode zone) et `qs ipc call screenshot area|screen|window` (touche Impr., phase 10).
+  IPC de test : `select x y w h`, `capture`, `isActive`.
+- `ScreencopyView` ne reçoit aucune image dans une session Sway sans GPU (rendu logiciel) : l'outil ne se teste que sur tes écrans.
+
 ### 10.2 Bluetooth : appairage et code PIN
 
 Vérifié :

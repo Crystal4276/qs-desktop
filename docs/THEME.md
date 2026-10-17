@@ -334,6 +334,13 @@ en contrastes inversés (fond `green`, texte `mantle`, comme une bascule activé
 `green` (marge 5 px, sélection du menu d'applications), vignette survolée ou au clavier entourée de `surface0`.
 Vignettes de 240 × 135 px (16:9), 4 par rangée, 3 rangées visibles (ton choix du 2026-10-17) ; panoramas et triptyques sur deux colonnes.
 
+## 7 ter. Outil de capture (nouveau composant, phase 8b)
+
+Voile hors de la sélection `#ffffff20` et cadre `pink` de 4 px (ta sélection `slurp` actuelle) ; poignées des coins : disques `pink`
+de 12 px ; écran ou fenêtre survolés : `pink` à 25 % ; barre d'outils au style des panneaux, mode choisi en contrastes inversés ;
+bouton de capture : anneau et disque `text` (modèle GNOME). **Nouveau, à valider** : poignées, survol, bouton de capture.
+Glyphes : `U+F0A6D` zone, `U+F0379` écran, `U+F0614` fenêtre, `U+F0156` fermer (Symbols Nerd Font Mono).
+
 ## 8. Fenêtres (compositeur, pour mémoire)
 
 | | Sway | Hyprland |
