@@ -49,16 +49,25 @@ OverlayPopup {
         return (category === "all" ? Apps.byName : Apps.byCategory[category] ?? []).map(appItem);
     }
 
-    onSelectedChanged: list.positionViewAtIndex(selected, ListView.Contain)
+    // Élément sélectionné : la sélection le suit quand la liste change d'elle-même (fichiers récents relus, applications installées).
+    property string selectedId: ""
+    onSelectedChanged: {
+        selectedId = items[selected]?.id ?? "";
+        list.positionViewAtIndex(selected, ListView.Contain);
+    }
+    onItemsChanged: {
+        const i = selectedId === "" ? -1 : items.findIndex(item => item.id === selectedId);
+        selected = i >= 0 ? i : Math.max(0, Math.min(selected, items.length - 1));
+    }
 
-    // Liste changée d'elle-même (applications installées, fichiers récents relus) : sélection gardée, ramenée dans la liste.
-    onItemsChanged: selected = Math.max(0, Math.min(selected, items.length - 1))
-
-    // Nouvelle liste demandée (saisie, catégorie) : première ligne choisie et visible, une fois la vue mise à jour.
+    // Nouvelle liste demandée (saisie, catégorie) : première ligne choisie et visible, une fois la liste à jour.
     function resetList(): void {
         contextEntry = null;
-        selected = 0;
-        Qt.callLater(() => list.positionViewAtBeginning());
+        Qt.callLater(() => {
+            selected = 0;
+            selectedId = items[0]?.id ?? "";
+            list.positionViewAtBeginning();
+        });
     }
 
     function appItem(entry: var): var {
@@ -107,12 +116,16 @@ OverlayPopup {
             return;
         }
         hoveredCategory = key;
-        // Hors visée, jamais pendant une recherche (le survol ne l'efface pas) ni sous le menu contextuel ; déjà choisie : rien.
-        // Sinon prise à l'arrêt du pointeur (aimStop).
         afterMove(() => {
-            if (hoveredCategory === key && key !== category && search.text === "" && !aiming && !contextEntry)
-                setCategory(key);
-        });
+            if (!aiming)
+                takeHoveredCategory();
+        });   // en visée : prise à l'arrêt du pointeur (aimStop)
+    }
+
+    // Catégorie survolée prise, sauf pendant une recherche (le survol ne l'efface pas), sous le menu contextuel, ou déjà choisie.
+    function takeHoveredCategory(): void {
+        if (hoveredCategory !== "" && hoveredCategory !== category && search.text === "" && !contextEntry)
+            setCategory(hoveredCategory);
     }
 
     // Sous le bouton, aligné sur le bord gauche de sa pilule (nwg-menu : 10 px sous la barre).
@@ -132,6 +145,7 @@ OverlayPopup {
         pointer = Qt.point(-1, -1);
         moves = 0;
         recentRead = false;
+        Places.refreshFolders();
         list.positionViewAtBeginning();
         visible = true;
         search.forceActiveFocus();
@@ -304,40 +318,19 @@ OverlayPopup {
     }
 
     // Bouton de session : ton SVG, sans fond ; survol : `rgba(255,255,255,0.1)` et bordure `overlay0` (nwg-menu).
-    component SessionButton: Rectangle {
-        id: button
-
-        property url image
-        signal clicked
-
-        implicitWidth: Theme.appMenu.sessionIconSize + 2 * Theme.appMenu.itemPadding
-        implicitHeight: implicitWidth
+    component SessionButton: QuickButton {
+        imageSize: Theme.appMenu.sessionIconSize
+        padding: Theme.appMenu.itemPadding
         radius: Theme.appMenu.itemRadius
-        color: hover.hovered ? Theme.appMenu.buttonHover : "transparent"
-        border.width: Theme.appMenu.border
-        border.color: hover.hovered ? Theme.appMenu.buttonHoverBorder : "transparent"
-
-        Image {
-            anchors.centerIn: parent
-            source: button.image
-            sourceSize.width: Theme.appMenu.sessionIconSize
-            sourceSize.height: Theme.appMenu.sessionIconSize
-        }
-
-        HoverHandler {
-            id: hover
-        }
-
-        MouseArea {
-            anchors.fill: parent
-            onClicked: button.clicked()
-        }
+        background: "transparent"
+        hoverBackground: Theme.appMenu.buttonHover
+        hoverBorder: Theme.appMenu.buttonHoverBorder
     }
 
     Rectangle {
         id: frame
 
-        x: Math.max(Theme.bar.marginSide, Math.min(root.anchorX, root.width - Theme.bar.marginSide - width))
+        x: BarState.panelLeft(root.anchorX, width, root.width)
         y: Theme.panel.gap
         width: layout.implicitWidth + 2 * (Theme.appMenu.border + Theme.appMenu.padding)
         // Au plus la hauteur de l'écran sous la barre : au-delà, les colonnes défilent.
@@ -366,8 +359,7 @@ OverlayPopup {
             interval: 30
             onTriggered: {
                 root.aiming = false;
-                if (root.hoveredCategory !== "" && root.hoveredCategory !== root.category && search.text === "" && !root.contextEntry)
-                    root.setCategory(root.hoveredCategory);
+                root.takeHoveredCategory();
             }
         }
 
@@ -531,7 +523,7 @@ OverlayPopup {
                                 required property int index
                                 width: list.width
                                 iconSize: Theme.appMenu.largeIconSize
-                                icon: modelData.entry ? Apps.iconSource(modelData.entry.icon) : Icons.mimeIcon(modelData.mime, Theme.appMenu.fileIcon)
+                                icon: modelData.entry ? Apps.iconSource(modelData.entry.icon) : Icons.mimeIcon(modelData.mime)
                                 label: modelData.name
                                 description: modelData.description ?? ""
                                 highlighted: root.pane === "apps" && root.selected === index

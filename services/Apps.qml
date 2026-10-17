@@ -114,7 +114,7 @@ Singleton {
     // Champs de recherche de chaque application, en minuscules : calculés une fois quand la liste change, pas à chaque frappe.
     readonly property var searchFields: {
         const map = {};
-        for (const e of entries)
+        for (const e of available)   // pas `entries` (trié par historique) : pas refait à chaque lancement
             map[e.id] = [e.name, e.genericName, e.execString, ...e.categories, ...e.keywords, e.comment]
                 .filter(f => f).map(f => f.toLowerCase());
         return map;

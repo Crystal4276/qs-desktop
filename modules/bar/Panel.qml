@@ -28,7 +28,7 @@ PopupWindow {
         // Centré sous l'élément, sans dépasser les marges de la barre (10 px du bord de l'écran).
         const itemX = item.mapToItem(null, 0, 0).x;
         const windowWidth = item.QsWindow.window?.width ?? 0;
-        const left = Math.max(Theme.bar.marginSide, Math.min(itemX + (item.width - width) / 2, windowWidth - Theme.bar.marginSide - width));
+        const left = BarState.panelLeft(itemX + (item.width - width) / 2, width, windowWidth);
         anchor.rect.x = left - itemX;
         // 10 px sous la pilule (bas de la zone réservée de la barre), quel que soit l'élément d'origine ;
         // hauteur : tout l'espace jusqu'à 10 px du bas de l'écran.

@@ -15,7 +15,8 @@ Singleton {
 
     readonly property string home: Quickshell.env("HOME")
     // [{ key, path, name }] ; `key` choisit l'icône (Theme.appMenu.placeIcons)
-    property var folders: [{ key: "HOME", path: home, name: "Home" }]
+    readonly property var homeFolder: ({ key: "HOME", path: home, name: "Home" })
+    property var folders: [homeFolder]
     // [{ path, name, mime, time }]
     property var recent: []
     property bool recentWanted: false
@@ -32,12 +33,18 @@ Singleton {
             recentWanted = true;
     }
 
+    // Relus à chaque ouverture du menu (dossier créé, user-dirs.dirs modifié).
+    function refreshFolders(): void {
+        folderList.running = true;
+    }
+
     Process {
+        id: folderList
         running: true
         command: ["sh", "-c", `for d in DOCUMENTS DOWNLOAD MUSIC PICTURES VIDEOS; do p="$(xdg-user-dir "$d")"; [ -d "$p" ] && printf '%s\\t%s\\n' "$d" "$p"; done; exit 0`]
         stdout: StdioCollector {
             onStreamFinished: {
-                const list = [{ key: "HOME", path: root.home, name: "Home" }];
+                const list = [root.homeFolder];
                 for (const line of text.split("\n")) {
                     const [key, path] = line.split("\t");
                     if (path && path !== root.home && path !== `${root.home}/`)
@@ -82,6 +89,7 @@ Singleton {
 
     // Fichiers encore présents (supprimés, déplacés, disque démonté : omis). La sortie commence par le numéro de la vérification :
     // seule la dernière lancée est appliquée, à sa liste (`checking`). Liste relue entre-temps : nouvelle vérification ensuite.
+    // Au plus 5 s (montage réseau ou gvfs qui ne répond plus) : sans la marque de fin, la liste est montrée sans filtre.
     property int checkNumber: 0
     property var checking: []
     property bool existsAgain: false
@@ -93,7 +101,8 @@ Singleton {
         }
         checkNumber++;
         checking = parsed;
-        exists.command = ["sh", "-c", `printf '%s\\n' "$0"; for f; do [ -e "$f" ] && printf '%s\\n' "$f"; done; exit 0`,
+        exists.command = ["timeout", "-s", "KILL", "5", "sh", "-c",
+            `printf '%s\\n' "$0"; for f; do [ -e "$f" ] && printf '%s\\n' "$f"; done; printf '\\n%s\\n' "$0"; exit 0`,
             String(checkNumber), ...parsed.map(f => f.path)];
         exists.running = true;
     }
@@ -103,10 +112,12 @@ Singleton {
         stdout: StdioCollector {
             onStreamFinished: {
                 const lines = text.split("\n");
-                if (lines[0] !== String(root.checkNumber))
+                const number = String(root.checkNumber);
+                if (lines[0] !== number)
                     return;
+                const finished = lines.length >= 3 && lines[lines.length - 2] === number;   // marque de fin : ligne vide puis le numéro
                 const present = new Set(lines.slice(1));
-                root.recent = root.checking.filter(f => present.has(f.path));
+                root.recent = finished ? root.checking.filter(f => present.has(f.path)) : root.checking;
             }
         }
         onExited: {

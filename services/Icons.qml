@@ -13,15 +13,15 @@ Singleton {
 
     property var panelIcons: ({})   // nom → chemin du fichier SVG
 
-    // Icône du thème pour un type de fichier (« text/plain » → text-plain, sinon text-x-generic, sinon `fallback`), cherchée une
-    // fois par type.
+    // Icône du thème pour un type de fichier (« text/plain » → text-plain, sinon text-x-generic, sinon l'icône de fichier
+    // générique), cherchée une fois par type.
     property var mimeIcons: ({})
 
-    function mimeIcon(mime: string, fallback: string): string {
+    function mimeIcon(mime: string): string {
         if (mime in mimeIcons)
             return mimeIcons[mime];
         let found = "";
-        for (const name of [mime.replace("/", "-"), `${mime.split("/")[0]}-x-generic`, fallback]) {
+        for (const name of [mime.replace("/", "-"), `${mime.split("/")[0]}-x-generic`, Theme.appMenu.fileIcon]) {
             found = name === "" || name.startsWith("-") ? "" : Quickshell.iconPath(name, true);
             if (found !== "")
                 break;
