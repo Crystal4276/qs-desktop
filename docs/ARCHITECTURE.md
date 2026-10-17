@@ -521,6 +521,21 @@ Remplace le power menu Rofi. Base : les réglages rapides de GNOME 51 (code de g
 
 Voir `WALLPAPERS.md` § « Mise en œuvre ». Remplace `swaybg` (Sway) et le fond de Hyprland à la bascule (phase 10).
 
+### 10.1.7 Phase 8b : écran de verrouillage (2026-10-17)
+
+- `modules/lock/LockScreen.qml` : `WlSessionLock` (protocole ext-session-lock) + `PamContext` (configuration `login` de
+  `/etc/pam.d`). Design validé (maquette du 2026-10-17) : `LockContent.qml`, fond actuel de chaque écran (`WallpaperView`, celui que
+  l'écran affiche, choix courant de l'utilitaire compris) flouté et assombri, horloge, date ; initiale, nom et champ sur l'écran qui
+  a le clavier (avant qu'un clavier soit attribué : l'écran focalisé au verrouillage). Majuscules verrouillées déduites des lettres
+  tapées. Entrée valide, Échap efface, Ctrl+Retour arrière efface tout.
+- Verrouiller : `Session.lock()` (panneau de réglages, menu d'applications), `qs ipc call lock lock`, veille (à venir). **Aucun
+  déverrouillage par IPC.** Les popups ouverts se ferment au verrouillage.
+- **Sûreté** : si Quickshell s'arrête pendant le verrouillage, le compositeur garde la session verrouillée (Sway : écran rouge).
+  Reprise : relancer Quickshell (depuis un autre terminal virtuel : `WAYLAND_DISPLAY=wayland-1 qs -c desktop &`, puis
+  `qs ipc call lock lock`) ; la nouvelle instance reprend le verrou et se déverrouille avec le mot de passe. Vérifié dans un Sway isolé.
+- Tests : PAM factice (`pam_permit` / `pam_deny`) dans un dossier temporaire, branché seulement dans une configuration de test
+  (`LockScreen.pamDirectory`) ; le verrouillage réel avec ton mot de passe est dans la liste « À faire par toi ».
+
 ### 10.2 Bluetooth : appairage et code PIN
 
 Vérifié :

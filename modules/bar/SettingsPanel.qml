@@ -75,13 +75,18 @@ OverlayPopup {
                 onClicked: root.run(Session.screenshot)
             }
 
+            QuickButton {
+                glyph: Theme.icon.wallpaper
+                onClicked: root.run(() => Wallpapers.pickerRequested())
+            }
+
             Item {
                 Layout.fillWidth: true
             }
 
             QuickButton {
                 image: Theme.image.lock
-                onClicked: root.run(Session.lock)
+                onClicked: root.run(() => Session.lock())
             }
 
             QuickButton {

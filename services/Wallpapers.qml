@@ -60,6 +60,9 @@ Singleton {
         state.overrides = Object.assign({}, overrides, { [description]: path });
     }
 
+    // Ouverture de l'utilitaire depuis l'interface (bouton du panneau de réglages) : modules/wallpaper/WallpaperPicker.qml écoute.
+    signal pickerRequested
+
     // Bibliothèque relue (ouverture de l'utilitaire, dossier changé).
     function refresh(): void {
         if (dir === "" || scan.running)

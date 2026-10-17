@@ -224,6 +224,10 @@ Liste tenue à jour à chaque phase ; à dérouler une fois le projet terminé.
   (l'appareil doit se connecter et rester approuvé) ; NordVPN qui apparaît dans le tray quand le démon démarre après la session.
 - **Deuxième passe** : vraie touche de volume / micro une fois les raccourcis branchés (phase 10) ; connexion limitée (Wi-Fi d'hôtel avec
   portail, ou câble sans Internet) ; sur le laptop : OSD de luminosité et alerte de batterie à 30 % et 15 %.
+- **Verrouillage (phase 8b)** : verrouiller depuis le panneau de réglages, déverrouiller avec ton vrai mot de passe (une erreur
+  d'abord, pour voir le message) ; majuscules verrouillées ; sur tes trois écrans.
+- **Fond d'écran (phase 8b)** : utilitaire depuis le bouton du panneau de réglages ; image pour un seul écran (tes deux LG doivent
+  pouvoir avoir des images différentes).
 - **Panneau audio (revues du 2026-10-17)** : ouvert au clic droit sur l'icône du volume, un clic gauche doit le fermer (et couper le
   son, comme avant) ; idem au clic du milieu (sortie suivante).
 - **Menu d'applications (2026-10-17)** : avec ta vraie souris — molette dans la liste, survol rapide des catégories, clic droit ;
@@ -827,7 +831,18 @@ outil de capture ; fenêtre de statistiques système.
 - Vérifié dans un Sway isolé à 3 écrans (2560 / 3440 / 2560) : triptyque green-storm (gauche / centre / droite), panorama étalé
   sans coupure (comparé au fichier), utilitaire (onglets, triptyque choisi, image pour un écran, clavier, Échap), clic sur le fond
   d'un autre écran (focus déplacé, comme swaybg). État de test effacé : retour au triptyque.
-- À valider : taille des vignettes (240 × 135, `THEME.md` § 7 bis) ; accès à l'utilitaire (raccourci en phase 10, bouton ?).
+- Tes choix (2026-10-17) : vignettes 240 × 135 ; utilitaire ouvert par un bouton du panneau de réglages (glyphe `U+F0E09`, à côté
+  de la capture) ; ton fond courant est toujours celui utilisé (verrouillage compris), le triptyque de la config machine n'étant que
+  le fond de départ.
+
+### Écran de verrouillage natif : fait (2026-10-17)
+
+- Maquette validée telle quelle ; `modules/lock/LockScreen.qml` + `LockContent.qml` (`ARCHITECTURE.md` § 10.1.7). Remplace swaylock
+  (retiré de `deps/`).
+- Vérifié dans un Sway isolé (PAM factice) : mot de passe refusé (« Wrong password », saisie effacée, toujours verrouillé) ;
+  accepté (déverrouillé, bureau rendu) ; arrêt brutal de Quickshell pendant le verrouillage (session gardée verrouillée par Sway),
+  nouvelle instance qui reprend le verrou et déverrouille ; deux écrans (champ sur l'écran focalisé, puis sur celui qui reçoit la
+  frappe).
 
 ## Prochaine étape
 

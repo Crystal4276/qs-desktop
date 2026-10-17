@@ -6,7 +6,7 @@ import qs.config
 
 // Actions de session du panneau de réglages (remplacent le power menu Rofi, SCRIPTS.md) : verrouiller, se déconnecter,
 // redémarrer, éteindre — sans confirmation, comme Rofi. Plus la capture d'écran et « garder l'écran allumé ».
-// Verrouillage et capture : commandes actuelles en attendant les outils natifs de la phase 8b.
+// Capture : commande actuelle en attendant l'outil natif de la phase 8b.
 Singleton {
     id: root
 
@@ -19,9 +19,11 @@ Singleton {
         property bool keepAwake: false
     }
 
-    // swaylock avec ta config s'il la trouve (power menu : `swaylock -C ~/.config/sway/swaylock.conf`).
+    // Verrouillage natif (modules/lock/LockScreen.qml, qui écoute ce signal) ; aussi `qs ipc call lock lock`.
+    signal lockRequested
+
     function lock(): void {
-        Quickshell.execDetached(["sh", "-c", 'c="${XDG_CONFIG_HOME:-$HOME/.config}/sway/swaylock.conf"; if [ -f "$c" ]; then exec swaylock -C "$c"; else exec swaylock; fi']);
+        lockRequested();
     }
 
     function logout(): void {

@@ -332,7 +332,7 @@ Icônes Papirus : `applications-*` pour les catégories, `preferences-desktop` (
 Cadre des panneaux (`mantle`, bordure `overlay0`, rayon 20, padding 15) ; onglets et choix d'écran : boutons de panneau, le choisi
 en contrastes inversés (fond `green`, texte `mantle`, comme une bascule activée) ; vignettes arrondies (10 px), fond actuel entouré de
 `green` (marge 5 px, sélection du menu d'applications), vignette survolée ou au clavier entourée de `surface0`.
-**Proposé, à valider** : vignettes de 240 × 135 px (16:9), 4 par rangée, 3 rangées visibles ; panoramas et triptyques sur deux colonnes.
+Vignettes de 240 × 135 px (16:9), 4 par rangée, 3 rangées visibles (ton choix du 2026-10-17) ; panoramas et triptyques sur deux colonnes.
 
 ## 8. Fenêtres (compositeur, pour mémoire)
 
@@ -431,5 +431,6 @@ versionnée dans `assets/` dans le même commit.
 | `network-vpn` (Tailscale, Papirus n'a pas son icône) / `zerotier-gui` | section « Private networks » du panneau réseau | Papirus-Dark |
 | `battery-low` / `battery-caution` | notification de batterie faible / critique (laptop) | Papirus-Dark |
 | `U+F013` (engrenage) | bouton du panneau de réglages (remplace power `U+F011`), couleur `text` | Symbols Nerd Font Mono |
+| `U+F0E09` fond d'écran | panneau de réglages : ouvre l'utilitaire de changement de fond (phase 8b) | Symbols Nerd Font Mono |
 | `U+F0100` caméra, `U+F032A` feuille, `U+F05D1` balance, `U+F04C5` compteur, `U+F009B` cloche barrée, `U+F0176` café, `U+F0594` lune, `U+F0D7D` HDR, `U+F1104` écran (VRR), `U+F001D` avion, `U+F078` chevron bas | panneau de réglages : capture, économie / équilibré / performance, ne pas déranger, écran allumé, veilleuse, HDR, VRR, mode avion, liste dépliée | Symbols Nerd Font Mono |
 | icônes de lecteurs `U+F04B` (défaut), `U+F1FF` Discord, `U+F269` Firefox, `U+F268` Chromium, `U+F03D` io | module média, lecteur choisi à la molette (`player-icons` de Waybar, enfin atteignables) | FontAwesome 4.7 (défaut, io), Hack Nerd Font (Discord), Font Awesome 7 Brands (Firefox, Chromium) — relevé avec Pango |

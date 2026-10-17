@@ -35,7 +35,7 @@ Chaque commande a été rattachée à son paquet sur cette machine avec `pacman 
 | Horloge + fenêtre calendrier | natif (Qt) | `tzdata` (système) | — | Inter, Hack Nerd Font, Font Awesome 7 Free | — |
 | Réseau (débit) | natif (`/proc/net/dev`, `/proc/net/route`) | — | — | Inter, Hack Nerd Font | — |
 | Tray | natif (`Services.SystemTray` ; Quickshell fait aussi le rôle de « watcher ») | — | — | Inter (menus) | — |
-| Engrenage → panneau de réglages (remplace le power menu) | natif (`Pipewire`, `UPower`, `PowerProfiles`, `IdleInhibitor`, IPC du compositeur pour HDR / VRR) | `systemd` (redémarrer, éteindre), `wlsunset` (veilleuse), `util-linux` (`rfkill`, mode avion), `grim` + `slurp` + `wl-clipboard` + `xdg-user-dirs` (capture, jusqu'à la phase 8b) ; verrouiller → `swaylock` jusqu'à la phase 8b | `power-profiles-daemon` (3 boutons masqués sans lui) ; `brightnessctl` (luminosité, laptop) | Inter, Symbols Nerd Font Mono | `assets/{lock,logout,restart,shutdown}.svg` |
+| Engrenage → panneau de réglages (remplace le power menu) | natif (`Pipewire`, `UPower`, `PowerProfiles`, `IdleInhibitor`, IPC du compositeur pour HDR / VRR) | `systemd` (redémarrer, éteindre), `wlsunset` (veilleuse), `util-linux` (`rfkill`, mode avion), `grim` + `slurp` + `wl-clipboard` + `xdg-user-dirs` (capture, jusqu'à la phase 8b) ; verrouiller : natif (phase 8b) | `power-profiles-daemon` (3 boutons masqués sans lui) ; `brightnessctl` (luminosité, laptop) | Inter, Symbols Nerd Font Mono | `assets/{lock,logout,restart,shutdown}.svg` |
 | Bouton Arch → menu d'applications (remplace nwg-menu) | natif (`DesktopEntries`) | `xdg-user-dirs` (dossiers), `xdg-utils` (ouvrir dossiers et fichiers) ; boutons de session comme le panneau de réglages | — | Inter, Symbols Nerd Font Mono | `assets/{lock,logout,restart,shutdown}.svg`, icônes Papirus-Dark |
 | Batterie (laptop) | natif (`Services.UPower`) | — | `upower` (service système) | Symbols Nerd Font Mono (icônes v3 `U+F0079`…) | — |
 | Luminosité (laptop) | `/sys/class/backlight` | — | `brightnessctl` (écriture sans root) | Symbols Nerd Font Mono | — |
@@ -50,7 +50,8 @@ Thème d'icônes des applications (tray, lanceur, menu d'applications, notificat
 | Notifications | — (natif) | `libnotify` (tests `notify-send`) | Inter (police homogène ; Dunst : Noto Sans Mono) | — |
 | Lanceur | — (natif, `DesktopEntries`) | terminal pour les applis `Terminal=true` | Inter, Symbols Nerd Font Mono | — |
 | Menu d'applications (modèle Cinnamon, remplace nwg-menu) | — (natif, `DesktopEntries`) | à préciser en phase 8 (ex. ouverture de dossiers → gestionnaire de fichiers par défaut via `xdg-open`) | à préciser | — |
-| Verrouillage (design refait) | — (natif, `WlSessionLock` + PAM, `pam` installé avec `quickshell`) | — | à définir | — |
+| Verrouillage (design refait, phase 8b) | — (natif, `WlSessionLock` + `PamContext`, `pam` installé avec `quickshell`) | — | — | Inter |
+| Fond d'écran + utilitaire (phase 8b) | — (natif) | `xdg-user-dirs` (dossier Images) | dépôt privé des fonds cloné dans `~/Pictures/Wallpapers` | Inter, Symbols Nerd Font Mono |
 | Veille des écrans | — (natif, `IdleMonitor` + commande DPMS au compositeur) | — | — | — |
 | Agent polkit | — (natif, `PolkitAgent` ; `polkit` installé avec `quickshell`) | — | à définir | — |
 | Fond d'écran + utilitaire | — (natif) | — | à définir | dépôt `wallpapers` cloné dans `~/Pictures/Wallpapers` |
@@ -89,7 +90,7 @@ Ce que `install.sh` (phase 11) devra installer, activer ou vérifier — relevé
 | `upower`, `udisks2` | batterie, disques | activés à la demande par D-Bus | rien |
 | `polkit` | agent polkit natif, montage des disques sans mot de passe | actif (statique) | rien |
 | Services utilisateur `pipewire.socket`, `pipewire-pulse.socket`, `wireplumber` | audio, cava | activés | `systemctl --user enable --now …` |
-| Fichier PAM du verrouillage | `WlSessionLock` + `PamContext` vérifient le mot de passe ; aujourd'hui c'est `/etc/pam.d/swaylock` (installé par `swaylock`, qui sera retiré) | `swaylock`, `login`, `system-auth` présents | le dépôt fournit son propre fichier (`pam/qs-lock`, `auth include login`) lu via `PamContext.configDirectory`, sans rien écrire dans `/etc` **[à vérifier en phase 8b]** |
+| Fichier PAM du verrouillage | `WlSessionLock` + `PamContext` vérifient le mot de passe ; aujourd'hui c'est `/etc/pam.d/swaylock` (installé par `swaylock`, qui sera retiré) | `swaylock`, `login`, `system-auth` présents | **vérifié en phase 8b** : configuration `login` de `/etc/pam.d` (présente partout, celle qu'incluait swaylock) ; un fichier propre au dépôt ne marche pas (`include` se résout dans son propre dossier). Rien n'est écrit dans `/etc` |
 | Polices d'icônes (Symbols Nerd Font Mono, Hack Nerd Font, Font Awesome 7 Free / Brands, FontAwesome 4.7) | icônes de la barre (`THEME.md` § 2) | paquets (`ttf-nerd-fonts-symbols-mono`, `ttf-hack-nerd`, `otf-font-awesome`, `awesome-terminal-fonts`) | copiées depuis `assets/fonts/` dans `~/.local/share/fonts` + `fc-cache` ; aucun paquet nécessaire |
 | Images `assets/*.svg` | bouton Arch, power menu | dans `~/.config/sway/assets/` | versionnées dans le dépôt depuis la phase 1 (`THEME.md` § 12) |
 | Lien `~/.config/quickshell/desktop` → dépôt | lancement par `qs -c desktop` | créé en phase 1 | créé par `install.sh` |
