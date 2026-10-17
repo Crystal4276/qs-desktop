@@ -801,6 +801,13 @@ Trouvé en testant après la passe 7 et corrigé : à la première ouverture apr
 (la liste se remplit progressivement et la sélection suivait le premier élément arrivé). La sélection ne suit plus qu'un élément
 choisi au clavier ou à la souris. Vérifié : première ouverture (haut de liste), Bas ×3, survol.
 
+Passe 8 (confirmation) : **rien de sérieux**, fin de la boucle. Petites corrections faites : indice hors liste ignoré par `choose` ;
+choix effacé avant de changer de liste ; dossiers réassignés seulement s'ils changent, un seul mécanisme de relecture (à l'ouverture) ;
+`Apps.iconSource` supprimé (appel direct à `Icons.iconSource`) ; image de notification donnée par chemin ou nom d'icône acceptée.
+Vérifié (Sway isolé) : catégorie, retour à All Applications, icônes du lanceur.
+Bilan de la boucle : 8 passes, 10 → 10 → 8 → 8 → 8 → 9 → 5 → 7 points, de plus en plus mineurs ; dernier défaut notable trouvé en
+testant (sélection à la première ouverture).
+
 ### Reste à faire
 
 Phase 8 : rien d'autre au programme ; à valider par toi (rapport du 2026-10-17).

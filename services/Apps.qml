@@ -100,10 +100,6 @@ Singleton {
         onLoaded: favorites.ids = text().split("\n").filter(l => l.endsWith(".desktop")).map(l => l.slice(0, -".desktop".length))
     }
 
-    function iconSource(icon: string): string {
-        return Icons.iconSource(icon);
-    }
-
     function inHistory(entry: DesktopEntry): bool {
         return history.some(h => h.id === entry.id);
     }

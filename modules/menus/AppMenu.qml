@@ -76,6 +76,8 @@ OverlayPopup {
     }
 
     function choose(index: int): void {
+        if (index < 0 || index >= items.length)   // ligne en cours de retrait
+            return;
         selected = index;
         selectedId = items[index]?.id ?? "";
     }
@@ -154,12 +156,12 @@ OverlayPopup {
             return;
         screen = from.QsWindow.window.screen;
         anchorX = from.mapToItem(null, 0, 0).x - Theme.bar.pillBorder;
+        selectedId = "";   // avant le changement de liste : rien de choisi à suivre
+        contextEntry = null;
         search.text = "";
         category = "all";
         pane = "apps";
         selected = 0;
-        selectedId = "";
-        contextEntry = null;
         aiming = false;
         hoveredCategory = "";
         hoveredRow = null;
@@ -173,9 +175,9 @@ OverlayPopup {
     }
 
     function setCategory(key: string): void {
+        resetList();   // avant le changement de liste : rien de choisi à suivre
         search.text = "";
         category = key;
-        resetList();
         if (key === "recent" && !recentRead) {
             recentRead = true;
             Places.refreshRecent();   // une fois par ouverture, quand on l'affiche (fichier de plusieurs centaines de Ko)
@@ -444,7 +446,7 @@ OverlayPopup {
                             id: favorite
                             required property var modelData
                             Layout.fillWidth: true
-                            icon: Apps.iconSource(modelData.icon)
+                            icon: Icons.iconSource(modelData.icon)
                             label: modelData.name
                             onClicked: root.activate(root.appItem(modelData))
                             onRightClicked: (x, y) => context.show(modelData, favorite, x, y)
@@ -550,7 +552,7 @@ OverlayPopup {
                                 required property int index
                                 width: list.width
                                 iconSize: Theme.appMenu.largeIconSize
-                                icon: modelData.entry ? Apps.iconSource(modelData.entry.icon) : Icons.mimeIcon(modelData.mime)
+                                icon: modelData.entry ? Icons.iconSource(modelData.entry.icon) : Icons.mimeIcon(modelData.mime)
                                 label: modelData.name
                                 description: modelData.description ?? ""
                                 highlighted: root.pane === "apps" && root.selected === index

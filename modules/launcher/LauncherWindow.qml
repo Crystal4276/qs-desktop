@@ -331,7 +331,7 @@ OverlayPopup {
                                 IconImage {
                                     anchors.verticalCenter: parent.verticalCenter
                                     implicitSize: Theme.launcher.itemIconSize
-                                    source: Apps.iconSource(row.modelData.icon)
+                                    source: Icons.iconSource(row.modelData.icon)
                                 }
 
                                 Text {
