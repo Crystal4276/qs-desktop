@@ -785,6 +785,14 @@ Vérifié (Sway isolé) : Tab ×3 puis Échap (menu fermé), Tab ×3 sans souris
 (ouvert, fermé) ; cloche gauche puis droit. Non testé ici (agirait sur ton vrai son) : clic gauche ou du milieu sur l'icône du
 volume, panneau audio ouvert.
 
+Passe 6 : 9 points, plus aucun défaut fréquent.
+- Corrigés : largeur du menu limitée à l'écran (écran étroit de laptop : la colonne des applications se resserre) ; historique effacé
+  qui pouvait réapparaître (vérification en cours ignorée) ; changement de user-dirs.dirs pendant une relecture (relu ensuite) ;
+  menu contextuel fermé si les applications sont relues ; catégorie survolée oubliée quand la liste des catégories est recréée.
+- Jugés négligeables : deux chemins pour la sélection au survol (mêmes conditions) ; fermeture diffusée à chaque type de popup
+  (maintenabilité) ; double garde de lecture des récents ; icônes génériques de shared-mime-info (cosmétique).
+Vérifié (Sway isolé) : menu à 2560 px (inchangé) et sur un écran de 900 px (tient dans l'écran).
+
 ### Reste à faire
 
 Phase 8 : rien d'autre au programme ; à valider par toi (rapport du 2026-10-17).
