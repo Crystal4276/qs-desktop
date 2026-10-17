@@ -20,13 +20,13 @@ OverlayPopup {
     property string expanded: ""   // "sink", "source" ou "" : liste de périphériques dépliée
 
     // Sous le bouton, centré, sans dépasser les marges de la barre (comme les panneaux du tray).
-    function toggle(button: Item): void {
-        if (!beginOpen())
+    function toggle(from: Item, fromPress: bool): void {
+        if (!beginOpen(from, fromPress))
             return;
-        const window = button.QsWindow.window;
+        const window = from.QsWindow.window;
         screen = window.screen;
-        const x = button.mapToItem(null, 0, 0).x;
-        frame.x = Math.max(Theme.bar.marginSide, Math.min(x + (button.width - frame.width) / 2, window.width - Theme.bar.marginSide - frame.width));
+        const x = from.mapToItem(null, 0, 0).x;
+        frame.x = Math.max(Theme.bar.marginSide, Math.min(x + (from.width - frame.width) / 2, window.width - Theme.bar.marginSide - frame.width));
         visible = true;
         frame.forceActiveFocus();
     }

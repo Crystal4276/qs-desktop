@@ -14,7 +14,7 @@ import qs.modules.bar
 // Ctrl+Maj+Entrée dans un terminal, Haut/Bas/Tab/Pages/Début/Fin pour la sélection, Ctrl+Haut/Bas pour les textes déjà saisis,
 // Maj+Suppr retire de l'historique, raccourcis d'édition Emacs de Rofi, Échap ferme.
 // Souris : clic = sélection, double clic = lancement, molette = ligne suivante ou précédente. Défilement par page.
-PanelWindow {
+OverlayPopup {
     id: root
 
     property int selected: 0
@@ -29,8 +29,10 @@ PanelWindow {
     property var inputHistory: []
     property int inputIndex: 0
 
+    // Déjà ouvert : remis à zéro sur place (sans se fermer, ce qui enregistrerait la saisie en cours).
     function open(): void {
-        BarState.closePopups();   // jamais deux surfaces au clavier exclusif l'une sur l'autre
+        if (!visible)
+            BarState.closePopups();   // jamais deux surfaces au clavier exclusif l'une sur l'autre
         screen = Quickshell.screens.find(s => s.name === Compositor.focusedOutput) ?? Quickshell.screens[0];
         inputHistory = [...Apps.inputs, ""];
         inputIndex = inputHistory.length - 1;
@@ -38,14 +40,6 @@ PanelWindow {
         selected = 0;
         visible = true;
         input.forceActiveFocus();
-    }
-
-    function close(): void {
-        if (!visible)
-            return;
-        inputHistory[inputIndex] = input.text;
-        Apps.saveInputs(inputHistory);
-        visible = false;
     }
 
     function toggle(): void {
@@ -163,41 +157,13 @@ PanelWindow {
         return true;
     }
 
-    visible: false
+    // Surface de la couche Overlay sur tout l'écran (OverlayPopup) : clavier réservé, un clic à côté, sur une barre ou sur un autre
+    // écran ferme (`click-to-exit` de Rofi). À la fermeture, la saisie rejoint les textes déjà saisis.
     WlrLayershell.namespace: "quickshell-launcher"
-    WlrLayershell.layer: WlrLayer.Overlay
-    WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
-    anchors {
-        top: true
-        bottom: true
-        left: true
-        right: true
-    }
-    exclusiveZone: 0
-    color: "transparent"
-
-    onVisibleChanged: BarState.setPopupOpen(root, visible)
-    Component.onDestruction: BarState.setPopupOpen(root, false)
-
-    Connections {
-        target: BarState
-        function onClosePopups() {
-            root.close();
-        }
-    }
-
-    // Clic sur un autre écran : fermeture (sinon le lanceur garderait le clavier).
-    OutsideClick {
-        active: root.visible
-        screen: root.screen
-        onPressed: root.close()
-    }
-
-    // Clic à côté du cadre : fermeture.
-    MouseArea {
-        anchors.fill: parent
-        acceptedButtons: Qt.AllButtons
-        onPressed: root.close()
+    frameItem: frame
+    onClosing: {
+        inputHistory[inputIndex] = input.text;
+        Apps.saveInputs(inputHistory);
     }
 
     Rectangle {

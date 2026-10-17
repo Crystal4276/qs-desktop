@@ -474,10 +474,12 @@ ce projet, **sans dépendance ni emprunt à Cinnamon** (ta consigne) : catégori
 - **Hauteur** : au plus celle de l'écran sous la barre ; au-delà, chaque colonne défile (petit écran de laptop). Colonne de gauche :
   270 px au plus (noms de favoris abrégés au-delà). Curseur de défilement à faire glisser.
 - **Un seul popup à la fois** : ouvrir le menu, le panneau de réglages ou le lanceur ferme les autres (`OverlayPopup.beginOpen`,
-  `BarState.closePopups`). Chaque barre a son menu ; le raccourci (`qs ipc call menu toggle`, de même pour `settings`) ferme celui qui
-  est ouvert, quel que soit l'écran, sinon ouvre celui de l'écran focalisé (`BarState.toggleFrom`).
-- Base commune du menu et du panneau de réglages : `modules/bar/OverlayPopup.qml` (surface Overlay plein écran, clavier exclusif,
-  fermeture par un appui à côté, sur une barre ou sur un autre écran).
+  `BarState.closePopups`). Le menu et le panneau de réglages existent **en un seul exemplaire** (`BarState`), placé sous le bouton
+  qui l'ouvre, sur son écran : un clic sur le bouton d'un autre écran l'y déplace ; le raccourci (`qs ipc call menu toggle`, de même
+  pour `settings`) le ferme s'il est ouvert, où qu'il soit, sinon l'ouvre sous le bouton de l'écran focalisé. Seul l'appui sur le
+  bouton qui vient de le fermer ne le rouvre pas (garde de 400 ms) ; un raccourci rouvre toujours.
+- Base commune du menu, du panneau de réglages et du lanceur : `modules/bar/OverlayPopup.qml` (surface Overlay plein écran, clavier
+  exclusif, fermeture par un appui à côté, sur une barre ou sur un autre écran ; signal `closing`).
 - **Recherche** en bas : la saisie va toujours au champ ; même recherche que le lanceur (`Apps.filter`). **Le survol n'efface jamais la
   recherche** (défaut de nwg-menu, ta demande) : pendant une recherche, survoler une catégorie ne fait rien ; seul un clic la quitte.
 - **Applications** : nom + description (commentaire, sinon nom générique), par nom ; clic ou Entrée : lancement (`Apps.launch`, compté

@@ -1,22 +1,14 @@
 import QtQuick
-import Quickshell
 import qs.config
-import qs.modules.menus
 
 // Bouton Arch (INVENTORY.md § 1, `custom/menu`) : logo vert sur `mantle` ; survol (ou menu ouvert) : logo `mantle` sur fond vert.
 // Largeur min. 40 px + padding horizontal 10 px ; logo 38 px de large. Aucune transition.
-// Un appui ouvre ou ferme le menu d'applications (modules/menus/AppMenu.qml, chargé à sa première ouverture) ;
-// `qs ipc call menu toggle` passe par le bouton de l'écran focalisé (BarState).
+// Un appui ouvre ou ferme le menu d'applications (modules/menus/AppMenu.qml, un seul pour toutes les barres : BarState) ;
+// `qs ipc call menu toggle` passe par le bouton de l'écran focalisé.
 Item {
     id: root
 
-    readonly property bool open: menu.item?.visible ?? false
-    readonly property bool active: hover.hovered || open
-
-    function toggle(): void {
-        menu.active = true;
-        menu.item.toggle(root);
-    }
+    readonly property bool active: hover.hovered || BarState.menuButton === root
 
     implicitWidth: Theme.bar.menuButtonMin + 2 * Theme.bar.menuButtonPadding
     implicitHeight: Theme.bar.menuButtonMin
@@ -43,13 +35,7 @@ Item {
 
     MouseArea {
         anchors.fill: parent
-        onPressed: root.toggle()
-    }
-
-    LazyLoader {
-        id: menu
-
-        AppMenu {}
+        onPressed: BarState.toggleMenu(root, true)
     }
 
     Component.onCompleted: BarState.registerMenu(root)

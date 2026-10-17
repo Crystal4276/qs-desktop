@@ -33,7 +33,8 @@ OverlayPopup {
     property bool mouseMoved: false
     property bool aiming: false
     property string hoveredCategory: ""
-    property int hoveredApp: -1     // ligne d'application sous le pointeur (-1 : aucune)
+    property string hoveredApp: ""  // identifiant de l'application ou du fichier sous le pointeur ("" : aucun) ; pas l'indice,
+                                    // qui change quand la liste change sous un pointeur immobile
     property var mimeIconCache: ({})
 
     readonly property var categories: [
@@ -99,9 +100,10 @@ OverlayPopup {
         mouseMoved = true;
         aimStop.restart();
         // Ligne survolée avant que ce mouvement soit vu (ordre des événements) ou sous un pointeur resté immobile : prise maintenant.
-        if (hoveredApp >= 0 && (pane !== "apps" || selected !== hoveredApp)) {
+        const hovered = hoveredApp === "" ? -1 : items.findIndex(item => item.id === hoveredApp);
+        if (hovered >= 0 && (pane !== "apps" || selected !== hovered)) {
             pane = "apps";
-            selected = hoveredApp;
+            selected = hovered;
         }
     }
 
@@ -116,11 +118,11 @@ OverlayPopup {
     }
 
     // Sous le bouton, aligné sur le bord gauche de sa pilule (nwg-menu : 10 px sous la barre).
-    function toggle(button: Item): void {
-        if (!beginOpen())
+    function toggle(from: Item, fromPress: bool): void {
+        if (!beginOpen(from, fromPress))
             return;
-        screen = button.QsWindow.window.screen;
-        anchorX = button.mapToItem(null, 0, 0).x - Theme.bar.pillBorder;
+        screen = from.QsWindow.window.screen;
+        anchorX = from.mapToItem(null, 0, 0).x - Theme.bar.pillBorder;
         search.text = "";
         category = "all";
         pane = "apps";
@@ -129,7 +131,7 @@ OverlayPopup {
         mouseMoved = false;
         aiming = false;
         hoveredCategory = "";
-        hoveredApp = -1;
+        hoveredApp = "";
         pointer = Qt.point(-1, -1);
         Places.refreshRecent();
         list.positionViewAtBeginning();
@@ -529,9 +531,9 @@ OverlayPopup {
                                 highlighted: root.pane === "apps" && root.selected === index
                                 onHoveredChanged: {
                                     if (hovered)
-                                        root.hoveredApp = index;
-                                    else if (root.hoveredApp === index)
-                                        root.hoveredApp = -1;
+                                        root.hoveredApp = modelData.id;
+                                    else if (root.hoveredApp === modelData.id)
+                                        root.hoveredApp = "";
                                     if (hovered && root.mouseMoved) {
                                         root.pane = "apps";
                                         root.selected = index;

@@ -80,8 +80,9 @@ Singleton {
         }
     }
 
-    // Fichiers encore présents (supprimés, déplacés, disque démonté : omis). Liste relue pendant une vérification : le résultat en
-    // cours, qui porte sur l'ancienne liste, est ignoré et la vérification reprend sur la nouvelle.
+    // Fichiers encore présents (supprimés, déplacés, disque démonté : omis). Chaque vérification porte sur sa propre liste
+    // (`checking`) et ne filtre qu'elle ; une liste relue pendant ce temps est vérifiée juste après.
+    property var checking: []
     property bool existsAgain: false
 
     function checkExists(): void {
@@ -89,7 +90,8 @@ Singleton {
             existsAgain = true;
             return;
         }
-        exists.command = ["sh", "-c", `for f; do [ -e "$f" ] && printf '%s\\n' "$f"; done; exit 0`, "sh", ...parsed.map(f => f.path)];
+        checking = parsed;
+        exists.command = ["sh", "-c", `for f; do [ -e "$f" ] && printf '%s\\n' "$f"; done; exit 0`, "sh", ...checking.map(f => f.path)];
         exists.running = true;
     }
 
@@ -97,10 +99,8 @@ Singleton {
         id: exists
         stdout: StdioCollector {
             onStreamFinished: {
-                if (root.existsAgain)
-                    return;
                 const present = new Set(text.split("\n"));
-                root.recent = root.parsed.filter(f => present.has(f.path));
+                root.recent = root.checking.filter(f => present.has(f.path));
             }
         }
         onExited: {

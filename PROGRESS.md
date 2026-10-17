@@ -679,6 +679,21 @@ clic droit puis survol d'une catégorie (menu contextuel fermé, catégorie pris
 pointeur immobile ; Pages dans les catégories ; glissement du curseur jusqu'en bas sur un écran de 500 px ; six ouvertures rapides
 puis Recent Files rempli.
 
+### Revue de code du menu, troisième passe (2026-10-17) : 7 problèmes, tous traités
+
+1. Ligne survolée retenue par son identifiant (l'indice changeait avec la liste : sélection d'une autre ligne, ou hors liste).
+2. Lanceur : `open` sur un lanceur déjà ouvert le remet à zéro sans se fermer (la saisie était enregistrée comme déjà tapée).
+3. Fichiers récents : chaque vérification ne filtre que la liste qu'elle a vérifiée (indépendant de l'ordre des signaux).
+4. Garde de 400 ms limitée à l'appui sur le bouton qui vient de fermer le panneau : un raccourci rapide rouvre toujours.
+5. Menu et panneau de réglages en un seul exemplaire (`BarState`), déplacés sous le bouton qui les ouvre.
+6. Le lanceur s'appuie aussi sur `OverlayPopup` (plus de copie de la surface, des fermetures et de la règle « un seul popup »).
+7. Largeur de la colonne de gauche : posée sans te demander ; tu as choisi 270 px.
+Vérifié dans le Sway isolé, avec deux écrans virtuels et une copie de config où la barre secondaire a aussi le bouton Arch et
+l'engrenage : menu ouvert sur l'écran 1, clic sur le bouton de l'écran 2 (le menu s'y déplace), re-clic (fermé) ; trois raccourcis
+rapides (ouvert, fermé, ouvert) ; menu ouvert à la souris puis raccourci (fermé) ; lanceur ouvert deux fois (reste ouvert) ; saisie
+sous un pointeur immobile puis un pixel de mouvement (la ligne sous le pointeur est prise). Historique du lanceur recréé par
+l'instance de test supprimé (reprise de Rofi gardée).
+
 ### Reste à faire
 
 Phase 8 : rien d'autre au programme ; à valider par toi (rapport du 2026-10-17).

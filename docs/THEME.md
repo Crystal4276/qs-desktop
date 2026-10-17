@@ -321,8 +321,8 @@ boutons lock/logout/reboot/power : survol `rgba(255,255,255,0.1)` + bordure `ove
 Menu QML (phase 8, disposition de Cinnamon) : texte Inter 20 px, recherche 24 px, descriptions 16 px `subtext0` ; cadre : padding et
 écarts des panneaux (15 / 10 px) ; colonne des applications : largeur du lanceur (500 px) ; boutons de session : tes SVG en 32 px (comme
 le panneau de réglages) ; curseur de défilement du thème GTK : gouttière 25 px, bordure transparente 4 px, au moins 24 px de haut.
-**Proposé, à valider** : colonne de gauche de 270 px au plus (les 180 px de Cinnamon pour un texte de 10 pt, ramenés au texte de
-20 px) ; les deux tailles d'icônes de nwg-menu réparties sur la disposition de Cinnamon — **48 px pour les applications**
+Colonne de gauche de 270 px au plus (les 180 px de Cinnamon pour un texte de 10 pt, ramenés au texte de 20 px ; ton choix du
+2026-10-17). **Proposé, à valider** : les deux tailles d'icônes de nwg-menu réparties sur la disposition de Cinnamon — **48 px pour les applications**
 (nom + description sur deux lignes), **24 px pour les catégories, dossiers et favoris** (nwg-menu : 48 px pour ses catégories).
 Icônes Papirus : `applications-*` pour les catégories, `preferences-desktop` (Preferences), `applications-all`, `document-open-recent`,
 `user-home` et `folder-*` pour les dossiers, icônes des types de fichiers pour les récents.
