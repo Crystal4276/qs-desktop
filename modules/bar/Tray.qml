@@ -51,7 +51,7 @@ Item {
                         const item = icon.modelData;
                         if ((mouse.button === Qt.LeftButton && item.onlyMenu) || mouse.button === Qt.RightButton) {
                             if (item.hasMenu)
-                                menu.openAt(item.menu, icon, mouse.x, mouse.y);
+                                menu.openAt(item.menu, icon, mouse.x, mouse.y, Qt.RightButton | (item.onlyMenu ? Qt.LeftButton : 0));
                             else {
                                 const p = icon.mapToItem(null, mouse.x, mouse.y);
                                 item.display(icon.QsWindow.window, p.x, p.y);
@@ -126,17 +126,17 @@ Item {
     TrayMenu {
         id: menu
 
-        // Clic qui ouvre ce menu (droit, ou gauche pour une icône sans autre action) sur son icône : la barre le laisse, ce clic
-        // le ferme.
+        // Clic qui ouvre ce menu sur son icône (`buttons`) : la barre le laisse, ce clic le ferme.
         readonly property Item owner: open ? anchor.item : null
-        readonly property int ownerButtons: Qt.RightButton | (anchor.item?.modelData?.onlyMenu ? Qt.LeftButton : 0)
+        property int ownerButtons: Qt.RightButton
 
-        function openAt(handle: var, item: Item, x: real, y: real): void {
+        function openAt(handle: var, item: Item, x: real, y: real, buttons: int): void {
             if (open && anchor.item === item) {
                 open = false;
                 return;
             }
             open = false;
+            ownerButtons = buttons;
             menu.menu = handle;
             anchor.item = item;
             anchor.rect.x = x;

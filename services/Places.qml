@@ -33,9 +33,12 @@ Singleton {
             recentWanted = true;
     }
 
-    // Relus à chaque ouverture du menu (dossier créé, user-dirs.dirs modifié).
-    function refreshFolders(): void {
-        folderList.running = true;
+    // Relus quand user-dirs.dirs change (dossiers XDG redéfinis).
+    FileView {
+        path: `${Quickshell.env("XDG_CONFIG_HOME") || `${root.home}/.config`}/user-dirs.dirs`
+        printErrors: false
+        watchChanges: true
+        onFileChanged: folderList.running = true
     }
 
     Process {
@@ -59,6 +62,10 @@ Singleton {
         id: recentFile
         path: root.recentWanted ? `${Quickshell.env("XDG_DATA_HOME") || `${root.home}/.local/share`}/recently-used.xbel` : ""
         printErrors: false
+        onLoadFailed: {   // fichier supprimé (historique effacé) : plus de fichiers récents
+            root.parsed = [];
+            root.recent = [];
+        }
         onLoaded: {
             const list = [];
             const bookmark = /<bookmark\b([^>]*)>([\s\S]*?)<\/bookmark>/g;   // pas de String.matchAll dans le moteur de Qt
