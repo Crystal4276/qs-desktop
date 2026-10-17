@@ -126,7 +126,15 @@ Item {
     TrayMenu {
         id: menu
 
+        // Clic droit sur l'icône dont le menu est ouvert : la barre le laisse, ce clic le ferme.
+        readonly property Item owner: open ? anchor.item : null
+        readonly property int ownerButtons: Qt.RightButton
+
         function openAt(handle: var, item: Item, x: real, y: real): void {
+            if (open && anchor.item === item) {
+                open = false;
+                return;
+            }
             open = false;
             menu.menu = handle;
             anchor.item = item;
@@ -142,8 +150,9 @@ Item {
 
         Connections {
             target: BarState
-            function onClosePopups() {
-                menu.open = false;
+            function onClosePopups(keep) {
+                if (!keep.includes(menu))
+                    menu.open = false;
             }
         }
     }

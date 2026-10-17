@@ -33,6 +33,7 @@ OverlayPopup {
 
     WlrLayershell.namespace: "quickshell-settings"
     frameItem: frame
+    ownerButtons: Qt.LeftButton | Qt.RightButton   // l'engrenage accepte les deux
     onVisibleChanged: if (!visible) expanded = ""
 
     PanelFrame {

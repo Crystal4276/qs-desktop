@@ -741,6 +741,19 @@ seuls) ; engrenage (fermé) ; horloge ×3 (épinglé, fermé, épinglé) ; Écha
 raccourci sous un pointeur posé sur les catégories (All Applications, première ligne) ; clic sur la bordure du menu contextuel (rien
 lancé) ; Entrée dans le menu contextuel (favori ajouté puis retiré : tes 4 favoris) ; Recent Files rempli.
 
+Passe 2 : 10 points.
+- Corrigés : icône d'un panneau du tray ouvert qui le refermait puis le rouvrait (les panneaux et le menu du tray ont aussi un
+  `owner`) ; clic droit ou du milieu sur le bouton d'un panneau ouvert qui ne faisait rien (`ownerButtons` : boutons gérés) ; clic
+  ailleurs dans le menu, menu contextuel ouvert, qui agissait (il ne fait plus que le fermer) ; survol jugé avant que le mouvement
+  soit vu (décidé après l'événement, sur le compteur de mouvements du cadre : plus de bascule de catégorie ni de sélection quand la
+  liste change sous un pointeur immobile) ; position du menu contextuel recalculée avec sa taille ; chemins d'icônes encodés
+  (`Icons.fileUrl`, partagé avec les notifications et le tray) ; exception de `closePopups` passée en argument (plus d'état global).
+- Gardé : les deux protections de la vérification des fichiers récents (le numéro protège de l'ordre des signaux).
+- Tailles d'icônes du menu : à te demander (fin de boucle).
+Vérifié (Sway isolé, deux barres) : Arch, clic droit sur Arch (fermé), engrenage, clic droit sur l'engrenage (fermé), horloge ×2,
+Arch ×2 ; cloche du tray ×3 et clic droit ; clic sur une autre ligne, menu contextuel ouvert (fermé, rien lancé) ; diagonale (Games
+gardé) ; descente (Internet) ; saisie sous un pointeur immobile (première ligne) puis Bas ×2.
+
 ### Reste à faire
 
 Phase 8 : rien d'autre au programme ; à valider par toi (rapport du 2026-10-17).

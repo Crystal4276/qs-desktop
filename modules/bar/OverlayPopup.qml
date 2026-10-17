@@ -11,6 +11,7 @@ PanelWindow {
     property Item frameItem    // cadre visible du panneau
     property Item button       // bouton sous lequel il est (ou a été) ouvert
     readonly property Item owner: visible ? button : null   // appui sur ce bouton : la barre laisse le bouton le fermer
+    property int ownerButtons: Qt.LeftButton                 // boutons de souris que gère ce bouton
 
     signal closing   // juste avant la fermeture (lanceur : enregistre la saisie)
 
@@ -27,7 +28,7 @@ PanelWindow {
     // Les autres popups se ferment ; `from` : bouton d'ancrage, ou null (lanceur).
     function prepareOpen(from: Item): void {
         if (!visible)
-            BarState.closePopups();
+            BarState.closePopups([]);
         if (from)
             button = from;
     }
@@ -65,8 +66,8 @@ PanelWindow {
 
     Connections {
         target: BarState
-        function onClosePopups() {
-            if (!BarState.keepOpen.includes(root))
+        function onClosePopups(keep) {
+            if (!keep.includes(root))
                 root.close();
         }
     }

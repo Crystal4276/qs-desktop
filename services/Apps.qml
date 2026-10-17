@@ -104,7 +104,7 @@ Singleton {
     function iconSource(icon: string): string {
         if (icon === "")
             return "";
-        return icon.startsWith("/") ? `file://${icon}` : Quickshell.iconPath(icon, true);
+        return icon.startsWith("/") ? Icons.fileUrl(icon) : Quickshell.iconPath(icon, true);
     }
 
     function inHistory(entry: DesktopEntry): bool {
