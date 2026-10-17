@@ -816,6 +816,10 @@ Phase 8 : rien d'autre au programme ; à valider par toi (rapport du 2026-10-17)
 
 Validation de la phase 8 (menu d'applications), puis phase 8b (fond d'écran, verrouillage, veille, polkit, capture, statistiques).
 
+Rappel pour la phase 10 : l'historique du lanceur (`~/.local/state/quickshell/by-shell/desktop/launcher.json`) est repris de Rofi
+quand il n'existe pas, et toute instance de test le recrée. Le supprimer juste avant la bascule, pour reprendre l'historique Rofi le
+plus récent.
+
 Décidé le 2026-10-16 pour la phase 8 (`ARCHITECTURE.md` § 10.1.4) : **plus de power menu séparé** ; le bouton power devient un
 **engrenage blanc** (`U+F013`) qui ouvre un panneau de réglages façon GNOME : capture d'écran, tes 4 icônes d'alimentation (sans veille ni
 confirmation), son, micro, luminosité (laptop), profil d'énergie, ne pas déranger, écran allumé, VRR, HDR, veilleuse (`wlsunset`, installé
