@@ -128,7 +128,11 @@ Scope {
     }
 
     WlSessionLock {
+        id: sessionLock
+
         locked: root.locked
+        // Verrouillage confirmé par le compositeur : connu de Session (verrouillage avant la mise en veille, services/Idle.qml).
+        onSecureChanged: Session.locked = secure
 
         WlSessionLockSurface {
             id: surface

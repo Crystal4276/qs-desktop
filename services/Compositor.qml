@@ -144,7 +144,7 @@ Singleton {
             console.warn("Compositor: placement des espaces écrit pour une config Hyprland en Lua seulement");
             return;
         }
-        console.info("Compositor: placement des espaces :", calls.join("; "));
+        console.info("Compositor: actions Hyprland :", calls.join("; "));
         Hyprland.dispatch(`function() ${calls.map(c => `hl.dispatch(${c})`).join(" ")} end`);
     }
 
@@ -167,6 +167,21 @@ Singleton {
     function setVrr(names: var, on: bool): void {
         if (isSway && names.length > 0)
             I3.dispatch(names.map(n => `output "${n}" adaptive_sync ${on ? "on" : "off"}`).join("; "));
+    }
+
+    // Alimentation des écrans (veille, services/Idle.qml) : `names` vide = tous. Sway : `output X power on|off` ;
+    // Hyprland : `hl.dsp.dpms` (config Lua) ou `dpms` (config classique), comme hypridle.
+    function setPower(names: var, on: bool): void {
+        if (isSway) {
+            I3.dispatch((names.length > 0 ? names : ["*"]).map(n => `output ${n === "*" ? "*" : `"${n}"`} power ${on ? "on" : "off"}`).join("; "));
+        } else if (isHyprland) {
+            const mode = on ? "on" : "off";
+            if (Hyprland.usingLua)
+                hyprlandBatch(names.length > 0 ? names.map(n => `hl.dsp.dpms({ mode = "${mode}", monitor = "${n}" })`)
+                    : [`hl.dsp.dpms({ mode = "${mode}" })`]);
+            else
+                (names.length > 0 ? names : [""]).forEach(n => Hyprland.dispatch(`dpms ${mode}${n ? ` ${n}` : ""}`));
+        }
     }
 
     // Quitte la session (Logout) : `swaymsg exit`, `hl.dsp.exit()` (le power menu Rofi appelait swaymsg même sous Hyprland).

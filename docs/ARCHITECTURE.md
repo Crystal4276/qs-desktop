@@ -536,6 +536,20 @@ Voir `WALLPAPERS.md` § « Mise en œuvre ». Remplace `swaybg` (Sway) et le fon
 - Tests : PAM factice (`pam_permit` / `pam_deny`) dans un dossier temporaire, branché seulement dans une configuration de test
   (`LockScreen.pamDirectory`) ; le verrouillage réel avec ton mot de passe est dans la liste « À faire par toi ».
 
+### 10.1.8 Phase 8b : veille des écrans (2026-10-17)
+
+- `services/Idle.qml` : `IdleMonitor` (inhibitions respectées : règles `inhibit_idle` du compositeur, « Keep Screen On », vidéos
+  des applications Wayland). Après `idle.timeout` s (300 par défaut, comme swayidle et hypridle) : `Compositor.setPower` éteint les
+  écrans (Sway `output * power off`, Hyprland `hl.dsp.dpms`). Reprise : rallumés, l'écran principal `idle.primaryWakeDelay` s après
+  les autres (3 s sur cette machine, repris de hypridle ; 0 par défaut). Le suivi est relancé quand le délai change (la config
+  machine est lue après sa création ; sinon le délai par défaut restait en place — vérifié).
+- Verrouillage avant la mise en veille du système (`idle.lockBeforeSleep`, par défaut sur une machine avec batterie) : verrou
+  « delay » de logind (`systemd-inhibit`), `PrepareForSleep` suivi par `gdbus monitor` ; écran verrouillé puis verrou relâché (au plus
+  2 s). Ton desktop ne verrouille pas aujourd'hui avant la veille : désactivé ici (pas de batterie).
+- Non repris : les inhibitions D-Bus (`org.freedesktop.ScreenSaver`) que hypridle respectait — les applications Wayland passent par
+  le protocole d'inhibition, que `IdleMonitor` respecte.
+- IPC de test : `qs ipc call idle state`.
+
 ### 10.2 Bluetooth : appairage et code PIN
 
 Vérifié :

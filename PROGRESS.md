@@ -224,6 +224,8 @@ Liste tenue à jour à chaque phase ; à dérouler une fois le projet terminé.
   (l'appareil doit se connecter et rester approuvé) ; NordVPN qui apparaît dans le tray quand le démon démarre après la session.
 - **Deuxième passe** : vraie touche de volume / micro une fois les raccourcis branchés (phase 10) ; connexion limitée (Wi-Fi d'hôtel avec
   portail, ou câble sans Internet) ; sur le laptop : OSD de luminosité et alerte de batterie à 30 % et 15 %.
+- **Veille (phase 8b)** : écrans éteints après 5 min sans activité, rallumés (principal 3 s après) ; sur le laptop, verrouillage
+  avant la mise en veille (fermer le capot, rouvrir : écran verrouillé).
 - **Verrouillage (phase 8b)** : verrouiller depuis le panneau de réglages, déverrouiller avec ton vrai mot de passe (une erreur
   d'abord, pour voir le message) ; majuscules verrouillées ; sur tes trois écrans.
 - **Fond d'écran (phase 8b)** : utilitaire depuis le bouton du panneau de réglages ; image pour un seul écran (tes deux LG doivent
@@ -843,6 +845,16 @@ outil de capture ; fenêtre de statistiques système.
   accepté (déverrouillé, bureau rendu) ; arrêt brutal de Quickshell pendant le verrouillage (session gardée verrouillée par Sway),
   nouvelle instance qui reprend le verrou et déverrouille ; deux écrans (champ sur l'écran focalisé, puis sur celui qui reçoit la
   frappe).
+
+### Veille des écrans : faite (2026-10-17)
+
+- `services/Idle.qml` (`ARCHITECTURE.md` § 10.1.8) : écrans éteints après 300 s, rallumés avec l'écran principal 3 s après les
+  autres (config machine, repris de hypridle) ; verrouillage avant la mise en veille du système sur un laptop.
+- Vérifié dans un Sway isolé à deux écrans (délai de 5 s, principal à 2 s) : extinction des deux écrans ; réveil au mouvement
+  (secondaire d'abord, principal ensuite) ; « Keep Screen On » activé dans le panneau de réglages : plus d'extinction. Défaut trouvé
+  et corrigé : le délai lu dans la config machine n'était pas pris en compte (suivi relancé quand il change).
+- Non testable ici : verrouillage avant la mise en veille (laptop, liste « À faire par toi ») ; tant que swayidle tourne (avant la
+  phase 10), les deux éteignent les écrans, sans conflit.
 
 ## Prochaine étape
 
