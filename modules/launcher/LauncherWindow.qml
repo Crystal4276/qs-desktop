@@ -158,8 +158,7 @@ OverlayPopup {
         return true;
     }
 
-    // Surface de la couche Overlay sur tout l'écran (OverlayPopup) : clavier réservé, un clic à côté, sur une barre ou sur un autre
-    // écran ferme (`click-to-exit` de Rofi). À la fermeture, la saisie rejoint les textes déjà saisis.
+    // OverlayPopup (`click-to-exit` de Rofi) ; à la fermeture, la saisie rejoint les textes déjà saisis.
     WlrLayershell.namespace: "quickshell-launcher"
     frameItem: frame
     onClosing: {

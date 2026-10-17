@@ -80,11 +80,10 @@ Singleton {
         }
     }
 
-    // Fichiers encore présents (supprimés, déplacés, disque démonté : omis). Chaque vérification est numérotée : sa sortie commence
-    // par son numéro et ne filtre que la liste qu'elle a vérifiée (`checks`), quel que soit l'ordre des signaux. Liste relue pendant
-    // une vérification : une autre suit dès que le processus est fini.
+    // Fichiers encore présents (supprimés, déplacés, disque démonté : omis). La sortie commence par le numéro de la vérification :
+    // seule la dernière lancée est appliquée, à sa liste (`checking`). Liste relue entre-temps : nouvelle vérification ensuite.
     property int checkNumber: 0
-    property var checks: ({})
+    property var checking: []
     property bool existsAgain: false
 
     function checkExists(): void {
@@ -93,7 +92,7 @@ Singleton {
             return;
         }
         checkNumber++;
-        checks = { [checkNumber]: parsed };   // une seule vérification à la fois : les précédentes sont oubliées
+        checking = parsed;
         exists.command = ["sh", "-c", `printf '%s\\n' "$0"; for f; do [ -e "$f" ] && printf '%s\\n' "$f"; done; exit 0`,
             String(checkNumber), ...parsed.map(f => f.path)];
         exists.running = true;
@@ -104,11 +103,10 @@ Singleton {
         stdout: StdioCollector {
             onStreamFinished: {
                 const lines = text.split("\n");
-                const checked = root.checks[lines[0]];
-                if (!checked)
+                if (lines[0] !== String(root.checkNumber))
                     return;
                 const present = new Set(lines.slice(1));
-                root.recent = checked.filter(f => present.has(f.path));
+                root.recent = root.checking.filter(f => present.has(f.path));
             }
         }
         onExited: {

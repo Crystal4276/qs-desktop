@@ -724,6 +724,23 @@ Vérifié dans le Sway isolé, deux écrans : menu puis réglages par raccourci 
 (fermé) ; calendrier épinglé, Échap puis clic immédiat (épinglé), clic (fermé, pas rouvert), clic (épinglé) ; recherche qui retire la
 ligne survolée puis la rétablit (ligne sous le pointeur choisie) ; Recent Files rempli.
 
+### Revues en boucle (2026-10-17, à ta demande : jusqu'à ne plus trouver que du négligeable)
+
+Passe 1 (tout le travail du menu et des popups depuis `d447c18`) : 10 points.
+- Corrigés : clic sur la bordure du menu contextuel qui lançait l'application dessous ; menu ouvert sous un pointeur immobile qui
+  prenait la ligne ou la catégorie sous lui ; Entrée et flèches qui agissaient derrière le menu contextuel (Entrée valide maintenant
+  son action) ; icônes cherchées pour toute la liste à chaque frappe (maintenant par ligne affichée) ; fichiers récents lus à chaque
+  ouverture (maintenant seulement quand « Recent Files » s'affiche) ; « appui qui vient de fermer » remplacé par la cause : la barre
+  ne ferme plus le popup dont le bouton est sous l'appui (`owner`), le bouton le ferme lui-même — l'horloge réagit de nouveau au
+  clic ; commentaires « tout l'écran » faux (zone utile sous les barres) et commentaires trop longs raccourcis ; vérification des
+  fichiers récents simplifiée.
+- Jugé négligeable : vérification de présence bloquée par un montage réseau mort (spéculatif ; bloquerait aussi un gestionnaire de
+  fichiers).
+Vérifié (Sway isolé, deux barres avec bouton Arch et engrenage) : Arch ×3 (ouvert, fermé, ouvert) ; engrenage menu ouvert (réglages
+seuls) ; engrenage (fermé) ; horloge ×3 (épinglé, fermé, épinglé) ; Échap puis clic (épinglé) ; Arch calendrier épinglé (menu seul) ;
+raccourci sous un pointeur posé sur les catégories (All Applications, première ligne) ; clic sur la bordure du menu contextuel (rien
+lancé) ; Entrée dans le menu contextuel (favori ajouté puis retiré : tes 4 favoris) ; Recent Files rempli.
+
 ### Reste à faire
 
 Phase 8 : rien d'autre au programme ; à valider par toi (rapport du 2026-10-17).

@@ -7,18 +7,8 @@ import qs.config
 import qs.services
 import qs.modules.bar
 
-// Menu d'applications (remplace nwg-menu, ARCHITECTURE § 8 Q3) : disposition du menu de Cinnamon, style de nwg-menu (THEME.md § 7).
-// Ouvert par le bouton Arch de la barre ou `qs ipc call menu toggle`, sous le bouton.
-// - Colonne de gauche : dossiers XDG, favoris (clic droit sur une application : ajouter / retirer), verrouiller, se déconnecter,
-//   redémarrer, éteindre (sans confirmation, comme le panneau de réglages) ;
-// - catégories (au survol, sauf pendant une recherche, que le survol n'efface jamais ; un clic la quitte) : All Applications,
-//   catégories freedesktop non vides, Recent Files ;
-// - applications de la catégorie (nom + description), recherche en bas (taper filtre toutes les applications, comme le lanceur).
-// Clavier : la saisie va à la recherche ; Haut / Bas, Pages : sélection ; Gauche : catégories (Haut / Bas les parcourent),
-// Droite : retour aux applications ; Entrée lance ; Échap ferme.
-// Souris : le survol d'une application la sélectionne seulement si la souris a bougé (une liste qui défile ou change sous un pointeur
-// immobile ne déplace pas la sélection) ; en allant d'une catégorie vers la liste des applications en diagonale, les catégories
-// traversées ne sont pas prises (visée : `aiming`) — celle sous le pointeur l'est dès qu'il s'arrête.
+// Menu d'applications (remplace nwg-menu) : disposition de Cinnamon, style de nwg-menu (THEME.md § 7). Comportement :
+// ARCHITECTURE § 10.1.5 (survol, visée vers la liste, clavier, recherche jamais effacée par le survol).
 OverlayPopup {
     id: root
 
@@ -70,7 +60,7 @@ OverlayPopup {
     }
 
     function appItem(entry: var): var {
-        return { id: entry.id, name: entry.name, description: entry.comment || entry.genericName, icon: Apps.iconSource(entry.icon), entry: entry };
+        return { id: entry.id, name: entry.name, description: entry.comment || entry.genericName, entry: entry };
     }
 
     // Icône d'un type de fichier (« text/plain » → text-plain, sinon text-x-generic, sinon l'icône de fichier générique), une
@@ -88,19 +78,23 @@ OverlayPopup {
         return found;
     }
 
-    // Mouvement de la souris dans le cadre. Visée : le déplacement va vers la gauche de la liste des applications, entre ses coins
-    // haut et bas vus de la position précédente ; elle tombe quand le pointeur s'arrête (aimStop).
+    // Mouvement dans le cadre. Visée : vers le bord gauche de la liste des applications, entre ses coins vus de la position
+    // précédente ; tombe à l'arrêt (aimStop). Premier événement après l'ouverture : position notée, pas un mouvement.
     function movePointer(p: point): void {
         if (p.x === pointer.x && p.y === pointer.y)
             return;
+        if (pointer.x < 0) {
+            pointer = p;
+            return;
+        }
         const box = appsBox.mapToItem(frame, 0, 0);
         const dx = p.x - pointer.x, dy = p.y - pointer.y, ahead = box.x - pointer.x;
-        aiming = pointer.x >= 0 && dx > 0 && ahead > 0 && dy / dx >= (box.y - pointer.y) / ahead
+        aiming = dx > 0 && ahead > 0 && dy / dx >= (box.y - pointer.y) / ahead
             && dy / dx <= (box.y + appsBox.height - pointer.y) / ahead;
         pointer = p;
         mouseMoved = true;
         aimStop.restart();
-        // Ligne survolée avant que ce mouvement soit vu (ordre des événements) ou sous un pointeur resté immobile : prise maintenant.
+        // Ligne survolée sous un pointeur jusque-là immobile : prise maintenant.
         const row = hoveredRow;
         if (row && row.index >= 0 && items[row.index]?.id === row.modelData.id && (pane !== "apps" || selected !== row.index)) {
             pane = "apps";
@@ -113,14 +107,14 @@ OverlayPopup {
             hoveredCategory = key;
         else if (hoveredCategory === key)
             hoveredCategory = "";
-        // Jamais pendant une recherche : le survol ne l'efface pas (défaut de nwg-menu, à ne pas reproduire).
-        if (hovered && search.text === "" && !aiming)
+        // Pointeur qui a bougé, hors visée, jamais pendant une recherche (le survol ne l'efface pas).
+        if (hovered && mouseMoved && search.text === "" && !aiming)
             setCategory(key);
     }
 
     // Sous le bouton, aligné sur le bord gauche de sa pilule (nwg-menu : 10 px sous la barre).
-    function toggle(from: Item, fromPress: bool): void {
-        if (!beginOpen(from, fromPress))
+    function toggle(from: Item): void {
+        if (!beginOpen(from))
             return;
         screen = from.QsWindow.window.screen;
         anchorX = from.mapToItem(null, 0, 0).x - Theme.bar.pillBorder;
@@ -134,7 +128,6 @@ OverlayPopup {
         hoveredCategory = "";
         hoveredRow = null;
         pointer = Qt.point(-1, -1);
-        Places.refreshRecent();
         list.positionViewAtBeginning();
         visible = true;
         search.forceActiveFocus();
@@ -144,6 +137,8 @@ OverlayPopup {
         search.text = "";
         category = key;
         resetList();
+        if (key === "recent")
+            Places.refreshRecent();   // lu seulement quand on l'affiche (fichier de plusieurs centaines de Ko)
     }
 
     function select(index: int): void {
@@ -164,6 +159,15 @@ OverlayPopup {
     function handleKey(event: var): bool {
         const k = event.key;
         mouseMoved = false;
+        // Menu contextuel ouvert : Entrée valide son action, Échap le ferme, les flèches et Pages ne touchent pas la liste derrière.
+        if (contextEntry && [Qt.Key_Return, Qt.Key_Enter, Qt.Key_Up, Qt.Key_Down, Qt.Key_PageUp, Qt.Key_PageDown, Qt.Key_Left,
+                Qt.Key_Right].includes(k)) {
+            if (k === Qt.Key_Return || k === Qt.Key_Enter) {
+                Apps.toggleFavorite(contextEntry);
+                contextEntry = null;
+            }
+            return true;
+        }
         if (k === Qt.Key_Escape) {
             if (contextEntry)
                 contextEntry = null;
@@ -195,7 +199,6 @@ OverlayPopup {
         return true;
     }
 
-    // Surface de la couche Overlay sur tout l'écran (OverlayPopup) : clavier réservé, un clic à côté ou sur une barre ferme.
     WlrLayershell.namespace: "quickshell-menu"
     frameItem: frame
 
@@ -526,7 +529,7 @@ OverlayPopup {
                                 required property int index
                                 width: list.width
                                 iconSize: Theme.appMenu.largeIconSize
-                                icon: modelData.icon ?? root.mimeIcon(modelData.mime)
+                                icon: modelData.entry ? Apps.iconSource(modelData.entry.icon) : root.mimeIcon(modelData.mime)
                                 label: modelData.name
                                 description: modelData.description ?? ""
                                 highlighted: root.pane === "apps" && root.selected === index
@@ -633,6 +636,17 @@ OverlayPopup {
                     }
                 }
             }
+        }
+
+        // Sous le menu contextuel (bordure, marges) : les appuis ne passent pas aux lignes situées dessous.
+        MouseArea {
+            visible: root.contextEntry !== null
+            x: context.x
+            y: context.y
+            width: context.width
+            height: context.height
+            z: 1
+            acceptedButtons: Qt.AllButtons
         }
 
         // Menu contextuel d'une application (clic droit) : ajouter aux favoris ou en retirer.

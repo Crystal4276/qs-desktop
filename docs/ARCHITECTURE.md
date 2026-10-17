@@ -466,7 +466,8 @@ ce projet, **sans dépendance ni emprunt à Cinnamon** (ta consigne) : catégori
 - **Catégories** (au survol, ton choix) : « All Applications », puis les catégories principales freedesktop non vides — une application
   va dans la première qu'elle déclare dans l'ordre Administration (`System`), Preferences (`Settings`), Programming, Games, Graphics,
   Sound & Video, Internet, Office, Education, Science, Accessories (`Utility`) ; sinon « Other » —, puis « Recent Files » (ton choix :
-  fichiers locaux de `recently-used.xbel` encore présents, du plus récent au plus ancien ; fichier lu à l'ouverture du menu seulement).
+  fichiers locaux de `recently-used.xbel` encore présents, du plus récent au plus ancien ; fichier lu seulement quand cette catégorie
+  s'affiche).
 - **Visée** (principe du menu de Cinnamon, code propre) : un pointeur qui va d'une catégorie vers la liste des applications, entre les
   coins haut et bas de cette liste, ne change pas de catégorie en traversant les autres ; dès qu'il s'arrête (30 ms), la catégorie sous
   lui est prise. Le survol d'une application ne la sélectionne que si la souris a bougé depuis la dernière touche : une liste qui
@@ -479,9 +480,8 @@ ce projet, **sans dépendance ni emprunt à Cinnamon** (ta consigne) : catégori
   `settings`) le ferme s'il est ouvert, où qu'il soit, sinon l'ouvre sous le bouton de l'écran focalisé (`BarState.toggle`,
   `toggleFromShortcut`). Les deux sont créés par `modules/menus/Panels.qml` (depuis `shell.qml`), qui inscrit leurs LazyLoader
   dans `BarState` : pas d'import circulaire entre les modules de la barre et des menus.
-- **Appui sur le bouton d'un panneau ouvert** (ou sur l'horloge, calendrier épinglé) : la barre ferme les popups avant que le
-  bouton ne reçoive l'appui ; `BarState` retient, le temps de cet appui, ceux qu'il a fermés (`pressClosed`), et le bouton ne rouvre
-  pas le sien. Pas de délai : un appui
+- **Appui sur le bouton d'un panneau ouvert** (ou sur l'horloge, calendrier épinglé) : un appui sur une barre ferme les popups,
+  sauf celui dont le bouton (`owner`) est sous l'appui ; c'est ce bouton qui le ferme. Pas de délai ni d'état temporaire : un appui
   suivant, Échap puis un clic, ou un raccourci rouvrent toujours.
 - **Écran ou bouton disparu** (écran débranché ou éteint) : le panneau ouvert se ferme (lanceur compris : tout changement d'écran
   d'un panneau ouvert le ferme).

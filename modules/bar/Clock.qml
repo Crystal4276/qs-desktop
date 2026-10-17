@@ -37,10 +37,8 @@ Item {
         id: hover
     }
 
-    // À l'appui, comme les boutons de la barre : la barre vient de fermer le calendrier épinglé (BarState.pressClosed, valable le
-    // temps de l'appui seulement).
     TapHandler {
-        onPressedChanged: if (pressed) calendar.toggle()
+        onTapped: calendar.toggle()
     }
 
     CalendarPopup {

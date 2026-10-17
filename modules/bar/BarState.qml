@@ -19,15 +19,15 @@ Singleton {
     // Fermeture de tous les popups (ouverture d'un autre, appui sur une barre).
     signal closePopups
 
-    // Appui sur une barre pendant qu'un popup est ouvert (Bar.qml) : tous se ferment, et l'appui continue vers le module visé.
-    // `pressClosed` garde, le temps de cet appui, les popups qu'il a fermés : le bouton d'un panneau qu'il vient de fermer ne le
-    // rouvre pas (OverlayPopup.beginOpen) ; un appui suivant, un raccourci ou un autre bouton l'ouvrent normalement.
-    property var pressClosed: []
+    // Appui sur une barre, popup ouvert (Bar.qml) : les popups se ferment, sauf celui dont le bouton (`owner`) est sous l'appui,
+    // que ce bouton ferme lui-même ; l'appui continue vers le module visé.
+    property var keepOpen: []
 
-    function closeFromBarPress(): void {
-        pressClosed = [...openList];
+    function closeFromBarPress(area: Item, x: real, y: real): void {
+        keepOpen = openList.filter(p => p.owner && p.owner.QsWindow.window === area.QsWindow.window
+            && p.owner.contains(p.owner.mapFromItem(area, x, y)));
         closePopups();
-        Qt.callLater(() => pressClosed = []);
+        keepOpen = [];
     }
 
     function setPopupOpen(popup: QtObject, open: bool): void {
@@ -35,9 +35,8 @@ Singleton {
         openList = open ? [...others, popup] : others;
     }
 
-    // Panneaux ouverts par un bouton de barre ("menu", "settings") : un seul exemplaire de chacun pour toutes les barres, placé sous
-    // le bouton qui l'ouvre (sur son écran) ; ouvrir l'un sur un autre écran le déplace. Leurs LazyLoader sont créés et inscrits par
-    // modules/menus/Panels.qml : ce module n'importe pas celui des menus, qui dépend de lui.
+    // Panneaux ouverts par un bouton de barre ("menu", "settings") : un exemplaire de chacun, placé sous le bouton qui l'ouvre ;
+    // LazyLoader inscrits par modules/menus/Panels.qml (ce module n'importe pas celui des menus).
     property var loaders: ({})
     // Boutons des barres par panneau (inscrits par SettingsButton.qml et MenuButton.qml).
     property var buttons: ({})
@@ -60,20 +59,19 @@ Singleton {
         return item?.visible ? item.button : null;
     }
 
-    // `fromPress` : appui sur le bouton (OverlayPopup.beginOpen) ; false pour un raccourci.
-    function toggle(kind: string, button: Item, fromPress: bool): void {
+    function toggle(kind: string, button: Item): void {
         const loader = loaders[kind];
         if (!loader || !button)
             return;
         loader.active = true;
-        loader.item.toggle(button, fromPress);
+        loader.item.toggle(button);
     }
 
     // Raccourcis `qs ipc call settings toggle` (`$mod+Escape`, phase 10) et `qs ipc call menu toggle` : bouton de l'écran focalisé,
     // sinon le premier (la barre principale en a un, hosts/*.json). Un panneau ouvert se ferme, quel que soit son écran.
     function toggleFromShortcut(kind: string): void {
         const list = buttons[kind] ?? [];
-        toggle(kind, list.find(b => b.QsWindow.window?.screen?.name === Compositor.focusedOutput) ?? list[0] ?? null, false);
+        toggle(kind, list.find(b => b.QsWindow.window?.screen?.name === Compositor.focusedOutput) ?? list[0] ?? null);
     }
 
     // Tests (scripts/test-outputs.sh) : popups inscrits et écran au clavier « à la demande », en JSON.
