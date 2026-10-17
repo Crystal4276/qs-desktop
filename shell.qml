@@ -9,6 +9,7 @@
 import Quickshell
 import qs.modules.bar
 import qs.modules.launcher
+import qs.modules.lock
 import qs.modules.menus
 import qs.modules.notifications
 import qs.modules.osd
@@ -26,4 +27,5 @@ ShellRoot {
     Launcher {}
     Panels {}
     WallpaperPicker {}
+    LockScreen {}
 }

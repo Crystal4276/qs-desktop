@@ -263,6 +263,7 @@ Singleton {
         readonly property string settings: "\uf013"            // nf-fa-gear : bouton de la barre (remplace power)
         readonly property string expanded: "\uf078"            // nf-fa-chevron_down : liste dépliée
         readonly property string screenshot: "\u{f0100}"       // nf-md-camera
+        readonly property string wallpaper: "\u{f0e09}"        // nf-md-wallpaper : utilitaire de changement de fond (2026-10-17)
         readonly property string powerSaver: "\u{f032a}"       // nf-md-leaf
         readonly property string balanced: "\u{f05d1}"         // nf-md-scale_balance
         readonly property string performance: "\u{f04c5}"     // nf-md-speedometer
@@ -475,7 +476,7 @@ Singleton {
     }
 
     // Utilitaire de changement de fond (nouveau composant) : style des panneaux ; vignette choisie entourée de `green` (sélection
-    // du menu d'applications). Taille des vignettes : proposée, à valider.
+    // du menu d'applications). Taille des vignettes : ton choix du 2026-10-17.
     readonly property QtObject wallpaperPicker: QtObject {
         readonly property int thumbWidth: 240
         readonly property int thumbHeight: 135      // 16:9
@@ -485,6 +486,37 @@ Singleton {
         readonly property color selection: root.appMenu.selected
         readonly property color hover: root.panel.rowHover
         readonly property int radius: root.panel.rowRadius
+    }
+
+    // Écran de verrouillage (nouveau design, ARCHITECTURE § 10.1 R2) : fond d'écran de chaque écran flouté et assombri, horloge, date ;
+    // sur l'écran qui a le clavier, initiale et nom de l'utilisateur, champ du mot de passe. Maquette validée le 2026-10-17.
+    readonly property QtObject lock: QtObject {
+        readonly property int blur: 64                            // rayon max du flou (MultiEffect)
+        readonly property color dim: Qt.alpha(root.color.crust, 0.45)
+        readonly property int clockSize: 120                      // Inter Light
+        readonly property color clock: root.color.text
+        readonly property int dateSize: 26
+        readonly property color date: root.color.subtext1
+        readonly property int avatarSize: 72
+        readonly property color avatar: root.color.green
+        readonly property color avatarText: root.color.mantle
+        readonly property int userSize: 20
+        readonly property color user: root.color.text
+        readonly property int fieldWidth: 360
+        readonly property int fieldHeight: 56
+        readonly property color field: Qt.alpha(root.color.mantle, 0.85)
+        readonly property color fieldBorder: root.color.overlay0
+        readonly property color fieldFocus: root.color.green
+        readonly property color fieldError: root.color.red
+        readonly property int fieldFontSize: 20
+        readonly property color dot: root.color.text
+        readonly property int dotSize: 10
+        readonly property int messageSize: 16
+        readonly property color message: root.color.subtext0
+        readonly property color error: root.color.red
+        readonly property color warning: root.color.yellow   // verrouillage majuscules
+        readonly property int spacing: 24
+        readonly property int gap: 64                          // entre la date et l'utilisateur
     }
 
     // Polices embarquées (assets/fonts, ARCHITECTURE § 8.2) chargées depuis le dépôt : prioritaires sur une copie système
