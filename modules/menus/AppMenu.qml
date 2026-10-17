@@ -60,24 +60,32 @@ OverlayPopup {
         }
     }
 
-    // Élément sélectionné : la sélection le suit quand la liste change d'elle-même (fichiers récents relus, applications installées).
+    // Élément choisi (clavier, souris : `choose`) : la sélection le suit quand la liste change d'elle-même (fichiers récents relus,
+    // applications installées). Rien de choisi ("") : la sélection garde sa place (liste qui se remplit au démarrage).
     property string selectedId: ""
-    onSelectedChanged: {
-        selectedId = items[selected]?.id ?? "";
-        list.positionViewAtIndex(selected, ListView.Contain);
-    }
+    onSelectedChanged: Qt.callLater(() => list.positionViewAtIndex(selected, ListView.Contain))   // après la mise à jour du modèle
     onItemsChanged: {
         const i = selectedId === "" ? -1 : items.findIndex(item => item.id === selectedId);
-        selected = i >= 0 ? i : Math.max(0, Math.min(selected, items.length - 1));
-        selectedId = items[selected]?.id ?? "";   // élément disparu : la sélection suit désormais celui qui prend sa place
+        if (i >= 0) {
+            selected = i;
+            return;
+        }
+        selected = Math.max(0, Math.min(selected, items.length - 1));
+        if (selectedId !== "")
+            selectedId = items[selected]?.id ?? "";   // élément disparu : celui qui prend sa place est suivi
     }
 
-    // Nouvelle liste demandée (saisie, catégorie) : première ligne choisie et visible, une fois la liste à jour.
+    function choose(index: int): void {
+        selected = index;
+        selectedId = items[index]?.id ?? "";
+    }
+
+    // Nouvelle liste demandée (saisie, catégorie) : première ligne, rien de choisi, visible une fois la liste à jour.
     function resetList(): void {
         contextEntry = null;
+        selectedId = "";
         Qt.callLater(() => {
             selected = 0;
-            selectedId = items[0]?.id ?? "";
             list.positionViewAtBeginning();
         });
     }
@@ -107,7 +115,7 @@ OverlayPopup {
         if (row && !contextEntry && row.index >= 0 && items[row.index]?.id === row.modelData.id
                 && (pane !== "apps" || selected !== row.index)) {
             pane = "apps";
-            selected = row.index;
+            choose(row.index);
         }
     }
 
@@ -150,6 +158,7 @@ OverlayPopup {
         category = "all";
         pane = "apps";
         selected = 0;
+        selectedId = "";
         contextEntry = null;
         aiming = false;
         hoveredCategory = "";
@@ -157,6 +166,7 @@ OverlayPopup {
         pointer = Qt.point(-1, -1);
         moves = 0;
         recentRead = false;
+        Places.refreshFolders();
         list.positionViewAtBeginning();
         visible = true;
         search.forceActiveFocus();
@@ -174,7 +184,7 @@ OverlayPopup {
 
     function select(index: int): void {
         if (items.length > 0)
-            selected = Math.max(0, Math.min(index, items.length - 1));
+            choose(Math.max(0, Math.min(index, items.length - 1)));
     }
 
     function activate(item: var): void {
@@ -191,7 +201,7 @@ OverlayPopup {
         const k = event.key;
         // Menu contextuel ouvert : Entrée valide son action, Échap le ferme, les flèches et Pages ne touchent pas la liste derrière.
         if (contextEntry && [Qt.Key_Return, Qt.Key_Enter, Qt.Key_Up, Qt.Key_Down, Qt.Key_PageUp, Qt.Key_PageDown, Qt.Key_Left,
-                Qt.Key_Right].includes(k)) {
+                Qt.Key_Right, Qt.Key_Tab, Qt.Key_Backtab].includes(k)) {
             if (k === Qt.Key_Return || k === Qt.Key_Enter) {
                 Apps.toggleFavorite(contextEntry);
                 contextEntry = null;
@@ -553,7 +563,7 @@ OverlayPopup {
                                         root.afterMove(() => {
                                             if (root.hoveredRow === appRow && !root.contextEntry) {
                                                 root.pane = "apps";
-                                                root.selected = index;
+                                                root.choose(index);
                                             }
                                         });
                                 }

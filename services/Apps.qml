@@ -100,11 +100,8 @@ Singleton {
         onLoaded: favorites.ids = text().split("\n").filter(l => l.endsWith(".desktop")).map(l => l.slice(0, -".desktop".length))
     }
 
-    // Icône d'une application : chemin absolu ou nom d'icône du thème.
     function iconSource(icon: string): string {
-        if (icon === "")
-            return "";
-        return icon.startsWith("/") ? Icons.fileUrl(icon) : Quickshell.iconPath(icon, true);
+        return Icons.iconSource(icon);
     }
 
     function inHistory(entry: DesktopEntry): bool {

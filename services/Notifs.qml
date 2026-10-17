@@ -336,11 +336,9 @@ Singleton {
             return image;
         if (appIcon === "" || (appIcon.includes("://") && !appIcon.startsWith("file:")))
             return "";
-        if (appIcon.startsWith("/"))
-            return Icons.fileUrl(appIcon);
         if (appIcon.startsWith("file:"))
             return appIcon;
-        return Quickshell.iconPath(appIcon, true);
+        return Icons.iconSource(appIcon);
     }
 
     // Indice « value » : progression 0–100, -1 sans barre.

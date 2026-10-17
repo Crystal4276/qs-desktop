@@ -793,6 +793,14 @@ Passe 6 : 9 points, plus aucun défaut fréquent.
   (maintenabilité) ; double garde de lecture des récents ; icônes génériques de shared-mime-info (cosmétique).
 Vérifié (Sway isolé) : menu à 2560 px (inchangé) et sur un écran de 900 px (tient dans l'écran).
 
+Passe 7 : **aucun défaut significatif** (critère d'arrêt atteint). Petites corrections faites quand même : Tab bloqué sous le menu
+contextuel ; dossiers XDG revérifiés à chaque ouverture (dossier créé ou supprimé) ; défilement différé après la mise à jour de la
+liste ; résolution d'icône partagée (`Icons.iconSource`, lanceur, menu, notifications). Négligeable : texte du fichier des récents
+gardé en mémoire.
+Trouvé en testant après la passe 7 et corrigé : à la première ouverture après le démarrage, la sélection partait loin dans la liste
+(la liste se remplit progressivement et la sélection suivait le premier élément arrivé). La sélection ne suit plus qu'un élément
+choisi au clavier ou à la souris. Vérifié : première ouverture (haut de liste), Bas ×3, survol.
+
 ### Reste à faire
 
 Phase 8 : rien d'autre au programme ; à valider par toi (rapport du 2026-10-17).
