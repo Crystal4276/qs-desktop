@@ -327,6 +327,13 @@ Colonne de gauche de 270 px au plus (les 180 px de Cinnamon pour un texte de 10 
 Icônes Papirus : `applications-*` pour les catégories, `preferences-desktop` (Preferences), `applications-all`, `document-open-recent`,
 `user-home` et `folder-*` pour les dossiers, icônes des types de fichiers pour les récents.
 
+## 7 bis. Utilitaire de changement de fond (nouveau composant, phase 8b)
+
+Cadre des panneaux (`mantle`, bordure `overlay0`, rayon 20, padding 15) ; onglets et choix d'écran : boutons de panneau, le choisi
+en contrastes inversés (fond `green`, texte `mantle`, comme une bascule activée) ; vignettes arrondies (10 px), fond actuel entouré de
+`green` (marge 5 px, sélection du menu d'applications), vignette survolée ou au clavier entourée de `surface0`.
+**Proposé, à valider** : vignettes de 240 × 135 px (16:9), 4 par rangée, 3 rangées visibles ; panoramas et triptyques sur deux colonnes.
+
 ## 8. Fenêtres (compositeur, pour mémoire)
 
 | | Sway | Hyprland |

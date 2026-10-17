@@ -12,15 +12,18 @@ import qs.modules.launcher
 import qs.modules.menus
 import qs.modules.notifications
 import qs.modules.osd
+import qs.modules.wallpaper
 import qs.services
 
 ShellRoot {
     // Services qui travaillent sans être affichés : créés dès le démarrage (un singleton ne l'est qu'à sa première lecture).
     readonly property var background: [NightLight]
 
+    Background {}
     Bar {}
     NotificationPopups {}
     Osd {}
     Launcher {}
     Panels {}
+    WallpaperPicker {}
 }

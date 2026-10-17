@@ -6,14 +6,15 @@ Rectangle {
     id: root
 
     property string text: ""
-    property color textColor: Theme.panel.text
+    property bool checked: false   // choisi (onglet) : contrastes inversés, comme une bascule activée
+    property color textColor: checked ? Theme.quickSettings.checkedText : Theme.panel.text
     property string fontFamily: Theme.font.text   // Theme.font.icons pour un bouton à glyphe (carte média)
     signal clicked
 
     implicitWidth: label.implicitWidth + 2 * Theme.panel.buttonPaddingH
     implicitHeight: label.implicitHeight + 2 * Theme.panel.buttonPaddingV
     radius: Theme.panel.rowRadius
-    color: hover.hovered ? Theme.panel.buttonHover : Theme.panel.button
+    color: checked ? Theme.quickSettings.checked : hover.hovered ? Theme.panel.buttonHover : Theme.panel.button
     opacity: enabled ? 1 : Theme.panel.disabledOpacity
 
     // Clavier (Tab, flèches) : Entrée ou Espace activent ; liseré quand l'élément est choisi.

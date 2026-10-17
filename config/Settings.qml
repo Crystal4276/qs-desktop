@@ -23,6 +23,10 @@ Singleton {
     // Lecteur suivi par le module `mpris` : nom D-Bus après `org.mpris.MediaPlayer2.` (option `player` de Waybar).
     readonly property string mediaPlayer: config.mediaPlayer ?? ""
     // Veilleuse : de `from` à `to` (HH:MM), `temperature` en kelvins la nuit (hosts/default.json : tes réglages GNOME).
+    // Fonds d'écran (docs/WALLPAPERS.md) : dossier (vide : « Wallpapers » dans le dossier Images XDG) et choix de départ, tant que
+    // rien n'a été choisi dans l'utilitaire : { kind: "simple" | "panorama" | "triptych", path: chemin relatif au dossier }.
+    readonly property string wallpapersDir: config.wallpapersDir ?? ""
+    readonly property var wallpaper: config.wallpaper ?? null
     readonly property var nightLight: Object.assign({ from: "20:00", to: "06:00", temperature: 3239 }, config.nightLight ?? {})
 
     // Pilules d'une barre : par description d'écran, sinon par rôle.

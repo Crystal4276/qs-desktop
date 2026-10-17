@@ -517,6 +517,10 @@ Remplace le power menu Rofi. Base : les réglages rapides de GNOME 51 (code de g
   la cache : tu ne la voyais pas). Veilleuse : `wlsunset` lancé par le shell, réglages de `hosts/*.json` (`nightLight`), état dans un
   fichier d'état local. HDR / VRR : commandes `output` de Sway ; Hyprland en phase 9 (sa config Lua n'a pas d'équivalent sûr connu).
 
+### 10.1.6 Phase 8b : fond d'écran natif (2026-10-17)
+
+Voir `WALLPAPERS.md` § « Mise en œuvre ». Remplace `swaybg` (Sway) et le fond de Hyprland à la bascule (phase 10).
+
 ### 10.2 Bluetooth : appairage et code PIN
 
 Vérifié :

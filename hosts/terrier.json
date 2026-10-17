@@ -1,5 +1,6 @@
 {
   "updateCommand": "paru -Syu",
+  "wallpaper": { "kind": "triptych", "path": "triptych/green-storm" },
   "primaryOutput": "Dell Inc. Dell AW3418DW #ASPFPBQwWjbd",
   "bars": {
     "primary": {
