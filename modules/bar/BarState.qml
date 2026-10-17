@@ -4,6 +4,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import qs.services
+import qs.modules.menus
 
 // État partagé entre les barres de tous les écrans : popups ouverts depuis la barre (calendrier, menus du tray, panneaux).
 Singleton {
@@ -24,9 +25,44 @@ Singleton {
         openList = open ? [...others, popup] : others;
     }
 
-    // Boutons des réglages des barres (SettingsButton.qml) : `qs ipc call settings toggle` (`$mod+Escape`, phase 10) ouvre le
-    // panneau sous celui de l'écran focalisé, sinon sous le premier (la barre principale en a un, hosts/*.json).
+    // Panneau de réglages et menu d'applications : un seul exemplaire de chacun pour toutes les barres, placé sous le bouton qui
+    // l'ouvre (sur son écran), chargé à la première ouverture. Ouvrir l'un sur un autre écran le déplace ; jamais deux à la fois.
+    LazyLoader {
+        id: settingsLoader
+
+        SettingsPanel {}
+    }
+
+    LazyLoader {
+        id: menuLoader
+
+        AppMenu {}
+    }
+
+    // Bouton sous lequel chaque panneau est ouvert (null : fermé) : le bouton se colore tant que son panneau est ouvert.
+    readonly property Item settingsButton: settingsLoader.item?.visible ? settingsLoader.item.button : null
+    readonly property Item menuButton: menuLoader.item?.visible ? menuLoader.item.button : null
+
+    // `fromPress` : appui sur le bouton (la barre a déjà fermé le panneau ouvert sous ce même bouton : il ne se rouvre pas).
+    function toggleSettings(button: Item, fromPress: bool): void {
+        settingsLoader.active = true;
+        settingsLoader.item.toggle(button, fromPress);
+    }
+
+    function toggleMenu(button: Item, fromPress: bool): void {
+        menuLoader.active = true;
+        menuLoader.item.toggle(button, fromPress);
+    }
+
+    // Boutons des barres : `qs ipc call settings toggle` (`$mod+Escape`, phase 10) et `qs ipc call menu toggle` passent par celui de
+    // l'écran focalisé, sinon par le premier (la barre principale en a un, hosts/*.json). Un panneau ouvert se ferme, quel que
+    // soit son écran (un seul exemplaire).
     property var settingsButtons: []
+    property var menuButtons: []
+
+    function focusedButton(buttons: var): Item {
+        return buttons.find(b => b.QsWindow.window?.screen?.name === Compositor.focusedOutput) ?? buttons[0] ?? null;
+    }
 
     function registerSettings(button: Item): void {
         settingsButtons = [...settingsButtons, button];
@@ -35,10 +71,6 @@ Singleton {
     function unregisterSettings(button: Item): void {
         settingsButtons = settingsButtons.filter(b => b !== button);
     }
-
-    // Boutons Arch des barres (MenuButton.qml) : `qs ipc call menu toggle` ouvre le menu d'applications sous celui de l'écran
-    // focalisé, sinon sous le premier.
-    property var menuButtons: []
 
     function registerMenu(button: Item): void {
         menuButtons = [...menuButtons, button];
@@ -57,19 +89,13 @@ Singleton {
         }
     }
 
-    // Raccourci : un panneau ouvert (sur n'importe quel écran) se ferme ; sinon celui du bouton de l'écran focalisé, ou du premier,
-    // s'ouvre. Chaque barre a son propre panneau : sans ce premier test, un second s'ouvrirait sur un autre écran.
-    function toggleFrom(buttons: var): void {
-        const button = buttons.find(b => b.open) ?? buttons.find(b => b.QsWindow.window?.screen?.name === Compositor.focusedOutput)
-            ?? buttons[0];
-        button?.toggle();
-    }
-
     IpcHandler {
         target: "menu"
 
         function toggle(): void {
-            root.toggleFrom(root.menuButtons);
+            const button = root.focusedButton(root.menuButtons);
+            if (button)
+                root.toggleMenu(button, false);
         }
     }
 
@@ -77,7 +103,9 @@ Singleton {
         target: "settings"
 
         function toggle(): void {
-            root.toggleFrom(root.settingsButtons);
+            const button = root.focusedButton(root.settingsButtons);
+            if (button)
+                root.toggleSettings(button, false);
         }
     }
 }

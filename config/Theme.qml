@@ -440,8 +440,8 @@ Singleton {
         readonly property int padding: root.panel.padding
         readonly property int spacing: root.panel.spacing
         readonly property int appsWidth: root.launcher.width                  // colonne des applications : largeur du lanceur
-        // Colonne de gauche au plus : 180 px de Cinnamon pour un texte de 10 pt (13,3 px), ramenés au texte de 20 px (proposé,
-        // à valider) ; au-delà, les noms de favoris sont abrégés.
+        // Colonne de gauche au plus : 180 px de Cinnamon pour un texte de 10 pt (13,3 px), ramenés au texte de 20 px (ton choix
+        // du 2026-10-17) ; au-delà, les noms de favoris sont abrégés.
         readonly property int sidebarMaxWidth: 270
         // Curseur de défilement du thème GTK (catppuccin) : bordure transparente de 4 px, au moins 24 px de haut, arrondi complet.
         readonly property int scrollbarInset: 4
