@@ -33,10 +33,9 @@ OverlayPopup {
     property bool mouseMoved: false
     property bool aiming: false
     property string hoveredCategory: ""
-    // Ligne sous le pointeur : identifiant ("" : aucune) et indice, tenu à jour par la ligne quand la liste change sous elle ;
-    // l'identifiant vérifie l'indice (ligne retirée : effacés à sa destruction).
-    property string hoveredApp: ""
-    property int hoveredIndex: -1
+    // Ligne d'application sous le pointeur (null : aucune ; remise à null d'elle-même quand la ligne est détruite). Son indice suit
+    // la liste ; une ligne retirée (en attente de destruction) a un indice hors liste.
+    property Item hoveredRow: null
     property var mimeIconCache: ({})
 
     readonly property var categories: [
@@ -102,9 +101,10 @@ OverlayPopup {
         mouseMoved = true;
         aimStop.restart();
         // Ligne survolée avant que ce mouvement soit vu (ordre des événements) ou sous un pointeur resté immobile : prise maintenant.
-        if (hoveredApp !== "" && items[hoveredIndex]?.id === hoveredApp && (pane !== "apps" || selected !== hoveredIndex)) {
+        const row = hoveredRow;
+        if (row && row.index >= 0 && items[row.index]?.id === row.modelData.id && (pane !== "apps" || selected !== row.index)) {
             pane = "apps";
-            selected = hoveredIndex;
+            selected = row.index;
         }
     }
 
@@ -132,7 +132,7 @@ OverlayPopup {
         mouseMoved = false;
         aiming = false;
         hoveredCategory = "";
-        hoveredApp = "";
+        hoveredRow = null;
         pointer = Qt.point(-1, -1);
         Places.refreshRecent();
         list.positionViewAtBeginning();
@@ -530,14 +530,11 @@ OverlayPopup {
                                 label: modelData.name
                                 description: modelData.description ?? ""
                                 highlighted: root.pane === "apps" && root.selected === index
-                                onIndexChanged: if (root.hoveredApp === modelData.id) root.hoveredIndex = index
-                                Component.onDestruction: if (root.hoveredApp === modelData.id) root.hoveredApp = ""
                                 onHoveredChanged: {
-                                    if (hovered) {
-                                        root.hoveredApp = modelData.id;
-                                        root.hoveredIndex = index;
-                                    } else if (root.hoveredApp === modelData.id)
-                                        root.hoveredApp = "";
+                                    if (hovered)
+                                        root.hoveredRow = appRow;
+                                    else if (root.hoveredRow === appRow)
+                                        root.hoveredRow = null;
                                     if (hovered && root.mouseMoved) {
                                         root.pane = "apps";
                                         root.selected = index;

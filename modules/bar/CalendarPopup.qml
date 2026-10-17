@@ -28,8 +28,6 @@ Item {
 
     // Mois affiché : décalage par rapport au mois en cours.
     property int monthOffset: 0
-    // Heure de la dernière fermeture : le clic sur l'horloge qui a fermé le calendrier ne doit pas le rouvrir.
-    property real closedAt: 0
 
     Connections {
         target: BarState
@@ -47,8 +45,8 @@ Item {
 
     // Clic sur l'horloge.
     function toggle(): void {
-        // Épinglé, l'appui sur la barre l'a déjà fermé (Bar.qml) : ce clic ne fait que bloquer l'aperçu.
-        if (pinned || Date.now() - closedAt < 400) {
+        // Épinglé, l'appui sur la barre l'a déjà fermé (Bar.qml, BarState.pressClosed) : ce clic ne fait que bloquer l'aperçu.
+        if (pinned || BarState.pressClosed.includes(root)) {
             pinned = false;
             hoverSuppressed = true;   // pas d'aperçu tant que le pointeur reste sur l'horloge
         } else {
@@ -88,8 +86,6 @@ Item {
         BarState.setPopupOpen(root, pinned);
         if (pinned)
             keys.forceActiveFocus();
-        if (!pinned)
-            closedAt = Date.now();
     }
 
     SystemClock {

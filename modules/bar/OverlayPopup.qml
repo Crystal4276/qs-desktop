@@ -77,7 +77,10 @@ PanelWindow {
 
     // Écran ou bouton disparu pendant que le panneau est ouvert (écran débranché ou éteint) : il se ferme, au lieu de rester au
     // clavier sur un autre écran.
+    // Le panneau ne change d'écran qu'avant de s'afficher : un changement pendant qu'il est ouvert vient de Quickshell (écran
+    // retiré, fenêtre déplacée ailleurs) ; c'est le seul cas pour le lanceur, qui n'a pas de bouton.
     onButtonChanged: if (!button && visible) close()
+    onScreenChanged: if (visible) close()
     Connections {
         target: Quickshell
         function onScreensChanged() {
