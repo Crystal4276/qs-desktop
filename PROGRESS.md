@@ -534,7 +534,7 @@ Vérifié (Sway, ta session ; instance de test limitée au lanceur, puis instanc
 
 État laissé : Waybar et Dunst actifs, aucune instance `qs`, focus sur DP-2.
 
-## Phase 8 — Menus et scripts : faite, à valider (2026-10-17)
+## Phase 8 — Menus et scripts : faite et validée (2026-10-17)
 
 ### Panneau de réglages façon GNOME : fait (2026-10-16)
 
@@ -812,9 +812,14 @@ testant (sélection à la première ouverture).
 
 Phase 8 : rien d'autre au programme ; à valider par toi (rapport du 2026-10-17).
 
+## Phase 8b — Services de session et utilitaires : en cours (2026-10-17)
+
+Ordre : fond d'écran natif et utilitaire de changement de fond ; verrouillage (maquette à valider d'abord) ; veille ; agent polkit ;
+outil de capture ; fenêtre de statistiques système.
+
 ## Prochaine étape
 
-Validation de la phase 8 (menu d'applications), puis phase 8b (fond d'écran, verrouillage, veille, polkit, capture, statistiques).
+Phase 8b (voir ci-dessus).
 
 Rappel pour la phase 10 : l'historique du lanceur (`~/.local/state/quickshell/by-shell/desktop/launcher.json`) est repris de Rofi
 quand il n'existe pas, et toute instance de test le recrée. Le supprimer juste avant la bascule, pour reprendre l'historique Rofi le
