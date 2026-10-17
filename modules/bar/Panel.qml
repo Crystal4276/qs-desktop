@@ -5,7 +5,7 @@ import qs.config
 
 // Panneau d'un module natif du tray (THEME.md § 3 « Panneaux ») : cadre du calendrier, titre, interrupteur facultatif,
 // contenu libre. Popup avec prise du clavier (saisie possible) : fermé par un clic sur une autre application (wlroots),
-// sur une barre (BarState.closePopups) ou par Échap. `toggle(item)` l'ouvre sous l'icône ou le ferme.
+// sur une barre (BarState.closePopups) ou par Échap. `toggle(item, boutons)` l'ouvre sous l'icône ou le ferme.
 // La fenêtre a une taille fixe (toute la hauteur sous la barre) et seul le cadre reçoit les clics (`mask`) : un popup déjà
 // affiché ne se redimensionne pas proprement sous Sway (l'ancienne image est étirée), or le contenu change (Wi-Fi coupé…).
 PopupWindow {
@@ -19,11 +19,14 @@ PopupWindow {
 
     default property alias content: frame.content
 
-    function toggle(item: Item): void {
+    // `buttons` : boutons de souris avec lesquels l'élément ouvre et ferme ce panneau (un appui de ces boutons sur lui ne le
+    // fait pas fermer par la barre : c'est l'élément qui le ferme).
+    function toggle(item: Item, buttons: int): void {
         if (visible) {
             visible = false;
             return;
         }
+        ownerButtons = buttons;
         anchor.item = item;
         // Centré sous l'élément, sans dépasser les marges de la barre (10 px du bord de l'écran).
         const itemX = item.mapToItem(null, 0, 0).x;
@@ -49,9 +52,9 @@ PopupWindow {
     onVisibleChanged: BarState.setPopupOpen(root, visible)
     Component.onDestruction: BarState.setPopupOpen(root, false)
 
-    // Appui sur l'icône du panneau ouvert : la barre le laisse, l'icône le ferme (TrayButton accepte les deux boutons).
+    // Appui sur l'élément qui a ouvert le panneau, avec un de ses boutons : la barre le laisse, l'élément le ferme.
     readonly property Item owner: visible ? anchor.item : null
-    readonly property int ownerButtons: Qt.LeftButton | Qt.RightButton
+    property int ownerButtons: Qt.LeftButton
 
     Connections {
         target: BarState

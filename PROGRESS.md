@@ -224,6 +224,8 @@ Liste tenue à jour à chaque phase ; à dérouler une fois le projet terminé.
   (l'appareil doit se connecter et rester approuvé) ; NordVPN qui apparaît dans le tray quand le démon démarre après la session.
 - **Deuxième passe** : vraie touche de volume / micro une fois les raccourcis branchés (phase 10) ; connexion limitée (Wi-Fi d'hôtel avec
   portail, ou câble sans Internet) ; sur le laptop : OSD de luminosité et alerte de batterie à 30 % et 15 %.
+- **Panneau audio (revues du 2026-10-17)** : ouvert au clic droit sur l'icône du volume, un clic gauche doit le fermer (et couper le
+  son, comme avant) ; idem au clic du milieu (sortie suivante).
 - **Menu d'applications (2026-10-17)** : avec ta vraie souris — molette dans la liste, survol rapide des catégories, clic droit ;
   verrouiller / se déconnecter / redémarrer / éteindre depuis le menu (non cliqués ici) ; rendu sur tes écrans (testé en session isolée).
 - **Séance de débogage (2026-10-16)** : musique Spotify à bas volume (cava doit rester affiché) ; vidéo YouTube dans Chromium avec
@@ -769,6 +771,19 @@ recherche du lanceur plus refait à chaque lancement ; dossiers XDG relus à cha
 un seul endroit ; position sous un bouton partagée (`BarState.panelLeft`, menu, réglages, panneaux du tray) ; cache d'icônes par
 type sans paramètre ambigu ; boutons de session du menu = `QuickButton` (style de nwg-menu, accessibles au clavier).
 Vérifié (Sway isolé) : rendu, survol du bouton d'extinction, Recent Files, recherche et Pages, panneau de réglages inchangé.
+
+Passe 5 : 8 points.
+- Corrigés : **Tab dans le menu** (régression de la passe 4 : le focus passait aux boutons de session, puis Entrée verrouillait ou
+  éteignait sans confirmation) — Tab / Maj+Tab déplacent la sélection, comme le lanceur, et les boutons de session ne prennent plus
+  le focus ; panneau audio ouvert au clic droit qui ne se fermait plus au clic gauche — l'élément qui ouvre un panneau indique les
+  boutons de souris qu'il gère (`Panel.toggle(item, boutons)`, `TrayMenu.openAt(…, boutons)`) ; sélection qui gardait l'identifiant
+  d'un élément disparu ; liste des récents gardée après l'effacement de l'historique ; dossiers XDG relus seulement quand
+  user-dirs.dirs change.
+- Jugés négligeables : plafond du nombre de fichiers récents (lecture une fois par ouverture de la catégorie) ; import d'épingles
+  nwg-menu dans des sous-dossiers (spéculatif ; tes 4 épingles sont reprises).
+Vérifié (Sway isolé) : Tab ×3 puis Échap (menu fermé), Tab ×3 sans souris (sélection 0 → 1 → 3) ; panneau audio clic droit ×2
+(ouvert, fermé) ; cloche gauche puis droit. Non testé ici (agirait sur ton vrai son) : clic gauche ou du milieu sur l'icône du
+volume, panneau audio ouvert.
 
 ### Reste à faire
 

@@ -14,6 +14,6 @@ TrayIcon {
     MouseArea {
         anchors.fill: parent
         acceptedButtons: Qt.LeftButton | Qt.RightButton
-        onPressed: root.panel.toggle(root)
+        onPressed: root.panel.toggle(root, Qt.LeftButton | Qt.RightButton)
     }
 }

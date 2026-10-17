@@ -7,7 +7,7 @@ LazyLoader {
 
     function toggle(item: Item): void {
         active = true;
-        root.item.toggle(item);
+        root.item.toggle(item, Qt.RightButton);   // volume et curseur : clic droit
     }
 
     AudioPanel {}

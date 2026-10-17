@@ -58,6 +58,7 @@ OverlayPopup {
     onItemsChanged: {
         const i = selectedId === "" ? -1 : items.findIndex(item => item.id === selectedId);
         selected = i >= 0 ? i : Math.max(0, Math.min(selected, items.length - 1));
+        selectedId = items[selected]?.id ?? "";   // élément disparu : la sélection suit désormais celui qui prend sa place
     }
 
     // Nouvelle liste demandée (saisie, catégorie) : première ligne choisie et visible, une fois la liste à jour.
@@ -145,7 +146,6 @@ OverlayPopup {
         pointer = Qt.point(-1, -1);
         moves = 0;
         recentRead = false;
-        Places.refreshFolders();
         list.positionViewAtBeginning();
         visible = true;
         search.forceActiveFocus();
@@ -197,6 +197,8 @@ OverlayPopup {
                 pane = "apps";
             else
                 activate(items[selected]);
+        } else if (k === Qt.Key_Tab || k === Qt.Key_Backtab) {
+            select(selected + (k === Qt.Key_Tab ? 1 : -1));   // comme le lanceur ; le focus ne quitte pas la recherche
         } else if (k === Qt.Key_Left && search.text === "")
             pane = "categories";
         else if (k === Qt.Key_Right && search.text === "")
@@ -319,6 +321,7 @@ OverlayPopup {
 
     // Bouton de session : ton SVG, sans fond ; survol : `rgba(255,255,255,0.1)` et bordure `overlay0` (nwg-menu).
     component SessionButton: QuickButton {
+        activeFocusOnTab: false   // le clavier reste à la recherche (Entrée n'éteint jamais par surprise)
         imageSize: Theme.appMenu.sessionIconSize
         padding: Theme.appMenu.itemPadding
         radius: Theme.appMenu.itemRadius
