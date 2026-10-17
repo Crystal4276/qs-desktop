@@ -754,6 +754,15 @@ Vérifié (Sway isolé, deux barres) : Arch, clic droit sur Arch (fermé), engre
 Arch ×2 ; cloche du tray ×3 et clic droit ; clic sur une autre ligne, menu contextuel ouvert (fermé, rien lancé) ; diagonale (Games
 gardé) ; descente (Internet) ; saisie sous un pointeur immobile (première ligne) puis Bas ×2.
 
+Passe 3 : 8 points, tous corrigés : retour du pointeur sur la catégorie déjà choisie (remettait la liste à zéro) ; icône du tray
+dont le menu s'ouvre au clic gauche (le clic gauche le referme) ; calendrier épinglé fermé dès l'appui sur l'horloge, même long ou
+glissé ; survol sans effet sous le menu contextuel ; défilement vers la sélection lié à `selected` (plus à l'indice interne de la
+liste) ; fichiers récents lus une fois par ouverture ; icône par type de fichier dans `Icons.mimeIcon` ; curseur de défilement
+centré dans sa gouttière.
+Vérifié (Sway isolé) : calendrier épinglé puis appui long (fermé), puis appui glissé (fermé), clic (épinglé) ; 30 × Bas puis retour
+sur la catégorie choisie (sélection gardée) ; menu contextuel d'un favori puis passage sur les catégories (gardé) ; recherche puis
+Pages (sélection visible).
+
 ### Reste à faire
 
 Phase 8 : rien d'autre au programme ; à valider par toi (rapport du 2026-10-17).

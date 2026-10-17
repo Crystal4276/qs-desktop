@@ -17,6 +17,7 @@ OverlayPopup {
     property int selected: 0
     property var contextEntry: null // application du menu contextuel (clic droit), null : fermé
     property real anchorX: 0        // bord gauche voulu du cadre (pilule du bouton) ; le cadre reste dans l'écran
+    property bool recentRead: false // fichiers récents relus depuis l'ouverture
 
     // Souris : dernière position dans le cadre (-1 : aucune depuis l'ouverture), visée vers la liste des applications.
     property point pointer: Qt.point(-1, -1)
@@ -26,7 +27,6 @@ OverlayPopup {
     // Ligne d'application sous le pointeur (null : aucune ; remise à null d'elle-même quand la ligne est détruite). Son indice suit
     // la liste ; une ligne retirée (en attente de destruction) a un indice hors liste.
     property Item hoveredRow: null
-    property var mimeIconCache: ({})
 
     readonly property var categories: [
         { key: "all", name: "All Applications", icon: Theme.appMenu.allIcon },
@@ -43,11 +43,13 @@ OverlayPopup {
                 id: `file:${f.path}`,
                 name: f.name,
                 description: f.path.slice(0, f.path.length - f.name.length - 1),
-                mime: f.mime,   // icône cherchée par la ligne affichée (mimeIcon), pas pour toute la liste
+                mime: f.mime,   // icône cherchée par la ligne affichée (Icons.mimeIcon), pas pour toute la liste
                 path: f.path
             }));
         return (category === "all" ? Apps.byName : Apps.byCategory[category] ?? []).map(appItem);
     }
+
+    onSelectedChanged: list.positionViewAtIndex(selected, ListView.Contain)
 
     // Liste changée d'elle-même (applications installées, fichiers récents relus) : sélection gardée, ramenée dans la liste.
     onItemsChanged: selected = Math.max(0, Math.min(selected, items.length - 1))
@@ -61,21 +63,6 @@ OverlayPopup {
 
     function appItem(entry: var): var {
         return { id: entry.id, name: entry.name, description: entry.comment || entry.genericName, entry: entry };
-    }
-
-    // Icône d'un type de fichier (« text/plain » → text-plain, sinon text-x-generic, sinon l'icône de fichier générique), une
-    // recherche par type.
-    function mimeIcon(mime: string): string {
-        if (mime in mimeIconCache)
-            return mimeIconCache[mime];
-        let found = "";
-        for (const name of [mime.replace("/", "-"), `${mime.split("/")[0]}-x-generic`, Theme.appMenu.fileIcon]) {
-            found = name.startsWith("-") ? "" : Quickshell.iconPath(name, true);
-            if (found !== "")
-                break;
-        }
-        mimeIconCache[mime] = found;
-        return found;
     }
 
     // Mouvement dans le cadre. Visée : vers le bord gauche de la liste des applications, entre ses coins vus de la position
@@ -96,7 +83,8 @@ OverlayPopup {
         aimStop.restart();
         // Ligne survolée sous un pointeur jusque-là immobile : prise maintenant.
         const row = hoveredRow;
-        if (row && row.index >= 0 && items[row.index]?.id === row.modelData.id && (pane !== "apps" || selected !== row.index)) {
+        if (row && !contextEntry && row.index >= 0 && items[row.index]?.id === row.modelData.id
+                && (pane !== "apps" || selected !== row.index)) {
             pane = "apps";
             selected = row.index;
         }
@@ -119,9 +107,10 @@ OverlayPopup {
             return;
         }
         hoveredCategory = key;
-        // Hors visée, jamais pendant une recherche (le survol ne l'efface pas) ; sinon prise à l'arrêt du pointeur (aimStop).
+        // Hors visée, jamais pendant une recherche (le survol ne l'efface pas) ni sous le menu contextuel ; déjà choisie : rien.
+        // Sinon prise à l'arrêt du pointeur (aimStop).
         afterMove(() => {
-            if (hoveredCategory === key && search.text === "" && !aiming)
+            if (hoveredCategory === key && key !== category && search.text === "" && !aiming && !contextEntry)
                 setCategory(key);
         });
     }
@@ -142,6 +131,7 @@ OverlayPopup {
         hoveredRow = null;
         pointer = Qt.point(-1, -1);
         moves = 0;
+        recentRead = false;
         list.positionViewAtBeginning();
         visible = true;
         search.forceActiveFocus();
@@ -151,8 +141,10 @@ OverlayPopup {
         search.text = "";
         category = key;
         resetList();
-        if (key === "recent")
-            Places.refreshRecent();   // lu seulement quand on l'affiche (fichier de plusieurs centaines de Ko)
+        if (key === "recent" && !recentRead) {
+            recentRead = true;
+            Places.refreshRecent();   // une fois par ouverture, quand on l'affiche (fichier de plusieurs centaines de Ko)
+        }
     }
 
     function select(index: int): void {
@@ -374,7 +366,7 @@ OverlayPopup {
             interval: 30
             onTriggered: {
                 root.aiming = false;
-                if (root.hoveredCategory !== "" && root.hoveredCategory !== root.category && search.text === "")
+                if (root.hoveredCategory !== "" && root.hoveredCategory !== root.category && search.text === "" && !root.contextEntry)
                     root.setCategory(root.hoveredCategory);
             }
         }
@@ -526,9 +518,6 @@ OverlayPopup {
                             clip: true
                             spacing: 2 * Theme.appMenu.itemMargin
                             boundsBehavior: Flickable.StopAtBounds
-                            currentIndex: root.selected
-                            highlightFollowsCurrentItem: false
-                            onCurrentIndexChanged: positionViewAtIndex(currentIndex, ListView.Contain)
                             onContentYChanged: root.contextEntry = null
 
                             model: ScriptModel {
@@ -542,7 +531,7 @@ OverlayPopup {
                                 required property int index
                                 width: list.width
                                 iconSize: Theme.appMenu.largeIconSize
-                                icon: modelData.entry ? Apps.iconSource(modelData.entry.icon) : root.mimeIcon(modelData.mime)
+                                icon: modelData.entry ? Apps.iconSource(modelData.entry.icon) : Icons.mimeIcon(modelData.mime, Theme.appMenu.fileIcon)
                                 label: modelData.name
                                 description: modelData.description ?? ""
                                 highlighted: root.pane === "apps" && root.selected === index
@@ -553,7 +542,7 @@ OverlayPopup {
                                         root.hoveredRow = null;
                                     if (hovered)
                                         root.afterMove(() => {
-                                            if (root.hoveredRow === appRow) {
+                                            if (root.hoveredRow === appRow && !root.contextEntry) {
                                                 root.pane = "apps";
                                                 root.selected = index;
                                             }
@@ -577,7 +566,8 @@ OverlayPopup {
                             readonly property real fraction: range > 0 ? (list.contentY - list.originY) / range : 0
 
                             visible: list.overflows
-                            x: parent.width - Theme.appMenu.itemPadding - Theme.appMenu.scrollbarWidth + Theme.appMenu.scrollbarInset
+                            x: parent.width - Theme.appMenu.itemPadding - Theme.appMenu.itemMargin - Theme.appMenu.scrollbarWidth
+                                + Theme.appMenu.scrollbarInset
                             y: list.y + Theme.appMenu.scrollbarInset + Math.max(0, Math.min(1, fraction)) * (track - height)
                             width: Theme.appMenu.scrollbarWidth - 2 * Theme.appMenu.scrollbarInset
                             height: Math.max(Theme.appMenu.scrollbarMinLength, list.visibleArea.heightRatio * track)
