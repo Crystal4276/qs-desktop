@@ -26,38 +26,20 @@ PanelCard {
         ["IP address", Network.wifiAddress]
     ]
 
-    RowLayout {
-        Layout.fillWidth: true
-        spacing: Theme.panel.spacing
-
-        WifiIcon {
+    CardHeader {
+        leading: WifiIcon {
             size: Theme.panel.cardIconSize
             level: root.level
             connecting: !root.connected
             limited: root.connected && Network.wifiLimited
             color: root.connected ? root.qualityColor : Theme.panel.secondaryText
         }
-
-        ColumnLayout {
-            Layout.fillWidth: true
-            spacing: 0
-
-            Text {
-                Layout.fillWidth: true
-                text: root.network?.name ?? ""
-                font.family: Theme.font.text
-                font.pixelSize: Theme.panel.fontSize
-                color: root.connected ? Theme.panel.accent : Theme.panel.text
-                elide: Text.ElideRight
-            }
-
-            PanelSection {
-                text: !root.connected ? "Connecting…"
-                    : Network.wifiLimited ? Network.limitedText
-                    : `Connected · ${Network.qualityText(root.strength).toLowerCase()} signal`
-                color: root.connected && Network.wifiLimited ? Theme.panel.warning : Theme.panel.secondaryText
-            }
-        }
+        title: root.network?.name ?? ""
+        active: root.connected
+        status: !root.connected ? "Connecting…"
+            : Network.wifiLimited ? Network.limitedText
+            : `Connected · ${Network.qualityText(root.strength).toLowerCase()} signal`
+        statusColor: root.connected && Network.wifiLimited ? Theme.panel.warning : Theme.panel.secondaryText
 
         PanelButton {
             text: root.connected ? "Disconnect" : "Cancel"

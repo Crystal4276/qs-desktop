@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell.Networking as NM
-import Quickshell.Widgets
 import qs.config
 import qs.services
 
@@ -39,35 +38,14 @@ PanelCard {
         }
     }
 
-    RowLayout {
-        Layout.fillWidth: true
-        spacing: Theme.panel.spacing
-
-        IconImage {
-            implicitSize: Theme.panel.cardIconSize
-            source: `image://icon/${root.connected ? "nm-device-wired" : "nm-no-connection"}`
-            opacity: root.device?.hasLink ? 1 : Theme.panel.disabledOpacity
-        }
-
-        ColumnLayout {
-            Layout.fillWidth: true
-            spacing: 0
-
-            Text {
-                Layout.fillWidth: true
-                // Plusieurs cartes réseau (dock, deux ports) : l'interface les distingue.
-            text: Network.wiredDevices.length > 1 ? `Ethernet · ${root.device?.name ?? ""}` : "Ethernet"
-                font.family: Theme.font.text
-                font.pixelSize: Theme.panel.fontSize
-                color: root.connected ? Theme.panel.accent : Theme.panel.text
-                elide: Text.ElideRight
-            }
-
-            PanelSection {
-                text: root.device ? root.stateText() : ""
-                color: root.connected && root.limited ? Theme.panel.warning : Theme.panel.secondaryText
-            }
-        }
+    CardHeader {
+        icon: root.connected ? "nm-device-wired" : "nm-no-connection"
+        iconOpacity: root.device?.hasLink ? 1 : Theme.panel.disabledOpacity
+        // Plusieurs cartes réseau (dock, deux ports) : l'interface les distingue.
+        title: Network.wiredDevices.length > 1 ? `Ethernet · ${root.device?.name ?? ""}` : "Ethernet"
+        active: root.connected
+        status: root.device ? root.stateText() : ""
+        statusColor: root.connected && root.limited ? Theme.panel.warning : Theme.panel.secondaryText
 
         PanelButton {
             visible: (root.device?.hasLink ?? false) && root.device.network !== null
