@@ -31,40 +31,46 @@ Rectangle {
     Keys.onUpPressed: (Window.activeFocusItem ?? root).nextItemInFocusChain(false)?.forceActiveFocus()
     Keys.onDownPressed: (Window.activeFocusItem ?? root).nextItemInFocusChain(true)?.forceActiveFocus()
 
-    ColumnLayout {
-        id: column
-        anchors {
-            left: parent.left
-            right: parent.right
-            top: parent.top
-            margins: Theme.panel.padding
-        }
-        spacing: Theme.panel.spacing
-
-        RowLayout {
-            Layout.fillWidth: true
-            visible: root.title !== "" || root.hasSwitch   // panneau de réglages : pas de titre
-
-            Text {
-                Layout.fillWidth: true
-                text: root.title
-                font.family: Theme.font.text
-                font.pixelSize: Theme.panel.fontSize
-                font.bold: true
-                color: Theme.panel.title
-            }
-
-            PanelSwitch {
-                visible: root.hasSwitch
-                checked: root.switchChecked
-                onToggled: checked => root.switchToggled(checked)
-            }
-        }
+    // Contenu plus haut que l'écran (onglet Tailscale sur un laptop 1080p…) : le cadre défile ; sinon il ne bouge pas.
+    Flickable {
+        id: scroller
+        anchors.fill: parent
+        contentHeight: column.implicitHeight + 2 * Theme.panel.padding
+        interactive: contentHeight > height
+        boundsBehavior: Flickable.StopAtBounds
 
         ColumnLayout {
-            id: body
-            Layout.fillWidth: true
+            id: column
+            x: Theme.panel.padding
+            y: Theme.panel.padding
+            width: scroller.width - 2 * Theme.panel.padding
             spacing: Theme.panel.spacing
+
+            RowLayout {
+                Layout.fillWidth: true
+                visible: root.title !== "" || root.hasSwitch   // panneau de réglages : pas de titre
+
+                Text {
+                    Layout.fillWidth: true
+                    text: root.title
+                    font.family: Theme.font.text
+                    font.pixelSize: Theme.panel.fontSize
+                    font.bold: true
+                    color: Theme.panel.title
+                }
+
+                PanelSwitch {
+                    visible: root.hasSwitch
+                    checked: root.switchChecked
+                    onToggled: checked => root.switchToggled(checked)
+                }
+            }
+
+            ColumnLayout {
+                id: body
+                Layout.fillWidth: true
+                spacing: Theme.panel.spacing
+            }
         }
     }
 }

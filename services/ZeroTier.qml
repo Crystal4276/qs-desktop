@@ -24,7 +24,8 @@ Singleton {
     // Repli sans jeton : [{ name, address }].
     property var interfaces: []
 
-    readonly property bool present: authorized || interfaces.length > 0
+    // Onglet visible aussi sans jeton ni réseau (machine neuve) : il donne la commande qui installe le jeton.
+    readonly property bool present: authorized || tokenMissing || interfaces.length > 0
     readonly property int connectedCount: authorized ? networks.filter(n => n.status === "OK").length : interfaces.length
 
     readonly property bool busy: cli.busy
@@ -130,7 +131,9 @@ Singleton {
             } catch (e) {
                 root.failures++;
                 // « authtoken.secret not found or readable » (code 2) : pas de jeton.
-                root.tokenMissing = infoErr.text.includes("authtoken");
+                // Jeton absent (« authtoken.secret not found », stderr) ou refusé (jeton périmé après réinstallation du service :
+                // « 401 info {} » sur stdout).
+                root.tokenMissing = infoErr.text.includes("authtoken") || infoOut.text.trim().startsWith("401");
                 if (root.tokenMissing || root.failures >= 2)
                     root.fallBack();
                 else

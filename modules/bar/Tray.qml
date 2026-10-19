@@ -83,10 +83,10 @@ Item {
             readonly property bool privateNetworks: Tailscale.installed || ZeroTier.present
             readonly property bool privateUp: Tailscale.running || ZeroTier.connectedCount > 0
             visible: Network.wiredShown || privateNetworks
-            // Sans câble, le bouton sert aux réseaux privés (le Wi-Fi a son icône) : `network-vpn`, atténuée si aucun n'est
-            // actif ; sans câble ni Wi-Fi, l'état filaire (« aucune connexion »).
+            // Sans câble mais avec le Wi-Fi (qui a son icône), le bouton sert aux réseaux privés : `network-vpn`, atténuée si aucun
+            // n'est actif. Sinon l'état filaire (sans câble ni Wi-Fi : « aucune connexion », même si Tailscale se dit actif).
             readonly property bool privateEntry: !Network.wiredLinked && Network.wifi !== null
-            icon: !Network.wiredLinked && (privateUp || Network.wifi !== null) ? "network-vpn" : Network.icon
+            icon: privateEntry ? "network-vpn" : Network.icon
             opacity: privateEntry && !privateUp ? Theme.panel.disabledOpacity : 1
             panel: networkPanel
         }

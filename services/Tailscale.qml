@@ -53,14 +53,20 @@ Singleton {
     CliRunner {
         id: cli
         program: "tailscale"
-        onFinished: root.refresh()
+        onFinished: {
+            root.prefsStale = true;
+            root.refresh();
+        }
     }
 
     CliRunner {
         id: loginCli
         program: "tailscale"
         probe: false
-        onFinished: root.refresh()
+        onFinished: {
+            root.prefsStale = true;
+            root.refresh();
+        }
     }
 
     // Nom d'affichage : nom de la machine, sinon (iOS : « localhost ») le premier label du nom MagicDNS.
@@ -107,13 +113,17 @@ Singleton {
             poller.request();
     }
 
-    // Préférences : panneau ouvert, ou pas encore lues (droits connus dès l'ouverture, sans message « Read only » passager).
+    // Préférences : elles ne changent que par `tailscale set` ; relues au démarrage, à l'ouverture du panneau et après une
+    // action (`prefsStale`), pas toutes les 5 s.
+    property bool prefsStale: true
     function read(): void {
         if (!available)
             return;
         statusQuery.running = true;
-        if (polling || prefs === null)
+        if (prefsStale || prefs === null) {
+            prefsStale = false;
             prefsQuery.running = true;
+        }
     }
     function clearErrors(): void {
         cli.error = "";
@@ -161,7 +171,10 @@ Singleton {
         active: root.available && (root.polling || !Network.wiredLinked || !root.installed)
         busy: statusQuery.running || prefsQuery.running
         onRead: root.read()
-        onPanelClosed: root.clearErrors()
+        onPanelClosed: {
+            root.clearErrors();
+            root.prefsStale = true;   // relues à la prochaine ouverture (réglage fait ailleurs entre-temps)
+        }
     }
 
     Process {
