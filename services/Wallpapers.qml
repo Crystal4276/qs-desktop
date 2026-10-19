@@ -12,8 +12,8 @@ import qs.config
 Singleton {
     id: root
 
-    property string pictures: ""
-    readonly property string dir: Settings.wallpapersDir !== "" ? Settings.wallpapersDir : pictures !== "" ? `${pictures}/Wallpapers` : ""
+    readonly property string dir: Settings.wallpapersDir !== "" ? Settings.wallpapersDir
+        : Places.pictures !== "" ? `${Places.pictures}/Wallpapers` : ""
 
     // Chemins relatifs au dossier : { simple: [chemin], panorama: [chemin], triptych: [{ path, name, parts: { left, center, right } }] }
     property var library: ({ simple: [], panorama: [], triptych: [] })
@@ -98,14 +98,6 @@ Singleton {
             id: state
             property var selection: null
             property var overrides: ({})
-        }
-    }
-
-    Process {
-        running: Settings.wallpapersDir === ""
-        command: ["xdg-user-dir", "PICTURES"]
-        stdout: StdioCollector {
-            onStreamFinished: root.pictures = text.trim()
         }
     }
 

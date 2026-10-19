@@ -13,7 +13,8 @@ Item {
     Image {
         anchors.fill: parent
         visible: root.shown?.kind === "image"
-        source: visible ? root.shown.source : ""
+        // Pas de source avant la taille finale : sinon une première lecture à la taille du fichier (sourceSize nulle), puis une autre.
+        source: visible && width > 0 && height > 0 ? root.shown.source : ""
         fillMode: Image.PreserveAspectCrop
         sourceSize: Qt.size(Math.ceil(width * Screen.devicePixelRatio), Math.ceil(height * Screen.devicePixelRatio))
         asynchronous: true
@@ -41,7 +42,7 @@ Item {
             readonly property var b: parent.bounds
             readonly property bool wide: b.width / b.height > ratio
 
-            source: parent.visible ? root.shown.source : ""
+            source: parent.visible && b.height > 0 ? root.shown.source : ""
             fillMode: Image.Stretch
             // Décodée à la hauteur de l'ensemble (pixels réels de cet écran), pas à celle du fichier.
             sourceSize.height: Math.ceil(b.height * Screen.devicePixelRatio)

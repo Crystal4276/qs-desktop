@@ -15,14 +15,20 @@ import qs.modules.bar
 Scope {
     id: root
 
-    property bool locked: false
+    // Pas de rechargement automatique de la config pendant le verrouillage (sauvegarde dans le dépôt, `git pull`…) : dans
+    // Quickshell 0.3, un WlSessionLock rechargé verrouillé recrée ses surfaces avant de reprendre les anciennes, et le compositeur
+    // coupe Quickshell (erreur de protocole) ; non verrouillé, il déverrouillerait la session sans mot de passe. Les changements
+    // faits pendant le verrouillage sont pris au suivant. État gardé malgré tout d'un rechargement à l'autre (rechargement
+    // demandé à la main) : en cas d'échec, la session reste verrouillée plutôt que de s'ouvrir.
+    property alias locked: persist.locked
+    onLockedChanged: Quickshell.watchFiles = !locked
     property string password: ""
     property bool checking: false
     property bool error: false
     property string message: ""
     property bool capsLock: false
     // Écran du champ : l'écran principal ; à défaut (aucun écran détecté), celui qui était focalisé au verrouillage.
-    property string lockedScreen: ""
+    property alias lockedScreen: persist.lockedScreen
     readonly property string fieldScreen: Outputs.primary?.name ?? lockedScreen
 
     // Dossier de configuration PAM : vide = /etc/pam.d (les tests y mettent une configuration factice).
@@ -71,11 +77,19 @@ Scope {
             password = "";
         else if (k === Qt.Key_Backspace)
             password = (event.modifiers & Qt.ControlModifier) ? "" : password.slice(0, -1);
-        else if (event.text !== "" && event.text.charCodeAt(0) >= 32) {
+        else if (event.text !== "" && event.text.charCodeAt(0) >= 32 && event.text.charCodeAt(0) !== 127) {   // Suppr. : U+007F
             password += event.text;
             error = false;
             message = "";
         }
+    }
+
+    PersistentProperties {
+        id: persist
+        reloadableId: "lockState"
+
+        property bool locked: false
+        property string lockedScreen: ""
     }
 
     Connections {

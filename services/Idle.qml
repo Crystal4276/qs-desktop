@@ -11,6 +11,9 @@ import qs.config
 // (contournement repris de hypridle). Les inhibitions sont respectées : règles `inhibit_idle` du compositeur, « Keep Screen On »
 // (IdleInhibitor des barres), vidéos des applications Wayland.
 // Verrouillage avant la mise en veille du système (laptop par défaut) : verrou « delay » de logind, relâché une fois l'écran verrouillé.
+// Au réveil sous Hyprland : `hyprctl reload` (after_sleep_cmd de ton hypridle : la disposition des écrans ne survit pas à la veille).
+// Non repris : les inhibitions D-Bus (org.freedesktop.ScreenSaver, `ignore_dbus_inhibit = false` de hypridle), faute de pouvoir
+// publier un service D-Bus en QML ; les applications Wayland passent par le protocole idle-inhibit, respecté.
 Singleton {
     id: root
 
@@ -76,17 +79,21 @@ Singleton {
 
     // Annonces de logind : PrepareForSleep(true) avant la veille, (false) au réveil.
     Process {
-        running: root.lockBeforeSleep
+        running: root.lockBeforeSleep || Compositor.isHyprland
         command: ["gdbus", "monitor", "--system", "--dest", "org.freedesktop.login1", "--object-path", "/org/freedesktop/login1"]
         stdout: SplitParser {
             onRead: line => {
                 if (!line.includes("PrepareForSleep"))
                     return;
                 if (line.includes("(true,)")) {
-                    Session.lock();
-                    release.restart();
+                    if (root.lockBeforeSleep) {
+                        Session.lock();
+                        release.restart();
+                    }
                 } else {
                     inhibitor.running = root.lockBeforeSleep;   // réveil : nouveau verrou pour la prochaine veille
+                    if (Compositor.isHyprland)
+                        Quickshell.execDetached(["hyprctl", "reload"]);
                 }
             }
         }
