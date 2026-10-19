@@ -81,8 +81,10 @@ Panel {
         ignoreUnknownSignals: true
         // Connecté : plus rien à surveiller.
         function onConnectedChanged() {
-            if (root.pending?.connected)
+            if (root.pending?.connected) {
                 root.pending = null;
+                root.failText = "";
+            }
         }
         function onConnectionFailed(reason) {
             const network = root.pending;
@@ -197,6 +199,7 @@ Panel {
             const network = root.passwordFor;
             root.passwordFor = null;
             root.passwordRefused = false;
+            root.failText = "";
             if (text !== "" && network) {
                 root.pending = network;
                 network.connectWithPsk(text);

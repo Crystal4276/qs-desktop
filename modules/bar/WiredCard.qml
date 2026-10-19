@@ -16,8 +16,9 @@ PanelCard {
     readonly property bool connected: device?.connected ?? false
     readonly property bool carriesTraffic: connected && Network.interfaceName !== ""
         && Network.interfaceName === (details?.ipIface ?? device?.name)
-    // Accès limité : sur la carte qui porte la route, ou sur le seul câble connecté (route sur un VPN).
-    readonly property bool limited: Network.wiredLimited && (carriesTraffic || Network.wiredDevices.filter(d => d.connected).length === 1)
+    // Accès limité : sur la carte qui porte la route ; si aucune ne la porte (route sur un VPN), sur toutes les connectées.
+    readonly property bool limited: Network.wiredLimited && connected && (carriesTraffic || !Network.wiredDevices.some(d => d.connected
+        && Network.interfaceName === (Network.wiredDetails[d.name]?.ipIface ?? d.name)))
 
     function speed(mbps: int): string {
         return mbps >= 1000 ? `${mbps / 1000} Gb/s` : `${mbps} Mb/s`;
