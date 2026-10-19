@@ -88,6 +88,7 @@ Singleton {
     // Pourquoi le mode lecture seule : jeton absent (sinon : service injoignable). Seulement si le service a créé son jeton
     // (`serviceReady`) : installé mais jamais démarré, zerotier-cli dit aussi « authtoken… », et il n'y a rien à copier.
     property bool tokenMissing: false
+    property bool readOnce: false   // une lecture `info` terminée (avant : ni « jeton » ni « injoignable » à annoncer)
     property bool serviceReady: false
 
     // Vérifié au démarrage et à chaque jeton manquant (service démarré après Quickshell).
@@ -133,6 +134,7 @@ Singleton {
             id: infoErr
         }
         onExited: code => {
+            root.readOnce = true;
             try {
                 const d = JSON.parse(infoOut.text);
                 root.info = { address: d.address ?? "", online: d.online ?? false };
@@ -145,7 +147,9 @@ Singleton {
                 // « authtoken.secret not found or readable » (code 2) : pas de jeton.
                 // Jeton absent (« authtoken.secret not found », stderr) ou refusé (jeton périmé après réinstallation du service :
                 // « 401 info {} » sur stdout).
-                root.tokenMissing = infoErr.text.includes("authtoken") || infoOut.text.trim().startsWith("401");
+                // Autre échec (délai, service figé) : rien n'est appris sur le jeton, la valeur précédente reste.
+                if (infoErr.text.includes("authtoken") || infoOut.text.trim().startsWith("401"))
+                    root.tokenMissing = true;
                 if (root.tokenMissing || root.failures >= 2)
                     root.fallBack();
             }

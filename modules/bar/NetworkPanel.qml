@@ -15,6 +15,7 @@ Panel {
 
     property string tab: "wired"
     property bool autoTab: false   // onglet privé choisi par le panneau (pas par un clic)
+    property bool picked: false    // onglet choisi à la main : plus jamais changé par le panneau
     readonly property var tabs: [
         { key: "wired", text: "Wired", shown: Network.wiredDevices.length > 0 },
         { key: "tailscale", text: "Tailscale", shown: Tailscale.installed },
@@ -28,11 +29,11 @@ Panel {
         // ainsi revient au filaire (un onglet choisi à la main est gardé).
         if (visible && Network.privateEntry) {
             const privateTab = tabs.find(t => t.key !== "wired")?.key;
-            if (privateTab && tab === "wired") {
+            if (privateTab && tab === "wired" && !picked) {
                 tab = privateTab;
                 autoTab = true;
             }
-        } else if (visible && autoTab) {
+        } else if (visible && autoTab && !picked) {
             tab = "wired";
             autoTab = false;
         }
@@ -60,6 +61,7 @@ Panel {
                 onClicked: {
                     root.tab = modelData.key;
                     root.autoTab = false;
+                    root.picked = true;
                 }
             }
         }
