@@ -79,8 +79,10 @@ Item {
         }
 
         TrayButton {
-            visible: Network.networkShown
-            icon: Network.icon
+            // Réseau : filaire, et Tailscale / ZeroTier (visibles aussi sans câble, icône `network-vpn`).
+            readonly property bool privateNetworks: Tailscale.installed || ZeroTier.present
+            visible: Network.wiredShown || privateNetworks
+            icon: !Network.wiredLinked && privateNetworks ? "network-vpn" : Network.icon
             panel: networkPanel
         }
 

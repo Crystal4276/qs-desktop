@@ -83,7 +83,11 @@ Panel {
         function onConnectionFailed(reason) {
             const network = root.pending;
             root.pending = null;
-            if (reason === NM.ConnectionFailReason.NoSecrets && network.security !== NM.WifiSecurityType.Open) {
+            // Clé refusée : NetworkManager le signale par l'absence de secrets, ou par une déconnexion / un délai pendant
+            // l'authentification ; le mot de passe est redemandé (aussi pour un réseau enregistré dont la clé a changé).
+            const keyProblem = [NM.ConnectionFailReason.NoSecrets, NM.ConnectionFailReason.WifiClientDisconnected,
+                NM.ConnectionFailReason.WifiAuthTimeout].includes(reason);
+            if (keyProblem && network.security !== NM.WifiSecurityType.Open) {
                 root.passwordRefused = true;
                 root.passwordFor = network;
             } else {
@@ -119,7 +123,8 @@ Panel {
     // --- Autres réseaux ---
     PanelSection {
         visible: Network.wifiUsable
-        text: root.others.length === 0 ? "Networks · searching…" : Network.currentWifi ? "Other networks" : "Networks"
+        text: Network.currentWifi ? (root.others.length === 0 ? "No other networks" : "Other networks")
+            : root.others.length === 0 ? "Networks · searching…" : "Networks"
     }
 
     Flickable {

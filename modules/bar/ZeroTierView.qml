@@ -41,20 +41,9 @@ ColumnLayout {
     }
 
     // --- Carte du nœud ---
-    Rectangle {
-        Layout.fillWidth: true
-        implicitHeight: card.implicitHeight + 2 * Theme.panel.padding
-        radius: Theme.panel.rowRadius
-        color: Theme.wifi.card
-
+    PanelCard {
         RowLayout {
-            id: card
-            anchors {
-                left: parent.left
-                right: parent.right
-                top: parent.top
-                margins: Theme.panel.padding
-            }
+            Layout.fillWidth: true
             spacing: Theme.panel.spacing
 
             IconImage {
