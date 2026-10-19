@@ -31,20 +31,29 @@ Rectangle {
     Keys.onUpPressed: (Window.activeFocusItem ?? root).nextItemInFocusChain(false)?.forceActiveFocus()
     Keys.onDownPressed: (Window.activeFocusItem ?? root).nextItemInFocusChain(true)?.forceActiveFocus()
 
-    // Élément choisi au clavier (Tab, flèches) hors de la partie visible d'un cadre qui défile : amené dans la vue.
+    // Élément choisi au clavier (Tab, flèches) hors de la partie visible : chaque liste qui le contient (de la plus proche au
+    // cadre) défile pour le montrer.
     readonly property Item focusedItem: Window.activeFocusItem
     onFocusedItemChanged: {
-        let ancestor = focusedItem;
-        while (ancestor && ancestor !== column)
-            ancestor = ancestor.parent;
-        if (!ancestor || !scroller.interactive)
+        let inside = false;
+        for (let a = focusedItem; a; a = a.parent)
+            inside = inside || a === column;
+        if (!inside)
             return;
-        const top = focusedItem.mapToItem(column, 0, 0).y + column.y;
-        const bottom = top + focusedItem.height;
-        if (top - Theme.panel.padding < scroller.contentY)
-            scroller.contentY = Math.max(0, top - Theme.panel.padding);
-        else if (bottom + Theme.panel.padding > scroller.contentY + scroller.height)
-            scroller.contentY = Math.min(scroller.contentHeight - scroller.height, bottom + Theme.panel.padding - scroller.height);
+        for (let a = focusedItem.parent; a; a = a.parent) {
+            // Flickable, ListView… (repérés par leurs propriétés).
+            if (a.contentY !== undefined && a.contentItem !== undefined && a.contentHeight > a.height) {
+                const margin = a === scroller ? Theme.panel.padding : 0;
+                const top = focusedItem.mapToItem(a.contentItem, 0, 0).y;
+                const bottom = top + focusedItem.height;
+                if (top - margin < a.contentY)
+                    a.contentY = Math.max(0, top - margin);
+                else if (bottom + margin > a.contentY + a.height)
+                    a.contentY = Math.min(a.contentHeight - a.height, bottom + margin - a.height);
+            }
+            if (a === scroller)
+                break;
+        }
     }
 
     // Contenu plus haut que l'écran (onglet Tailscale sur un laptop 1080p…) : le cadre défile ; sinon il ne bouge pas.

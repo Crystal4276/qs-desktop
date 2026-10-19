@@ -213,19 +213,7 @@ Panel {
         }
     }
 
-    RowLayout {
-        Layout.fillWidth: true
-
-        Item {
-            Layout.fillWidth: true
-        }
-
-        PanelButton {
-            text: "Network settings…"
-            onClicked: {
-                root.visible = false;
-                Network.openEditor();
-            }
-        }
+    NetworkSettingsButton {
+        panel: root
     }
 }

@@ -23,8 +23,8 @@ Panel {
 
     // Onglet affiché, pour que Tailscale / ZeroTier ne soient relus souvent que sur le leur.
     onVisibleChanged: {
-        // Sans câble, le bouton sert aux réseaux privés : leur onglet d'abord.
-        if (visible && !Network.wiredLinked)
+        // Bouton servant d'entrée aux réseaux privés : leur onglet d'abord.
+        if (visible && Network.privateEntry)
             tab = tabs.find(t => t.key !== "wired")?.key ?? tab;
         if (visible)
             Network.networkTab = current;
@@ -80,22 +80,7 @@ Panel {
         sourceComponent: ZeroTierView {}
     }
 
-    // Édition des connexions, quel que soit l'onglet (et même sans onglet : aucun appareil encore listé) ; seulement si
-    // NetworkManager gère le réseau (bouton visible pour Tailscale / ZeroTier sous iwd ou systemd-networkd).
-    RowLayout {
-        visible: Network.managed
-        Layout.fillWidth: true
-
-        Item {
-            Layout.fillWidth: true
-        }
-
-        PanelButton {
-            text: "Network settings…"
-            onClicked: {
-                root.visible = false;
-                Network.openEditor();
-            }
-        }
+    NetworkSettingsButton {
+        panel: root
     }
 }

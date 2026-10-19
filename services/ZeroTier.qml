@@ -79,7 +79,7 @@ Singleton {
     // Relecture : onglet affiché (5 s) ; sinon 60 s, câble débranché (icône du tray) ou service pas encore joint (démarrage
     // avant le démon, redémarrage), sans quoi l'onglet ne reviendrait jamais sur une machine câblée.
     // Lecture en deux temps (`info`, puis `listnetworks` ou les interfaces) : `reading` la couvre entière, pour que Poller ne
-    // relance rien entre les deux ; remis à faux aussi si plus rien ne tourne (commande qui n'a pas démarré : pas d'`exited`).
+    // relance rien entre les deux ; remis à faux quand plus rien ne tourne (y compris une commande qui n'a pas démarré).
     property bool reading: false
     function endIfIdle(): void {
         if (!infoQuery.running && !networksQuery.running && !addressQuery.running)
@@ -90,11 +90,14 @@ Singleton {
     property bool tokenMissing: false
     property bool serviceReady: false
 
+    // Vérifié au démarrage et à chaque jeton manquant (service démarré après Quickshell).
     Process {
+        id: serviceCheck
         running: root.available
         command: ["test", "-e", "/var/lib/zerotier-one/authtoken.secret"]
         onExited: code => root.serviceReady = code === 0
     }
+    onTokenMissingChanged: if (tokenMissing) serviceCheck.running = true
 
     Poller {
         id: poller
@@ -120,7 +123,7 @@ Singleton {
 
     Process {
         id: infoQuery
-        command: ["zerotier-cli", "-j", "info"]
+        command: ["timeout", "10", "zerotier-cli", "-j", "info"]   // bornée : service figé
         onRunningChanged: if (!running) Qt.callLater(root.endIfIdle)
         stdout: StdioCollector {
             id: infoOut
@@ -144,16 +147,13 @@ Singleton {
                 root.tokenMissing = infoErr.text.includes("authtoken") || infoOut.text.trim().startsWith("401");
                 if (root.tokenMissing || root.failures >= 2)
                     root.fallBack();
-                else
-                    root.reading = false;
             }
         }
     }
 
     Process {
         id: networksQuery
-        command: ["zerotier-cli", "-j", "listnetworks"]
-        onExited: root.reading = false
+        command: ["timeout", "10", "zerotier-cli", "-j", "listnetworks"]
         onRunningChanged: if (!running) Qt.callLater(root.endIfIdle)
         stdout: StdioCollector {
             onStreamFinished: {
@@ -176,7 +176,6 @@ Singleton {
     Process {
         id: addressQuery
         command: ["ip", "-j", "addr"]
-        onExited: root.reading = false
         onRunningChanged: if (!running) Qt.callLater(root.endIfIdle)
         stdout: StdioCollector {
             onStreamFinished: {
