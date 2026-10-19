@@ -38,7 +38,7 @@ ColumnLayout {
     }
 
     PanelSection {
-        visible: !ZeroTier.authorized && !ZeroTier.tokenMissing
+        visible: ZeroTier.readOnce && !ZeroTier.authorized && !ZeroTier.tokenMissing
         text: "ZeroTier service unreachable: showing its interfaces only"
         wrapMode: Text.Wrap
     }

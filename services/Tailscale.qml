@@ -177,10 +177,10 @@ Singleton {
 
     Process {
         id: statusQuery
-        // Panneau fermé : l'état seul (`--peers=false`) ; la liste complète peut compter des centaines de nœuds Mullvad. Lue dès
-        // l'ouverture du panneau, pour que l'onglet ait ses appareils sans attendre.
+        // Onglet fermé : l'état seul (`--peers=false`) ; la liste complète (des centaines de nœuds Mullvad possibles) est lue à
+        // l'ouverture de l'onglet.
         // Bornée (démon figé : sans cela, Poller resterait occupé pour la session).
-        command: ["timeout", "10", "tailscale", "status", "--json", ...(Network.networkPanelOpen ? [] : ["--peers=false"])]
+        command: ["timeout", "10", "tailscale", "status", "--json", ...(root.polling ? [] : ["--peers=false"])]
         stdout: StdioCollector {
             onStreamFinished: {
                 // Code 1 quand Tailscale est arrêté (JSON quand même) comme quand le démon est injoignable (pas de JSON) : le
@@ -208,7 +208,7 @@ Singleton {
                 try {
                     root.prefs = JSON.parse(text);
                 } catch (e) {
-                    root.prefs = null;
+                    // Lecture ratée (délai) : dernières préférences connues gardées (pas de « Read only » passager).
                 }
             }
         }

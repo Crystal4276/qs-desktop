@@ -114,7 +114,7 @@ Singleton {
     readonly property bool wiredShown: managed && (wiredLinked || wifi === null)
     // Le bouton « réseau » sert d'entrée aux réseaux privés (Tray, onglet ouvert d'abord : NetworkPanel) : sans câble mais avec
     // le Wi-Fi (qui a son icône), ou sans NetworkManager.
-    readonly property bool privateEntry: !wiredLinked && wifi !== null || !managed
+    readonly property bool privateEntry: !wiredShown
     readonly property string icon: wiredConnected ? (wiredLimited ? "network-wired-no-route" : "nm-device-wired") : "nm-no-connection"
 
     // --- Module Wi-Fi (WifiPanel.qml, WifiIcon.qml) ---
