@@ -156,12 +156,11 @@ ColumnLayout {
         id: joinField
         visible: ZeroTier.authorized
         placeholder: "Network ID (16 characters)"
-        error: text !== "" && !/^[0-9a-fA-F]{16}$/.test(text)
+        // Rouge seulement pour une saisie impossible (caractère non hexadécimal, plus de 16) ; vidé si la demande est partie.
+        error: /[^0-9a-fA-F]/.test(text) || text.length > 16
         onAccepted: text => {
-            if (/^[0-9a-fA-F]{16}$/.test(text)) {
-                ZeroTier.join(text.toLowerCase());
+            if (/^[0-9a-fA-F]{16}$/.test(text) && ZeroTier.join(text.toLowerCase()))
                 joinField.text = "";
-            }
         }
     }
 }

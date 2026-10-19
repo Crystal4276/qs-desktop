@@ -63,7 +63,11 @@ Panel {
         if (network.connected || network.stateChanging)
             return;
         failText = "";
-        if (!network.known && network.security !== NM.WifiSecurityType.Open) {
+        if (!network.known && Network.isEnterprise(network.security)) {
+            failText = `${network.name} is an enterprise network: set it up in Network settings…`;
+            return;
+        }
+        if (!network.known && Network.needsPsk(network.security)) {
             passwordRefused = false;
             passwordFor = network;
             return;
@@ -86,7 +90,7 @@ Panel {
             // Clé refusée : NetworkManager le signale par l'absence de secrets (« Wrong password ») ; une déconnexion ou un délai
             // pendant l'authentification peut venir de la clé ou du signal : message neutre et mot de passe proposé. La saisie
             // met à jour le profil enregistré (Quickshell, connectWithPsk), sans en créer un autre.
-            const secured = network.security !== NM.WifiSecurityType.Open;
+            const secured = Network.needsPsk(network.security);
             if (secured && reason === NM.ConnectionFailReason.NoSecrets) {
                 root.passwordRefused = true;
                 root.passwordFor = network;

@@ -16,7 +16,7 @@ PanelCard {
     readonly property int level: Network.wifiLevel(strength)
     readonly property color qualityColor: Theme.wifi.quality[level]
     readonly property var accessPoint: Network.wifiAccessPoints[network?.name ?? ""] ?? null
-    readonly property bool carriesTraffic: Network.interfaceName !== "" && Network.interfaceName === (Network.wifi?.name ?? "")
+    readonly property bool carriesTraffic: Network.wifiCarriesRoute
 
     // [libellé, valeur] ; lignes sans valeur omises (détails pas encore lus, ou absents).
     readonly property var details: [

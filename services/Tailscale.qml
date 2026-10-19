@@ -89,13 +89,15 @@ Singleton {
             prefsQuery.running = true;
     }
 
-    function run(args: var): void {
+    // Renvoie faux si une autre commande est en cours (rien n'est lancé).
+    function run(args: var): bool {
         if (busy)
-            return;
+            return false;
         error = "";
         busy = true;
         command.command = ["tailscale", ...args];
         command.running = true;
+        return true;
     }
 
     function setRunning(on: bool): void {
@@ -111,14 +113,30 @@ Singleton {
         run(["set", `--${flag}=${on}`]);
     }
 
-    // `tailscale login` attend la fin de l'authentification (10 min au plus) : une seule à la fois (`busy`), erreurs affichées ;
-    // son adresse revient par `status` (AuthURL) et s'ouvre au clic suivant.
+    // `tailscale login` attend la fin de l'authentification (10 min au plus) : processus à part (les autres actions restent
+    // libres), une seule à la fois, erreur affichée ; son adresse revient par `status` (AuthURL) et s'ouvre au clic suivant.
+    readonly property bool loggingIn: loginProcess.running
     function login(): void {
         if (authUrl !== "")
             Quickshell.execDetached(["xdg-open", authUrl]);
-        else
-            run(["login", "--timeout=10m"]);
+        else if (!loginProcess.running) {
+            error = "";
+            loginProcess.running = true;
+        }
         refresh();
+    }
+
+    Process {
+        id: loginProcess
+        command: ["tailscale", "login", "--timeout=10m"]
+        stderr: StdioCollector {
+            id: loginErr
+        }
+        onExited: code => {
+            if (code !== 0)
+                root.error = loginErr.text.trim().split("\n").filter(l => l.trim() !== "").slice(-1)[0] ?? `tailscale login: exit code ${code}`;
+            root.refresh();
+        }
     }
 
     Process {
@@ -131,6 +149,7 @@ Singleton {
         interval: root.polling ? 5000 : 60000
         running: root.available && (root.polling || !Network.wiredLinked)
         repeat: true
+        triggeredOnStart: true   // relu dès le démarrage du minuteur (câble débranché, panneau ouvert)
         onTriggered: root.refresh()
     }
     onPollingChanged: if (polling) refresh()

@@ -11,10 +11,12 @@ import qs.services
 ColumnLayout {
     id: root
 
-    // Appareil dont l'IP vient d'être copiée (affiché 2 s) : `id`, ou "self".
+    // Ce qui vient d'être copié (affiché 2 s) : `id` d'un appareil, "self-ip" ou "self-name". Rien sans valeur.
     property string copied: ""
 
     function copy(text: string, id: string): void {
+        if (text === "")
+            return;
         Network.copy(text);
         copied = id;
         copiedTimer.restart();
@@ -83,6 +85,7 @@ ColumnLayout {
 
                 PanelSection {
                     text: Tailscale.busy ? "Working…"
+                        : Tailscale.loggingIn && Tailscale.state === "NeedsLogin" ? "Waiting for sign-in in the browser…"
                         : Tailscale.running ? `Connected · ${Tailscale.onlineCount} of ${Tailscale.peers.length} devices online`
                         : Tailscale.state === "NeedsLogin" ? "Signed out"
                         : Tailscale.state === "Stopped" ? "Disconnected"
@@ -93,7 +96,7 @@ ColumnLayout {
             PanelButton {
                 visible: Tailscale.state === "NeedsLogin"
                 text: Tailscale.authUrl !== "" ? "Open sign-in page" : "Sign in…"
-                enabled: Tailscale.canAct && (Tailscale.authUrl !== "" || !Tailscale.busy)
+                enabled: Tailscale.canAct && (Tailscale.authUrl !== "" || !Tailscale.loggingIn)
                 onClicked: Tailscale.login()
             }
 
@@ -111,8 +114,8 @@ ColumnLayout {
             rows: [
                 ["Tailnet", Tailscale.tailnet],
                 ["This device", Tailscale.self?.name ?? ""],
-                ["IPv4 address", root.copied === "self" ? "Copied" : (Tailscale.self?.ip ?? "")],
-                ["MagicDNS name", Tailscale.self?.dns ?? ""],
+                ["IPv4 address", root.copied === "self-ip" ? "Copied" : (Tailscale.self?.ip ?? "")],
+                ["MagicDNS name", root.copied === "self-name" ? "Copied" : (Tailscale.self?.dns ?? "")],
                 ["Exit node", Tailscale.exitNode ? Tailscale.exitNode.name : "None"]
             ]
         }
@@ -127,12 +130,12 @@ ColumnLayout {
 
             PanelButton {
                 text: "Copy IP"
-                onClicked: root.copy(Tailscale.self.ip, "self")
+                onClicked: root.copy(Tailscale.self.ip, "self-ip")
             }
 
             PanelButton {
                 text: "Copy name"
-                onClicked: root.copy(Tailscale.self.dns, "self")
+                onClicked: root.copy(Tailscale.self.dns, "self-name")
             }
         }
     }
@@ -144,23 +147,38 @@ ColumnLayout {
     }
 
     // Listes relues toutes les 5 s : ScriptModel avec clé, pour garder les lignes (focus clavier, survol) d'une relecture à
-    // l'autre. « None » : clé vide.
-    Repeater {
-        model: ScriptModel {
-            values: Tailscale.running && Tailscale.exitNodes.length > 0 ? [{ id: "", none: true }, ...Tailscale.exitNodes] : []
-            objectProp: "id"
-        }
+    // l'autre. « None » : clé vide. Liste qui défile au-delà de la hauteur des listes (centaines de nœuds avec Mullvad).
+    Flickable {
+        visible: Tailscale.running && Tailscale.exitNodes.length > 0
+        Layout.fillWidth: true
+        Layout.preferredHeight: Math.min(exitList.implicitHeight, Theme.panel.maxListHeight)
+        contentHeight: exitList.implicitHeight
+        clip: true
+        boundsBehavior: Flickable.StopAtBounds
 
-        PanelRow {
-            required property var modelData
-            readonly property bool none: modelData.none ?? false
+        ColumnLayout {
+            id: exitList
+            width: parent.width
+            spacing: 0
 
-            icon: none ? "network-vpn" : Tailscale.osIcon(modelData.os)
-            text: none ? "None" : modelData.name
-            subtext: none ? "Use your own Internet connection" : (modelData.online ? modelData.ip : "Offline")
-            active: none ? Tailscale.exitNode === null : modelData.exitNode
-            enabled: Tailscale.canAct && !Tailscale.busy && (none || modelData.online)
-            onClicked: Tailscale.setExitNode(none ? "" : (modelData.ip || modelData.dns))
+            Repeater {
+                model: ScriptModel {
+                    values: Tailscale.running && Tailscale.exitNodes.length > 0 ? [{ id: "", none: true }, ...Tailscale.exitNodes] : []
+                    objectProp: "id"
+                }
+
+                PanelRow {
+                    required property var modelData
+                    readonly property bool none: modelData.none ?? false
+
+                    icon: none ? "network-vpn" : Tailscale.osIcon(modelData.os)
+                    text: none ? "None" : modelData.name
+                    subtext: none ? "Use your own Internet connection" : (modelData.online ? modelData.ip : "Offline")
+                    active: none ? Tailscale.exitNode === null : modelData.exitNode
+                    enabled: Tailscale.canAct && !Tailscale.busy && (none || modelData.online)
+                    onClicked: Tailscale.setExitNode(none ? "" : (modelData.ip || modelData.dns))
+                }
+            }
         }
     }
 

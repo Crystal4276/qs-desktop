@@ -37,11 +37,11 @@ Singleton {
 
     // Appelé à la fin de chaque lecture de /proc/net/dev (reload() est asynchrone) ; la route a été relue juste avant.
     function update(): void {
-        // Route par défaut : destination 00000000 ; la plus petite métrique l'emporte.
+        // Route par défaut : destination et masque 00000000 (pas les 0.0.0.0/1 d'un VPN) ; la plus petite métrique l'emporte.
         let best = null;
         for (const line of route.text().split("\n").slice(1)) {
             const f = line.trim().split(/\s+/);
-            if (f.length > 6 && f[1] === "00000000" && (!best || Number(f[6]) < best.metric))
+            if (f.length > 7 && f[1] === "00000000" && f[7] === "00000000" && (!best || Number(f[6]) < best.metric))
                 best = { name: f[0], metric: Number(f[6]) };
         }
         const name = best?.name ?? "";
@@ -124,9 +124,9 @@ Singleton {
     // Réseau de la carte du panneau : connecté, sinon en cours de connexion.
     readonly property var currentWifi: connectedWifi ?? connectingWifi
     // Accès limité (vérification globale de NetworkManager) attribué à l'interface de la route par défaut : le Wi-Fi s'il la
-    // porte, sinon le filaire.
+    // porte ou s'il est seul connecté (route sur un VPN : tun0, wg0…), sinon le filaire.
     readonly property bool wifiCarriesRoute: wifi !== null && interfaceName === wifi.name
-    readonly property bool wifiLimited: limited && connectedWifi !== null && wifiCarriesRoute
+    readonly property bool wifiLimited: limited && connectedWifi !== null && (wifiCarriesRoute || !wiredConnected)
     // Libellé des cartes (filaire, Wi-Fi) quand l'accès est limité.
     readonly property string limitedText: connectivity === NetworkConnectivity.Portal ? "Sign-in required: captive portal"
         : "Connected without Internet access"
@@ -154,6 +154,16 @@ Singleton {
     function qualityText(strength: real): string {
         return ["Very weak", "Weak", "Fair", "Good", "Excellent"][wifiLevel(strength)];
     }
+    // Réseau qui se connecte avec une clé partagée (le panneau la demande s'il est inconnu) ; Open et OWE : sans mot de passe ;
+    // entreprise (EAP, LEAP, WEP dynamique) : identifiants à régler dans l'éditeur de connexions.
+    function needsPsk(security: int): bool {
+        return [WifiSecurityType.WpaPsk, WifiSecurityType.Wpa2Psk, WifiSecurityType.Sae, WifiSecurityType.StaticWep].includes(security);
+    }
+    function isEnterprise(security: int): bool {
+        return [WifiSecurityType.WpaEap, WifiSecurityType.Wpa2Eap, WifiSecurityType.Wpa3SuiteB192, WifiSecurityType.Leap,
+            WifiSecurityType.DynamicWep].includes(security);
+    }
+
     function securityText(security: int): string {
         switch (security) {
         case WifiSecurityType.Open:
