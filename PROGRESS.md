@@ -919,8 +919,18 @@ changement de focus. À vérifier en phase 9 : après `hyprctl reload` au révei
 - Vérifié : Sway isolé (vitrine hors dépôt) — tous les états du glyphe, cartes connecté fort / faible / en connexion, vrai
   panneau avec tes réseaux réels (<Wi-Fi 5 GHz> 5 GHz, <Wi-Fi 2,4 GHz> 2.4 GHz) ; animation (images différentes) ; ton instance recharge sans
   erreur, capture du tray `.shots/wifi-after-tray.png`.
-- Non testé (ton desktop est en filaire, je n'ai pas connecté le Wi-Fi pour ne pas changer ta route) : connexion réelle, carte
-  avec vraies valeurs (débit, IPv4, trafic), mot de passe refusé, accès limité. À tester à la main, idéalement sur le laptop.
+- Tests réels sur ton desktop (ta demande, 2026-10-19 ; VPN coupé par toi, car NordVPN se reconnecte à chaque changement de
+  réseau et coupait Claude Code) : panneau dans un Sway isolé, données NetworkManager réelles, actions par IPC au lieu de clics ;
+  captures `.shots/wifi-test-*.png`.
+  - Connexion à <Wi-Fi 5 GHz> (animation dans ton tray, carte : 53 %, 5 GHz canal 36 80 MHz, 650 Mb/s, IPv4), bascule vers <Wi-Fi 2,4 GHz>,
+    Disconnect, interrupteur coupé (croix, « Wi-Fi is off ») puis rallumé : conformes.
+  - **Corrigé** : « Cancel » ne faisait rien (Quickshell refuse `WifiNetwork.disconnect()` avant la connexion) → déconnexion
+    de l'interface ; vérifié (connexion interrompue, aucun faux message d'échec).
+  - **Corrigé** : bande absente jusqu'à 5 s après le rallumage → relue dès que la liste des réseaux change.
+  - État remis comme avant : `wlan0` déconnecté, connexion automatique désactivée (appareil et <Wi-Fi 5 GHz> / <Wi-Fi 2,4 GHz>), filaire seul
+    en route par défaut. NordVPN à relancer par toi.
+- Non testable ici (réseaux ouverts, filaire prioritaire) : mot de passe refusé, accès limité, ligne « Traffic » (affichée
+  seulement si le Wi-Fi porte la route par défaut). À tester sur le laptop.
 - Valeurs nouvelles à valider : `THEME.md` § 3 « Module Wi-Fi » (couleurs de qualité, glyphe 48 px, durées d'animation).
 
 ## Prochaine étape

@@ -211,6 +211,12 @@ Singleton {
         }
     }
 
+    // Réseaux apparus (Wi-Fi rallumé, recherche) : leur bande sans attendre la relecture suivante.
+    onWifiNetworksChanged: {
+        if (wifiPanelOpen && wifiEnabled)
+            apQuery.running = true;
+    }
+
     Process {
         id: apQuery
         command: ["nmcli", "-t", "-f", "IN-USE,FREQ,CHAN,BANDWIDTH,SIGNAL,SSID", "device", "wifi", "list", "ifname", root.wifi?.name ?? "", "--rescan", "no"]
