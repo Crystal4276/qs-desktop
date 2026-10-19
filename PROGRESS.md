@@ -951,6 +951,29 @@ changement de focus. À vérifier en phase 9 : après `hyprctl reload` au révei
 - Non testé : nœud de sortie (aucun dans ton tailnet), Accept routes, ZeroTier « Leave » / « Join » (pour ne pas quitter ton
   réseau), « Sign in » (compte connecté), clics réels (comme toujours en headless).
 
+### Revues en boucle du Wi-Fi et du panneau réseau (2026-10-19, ta demande)
+
+- 17 passes de `/code-review high` sur `5c19f11^..HEAD`, chaque point vérifié avant correction, un commit par passe
+  (5c397f6 … f6ee8f6). Arrêt : la passe 17 ne trouve plus que des cas limites, déjà corrigés, et du négligeable.
+- Bugs notables trouvés et corrigés : « Cancel » qui désactivait la connexion automatique de l'appareil ; `tailscale up` /
+  `login` refusés avec une option dès qu'un réglage n'est pas par défaut (vérifié en réel) ; dépendance circulaire entre
+  singletons (liaisons `undefined` au démarrage) ; onglet Tailscale / ZeroTier perdu si le démon n'est pas prêt au démarrage ;
+  commande qui ne démarre pas (Quickshell n'émet pas `exited`) ou lecture figée qui bloquaient tout pour la session ; jeton
+  ZeroTier périmé (401) ; route `0.0.0.0/1` d'un VPN prise pour la route par défaut ; panneaux qui débordaient d'un petit écran
+  (le cadre défile désormais, et suit le focus clavier, listes internes comprises).
+- Deux régressions de ma part, rattrapées aux passes suivantes : `up --timeout` (passe 5 → 6), `fallBack()` supprimée par
+  erreur (passe 9 → 10). Depuis, un jeu de 14 vérifications sur banc (Sway isolé, données réelles, ZeroTier sans jeton et avec
+  un jeton périmé, actions Tailscale réversibles, copie, commande introuvable) est rejoué à chaque passe.
+- Composants communs créés en route : `CliRunner`, `Poller` (services) ; `PanelCard`, `CardHeader`, `DetailsGrid`,
+  `PanelList`, `StatusIcon`, `NetworkSettingsButton` ; `TrayButton` accepte un glyphe dessiné.
+- Restent, jugés négligeables : un peu de code semblable entre Tailscale.qml et ZeroTier.qml ; un tray sur plusieurs barres
+  partage l'onglet affiché ; NordVPN a encore son propre lanceur (BACKLOG). À valider par toi : les valeurs « nouveau, à
+  valider » de `THEME.md` (signalées à chaque passe).
+- État de ta machine remis : Wi-Fi déconnecté (connexion auto. de l'appareil à « non »), Shields Up désactivé, DNS ZeroTier
+  désactivé, filaire seul en route par défaut. **NordVPN est encore coupé** (coupé par toi pour les tests Wi-Fi).
+- À tester à la main : défilement à la souris d'un panneau sur petit écran, clics réels, nœud de sortie, Accept routes,
+  Join / Leave ZeroTier, Sign in Tailscale, et tout le Wi-Fi sur le laptop (mot de passe, portail captif).
+
 ## Prochaine étape
 
 Phase 9 — parité Hyprland (tests à faire ensemble dans une session Hyprland : voir « Compatibilité Hyprland »).
