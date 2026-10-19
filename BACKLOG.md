@@ -27,3 +27,7 @@ Idées notées pendant le travail. Rien ici n'est implémenté sans accord.
 - Partage d'écran : choix de l'écran par une fenêtre Quickshell au lieu de `slurp` (`chooser_cmd` de `xdg-desktop-portal-wlr`).
 - **Vue des fenêtres** (accepté le 2026-10-16, après la première version) : aperçus en direct de toutes les fenêtres (`Toplevel` +
   `ScreencopyView`), clic pour y aller, ouverte par un raccourci.
+
+- NordVPN (`services/Vpn.qml`) : son lanceur de commandes (busy / run / error) date de la phase 5 ; le passer sur
+  `services/CliRunner.qml`, qui gère en plus une commande qui ne démarre pas (sinon `busy` resterait vrai pour la session).
+  Relevé par la revue du 2026-10-19 ; non fait sans test, pour ne pas toucher à ta connexion VPN.

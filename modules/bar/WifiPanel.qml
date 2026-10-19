@@ -63,6 +63,10 @@ Panel {
         if (network.connected || network.stateChanging)
             return;
         failText = "";
+        if (passwordFor !== network) {   // demande de mot de passe d'un autre réseau : abandonnée
+            passwordFor = null;
+            passwordRefused = false;
+        }
         if (!network.known && Network.needsEditor(network.security)) {
             failText = `${network.name} needs an enterprise or WEP setup: use Network settings…`;
             return;

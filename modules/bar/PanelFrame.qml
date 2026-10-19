@@ -31,6 +31,22 @@ Rectangle {
     Keys.onUpPressed: (Window.activeFocusItem ?? root).nextItemInFocusChain(false)?.forceActiveFocus()
     Keys.onDownPressed: (Window.activeFocusItem ?? root).nextItemInFocusChain(true)?.forceActiveFocus()
 
+    // Élément choisi au clavier (Tab, flèches) hors de la partie visible d'un cadre qui défile : amené dans la vue.
+    readonly property Item focusedItem: Window.activeFocusItem
+    onFocusedItemChanged: {
+        let ancestor = focusedItem;
+        while (ancestor && ancestor !== column)
+            ancestor = ancestor.parent;
+        if (!ancestor || !scroller.interactive)
+            return;
+        const top = focusedItem.mapToItem(column, 0, 0).y + column.y;
+        const bottom = top + focusedItem.height;
+        if (top - Theme.panel.padding < scroller.contentY)
+            scroller.contentY = Math.max(0, top - Theme.panel.padding);
+        else if (bottom + Theme.panel.padding > scroller.contentY + scroller.height)
+            scroller.contentY = Math.min(scroller.contentHeight - scroller.height, bottom + Theme.panel.padding - scroller.height);
+    }
+
     // Contenu plus haut que l'écran (onglet Tailscale sur un laptop 1080p…) : le cadre défile ; sinon il ne bouge pas.
     Flickable {
         id: scroller
