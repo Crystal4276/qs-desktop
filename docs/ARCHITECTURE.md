@@ -525,8 +525,9 @@ Voir `WALLPAPERS.md` § « Mise en œuvre ». Remplace `swaybg` (Sway) et le fon
 
 - `modules/lock/LockScreen.qml` : `WlSessionLock` (protocole ext-session-lock) + `PamContext` (configuration `login` de
   `/etc/pam.d`). Design validé (maquette du 2026-10-17) : `LockContent.qml`, fond actuel de chaque écran (`WallpaperView`, celui que
-  l'écran affiche, choix courant de l'utilitaire compris) flouté et assombri, horloge, date ; initiale, nom et champ sur l'écran qui
-  a le clavier (avant qu'un clavier soit attribué : l'écran focalisé au verrouillage). Majuscules verrouillées déduites des lettres
+  l'écran affiche, choix courant de l'utilitaire compris) flouté et assombri, horloge, date ; initiale, nom et champ sur l'écran
+  principal (`Outputs.primary` ; à défaut, l'écran focalisé au verrouillage), saisie prise quel que soit l'écran qui a le clavier
+  (demande du 2026-10-19). Majuscules verrouillées déduites des lettres
   tapées. Entrée valide, Échap efface, Ctrl+Retour arrière efface tout.
 - Verrouiller : `Session.lock()` (panneau de réglages, menu d'applications), `qs ipc call lock lock`, veille (à venir). **Aucun
   déverrouillage par IPC.** Les popups ouverts se ferment au verrouillage.
@@ -563,9 +564,10 @@ Voir `WALLPAPERS.md` § « Mise en œuvre ». Remplace `swaybg` (Sway) et le fon
 
 - `services/Screenshot.qml` + `modules/screenshot/ScreenshotTool.qml` (modèle de l'outil de GNOME) : image figée de chaque écran
   (`ScreencopyView` en continu jusqu'à la première image, puis arrêtée : une capture demandée à la création échoue, « no recording
-  context ») ; voile `#ffffff20` et cadre rose de 4 px (ta sélection slurp actuelle) ; modes zone (tracer, déplacer, coins), écran,
-  fenêtre (rectangles des fenêtres des espaces affichés donnés par le compositeur : `Toplevel` ne fournit pas leur position) ; barre
-  d'outils en bas de l'écran de départ ; Entrée / Espace capturent, Échap ferme.
+  context ») ; voile `#ffffff20` et cadre rose de 4 px (ta sélection slurp actuelle) ; capture dès que le choix est fait (ta
+  demande du 2026-10-19 : ni redimensionnement ni bouton de capture) — zone tracée (au relâchement), écran cliqué, fenêtre cliquée
+  (rectangles des fenêtres des espaces affichés donnés par le compositeur : `Toplevel` ne fournit pas leur position) ; barre
+  d'outils en bas de l'écran de départ (modes, fermer) ; Entrée / Espace capturent l'écran présélectionné, Échap ferme.
 - Capture : découpe de l'image figée (`ShaderEffectSource`) à la résolution réelle de l'écran, enregistrée dans
   `Images/screenshot/AAAA-MM-JJ-HHMMSS.png` (comme ta touche Impr.) et copiée dans le presse-papiers (`wl-copy`).
 - Ouvert par le bouton du panneau de réglages (mode zone) et `qs ipc call screenshot area|screen|window` (touche Impr., phase 10).

@@ -10,6 +10,8 @@ import qs.modules.bar
 // processeur (total, température, cœurs), mémoire et swap, GPU (charge, mémoire vidéo, température, consommation, ventilateur,
 // fréquence), disques, réseau ; processus triables (nom, PID, utilisateur, CPU, mémoire, mémoire vidéo), recherche, arrêt de tes
 // processus avec confirmation (SIGTERM, puis « Force » : SIGKILL). Mesures relevées seulement panneau ouvert (Monitor.users).
+// Un processus choisi fige l'ordre de la liste (les valeurs continuent de changer, les nouveaux processus s'ajoutent en bas) jusqu'à
+// ce qu'on le désélectionne (nouveau clic), qu'il s'arrête, ou qu'on change le tri ou la recherche (la liste est alors refigée).
 OverlayPopup {
     id: root
 
@@ -18,14 +20,46 @@ OverlayPopup {
     property int selectedPid: -1
     property string confirm: ""      // "", "end" ou "force" : confirmation en cours pour le processus choisi
 
-    readonly property var rows: {
+    // Ordre des PID figé tant qu'un processus est choisi (null : liste triée en direct).
+    property var frozen: null
+
+    readonly property var sorted: {
         const q = search.text.toLowerCase();
         const list = Monitor.processes.filter(p => q === "" || p.name.toLowerCase().includes(q) || String(p.pid).startsWith(q)
             || p.user.toLowerCase().includes(q));
         const k = sortKey, d = descending ? -1 : 1;
         return list.sort((a, b) => (typeof a[k] === "string" ? a[k].localeCompare(b[k]) : a[k] - b[k]) * d);
     }
+    readonly property var rows: {
+        if (!frozen)
+            return sorted;
+        const byPid = {};
+        for (const p of sorted)
+            byPid[p.pid] = p;
+        const known = new Set(frozen);
+        return frozen.filter(pid => byPid[pid]).map(pid => byPid[pid]).concat(sorted.filter(p => !known.has(p.pid)));
+    }
     readonly property var selectedProcess: Monitor.processes.find(p => p.pid === selectedPid) ?? null
+
+    // Processus choisi arrêté : sélection levée, la liste reprend son tri.
+    onSelectedProcessChanged: {
+        if (selectedPid >= 0 && !selectedProcess)
+            select(-1);
+    }
+
+    function select(pid: int): void {
+        selectedPid = pid;
+        confirm = "";
+        frozen = null;
+        if (pid >= 0)
+            frozen = rows.map(p => p.pid);
+    }
+
+    // Tri ou recherche changés : nouvel ordre, figé de nouveau si un processus est choisi.
+    function refreeze(): void {
+        if (selectedPid >= 0)
+            select(selectedPid);
+    }
 
     function toggle(): void {
         if (visible) {
@@ -35,8 +69,7 @@ OverlayPopup {
         screen = Quickshell.screens.find(s => s.name === Compositor.focusedOutput) ?? Quickshell.screens[0];
         prepareOpen(null);
         search.text = "";
-        selectedPid = -1;
-        confirm = "";
+        select(-1);
         visible = true;
         search.focusInput();
     }
@@ -58,6 +91,7 @@ OverlayPopup {
             sortKey = key;
             descending = key !== "name" && key !== "user";
         }
+        refreeze();
     }
 
     WlrLayershell.namespace: "quickshell-monitor"
@@ -306,6 +340,7 @@ OverlayPopup {
             PanelField {
                 id: search
                 placeholder: "Search processes"
+                onTextChanged: root.refreeze()
                 Keys.onEscapePressed: root.close()
             }
 
@@ -442,10 +477,7 @@ OverlayPopup {
 
                 MouseArea {
                     anchors.fill: parent
-                    onClicked: {
-                        root.selectedPid = row.modelData.pid;
-                        root.confirm = "";
-                    }
+                    onClicked: root.select(root.selectedPid === row.modelData.pid ? -1 : row.modelData.pid)
                 }
             }
         }

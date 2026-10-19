@@ -494,16 +494,12 @@ Singleton {
         readonly property int radius: root.panel.rowRadius
     }
 
-    // Outil de capture (nouveau, phase 8b) : voile et cadre de ta sélection actuelle (slurp), barre d'outils au style des panneaux ;
-    // bouton de capture : anneau `text` autour d'un disque `text` (modèle de l'outil de GNOME).
+    // Outil de capture (nouveau, phase 8b) : voile et cadre de ta sélection actuelle (slurp), barre d'outils au style des panneaux.
     readonly property QtObject screenshot: QtObject {
         readonly property color veil: root.slurpBackground          // hors de la sélection
         readonly property color selection: root.slurpSelection
         readonly property int border: root.slurpBorder
-        readonly property int handle: 3 * root.slurpBorder          // poignées des coins de la zone
         readonly property color hover: Qt.alpha(root.slurpSelection, 0.25)   // écran ou fenêtre sous le pointeur
-        readonly property int buttonSize: root.quickSettings.imageSize + 2 * root.quickSettings.buttonPadding
-        readonly property int captureSize: 2 * root.quickSettings.imageSize   // bouton de capture
         readonly property int gap: root.panel.gap                   // barre d'outils : distance au bas de l'écran
     }
 

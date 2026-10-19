@@ -9,7 +9,8 @@ import qs.modules.bar
 
 // Écran de verrouillage natif (remplace swaylock, ARCHITECTURE § 10.1 R2) : protocole ext-session-lock (WlSessionLock) — si
 // Quickshell s'arrête, la session reste verrouillée — et mot de passe vérifié par PAM (`/etc/pam.d/login`, comme swaylock).
-// Une surface par écran (LockContent) ; le champ du mot de passe s'affiche sur celle qui a le clavier. Pas de déverrouillage par IPC.
+// Une surface par écran (LockContent) ; le champ du mot de passe s'affiche sur l'écran principal (services/Outputs.qml), la saisie
+// est prise quel que soit l'écran qui a le clavier. Pas de déverrouillage par IPC.
 // Verrouiller : Session.lock() (panneau de réglages, menu), `qs ipc call lock lock`, veille (IdleMonitor, à venir).
 Scope {
     id: root
@@ -20,9 +21,9 @@ Scope {
     property bool error: false
     property string message: ""
     property bool capsLock: false
-    // Écran du champ : celui dont la surface a le clavier ; avant (aucun clavier encore attribué), l'écran focalisé au verrouillage.
-    property string activeScreen: ""
+    // Écran du champ : l'écran principal ; à défaut (aucun écran détecté), celui qui était focalisé au verrouillage.
     property string lockedScreen: ""
+    readonly property string fieldScreen: Outputs.primary?.name ?? lockedScreen
 
     // Dossier de configuration PAM : vide = /etc/pam.d (les tests y mettent une configuration factice).
     property string pamDirectory: ""
@@ -34,7 +35,6 @@ Scope {
         password = "";
         error = false;
         message = "";
-        activeScreen = "";
         lockedScreen = Compositor.focusedOutput;
         locked = true;
     }
@@ -142,8 +142,7 @@ Scope {
             LockContent {
                 anchors.fill: parent
                 output: Compositor.output(surface.screen?.name ?? "")
-                primary: root.activeScreen !== "" ? root.activeScreen === surface.screen?.name
-                    : root.lockedScreen === (surface.screen?.name ?? "")
+                primary: root.fieldScreen === (surface.screen?.name ?? "")
                 length: root.password.length
                 message: root.message
                 error: root.error
@@ -155,9 +154,6 @@ Scope {
                     event.accepted = true;
                 }
                 Component.onCompleted: forceActiveFocus()
-
-                readonly property bool active: Window.active
-                onActiveChanged: if (active) root.activeScreen = surface.screen?.name ?? ""
             }
         }
     }

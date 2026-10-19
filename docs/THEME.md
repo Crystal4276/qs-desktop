@@ -336,9 +336,9 @@ Vignettes de 240 × 135 px (16:9), 4 par rangée, 3 rangées visibles (ton choix
 
 ## 7 ter. Outil de capture (nouveau composant, phase 8b)
 
-Voile hors de la sélection `#ffffff20` et cadre `pink` de 4 px (ta sélection `slurp` actuelle) ; poignées des coins : disques `pink`
-de 12 px ; écran ou fenêtre survolés : `pink` à 25 % ; barre d'outils au style des panneaux, mode choisi en contrastes inversés ;
-bouton de capture : anneau et disque `text` (modèle GNOME). **Nouveau, à valider** : poignées, survol, bouton de capture.
+Voile hors de la sélection `#ffffff20` et cadre `pink` de 4 px (ta sélection `slurp` actuelle) ; écran ou fenêtre survolés : `pink`
+à 25 % ; barre d'outils au style des panneaux (modes, fermer), mode choisi en contrastes inversés. Pas de poignées ni de bouton de
+capture : la capture part dès que la zone, l'écran ou la fenêtre est choisi (ta demande du 2026-10-19). **Nouveau, à valider** : survol.
 Glyphes : `U+F0A6D` zone, `U+F0379` écran, `U+F0614` fenêtre, `U+F0156` fermer (Symbols Nerd Font Mono).
 
 ## 7 quater. Panneau de statistiques système (nouveau composant, phase 8b)
