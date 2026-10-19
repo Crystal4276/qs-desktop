@@ -29,9 +29,10 @@ Chaque commande a été rattachée à son paquet sur cette machine avec `pacman 
 | Volume (icône + curseur) | natif (`Services.Pipewire`) | `pipewire`, `wireplumber` (services utilisateur actifs) | `pavucontrol` (clic droit) | Symbols Nerd Font Mono | — |
 | Sortie audio suivante (ex-`audio-toggle.sh`) | natif (`Services.Pipewire`) + `notify-send` (phase 6 : notification interne) | `libnotify` | — | — | — |
 | Mises à jour | `checkupdates` | `pacman-contrib`, **`fakeroot`** (`checkupdates` échoue sans lui ; non déclaré par `pacman-contrib`) | `paru` ou `yay` (clic) ; terminal | Inter, Hack Nerd Font | — |
-| GPU | NVIDIA : `nvidia-smi` ; AMD / Intel : sysfs (natif) | — | `nvidia-utils` (NVIDIA uniquement) ; `nvtop` (clic, tous constructeurs) ; module masqué sans température lisible | Inter, Hack Nerd Font | — |
-| CPU | natif (`/proc/stat`) | — | `btop` (clic) | Inter, Hack Nerd Font | — |
-| Mémoire | natif (`/proc/meminfo`) | — | `btop` (clic) | Inter, Hack Nerd Font | — |
+| GPU | NVIDIA : `nvidia-smi` ; AMD / Intel : sysfs (natif) | — | `nvidia-utils` (NVIDIA uniquement : température, charge, mémoire vidéo, processus) ; module masqué sans température lisible | Inter, Hack Nerd Font | — |
+| CPU | natif (`/proc/stat`) | — | — | Inter, Hack Nerd Font | — |
+| Mémoire | natif (`/proc/meminfo`) | — | — |
+| Panneau de statistiques (clic CPU / mémoire / GPU, remplace btop et nvtop) | natif (`/proc`, `/sys`) | `procps-ng` (`ps`, `kill`), `coreutils` (`df`) ; NVIDIA : `nvidia-smi` | — | Inter, Hack Nerd Font | — |
 | Horloge + fenêtre calendrier | natif (Qt) | `tzdata` (système) | — | Inter, Hack Nerd Font, Font Awesome 7 Free | — |
 | Réseau (débit) | natif (`/proc/net/dev`, `/proc/net/route`) | — | — | Inter, Hack Nerd Font | — |
 | Tray | natif (`Services.SystemTray` ; Quickshell fait aussi le rôle de « watcher ») | — | — | Inter (menus) | — |
@@ -106,8 +107,8 @@ Ce que `install.sh` (phase 11) devra installer, activer ou vérifier — relevé
 | Utilisateur dans le groupe `video` ou règles udev | `brightnessctl` sans `sudo` (laptop) | sans objet (pas de rétroéclairage) | fourni par le paquet `brightnessctl` (règles udev) ; à vérifier sur le laptop |
 
 Commandes dont `install.sh` vérifiera la présence après installation :
-`qs`, `cava`, `checkupdates`, `fakeroot`, `bluetoothctl`, `udisksctl`, `gdbus`, `busctl`, `grim`, `slurp`, `wl-copy`, `pavucontrol`, `btop`
-(+ optionnels : `nvidia-smi`, `nvtop`, `brightnessctl`, `paru`/`yay`, `nm-connection-editor`).
+`qs`, `cava`, `checkupdates`, `fakeroot`, `bluetoothctl`, `udisksctl`, `gdbus`, `busctl`, `grim`, `slurp`, `wl-copy`, `pavucontrol`
+(+ optionnels : `nvidia-smi`, `brightnessctl`, `paru`/`yay`, `nm-connection-editor`).
 
 ## Correspondance avec d'autres distributions
 

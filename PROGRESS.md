@@ -224,6 +224,8 @@ Liste tenue à jour à chaque phase ; à dérouler une fois le projet terminé.
   (l'appareil doit se connecter et rester approuvé) ; NordVPN qui apparaît dans le tray quand le démon démarre après la session.
 - **Deuxième passe** : vraie touche de volume / micro une fois les raccourcis branchés (phase 10) ; connexion limitée (Wi-Fi d'hôtel avec
   portail, ou câble sans Internet) ; sur le laptop : OSD de luminosité et alerte de batterie à 30 % et 15 %.
+- **Statistiques (phase 8b)** : clic sur CPU, mémoire, GPU de la barre ; colonne VRAM des processus (jeu ou navigateur) ;
+  « Force quit » sur une application figée.
 - **Polkit (phase 8b)** : après la bascule (polkit-gnome retiré), une action administrateur (ex. `pkexec true`) : la fenêtre,
   ton mot de passe, une erreur puis le bon.
 - **Veille (phase 8b)** : écrans éteints après 5 min sans activité, rallumés (principal 3 s après) ; sur le laptop, verrouillage
@@ -873,6 +875,16 @@ outil de capture ; fenêtre de statistiques système.
 - Non vérifié : `ScreencopyView` ne reçoit pas d'image dans un Sway isolé sans GPU (configuration minimale comprise), et tes écrans
   étaient en veille. Vérification prévue quand ils seront allumés : ouverture et sélection par IPC, fichier comparé
   numériquement à `grim` sur la même zone (sans regarder l'image), puis supprimé.
+
+### Panneau de statistiques système : fait (2026-10-19)
+
+- Tes choix : panneau surgissant ; les informations de nvtop fusionnées (le module GPU ouvre aussi ce panneau) ; tri et arrêt avec
+  confirmation. `modules/monitor/MonitorPanel.qml` + `services/Monitor.qml` (`ARCHITECTURE.md` § 11.5). btop et nvtop retirés de
+  `deps/`.
+- Vérifié dans un Sway isolé : toutes les mesures (cœurs, température, mémoire, swap, réseau, GPU RTX 2080 avec charge, mémoire
+  vidéo, température, consommation, ventilateur, fréquence, 16 disques en deux colonnes) ; recherche « sleep », choix d'un `sleep`
+  de test, « End process » → confirmation → processus arrêté, liste à jour. Ton instance, panneau fermé : 1 tic CPU en 10 s.
+- À valider : largeur, jauges, lignes (`THEME.md` § 7 quater).
 
 ## Prochaine étape
 

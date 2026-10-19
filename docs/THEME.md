@@ -341,6 +341,12 @@ de 12 px ; écran ou fenêtre survolés : `pink` à 25 % ; barre d'outils au sty
 bouton de capture : anneau et disque `text` (modèle GNOME). **Nouveau, à valider** : poignées, survol, bouton de capture.
 Glyphes : `U+F0A6D` zone, `U+F0379` écran, `U+F0614` fenêtre, `U+F0156` fermer (Symbols Nerd Font Mono).
 
+## 7 quater. Panneau de statistiques système (nouveau composant, phase 8b)
+
+Style des panneaux ; cartes fond `base` (champs des panneaux), titres `yellow` ; jauges : piste `surface0`, remplissage aux couleurs
+des modules de la barre (processeur `teal`, mémoire `green`, GPU `sky`), disques `green` ; ligne de processus choisie `surface0`.
+**Proposé, à valider** : largeur 1100 px, jauges de 8 px, 4 colonnes de cœurs, 14 lignes de processus visibles.
+
 ## 8. Fenêtres (compositeur, pour mémoire)
 
 | | Sway | Hyprland |

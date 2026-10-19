@@ -1,0 +1,227 @@
+pragma Singleton
+
+import QtQuick
+import Quickshell
+import Quickshell.Io
+
+// Statistiques système détaillées (ARCHITECTURE § 11.5 « moniteur système », panneau modules/monitor/) : relevées seulement tant que
+// le panneau est ouvert (`users`), chaque seconde. Processeur (total, par cœur, température), mémoire et swap, GPU (comme nvtop :
+// charge, mémoire vidéo, température, consommation, ventilateur, fréquence ; processus qui l'utilisent), disques, processus (charge
+// instantanée comme top : temps CPU écoulé depuis le relevé précédent, en % d'un cœur).
+Singleton {
+    id: root
+
+    property int users: 0
+    readonly property bool active: users > 0
+    // Ouvrir ou fermer le panneau (modules de la barre, raccourci) : modules/monitor/Monitor.qml écoute.
+    signal toggleRequested
+
+    function toggle(): void {
+        toggleRequested();
+    }
+
+    // --- Processeur ---
+    property int cpuTotal: 0
+    property var cores: []             // % par cœur
+    property int cpuTemperature: -1    // °C (capteur coretemp, k10temp ou zenpower)
+    property var previousCores: []
+
+    // --- Mémoire (octets) ---
+    property real memTotal: 0
+    property real memUsed: 0
+    property real swapTotal: 0
+    property real swapUsed: 0
+
+    // --- GPU ---
+    property var gpu: null             // { name, load, memUsed, memTotal (Mio), temperature, power (W), fan (%), clock (MHz) }
+    property var gpuProcesses: ({})    // pid → mémoire vidéo (Mio)
+
+    // --- Disques ---
+    property var disks: []             // [{ mount, size, used }] (octets)
+
+    // --- Processus ---
+    property var processes: []         // [{ pid, name, user, cpu (%), memory (octets), gpu (Mio) }]
+    property var previousTimes: ({})   // pid → temps CPU (tics)
+    property real previousTotal: 0     // tics de tous les cœurs
+    readonly property string me: Quickshell.env("USER") ?? ""
+
+    // Arrêt d'un de tes processus : SIGTERM (`force` : SIGKILL). Pas d'élévation de droits.
+    function stop(pid: int, force: bool): void {
+        Quickshell.execDetached(["kill", force ? "-KILL" : "-TERM", String(pid)]);
+        Qt.callLater(() => processList.running = true);
+    }
+
+    Timer {
+        interval: 1000
+        running: root.active
+        repeat: true
+        triggeredOnStart: true
+        onTriggered: {
+            cpu.reload();
+            mem.reload();
+            if (!processList.running)
+                processList.running = true;
+            if (!gpuQuery.running && Gpu.vendor !== "")
+                gpuQuery.running = true;
+        }
+    }
+
+    Timer {
+        interval: 5000
+        running: root.active
+        repeat: true
+        triggeredOnStart: true
+        onTriggered: {
+            if (!diskList.running)
+                diskList.running = true;
+        }
+    }
+
+    // Lignes cpuN de /proc/stat : charge de chaque cœur depuis le relevé précédent.
+    FileView {
+        id: cpu
+        path: "/proc/stat"
+        onLoaded: {
+            const rows = text().split("\n").filter(l => /^cpu\d* /.test(l)).map(l => {
+                const t = l.trim().split(/\s+/).slice(1).map(Number);
+                return { idle: t[3] + t[4], total: t.reduce((a, b) => a + b, 0) };
+            });
+            const usage = rows.map((r, i) => {
+                const p = root.previousCores[i];
+                return p && r.total > p.total ? Math.round(100 * (1 - (r.idle - p.idle) / (r.total - p.total))) : 0;
+            });
+            root.previousCores = rows;
+            root.cpuTotal = usage[0] ?? 0;
+            root.cores = usage.slice(1);
+        }
+    }
+
+    FileView {
+        id: mem
+        path: "/proc/meminfo"
+        onLoaded: {
+            const kib = {};
+            for (const line of text().split("\n")) {
+                const m = line.match(/^(\w+):\s+(\d+)/);
+                if (m)
+                    kib[m[1]] = Number(m[2]) * 1024;
+            }
+            root.memTotal = kib.MemTotal ?? 0;
+            root.memUsed = (kib.MemTotal ?? 0) - (kib.MemAvailable ?? 0);
+            root.swapTotal = kib.SwapTotal ?? 0;
+            root.swapUsed = (kib.SwapTotal ?? 0) - (kib.SwapFree ?? 0);
+        }
+    }
+
+    // Température du processeur : premier capteur coretemp / k10temp / zenpower (temp1 : boîtier ou Tctl), toutes les 5 s.
+    Timer {
+        interval: 5000
+        running: root.active
+        repeat: true
+        triggeredOnStart: true
+        onTriggered: cpuTemp.running = true
+    }
+
+    Process {
+        id: cpuTemp
+        command: ["sh", "-c", 'for h in /sys/class/hwmon/hwmon*; do case "$(cat "$h/name" 2>/dev/null)" in coretemp|k10temp|zenpower) cat "$h/temp1_input"; exit 0;; esac; done; exit 0']
+        stdout: StdioCollector {
+            onStreamFinished: root.cpuTemperature = text.trim() !== "" ? Math.round(Number(text) / 1000) : -1
+        }
+    }
+
+    // Processus : temps CPU (/proc/PID/stat), utilisateurs (ps), total des cœurs (/proc/stat), en un seul passage.
+    Process {
+        id: processList
+        command: ["sh", "-c", 'head -1 /proc/stat; echo ---; cat /proc/[0-9]*/stat 2>/dev/null; echo ---; ps -eo pid=,user=']
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const [head, stats, users] = text.split("\n---\n");
+                const total = head.trim().split(/\s+/).slice(1).map(Number).reduce((a, b) => a + b, 0);
+                const owner = {};
+                for (const line of (users ?? "").split("\n")) {
+                    const m = line.trim().match(/^(\d+)\s+(\S+)/);
+                    if (m)
+                        owner[m[1]] = m[2];
+                }
+                const elapsed = total - root.previousTotal;
+                const coresCount = Math.max(1, root.cores.length);
+                const times = {};
+                const list = [];
+                for (const line of (stats ?? "").split("\n")) {
+                    const open = line.indexOf("("), close = line.lastIndexOf(")");
+                    if (open < 0 || close < 0)
+                        continue;
+                    const pid = line.slice(0, open).trim();
+                    const rest = line.slice(close + 2).split(" ");
+                    const time = Number(rest[11]) + Number(rest[12]);
+                    times[pid] = time;
+                    const before = root.previousTimes[pid];
+                    list.push({
+                        pid: Number(pid),
+                        name: line.slice(open + 1, close),
+                        user: owner[pid] ?? "",
+                        cpu: before !== undefined && elapsed > 0 ? Math.round(1000 * (time - before) / (elapsed / coresCount)) / 10 : 0,
+                        memory: Number(rest[21]) * 4096,
+                        gpu: root.gpuProcesses[pid] ?? 0
+                    });
+                }
+                root.previousTimes = times;
+                root.previousTotal = total;
+                root.processes = list;
+            }
+        }
+    }
+
+    // GPU : nvidia-smi (requête + processus) ; AMD : sysfs ; autres : température seule (service Gpu).
+    Process {
+        id: gpuQuery
+        command: Gpu.vendor === "nvidia" && Gpu.useSmi
+            ? ["sh", "-c", "nvidia-smi --query-gpu=name,utilization.gpu,memory.used,memory.total,temperature.gpu,power.draw,fan.speed,clocks.gr --format=csv,noheader,nounits; echo ---; nvidia-smi pmon -c 1 -s m"]
+            : ["sh", "-c", `d="$(dirname "$(dirname "$(dirname "$0")")")"; cat "$d/gpu_busy_percent" "$d/mem_info_vram_used" "$d/mem_info_vram_total" 2>/dev/null; exit 0`, Gpu.sensorPath]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                if (Gpu.vendor === "nvidia" && Gpu.useSmi) {
+                    const [query, pmon] = text.split("\n---\n");
+                    const f = (query ?? "").split("\n")[0].split(",").map(s => s.trim());
+                    const num = s => isNaN(Number(s)) ? -1 : Number(s);
+                    root.gpu = { name: f[0] ?? "", load: num(f[1]), memUsed: num(f[2]), memTotal: num(f[3]), temperature: num(f[4]),
+                        power: num(f[5]), fan: num(f[6]), clock: num(f[7]) };
+                    const procs = {};
+                    for (const line of (pmon ?? "").split("\n")) {
+                        if (line.startsWith("#"))
+                            continue;
+                        const c = line.trim().split(/\s+/);
+                        if (c.length >= 4 && /^\d+$/.test(c[1]))
+                            procs[c[1]] = Number(c[3]) || 0;   // colonne fb (Mio)
+                    }
+                    root.gpuProcesses = procs;
+                } else {
+                    const v = text.trim().split("\n").map(Number);
+                    root.gpu = { name: Gpu.vendor.toUpperCase(), load: v.length > 0 ? v[0] : -1,
+                        memUsed: v.length > 2 ? v[1] / 1048576 : -1, memTotal: v.length > 2 ? v[2] / 1048576 : -1,
+                        temperature: Gpu.temperature, power: -1, fan: -1, clock: -1 };
+                }
+            }
+        }
+    }
+
+    Process {
+        id: diskList
+        command: ["df", "-B1", "-l", "--output=target,size,used", "-x", "tmpfs", "-x", "devtmpfs", "-x", "efivarfs", "-x", "overlay",
+            "-x", "squashfs"]
+        stdout: StdioCollector {
+            onStreamFinished: root.disks = text.split("\n").slice(1).map(l => l.trim().split(/\s+/)).filter(c => c.length === 3)
+                .map(c => ({ mount: c[0], size: Number(c[1]), used: Number(c[2]) }))
+        }
+    }
+
+    // `qs ipc call monitor toggle` (raccourci, phase 10) : panneau modules/monitor/MonitorPanel.qml.
+    IpcHandler {
+        target: "monitor"
+
+        function toggle(): void {
+            root.toggle();
+        }
+    }
+}

@@ -45,10 +45,6 @@ Singleton {
         swapUsed = gib((kib.SwapTotal ?? 0) - (kib.SwapFree ?? 0));
     }
 
-    function openMonitor(): void {
-        Quickshell.execDetached([...Settings.terminal, "btop"]);
-    }
-
     // reload() est asynchrone : les calculs se font à la fin de chaque lecture.
     FileView {
         id: stat

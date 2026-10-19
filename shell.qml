@@ -11,6 +11,7 @@ import qs.modules.bar
 import qs.modules.launcher
 import qs.modules.lock
 import qs.modules.menus
+import qs.modules.monitor
 import qs.modules.notifications
 import qs.modules.osd
 import qs.modules.polkit
@@ -32,4 +33,5 @@ ShellRoot {
     LockScreen {}
     PolkitDialog {}
     ScreenshotTool {}
+    SystemMonitor {}
 }
