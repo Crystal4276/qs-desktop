@@ -77,13 +77,30 @@ Singleton {
 
     // Relecture : onglet affiché (5 s) ; sinon 60 s, câble débranché (icône du tray) ou service pas encore joint (démarrage
     // avant le démon, redémarrage), sans quoi l'onglet ne reviendrait jamais sur une machine câblée.
+    // Lecture en deux temps (`info`, puis `listnetworks` ou les interfaces) : `reading` la couvre entière, pour que Poller ne
+    // relance rien entre les deux.
+    property bool reading: false
+
     Poller {
         id: poller
         tab: "zerotier"
         active: root.available && (root.polling || !Network.wiredLinked || !root.present)
-        busy: infoQuery.running || networksQuery.running || addressQuery.running
-        onRead: if (root.available) infoQuery.running = true
+        busy: root.reading
+        onRead: {
+            if (!root.available)
+                return;
+            root.reading = true;
+            infoQuery.running = true;
+        }
         onPanelClosed: root.clearErrors()
+    }
+
+    // Plus de jeton (ou service injoignable) : réseaux oubliés, repli sur les interfaces `zt*`.
+    function fallBack(): void {
+        info = null;
+        networks = [];
+        authorized = false;
+        addressQuery.running = true;
     }
 
     Process {
@@ -107,6 +124,8 @@ Singleton {
                 // « authtoken.secret not found or readable » (code 2) : pas de jeton.
                 if (infoErr.text.includes("authtoken") || root.failures >= 2)
                     root.fallBack();
+                else
+                    root.reading = false;
             }
         }
     }
@@ -114,6 +133,7 @@ Singleton {
     Process {
         id: networksQuery
         command: ["zerotier-cli", "-j", "listnetworks"]
+        onExited: root.reading = false
         stdout: StdioCollector {
             onStreamFinished: {
                 try {
@@ -135,6 +155,7 @@ Singleton {
     Process {
         id: addressQuery
         command: ["ip", "-j", "addr"]
+        onExited: root.reading = false
         stdout: StdioCollector {
             onStreamFinished: {
                 try {
