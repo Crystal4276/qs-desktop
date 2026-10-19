@@ -126,27 +126,31 @@ ColumnLayout {
     }
 
     // Listes relues toutes les 5 s : ScriptModel avec clé, pour garder les lignes (focus clavier, survol) d'une relecture à
-    // l'autre. « None » : clé vide. Liste qui défile au-delà de la hauteur des listes (centaines de nœuds avec Mullvad).
-    PanelList {
+    // l'autre. « None » : clé vide. Nœuds de sortie : ListView (seules les lignes visibles sont créées : des centaines avec
+    // Mullvad), qui défile au-delà de la hauteur des listes.
+    ListView {
+        id: exitList
         visible: Tailscale.running && Tailscale.exitNodes.length > 0
+        Layout.fillWidth: true
+        Layout.preferredHeight: Math.min(contentHeight, Theme.panel.maxListHeight)
+        clip: true
+        boundsBehavior: Flickable.StopAtBounds
+        model: ScriptModel {
+            values: Tailscale.running && Tailscale.exitNodes.length > 0 ? [{ id: "", none: true }, ...Tailscale.exitNodes] : []
+            objectProp: "id"
+        }
 
-        Repeater {
-            model: ScriptModel {
-                values: Tailscale.running && Tailscale.exitNodes.length > 0 ? [{ id: "", none: true }, ...Tailscale.exitNodes] : []
-                objectProp: "id"
-            }
+        delegate: PanelRow {
+            required property var modelData
+            readonly property bool none: modelData.none ?? false
 
-            PanelRow {
-                required property var modelData
-                readonly property bool none: modelData.none ?? false
-
-                icon: none ? "network-vpn" : Tailscale.osIcon(modelData.os)
-                text: none ? "None" : modelData.name
-                subtext: none ? "Use your own Internet connection" : (modelData.online ? modelData.ip : "Offline")
-                active: none ? Tailscale.exitNode === null : modelData.exitNode
-                enabled: Tailscale.canAct && !Tailscale.busy && (none || modelData.online)
-                onClicked: Tailscale.setExitNode(none ? "" : (modelData.ip || modelData.dns))
-            }
+            width: exitList.width
+            icon: none ? "network-vpn" : Tailscale.osIcon(modelData.os)
+            text: none ? "None" : modelData.name
+            subtext: none ? "Use your own Internet connection" : (modelData.online ? modelData.ip : "Offline")
+            active: none ? Tailscale.exitNode === null : modelData.exitNode
+            enabled: Tailscale.canAct && !Tailscale.busy && (none || modelData.online)
+            onClicked: Tailscale.setExitNode(none ? "" : (modelData.ip || modelData.dns))
         }
     }
 

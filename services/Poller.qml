@@ -17,10 +17,11 @@ Timer {
     signal panelClosed
 
     function request(): void {
-        Qt.callLater(start);
+        Qt.callLater(trigger);
     }
 
-    function start(): void {
+    // Pas `start` : ce serait masquer Timer.start().
+    function trigger(): void {
         if (busy)
             again = true;
         else

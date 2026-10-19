@@ -242,6 +242,7 @@ graphique Linux), ZeroTier : `zerotier-cli`.
 | Graphe de trafic | 2 min (24 relevés de 5 s) ; creux `crust`, coins 10 px, **64 px** de haut ; descendant : aire `sky` à **25 %** + ligne, montant : ligne `peach` ; lignes **2 px** ; légende Inter 16 px ↓ / ↑ aux couleurs des courbes, échelle `subtext0` | `sky` : module réseau de la barre ; **`peach`, tailles nouvelles, à valider** |
 | Appareils Tailscale | ligne de panneau, icône Papirus du système (ordinateur / téléphone), point d'état **10 px** cerclé du fond du panneau : `green` en ligne, `surface2` hors ligne ; nom `green` en ligne | **point nouveau, à valider** |
 | Options | ligne de panneau avec interrupteur à droite (Use Tailscale DNS, Accept subnet routes, Shields up, Allow local network access) | GNOME |
+| Bouton du tray sans câble | `network-vpn` (le Wi-Fi a son icône) ; à 50 % d'opacité si aucun réseau privé n'est actif (opacité « indisponible » des panneaux) | panneaux |
 | Avertissements | `red` (erreur de commande, santé du démon) ; lecture seule : `subtext0` avec la commande qui active les actions | panneaux |
 
 ### Calendrier de l'horloge (nouveau composant, phase 4 — ARCHITECTURE § 8.3)
