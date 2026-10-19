@@ -12,8 +12,12 @@ case "${1:-}" in
     log) exec qs log -f -p "$repo" ;;
 esac
 
-# Tue l'instance de dev précédente (celle lancée depuis ce dépôt uniquement).
-qs kill -p "$repo" >/dev/null 2>&1 || true
+# Tue les instances de dev précédentes (celles lancées depuis ce dépôt uniquement) : `qs kill` n'en arrête qu'une par appel.
+for _ in {1..10}; do
+    qs list -p "$repo" >/dev/null 2>&1 || break
+    qs kill -p "$repo" >/dev/null 2>&1 || true
+    sleep 0.3
+done
 
 [[ "${1:-}" == "stop" ]] && exit 0
 
