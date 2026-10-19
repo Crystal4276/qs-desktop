@@ -83,8 +83,9 @@ Item {
             readonly property bool privateNetworks: Tailscale.installed || ZeroTier.present
             readonly property bool privateUp: Tailscale.running || ZeroTier.connectedCount > 0
             visible: Network.wiredShown || privateNetworks
-            // `network-vpn` seulement si un réseau privé est actif ; sinon l'état filaire (« aucune connexion »).
-            icon: !Network.wiredLinked && privateUp ? "network-vpn" : Network.icon
+            // Sans câble, le bouton sert aux réseaux privés : `network-vpn` si l'un est actif ou si le Wi-Fi existe (il a sa
+            // propre icône pour la connexion) ; sinon (ni câble ni Wi-Fi) l'état filaire, « aucune connexion ».
+            icon: !Network.wiredLinked && (privateUp || Network.wifi !== null) ? "network-vpn" : Network.icon
             panel: networkPanel
         }
 
