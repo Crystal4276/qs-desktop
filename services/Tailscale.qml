@@ -15,15 +15,16 @@ Singleton {
 
     readonly property bool polling: Network.networkPanelOpen
     // Commande présente (`command -v`, au démarrage).
-    property bool available: false
-    // Commande présente et démon joignable (une réponse JSON).
+    readonly property bool available: cli.available
+    // Démon joignable (réponse JSON) ; ne repasse à faux qu'après deux échecs de suite (redémarrage du démon).
     property bool installed: false
+    property int failures: 0
     property var status: null
     property var prefs: null
 
     readonly property string state: status?.BackendState ?? ""   // Running, Stopped, NeedsLogin, Starting, NoState
     readonly property bool running: state === "Running"
-    readonly property bool canAct: (prefs?.OperatorUser ?? "") === Quickshell.env("USER")
+    readonly property bool canAct: (prefs?.OperatorUser ?? "") === (Quickshell.env("USER") || Quickshell.env("LOGNAME"))
     readonly property string tailnet: status?.CurrentTailnet?.Name ?? ""
     readonly property string authUrl: status?.AuthURL ?? ""
     readonly property var health: status?.Health ?? []
@@ -41,9 +42,22 @@ Singleton {
     readonly property bool shieldsUp: prefs?.ShieldsUp ?? false
     readonly property bool allowLanAccess: prefs?.ExitNodeAllowLANAccess ?? false
 
-    // Dernière commande : en cours, et son erreur ("" : aucune).
-    property bool busy: false
-    property string error: ""
+    // Dernière commande : en cours, et son erreur ("" : aucune) ; connexion au compte à part (elle attend le navigateur).
+    readonly property bool busy: cli.busy
+    readonly property string error: cli.error || loginCli.error
+    readonly property bool loggingIn: loginCli.busy
+
+    CliRunner {
+        id: cli
+        program: "tailscale"
+        onFinished: root.refresh()
+    }
+
+    CliRunner {
+        id: loginCli
+        program: "tailscale"
+        onFinished: root.refresh()
+    }
 
     // Nom d'affichage : nom de la machine, sinon (iOS : « localhost ») le premier label du nom MagicDNS.
     function peer(p: var): var {
@@ -81,27 +95,22 @@ Singleton {
         return minutes < 60 ? `${minutes} min ago` : minutes < 2880 ? `${Math.round(minutes / 60)} h ago` : `${Math.round(minutes / 1440)} d ago`;
     }
 
+    // Préférences : panneau ouvert, ou pas encore lues (droits connus dès l'ouverture, sans message « Read only » passager).
     function refresh(): void {
         if (!available)
             return;
         statusQuery.running = true;
-        if (polling)
+        if (polling || prefs === null)
             prefsQuery.running = true;
     }
 
-    // Renvoie faux si une autre commande est en cours (rien n'est lancé).
     function run(args: var): bool {
-        if (busy)
-            return false;
-        error = "";
-        busy = true;
-        command.command = ["tailscale", ...args];
-        command.running = true;
-        return true;
+        return cli.run(args);
     }
 
+    // `up` attend une authentification si la clé du nœud a expiré : borné, pour ne pas bloquer les autres actions.
     function setRunning(on: bool): void {
-        run([on ? "up" : "down"]);
+        run(on ? ["up", "--timeout=30s"] : ["down"]);
     }
 
     // `node` : IP ou nom MagicDNS de l'appareil de sortie (`tailscale set` accepte les deux), "" pour aucun.
@@ -113,36 +122,14 @@ Singleton {
         run(["set", `--${flag}=${on}`]);
     }
 
-    // `tailscale login` attend la fin de l'authentification (10 min au plus) : processus à part (les autres actions restent
-    // libres), une seule à la fois, erreur affichée ; son adresse revient par `status` (AuthURL) et s'ouvre au clic suivant.
-    readonly property bool loggingIn: loginProcess.running
+    // `tailscale login` attend la fin de l'authentification (10 min au plus) : lanceur à part (les autres actions restent
+    // libres), une seule à la fois ; son adresse revient par `status` (AuthURL) et s'ouvre au clic suivant.
     function login(): void {
         if (authUrl !== "")
             Quickshell.execDetached(["xdg-open", authUrl]);
-        else if (!loginProcess.running) {
-            error = "";
-            loginProcess.running = true;
-        }
+        else
+            loginCli.run(["login", "--timeout=10m"]);
         refresh();
-    }
-
-    Process {
-        id: loginProcess
-        command: ["tailscale", "login", "--timeout=10m"]
-        stderr: StdioCollector {
-            id: loginErr
-        }
-        onExited: code => {
-            if (code !== 0)
-                root.error = loginErr.text.trim().split("\n").filter(l => l.trim() !== "").slice(-1)[0] ?? `tailscale login: exit code ${code}`;
-            root.refresh();
-        }
-    }
-
-    Process {
-        running: true
-        command: ["sh", "-c", "command -v tailscale"]
-        onExited: code => root.available = code === 0
     }
 
     Timer {
@@ -160,20 +147,19 @@ Singleton {
         command: ["tailscale", "status", "--json"]
         stdout: StdioCollector {
             onStreamFinished: {
-                // Démon injoignable (« failed to connect to local tailscaled », code 1 aussi) : pas de JSON.
+                // Code 1 quand Tailscale est arrêté (JSON quand même) comme quand le démon est injoignable (pas de JSON) : le
+                // JSON fait foi.
                 try {
                     root.status = JSON.parse(text);
                     root.installed = true;
+                    root.failures = 0;
                 } catch (e) {
-                    root.status = null;
-                    root.installed = false;
+                    root.failures++;
+                    if (root.failures >= 2) {
+                        root.status = null;
+                        root.installed = false;
+                    }
                 }
-            }
-        }
-        onExited: code => {
-            if (code !== 0 && code !== 1) {   // 1 : arrêté (« Tailscale is stopped »), JSON quand même
-                root.status = null;
-                root.installed = false;
             }
         }
     }
@@ -189,19 +175,6 @@ Singleton {
                     root.prefs = null;
                 }
             }
-        }
-    }
-
-    Process {
-        id: command
-        stderr: StdioCollector {
-            id: commandErr
-        }
-        onExited: code => {
-            root.busy = false;
-            if (code !== 0)
-                root.error = commandErr.text.trim().split("\n").filter(l => l.trim() !== "").slice(-1)[0] ?? `tailscale: exit code ${code}`;
-            root.refresh();
         }
     }
 }

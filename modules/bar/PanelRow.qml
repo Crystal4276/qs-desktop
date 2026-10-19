@@ -22,6 +22,7 @@ Rectangle {
     implicitHeight: Math.max(iconItem.implicitHeight, leadingRow.implicitHeight, texts.implicitHeight, trailingRow.implicitHeight) + 2 * Theme.panel.rowPadding
     radius: Theme.panel.rowRadius
     color: clickable && hover.hovered ? Theme.panel.rowHover : "transparent"
+    opacity: enabled ? 1 : Theme.panel.disabledOpacity   // indisponible, comme PanelButton
 
     // Clavier (Tab, flèches) : Entrée ou Espace activent ; liseré quand l'élément est choisi.
     activeFocusOnTab: clickable

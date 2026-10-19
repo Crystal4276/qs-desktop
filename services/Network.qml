@@ -339,8 +339,9 @@ Singleton {
         nmcli -t -g IP4.ADDRESS,IP4.GATEWAY,IP4.DNS,IP4.DOMAIN,IP6.ADDRESS device show "$i"
     done`
 
+    // Ligne de `nmcli -g` (un seul champ, « : » échappés) : même désescapage que splitTerse.
     function unescapeField(value: string): string {
-        return value.replace(/\\(.)/g, "$1");
+        return splitTerse(value).join(":");
     }
 
     Process {
