@@ -11,7 +11,8 @@ import qs.modules.bar
 // Quickshell s'arrête, la session reste verrouillée — et mot de passe vérifié par PAM (`/etc/pam.d/login`, comme swaylock).
 // Une surface par écran (LockContent) ; le champ du mot de passe s'affiche sur l'écran principal (services/Outputs.qml), la saisie
 // est prise quel que soit l'écran qui a le clavier. Pas de déverrouillage par IPC.
-// Verrouiller : Session.lock() (panneau de réglages, menu), `qs ipc call lock lock`, veille (IdleMonitor, à venir).
+// Verrouiller : Session.lock() (panneau de réglages, menu), `qs ipc call lock lock`, avant la mise en veille du système
+// (services/Idle.qml, laptop). L'inactivité éteint seulement les écrans, comme swayidle aujourd'hui.
 Scope {
     id: root
 

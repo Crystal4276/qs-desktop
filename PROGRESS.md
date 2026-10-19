@@ -899,6 +899,14 @@ outil de capture ; fenêtre de statistiques système.
 
 Retour du 2026-10-19 : phase validée.
 
+### Revues en boucle de la phase 8b (2026-10-19, à ta demande)
+
+4 passes : 10 → 10 (+2) → 8 → 8 points ; la quatrième ne trouve que du mineur (« la boucle peut s'arrêter »). Commits 4321403,
+3dc3266, 78d18c0 et la passe 4. Points notables corrigés : rechargement de la config pendant le verrouillage (déverrouillait sans
+mot de passe), outil de capture qui pouvait rester invisible en bloquant le bureau, panorama décodé par écran (≈ 1 000 → 710 Mo
+dans le test). Laissés (négligeables) : écrans de même description (choix de fond partagé), recalcul du fond à chaque
+changement de focus. À vérifier en phase 9 : après `hyprctl reload` au réveil, répartition des espaces (Outputs) et VRR/HDR.
+
 ## Prochaine étape
 
 Phase 9 — parité Hyprland (tests à faire ensemble dans une session Hyprland : voir « Compatibilité Hyprland »).

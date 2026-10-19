@@ -3,7 +3,6 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
-import qs.config
 
 // Température du GPU (INVENTORY.md § 1, module `custom/nvidia` ; ARCHITECTURE.md § 11.5), toutes les 5 s.
 // Carte : celle qui affiche le démarrage (`boot_vga`), sinon la première. Lecture selon le constructeur :

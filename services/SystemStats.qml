@@ -3,7 +3,6 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
-import qs.config
 
 // Processeur et mémoire (INVENTORY.md § 1, modules `cpu` et `memory`), toutes les 5 s comme Waybar.
 // Calculs repris de Waybar 0.15 (cpu_usage/linux.cpp, memory/common.cpp).
