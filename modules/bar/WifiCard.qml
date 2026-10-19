@@ -77,9 +77,7 @@ Rectangle {
 
             PanelButton {
                 text: root.connected ? "Disconnect" : "Cancel"
-                // En connexion, `WifiNetwork.disconnect()` est refusé (« not currently connected ») : c'est l'interface qu'on
-                // déconnecte, ce qui interrompt l'activation.
-                onClicked: root.connected ? root.network.disconnect() : Network.wifi?.disconnect()
+                onClicked: root.connected ? root.network.disconnect() : Network.cancelWifi()
             }
         }
 

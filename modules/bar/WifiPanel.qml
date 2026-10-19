@@ -27,15 +27,17 @@ Panel {
 
     readonly property var others: Network.wifiNetworks.filter(n => n !== Network.currentWifi)
 
+    // Fermé : demandes en cours oubliées (un échec plus tard, panneau fermé, n'est pas annoncé à la réouverture).
     onVisibleChanged: {
-        Network.wifiPanelOpen = visible;
+        Network.setPanelOpen("wifi", root, visible);
         if (!visible) {
             passwordFor = null;
             passwordRefused = false;
+            pending = null;
             failText = "";
         }
     }
-    Component.onDestruction: Network.wifiPanelOpen = false
+    Component.onDestruction: Network.setPanelOpen("wifi", root, false)
 
     function stateText(network): string {
         switch (network.state) {
@@ -73,6 +75,11 @@ Panel {
     Connections {
         target: root.pending
         ignoreUnknownSignals: true
+        // Connecté : plus rien à surveiller.
+        function onConnectedChanged() {
+            if (root.pending?.connected)
+                root.pending = null;
+        }
         function onConnectionFailed(reason) {
             const network = root.pending;
             root.pending = null;
@@ -105,18 +112,18 @@ Panel {
 
     // --- Réseau courant ---
     WifiCard {
-        visible: Network.wifiEnabled && network !== null
+        visible: Network.wifiUsable && network !== null
         network: Network.currentWifi
     }
 
     // --- Autres réseaux ---
     PanelSection {
-        visible: Network.wifiEnabled
+        visible: Network.wifiUsable
         text: root.others.length === 0 ? "Networks · searching…" : Network.currentWifi ? "Other networks" : "Networks"
     }
 
     Flickable {
-        visible: Network.wifiEnabled && root.others.length > 0
+        visible: Network.wifiUsable && root.others.length > 0
         Layout.fillWidth: true
         Layout.preferredHeight: Math.min(wifiList.implicitHeight, Theme.panel.maxListHeight)
         contentHeight: wifiList.implicitHeight
@@ -174,6 +181,13 @@ Panel {
             text = "";
             if (visible)
                 focusInput();
+        }
+        // Autre réseau demandé pendant la saisie : le texte tapé n'est pas pour lui.
+        Connections {
+            target: root
+            function onPasswordForChanged() {
+                password.text = "";
+            }
         }
         onAccepted: text => {
             const network = root.passwordFor;

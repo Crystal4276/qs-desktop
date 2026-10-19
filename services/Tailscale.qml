@@ -8,11 +8,14 @@ import Quickshell.Io
 // la commande `tailscale` (pas de bibliothèque native). Lecture sans droits (`status --json`, `debug prefs`) ; les actions
 // demandent que ton utilisateur soit « operator » du démon (`sudo tailscale set --operator=$USER`, une fois — install.sh) :
 // sans cela, l'erreur de la commande est affichée.
-// Relu toutes les 5 s panneau ouvert (`polling`), toutes les 60 s sinon (icône du tray quand il n'y a pas de câble).
+// Relu toutes les 5 s panneau réseau ouvert, toutes les 60 s sinon (icône du tray quand il n'y a pas de câble) ; rien si la
+// commande est absente (cherchée une fois au démarrage). Préférences lues panneau ouvert seulement.
 Singleton {
     id: root
 
-    property bool polling: false
+    readonly property bool polling: Network.networkPanelOpen
+    // Commande présente (`command -v`, au démarrage).
+    property bool available: false
     // Commande présente et démon joignable (une réponse JSON).
     property bool installed: false
     property var status: null
@@ -79,8 +82,11 @@ Singleton {
     }
 
     function refresh(): void {
+        if (!available)
+            return;
         statusQuery.running = true;
-        prefsQuery.running = true;
+        if (polling)
+            prefsQuery.running = true;
     }
 
     function run(args: var): void {
@@ -115,9 +121,15 @@ Singleton {
         refresh();
     }
 
+    Process {
+        running: true
+        command: ["sh", "-c", "command -v tailscale"]
+        onExited: code => root.available = code === 0
+    }
+
     Timer {
         interval: root.polling ? 5000 : 60000
-        running: true
+        running: root.available
         repeat: true
         triggeredOnStart: true
         onTriggered: root.refresh()
@@ -129,11 +141,13 @@ Singleton {
         command: ["tailscale", "status", "--json"]
         stdout: StdioCollector {
             onStreamFinished: {
+                // Démon injoignable (« failed to connect to local tailscaled », code 1 aussi) : pas de JSON.
                 try {
                     root.status = JSON.parse(text);
                     root.installed = true;
                 } catch (e) {
                     root.status = null;
+                    root.installed = false;
                 }
             }
         }

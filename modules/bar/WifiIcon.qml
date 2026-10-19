@@ -4,14 +4,15 @@ import qs.config
 
 // Glyphe Wi-Fi dessiné (THEME.md § 3 « Module Wi-Fi ») : géométrie des icônes Papirus `network-wireless-signal-*` (viewBox 16×16,
 // éventail de sommet (8, 15)), pour animer ce qu'elles montrent en images fixes. Éventail de fond à 35 %, secteur plein selon le
-// niveau (0 aucun … 4 excellent, sommets y = 15 / 9 / 6 / 4 / 1 comme Papirus), glissement d'un niveau à l'autre ; balayage en
+// niveau (-1 : non connecté, éventail vide ; 0 très faible … 4 excellent, sommets y = 12 / 9 / 6 / 4 / 1 — Papirus pour 1 à 4 ;
+// 0 a un petit secteur, pour ne pas ressembler à « non connecté »), glissement d'un niveau à l'autre ; balayage en
 // boucle pendant la connexion ; croix (Wi-Fi coupé) et « ! » (accès limité) repris de `network-wireless-offline` / `-limited` ;
 // cadenas (réseau protégé, listes du panneau) de `network-wireless-secure-*`, réduit à 85 % dans le coin pour ne pas toucher
 // l'éventail (Papirus l'entaille).
 Item {
     id: root
 
-    property int level: 0
+    property int level: -1
     property bool connecting: false
     property bool off: false
     property bool limited: false
@@ -23,10 +24,10 @@ Item {
     implicitHeight: size
 
     readonly property string wedge: "M 0,4 C 2.1,2.1 4.9,1 8,1 c 3.1,0 5.9,1.1 8,3 L 8,15 Z"
-    readonly property var tops: [15, 9, 6, 4, 1]
+    readonly property var tops: [12, 9, 6, 4, 1]
 
     // Haut du secteur plein : niveau (animé) ou balayage pendant la connexion.
-    property real levelTop: tops[Math.max(0, Math.min(4, level))]
+    property real levelTop: level < 0 ? 15 : tops[Math.min(4, level)]
     Behavior on levelTop {
         NumberAnimation {
             duration: Theme.wifi.levelDuration

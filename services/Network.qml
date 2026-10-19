@@ -119,6 +119,8 @@ Singleton {
 
     readonly property bool wifiShown: managed && wifi !== null
     readonly property bool wifiHardwareEnabled: Networking.wifiHardwareEnabled
+    // Radio utilisable : interrupteur logiciel et matériel (rfkill, mode avion).
+    readonly property bool wifiUsable: wifiEnabled && wifiHardwareEnabled
     readonly property var connectingWifi: wifiNetworks.find(n => n.state === ConnectionState.Connecting) ?? null
     // Réseau de la carte du panneau : connecté, sinon en cours de connexion.
     readonly property var currentWifi: connectedWifi ?? connectingWifi
@@ -162,9 +164,17 @@ Singleton {
         }
     }
 
-    // Panneaux ouverts : le Wi-Fi recherche les réseaux et relit ses détails ; le panneau réseau relit les détails filaires.
-    property bool networkPanelOpen: false
-    property bool wifiPanelOpen: false
+    // Panneaux ouverts : le Wi-Fi recherche les réseaux et relit ses détails ; le panneau réseau relit les détails filaires (et
+    // fait relire Tailscale / ZeroTier toutes les 5 s). Liste des panneaux ouverts plutôt qu'un booléen : deux barres avec un
+    // tray, ou une barre recréée, ne s'écrasent pas.
+    property var openPanels: []
+    readonly property bool networkPanelOpen: openPanels.some(p => p.kind === "network")
+    readonly property bool wifiPanelOpen: openPanels.some(p => p.kind === "wifi")
+
+    function setPanelOpen(kind: string, panel: QtObject, open: bool): void {
+        const others = openPanels.filter(p => p.panel !== panel);
+        openPanels = open ? [...others, { kind: kind, panel: panel }] : others;
+    }
 
     Binding {
         when: root.wifi !== null
@@ -207,7 +217,7 @@ Singleton {
     }
 
     Timer {
-        running: root.wifiPanelOpen && root.wifi !== null && root.wifiEnabled
+        running: root.wifiPanelOpen && root.wifi !== null && root.wifiUsable
         triggeredOnStart: true
         interval: root.interval
         repeat: true
@@ -217,10 +227,24 @@ Singleton {
         }
     }
 
-    // Réseaux apparus (Wi-Fi rallumé, recherche) : leur bande sans attendre la relecture suivante.
+    // Réseaux apparus (Wi-Fi rallumé, recherche) : leur bande sans attendre la relecture suivante. Seulement quand l'ensemble
+    // des noms change : la liste est recalculée à chaque variation de signal.
+    property string wifiNames: ""
     onWifiNetworksChanged: {
-        if (wifiPanelOpen && wifiEnabled)
+        const names = wifiNetworks.map(n => n.name).sort().join("\n");
+        if (names === wifiNames)
+            return;
+        wifiNames = names;
+        if (wifiPanelOpen && wifiUsable && names !== "")
             apQuery.running = true;
+    }
+
+    // Annule une connexion Wi-Fi en cours : désactive la connexion qui s'active (`nmcli connection down`), sans
+    // `Device.Disconnect` qui bloquerait ensuite la connexion automatique de l'appareil (documentation de NetworkManager),
+    // ni `WifiNetwork.disconnect()` que Quickshell refuse avant la connexion.
+    function cancelWifi(): void {
+        if (wifi)
+            Quickshell.execDetached(["sh", "-c", 'u=$(nmcli -t -g GENERAL.CON-UUID device show "$1") && [ -n "$u" ] && nmcli connection down uuid "$u"', "sh", wifi.name]);
     }
 
     Process {
