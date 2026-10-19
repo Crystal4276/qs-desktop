@@ -61,12 +61,20 @@ Panel {
         }
     }
 
-    TailscaleView {
-        visible: root.current === "tailscale"
+    // Vues construites seulement panneau ouvert sur leur onglet (des centaines de nœuds de sortie possibles, une barre par
+    // écran).
+    Loader {
+        Layout.fillWidth: true
+        active: root.visible && root.current === "tailscale"
+        visible: active
+        sourceComponent: TailscaleView {}
     }
 
-    ZeroTierView {
-        visible: root.current === "zerotier"
+    Loader {
+        Layout.fillWidth: true
+        active: root.visible && root.current === "zerotier"
+        visible: active
+        sourceComponent: ZeroTierView {}
     }
 
     // Édition des connexions, quel que soit l'onglet (et même sans onglet : aucun appareil encore listé).

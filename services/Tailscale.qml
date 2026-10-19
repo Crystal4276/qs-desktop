@@ -13,7 +13,7 @@ import Quickshell.Io
 Singleton {
     id: root
 
-    readonly property bool polling: Network.networkPanelOpen && Network.networkTab === "tailscale"
+    readonly property bool polling: poller.fast
     // Commande présente (`command -v`, au démarrage).
     readonly property bool available: cli.available
     // Démon joignable (réponse JSON) ; ne repasse à faux qu'après deux échecs de suite (redémarrage du démon).
@@ -107,6 +107,8 @@ Singleton {
 
     // Préférences : panneau ouvert, ou pas encore lues (droits connus dès l'ouverture, sans message « Read only » passager).
     function read(): void {
+        if (!available)
+            return;
         statusQuery.running = true;
         if (polling || prefs === null)
             prefsQuery.running = true;
@@ -152,21 +154,11 @@ Singleton {
     // avant le démon, redémarrage), sans quoi l'onglet ne reviendrait jamais sur une machine câblée.
     Poller {
         id: poller
-        fast: root.polling
+        tab: "tailscale"
         active: root.available && (root.polling || !Network.wiredLinked || !root.installed)
         busy: statusQuery.running || prefsQuery.running
         onRead: root.read()
-    }
-
-    // Panneau réseau : relu à l'ouverture (onglets à jour) ; erreur de la dernière action oubliée à la fermeture.
-    Connections {
-        target: Network
-        function onNetworkPanelOpenChanged() {
-            if (Network.networkPanelOpen)
-                root.refresh();
-            else
-                root.clearErrors();
-        }
+        onPanelClosed: root.clearErrors()
     }
 
     Process {

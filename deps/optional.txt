@@ -6,4 +6,4 @@ brightnessctl   # réglage du rétroéclairage (laptop) ; non installé sur le d
 paru            # (AUR) commande de mise à jour lancée par le module updates ; sinon yay ou pacman
 nordvpn-bin     # (AUR) module NordVPN (connexion, pays, pause) ; masqué si absent
 tailscale       # onglet Tailscale du panneau réseau (état, appareils, nœud de sortie, options) ; masqué si absent. Actions : `sudo tailscale set --operator=$USER` une fois (install.sh, phase 11)
-zerotier-one    # onglet ZeroTier du panneau réseau (zerotier-cli -j ; jeton copié dans ~/.zeroTierOneAuthToken, install.sh phase 11 ; sans lui, interfaces zt* lues par `ip`, iproute2) ; masqué si absent
+zerotier-one    # onglet ZeroTier du panneau réseau (zerotier-cli -j ; jeton copié dans ~/.zeroTierOneAuthToken, install.sh phase 11 ; sans lui, interfaces zt* lues par `ip`, iproute2 dans arch-pacman.txt) ; masqué si absent

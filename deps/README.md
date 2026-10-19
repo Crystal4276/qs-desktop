@@ -139,6 +139,7 @@ Correspondances attendues, **non encore vérifiées** (phase 11).
 | systemd (`busctl`) | systemd | systemd | toujours présent |
 | nm-connection-editor (optionnel) | nm-connection-editor | network-manager-gnome | |
 | tailscale (optionnel) | — (dépôt de l'éditeur : pkgs.tailscale.com) | — (dépôt de l'éditeur : pkgs.tailscale.com) | absent des dépôts officiels Fedora et Debian/Ubuntu |
+| iproute2 | iproute | iproute2 | toujours présent |
 | zerotier-one (optionnel) | — (dépôt de l'éditeur : install.zerotier.com) | — (dépôt de l'éditeur : install.zerotier.com) | absent des dépôts officiels Fedora et Debian/Ubuntu |
 | pacman-contrib + fakeroot | — | — | spécifique Arch : module mises à jour masqué |
 | btop / nvtop | idem | idem | |

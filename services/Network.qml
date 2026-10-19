@@ -131,6 +131,9 @@ Singleton {
     readonly property string limitedText: connectivity === NetworkConnectivity.Portal ? "Sign-in required: captive portal"
         : "Connected without Internet access"
     readonly property bool wiredLimited: limited && wiredConnected && !wifiCarriesRoute
+    // Câble qui porte la route (son pont si c'est un port de pont : détails lus panneau ouvert) ; "" : aucun (VPN, Wi-Fi).
+    readonly property string routeWiredDevice: wiredDevices.find(d => d.connected
+        && interfaceName === (wiredDetails[d.name]?.ipIface ?? d.name))?.name ?? ""
 
     // Autre réseau connecté : débit et adresse du précédent effacés, relus aussitôt panneau ouvert. Comparé au précédent : la
     // liaison est réévaluée à chaque variation de signal.
@@ -142,7 +145,7 @@ Singleton {
         wifiBitrate = "";
         wifiAddress = "";
         if (wifiPanelOpen && connectedWifi)
-            linkQuery.running = true;
+            root.requery(linkQuery);
     }
 
     // Niveau de signal 0 (aucun) … 4 (excellent) : seuils de GNOME Shell (signalToIcon, alignés sur GNOME Settings) — 20, 40,
@@ -266,7 +269,7 @@ Singleton {
             return;
         wifiNames = names;
         if (wifiPanelOpen && wifiUsable && names !== "")
-            apQuery.running = true;
+            root.requery(apQuery);
     }
 
     // Annule une connexion Wi-Fi en cours : désactive la connexion qui s'active (`nmcli connection down`), sans
@@ -277,8 +280,22 @@ Singleton {
             Quickshell.execDetached(["sh", "-c", 'u=$(nmcli -t -g GENERAL.CON-UUID device show "$1") && [ -n "$u" ] && nmcli connection down uuid "$u"', "sh", wifi.name]);
     }
 
+    // Relecture demandée pendant une lecture en cours (autre réseau, réseaux apparus) : refaite à sa fin, sans quoi la lecture
+    // en cours, faite avant le changement, resterait affichée jusqu'au relevé suivant.
+    function requery(query: var): void {
+        if (query.running)
+            query.again = true;
+        else
+            query.running = true;
+    }
+
     Process {
         id: apQuery
+        property bool again: false
+        onExited: if (again) {
+            again = false;
+            running = true;
+        }
         command: ["nmcli", "-t", "-f", "IN-USE,FREQ,CHAN,BANDWIDTH,SIGNAL,SSID", "device", "wifi", "list", "ifname", root.wifi?.name ?? "", "--rescan", "no"]
         stdout: StdioCollector {
             onStreamFinished: {
@@ -305,6 +322,11 @@ Singleton {
 
     Process {
         id: linkQuery
+        property bool again: false
+        onExited: if (again) {
+            again = false;
+            running = true;
+        }
         command: ["nmcli", "-t", "-g", "CAPABILITIES.SPEED,IP4.ADDRESS", "device", "show", root.wifi?.name ?? ""]
         stdout: StdioCollector {
             onStreamFinished: {

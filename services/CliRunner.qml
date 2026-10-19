@@ -45,11 +45,13 @@ Scope {
         }
         onExited: code => {
             root.busy = false;
-            // Première ligne non vide : le message (une option refusée est suivie de toute l'aide de la commande) ; 124 : arrêtée
-            // par `timeout`.
-            if (code !== 0)
+            // 124 : arrêtée par `timeout` (sa sortie, ex. « To authenticate, visit: » sans l'adresse, n'est pas le message).
+            // Sinon la première ligne non vide (une option refusée est suivie de toute l'aide de la commande).
+            if (code === 124)
+                root.error = `${root.program}: no answer (sign-in needed?)`;
+            else if (code !== 0)
                 root.error = (err.text.trim() || out.text.trim()).split("\n").find(l => l.trim() !== "")?.trim()
-                    ?? (code === 124 ? `${root.program}: no answer (sign-in needed?)` : `${root.program}: exit code ${code}`);
+                    ?? `${root.program}: exit code ${code}`;
             root.finished();
         }
     }

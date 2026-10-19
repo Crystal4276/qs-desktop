@@ -12,14 +12,14 @@ import Quickshell.Io
 Singleton {
     id: root
 
-    readonly property bool polling: Network.networkPanelOpen && Network.networkTab === "zerotier"
+    readonly property bool polling: poller.fast
     readonly property bool available: cli.available
     // Jeton accepté. Repasse à faux sur une erreur de jeton, ou après deux autres échecs de suite (service redémarré).
     property bool authorized: false
     property int failures: 0
-    // { address, online, version } du nœud local.
+    // { address, online } du nœud local.
     property var info: null
-    // [{ id, name, status, type, addresses, device, allowDns, allowDefault }]
+    // [{ id, name, status, type, addresses, allowDns }]
     property var networks: []
     // Repli sans jeton : [{ name, address }].
     property var interfaces: []
@@ -79,27 +79,11 @@ Singleton {
     // avant le démon, redémarrage), sans quoi l'onglet ne reviendrait jamais sur une machine câblée.
     Poller {
         id: poller
-        fast: root.polling
+        tab: "zerotier"
         active: root.available && (root.polling || !Network.wiredLinked || !root.present)
         busy: infoQuery.running || networksQuery.running || addressQuery.running
-        onRead: infoQuery.running = true
-    }
-
-    // Panneau réseau : relu à l'ouverture (onglets à jour) ; erreur de la dernière action oubliée à la fermeture.
-    Connections {
-        target: Network
-        function onNetworkPanelOpenChanged() {
-            if (Network.networkPanelOpen)
-                root.refresh();
-            else
-                root.clearErrors();
-        }
-    }
-
-    function fallBack(): void {
-        info = null;
-        authorized = false;
-        addressQuery.running = true;   // repli sans jeton
+        onRead: if (root.available) infoQuery.running = true
+        onPanelClosed: root.clearErrors()
     }
 
     Process {
@@ -114,7 +98,7 @@ Singleton {
         onExited: code => {
             try {
                 const d = JSON.parse(infoOut.text);
-                root.info = { address: d.address ?? "", online: d.online ?? false, version: d.version ?? "" };
+                root.info = { address: d.address ?? "", online: d.online ?? false };
                 root.authorized = true;
                 root.failures = 0;
                 networksQuery.running = true;
@@ -139,9 +123,7 @@ Singleton {
                         status: n.status ?? "",
                         type: n.type ?? "",
                         addresses: (n.assignedAddresses ?? []).map(a => a.split("/")[0]),
-                        device: n.portDeviceName ?? "",
-                        allowDns: n.allowDNS ?? false,
-                        allowDefault: n.allowDefault ?? false
+                        allowDns: n.allowDNS ?? false
                     }));
                 } catch (e) {
                     root.networks = [];
