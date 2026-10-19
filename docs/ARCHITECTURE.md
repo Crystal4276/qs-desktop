@@ -547,6 +547,8 @@ Voir `WALLPAPERS.md` § « Mise en œuvre ». Remplace `swaybg` (Sway) et le fon
 - Verrouillage avant la mise en veille du système (`idle.lockBeforeSleep`, par défaut sur une machine avec batterie) : verrou
   « delay » de logind (`systemd-inhibit`), `PrepareForSleep` suivi par `gdbus monitor` ; écran verrouillé puis verrou relâché (au plus
   2 s). Ton desktop ne verrouille pas aujourd'hui avant la veille : désactivé ici (pas de batterie).
+- Au réveil sous Hyprland : `hyprctl reload` (`after_sleep_cmd` de ton hypridle : la disposition des écrans ne survit pas à la
+  veille) ; `PrepareForSleep` est donc aussi suivi sous Hyprland, même sans verrouillage avant la veille.
 - Non repris : les inhibitions D-Bus (`org.freedesktop.ScreenSaver`) que hypridle respectait — les applications Wayland passent par
   le protocole d'inhibition, que `IdleMonitor` respecte.
 - IPC de test : `qs ipc call idle state`.

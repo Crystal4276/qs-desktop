@@ -60,7 +60,7 @@ Singleton {
         onTriggered: {
             cpu.reload();
             mem.reload();
-            if (!gpuQuery.running && Gpu.vendor !== "")
+            if (!gpuQuery.running && (Gpu.useSmi || Gpu.sensorPath !== ""))
                 gpuQuery.running = true;
         }
     }
@@ -140,10 +140,11 @@ Singleton {
         }
     }
 
-    // Processus : temps CPU (/proc/PID/stat), utilisateurs (ps), total des cœurs (/proc/stat), en un seul passage.
+    // Processus : temps CPU (/proc/PID/stat), utilisateurs (ps), total des cœurs (/proc/stat), en un seul passage. `user:64` : nom
+    // complet (8 caractères par défaut, au-delà tronqué ou remplacé par l'UID).
     Process {
         id: processList
-        command: ["sh", "-c", 'head -1 /proc/stat; echo ---; cat /proc/[0-9]*/stat 2>/dev/null; echo ---; ps -eo pid=,user=']
+        command: ["sh", "-c", 'head -1 /proc/stat; echo ---; cat /proc/[0-9]*/stat 2>/dev/null; echo ---; ps -eo pid=,user:64=']
         stdout: StdioCollector {
             onStreamFinished: {
                 const [head, stats, users] = text.split("\n---\n");
@@ -188,7 +189,8 @@ Singleton {
         id: gpuQuery
         command: Gpu.vendor === "nvidia" && Gpu.useSmi
             ? ["sh", "-c", "nvidia-smi --query-gpu=name,utilization.gpu,memory.used,memory.total,temperature.gpu,power.draw,fan.speed,clocks.gr --format=csv,noheader,nounits; echo ---; nvidia-smi pmon -c 1 -s m"]
-            : ["sh", "-c", `d="$(dirname "$(dirname "$(dirname "$0")")")"; cat "$d/gpu_busy_percent" "$d/mem_info_vram_used" "$d/mem_info_vram_total" 2>/dev/null; exit 0`, Gpu.sensorPath]
+            // Fichier absent (Intel, Nvidia sans nvidia-smi) : ligne « nom » sans valeur, mesure masquée.
+            : ["sh", "-c", 'd="$(dirname "$(dirname "$(dirname "$0")")")"; for f in gpu_busy_percent mem_info_vram_used mem_info_vram_total; do echo "$f $(cat "$d/$f" 2>/dev/null)"; done', Gpu.sensorPath]
         stdout: StdioCollector {
             onStreamFinished: {
                 if (Gpu.vendor === "nvidia" && Gpu.useSmi) {
@@ -207,9 +209,15 @@ Singleton {
                     }
                     root.gpuProcesses = procs;
                 } else {
-                    const v = text.trim().split("\n").map(Number);
-                    root.gpu = { name: Gpu.vendor.toUpperCase(), load: v.length > 0 ? v[0] : -1,
-                        memUsed: v.length > 2 ? v[1] / 1048576 : -1, memTotal: v.length > 2 ? v[2] / 1048576 : -1,
+                    const v = {};
+                    for (const line of text.split("\n")) {
+                        const [name, value] = line.trim().split(" ");
+                        if (value !== undefined && value !== "" && !isNaN(Number(value)))
+                            v[name] = Number(value);
+                    }
+                    const vram = v.mem_info_vram_used !== undefined && v.mem_info_vram_total !== undefined;
+                    root.gpu = { name: Gpu.vendor.toUpperCase(), load: v.gpu_busy_percent ?? -1,
+                        memUsed: vram ? v.mem_info_vram_used / 1048576 : -1, memTotal: vram ? v.mem_info_vram_total / 1048576 : -1,
                         temperature: Gpu.temperature, power: -1, fan: -1, clock: -1 };
                 }
             }

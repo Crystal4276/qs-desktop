@@ -12,9 +12,12 @@ case "${1:-}" in
     log) exec qs log -f -p "$repo" ;;
 esac
 
+# Instance lancée depuis ce dépôt ? (`qs list` réussit aussi quand il n'y en a aucune : « No running instances ».)
+running() { qs list -p "$repo" 2>/dev/null | grep -q "^Instance"; }
+
 # Tue les instances de dev précédentes (celles lancées depuis ce dépôt uniquement) : `qs kill` n'en arrête qu'une par appel.
 for _ in {1..10}; do
-    qs list -p "$repo" >/dev/null 2>&1 || break
+    running || break
     qs kill -p "$repo" >/dev/null 2>&1 || true
     sleep 0.3
 done
@@ -28,7 +31,7 @@ disown
 # Laisse le temps au chargement, puis montre ce qui ne va pas.
 # Le journal de l'instance (`qs log`) est à jour, contrairement à $log qui est écrit par blocs.
 sleep 2
-if ! qs list -p "$repo" >/dev/null 2>&1; then
+if ! running; then
     echo "Échec du démarrage :" >&2
     cat "$log" >&2
     exit 1

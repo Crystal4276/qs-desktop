@@ -17,7 +17,7 @@ Singleton {
     property string startScreen: ""     // écran focalisé à l'ouverture : barre d'outils
     // Fenêtres visibles : [{ x, y, width, height, title }], coordonnées logiques globales.
     property var windows: []
-    property string pictures: ""
+    readonly property string pictures: Places.pictures !== "" ? Places.pictures : `${Quickshell.env("HOME")}/Pictures`
 
     function open(startMode: string): void {
         if (active)
@@ -27,6 +27,7 @@ Singleton {
         const o = Compositor.output(startScreen);
         selection = mode === "screen" && o ? { x: o.x, y: o.y, width: o.width, height: o.height } : null;
         windows = [];
+        ensureDirectory();   // le temps de choisir la zone suffit à le créer
         windowList.command = Compositor.isHyprland ? ["hyprctl", "clients", "-j"] : ["swaymsg", "-t", "get_tree"];
         windowList.running = true;
         active = true;
@@ -50,7 +51,7 @@ Singleton {
         const now = new Date();
         const pad = n => String(n).padStart(2, "0");
         const name = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}.png`;
-        return `${pictures !== "" ? pictures : `${Quickshell.env("HOME")}/Pictures`}/screenshot/${name}`;
+        return `${pictures}/screenshot/${name}`;
     }
 
     // Image enregistrée : copiée dans le presse-papiers (PNG).
@@ -59,7 +60,7 @@ Singleton {
     }
 
     function ensureDirectory(): void {
-        Quickshell.execDetached(["mkdir", "-p", `${pictures !== "" ? pictures : `${Quickshell.env("HOME")}/Pictures`}/screenshot`]);
+        Quickshell.execDetached(["mkdir", "-p", `${pictures}/screenshot`]);
     }
 
     // `qs ipc call screenshot area|screen|window` (touche Impr., phase 10).
@@ -96,19 +97,10 @@ Singleton {
         }
     }
 
-    Process {
-        running: true
-        command: ["xdg-user-dir", "PICTURES"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                root.pictures = text.trim();
-                root.ensureDirectory();
-            }
-        }
-    }
 
-    // Fenêtres des espaces affichés (Sway : feuilles de l'arbre des espaces visibles, flottantes comprises ; Hyprland : clients
-    // des espaces affichés).
+    // Fenêtres des espaces affichés, de la plus basse à la plus haute (windowAt prend la dernière) : Sway, feuilles visibles
+    // (`visible` : une fenêtre cachée par un plein écran ou un onglet garde son rectangle), flottantes après ; Hyprland, clients des
+    // espaces affichés (l'ordre de `hyprctl clients` n'est pas l'empilement) : en mosaïque, flottants, puis plein écran.
     Process {
         id: windowList
         stdout: StdioCollector {
@@ -122,15 +114,17 @@ Singleton {
                 const list = [];
                 if (Compositor.isHyprland) {
                     const shown = Compositor.workspaces.filter(w => w.visible).map(w => w.number);
-                    for (const c of data)
-                        if (shown.includes(c.workspace?.id) && !c.hidden)
-                            list.push({ x: c.at[0], y: c.at[1], width: c.size[0], height: c.size[1], title: c.title });
+                    const layer = c => c.fullscreen ? 2 : c.floating ? 1 : 0;
+                    for (const c of data.filter(c => shown.includes(c.workspace?.id) && !c.hidden && c.mapped !== false)
+                            .sort((a, b) => layer(a) - layer(b)))
+                        list.push({ x: c.at[0], y: c.at[1], width: c.size[0], height: c.size[1], title: c.title });
                 } else {
                     const visit = (node, visible) => {
                         if (node.type === "workspace")
                             visible = Compositor.workspaces.some(w => w.name === node.name && w.visible);
                         const children = [...(node.nodes ?? []), ...(node.floating_nodes ?? [])];
-                        if (visible && children.length === 0 && (node.type === "con" || node.type === "floating_con") && node.pid)
+                        if (visible && children.length === 0 && (node.type === "con" || node.type === "floating_con") && node.pid
+                                && node.visible)
                             list.push({ x: node.rect.x, y: node.rect.y, width: node.rect.width, height: node.rect.height, title: node.name });
                         for (const child of children)
                             visit(child, visible);

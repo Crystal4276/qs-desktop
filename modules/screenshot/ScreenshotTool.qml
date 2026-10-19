@@ -60,8 +60,9 @@ LazyLoader {
                 paintCursor: false
             }
 
-            // Capture de la sélection si elle est sur cet écran : découpe de l'image figée à sa résolution réelle, enregistrée,
-            // copiée dans le presse-papiers.
+            // Capture de la sélection par l'écran qui contient son centre (un seul fichier, même pour une fenêtre à cheval sur deux
+            // écrans : on garde la partie de cet écran) : découpe de l'image figée à sa résolution réelle, enregistrée, copiée dans
+            // le presse-papiers.
             ShaderEffectSource {
                 id: crop
                 z: -1
@@ -73,7 +74,10 @@ LazyLoader {
                 target: Screenshot
                 function onCaptureRequested(rect) {
                     const r = win.local;
-                    if (!r || !view.hasContent || view.width <= 0)
+                    const cx = rect.x + rect.width / 2, cy = rect.y + rect.height / 2;
+                    if (!r || !win.output || cx < win.ox || cx >= win.ox + win.output.width || cy < win.oy || cy >= win.oy + win.output.height)
+                        return;
+                    if (!view.hasContent || view.width <= 0)
                         return;
                     const scale = view.sourceSize.width / view.width;
                     crop.sourceRect = Qt.rect(r.x, r.y, r.width, r.height);

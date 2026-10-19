@@ -17,6 +17,9 @@ Singleton {
     // [{ key, path, name }] ; `key` choisit l'icône (Theme.appMenu.placeIcons)
     readonly property var homeFolder: ({ key: "HOME", path: home, name: "Home" })
     property var folders: [homeFolder]
+    // Dossier Images XDG, aussi pour les fonds d'écran (Wallpapers) et les captures (Screenshot) : "" avant la première lecture ;
+    // non défini ou absent : ~/Pictures.
+    property string pictures: ""
     // [{ path, name, mime, time }]
     property var recent: []
     property bool recentWanted: false
@@ -58,6 +61,7 @@ Singleton {
                 }
                 if (JSON.stringify(list) !== JSON.stringify(root.folders))   // inchangés : lignes du menu gardées
                     root.folders = list;
+                root.pictures = list.find(f => f.key === "PICTURES")?.path.replace(/\/$/, "") ?? `${root.home}/Pictures`;
             }
         }
         onExited: {
