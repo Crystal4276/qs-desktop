@@ -214,7 +214,8 @@ LazyLoader {
                     onReleased: Screenshot.capture()
                 }
 
-                // Barre d'outils (écran de départ) : modes, fermer.
+                // Barre d'outils (écran de départ) : ce qu'il faut faire dans le mode choisi, puis les modes (glyphe et nom, le choisi
+                // en contrastes inversés) et fermer.
                 Rectangle {
                     visible: win.home
                     anchors.horizontalCenter: parent.horizontalCenter
@@ -233,38 +234,91 @@ LazyLoader {
                         acceptedButtons: Qt.AllButtons
                     }
 
-                    RowLayout {
+                    ColumnLayout {
                         id: tools
                         anchors.centerIn: parent
                         spacing: Theme.panel.spacing
 
-                        Repeater {
-                            model: [
-                                { mode: "area", glyph: Theme.icon.captureArea },
-                                { mode: "screen", glyph: Theme.icon.captureScreen },
-                                { mode: "window", glyph: Theme.icon.captureWindow }
-                            ]
-
-                            QuickButton {
-                                required property var modelData
-                                readonly property bool chosen: Screenshot.mode === modelData.mode
-                                glyph: modelData.glyph
-                                activeFocusOnTab: false
-                                background: chosen ? Theme.quickSettings.checked : Theme.panel.button
-                                hoverBackground: chosen ? Theme.quickSettings.checked : Theme.panel.buttonHover
-                                glyphColor: chosen ? Theme.quickSettings.checkedText : Theme.panel.text
-                                onClicked: {
-                                    Screenshot.mode = modelData.mode;
-                                    Screenshot.selection = modelData.mode === "screen"
-                                        ? { x: win.ox, y: win.oy, width: win.width, height: win.height } : null;
-                                }
-                            }
+                        Text {
+                            Layout.alignment: Qt.AlignHCenter
+                            text: ({
+                                area: "Drag to capture an area",
+                                screen: "Click a screen to capture it",
+                                window: "Click a window to capture it"
+                            })[Screenshot.mode] + "  ·  Esc to cancel"
+                            font.family: Theme.font.text
+                            font.pixelSize: Theme.panel.smallFontSize
+                            color: Theme.panel.secondaryText
                         }
 
-                        QuickButton {
-                            glyph: Theme.icon.close
-                            activeFocusOnTab: false
-                            onClicked: Screenshot.close()
+                        RowLayout {
+                            Layout.alignment: Qt.AlignHCenter
+                            spacing: Theme.panel.spacing
+
+                            Repeater {
+                                model: [
+                                    { mode: "area", glyph: Theme.icon.captureArea, name: "Area" },
+                                    { mode: "screen", glyph: Theme.icon.captureScreen, name: "Screen" },
+                                    { mode: "window", glyph: Theme.icon.captureWindow, name: "Window" }
+                                ]
+
+                                Rectangle {
+                                    id: modeButton
+
+                                    required property var modelData
+                                    readonly property bool chosen: Screenshot.mode === modelData.mode
+                                    readonly property color ink: chosen ? Theme.quickSettings.checkedText : Theme.panel.text
+
+                                    implicitWidth: Math.max(modeGlyph.implicitWidth, modeName.implicitWidth, Theme.quickSettings.imageSize)
+                                        + 2 * Theme.panel.buttonPaddingH
+                                    implicitHeight: modeColumn.implicitHeight + 2 * Theme.quickSettings.buttonPadding
+                                    radius: Theme.panel.rowRadius
+                                    color: chosen ? Theme.quickSettings.checked : modeHover.hovered ? Theme.panel.buttonHover : Theme.panel.button
+
+                                    Column {
+                                        id: modeColumn
+                                        anchors.centerIn: parent
+
+                                        Text {
+                                            id: modeGlyph
+                                            anchors.horizontalCenter: parent.horizontalCenter
+                                            text: modeButton.modelData.glyph
+                                            font.family: Theme.font.icons
+                                            font.pixelSize: Theme.quickSettings.glyphSize
+                                            color: modeButton.ink
+                                        }
+
+                                        Text {
+                                            id: modeName
+                                            anchors.horizontalCenter: parent.horizontalCenter
+                                            text: modeButton.modelData.name
+                                            font.family: Theme.font.text
+                                            font.pixelSize: Theme.panel.smallFontSize
+                                            color: modeButton.ink
+                                        }
+                                    }
+
+                                    HoverHandler {
+                                        id: modeHover
+                                    }
+
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        onClicked: {
+                                            Screenshot.mode = modeButton.modelData.mode;
+                                            Screenshot.selection = modeButton.modelData.mode === "screen"
+                                                ? { x: win.ox, y: win.oy, width: win.width, height: win.height } : null;
+                                        }
+                                    }
+                                }
+                            }
+
+                            QuickButton {
+                                Layout.alignment: Qt.AlignVCenter
+                                glyph: Theme.icon.close
+                                activeFocusOnTab: false
+                                onClicked: Screenshot.close()
+                            }
                         }
                     }
                 }

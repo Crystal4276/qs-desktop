@@ -41,10 +41,14 @@ OverlayPopup {
     }
     readonly property var selectedProcess: Monitor.processes.find(p => p.pid === selectedPid) ?? null
 
-    // Processus choisi arrêté : sélection levée, la liste reprend son tri.
+    // Processus choisi arrêté : sélection levée, la liste reprend son tri (après coup : changer selectedPid ici, pendant
+    // l'évaluation de selectedProcess, ferait une boucle de liaison).
     onSelectedProcessChanged: {
         if (selectedPid >= 0 && !selectedProcess)
-            select(-1);
+            Qt.callLater(() => {
+                if (selectedPid >= 0 && !selectedProcess)
+                    select(-1);
+            });
     }
 
     function select(pid: int): void {
