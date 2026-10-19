@@ -127,10 +127,18 @@ Singleton {
     // porte, sinon le filaire.
     readonly property bool wifiCarriesRoute: wifi !== null && interfaceName === wifi.name
     readonly property bool wifiLimited: limited && connectedWifi !== null && wifiCarriesRoute
+    // Libellé des cartes (filaire, Wi-Fi) quand l'accès est limité.
+    readonly property string limitedText: connectivity === NetworkConnectivity.Portal ? "Sign-in required: captive portal"
+        : "Connected without Internet access"
     readonly property bool wiredLimited: limited && wiredConnected && !wifiCarriesRoute
 
-    // Autre réseau connecté : débit et adresse du précédent effacés, relus aussitôt panneau ouvert.
+    // Autre réseau connecté : débit et adresse du précédent effacés, relus aussitôt panneau ouvert. Comparé au précédent : la
+    // liaison est réévaluée à chaque variation de signal.
+    property var lastConnectedWifi: null
     onConnectedWifiChanged: {
+        if (connectedWifi === lastConnectedWifi)
+            return;
+        lastConnectedWifi = connectedWifi;
         wifiBitrate = "";
         wifiAddress = "";
         if (wifiPanelOpen && connectedWifi)

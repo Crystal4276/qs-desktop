@@ -47,7 +47,7 @@ ColumnLayout {
             spacing: Theme.panel.spacing
 
             IconImage {
-                implicitSize: Theme.wifi.cardIconSize
+                implicitSize: Theme.panel.cardIconSize
                 source: "image://icon/zerotier-gui"
             }
 
@@ -97,27 +97,9 @@ ColumnLayout {
         PanelRow {
             required property var modelData
 
-            leading: Item {
-                implicitWidth: Theme.panel.iconSize
-                implicitHeight: Theme.panel.iconSize
-
-                IconImage {
-                    anchors.fill: parent
-                    source: "image://icon/zerotier-gui"
-                    opacity: modelData.status === "OK" ? 1 : Theme.panel.disabledOpacity
-                }
-
-                // Point d'état, comme les appareils Tailscale.
-                Rectangle {
-                    width: Theme.network.dotSize
-                    height: width
-                    radius: width / 2
-                    anchors.right: parent.right
-                    anchors.bottom: parent.bottom
-                    color: modelData.status === "OK" ? Theme.network.online : Theme.network.offline
-                    border.width: Theme.panel.border
-                    border.color: Theme.panel.background
-                }
+            leading: StatusIcon {
+                icon: "zerotier-gui"
+                online: modelData.status === "OK"
             }
             text: modelData.name
             subtext: [ZeroTier.statusText(modelData.status), modelData.addresses.join(", "), modelData.type.toLowerCase()].filter(s => s).join(" · ")

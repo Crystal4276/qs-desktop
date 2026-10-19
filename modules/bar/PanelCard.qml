@@ -10,7 +10,7 @@ Rectangle {
     Layout.fillWidth: true
     implicitHeight: column.implicitHeight + 2 * Theme.panel.padding
     radius: Theme.panel.rowRadius
-    color: Theme.wifi.card
+    color: Theme.panel.card
 
     ColumnLayout {
         id: column

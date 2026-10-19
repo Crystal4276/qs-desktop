@@ -83,12 +83,16 @@ Panel {
         function onConnectionFailed(reason) {
             const network = root.pending;
             root.pending = null;
-            // Clé refusée : NetworkManager le signale par l'absence de secrets, ou par une déconnexion / un délai pendant
-            // l'authentification ; le mot de passe est redemandé (aussi pour un réseau enregistré dont la clé a changé).
-            const keyProblem = [NM.ConnectionFailReason.NoSecrets, NM.ConnectionFailReason.WifiClientDisconnected,
-                NM.ConnectionFailReason.WifiAuthTimeout].includes(reason);
-            if (keyProblem && network.security !== NM.WifiSecurityType.Open) {
+            // Clé refusée : NetworkManager le signale par l'absence de secrets (« Wrong password ») ; une déconnexion ou un délai
+            // pendant l'authentification peut venir de la clé ou du signal : message neutre et mot de passe proposé. La saisie
+            // met à jour le profil enregistré (Quickshell, connectWithPsk), sans en créer un autre.
+            const secured = network.security !== NM.WifiSecurityType.Open;
+            if (secured && reason === NM.ConnectionFailReason.NoSecrets) {
                 root.passwordRefused = true;
+                root.passwordFor = network;
+            } else if (secured && [NM.ConnectionFailReason.WifiClientDisconnected, NM.ConnectionFailReason.WifiAuthTimeout].includes(reason)) {
+                root.failText = `Could not connect to ${network.name} — weak signal or wrong password`;
+                root.passwordRefused = false;
                 root.passwordFor = network;
             } else {
                 root.failText = `Could not connect to ${network.name}`;

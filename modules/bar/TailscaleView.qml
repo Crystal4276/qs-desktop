@@ -64,7 +64,7 @@ ColumnLayout {
             spacing: Theme.panel.spacing
 
             IconImage {
-                implicitSize: Theme.wifi.cardIconSize
+                implicitSize: Theme.panel.cardIconSize
                 source: "image://icon/network-vpn"
                 opacity: Tailscale.running ? 1 : Theme.panel.disabledOpacity
             }
@@ -93,6 +93,7 @@ ColumnLayout {
             PanelButton {
                 visible: Tailscale.state === "NeedsLogin"
                 text: Tailscale.authUrl !== "" ? "Open sign-in page" : "Sign in…"
+                enabled: Tailscale.canAct && (Tailscale.authUrl !== "" || !Tailscale.busy)
                 onClicked: Tailscale.login()
             }
 
@@ -225,27 +226,9 @@ ColumnLayout {
                 PanelRow {
                     required property var modelData
 
-                    leading: Item {
-                        implicitWidth: Theme.panel.iconSize
-                        implicitHeight: Theme.panel.iconSize
-
-                        IconImage {
-                            anchors.fill: parent
-                            source: `image://icon/${Tailscale.osIcon(modelData.os)}`
-                            opacity: modelData.online ? 1 : Theme.panel.disabledOpacity
-                        }
-
-                        // Point d'état, en bas à droite, cerclé du fond du panneau.
-                        Rectangle {
-                            width: Theme.network.dotSize
-                            height: width
-                            radius: width / 2
-                            anchors.right: parent.right
-                            anchors.bottom: parent.bottom
-                            color: modelData.online ? Theme.network.online : Theme.network.offline
-                            border.width: Theme.panel.border
-                            border.color: Theme.panel.background
-                        }
+                    leading: StatusIcon {
+                        icon: Tailscale.osIcon(modelData.os)
+                        online: modelData.online
                     }
                     text: modelData.name
                     subtext: root.copied === modelData.id ? `Copied ${modelData.ip}`

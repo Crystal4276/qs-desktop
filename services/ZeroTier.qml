@@ -43,8 +43,7 @@ Singleton {
     function refresh(): void {
         if (!available)
             return;
-        infoQuery.running = true;
-        networksQuery.running = true;
+        infoQuery.running = true;   // puis `listnetworks` s'il répond (jeton présent), sinon les interfaces
     }
 
     function run(args: var): void {
@@ -93,6 +92,7 @@ Singleton {
                     const d = JSON.parse(text);
                     root.info = { address: d.address ?? "", online: d.online ?? false, version: d.version ?? "" };
                     root.authorized = true;
+                    networksQuery.running = true;
                 } catch (e) {
                     root.info = null;
                     root.authorized = false;

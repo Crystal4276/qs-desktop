@@ -914,8 +914,8 @@ changement de focus. À vérifier en phase 9 : après `hyprctl reload` au révei
 - Nouveau panneau `WifiPanel.qml` : interrupteur, carte du réseau courant (`WifiCard.qml` : qualité en mots, jauge colorée,
   bande / canal / largeur, débit du lien, sécurité, IPv4, trafic), autres réseaux (glyphe + cadenas, bande, %), mot de passe
   redemandé en rouge s'il est refusé, échec de connexion signalé. Détails lus par `nmcli` seulement panneau ouvert.
-- Panneau réseau réduit au filaire + réseaux privés (`PrivateNetworks.qml`, partagé) ; icône réseau masquée sans câble branché
-  quand il y a du Wi-Fi (laptop) — les réseaux privés passent alors dans le panneau Wi-Fi.
+- Panneau réseau réduit au filaire + réseaux privés ; icône réseau masquée sans câble branché quand il y a du Wi-Fi (laptop).
+  (Remplacé plus bas, même jour : onglets Tailscale / ZeroTier dans le panneau réseau, icône visible sans câble.)
 - Vérifié : Sway isolé (vitrine hors dépôt) — tous les états du glyphe, cartes connecté fort / faible / en connexion, vrai
   panneau avec tes réseaux réels (<Wi-Fi 5 GHz> 5 GHz, <Wi-Fi 2,4 GHz> 2.4 GHz) ; animation (images différentes) ; ton instance recharge sans
   erreur, capture du tray `.shots/wifi-after-tray.png`.

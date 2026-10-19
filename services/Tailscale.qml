@@ -111,13 +111,13 @@ Singleton {
         run(["set", `--${flag}=${on}`]);
     }
 
-    // `tailscale login` attend la fin de l'authentification : lancé détaché, son adresse revient par `status` (AuthURL) et
-    // s'ouvre au clic suivant.
+    // `tailscale login` attend la fin de l'authentification (10 min au plus) : une seule à la fois (`busy`), erreurs affichées ;
+    // son adresse revient par `status` (AuthURL) et s'ouvre au clic suivant.
     function login(): void {
         if (authUrl !== "")
             Quickshell.execDetached(["xdg-open", authUrl]);
         else
-            Quickshell.execDetached(["tailscale", "login"]);
+            run(["login", "--timeout=10m"]);
         refresh();
     }
 

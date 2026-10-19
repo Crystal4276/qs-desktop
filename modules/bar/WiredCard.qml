@@ -31,8 +31,7 @@ PanelCard {
         case NM.ConnectionState.Disconnecting:
             return "Disconnecting…";
         case NM.ConnectionState.Connected:
-            return Network.wiredLimited ? (Network.connectivity === NM.NetworkConnectivity.Portal ? "Sign-in required: captive portal"
-                : "Connected without Internet access") : `Connected · ${speed(device.linkSpeed)}`;
+            return Network.wiredLimited ? Network.limitedText : `Connected · ${speed(device.linkSpeed)}`;
         default:
             return "Disconnected";
         }
@@ -43,7 +42,7 @@ PanelCard {
         spacing: Theme.panel.spacing
 
         IconImage {
-            implicitSize: Theme.wifi.cardIconSize
+            implicitSize: Theme.panel.cardIconSize
             source: `image://icon/${root.connected ? "nm-device-wired" : "nm-no-connection"}`
             opacity: root.device?.hasLink ? 1 : Theme.panel.disabledOpacity
         }
@@ -54,7 +53,8 @@ PanelCard {
 
             Text {
                 Layout.fillWidth: true
-                text: "Ethernet"
+                // Plusieurs cartes réseau (dock, deux ports) : l'interface les distingue.
+            text: Network.wiredDevices.length > 1 ? `Ethernet · ${root.device?.name ?? ""}` : "Ethernet"
                 font.family: Theme.font.text
                 font.pixelSize: Theme.panel.fontSize
                 color: root.connected ? Theme.panel.accent : Theme.panel.text

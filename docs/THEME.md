@@ -238,7 +238,7 @@ graphique Linux), ZeroTier : `zerotier-cli`.
 | Élément | Valeur | Origine |
 |---|---|---|
 | Onglets | Wired / Tailscale / ZeroTier, seulement ceux qui existent ; boutons de panneau de même largeur, onglet choisi « coché » (`green`, texte `mantle`) | sélecteur de fonds |
-| Cartes | cadre de la carte Wi-Fi (fond `base`, coins 10 px, padding 15 px, icône Papirus 48 px) ; détails : grille partagée | module Wi-Fi |
+| Cartes | cadre commun (`PanelCard.qml`, jetons `Theme.panel.card` / `cardIconSize`) : fond `base`, coins 10 px, padding 15 px, icône Papirus 48 px ; détails : grille partagée | module Wi-Fi |
 | Graphe de trafic | 2 min (24 relevés de 5 s) ; creux `crust`, coins 10 px, **64 px** de haut ; descendant : aire `sky` à **25 %** + ligne, montant : ligne `peach` ; lignes **2 px** ; légende Inter 16 px ↓ / ↑ aux couleurs des courbes, échelle `subtext0` | `sky` : module réseau de la barre ; **`peach`, tailles nouvelles, à valider** |
 | Appareils Tailscale | ligne de panneau, icône Papirus du système (ordinateur / téléphone), point d'état **10 px** cerclé du fond du panneau : `green` en ligne, `surface2` hors ligne ; nom `green` en ligne | **point nouveau, à valider** |
 | Options | ligne de panneau avec interrupteur à droite (Use Tailscale DNS, Accept subnet routes, Shields up, Allow local network access) | GNOME |
