@@ -209,7 +209,7 @@ rapides façon GNOME). Style du calendrier ; valeurs reprises de la charte sauf 
 | Ligne | padding 8 px, coins 10 px, survol `surface0`, icône 24 px ; état actif (connecté, monté) en `green` | lanceur |
 | Bouton | fond `surface0`, survol `surface1`, coins 10 px, padding 6 / 12 px, Inter 16 px | — |
 | Interrupteur | 44 × 24 px, rond ; activé : fond `green`, bouton `mantle` ; désactivé : fond `surface1`, bouton `overlay2` | — |
-| Champ de saisie | fond `base`, bordure 1 px `overlay0` (`green` quand il a le focus), coins 10 px, Inter 20 px | soulignement du lanceur |
+| Champ de saisie | fond `base`, bordure 1 px `overlay0` (`green` quand il a le focus, `red` après un mot de passe refusé), coins 10 px, Inter 20 px | soulignement du lanceur ; erreur : comme l'écran de verrouillage |
 | Liste longue | au-delà de 400 px, elle défile | — |
 | Clavier | Tab / Maj+Tab ou ↑ / ↓ : élément suivant / précédent ; Entrée ou Espace : activer ; ← / → : curseur ±5 % ; élément choisi : liseré 1 px `text` (**nouveau, à valider**, visible aussi sur une bascule activée en `green`) ; indisponible : 50 % d'opacité | revue de code du 2026-10-16 |
 | Fermeture | clic sur une autre application ou sur une barre, Échap ; un clic à côté n'est pas transmis (popup « grab », nécessaire pour la saisie au clavier) | — |

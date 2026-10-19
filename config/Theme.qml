@@ -201,6 +201,7 @@ Singleton {
         readonly property color fieldBackground: root.color.base
         readonly property color fieldBorder: root.color.overlay0
         readonly property color fieldFocus: root.color.green
+        readonly property color fieldError: root.color.red   // mot de passe refusé, comme l'écran de verrouillage
         // Élément choisi au clavier (Tab, flèches) : liseré de la largeur de la bordure des panneaux, en `text` pour rester
         // visible sur une bascule activée (fond `green`). Nouveau, à valider.
         readonly property color focusRing: root.color.text
