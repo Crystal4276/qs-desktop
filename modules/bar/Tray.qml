@@ -79,7 +79,7 @@ Item {
         }
 
         TrayButton {
-            visible: Network.wiredShown
+            visible: Network.networkShown
             icon: Network.icon
             panel: networkPanel
         }

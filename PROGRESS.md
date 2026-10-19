@@ -933,6 +933,23 @@ changement de focus. À vérifier en phase 9 : après `hyprctl reload` au révei
   seulement si le Wi-Fi porte la route par défaut). À tester sur le laptop.
 - Valeurs nouvelles à valider : `THEME.md` § 3 « Module Wi-Fi » (couleurs de qualité, glyphe 48 px, durées d'animation).
 
+### Panneau réseau refait (2026-10-19, ta demande)
+
+- Onglets Wired / Tailscale / ZeroTier (`NetworkPanel.qml`). Filaire : carte (`WiredCard.qml`) avec graphe du trafic sur 2 min
+  (`TrafficGraph.qml`, aussi dans la carte Wi-Fi), adaptateur, IPv4, passerelle, DNS, domaine, IPv6, adresse matérielle, pont.
+- Tailscale (`services/Tailscale.qml`, `TailscaleView.qml`), tes choix : interrupteur up / down, nœud de sortie, options (DNS,
+  routes, Shields Up, accès au LAN), appareils (en ligne, système, direct / relayé, vu il y a…, clic = copie de l'IP).
+  `sudo tailscale set --operator=$USER` lancé par toi.
+- ZeroTier (`services/ZeroTier.qml`, `ZeroTierView.qml`) : nœud, réseaux (état, adresses, DNS, quitter avec confirmation),
+  rejoindre ; lecture seule tant que le jeton n'est pas copié (`~/.zeroTierOneAuthToken`, ton choix — pas encore fait).
+- Icône réseau : visible aussi sans câble si Tailscale / ZeroTier sont là (`network-vpn`). `PrivateNetworks.qml` supprimé.
+- Vérifié (Sway isolé, données réelles) : onglets, carte filaire et graphe ; Shields Up activé puis désactivé, Tailscale
+  coupé puis relancé (états et prefs vérifiés par `tailscale`) ; copie (`wl-paste`). `Quickshell.clipboardText` ne remplit pas
+  le presse-papiers sans clic : remplacé par `wl-copy`.
+- Phase 11 : install.sh doit proposer `tailscale set --operator` et la copie du jeton ZeroTier (avec sudo et confirmation).
+- Non testé : nœud de sortie (aucun dans ton tailnet), Accept routes, ZeroTier complet (jeton), « Sign in » (compte connecté),
+  clics réels (comme toujours en headless).
+
 ## Prochaine étape
 
 Phase 9 — parité Hyprland (tests à faire ensemble dans une session Hyprland : voir « Compatibilité Hyprland »).
