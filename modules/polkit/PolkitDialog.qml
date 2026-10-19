@@ -29,11 +29,22 @@ Scope {
         }
     }
 
+    // Mot de passe refusé (comme l'écran de verrouillage) : champ rouge et « Wrong password », jusqu'à la saisie suivante.
+    property bool wrong: false
+
     Connections {
         target: root.flow
         function onIsCompletedChanged() {
             if (root.flow.isCompleted)
                 window.close();
+        }
+        function onAuthenticationFailed() {
+            root.wrong = true;
+        }
+        // Nouvel essai demandé après un refus : le champ, désactivé pendant la vérification, reprend le clavier.
+        function onIsResponseRequiredChanged() {
+            if (root.flow.isResponseRequired && window.visible)
+                field.focusInput();
         }
     }
 
@@ -46,6 +57,7 @@ Scope {
         function show(): void {
             screen = Quickshell.screens.find(s => s.name === Compositor.focusedOutput) ?? Quickshell.screens[0];
             field.text = "";
+            root.wrong = false;
             prepareOpen(null);
             visible = true;
             field.focusInput();
@@ -98,6 +110,11 @@ Scope {
                 enabled: root.flow?.isResponseRequired ?? false
                 password: !(root.flow?.responseVisible ?? false)
                 placeholder: (root.flow?.inputPrompt ?? "").replace(/:\s*$/, "")
+                error: root.wrong
+                onTextChanged: {
+                    if (text !== "")
+                        root.wrong = false;
+                }
                 onAccepted: window.submit()
                 Keys.onEscapePressed: root.flow?.cancelAuthenticationRequest()
             }
@@ -105,11 +122,12 @@ Scope {
             Text {
                 Layout.fillWidth: true
                 visible: text !== ""
-                text: root.flow?.supplementaryMessage ?? ""
+                // Message de polkit s'il y en a un, sinon celui de l'écran de verrouillage.
+                text: (root.flow?.supplementaryMessage ?? "") !== "" ? root.flow.supplementaryMessage : root.wrong ? "Wrong password" : ""
                 wrapMode: Text.Wrap
                 font.family: Theme.font.text
                 font.pixelSize: Theme.panel.smallFontSize
-                color: root.flow?.supplementaryIsError ? Theme.panel.warning : Theme.panel.secondaryText
+                color: root.wrong || root.flow?.supplementaryIsError ? Theme.panel.warning : Theme.panel.secondaryText
             }
 
             RowLayout {

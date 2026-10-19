@@ -3,12 +3,13 @@ import QtQuick.Layouts
 import qs.config
 
 // Champ de saisie d'un panneau (mot de passe Wi-Fi, phrase de passe d'un disque…) : fond `base`, bordure `overlay0`,
-// `green` quand il a le focus. Entrée : `accepted(text)`.
+// `green` quand il a le focus, `red` en erreur (mot de passe refusé). Entrée : `accepted(text)`.
 Rectangle {
     id: root
 
     property alias text: input.text
     property bool password: false
+    property bool error: false
     property string placeholder: ""
     signal accepted(string text)
 
@@ -21,7 +22,7 @@ Rectangle {
     radius: Theme.panel.rowRadius
     color: Theme.panel.fieldBackground
     border.width: Theme.panel.border
-    border.color: input.activeFocus ? Theme.panel.fieldFocus : Theme.panel.fieldBorder
+    border.color: root.error ? Theme.panel.fieldError : input.activeFocus ? Theme.panel.fieldFocus : Theme.panel.fieldBorder
 
     TextInput {
         id: input
