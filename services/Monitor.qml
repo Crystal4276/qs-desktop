@@ -5,7 +5,8 @@ import Quickshell
 import Quickshell.Io
 
 // Statistiques système détaillées (ARCHITECTURE § 11.5 « moniteur système », panneau modules/monitor/) : relevées seulement tant que
-// le panneau est ouvert (`users`), chaque seconde. Processeur (total, par cœur, température), mémoire et swap, GPU (comme nvtop :
+// le panneau est ouvert (`users`) : jauges chaque seconde, processus toutes les 2,6 s (`update_ms` de ton btop : une liste plus
+// rapide saute trop pour qu'on y choisisse une ligne). Processeur (total, par cœur, température), mémoire et swap, GPU (comme nvtop :
 // charge, mémoire vidéo, température, consommation, ventilateur, fréquence ; processus qui l'utilisent), disques, processus (charge
 // instantanée comme top : temps CPU écoulé depuis le relevé précédent, en % d'un cœur).
 Singleton {
@@ -59,10 +60,19 @@ Singleton {
         onTriggered: {
             cpu.reload();
             mem.reload();
-            if (!processList.running)
-                processList.running = true;
             if (!gpuQuery.running && Gpu.vendor !== "")
                 gpuQuery.running = true;
+        }
+    }
+
+    Timer {
+        interval: 2600
+        running: root.active
+        repeat: true
+        triggeredOnStart: true
+        onTriggered: {
+            if (!processList.running)
+                processList.running = true;
         }
     }
 

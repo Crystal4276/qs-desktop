@@ -7,9 +7,10 @@ import qs.services
 import qs.modules.bar
 
 // Outil de capture (modèle de l'outil de GNOME, service : Screenshot.qml) : à l'ouverture, une image figée de chaque écran ; voile et
-// cadre de ta sélection actuelle (slurp). Modes : zone (tracer ; déplacer en tirant dedans ; redimensionner par les coins), écran
-// (clic sur un écran), fenêtre (clic sur une fenêtre). Barre d'outils en bas de l'écran de départ : modes, capture, fermer.
-// Entrée ou Espace capturent, Échap ferme. La capture vient de l'image figée, à la résolution réelle de l'écran.
+// cadre de ta sélection actuelle (slurp). Capture dès que le choix est fait (demande du 2026-10-19) : zone (tracer, capture au
+// relâchement), écran (clic sur un écran), fenêtre (clic sur une fenêtre). Barre d'outils en bas de l'écran de départ : modes,
+// fermer. Entrée ou Espace capturent l'écran présélectionné (mode écran), Échap ferme. La capture vient de l'image figée, à la
+// résolution réelle de l'écran.
 LazyLoader {
     active: Screenshot.active
 
@@ -143,7 +144,7 @@ LazyLoader {
                     color: Theme.screenshot.hover
                 }
 
-                // Cadre de la sélection, à l'extérieur de la zone (comme slurp) ; poignées aux coins en mode zone.
+                // Cadre de la sélection, à l'extérieur de la zone (comme slurp).
                 Rectangle {
                     visible: win.local !== null
                     x: (win.local?.x ?? 0) - Theme.screenshot.border
@@ -153,29 +154,13 @@ LazyLoader {
                     color: "transparent"
                     border.width: Theme.screenshot.border
                     border.color: Theme.screenshot.selection
-
-                    Repeater {
-                        model: Screenshot.mode === "area" ? [[0, 0], [1, 0], [0, 1], [1, 1]] : []
-
-                        Rectangle {
-                            required property var modelData
-                            width: Theme.screenshot.handle
-                            height: width
-                            radius: width / 2
-                            color: Theme.screenshot.selection
-                            x: modelData[0] * parent.width - width / 2
-                            y: modelData[1] * parent.height - height / 2
-                        }
-                    }
                 }
 
+                // Capture dès que le choix est fait : zone tracée (au relâchement), écran ou fenêtre cliqués.
                 MouseArea {
                     id: mouse
 
-                    property string action: ""   // "new", "move", "resize"
                     property point start          // global
-                    property var original: null   // sélection au début du geste
-                    property var corner: [0, 0]   // coin tiré (0 : gauche / haut, 1 : droite / bas)
 
                     anchors.fill: parent
                     hoverEnabled: true
@@ -202,25 +187,10 @@ LazyLoader {
                         } else if (Screenshot.mode === "window") {
                             const w = windowAt(p);
                             win.hovered = w ? { x: w.x - win.ox, y: w.y - win.oy, width: w.width, height: w.height } : null;
-                        }
-                        if (!pressed || Screenshot.mode !== "area")
-                            return;
-                        if (action === "new") {
+                        } else if (pressed) {
                             Screenshot.selection = {
                                 x: Math.min(start.x, p.x), y: Math.min(start.y, p.y),
                                 width: Math.abs(p.x - start.x), height: Math.abs(p.y - start.y)
-                            };
-                        } else if (action === "move") {
-                            const o = original;
-                            const nx = Math.max(win.ox, Math.min(o.x + p.x - start.x, win.ox + win.width - o.width));
-                            const ny = Math.max(win.oy, Math.min(o.y + p.y - start.y, win.oy + win.height - o.height));
-                            Screenshot.selection = { x: nx, y: ny, width: o.width, height: o.height };
-                        } else if (action === "resize") {
-                            const o = original;
-                            // Coin opposé fixe.
-                            const fx = corner[0] === 0 ? o.x + o.width : o.x, fy = corner[1] === 0 ? o.y + o.height : o.y;
-                            Screenshot.selection = {
-                                x: Math.min(fx, p.x), y: Math.min(fy, p.y), width: Math.abs(p.x - fx), height: Math.abs(p.y - fy)
                             };
                         }
                     }
@@ -231,31 +201,20 @@ LazyLoader {
                         const p = clampToScreen(globalPoint(m));
                         if (Screenshot.mode === "screen") {
                             Screenshot.selection = { x: win.ox, y: win.oy, width: win.width, height: win.height };
-                            return;
-                        }
-                        if (Screenshot.mode === "window") {
+                        } else if (Screenshot.mode === "window") {
                             const w = windowAt(p);
-                            if (w)
-                                Screenshot.selection = { x: w.x, y: w.y, width: w.width, height: w.height };
-                            return;
-                        }
-                        start = p;
-                        const s = Screenshot.selection;
-                        original = s;
-                        const near = (a, b) => Math.abs(a - b) <= Theme.screenshot.handle;
-                        if (s && [0, 1].some(cx => near(p.x, s.x + cx * s.width)) && [0, 1].some(cy => near(p.y, s.y + cy * s.height))) {
-                            action = "resize";
-                            corner = [near(p.x, s.x) ? 0 : 1, near(p.y, s.y) ? 0 : 1];
-                        } else if (s && p.x >= s.x && p.x <= s.x + s.width && p.y >= s.y && p.y <= s.y + s.height) {
-                            action = "move";
+                            Screenshot.selection = w ? { x: w.x, y: w.y, width: w.width, height: w.height } : null;
                         } else {
-                            action = "new";
+                            start = p;
                             Screenshot.selection = { x: p.x, y: p.y, width: 0, height: 0 };
                         }
                     }
+
+                    // Un simple clic en mode zone (aucune surface) ne capture rien : Screenshot.capture() l'ignore.
+                    onReleased: Screenshot.capture()
                 }
 
-                // Barre d'outils (écran de départ) : modes, capture, fermer.
+                // Barre d'outils (écran de départ) : modes, fermer.
                 Rectangle {
                     visible: win.home
                     anchors.horizontalCenter: parent.horizontalCenter
@@ -299,30 +258,6 @@ LazyLoader {
                                     Screenshot.selection = modelData.mode === "screen"
                                         ? { x: win.ox, y: win.oy, width: win.width, height: win.height } : null;
                                 }
-                            }
-                        }
-
-                        // Capture : anneau et disque `text`.
-                        Rectangle {
-                            implicitWidth: Theme.screenshot.captureSize
-                            implicitHeight: implicitWidth
-                            radius: width / 2
-                            color: "transparent"
-                            border.width: Theme.screenshot.border
-                            border.color: Theme.panel.text
-                            opacity: Screenshot.selection && Screenshot.selection.width > 0 ? 1 : Theme.panel.disabledOpacity
-
-                            Rectangle {
-                                anchors.centerIn: parent
-                                width: parent.width - 4 * Theme.screenshot.border
-                                height: width
-                                radius: width / 2
-                                color: Theme.panel.text
-                            }
-
-                            MouseArea {
-                                anchors.fill: parent
-                                onClicked: Screenshot.capture()
                             }
                         }
 
