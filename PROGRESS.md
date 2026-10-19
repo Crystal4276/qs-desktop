@@ -224,10 +224,7 @@ Liste tenue à jour à chaque phase ; à dérouler une fois le projet terminé.
   (l'appareil doit se connecter et rester approuvé) ; NordVPN qui apparaît dans le tray quand le démon démarre après la session.
 - **Deuxième passe** : vraie touche de volume / micro une fois les raccourcis branchés (phase 10) ; connexion limitée (Wi-Fi d'hôtel avec
   portail, ou câble sans Internet) ; sur le laptop : OSD de luminosité et alerte de batterie à 30 % et 15 %.
-- **Statistiques (phase 8b)** : clic sur CPU, mémoire, GPU de la barre ; colonne VRAM des processus (jeu ou navigateur) ;
-  « Force quit » sur une application figée.
-- **Polkit (phase 8b)** : après la bascule (polkit-gnome retiré), une action administrateur (ex. `pkexec true`) : la fenêtre,
-  ton mot de passe, une erreur puis le bon.
+- **Statistiques (phase 8b)** : colonne VRAM des processus (jeu ou navigateur) ; « Force quit » sur une application vraiment figée.
 - **Veille (phase 8b)** : écrans éteints après 5 min sans activité, rallumés (principal 3 s après) ; sur le laptop, verrouillage
   avant la mise en veille (fermer le capot, rouvrir : écran verrouillé).
 - **Verrouillage (phase 8b)** : verrouiller depuis le panneau de réglages, déverrouiller avec ton vrai mot de passe (une erreur
@@ -822,7 +819,7 @@ testant (sélection à la première ouverture).
 
 Phase 8 : rien d'autre au programme ; à valider par toi (rapport du 2026-10-17).
 
-## Phase 8b — Services de session et utilitaires : en cours (2026-10-17)
+## Phase 8b — Services de session et utilitaires : validée (2026-10-19)
 
 Ordre : fond d'écran natif et utilitaire de changement de fond ; verrouillage (maquette à valider d'abord) ; veille ; agent polkit ;
 outil de capture ; fenêtre de statistiques système.
@@ -868,7 +865,7 @@ outil de capture ; fenêtre de statistiques système.
   ensuite (la première relance avait échoué — `pgrep -f` voyait sa propre commande — puis refaite et vérifiée). Aucun mot de passe
   tapé (une erreur compterait dans faillock).
 
-### Outil de capture : écrit, à vérifier sur tes écrans (2026-10-17)
+### Outil de capture : fait, testé par toi sur tes écrans (2026-10-19)
 
 - `services/Screenshot.qml` + `modules/screenshot/ScreenshotTool.qml` (`ARCHITECTURE.md` § 10.1.10) ; le bouton du panneau de
   réglages l'ouvre (plus de grim / slurp).
@@ -884,7 +881,7 @@ outil de capture ; fenêtre de statistiques système.
 - Vérifié dans un Sway isolé : toutes les mesures (cœurs, température, mémoire, swap, réseau, GPU RTX 2080 avec charge, mémoire
   vidéo, température, consommation, ventilateur, fréquence, 16 disques en deux colonnes) ; recherche « sleep », choix d'un `sleep`
   de test, « End process » → confirmation → processus arrêté, liste à jour. Ton instance, panneau fermé : 1 tic CPU en 10 s.
-- À valider : largeur, jauges, lignes (`THEME.md` § 7 quater).
+- Largeur, jauges, lignes : validées pour une première version (`THEME.md` § 7 quater).
 
 ### Retours de tes tests (2026-10-19)
 
@@ -892,14 +889,19 @@ outil de capture ; fenêtre de statistiques système.
 - Verrouillage testé par toi : champ du mot de passe désormais sur l'écran principal (saisie prise quel que soit l'écran qui a le
   clavier) ; vérifié dans un Sway isolé à deux écrans, focus sur le petit écran.
 - Capture : plus de poignées, de déplacement, de redimensionnement ni de bouton de capture ; capture dès que la zone (au
-  relâchement), l'écran ou la fenêtre est choisi. Toujours à vérifier sur tes écrans.
+  relâchement), l'écran ou la fenêtre est choisi. Barre d'outils : ligne d'aide du mode et nom sous chaque glyphe. Testé par toi :
+  les trois modes fonctionnent ; barre validée.
 - Statistiques : liste des processus toutes les 2,6 s (`update_ms` de ton btop) ; un processus choisi fige l'ordre des lignes
-  (vérifié : aucun pixel de différence en 8 s, contre une liste qui bouge sans sélection). « End process » / « Force quit » restent
-  à tester par toi.
+  (vérifié : aucun pixel de différence en 8 s, contre une liste qui bouge sans sélection). « End process » / « Force quit » testés
+  par toi : fonctionnent. Boucle de liaison à l'arrêt du processus choisi corrigée.
+- Polkit : ton choix, garder l'agent Quickshell. polkit-gnome est arrêté depuis le 2026-10-19 ; ta config Sway le relancera au
+  prochain démarrage de session (il reprendra alors la place jusqu'à la bascule de la phase 10, qui le retire de l'autostart).
+
+Retour du 2026-10-19 : phase validée.
 
 ## Prochaine étape
 
-Phase 8b (voir ci-dessus).
+Phase 9 — parité Hyprland (tests à faire ensemble dans une session Hyprland : voir « Compatibilité Hyprland »).
 
 Rappel pour la phase 10 : l'historique du lanceur (`~/.local/state/quickshell/by-shell/desktop/launcher.json`) est repris de Rofi
 quand il n'existe pas, et toute instance de test le recrée. Le supprimer juste avant la bascule, pour reprendre l'historique Rofi le
