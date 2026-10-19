@@ -58,96 +58,80 @@ ColumnLayout {
     }
 
     // --- Carte ---
-    Rectangle {
-        Layout.fillWidth: true
-        implicitHeight: card.implicitHeight + 2 * Theme.panel.padding
-        radius: Theme.panel.rowRadius
-        color: Theme.wifi.card
-
-        ColumnLayout {
-            id: card
-            anchors {
-                left: parent.left
-                right: parent.right
-                top: parent.top
-                margins: Theme.panel.padding
-            }
+    PanelCard {
+        RowLayout {
+            Layout.fillWidth: true
             spacing: Theme.panel.spacing
 
-            RowLayout {
+            IconImage {
+                implicitSize: Theme.wifi.cardIconSize
+                source: "image://icon/network-vpn"
+                opacity: Tailscale.running ? 1 : Theme.panel.disabledOpacity
+            }
+
+            ColumnLayout {
                 Layout.fillWidth: true
-                spacing: Theme.panel.spacing
+                spacing: 0
 
-                IconImage {
-                    implicitSize: Theme.wifi.cardIconSize
-                    source: "image://icon/network-vpn"
-                    opacity: Tailscale.running ? 1 : Theme.panel.disabledOpacity
-                }
-
-                ColumnLayout {
+                Text {
                     Layout.fillWidth: true
-                    spacing: 0
-
-                    Text {
-                        Layout.fillWidth: true
-                        text: "Tailscale"
-                        font.family: Theme.font.text
-                        font.pixelSize: Theme.panel.fontSize
-                        color: Tailscale.running ? Theme.panel.accent : Theme.panel.text
-                    }
-
-                    PanelSection {
-                        text: Tailscale.busy ? "Working…"
-                            : Tailscale.running ? `Connected · ${Tailscale.onlineCount} of ${Tailscale.peers.length} devices online`
-                            : Tailscale.state === "NeedsLogin" ? "Signed out"
-                            : Tailscale.state === "Stopped" ? "Disconnected"
-                            : Tailscale.state
-                    }
+                    text: "Tailscale"
+                    font.family: Theme.font.text
+                    font.pixelSize: Theme.panel.fontSize
+                    color: Tailscale.running ? Theme.panel.accent : Theme.panel.text
                 }
 
-                PanelButton {
-                    visible: Tailscale.state === "NeedsLogin"
-                    text: Tailscale.authUrl !== "" ? "Open sign-in page" : "Sign in…"
-                    onClicked: Tailscale.login()
-                }
-
-                PanelSwitch {
-                    visible: Tailscale.state !== "NeedsLogin"
-                    enabled: Tailscale.canAct && !Tailscale.busy
-                    opacity: enabled ? 1 : Theme.panel.disabledOpacity
-                    checked: Tailscale.running
-                    onToggled: checked => Tailscale.setRunning(checked)
+                PanelSection {
+                    text: Tailscale.busy ? "Working…"
+                        : Tailscale.running ? `Connected · ${Tailscale.onlineCount} of ${Tailscale.peers.length} devices online`
+                        : Tailscale.state === "NeedsLogin" ? "Signed out"
+                        : Tailscale.state === "Stopped" ? "Disconnected"
+                        : Tailscale.state
                 }
             }
 
-            DetailsGrid {
-                visible: Tailscale.running && shown.length > 0
-                rows: [
-                    ["Tailnet", Tailscale.tailnet],
-                    ["This device", Tailscale.self?.name ?? ""],
-                    ["IPv4 address", root.copied === "self" ? "Copied" : (Tailscale.self?.ip ?? "")],
-                    ["MagicDNS name", Tailscale.self?.dns ?? ""],
-                    ["Exit node", Tailscale.exitNode ? Tailscale.exitNode.name : "None"]
-                ]
+            PanelButton {
+                visible: Tailscale.state === "NeedsLogin"
+                text: Tailscale.authUrl !== "" ? "Open sign-in page" : "Sign in…"
+                onClicked: Tailscale.login()
             }
 
-            RowLayout {
-                visible: Tailscale.running && Tailscale.self !== null
+            PanelSwitch {
+                visible: Tailscale.state !== "NeedsLogin"
+                enabled: Tailscale.canAct && !Tailscale.busy
+                opacity: enabled ? 1 : Theme.panel.disabledOpacity
+                checked: Tailscale.running
+                onToggled: checked => Tailscale.setRunning(checked)
+            }
+        }
+
+        DetailsGrid {
+            visible: Tailscale.running && shown.length > 0
+            rows: [
+                ["Tailnet", Tailscale.tailnet],
+                ["This device", Tailscale.self?.name ?? ""],
+                ["IPv4 address", root.copied === "self" ? "Copied" : (Tailscale.self?.ip ?? "")],
+                ["MagicDNS name", Tailscale.self?.dns ?? ""],
+                ["Exit node", Tailscale.exitNode ? Tailscale.exitNode.name : "None"]
+            ]
+        }
+
+        RowLayout {
+            visible: Tailscale.running && Tailscale.self !== null
+            Layout.fillWidth: true
+
+            Item {
                 Layout.fillWidth: true
+            }
 
-                Item {
-                    Layout.fillWidth: true
-                }
+            PanelButton {
+                text: "Copy IP"
+                onClicked: root.copy(Tailscale.self.ip, "self")
+            }
 
-                PanelButton {
-                    text: "Copy IP"
-                    onClicked: root.copy(Tailscale.self.ip, "self")
-                }
-
-                PanelButton {
-                    text: "Copy name"
-                    onClicked: root.copy(Tailscale.self.dns, "self")
-                }
+            PanelButton {
+                text: "Copy name"
+                onClicked: root.copy(Tailscale.self.dns, "self")
             }
         }
     }
@@ -175,7 +159,7 @@ ColumnLayout {
             subtext: none ? "Use your own Internet connection" : (modelData.online ? modelData.ip : "Offline")
             active: none ? Tailscale.exitNode === null : modelData.exitNode
             enabled: Tailscale.canAct && !Tailscale.busy && (none || modelData.online)
-            onClicked: Tailscale.setExitNode(none ? "" : modelData.ip)
+            onClicked: Tailscale.setExitNode(none ? "" : (modelData.ip || modelData.dns))
         }
     }
 

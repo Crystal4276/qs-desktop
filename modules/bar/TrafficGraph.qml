@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Shapes
+import Quickshell
 import qs.config
 import qs.services
 
@@ -10,7 +11,9 @@ import qs.services
 ColumnLayout {
     id: root
 
-    readonly property var samples: Network.history
+    // Calculé seulement panneau affiché (une carte par barre, panneaux fermés le plus souvent).
+    readonly property bool shown: visible && (QsWindow.window?.visible ?? false)
+    readonly property var samples: shown ? Network.history : []
     readonly property real peak: Math.max(1000, ...samples.map(s => Math.max(s.down, s.up)))
 
     Layout.fillWidth: true

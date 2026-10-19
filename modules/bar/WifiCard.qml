@@ -7,7 +7,7 @@ import qs.services
 // Carte du réseau Wi-Fi courant (THEME.md § 3 « Module Wi-Fi »), en tête du panneau comme le réseau déplié de KDE : glyphe
 // coloré selon la qualité, nom, état et qualité en mots (GNOME), jauge du signal, puis détails — bande et canal, débit du lien,
 // sécurité, adresse IPv4 ; graphe du trafic si le Wi-Fi porte la route par défaut. En connexion : glyphe animé et bouton « Cancel ».
-Rectangle {
+PanelCard {
     id: root
 
     property var network: null   // Quickshell.Networking WifiNetwork
@@ -27,112 +27,96 @@ Rectangle {
         ["IP address", Network.wifiAddress]
     ]
 
-    Layout.fillWidth: true
-    implicitHeight: column.implicitHeight + 2 * Theme.panel.padding
-    radius: Theme.panel.rowRadius
-    color: Theme.wifi.card
-
-    ColumnLayout {
-        id: column
-        anchors {
-            left: parent.left
-            right: parent.right
-            top: parent.top
-            margins: Theme.panel.padding
-        }
+    RowLayout {
+        Layout.fillWidth: true
         spacing: Theme.panel.spacing
 
-        RowLayout {
+        WifiIcon {
+            size: Theme.wifi.cardIconSize
+            level: root.level
+            connecting: !root.connected
+            limited: root.connected && Network.wifiLimited
+            color: root.connected ? root.qualityColor : Theme.panel.secondaryText
+        }
+
+        ColumnLayout {
             Layout.fillWidth: true
-            spacing: Theme.panel.spacing
+            spacing: 0
 
-            WifiIcon {
-                size: Theme.wifi.cardIconSize
-                level: root.level
-                connecting: !root.connected
-                limited: root.connected && Network.wifiLimited
-                color: root.connected ? root.qualityColor : Theme.panel.secondaryText
-            }
-
-            ColumnLayout {
+            Text {
                 Layout.fillWidth: true
-                spacing: 0
-
-                Text {
-                    Layout.fillWidth: true
-                    text: root.network?.name ?? ""
-                    font.family: Theme.font.text
-                    font.pixelSize: Theme.panel.fontSize
-                    color: root.connected ? Theme.panel.accent : Theme.panel.text
-                    elide: Text.ElideRight
-                }
-
-                PanelSection {
-                    text: !root.connected ? "Connecting…"
-                        : Network.wifiLimited ? (Network.connectivity === NM.NetworkConnectivity.Portal ? "Sign-in required: captive portal" : "Connected without Internet access")
-                        : `Connected · ${Network.qualityText(root.strength).toLowerCase()} signal`
-                    color: root.connected && Network.wifiLimited ? Theme.panel.warning : Theme.panel.secondaryText
-                }
+                text: root.network?.name ?? ""
+                font.family: Theme.font.text
+                font.pixelSize: Theme.panel.fontSize
+                color: root.connected ? Theme.panel.accent : Theme.panel.text
+                elide: Text.ElideRight
             }
 
-            PanelButton {
-                text: root.connected ? "Disconnect" : "Cancel"
-                onClicked: root.connected ? root.network.disconnect() : Network.cancelWifi()
+            PanelSection {
+                text: !root.connected ? "Connecting…"
+                    : Network.wifiLimited ? (Network.connectivity === NM.NetworkConnectivity.Portal ? "Sign-in required: captive portal" : "Connected without Internet access")
+                    : `Connected · ${Network.qualityText(root.strength).toLowerCase()} signal`
+                color: root.connected && Network.wifiLimited ? Theme.panel.warning : Theme.panel.secondaryText
             }
         }
 
-        // Jauge du signal : creux et hauteur du curseur de volume, remplissage à la couleur de la qualité.
-        RowLayout {
-            visible: root.connected
+        PanelButton {
+            text: root.connected ? "Disconnect" : "Cancel"
+            onClicked: root.connected ? root.network.disconnect() : Network.cancelWifi()
+        }
+    }
+
+    // Jauge du signal : creux et hauteur du curseur de volume, remplissage à la couleur de la qualité.
+    RowLayout {
+        visible: root.connected
+        Layout.fillWidth: true
+        spacing: Theme.panel.spacing
+
+        Rectangle {
             Layout.fillWidth: true
-            spacing: Theme.panel.spacing
+            implicitHeight: Theme.slider.troughHeight
+            radius: Theme.slider.troughRadius
+            color: Theme.slider.trough
 
             Rectangle {
-                Layout.fillWidth: true
-                implicitHeight: Theme.slider.troughHeight
-                radius: Theme.slider.troughRadius
-                color: Theme.slider.trough
+                width: Math.max(height, parent.width * root.strength)
+                height: parent.height
+                radius: parent.radius
+                color: root.qualityColor
 
-                Rectangle {
-                    width: Math.max(height, parent.width * root.strength)
-                    height: parent.height
-                    radius: parent.radius
-                    color: root.qualityColor
-
-                    Behavior on width {
-                        NumberAnimation {
-                            duration: Theme.wifi.levelDuration
-                            easing.type: Easing.OutCubic
-                        }
+                Behavior on width {
+                    NumberAnimation {
+                        duration: Theme.wifi.levelDuration
+                        easing.type: Easing.OutCubic
                     }
                 }
             }
+        }
 
-            Text {
-                id: percent
-                text: `${Math.round(root.strength * 100)} %`
-                font.family: Theme.font.text
-                font.pixelSize: Theme.panel.smallFontSize
-                font.features: { "tnum": 1 }
-                color: Theme.panel.text
-                horizontalAlignment: Text.AlignRight
-                Layout.preferredWidth: percentMetrics.advanceWidth
+        Text {
+            id: percent
+            text: `${Math.round(root.strength * 100)} %`
+            font.family: Theme.font.text
+            font.pixelSize: Theme.panel.smallFontSize
+            font.features: { "tnum": 1 }
+            color: Theme.panel.text
+            horizontalAlignment: Text.AlignRight
+            Layout.preferredWidth: percentMetrics.advanceWidth
 
-                TextMetrics {
-                    id: percentMetrics
-                    font: percent.font
-                    text: "100 %"
-                }
+            TextMetrics {
+                id: percentMetrics
+                font: percent.font
+                text: "100 %"
             }
         }
+    }
 
-        DetailsGrid {
-            visible: root.connected && shown.length > 0
-            rows: root.details
-        }
+    DetailsGrid {
+        visible: root.connected && shown.length > 0
+        rows: root.details
+    }
 
-        TrafficGraph {
-            visible: root.connected && root.carriesTraffic
-        }
+    TrafficGraph {
+        visible: root.connected && root.carriesTraffic
     }
 }

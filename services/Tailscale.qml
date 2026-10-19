@@ -8,8 +8,8 @@ import Quickshell.Io
 // la commande `tailscale` (pas de bibliothèque native). Lecture sans droits (`status --json`, `debug prefs`) ; les actions
 // demandent que ton utilisateur soit « operator » du démon (`sudo tailscale set --operator=$USER`, une fois — install.sh) :
 // sans cela, l'erreur de la commande est affichée.
-// Relu toutes les 5 s panneau réseau ouvert, toutes les 60 s sinon (icône du tray quand il n'y a pas de câble) ; rien si la
-// commande est absente (cherchée une fois au démarrage). Préférences lues panneau ouvert seulement.
+// Relu toutes les 5 s panneau réseau ouvert ; panneau fermé, toutes les 60 s seulement sans câble branché (l'icône réseau en
+// dépend alors) ; une fois au démarrage ; rien si la commande est absente. Préférences lues panneau ouvert seulement.
 Singleton {
     id: root
 
@@ -102,9 +102,9 @@ Singleton {
         run([on ? "up" : "down"]);
     }
 
-    // `ip` : IP Tailscale de l'appareil de sortie, "" pour aucun.
-    function setExitNode(ip: string): void {
-        run(["set", `--exit-node=${ip}`]);
+    // `node` : IP ou nom MagicDNS de l'appareil de sortie (`tailscale set` accepte les deux), "" pour aucun.
+    function setExitNode(node: string): void {
+        run(["set", `--exit-node=${node}`]);
     }
 
     function setOption(flag: string, on: bool): void {
@@ -129,12 +129,12 @@ Singleton {
 
     Timer {
         interval: root.polling ? 5000 : 60000
-        running: root.available
+        running: root.available && (root.polling || !Network.wiredLinked)
         repeat: true
-        triggeredOnStart: true
         onTriggered: root.refresh()
     }
     onPollingChanged: if (polling) refresh()
+    onAvailableChanged: if (available) refresh()
 
     Process {
         id: statusQuery

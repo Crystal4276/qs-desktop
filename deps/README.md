@@ -55,7 +55,8 @@ Thème d'icônes des applications (tray, lanceur, menu d'applications, notificat
 | Fond d'écran + utilitaire (phase 8b) | — (natif) | `xdg-user-dirs` (dossier Images) | dépôt privé des fonds cloné dans `~/Pictures/Wallpapers` | Inter, Symbols Nerd Font Mono |
 | Veille des écrans | natif (`IdleMonitor` + commande DPMS au compositeur) ; `systemd` (`systemd-inhibit`), `glib2` (`gdbus` : mise en veille du système) | — | — | — |
 | Agent polkit | — (natif, `PolkitAgent` ; `polkit` installé avec `quickshell`) | — | à définir | — |
-| Réseau (tray) | `networkmanager` (natif, `Networking`) | `nm-connection-editor` pour l'édition des connexions | icônes Papirus-Dark (`nm-*`) | — |
+| Réseau (tray) | `networkmanager` (natif, `Networking` ; `nmcli` pour les détails filaires), `wl-clipboard` (copies) | `nm-connection-editor` pour l'édition des connexions ; onglets `tailscale` (actions : `tailscale set --operator=$USER`) et `zerotier-one` (jeton copié dans `~/.zeroTierOneAuthToken`), masqués si absents | icônes Papirus-Dark (`nm-*`, `network-vpn`, `zerotier-gui`, `computer`, `smartphone`) | — |
+| Wi-Fi (tray) | `networkmanager` (natif ; `nmcli` pour bande, canal, débit, adresse) | — | glyphe dessiné (géométrie Papirus) | — |
 | Bluetooth (tray) | `bluez` (natif, `Bluetooth`), `bluez-utils` (agent d'appairage) | — | icônes Papirus-Dark (`blueman-tray*`) | — |
 | Disques amovibles (tray) | `udisks2`, `glib2` (`gdbus`), `systemd` (`busctl`), `xdg-utils` (ouvrir) | — | icônes Papirus-Dark | — |
 | NordVPN (tray) | — | `nordvpn-bin` (AUR) + service `nordvpnd` + compte connecté (sinon module masqué) ; icônes `nordvpn-tray-*` du paquet | — | historique des pays : `~/.local/state/quickshell/by-shell/desktop/vpn.json` |
@@ -137,6 +138,8 @@ Correspondances attendues, **non encore vérifiées** (phase 11).
 | glib2 (`gdbus`) | glib2 | libglib2.0-bin | souvent déjà présent |
 | systemd (`busctl`) | systemd | systemd | toujours présent |
 | nm-connection-editor (optionnel) | nm-connection-editor | network-manager-gnome | |
+| tailscale (optionnel) | — (dépôt de l'éditeur : pkgs.tailscale.com) | — (dépôt de l'éditeur : pkgs.tailscale.com) | absent des dépôts officiels Fedora et Debian/Ubuntu |
+| zerotier-one (optionnel) | — (dépôt de l'éditeur : install.zerotier.com) | — (dépôt de l'éditeur : install.zerotier.com) | absent des dépôts officiels Fedora et Debian/Ubuntu |
 | pacman-contrib + fakeroot | — | — | spécifique Arch : module mises à jour masqué |
 | btop / nvtop | idem | idem | |
 | gnome-terminal | idem | idem | |

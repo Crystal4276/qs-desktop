@@ -107,13 +107,12 @@ Singleton {
     readonly property bool limited: (wiredConnected || connectedWifi !== null)
         && [NetworkConnectivity.None, NetworkConnectivity.Portal, NetworkConnectivity.Limited].includes(connectivity)
 
-    // Icône « réseau » (ta demande du 2026-10-19 : Wi-Fi séparé ; filaire et réseaux privés ici) : visible si un câble est
-    // branché, s'il n'y a pas de Wi-Fi, ou si Tailscale / ZeroTier sont là (laptop sans câble). Filaire branché : son état
-    // (noms de nm-applet, Papirus-Dark) ; sinon `network-vpn`.
+    // Filaire de l'icône « réseau » (Tray.qml, qui y ajoute Tailscale / ZeroTier : ce service ne les lit pas, eux lisent
+    // celui-ci — pas de dépendance circulaire entre singletons, qui donnait des liaisons `undefined` au démarrage) : câble
+    // branché, état (noms de nm-applet, Papirus-Dark).
     readonly property bool wiredLinked: wiredDevices.some(d => d.hasLink)
-    readonly property bool networkShown: managed && (wiredLinked || wifi === null) || Tailscale.installed || ZeroTier.present
-    readonly property string icon: wiredConnected ? (limited ? "network-wired-no-route" : "nm-device-wired")
-        : !wiredLinked && (Tailscale.installed || ZeroTier.present) ? "network-vpn" : "nm-no-connection"
+    readonly property bool wiredShown: managed && (wiredLinked || wifi === null)
+    readonly property string icon: wiredConnected ? (wiredLimited ? "network-wired-no-route" : "nm-device-wired") : "nm-no-connection"
 
     // --- Module Wi-Fi (WifiPanel.qml, WifiIcon.qml) ---
 
@@ -124,8 +123,19 @@ Singleton {
     readonly property var connectingWifi: wifiNetworks.find(n => n.state === ConnectionState.Connecting) ?? null
     // Réseau de la carte du panneau : connecté, sinon en cours de connexion.
     readonly property var currentWifi: connectedWifi ?? connectingWifi
-    // Accès limité sur le Wi-Fi (le filaire, s'il est connecté, porte la route : l'avertissement est pour lui).
-    readonly property bool wifiLimited: connectedWifi !== null && !wiredConnected && limited
+    // Accès limité (vérification globale de NetworkManager) attribué à l'interface de la route par défaut : le Wi-Fi s'il la
+    // porte, sinon le filaire.
+    readonly property bool wifiCarriesRoute: wifi !== null && interfaceName === wifi.name
+    readonly property bool wifiLimited: limited && connectedWifi !== null && wifiCarriesRoute
+    readonly property bool wiredLimited: limited && wiredConnected && !wifiCarriesRoute
+
+    // Autre réseau connecté : débit et adresse du précédent effacés, relus aussitôt panneau ouvert.
+    onConnectedWifiChanged: {
+        wifiBitrate = "";
+        wifiAddress = "";
+        if (wifiPanelOpen && connectedWifi)
+            linkQuery.running = true;
+    }
 
     // Niveau de signal 0 (aucun) … 4 (excellent) : seuils de GNOME Shell (signalToIcon, alignés sur GNOME Settings) — 20, 40,
     // 50, 80 %.
