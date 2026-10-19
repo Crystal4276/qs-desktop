@@ -225,6 +225,7 @@ OverlayPopup {
                         Gauge {
                             required property int index
                             label: String(index)
+                            labelWidth: Math.ceil(Math.max(0, ...Monitor.cores.map((_, i) => mountMetrics.advanceWidth(String(i)))))   // jauges alignées
                             value: (Monitor.cores[index] ?? 0) / 100
                             tint: Theme.monitor.cpu
                         }

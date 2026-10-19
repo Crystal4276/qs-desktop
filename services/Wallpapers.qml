@@ -31,10 +31,17 @@ Singleton {
         if (!output || dir === "" || !stateRead)
             return null;
         const own = overrides[output.description];
-        if (own)
+        if (own && (!libraryRead || library.simple.includes(own)))
             return { kind: "image", source: url(own) };
-        const s = selection;
+        // Choix enregistré disparu du dossier (fichier supprimé ou renommé) : fond de la config machine.
+        return pick(selection, output, outputs)
+            ?? (libraryRead && selection !== Settings.wallpaper ? pick(Settings.wallpaper, output, outputs) : null);
+    }
+
+    function pick(s: var, output: var, outputs: var): var {
         if (!s)
+            return null;
+        if (libraryRead && s.kind !== "triptych" && !(library[s.kind] ?? []).includes(s.path))
             return null;
         if (s.kind === "panorama")
             return outputs.length > 1 ? { kind: "panorama", source: url(s.path) } : { kind: "image", source: url(s.path) };
@@ -63,10 +70,18 @@ Singleton {
     // Ouverture de l'utilitaire depuis l'interface (bouton du panneau de réglages) : modules/wallpaper/WallpaperPicker.qml écoute.
     signal pickerRequested
 
-    // Bibliothèque relue (ouverture de l'utilitaire, dossier changé).
+    // Bibliothèque relue (ouverture de l'utilitaire, dossier changé) ; demande pendant une lecture : relue juste après (le dossier
+    // a pu changer). `libraryRead` : une lecture complète faite, les choix absents du dossier peuvent être écartés.
+    property bool scanAgain: false
+    property bool libraryRead: false
+
     function refresh(): void {
-        if (dir === "" || scan.running)
+        if (dir === "")
             return;
+        if (scan.running) {
+            scanAgain = true;
+            return;
+        }
         // Commande fixée ici : liée par une liaison, elle pourrait ne pas encore suivre un dossier qui vient de changer.
         scan.command = ["sh", "-c", `cd "$0" 2>/dev/null && find -L simple panorama triptych -type f \\( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \\) 2>/dev/null | sort; exit 0`, dir];
         scan.running = true;
@@ -124,6 +139,13 @@ Singleton {
                 }
                 lib.triptych = Object.values(triptychs).filter(t => t.parts.left && t.parts.center && t.parts.right);
                 root.library = lib;
+                root.libraryRead = true;
+            }
+        }
+        onExited: {
+            if (root.scanAgain) {
+                root.scanAgain = false;
+                Qt.callLater(root.refresh);
             }
         }
     }
