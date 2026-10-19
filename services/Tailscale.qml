@@ -13,7 +13,7 @@ import Quickshell.Io
 Singleton {
     id: root
 
-    readonly property bool polling: Network.networkPanelOpen
+    readonly property bool polling: Network.networkPanelOpen && Network.networkTab === "tailscale"
     // Commande présente (`command -v`, au démarrage).
     readonly property bool available: cli.available
     // Démon joignable (réponse JSON) ; ne repasse à faux qu'après deux échecs de suite (redémarrage du démon).
@@ -44,7 +44,7 @@ Singleton {
 
     // Dernière commande : en cours, et son erreur ("" : aucune) ; connexion au compte à part (elle attend le navigateur).
     readonly property bool busy: cli.busy
-    readonly property string error: cli.error || loginCli.error
+    readonly property string error: cli.error || (state === "NeedsLogin" ? loginCli.error : "")
     readonly property bool loggingIn: loginCli.busy
 
     CliRunner {
@@ -71,6 +71,7 @@ Singleton {
             ip: ips.find(a => !a.includes(":")) ?? "",
             online: p.Online ?? false,
             direct: (p.CurAddr ?? "") !== "",
+            active: p.Active ?? false,   // session en cours ; sans elle, ni directe ni relayée
             relay: p.Relay ?? "",
             lastSeen: p.LastSeen && !p.LastSeen.startsWith("0001") ? new Date(p.LastSeen) : null,
             exitNode: p.ExitNode ?? false,
@@ -108,9 +109,13 @@ Singleton {
         return cli.run(args);
     }
 
-    // `up` attend une authentification si la clé du nœud a expiré : borné, pour ne pas bloquer les autres actions.
+    // `up` seul : avec une option (même `--timeout`), tailscale exige de répéter tous les réglages faits par `set` (vérifié).
+    // Il attend une authentification si la clé du nœud a expiré : borné par `timeout` (coreutils), pour ne pas bloquer.
     function setRunning(on: bool): void {
-        run(on ? ["up", "--timeout=30s"] : ["down"]);
+        if (on)
+            cli.runCommand(["timeout", "30", "tailscale", "up"]);
+        else
+            run(["down"]);
     }
 
     // `node` : IP ou nom MagicDNS de l'appareil de sortie (`tailscale set` accepte les deux), "" pour aucun.

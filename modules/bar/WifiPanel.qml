@@ -63,8 +63,8 @@ Panel {
         if (network.connected || network.stateChanging)
             return;
         failText = "";
-        if (!network.known && Network.isEnterprise(network.security)) {
-            failText = `${network.name} is an enterprise network: set it up in Network settings…`;
+        if (!network.known && Network.needsEditor(network.security)) {
+            failText = `${network.name} needs an enterprise or WEP setup: use Network settings…`;
             return;
         }
         if (!network.known && Network.needsPsk(network.security)) {

@@ -154,14 +154,14 @@ Singleton {
     function qualityText(strength: real): string {
         return ["Very weak", "Weak", "Fair", "Good", "Excellent"][wifiLevel(strength)];
     }
-    // Réseau qui se connecte avec une clé partagée (le panneau la demande s'il est inconnu) ; Open et OWE : sans mot de passe ;
-    // entreprise (EAP, LEAP, WEP dynamique) : identifiants à régler dans l'éditeur de connexions.
+    // Réseau qui se connecte avec une clé WPA (le panneau la demande s'il est inconnu : connectWithPsk fait un profil WPA) ;
+    // Open et OWE : sans mot de passe ; entreprise (EAP, LEAP) et WEP : à régler dans l'éditeur de connexions.
     function needsPsk(security: int): bool {
-        return [WifiSecurityType.WpaPsk, WifiSecurityType.Wpa2Psk, WifiSecurityType.Sae, WifiSecurityType.StaticWep].includes(security);
+        return [WifiSecurityType.WpaPsk, WifiSecurityType.Wpa2Psk, WifiSecurityType.Sae].includes(security);
     }
-    function isEnterprise(security: int): bool {
+    function needsEditor(security: int): bool {
         return [WifiSecurityType.WpaEap, WifiSecurityType.Wpa2Eap, WifiSecurityType.Wpa3SuiteB192, WifiSecurityType.Leap,
-            WifiSecurityType.DynamicWep].includes(security);
+            WifiSecurityType.DynamicWep, WifiSecurityType.StaticWep].includes(security);
     }
 
     function securityText(security: int): string {
@@ -197,6 +197,8 @@ Singleton {
     // tray, ou une barre recréée, ne s'écrasent pas.
     property var openPanels: []
     readonly property bool networkPanelOpen: openPanels.some(p => p.kind === "network")
+    // Onglet affiché du panneau réseau (NetworkPanel) : Tailscale et ZeroTier ne sont relus toutes les 5 s que sur le leur.
+    property string networkTab: ""
     readonly property bool wifiPanelOpen: openPanels.some(p => p.kind === "wifi")
 
     function setPanelOpen(kind: string, panel: QtObject, open: bool): void {

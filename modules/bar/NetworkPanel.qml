@@ -21,7 +21,13 @@ Panel {
     ].filter(t => t.shown)
     readonly property string current: tabs.some(t => t.key === tab) ? tab : (tabs[0]?.key ?? "")
 
-    onVisibleChanged: Network.setPanelOpen("network", root, visible)
+    // Onglet affiché, pour que Tailscale / ZeroTier ne soient relus souvent que sur le leur.
+    onVisibleChanged: {
+        if (visible)
+            Network.networkTab = current;
+        Network.setPanelOpen("network", root, visible);
+    }
+    onCurrentChanged: if (visible) Network.networkTab = current
     Component.onDestruction: Network.setPanelOpen("network", root, false)
 
     RowLayout {

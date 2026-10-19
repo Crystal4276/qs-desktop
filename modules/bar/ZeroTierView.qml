@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
-import Quickshell.Widgets
 import qs.config
 import qs.services
 
@@ -18,13 +17,17 @@ ColumnLayout {
     Layout.fillWidth: true
     spacing: Theme.panel.spacing
 
+    // Un minuteur par état : copier ne prolonge pas une confirmation de départ, et inversement.
     Timer {
-        id: resetTimer
+        id: copiedTimer
         interval: 3000
-        onTriggered: {
-            root.copied = false;
-            root.confirmLeave = "";
-        }
+        onTriggered: root.copied = false
+    }
+
+    Timer {
+        id: confirmTimer
+        interval: 3000
+        onTriggered: root.confirmLeave = ""
     }
 
     PanelSection {
@@ -42,41 +45,23 @@ ColumnLayout {
 
     // --- Carte du nœud ---
     PanelCard {
-        RowLayout {
-            Layout.fillWidth: true
-            spacing: Theme.panel.spacing
-
-            IconImage {
-                implicitSize: Theme.panel.cardIconSize
-                source: "image://icon/zerotier-gui"
-            }
-
-            ColumnLayout {
-                Layout.fillWidth: true
-                spacing: 0
-
-                Text {
-                    Layout.fillWidth: true
-                    text: "ZeroTier"
-                    font.family: Theme.font.text
-                    font.pixelSize: Theme.panel.fontSize
-                    color: ZeroTier.connectedCount > 0 ? Theme.panel.accent : Theme.panel.text
-                }
-
-                PanelSection {
-                    text: root.copied ? "Node ID copied"
-                        : !ZeroTier.authorized ? `${ZeroTier.interfaces.length} interface(s)`
-                        : `${ZeroTier.info?.online ? "Online" : "Offline"} · node ${ZeroTier.info?.address ?? ""}`
-                }
-            }
+        CardHeader {
+            icon: "zerotier-gui"
+            title: "ZeroTier"
+            active: ZeroTier.connectedCount > 0
+            status: root.copied ? "Node ID copied"
+                : !ZeroTier.authorized ? `${ZeroTier.interfaces.length} interface(s)`
+                : `${ZeroTier.info?.online ? "Online" : "Offline"} · node ${ZeroTier.info?.address ?? ""}`
 
             PanelButton {
                 visible: ZeroTier.authorized
                 text: "Copy node ID"
                 onClicked: {
-                    Network.copy(ZeroTier.info?.address ?? "");
+                    if ((ZeroTier.info?.address ?? "") === "")
+                        return;
+                    Network.copy(ZeroTier.info.address);
                     root.copied = true;
-                    resetTimer.restart();
+                    copiedTimer.restart();
                 }
             }
         }
@@ -122,7 +107,7 @@ ColumnLayout {
                         ZeroTier.leave(modelData.id);
                     } else {
                         root.confirmLeave = modelData.id;
-                        resetTimer.restart();
+                        confirmTimer.restart();
                     }
                 }
             }

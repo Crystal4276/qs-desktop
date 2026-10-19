@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
-import Quickshell.Widgets
 import qs.config
 import qs.services
 
@@ -61,37 +60,17 @@ ColumnLayout {
 
     // --- Carte ---
     PanelCard {
-        RowLayout {
-            Layout.fillWidth: true
-            spacing: Theme.panel.spacing
-
-            IconImage {
-                implicitSize: Theme.panel.cardIconSize
-                source: "image://icon/network-vpn"
-                opacity: Tailscale.running ? 1 : Theme.panel.disabledOpacity
-            }
-
-            ColumnLayout {
-                Layout.fillWidth: true
-                spacing: 0
-
-                Text {
-                    Layout.fillWidth: true
-                    text: "Tailscale"
-                    font.family: Theme.font.text
-                    font.pixelSize: Theme.panel.fontSize
-                    color: Tailscale.running ? Theme.panel.accent : Theme.panel.text
-                }
-
-                PanelSection {
-                    text: Tailscale.busy ? "Working…"
-                        : Tailscale.loggingIn && Tailscale.state === "NeedsLogin" ? "Waiting for sign-in in the browser…"
-                        : Tailscale.running ? `Connected · ${Tailscale.onlineCount} of ${Tailscale.peers.length} devices online`
-                        : Tailscale.state === "NeedsLogin" ? "Signed out"
-                        : Tailscale.state === "Stopped" ? "Disconnected"
-                        : Tailscale.state
-                }
-            }
+        CardHeader {
+            icon: "network-vpn"
+            iconOpacity: Tailscale.running ? 1 : Theme.panel.disabledOpacity
+            title: "Tailscale"
+            active: Tailscale.running
+            status: Tailscale.busy ? "Working…"
+                : Tailscale.loggingIn && Tailscale.state === "NeedsLogin" ? "Waiting for sign-in in the browser…"
+                : Tailscale.running ? `Connected · ${Tailscale.onlineCount} of ${Tailscale.peers.length} devices online`
+                : Tailscale.state === "NeedsLogin" ? "Signed out"
+                : Tailscale.state === "Stopped" ? "Disconnected"
+                : Tailscale.state
 
             PanelButton {
                 visible: Tailscale.state === "NeedsLogin"
@@ -207,9 +186,8 @@ ColumnLayout {
             enabled: Tailscale.canAct && !Tailscale.busy
             onClicked: Tailscale.setOption(modelData.flag, !modelData.on)
 
+            // Atténué avec sa ligne (PanelRow) : pas d'opacité propre, qui se cumulerait.
             PanelSwitch {
-                enabled: Tailscale.canAct && !Tailscale.busy
-                opacity: enabled ? 1 : Theme.panel.disabledOpacity
                 checked: modelData.on
                 onToggled: checked => Tailscale.setOption(modelData.flag, checked)
             }
@@ -250,7 +228,7 @@ ColumnLayout {
                     }
                     text: modelData.name
                     subtext: root.copied === modelData.id ? `Copied ${modelData.ip}`
-                        : modelData.online ? [modelData.ip, Tailscale.osName(modelData.os), modelData.direct ? "direct" : `relayed (${modelData.relay})`].filter(s => s).join(" · ")
+                        : modelData.online ? [modelData.ip, Tailscale.osName(modelData.os), modelData.direct ? "direct" : !modelData.active ? "idle" : modelData.relay ? `relayed (${modelData.relay})` : "relayed"].filter(s => s).join(" · ")
                         : ["Offline", Tailscale.osName(modelData.os), modelData.lastSeen ? `seen ${Tailscale.ago(modelData.lastSeen)}` : ""].filter(s => s).join(" · ")
                     active: modelData.online
                     onClicked: root.copy(modelData.ip, modelData.id)

@@ -12,7 +12,7 @@ import Quickshell.Io
 Singleton {
     id: root
 
-    readonly property bool polling: Network.networkPanelOpen
+    readonly property bool polling: Network.networkPanelOpen && Network.networkTab === "zerotier"
     readonly property bool available: cli.available
     // Jeton accepté. Repasse à faux sur une erreur de jeton, ou après deux autres échecs de suite (service redémarré).
     property bool authorized: false

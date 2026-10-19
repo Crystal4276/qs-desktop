@@ -15,11 +15,16 @@ Scope {
 
     // Renvoie faux si une autre commande est en cours (rien n'est lancé).
     function run(args: var): bool {
+        return runCommand([program, ...args]);
+    }
+
+    // Commande complète (ex. bornée par `timeout`).
+    function runCommand(cmd: var): bool {
         if (busy)
             return false;
         error = "";
         busy = true;
-        command.command = [program, ...args];
+        command.command = cmd;
         command.running = true;
         return true;
     }
@@ -40,10 +45,11 @@ Scope {
         }
         onExited: code => {
             root.busy = false;
-            // Première ligne non vide : le message (une option refusée est suivie de toute l'aide de la commande).
+            // Première ligne non vide : le message (une option refusée est suivie de toute l'aide de la commande) ; 124 : arrêtée
+            // par `timeout`.
             if (code !== 0)
                 root.error = (err.text.trim() || out.text.trim()).split("\n").find(l => l.trim() !== "")?.trim()
-                    ?? `${root.program}: exit code ${code}`;
+                    ?? (code === 124 ? `${root.program}: no answer (sign-in needed?)` : `${root.program}: exit code ${code}`);
             root.finished();
         }
     }
