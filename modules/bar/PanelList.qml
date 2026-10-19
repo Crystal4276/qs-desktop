@@ -5,9 +5,10 @@ import qs.config
 // Liste d'un panneau : sa hauteur, au plus `Theme.panel.maxListHeight` ; au-delà elle défile (THEME.md § 3 « Panneaux »).
 Flickable {
     default property alias content: column.data
+    property real maxHeight: Theme.panel.maxListHeight
 
     Layout.fillWidth: true
-    Layout.preferredHeight: Math.min(column.implicitHeight, Theme.panel.maxListHeight)
+    Layout.preferredHeight: Math.min(column.implicitHeight, maxHeight)
     contentHeight: column.implicitHeight
     clip: true
     boundsBehavior: Flickable.StopAtBounds

@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
+import Quickshell
 import qs.config
 
 // Détails d'une carte (Wi-Fi, filaire, Tailscale) : libellés Inter 16 px `subtext0` en première colonne, valeurs `text`.
@@ -8,7 +9,9 @@ GridLayout {
     id: root
 
     property var rows: []
+    // Objets clés par libellé (ScriptModel) : les lignes sont gardées d'une relecture à l'autre, pas recréées.
     readonly property var shown: rows.filter(r => r[1] !== "" && r[1] !== undefined && r[1] !== null)
+        .map((r, i) => ({ label: r[0], value: r[1], row: i }))
 
     visible: shown.length > 0
     Layout.fillWidth: true
@@ -17,16 +20,18 @@ GridLayout {
     rowSpacing: 0
 
     Repeater {
-        model: root.shown
+        model: ScriptModel {
+            values: root.shown
+            objectProp: "label"
+        }
 
         Text {
             required property var modelData
-            required property int index
 
-            Layout.row: index
+            Layout.row: modelData.row
             Layout.column: 0
             Layout.alignment: Qt.AlignTop
-            text: modelData[0]
+            text: modelData.label
             font.family: Theme.font.text
             font.pixelSize: Theme.panel.smallFontSize
             color: Theme.panel.secondaryText
@@ -34,16 +39,18 @@ GridLayout {
     }
 
     Repeater {
-        model: root.shown
+        model: ScriptModel {
+            values: root.shown
+            objectProp: "label"
+        }
 
         Text {
             required property var modelData
-            required property int index
 
-            Layout.row: index
+            Layout.row: modelData.row
             Layout.column: 1
             Layout.fillWidth: true
-            text: modelData[1]
+            text: modelData.value
             font.family: Theme.font.text
             font.pixelSize: Theme.panel.smallFontSize
             color: Theme.panel.text

@@ -145,7 +145,7 @@ Singleton {
         wifiBitrate = "";
         wifiAddress = "";
         if (wifiPanelOpen && connectedWifi)
-            root.requery(linkQuery);
+            linkQuery.request();
     }
 
     // Niveau de signal 0 (aucun) … 4 (excellent) : seuils de GNOME Shell (signalToIcon, alignés sur GNOME Settings) — 20, 40,
@@ -165,6 +165,11 @@ Singleton {
     function needsEditor(security: int): bool {
         return [WifiSecurityType.WpaEap, WifiSecurityType.Wpa2Eap, WifiSecurityType.Wpa3SuiteB192, WifiSecurityType.Leap,
             WifiSecurityType.DynamicWep, WifiSecurityType.StaticWep].includes(security);
+    }
+
+    // Sans mot de passe : ouvert, ou OWE (chiffré, sans clé).
+    function isOpen(security: int): bool {
+        return security === WifiSecurityType.Open || security === WifiSecurityType.Owe;
     }
 
     function securityText(security: int): string {
@@ -269,7 +274,7 @@ Singleton {
             return;
         wifiNames = names;
         if (wifiPanelOpen && wifiUsable && names !== "")
-            root.requery(apQuery);
+            apQuery.request();
     }
 
     // Annule une connexion Wi-Fi en cours : désactive la connexion qui s'active (`nmcli connection down`), sans
@@ -280,22 +285,8 @@ Singleton {
             Quickshell.execDetached(["sh", "-c", 'u=$(nmcli -t -g GENERAL.CON-UUID device show "$1") && [ -n "$u" ] && nmcli connection down uuid "$u"', "sh", wifi.name]);
     }
 
-    // Relecture demandée pendant une lecture en cours (autre réseau, réseaux apparus) : refaite à sa fin, sans quoi la lecture
-    // en cours, faite avant le changement, resterait affichée jusqu'au relevé suivant.
-    function requery(query: var): void {
-        if (query.running)
-            query.again = true;
-        else
-            query.running = true;
-    }
-
-    Process {
+    Query {
         id: apQuery
-        property bool again: false
-        onExited: if (again) {
-            again = false;
-            running = true;
-        }
         command: ["nmcli", "-t", "-f", "IN-USE,FREQ,CHAN,BANDWIDTH,SIGNAL,SSID", "device", "wifi", "list", "ifname", root.wifi?.name ?? "", "--rescan", "no"]
         stdout: StdioCollector {
             onStreamFinished: {
@@ -320,13 +311,8 @@ Singleton {
         }
     }
 
-    Process {
+    Query {
         id: linkQuery
-        property bool again: false
-        onExited: if (again) {
-            again = false;
-            running = true;
-        }
         command: ["nmcli", "-t", "-g", "CAPABILITIES.SPEED,IP4.ADDRESS", "device", "show", root.wifi?.name ?? ""]
         stdout: StdioCollector {
             onStreamFinished: {
@@ -344,7 +330,7 @@ Singleton {
     property var wiredDetails: ({})
 
     Timer {
-        running: root.networkPanelOpen && root.wiredDevices.length > 0
+        running: root.networkPanelOpen && root.networkTab === "wired" && root.wiredDevices.length > 0
         triggeredOnStart: true
         interval: root.interval
         repeat: true

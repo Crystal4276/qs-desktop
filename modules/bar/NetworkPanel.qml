@@ -23,6 +23,9 @@ Panel {
 
     // Onglet affiché, pour que Tailscale / ZeroTier ne soient relus souvent que sur le leur.
     onVisibleChanged: {
+        // Sans câble, le bouton sert aux réseaux privés : leur onglet d'abord.
+        if (visible && !Network.wiredLinked)
+            tab = tabs.find(t => t.key !== "wired")?.key ?? tab;
         if (visible)
             Network.networkTab = current;
         Network.setPanelOpen("network", root, visible);

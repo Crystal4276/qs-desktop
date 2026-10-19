@@ -53,7 +53,7 @@ Panel {
     function rowSubtext(network): string {
         const ap = Network.wifiAccessPoints[network.name];
         return [
-            root.stateText(network) || (network.known ? "Saved" : network.security === NM.WifiSecurityType.Open ? "Open" : ""),
+            root.stateText(network) || (network.known ? "Saved" : Network.isOpen(network.security) ? "Open" : ""),
             ap?.band ?? "",
             `${Math.round(network.signalStrength * 100)} %`
         ].filter(s => s).join(" · ");
@@ -92,7 +92,8 @@ Panel {
             // Clé refusée : NetworkManager le signale par l'absence de secrets (« Wrong password ») ; une déconnexion ou un délai
             // pendant l'authentification peut venir de la clé ou du signal : message neutre et mot de passe proposé. La saisie
             // met à jour le profil enregistré (Quickshell, connectWithPsk), sans en créer un autre.
-            const secured = Network.needsPsk(network.security);
+            // Clé WPA attendue, ou sécurité non reconnue (drapeaux inhabituels) : le mot de passe peut être proposé.
+            const secured = !Network.isOpen(network.security) && !Network.needsEditor(network.security);
             if (secured && reason === NM.ConnectionFailReason.NoSecrets) {
                 root.passwordRefused = true;
                 root.passwordFor = network;
@@ -154,7 +155,7 @@ Panel {
                     size: Theme.panel.iconSize
                     color: Theme.panel.text
                     level: Network.wifiLevel(modelData.signalStrength)
-                    secure: modelData.security !== NM.WifiSecurityType.Open
+                    secure: !Network.isOpen(modelData.security)
                     connecting: modelData.state === NM.ConnectionState.Connecting
                 }
                 text: modelData.name
