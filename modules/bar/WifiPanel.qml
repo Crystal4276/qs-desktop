@@ -8,7 +8,7 @@ import qs.services
 // Panneau Wi-Fi (ta demande du 2026-10-19 : sorti du panneau réseau ; THEME.md § 3 « Module Wi-Fi », ARCHITECTURE R5) :
 // interrupteur ; carte du réseau courant (WifiCard.qml : qualité du signal et détails, comme KDE) ; autres réseaux visibles
 // avec force, bande et état (GNOME, Cinnamon) ; mot de passe demandé sous la liste pour un réseau protégé inconnu, redemandé en
-// rouge s'il est refusé ; échec de connexion signalé ; réseaux privés si l'icône réseau est masquée ; édition des connexions.
+// rouge s'il est refusé ; échec de connexion signalé ; édition des connexions.
 // Quickshell.Networking importé sous `NM` : son type `Network` masquerait le service du même nom.
 Panel {
     id: root
@@ -184,10 +184,6 @@ Panel {
                 network.connectWithPsk(text);
             }
         }
-    }
-
-    PrivateNetworks {
-        wanted: !Network.wiredShown
     }
 
     RowLayout {

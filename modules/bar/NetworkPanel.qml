@@ -1,74 +1,82 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
-import Quickshell.Networking as NM
 import qs.config
 import qs.services
 
-// Panneau réseau (remplace le menu de nm-applet, ARCHITECTURE R5) : connexions filaires, réseaux privés, édition des connexions
-// dans `nm-connection-editor`. Le Wi-Fi a son propre module (WifiPanel.qml, ta demande du 2026-10-19).
-// Libellés en anglais, comme nm-applet et la locale du système. Quickshell.Networking importé sous `NM` : son type `Network`
-// masquerait le service du même nom.
+// Panneau réseau (remplace le menu de nm-applet, ARCHITECTURE R5 ; refonte du 2026-10-19, ta demande — THEME.md § 3
+// « Panneau réseau ») : onglets Wired / Tailscale / ZeroTier (seulement ceux qui existent ; pas d'onglets s'il n'y en a qu'un),
+// boutons cochés comme le sélecteur de fonds. Filaire : une carte par câble (WiredCard.qml) ; Tailscale et ZeroTier : leurs
+// vues. Le Wi-Fi a son propre module (WifiPanel.qml). Libellés en anglais, comme nm-applet et la locale du système.
 Panel {
     id: root
 
     title: "Network"
 
+    property string tab: "wired"
+    readonly property var tabs: [
+        { key: "wired", text: "Wired", shown: Network.wiredDevices.length > 0 },
+        { key: "tailscale", text: "Tailscale", shown: Tailscale.installed },
+        { key: "zerotier", text: "ZeroTier", shown: ZeroTier.present }
+    ].filter(t => t.shown)
+    readonly property string current: tabs.some(t => t.key === tab) ? tab : (tabs[0]?.key ?? "")
+
     onVisibleChanged: Network.networkPanelOpen = visible
     Component.onDestruction: Network.networkPanelOpen = false
 
-    function stateText(network): string {
-        switch (network.state) {
-        case NM.ConnectionState.Connecting:
-            return "Connecting…";
-        case NM.ConnectionState.Disconnecting:
-            return "Disconnecting…";
-        case NM.ConnectionState.Connected:
-            return "Connected";
-        default:
-            return "";
-        }
+    Binding {
+        target: Tailscale
+        property: "polling"
+        value: root.visible
     }
 
-    // Accès limité (Network.limited) : en `red`, comme les autres avertissements des panneaux.
-    PanelSection {
-        visible: Network.limited && Network.wiredConnected
-        text: Network.connectivity === NM.NetworkConnectivity.Portal ? "Sign-in required: captive portal" : "Connected without Internet access"
-        color: Theme.panel.warning
+    Binding {
+        target: ZeroTier
+        property: "polling"
+        value: root.visible
     }
 
-    // --- Filaire ---
-    PanelSection {
-        visible: Network.wiredDevices.length > 0
-        text: "Wired"
-    }
+    RowLayout {
+        visible: root.tabs.length > 1
+        Layout.fillWidth: true
+        spacing: Theme.panel.spacing
 
-    Repeater {
-        model: ScriptModel {
-            values: Network.wiredDevices
-        }
-
-        PanelRow {
-            required property NM.NetworkDevice modelData
-
-            icon: modelData.connected ? "nm-device-wired" : "nm-no-connection"
-            text: modelData.network?.name ?? modelData.name
-            subtext: !modelData.hasLink ? "Cable unplugged"
-                : modelData.connected ? `Connected · ${modelData.linkSpeed} Mb/s` : (root.stateText(modelData.network ?? modelData) || "Disconnected")
-            active: modelData.connected
-            clickable: false
+        Repeater {
+            model: root.tabs
 
             PanelButton {
-                visible: modelData.hasLink && modelData.network !== null
-                text: modelData.connected ? "Disconnect" : "Connect"
-                onClicked: modelData.connected ? modelData.disconnect() : modelData.network.connect()
+                required property var modelData
+
+                Layout.fillWidth: true
+                text: modelData.text
+                checked: root.current === modelData.key
+                onClicked: root.tab = modelData.key
             }
         }
     }
 
-    PrivateNetworks {}
+    // --- Filaire ---
+    Repeater {
+        model: ScriptModel {
+            values: root.current === "wired" ? Network.wiredDevices : []
+        }
+
+        WiredCard {
+            required property var modelData
+            device: modelData
+        }
+    }
+
+    TailscaleView {
+        visible: root.current === "tailscale"
+    }
+
+    ZeroTierView {
+        visible: root.current === "zerotier"
+    }
 
     RowLayout {
+        visible: root.current === "wired"
         Layout.fillWidth: true
 
         Item {

@@ -62,7 +62,7 @@ libnotify               # notify-send (sortie audio suivante, tests)
 # --- Captures et outils de dev ---
 grim                    # captures des outils de dev (scripts/shot.sh) ; touche Impr. actuelle jusqu'à la phase 10
 slurp                   # sélection de zone de la touche Impr. actuelle, jusqu'à la phase 10 (outil natif ensuite)
-wl-clipboard            # copie des captures dans le presse-papiers (outil de capture natif)
+wl-clipboard            # presse-papiers : captures (outil natif), IP / noms copiés depuis le panneau réseau
 imagemagick             # scripts/crop.sh
 jq                      # scripts de test (lecture JSON swaymsg/hyprctl)
 zenity                  # fenêtres de test (scripts/test-outputs.sh)

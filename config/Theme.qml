@@ -224,6 +224,18 @@ Singleton {
         readonly property list<color> quality: [root.color.red, root.color.peach, root.color.yellow, root.color.green, root.color.green]
     }
 
+    // § 3 — Panneau réseau (refonte du 2026-10-19 ; THEME.md § 3 « Panneau réseau »)
+    readonly property QtObject network: QtObject {
+        readonly property int graphHeight: 64                 // nouveau, à valider
+        readonly property int graphLine: 2                    // nouveau, à valider
+        readonly property real graphFill: 0.25                // aire sous la courbe descendante (nouveau, à valider)
+        readonly property color down: root.color.sky          // couleur du module réseau de la barre
+        readonly property color up: root.color.peach          // nouveau, à valider
+        readonly property color online: root.color.green      // appareil en ligne (point), comme l'état connecté
+        readonly property color offline: root.color.surface2  // comme les jours hors du mois du calendrier
+        readonly property int dotSize: 10                     // nouveau, à valider
+    }
+
     // § 3 — Curseur de volume
     readonly property QtObject slider: QtObject {
         readonly property int minWidth: 50

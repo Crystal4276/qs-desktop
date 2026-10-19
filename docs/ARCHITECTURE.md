@@ -403,8 +403,16 @@ Proposition de placement dans les phases (CLAUDE.md n'est pas modifié sans ton 
   `signalToIcon`, qualité en mots), de KDE (réseau courant déplié avec ses détails) et de Cinnamon / GNOME (liste avec force du
   signal). Glyphe dessiné en QML (`WifiIcon.qml`) sur la géométrie Papirus, pour l'animer (glissement de niveau, balayage pendant
   la connexion). Détails absents de `Quickshell.Networking` (bande, canal, largeur, débit du lien, adresse IPv4) : `nmcli`,
-  relu toutes les 5 s seulement panneau ouvert. Sans icône réseau (laptop sans câble), les réseaux privés passent dans le
-  panneau Wi-Fi (`PrivateNetworks.qml`, partagé).
+  relu toutes les 5 s seulement panneau ouvert.
+  Panneau réseau refait le 2026-10-19 (ta demande) : onglets Wired / Tailscale / ZeroTier (`NetworkPanel.qml`). Filaire
+  (`WiredCard.qml`) : détails `nmcli` (IPv4, passerelle, DNS, domaine, IPv6 ; un port de pont est lu sur son pont) et graphe
+  du trafic (`TrafficGraph.qml`, aussi dans la carte Wi-Fi). Tailscale (`services/Tailscale.qml`) : `status --json` et
+  `debug prefs` sans droits ; actions (`up` / `down`, `set --exit-node / --accept-dns / --accept-routes / --shields-up /
+  --exit-node-allow-lan-access`) grâce à `--operator=$USER` (ton choix ; à proposer par install.sh). ZeroTier
+  (`services/ZeroTier.qml`) : `zerotier-cli -j` avec le jeton copié dans `~/.zeroTierOneAuthToken` (ton choix ; install.sh),
+  sinon interfaces `zt*` en lecture seule. Relus toutes les 5 s panneau ouvert, 60 s sinon. L'icône réseau reste visible
+  sans câble si Tailscale ou ZeroTier sont là (`network-vpn`). Copies : `wl-copy` (`Quickshell.clipboardText` n'atteint pas le
+  presse-papiers sans appui récent).
 - **Bluetooth** (R6) : `Quickshell.Bluetooth` ; appairage par `bluetoothctl` lancé pour l'occasion, son agent servant à sa propre commande
   `pair` (l'agent par défaut de blueman n'est pas touché) ; demandes affichées dans le panneau, jamais acceptées automatiquement.
 - **Disques** (R7) : `busctl` / `gdbus monitor` / `udisksctl` ; règles et textes d'udiskie (montage automatique, notifications, images

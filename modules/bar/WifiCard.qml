@@ -6,7 +6,7 @@ import qs.services
 
 // Carte du réseau Wi-Fi courant (THEME.md § 3 « Module Wi-Fi »), en tête du panneau comme le réseau déplié de KDE : glyphe
 // coloré selon la qualité, nom, état et qualité en mots (GNOME), jauge du signal, puis détails — bande et canal, débit du lien,
-// sécurité, adresse IPv4, trafic (si le Wi-Fi porte la route par défaut). En connexion : glyphe animé et bouton « Cancel ».
+// sécurité, adresse IPv4 ; graphe du trafic si le Wi-Fi porte la route par défaut. En connexion : glyphe animé et bouton « Cancel ».
 Rectangle {
     id: root
 
@@ -25,7 +25,7 @@ Rectangle {
         ["Link speed", Network.wifiBitrate],
         ["Security", Network.securityText(network?.security ?? -1)],
         ["IP address", Network.wifiAddress]
-    ].filter(d => d[1] !== "")
+    ]
 
     Layout.fillWidth: true
     implicitHeight: column.implicitHeight + 2 * Theme.panel.padding
@@ -128,72 +128,13 @@ Rectangle {
             }
         }
 
-        // Détails : libellés `subtext0` en première colonne, valeurs `text`.
-        GridLayout {
-            visible: root.connected && (root.details.length > 0 || root.carriesTraffic)
-            Layout.fillWidth: true
-            columns: 2
-            columnSpacing: Theme.panel.spacing
-            rowSpacing: 0
+        DetailsGrid {
+            visible: root.connected && shown.length > 0
+            rows: root.details
+        }
 
-            Repeater {
-                model: root.details
-
-                Text {
-                    required property var modelData
-                    required property int index
-
-                    Layout.row: index
-                    Layout.column: 0
-                    text: modelData[0]
-                    font.family: Theme.font.text
-                    font.pixelSize: Theme.panel.smallFontSize
-                    color: Theme.panel.secondaryText
-                }
-            }
-
-            Repeater {
-                model: root.details
-
-                Text {
-                    required property var modelData
-                    required property int index
-
-                    Layout.row: index
-                    Layout.column: 1
-                    Layout.fillWidth: true
-                    text: modelData[1]
-                    font.family: Theme.font.text
-                    font.pixelSize: Theme.panel.smallFontSize
-                    color: Theme.panel.text
-                    elide: Text.ElideRight
-                }
-            }
-
-            Text {
-                visible: root.carriesTraffic
-                Layout.row: root.details.length
-                Layout.column: 0
-                text: "Traffic"
-                font.family: Theme.font.text
-                font.pixelSize: Theme.panel.smallFontSize
-                color: Theme.panel.secondaryText
-            }
-
-            RichLabel {
-                visible: root.carriesTraffic
-                Layout.row: root.details.length
-                Layout.column: 1
-                Layout.fillWidth: true
-                font.pixelSize: Theme.panel.smallFontSize
-                color: Theme.panel.text
-                segments: [
-                    [Theme.font.inlineIcons, Theme.icon.download],
-                    [Theme.font.text, ` ${Network.format(Network.downBytesPerSecond).trim()}   `],
-                    [Theme.font.inlineIcons, Theme.icon.upload],
-                    [Theme.font.text, ` ${Network.format(Network.upBytesPerSecond).trim()}`]
-                ]
-            }
+        TrafficGraph {
+            visible: root.connected && root.carriesTraffic
         }
     }
 }

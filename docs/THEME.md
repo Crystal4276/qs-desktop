@@ -229,6 +229,21 @@ Cinnamon (liste). Style des panneaux ci-dessus ; valeurs nouvelles marquées.
 | Détails | libellés Inter 16 px `subtext0`, valeurs `text` : bande · canal · largeur, débit du lien, sécurité, adresse IPv4, trafic (si le Wi-Fi porte la route ; glyphes du module réseau) | KDE |
 | Liste des réseaux | ligne des panneaux ; glyphe 24 px `text` au niveau du réseau, cadenas Papirus (réduit à 85 %, dans le coin) si protégé ; « Saved / Open · bande · % » | GNOME, Papirus `-secure` |
 
+### Panneau réseau (refonte du 2026-10-19, ta demande)
+
+Même langage que le module Wi-Fi. Inspiration : GNOME (filaire : vitesse, IPv4, passerelle, DNS, adresse matérielle), KDE
+(réseau déplié, graphe « Speed »), Cinnamon (une section par appareil) ; Tailscale : à la manière de Trayscale (seule interface
+graphique Linux), ZeroTier : `zerotier-cli`.
+
+| Élément | Valeur | Origine |
+|---|---|---|
+| Onglets | Wired / Tailscale / ZeroTier, seulement ceux qui existent ; boutons de panneau de même largeur, onglet choisi « coché » (`green`, texte `mantle`) | sélecteur de fonds |
+| Cartes | cadre de la carte Wi-Fi (fond `base`, coins 10 px, padding 15 px, icône Papirus 48 px) ; détails : grille partagée | module Wi-Fi |
+| Graphe de trafic | 2 min (24 relevés de 5 s) ; creux `crust`, coins 10 px, **64 px** de haut ; descendant : aire `sky` à **25 %** + ligne, montant : ligne `peach` ; lignes **2 px** ; légende Inter 16 px ↓ / ↑ aux couleurs des courbes, échelle `subtext0` | `sky` : module réseau de la barre ; **`peach`, tailles nouvelles, à valider** |
+| Appareils Tailscale | ligne de panneau, icône Papirus du système (ordinateur / téléphone), point d'état **10 px** cerclé du fond du panneau : `green` en ligne, `surface2` hors ligne ; nom `green` en ligne | **point nouveau, à valider** |
+| Options | ligne de panneau avec interrupteur à droite (Use Tailscale DNS, Accept subnet routes, Shields up, Allow local network access) | GNOME |
+| Avertissements | `red` (erreur de commande, santé du démon) ; lecture seule : `subtext0` avec la commande qui active les actions | panneaux |
+
 ### Calendrier de l'horloge (nouveau composant, phase 4 — ARCHITECTURE § 8.3)
 
 Remplace le tooltip calendrier. Aucune valeur nouvelle : tout est repris de la barre, du lanceur et de la palette.

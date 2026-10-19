@@ -18,6 +18,10 @@ Singleton {
     property real downBytesPerSecond: 0
     property real upBytesPerSecond: 0
     property var previous: null
+    // Graphe de trafic des cartes (TrafficGraph.qml, comme l'onglet « Speed » de KDE) : débits des 2 dernières minutes
+    // ({ down, up }, un relevé toutes les 5 s) sur l'interface de la route par défaut.
+    readonly property int historyLength: 24
+    property var history: []
 
     // Format `{bandwidthDownBytes:>3}` de Waybar (util/format.hpp) : une décimale, préfixe k / M / G… en base 1000,
     // aligné à droite sur 9 caractères (« 833.6kB/s », «   2.5MB/s »).
@@ -44,6 +48,7 @@ Singleton {
         if (name !== interfaceName) {
             interfaceName = name;
             previous = null;
+            history = [];
         }
         const line = dev.text().split("\n").find(l => l.trim().startsWith(name + ":"));
         if (!name || !line) {
@@ -55,6 +60,7 @@ Singleton {
         if (previous) {
             downBytesPerSecond = Math.max(0, counters.down - previous.down) / (interval / 1000);
             upBytesPerSecond = Math.max(0, counters.up - previous.up) / (interval / 1000);
+            history = [...history.slice(1 - historyLength), { down: downBytesPerSecond, up: upBytesPerSecond }];
         }
         previous = counters;
     }
@@ -101,10 +107,13 @@ Singleton {
     readonly property bool limited: (wiredConnected || connectedWifi !== null)
         && [NetworkConnectivity.None, NetworkConnectivity.Portal, NetworkConnectivity.Limited].includes(connectivity)
 
-    // Le Wi-Fi a son propre module (ta demande du 2026-10-19) ; l'icône « réseau » ne montre plus que le filaire, et seulement
-    // si un câble est branché (ou s'il n'y a pas de Wi-Fi), comme GNOME. Mêmes noms que nm-applet (thème Papirus-Dark).
-    readonly property bool wiredShown: managed && (wiredDevices.some(d => d.hasLink) || wifi === null)
-    readonly property string icon: wiredConnected ? (limited ? "network-wired-no-route" : "nm-device-wired") : "nm-no-connection"
+    // Icône « réseau » (ta demande du 2026-10-19 : Wi-Fi séparé ; filaire et réseaux privés ici) : visible si un câble est
+    // branché, s'il n'y a pas de Wi-Fi, ou si Tailscale / ZeroTier sont là (laptop sans câble). Filaire branché : son état
+    // (noms de nm-applet, Papirus-Dark) ; sinon `network-vpn`.
+    readonly property bool wiredLinked: wiredDevices.some(d => d.hasLink)
+    readonly property bool networkShown: managed && (wiredLinked || wifi === null) || Tailscale.installed || ZeroTier.present
+    readonly property string icon: wiredConnected ? (limited ? "network-wired-no-route" : "nm-device-wired")
+        : !wiredLinked && (Tailscale.installed || ZeroTier.present) ? "network-vpn" : "nm-no-connection"
 
     // --- Module Wi-Fi (WifiPanel.qml, WifiIcon.qml) ---
 
@@ -153,12 +162,9 @@ Singleton {
         }
     }
 
-    // Panneaux ouverts : le Wi-Fi recherche les réseaux et relit ses détails ; les réseaux privés sont relus pour le panneau
-    // réseau, ou pour le panneau Wi-Fi quand l'icône réseau est masquée (laptop sans câble). Deux drapeaux plutôt qu'un : un
-    // panneau qui s'ouvre et l'autre qui se ferme ne s'écrasent pas.
+    // Panneaux ouverts : le Wi-Fi recherche les réseaux et relit ses détails ; le panneau réseau relit les détails filaires.
     property bool networkPanelOpen: false
     property bool wifiPanelOpen: false
-    readonly property bool privateNeeded: networkPanelOpen || (wifiPanelOpen && !wiredShown)
 
     Binding {
         when: root.wifi !== null
@@ -256,64 +262,65 @@ Singleton {
         }
     }
 
-    // --- Réseaux privés (ton choix du 2026-10-16) : Tailscale et ZeroTier, en lecture seule, relus toutes les 5 s pendant que le
-    // panneau est ouvert. Tailscale : `tailscale status --json` (lisible sans droits) ; ZeroTier : `zerotier-cli` exige le jeton de
-    // root, donc seules ses interfaces `zt*` et leurs adresses sont lues (`ip -j addr`). Section masquée si aucun des deux n'existe.
-
-    // { state ("Running", "Stopped", "NeedsLogin"…), address, peers } ou null si Tailscale est absent.
-    property var tailscale: null
-    // [{ name, address }] : interfaces ZeroTier ayant une adresse.
-    property var zerotier: []
+    // --- Détails filaires (WiredCard.qml), lus avec `nmcli` toutes les 5 s panneau réseau ouvert, comme les détails de KDE et de
+    // GNOME Settings. Un port de pont (ton `eno2` dans `bridge0`) n'a pas d'adresse : elle est lue sur le pont
+    // (/sys/class/net/<port>/master). Par appareil : { ipIface, bridge, product, ipv4, gateway, dns, domain, ipv6 }.
+    property var wiredDetails: ({})
 
     Timer {
-        running: root.privateNeeded
+        running: root.networkPanelOpen && root.wiredDevices.length > 0
         triggeredOnStart: true
         interval: root.interval
         repeat: true
         onTriggered: {
-            tailscaleQuery.running = true;
-            addressQuery.running = true;
+            wiredQuery.command = ["sh", "-c", root.wiredScript, "sh", ...root.wiredDevices.map(d => d.name)];
+            wiredQuery.running = true;
         }
     }
 
+    // Pour chaque appareil : `@@ <appareil> <interface IP>`, puis les champs (`nmcli -g` : une ligne par champ).
+    readonly property string wiredScript: `for d; do
+        i=$d
+        [ -e /sys/class/net/$d/master ] && i=$(basename "$(readlink /sys/class/net/$d/master)")
+        echo "@@ $d $i"
+        nmcli -t -g GENERAL.PRODUCT device show "$d"
+        nmcli -t -g IP4.ADDRESS,IP4.GATEWAY,IP4.DNS,IP4.DOMAIN,IP6.ADDRESS device show "$i"
+    done`
+
+    function unescapeField(value: string): string {
+        return value.replace(/\\(.)/g, "$1");
+    }
+
     Process {
-        id: tailscaleQuery
-        command: ["tailscale", "status", "--json"]
+        id: wiredQuery
         stdout: StdioCollector {
             onStreamFinished: {
-                try {
-                    const d = JSON.parse(text);
-                    root.tailscale = {
-                        state: d.BackendState ?? "",
-                        address: (d.Self?.TailscaleIPs ?? []).find(a => !a.includes(":")) ?? "",
-                        peers: Object.keys(d.Peer ?? {}).length
+                const details = {};
+                for (const block of text.split("@@ ").slice(1)) {
+                    const lines = block.split("\n");
+                    const [device, ipIface] = lines[0].trim().split(" ");
+                    const field = n => root.unescapeField(lines[n] ?? "").split(" | ").filter(v => v !== "");
+                    details[device] = {
+                        ipIface: ipIface,
+                        bridge: ipIface !== device ? ipIface : "",
+                        product: root.unescapeField(lines[1] ?? ""),
+                        ipv4: (field(2)[0] ?? "").split("/")[0],
+                        gateway: field(3)[0] ?? "",
+                        dns: field(4).join(", "),
+                        domain: field(5).join(", "),
+                        ipv6: (field(6).find(a => !a.startsWith("fe80")) ?? "").split("/")[0]   // adresse globale ; lien local omis
                     };
-                } catch (e) {
-                    root.tailscale = null;
                 }
+                root.wiredDetails = details;
             }
-        }
-        onExited: code => {
-            if (code !== 0 && code !== 1)   // 1 : arrêté (« Tailscale is stopped »), sortie JSON quand même
-                root.tailscale = null;
         }
     }
 
-    Process {
-        id: addressQuery
-        command: ["ip", "-j", "addr"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                try {
-                    root.zerotier = JSON.parse(text).filter(i => i.ifname.startsWith("zt")).map(i => ({
-                        name: i.ifname,
-                        address: (i.addr_info ?? []).find(a => a.family === "inet")?.local ?? ""
-                    })).filter(i => i.address !== "");
-                } catch (e) {
-                    root.zerotier = [];
-                }
-            }
-        }
+    // Copie (IP, nom MagicDNS, identifiant ZeroTier) : `wl-copy` ; `Quickshell.clipboardText` n'atteint pas le presse-papiers
+    // Wayland sans appui récent sur une surface Quickshell (vérifié 2026-10-19 : `wl-paste` vide).
+    function copy(text: string): void {
+        if (text !== "")
+            Quickshell.execDetached(["wl-copy", "--", text]);
     }
 
     // Édition des connexions : `nm-connection-editor` (repli, ARCHITECTURE R5).
