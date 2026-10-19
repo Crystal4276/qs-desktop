@@ -80,8 +80,10 @@ Panel {
         sourceComponent: ZeroTierView {}
     }
 
-    // Édition des connexions, quel que soit l'onglet (et même sans onglet : aucun appareil encore listé).
+    // Édition des connexions, quel que soit l'onglet (et même sans onglet : aucun appareil encore listé) ; seulement si
+    // NetworkManager gère le réseau (bouton visible pour Tailscale / ZeroTier sous iwd ou systemd-networkd).
     RowLayout {
+        visible: Network.managed
         Layout.fillWidth: true
 
         Item {

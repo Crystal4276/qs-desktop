@@ -36,8 +36,19 @@ Scope {
         onExited: code => root.available = code === 0
     }
 
+    // Commande qui ne démarre pas (programme retiré pendant une mise à jour) : Quickshell n'émet pas `exited`, seulement
+    // `running` faux ; sans ce rattrapage, `busy` resterait vrai pour la session.
+    function settleIfFailed(): void {
+        if (busy && !command.running) {
+            busy = false;
+            error = `${program}: could not start`;
+            finished();
+        }
+    }
+
     Process {
         id: command
+        onRunningChanged: if (!running) Qt.callLater(root.settleIfFailed)
         stdout: StdioCollector {
             id: out
         }

@@ -38,7 +38,13 @@ ColumnLayout {
     }
 
     PanelSection {
-        visible: !ZeroTier.authorized
+        visible: !ZeroTier.authorized && !ZeroTier.tokenMissing
+        text: "ZeroTier service unreachable: showing its interfaces only"
+        wrapMode: Text.Wrap
+    }
+
+    PanelSection {
+        visible: !ZeroTier.authorized && ZeroTier.tokenMissing
         text: "Read only: copy the service token once to manage networks here —\nsudo install -m 600 -o $USER -g $USER /var/lib/zerotier-one/authtoken.secret ~/.zeroTierOneAuthToken"
         wrapMode: Text.Wrap
     }

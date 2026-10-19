@@ -97,7 +97,8 @@ Panel {
             if (secured && reason === NM.ConnectionFailReason.NoSecrets) {
                 root.passwordRefused = true;
                 root.passwordFor = network;
-            } else if (secured && [NM.ConnectionFailReason.WifiClientDisconnected, NM.ConnectionFailReason.WifiAuthTimeout].includes(reason)) {
+            } else if (secured && [NM.ConnectionFailReason.WifiClientDisconnected, NM.ConnectionFailReason.WifiClientFailed,
+                NM.ConnectionFailReason.WifiAuthTimeout].includes(reason)) {
                 root.failText = `Could not connect to ${network.name} — weak signal or wrong password`;
                 root.passwordRefused = false;
                 root.passwordFor = network;

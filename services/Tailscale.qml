@@ -30,7 +30,8 @@ Singleton {
     readonly property var health: status?.Health ?? []
     readonly property var self: status?.Self ? peer(status.Self) : null
     // Appareils : en ligne d'abord, puis par nom.
-    readonly property var peers: Object.values(status?.Peer ?? {}).map(p => peer(p))
+    // Construites seulement onglet affiché (des centaines de nœuds Mullvad possibles ; panneau fermé, seul l'état sert).
+    readonly property var peers: !polling ? [] : Object.values(status?.Peer ?? {}).map(p => peer(p))
         .sort((a, b) => (b.online - a.online) || a.name.localeCompare(b.name))
     // Tes appareils (sans les nœuds de sortie hébergés, qui peuvent être des centaines).
     readonly property var devices: peers.filter(p => !p.hosted)

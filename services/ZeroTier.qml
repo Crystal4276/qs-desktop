@@ -78,8 +78,14 @@ Singleton {
     // Relecture : onglet affiché (5 s) ; sinon 60 s, câble débranché (icône du tray) ou service pas encore joint (démarrage
     // avant le démon, redémarrage), sans quoi l'onglet ne reviendrait jamais sur une machine câblée.
     // Lecture en deux temps (`info`, puis `listnetworks` ou les interfaces) : `reading` la couvre entière, pour que Poller ne
-    // relance rien entre les deux.
+    // relance rien entre les deux ; remis à faux aussi si plus rien ne tourne (commande qui n'a pas démarré : pas d'`exited`).
     property bool reading: false
+    function endIfIdle(): void {
+        if (!infoQuery.running && !networksQuery.running && !addressQuery.running)
+            reading = false;
+    }
+    // Pourquoi le mode lecture seule : jeton absent (sinon : service injoignable).
+    property bool tokenMissing: false
 
     Poller {
         id: poller
@@ -106,6 +112,7 @@ Singleton {
     Process {
         id: infoQuery
         command: ["zerotier-cli", "-j", "info"]
+        onRunningChanged: if (!running) Qt.callLater(root.endIfIdle)
         stdout: StdioCollector {
             id: infoOut
         }
@@ -117,12 +124,14 @@ Singleton {
                 const d = JSON.parse(infoOut.text);
                 root.info = { address: d.address ?? "", online: d.online ?? false };
                 root.authorized = true;
+                root.tokenMissing = false;
                 root.failures = 0;
                 networksQuery.running = true;
             } catch (e) {
                 root.failures++;
                 // « authtoken.secret not found or readable » (code 2) : pas de jeton.
-                if (infoErr.text.includes("authtoken") || root.failures >= 2)
+                root.tokenMissing = infoErr.text.includes("authtoken");
+                if (root.tokenMissing || root.failures >= 2)
                     root.fallBack();
                 else
                     root.reading = false;
@@ -134,6 +143,7 @@ Singleton {
         id: networksQuery
         command: ["zerotier-cli", "-j", "listnetworks"]
         onExited: root.reading = false
+        onRunningChanged: if (!running) Qt.callLater(root.endIfIdle)
         stdout: StdioCollector {
             onStreamFinished: {
                 try {
@@ -156,6 +166,7 @@ Singleton {
         id: addressQuery
         command: ["ip", "-j", "addr"]
         onExited: root.reading = false
+        onRunningChanged: if (!running) Qt.callLater(root.endIfIdle)
         stdout: StdioCollector {
             onStreamFinished: {
                 try {

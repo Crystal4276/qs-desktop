@@ -145,7 +145,7 @@ Singleton {
         wifiBitrate = "";
         wifiAddress = "";
         if (wifiPanelOpen && connectedWifi)
-            linkQuery.request();
+            linkQuery.running = true;
     }
 
     // Niveau de signal 0 (aucun) … 4 (excellent) : seuils de GNOME Shell (signalToIcon, alignés sur GNOME Settings) — 20, 40,
@@ -274,7 +274,7 @@ Singleton {
             return;
         wifiNames = names;
         if (wifiPanelOpen && wifiUsable && names !== "")
-            apQuery.request();
+            apQuery.running = true;
     }
 
     // Annule une connexion Wi-Fi en cours : désactive la connexion qui s'active (`nmcli connection down`), sans
@@ -285,7 +285,9 @@ Singleton {
             Quickshell.execDetached(["sh", "-c", 'u=$(nmcli -t -g GENERAL.CON-UUID device show "$1") && [ -n "$u" ] && nmcli connection down uuid "$u"', "sh", wifi.name]);
     }
 
-    Query {
+    // `running = true` pendant une lecture : Quickshell la relance à sa fin (Process.targetRunning), ce qu'il faut après un
+    // changement (autre réseau, réseaux apparus) pour ne pas laisser la lecture faite avant.
+    Process {
         id: apQuery
         command: ["nmcli", "-t", "-f", "IN-USE,FREQ,CHAN,BANDWIDTH,SIGNAL,SSID", "device", "wifi", "list", "ifname", root.wifi?.name ?? "", "--rescan", "no"]
         stdout: StdioCollector {
@@ -311,7 +313,7 @@ Singleton {
         }
     }
 
-    Query {
+    Process {
         id: linkQuery
         command: ["nmcli", "-t", "-g", "CAPABILITIES.SPEED,IP4.ADDRESS", "device", "show", root.wifi?.name ?? ""]
         stdout: StdioCollector {

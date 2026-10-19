@@ -93,7 +93,7 @@ PanelCard {
     }
 
     DetailsGrid {
-        visible: root.connected && shown.length > 0
+        shownWhen: root.connected
         rows: root.details
     }
 

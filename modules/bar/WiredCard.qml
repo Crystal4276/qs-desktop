@@ -58,7 +58,7 @@ PanelCard {
     }
 
     DetailsGrid {
-        visible: root.connected && shown.length > 0
+        shownWhen: root.connected
         rows: [
             ["Adapter", (root.details?.product ?? "").replace(/^Ethernet Connection\s*(\(\d+\))?\s*/, "")],
             ["IPv4 address", root.details?.ipv4 ?? ""],
