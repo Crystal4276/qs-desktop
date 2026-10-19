@@ -136,6 +136,10 @@ Panel {
     WifiCard {
         visible: Network.wifiUsable && network !== null
         network: Network.currentWifi
+        onCancelled: {
+            root.pending = null;   // annulation : pas un échec à signaler
+            root.failText = "";
+        }
     }
 
     // --- Autres réseaux ---

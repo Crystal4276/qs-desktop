@@ -14,6 +14,7 @@ Panel {
     title: "Network"
 
     property string tab: "wired"
+    property bool autoTab: false   // onglet privé choisi par le panneau (pas par un clic)
     readonly property var tabs: [
         { key: "wired", text: "Wired", shown: Network.wiredDevices.length > 0 },
         { key: "tailscale", text: "Tailscale", shown: Tailscale.installed },
@@ -23,9 +24,18 @@ Panel {
 
     // Onglet affiché, pour que Tailscale / ZeroTier ne soient relus souvent que sur le leur.
     onVisibleChanged: {
-        // Bouton servant d'entrée aux réseaux privés : leur onglet d'abord.
-        if (visible && Network.privateEntry)
-            tab = tabs.find(t => t.key !== "wired")?.key ?? tab;
+        // Bouton servant d'entrée aux réseaux privés : leur onglet d'abord ; redevenu filaire (câble rebranché), l'onglet choisi
+        // ainsi revient au filaire (un onglet choisi à la main est gardé).
+        if (visible && Network.privateEntry) {
+            const privateTab = tabs.find(t => t.key !== "wired")?.key;
+            if (privateTab && tab === "wired") {
+                tab = privateTab;
+                autoTab = true;
+            }
+        } else if (visible && autoTab) {
+            tab = "wired";
+            autoTab = false;
+        }
         if (visible)
             Network.networkTab = current;
         Network.setPanelOpen("network", root, visible);
@@ -47,7 +57,10 @@ Panel {
                 Layout.fillWidth: true
                 text: modelData.text
                 checked: root.current === modelData.key
-                onClicked: root.tab = modelData.key
+                onClicked: {
+                    root.tab = modelData.key;
+                    root.autoTab = false;
+                }
             }
         }
     }

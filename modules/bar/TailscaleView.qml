@@ -24,10 +24,6 @@ ColumnLayout {
     Layout.fillWidth: true
     spacing: Theme.panel.spacing
 
-    // Nœuds de sortie et appareils : la hauteur des listes partagée entre les deux, pour que l'onglet tienne dans le panneau
-    // sur un petit écran (le cadre ne défile pas).
-    readonly property real listHeight: exitList.visible && devicesList.visible ? Theme.panel.maxListHeight / 2 : Theme.panel.maxListHeight
-
     Timer {
         id: copiedTimer
         interval: 2000
@@ -136,7 +132,7 @@ ColumnLayout {
         id: exitList
         visible: Tailscale.running && Tailscale.exitNodes.length > 0
         Layout.fillWidth: true
-        Layout.preferredHeight: Math.min(contentHeight, root.listHeight)
+        Layout.preferredHeight: Math.min(contentHeight, Theme.panel.maxListHeight)
         clip: true
         boundsBehavior: Flickable.StopAtBounds
         model: ScriptModel {
@@ -200,7 +196,6 @@ ColumnLayout {
     PanelList {
         id: devicesList
         visible: Tailscale.running && Tailscale.devices.length > 0
-        maxHeight: root.listHeight
 
         Repeater {
             model: ScriptModel {

@@ -46,10 +46,12 @@ Rectangle {
                 const margin = a === scroller ? Theme.panel.padding : 0;
                 const top = focusedItem.mapToItem(a.contentItem, 0, 0).y;
                 const bottom = top + focusedItem.height;
+                // Coordonnées du contenu et contentY partent de originY (ListView : estimée, pas toujours 0).
+                const first = a.originY, last = a.originY + a.contentHeight - a.height;
                 if (top - margin < a.contentY)
-                    a.contentY = Math.max(0, top - margin);
+                    a.contentY = Math.max(first, top - margin);
                 else if (bottom + margin > a.contentY + a.height)
-                    a.contentY = Math.min(a.contentHeight - a.height, bottom + margin - a.height);
+                    a.contentY = Math.min(last, bottom + margin - a.height);
             }
             if (a === scroller)
                 break;
