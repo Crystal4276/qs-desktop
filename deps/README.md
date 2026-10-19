@@ -31,12 +31,12 @@ Chaque commande a été rattachée à son paquet sur cette machine avec `pacman 
 | Mises à jour | `checkupdates` | `pacman-contrib`, **`fakeroot`** (`checkupdates` échoue sans lui ; non déclaré par `pacman-contrib`) | `paru` ou `yay` (clic) ; terminal | Inter, Hack Nerd Font | — |
 | GPU | NVIDIA : `nvidia-smi` ; AMD / Intel : sysfs (natif) | — | `nvidia-utils` (NVIDIA uniquement : température, charge, mémoire vidéo, processus) ; module masqué sans température lisible | Inter, Hack Nerd Font | — |
 | CPU | natif (`/proc/stat`) | — | — | Inter, Hack Nerd Font | — |
-| Mémoire | natif (`/proc/meminfo`) | — | — |
-| Panneau de statistiques (clic CPU / mémoire / GPU, remplace btop et nvtop) | natif (`/proc`, `/sys`) | `procps-ng` (`ps`, `kill`), `coreutils` (`df`) ; NVIDIA : `nvidia-smi` | — | Inter, Hack Nerd Font | — |
+| Mémoire | natif (`/proc/meminfo`) | — | — | Inter, Hack Nerd Font | — |
+| Panneau de statistiques (clic CPU / mémoire / GPU, remplace btop et nvtop) | natif (`/proc`, `/sys`) | `procps-ng` (`ps`), `util-linux` (`kill`), `coreutils` (`df`) ; NVIDIA : `nvidia-smi` | — | Inter, Hack Nerd Font | — |
 | Horloge + fenêtre calendrier | natif (Qt) | `tzdata` (système) | — | Inter, Hack Nerd Font, Font Awesome 7 Free | — |
 | Réseau (débit) | natif (`/proc/net/dev`, `/proc/net/route`) | — | — | Inter, Hack Nerd Font | — |
 | Tray | natif (`Services.SystemTray` ; Quickshell fait aussi le rôle de « watcher ») | — | — | Inter (menus) | — |
-| Engrenage → panneau de réglages (remplace le power menu) | natif (`Pipewire`, `UPower`, `PowerProfiles`, `IdleInhibitor`, IPC du compositeur pour HDR / VRR) | `systemd` (redémarrer, éteindre), `wlsunset` (veilleuse), `util-linux` (`rfkill`, mode avion), `grim` + `slurp` + `wl-clipboard` + `xdg-user-dirs` (capture, jusqu'à la phase 8b) ; verrouiller : natif (phase 8b) | `power-profiles-daemon` (3 boutons masqués sans lui) ; `brightnessctl` (luminosité, laptop) | Inter, Symbols Nerd Font Mono | `assets/{lock,logout,restart,shutdown}.svg` |
+| Engrenage → panneau de réglages (remplace le power menu) | natif (`Pipewire`, `UPower`, `PowerProfiles`, `IdleInhibitor`, IPC du compositeur pour HDR / VRR) | `systemd` (redémarrer, éteindre), `wlsunset` (veilleuse), `util-linux` (`rfkill`, mode avion), capture et verrouiller : natifs (phase 8b, voir plus bas) | `power-profiles-daemon` (3 boutons masqués sans lui) ; `brightnessctl` (luminosité, laptop) | Inter, Symbols Nerd Font Mono | `assets/{lock,logout,restart,shutdown}.svg` |
 | Bouton Arch → menu d'applications (remplace nwg-menu) | natif (`DesktopEntries`) | `xdg-user-dirs` (dossiers), `xdg-utils` (ouvrir dossiers et fichiers) ; boutons de session comme le panneau de réglages | — | Inter, Symbols Nerd Font Mono | `assets/{lock,logout,restart,shutdown}.svg`, icônes Papirus-Dark |
 | Batterie (laptop) | natif (`Services.UPower`) | — | `upower` (service système) | Symbols Nerd Font Mono (icônes v3 `U+F0079`…) | — |
 | Luminosité (laptop) | `/sys/class/backlight` | — | `brightnessctl` (écriture sans root) | Symbols Nerd Font Mono | — |
@@ -53,14 +53,13 @@ Thème d'icônes des applications (tray, lanceur, menu d'applications, notificat
 | Menu d'applications (modèle Cinnamon, remplace nwg-menu) | — (natif, `DesktopEntries`) | à préciser en phase 8 (ex. ouverture de dossiers → gestionnaire de fichiers par défaut via `xdg-open`) | à préciser | — |
 | Verrouillage (design refait, phase 8b) | — (natif, `WlSessionLock` + `PamContext`, `pam` installé avec `quickshell`) | — | — | Inter |
 | Fond d'écran + utilitaire (phase 8b) | — (natif) | `xdg-user-dirs` (dossier Images) | dépôt privé des fonds cloné dans `~/Pictures/Wallpapers` | Inter, Symbols Nerd Font Mono |
-| Veille des écrans | — (natif, `IdleMonitor` + commande DPMS au compositeur) | — | — | — |
+| Veille des écrans | natif (`IdleMonitor` + commande DPMS au compositeur) ; `systemd` (`systemd-inhibit`), `glib2` (`gdbus` : mise en veille du système) | — | — | — |
 | Agent polkit | — (natif, `PolkitAgent` ; `polkit` installé avec `quickshell`) | — | à définir | — |
-| Fond d'écran + utilitaire | — (natif) | — | à définir | dépôt `wallpapers` cloné dans `~/Pictures/Wallpapers` |
 | Réseau (tray) | `networkmanager` (natif, `Networking`) | `nm-connection-editor` pour l'édition des connexions | icônes Papirus-Dark (`nm-*`) | — |
 | Bluetooth (tray) | `bluez` (natif, `Bluetooth`), `bluez-utils` (agent d'appairage) | — | icônes Papirus-Dark (`blueman-tray*`) | — |
 | Disques amovibles (tray) | `udisks2`, `glib2` (`gdbus`), `systemd` (`busctl`), `xdg-utils` (ouvrir) | — | icônes Papirus-Dark | — |
 | NordVPN (tray) | — | `nordvpn-bin` (AUR) + service `nordvpnd` + compte connecté (sinon module masqué) ; icônes `nordvpn-tray-*` du paquet | — | historique des pays : `~/.local/state/quickshell/by-shell/desktop/vpn.json` |
-| Outil de capture | `grim`, `slurp`, `wl-clipboard` (au départ) | — | à définir | — |
+| Outil de capture (phase 8b) | natif (`ScreencopyView`) ; `wl-clipboard` (presse-papiers), `xdg-user-dirs` (dossier Images) | — | Inter, Symbols Nerd Font Mono | — |
 | Événements Thunderbird (backlog) | `sqlite` | — | — | — |
 
 ### Hors barre (configs compositeur, phase 10)

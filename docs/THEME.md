@@ -377,7 +377,24 @@ Quickshell (Qt) ne lit pas le thème d'icônes GTK : le thème `Papirus-Dark` de
 Aucune animation côté barre, notifications ou menus (Waybar `transition: none`, Dunst sans animation, Rofi sans animation).
 Les animations Hyprland concernent les fenêtres et les *layers* (fondu à l'ouverture/fermeture des surfaces layer-shell, donc aussi la future barre) : elles restent gérées par Hyprland.
 
-## 11. Écran de verrouillage (swaylock)
+## 11. Écran de verrouillage
+
+### 11.1 Écran natif (nouveau design, phase 8b ; maquette validée le 2026-10-17)
+
+`Theme.lock`. Un écran par sortie ; initiale, nom et champ sur l'écran principal (ta demande du 2026-10-19).
+
+| Élément | Valeur |
+|---|---|
+| Fond | fond d'écran affiché sur cette sortie, flouté (rayon max 64, `MultiEffect`) sur `crust`, voile `crust` à 45 % |
+| Horloge | Inter Light 120 px, `text` |
+| Date | Inter 26 px, `subtext1` |
+| Initiale | disque de 72 px `green`, lettre `mantle` |
+| Nom | Inter 20 px, `text` |
+| Champ | 360 × 56 px, fond `mantle` à 85 %, bordure `overlay0` (`green` pendant la saisie, `red` après un refus) ; points de 10 px `text` ; texte indicatif Inter 20 px |
+| Message | Inter 16 px : `subtext0` (vérification), `red` (erreur), `yellow` (verr. maj.) |
+| Espacements | 24 px entre éléments ; 64 px entre la date et l'utilisateur |
+
+### 11.2 swaylock (configuration actuelle, remplacée)
 
 Source : `~/.config/sway/swaylock.conf` (pas de capture : verrouiller la session pendant l'audit n'était pas souhaitable).
 

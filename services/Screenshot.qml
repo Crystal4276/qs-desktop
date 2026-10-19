@@ -23,7 +23,9 @@ Singleton {
         if (active)
             return;
         mode = startMode;
-        startScreen = Compositor.focusedOutput;
+        // Écran focalisé, sinon le premier : barre d'outils et clavier (Échap) ont toujours un écran.
+        const names = Quickshell.screens.map(s => s.name);
+        startScreen = names.includes(Compositor.focusedOutput) ? Compositor.focusedOutput : (names[0] ?? "");
         const o = Compositor.output(startScreen);
         selection = mode === "screen" && o ? { x: o.x, y: o.y, width: o.width, height: o.height } : null;
         windows = [];
@@ -38,12 +40,29 @@ Singleton {
         selection = null;
     }
 
-    // Capture de la sélection : la fenêtre de l'écran qui la contient s'en charge (modules/screenshot/ScreenshotTool.qml).
-    signal captureRequested(var rect)
+    // Capture de la sélection par la fenêtre de l'écran qui en recouvre la plus grande part (un seul fichier, même pour une fenêtre
+    // à cheval sur deux écrans : on garde la partie de cet écran) ; modules/screenshot/ScreenshotTool.qml. Sur aucun écran :
+    // outil fermé.
+    signal captureRequested(var rect, string screen)
 
     function capture(): void {
-        if (selection && selection.width > 0 && selection.height > 0)
-            captureRequested(selection);
+        const s = selection;
+        if (!s || s.width <= 0 || s.height <= 0)
+            return;
+        const names = Quickshell.screens.map(q => q.name);
+        let best = "", bestArea = 0;
+        for (const o of Compositor.outputs.filter(o => names.includes(o.name))) {
+            const w = Math.min(s.x + s.width, o.x + o.width) - Math.max(s.x, o.x);
+            const h = Math.min(s.y + s.height, o.y + o.height) - Math.max(s.y, o.y);
+            if (w > 0 && h > 0 && w * h > bestArea) {
+                best = o.name;
+                bestArea = w * h;
+            }
+        }
+        if (best === "")
+            close();
+        else
+            captureRequested(s, best);
     }
 
     // Fichier de la capture : dossier Images XDG (comme le script de la touche Impr.).

@@ -217,14 +217,15 @@ OverlayPopup {
                     columnSpacing: Theme.panel.spacing
                     rowSpacing: Theme.panel.spacing / 4
 
+                    // Modèles en nombre d'éléments (cœurs, disques, cellules d'une ligne) : les valeurs changent à chaque relevé sans
+                    // recréer les délégués.
                     Repeater {
-                        model: Monitor.cores
+                        model: Monitor.cores.length
 
                         Gauge {
-                            required property int modelData
                             required property int index
                             label: String(index)
-                            value: modelData / 100
+                            value: (Monitor.cores[index] ?? 0) / 100
                             tint: Theme.monitor.cpu
                         }
                     }
@@ -322,10 +323,11 @@ OverlayPopup {
                 rowSpacing: Theme.panel.spacing / 4
 
                 Repeater {
-                    model: Monitor.disks
+                    model: Monitor.disks.length
 
                     Gauge {
-                        required property var modelData
+                        required property int index
+                        readonly property var modelData: Monitor.disks[index] ?? { mount: "", size: 0, used: 0 }
                         label: modelData.mount
                         labelWidth: Math.ceil(Math.max(0, ...Monitor.disks.map(d => mountMetrics.advanceWidth(d.mount))))
                         value: modelData.size > 0 ? modelData.used / modelData.size : 0
@@ -446,6 +448,8 @@ OverlayPopup {
                 id: row
 
                 required property var modelData
+                readonly property var cells: [modelData.name, String(modelData.pid), modelData.user, `${modelData.cpu.toFixed(1)} %`,
+                    root.bytes(modelData.memory), modelData.gpu > 0 ? `${modelData.gpu} MiB` : ""]
                 width: list.width
                 height: measure.implicitHeight + Theme.panel.rowPadding
                 radius: Theme.panel.rowRadius / 2
@@ -456,21 +460,15 @@ OverlayPopup {
                     spacing: Theme.panel.spacing
 
                     Repeater {
-                        model: [
-                            { text: row.modelData.name, fill: true },
-                            { text: String(row.modelData.pid) },
-                            { text: row.modelData.user },
-                            { text: `${row.modelData.cpu.toFixed(1)} %` },
-                            { text: root.bytes(row.modelData.memory) },
-                            { text: row.modelData.gpu > 0 ? `${row.modelData.gpu} MiB` : "" }
-                        ]
+                        model: 6
 
                         Text {
-                            required property var modelData
-                            Layout.fillWidth: modelData.fill === true
-                            Layout.preferredWidth: modelData.fill === true ? -1 : frame.width / 9
-                            horizontalAlignment: modelData.fill === true ? Text.AlignLeft : Text.AlignRight
-                            text: modelData.text
+                            required property int index
+                            readonly property bool fill: index === 0   // nom
+                            Layout.fillWidth: fill
+                            Layout.preferredWidth: fill ? -1 : frame.width / 9
+                            horizontalAlignment: fill ? Text.AlignLeft : Text.AlignRight
+                            text: row.cells[index]
                             elide: Text.ElideRight
                             font.family: Theme.font.text
                             font.pixelSize: Theme.panel.smallFontSize

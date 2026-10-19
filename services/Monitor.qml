@@ -5,7 +5,7 @@ import Quickshell
 import Quickshell.Io
 
 // Statistiques système détaillées (ARCHITECTURE § 11.5 « moniteur système », panneau modules/monitor/) : relevées seulement tant que
-// le panneau est ouvert (`users`) : jauges chaque seconde, processus toutes les 2,6 s (`update_ms` de ton btop : une liste plus
+// le panneau est ouvert (`users`) : processeur et mémoire chaque seconde, processus et GPU toutes les 2,6 s (`update_ms` de ton btop : une liste plus
 // rapide saute trop pour qu'on y choisisse une ligne). Processeur (total, par cœur, température), mémoire et swap, GPU (comme nvtop :
 // charge, mémoire vidéo, température, consommation, ventilateur, fréquence ; processus qui l'utilisent), disques, processus (charge
 // instantanée comme top : temps CPU écoulé depuis le relevé précédent, en % d'un cœur).
@@ -46,10 +46,20 @@ Singleton {
     property real previousTotal: 0     // tics de tous les cœurs
     readonly property string me: Quickshell.env("USER") ?? ""
 
-    // Arrêt d'un de tes processus : SIGTERM (`force` : SIGKILL). Pas d'élévation de droits.
+    // Arrêt d'un de tes processus : SIGTERM (`force` : SIGKILL). Pas d'élévation de droits. Retiré de la liste tout de suite (le
+    // relevé suivant le remet s'il a survécu) : un relevé immédiat, trop proche du précédent, fausserait les % CPU.
     function stop(pid: int, force: bool): void {
         Quickshell.execDetached(["kill", force ? "-KILL" : "-TERM", String(pid)]);
-        Qt.callLater(() => processList.running = true);
+        processes = processes.filter(p => p.pid !== pid);
+    }
+
+    // Panneau fermé : relevés précédents oubliés, sinon le premier % CPU à la réouverture serait une moyenne sur toute la fermeture.
+    onActiveChanged: {
+        if (!active) {
+            previousCores = [];
+            previousTimes = {};
+            previousTotal = 0;
+        }
     }
 
     Timer {
@@ -60,8 +70,6 @@ Singleton {
         onTriggered: {
             cpu.reload();
             mem.reload();
-            if (!gpuQuery.running && (Gpu.useSmi || Gpu.sensorPath !== ""))
-                gpuQuery.running = true;
         }
     }
 
@@ -70,9 +78,12 @@ Singleton {
         running: root.active
         repeat: true
         triggeredOnStart: true
+        // GPU au même rythme : `nvidia-smi pmon` mesure pendant 1 s, une requête par seconde le ferait tourner sans arrêt.
         onTriggered: {
             if (!processList.running)
                 processList.running = true;
+            if (!gpuQuery.running && (Gpu.useSmi || Gpu.sensorPath !== ""))
+                gpuQuery.running = true;
         }
     }
 
@@ -87,7 +98,8 @@ Singleton {
         }
     }
 
-    // Lignes cpuN de /proc/stat : charge de chaque cœur depuis le relevé précédent.
+    // Lignes cpuN de /proc/stat : charge de chaque cœur depuis le relevé précédent, tronquée comme SystemStats (Waybar), pour que
+    // la barre et le panneau donnent la même valeur au même relevé.
     FileView {
         id: cpu
         path: "/proc/stat"
@@ -98,7 +110,7 @@ Singleton {
             });
             const usage = rows.map((r, i) => {
                 const p = root.previousCores[i];
-                return p && r.total > p.total ? Math.round(100 * (1 - (r.idle - p.idle) / (r.total - p.total))) : 0;
+                return p && r.total > p.total ? Math.floor(100 * (1 - (r.idle - p.idle) / (r.total - p.total))) : 0;
             });
             root.previousCores = rows;
             root.cpuTotal = usage[0] ?? 0;

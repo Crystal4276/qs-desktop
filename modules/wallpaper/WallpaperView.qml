@@ -38,14 +38,22 @@ Item {
         }
 
         Image {
-            readonly property real ratio: implicitHeight > 0 ? implicitWidth / implicitHeight : 1
+            // Proportions du fichier, connues après la première lecture (gardées : sourceSize ne les change pas).
+            property real fileRatio: 0
+            readonly property real ratio: fileRatio > 0 ? fileRatio : implicitHeight > 0 ? implicitWidth / implicitHeight : 1
             readonly property var b: parent.bounds
             readonly property bool wide: b.width / b.height > ratio
 
             source: parent.visible && b.height > 0 ? root.shown.source : ""
+            onSourceChanged: fileRatio = 0
+            onStatusChanged: {
+                if (status === Image.Ready && fileRatio === 0 && implicitHeight > 0)
+                    fileRatio = implicitWidth / implicitHeight;
+            }
             fillMode: Image.Stretch
-            // Décodée à la hauteur de l'ensemble (pixels réels de cet écran), pas à celle du fichier.
-            sourceSize.height: Math.ceil(b.height * Screen.devicePixelRatio)
+            // Décodée à sa hauteur affichée (pixels réels de cet écran), pas à celle du fichier : d'abord à la hauteur de
+            // l'ensemble, puis, une fois les proportions connues, plus haute si l'image est moins large que l'ensemble.
+            sourceSize.height: Math.ceil((fileRatio > 0 && wide ? b.width / fileRatio : b.height) * Screen.devicePixelRatio)
             asynchronous: true
             cache: false
             width: wide ? b.width : b.height * ratio

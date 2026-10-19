@@ -27,6 +27,11 @@ Scope {
         function onAuthenticationRequestStarted() {
             window.show();
         }
+        // Demande retirée par polkit sans fin signalée sur le flux : fenêtre fermée quand même.
+        function onIsActiveChanged() {
+            if (!agent.isActive && window.visible)
+                window.close();
+        }
     }
 
     // Mot de passe refusé (comme l'écran de verrouillage) : champ rouge et « Wrong password », jusqu'à la saisie suivante.

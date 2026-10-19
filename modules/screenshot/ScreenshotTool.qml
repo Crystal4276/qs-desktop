@@ -60,9 +60,8 @@ LazyLoader {
                 paintCursor: false
             }
 
-            // Capture de la sélection par l'écran qui contient son centre (un seul fichier, même pour une fenêtre à cheval sur deux
-            // écrans : on garde la partie de cet écran) : découpe de l'image figée à sa résolution réelle, enregistrée, copiée dans
-            // le presse-papiers.
+            // Capture de la sélection si cet écran en est chargé (Screenshot.capture) : découpe de l'image figée à sa résolution
+            // réelle, enregistrée, copiée dans le presse-papiers ; image figée pas encore reçue : outil fermé sans capture.
             ShaderEffectSource {
                 id: crop
                 z: -1
@@ -72,24 +71,27 @@ LazyLoader {
 
             Connections {
                 target: Screenshot
-                function onCaptureRequested(rect) {
+                function onCaptureRequested(rect, screen) {
+                    if (screen !== win.modelData?.name)
+                        return;
                     const r = win.local;
-                    const cx = rect.x + rect.width / 2, cy = rect.y + rect.height / 2;
-                    if (!r || !win.output || cx < win.ox || cx >= win.ox + win.output.width || cy < win.oy || cy >= win.oy + win.output.height)
+                    if (!r || !view.hasContent || view.width <= 0) {
+                        Screenshot.close();
                         return;
-                    if (!view.hasContent || view.width <= 0)
-                        return;
+                    }
                     const scale = view.sourceSize.width / view.width;
                     crop.sourceRect = Qt.rect(r.x, r.y, r.width, r.height);
                     crop.width = r.width;
                     crop.height = r.height;
                     crop.textureSize = Qt.size(Math.round(r.width * scale), Math.round(r.height * scale));
                     const path = Screenshot.nextPath();
-                    crop.grabToImage(result => {
+                    const started = crop.grabToImage(result => {
                         if (result.saveToFile(path))
                             Screenshot.copyToClipboard(path);
                         Screenshot.close();
                     }, crop.textureSize);
+                    if (!started)
+                        Screenshot.close();
                 }
             }
 
