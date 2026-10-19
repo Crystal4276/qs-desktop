@@ -93,7 +93,7 @@ ColumnLayout {
         }
 
         DetailsGrid {
-            visible: Tailscale.running && shown.length > 0
+            shownWhen: Tailscale.running
             rows: [
                 ["Tailnet", Tailscale.tailnet],
                 ["This device", Tailscale.self?.name ?? ""],

@@ -9,11 +9,12 @@ GridLayout {
     id: root
 
     property var rows: []
+    property bool shownWhen: true   // condition de l'appelant (ex. connecté), en plus des lignes à afficher
     // Objets clés par libellé (ScriptModel) : les lignes sont gardées d'une relecture à l'autre, pas recréées.
     readonly property var shown: rows.filter(r => r[1] !== "" && r[1] !== undefined && r[1] !== null)
         .map((r, i) => ({ label: r[0], value: r[1], row: i }))
 
-    visible: shown.length > 0
+    visible: shownWhen && shown.length > 0
     Layout.fillWidth: true
     columns: 2
     columnSpacing: Theme.panel.spacing
