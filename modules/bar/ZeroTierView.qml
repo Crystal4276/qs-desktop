@@ -20,7 +20,7 @@ ColumnLayout {
     // Un minuteur par état : copier ne prolonge pas une confirmation de départ, et inversement.
     Timer {
         id: copiedTimer
-        interval: 3000
+        interval: 2000   // comme les copies de l'onglet Tailscale
         onTriggered: root.copied = false
     }
 

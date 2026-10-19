@@ -32,7 +32,9 @@ Singleton {
     // Appareils : en ligne d'abord, puis par nom.
     readonly property var peers: Object.values(status?.Peer ?? {}).map(p => peer(p))
         .sort((a, b) => (b.online - a.online) || a.name.localeCompare(b.name))
-    readonly property int onlineCount: peers.filter(p => p.online).length
+    // Tes appareils (sans les nœuds de sortie hébergés, qui peuvent être des centaines).
+    readonly property var devices: peers.filter(p => !p.hosted)
+    readonly property int onlineCount: devices.filter(p => p.online).length
     readonly property var exitNodes: peers.filter(p => p.exitNodeOption)
     readonly property var exitNode: peers.find(p => p.exitNode) ?? null
 
@@ -75,7 +77,8 @@ Singleton {
             relay: p.Relay ?? "",
             lastSeen: p.LastSeen && !p.LastSeen.startsWith("0001") ? new Date(p.LastSeen) : null,
             exitNode: p.ExitNode ?? false,
-            exitNodeOption: p.ExitNodeOption ?? false
+            exitNodeOption: p.ExitNodeOption ?? false,
+            hosted: p.Location !== undefined   // nœud de sortie d'un service (Mullvad) : pas un de tes appareils
         };
     }
 
@@ -97,12 +100,28 @@ Singleton {
     }
 
     // Préférences : panneau ouvert, ou pas encore lues (droits connus dès l'ouverture, sans message « Read only » passager).
+    // Lecture déjà en cours (relecture périodique) : refaite à sa fin, pour voir l'effet d'une action qui vient de finir.
+    property bool again: false
     function refresh(): void {
         if (!available)
             return;
+        if (statusQuery.running || prefsQuery.running) {
+            again = true;
+            return;
+        }
         statusQuery.running = true;
         if (polling || prefs === null)
             prefsQuery.running = true;
+    }
+    function settled(): void {
+        if (again && !statusQuery.running && !prefsQuery.running) {
+            again = false;
+            refresh();
+        }
+    }
+    function clearErrors(): void {
+        cli.error = "";
+        loginCli.error = "";
     }
 
     function run(args: var): bool {
@@ -137,19 +156,29 @@ Singleton {
         refresh();
     }
 
-    Timer {
-        interval: root.polling ? 5000 : 60000
-        running: root.available && (root.polling || !Network.wiredLinked)
-        repeat: true
-        triggeredOnStart: true   // relu dès le démarrage du minuteur (câble débranché, panneau ouvert)
-        onTriggered: root.refresh()
+    // Relecture : onglet affiché (5 s) ; sinon 60 s, câble débranché (icône du tray) ou service pas encore joint (démarrage
+    // avant le démon, redémarrage), sans quoi l'onglet ne reviendrait jamais sur une machine câblée.
+    Poller {
+        fast: root.polling
+        active: root.available && (root.polling || !Network.wiredLinked || !root.installed)
+        onPoll: root.refresh()
     }
-    onPollingChanged: if (polling) refresh()
-    onAvailableChanged: if (available) refresh()
+
+    // Panneau réseau : relu à l'ouverture (onglets à jour) ; erreur de la dernière action oubliée à la fermeture.
+    Connections {
+        target: Network
+        function onNetworkPanelOpenChanged() {
+            if (Network.networkPanelOpen)
+                root.refresh();
+            else
+                root.clearErrors();
+        }
+    }
 
     Process {
         id: statusQuery
         command: ["tailscale", "status", "--json"]
+        onExited: Qt.callLater(root.settled)
         stdout: StdioCollector {
             onStreamFinished: {
                 // Code 1 quand Tailscale est arrêté (JSON quand même) comme quand le démon est injoignable (pas de JSON) : le
@@ -172,6 +201,7 @@ Singleton {
     Process {
         id: prefsQuery
         command: ["tailscale", "debug", "prefs"]
+        onExited: Qt.callLater(root.settled)
         stdout: StdioCollector {
             onStreamFinished: {
                 try {

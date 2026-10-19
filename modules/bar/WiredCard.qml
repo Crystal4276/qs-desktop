@@ -32,7 +32,7 @@ PanelCard {
         case NM.ConnectionState.Disconnecting:
             return "Disconnecting…";
         case NM.ConnectionState.Connected:
-            return limited ? Network.limitedText : `Connected · ${speed(device.linkSpeed)}`;
+            return limited ? Network.limitedText : device.linkSpeed > 0 ? `Connected · ${speed(device.linkSpeed)}` : "Connected";   // 0 : vitesse inconnue (VM, certains adaptateurs USB)
         default:
             return "Disconnected";
         }

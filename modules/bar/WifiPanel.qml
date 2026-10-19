@@ -109,12 +109,14 @@ Panel {
         visible: !Network.wifiHardwareEnabled
         text: "Wi-Fi is disabled by a hardware switch or airplane mode"
         color: Theme.panel.warning
+        wrapMode: Text.Wrap
     }
 
     PanelSection {
         visible: root.failText !== ""
         text: root.failText
         color: Theme.panel.warning
+        wrapMode: Text.Wrap
     }
 
     PanelSection {
@@ -135,43 +137,32 @@ Panel {
             : root.others.length === 0 ? "Networks · searching…" : "Networks"
     }
 
-    Flickable {
+    PanelList {
         visible: Network.wifiUsable && root.others.length > 0
-        Layout.fillWidth: true
-        Layout.preferredHeight: Math.min(wifiList.implicitHeight, Theme.panel.maxListHeight)
-        contentHeight: wifiList.implicitHeight
-        clip: true
-        boundsBehavior: Flickable.StopAtBounds
 
-        ColumnLayout {
-            id: wifiList
-            width: parent.width
-            spacing: 0
+        Repeater {
+            model: ScriptModel {
+                values: root.others
+            }
 
-            Repeater {
-                model: ScriptModel {
-                    values: root.others
+            PanelRow {
+                required property NM.WifiNetwork modelData
+
+                leading: WifiIcon {
+                    size: Theme.panel.iconSize
+                    color: Theme.panel.text
+                    level: Network.wifiLevel(modelData.signalStrength)
+                    secure: modelData.security !== NM.WifiSecurityType.Open
+                    connecting: modelData.state === NM.ConnectionState.Connecting
                 }
+                text: modelData.name
+                subtext: root.rowSubtext(modelData)
+                onClicked: root.activate(modelData)
 
-                PanelRow {
-                    required property NM.WifiNetwork modelData
-
-                    leading: WifiIcon {
-                        size: Theme.panel.iconSize
-                        color: Theme.panel.text
-                        level: Network.wifiLevel(modelData.signalStrength)
-                        secure: modelData.security !== NM.WifiSecurityType.Open
-                        connecting: modelData.state === NM.ConnectionState.Connecting
-                    }
-                    text: modelData.name
-                    subtext: root.rowSubtext(modelData)
-                    onClicked: root.activate(modelData)
-
-                    PanelButton {
-                        visible: modelData.known
-                        text: "Forget"
-                        onClicked: modelData.forget()
-                    }
+                PanelButton {
+                    visible: modelData.known
+                    text: "Forget"
+                    onClicked: modelData.forget()
                 }
             }
         }
