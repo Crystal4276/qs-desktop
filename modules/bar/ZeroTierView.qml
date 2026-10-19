@@ -45,7 +45,7 @@ ColumnLayout {
 
     PanelSection {
         visible: !ZeroTier.authorized && ZeroTier.tokenMissing
-        text: "Read only: copy the service token once to manage networks here —\nsudo install -m 600 -o $USER -g $USER /var/lib/zerotier-one/authtoken.secret ~/.zeroTierOneAuthToken"
+        text: "Read only: copy the service token (again, if the service was reinstalled) to manage networks here —\nsudo install -m 600 -o $USER -g $USER /var/lib/zerotier-one/authtoken.secret ~/.zeroTierOneAuthToken"
         wrapMode: Text.Wrap
     }
 
