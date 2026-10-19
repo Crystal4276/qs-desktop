@@ -39,7 +39,9 @@ LazyLoader {
             screen: modelData
             WlrLayershell.layer: WlrLayer.Overlay
             WlrLayershell.namespace: "quickshell-screenshot"
-            WlrLayershell.keyboardFocus: home ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+            // Clavier et pointeur pris seulement une fois l'outil visible (image figée reçue) : invisible, il ne doit rien bloquer.
+            WlrLayershell.keyboardFocus: home && view.hasContent ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+            mask: view.hasContent ? null : noInput
             exclusionMode: ExclusionMode.Ignore
             anchors {
                 top: true
@@ -52,6 +54,17 @@ LazyLoader {
             // Image figée, sans curseur : la vue capture en continu jusqu'à sa première image, puis s'arrête (une capture demandée
             // à la création échoue : le contexte d'enregistrement n'est pas encore prêt). L'outil reste invisible jusque-là, il
             // n'apparaît donc pas sur l'image.
+            Region {
+                id: noInput
+            }
+
+            // Pas d'image figée de l'écran de départ au bout de 3 s (capture refusée, écran éteint) : outil fermé.
+            Timer {
+                interval: 3000
+                running: win.home && !view.hasContent
+                onTriggered: Screenshot.close()
+            }
+
             ScreencopyView {
                 id: view
                 anchors.fill: parent

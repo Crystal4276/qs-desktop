@@ -41,6 +41,7 @@ Scope {
         password = "";
         error = false;
         message = "";
+        capsLock = false;   // deviné à la frappe : l'état du dernier déverrouillage ne vaut plus
         lockedScreen = Compositor.focusedOutput;
         locked = true;
     }

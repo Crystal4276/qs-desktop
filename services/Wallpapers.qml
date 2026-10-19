@@ -28,7 +28,7 @@ Singleton {
 
     // Ce qu'affiche une sortie (Compositor.outputs) : { kind: "image", source } ou { kind: "panorama", source }, ou null.
     function forOutput(output: var, outputs: var): var {
-        if (!output || dir === "")
+        if (!output || dir === "" || !stateRead)
             return null;
         const own = overrides[output.description];
         if (own)
@@ -89,10 +89,15 @@ Singleton {
         }
     }
 
+    // Choix enregistré lu (ou absent) : rien n'est affiché avant, sinon le fond de la config machine passerait d'abord à l'écran.
+    property bool stateRead: false
+
     FileView {
         path: Quickshell.statePath("wallpaper.json")
         printErrors: false
         onAdapterUpdated: writeAdapter()
+        onLoaded: root.stateRead = true
+        onLoadFailed: root.stateRead = true
 
         JsonAdapter {
             id: state
