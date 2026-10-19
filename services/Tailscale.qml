@@ -99,25 +99,17 @@ Singleton {
         return minutes < 60 ? `${minutes} min ago` : minutes < 2880 ? `${Math.round(minutes / 60)} h ago` : `${Math.round(minutes / 1440)} d ago`;
     }
 
-    // Préférences : panneau ouvert, ou pas encore lues (droits connus dès l'ouverture, sans message « Read only » passager).
-    // Lecture déjà en cours (relecture périodique) : refaite à sa fin, pour voir l'effet d'une action qui vient de finir.
-    property bool again: false
+    // Demande de lecture (regroupée, refaite après une lecture en cours : Poller).
     function refresh(): void {
-        if (!available)
-            return;
-        if (statusQuery.running || prefsQuery.running) {
-            again = true;
-            return;
-        }
+        if (available)
+            poller.request();
+    }
+
+    // Préférences : panneau ouvert, ou pas encore lues (droits connus dès l'ouverture, sans message « Read only » passager).
+    function read(): void {
         statusQuery.running = true;
         if (polling || prefs === null)
             prefsQuery.running = true;
-    }
-    function settled(): void {
-        if (again && !statusQuery.running && !prefsQuery.running) {
-            again = false;
-            refresh();
-        }
     }
     function clearErrors(): void {
         cli.error = "";
@@ -159,9 +151,11 @@ Singleton {
     // Relecture : onglet affiché (5 s) ; sinon 60 s, câble débranché (icône du tray) ou service pas encore joint (démarrage
     // avant le démon, redémarrage), sans quoi l'onglet ne reviendrait jamais sur une machine câblée.
     Poller {
+        id: poller
         fast: root.polling
         active: root.available && (root.polling || !Network.wiredLinked || !root.installed)
-        onPoll: root.refresh()
+        busy: statusQuery.running || prefsQuery.running
+        onRead: root.read()
     }
 
     // Panneau réseau : relu à l'ouverture (onglets à jour) ; erreur de la dernière action oubliée à la fermeture.
@@ -178,7 +172,6 @@ Singleton {
     Process {
         id: statusQuery
         command: ["tailscale", "status", "--json"]
-        onExited: Qt.callLater(root.settled)
         stdout: StdioCollector {
             onStreamFinished: {
                 // Code 1 quand Tailscale est arrêté (JSON quand même) comme quand le démon est injoignable (pas de JSON) : le
@@ -201,7 +194,6 @@ Singleton {
     Process {
         id: prefsQuery
         command: ["tailscale", "debug", "prefs"]
-        onExited: Qt.callLater(root.settled)
         stdout: StdioCollector {
             onStreamFinished: {
                 try {

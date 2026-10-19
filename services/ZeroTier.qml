@@ -48,23 +48,11 @@ Singleton {
         })[status] ?? status;
     }
 
-    // Lecture déjà en cours : refaite à sa fin, pour voir l'effet d'une action qui vient de finir.
-    property bool again: false
-    readonly property bool reading: infoQuery.running || networksQuery.running || addressQuery.running
+    // Demande de lecture (regroupée, refaite après une lecture en cours : Poller) ; `info`, puis `listnetworks` s'il répond
+    // (jeton présent), sinon les interfaces.
     function refresh(): void {
-        if (!available)
-            return;
-        if (reading) {
-            again = true;
-            return;
-        }
-        infoQuery.running = true;   // puis `listnetworks` s'il répond (jeton présent), sinon les interfaces
-    }
-    function settled(): void {
-        if (again && !reading) {
-            again = false;
-            refresh();
-        }
+        if (available)
+            poller.request();
     }
     function clearErrors(): void {
         cli.error = "";
@@ -90,9 +78,11 @@ Singleton {
     // Relecture : onglet affiché (5 s) ; sinon 60 s, câble débranché (icône du tray) ou service pas encore joint (démarrage
     // avant le démon, redémarrage), sans quoi l'onglet ne reviendrait jamais sur une machine câblée.
     Poller {
+        id: poller
         fast: root.polling
         active: root.available && (root.polling || !Network.wiredLinked || !root.present)
-        onPoll: root.refresh()
+        busy: infoQuery.running || networksQuery.running || addressQuery.running
+        onRead: infoQuery.running = true
     }
 
     // Panneau réseau : relu à l'ouverture (onglets à jour) ; erreur de la dernière action oubliée à la fermeture.
@@ -134,14 +124,12 @@ Singleton {
                 if (infoErr.text.includes("authtoken") || root.failures >= 2)
                     root.fallBack();
             }
-            Qt.callLater(root.settled);
         }
     }
 
     Process {
         id: networksQuery
         command: ["zerotier-cli", "-j", "listnetworks"]
-        onExited: Qt.callLater(root.settled)
         stdout: StdioCollector {
             onStreamFinished: {
                 try {
@@ -165,7 +153,6 @@ Singleton {
     Process {
         id: addressQuery
         command: ["ip", "-j", "addr"]
-        onExited: Qt.callLater(root.settled)
         stdout: StdioCollector {
             onStreamFinished: {
                 try {

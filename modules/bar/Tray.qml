@@ -81,24 +81,24 @@ Item {
         TrayButton {
             // Réseau : filaire, et Tailscale / ZeroTier (visibles aussi sans câble, icône `network-vpn`).
             readonly property bool privateNetworks: Tailscale.installed || ZeroTier.present
+            readonly property bool privateUp: Tailscale.running || ZeroTier.connectedCount > 0
             visible: Network.wiredShown || privateNetworks
-            icon: !Network.wiredLinked && privateNetworks ? "network-vpn" : Network.icon
+            // `network-vpn` seulement si un réseau privé est actif ; sinon l'état filaire (« aucune connexion »).
+            icon: !Network.wiredLinked && privateUp ? "network-vpn" : Network.icon
             panel: networkPanel
         }
 
         // Wi-Fi (ta demande du 2026-10-19) : glyphe dessiné et animé (WifiIcon.qml), niveau du signal à la manière de GNOME.
-        WifiIcon {
-            id: wifiButton
+        TrayButton {
             visible: Network.wifiShown
-            off: !Network.wifiEnabled || !Network.wifiHardwareEnabled
-            connecting: Network.connectedWifi === null && Network.connectingWifi !== null
-            level: Network.connectedWifi ? Network.wifiLevel(Network.connectedWifi.signalStrength) : -1
-            limited: Network.wifiLimited
+            panel: wifiPanel
 
-            MouseArea {
+            WifiIcon {
                 anchors.fill: parent
-                acceptedButtons: Qt.LeftButton | Qt.RightButton
-                onPressed: wifiPanel.toggle(wifiButton, Qt.LeftButton | Qt.RightButton)
+                off: !Network.wifiEnabled || !Network.wifiHardwareEnabled
+                connecting: Network.connectedWifi === null && Network.connectingWifi !== null
+                level: Network.connectedWifi ? Network.wifiLevel(Network.connectedWifi.signalStrength) : -1
+                limited: Network.wifiLimited
             }
         }
 
