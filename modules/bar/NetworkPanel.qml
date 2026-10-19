@@ -5,26 +5,17 @@ import Quickshell.Networking as NM
 import qs.config
 import qs.services
 
-// Panneau réseau (remplace le menu de nm-applet, ARCHITECTURE R5) : connexions filaires, Wi-Fi (interrupteur, réseaux visibles,
-// mot de passe demandé pour un réseau protégé inconnu), édition des connexions dans `nm-connection-editor`.
+// Panneau réseau (remplace le menu de nm-applet, ARCHITECTURE R5) : connexions filaires, réseaux privés, édition des connexions
+// dans `nm-connection-editor`. Le Wi-Fi a son propre module (WifiPanel.qml, ta demande du 2026-10-19).
 // Libellés en anglais, comme nm-applet et la locale du système. Quickshell.Networking importé sous `NM` : son type `Network`
 // masquerait le service du même nom.
 Panel {
     id: root
 
     title: "Network"
-    hasSwitch: Network.wifi !== null
-    switchChecked: Network.wifiEnabled
-    onSwitchToggled: checked => Network.setWifiEnabled(checked)
 
-    // Réseau protégé inconnu en attente de mot de passe.
-    property var passwordFor: null
-
-    onVisibleChanged: {
-        Network.scanning = visible;
-        if (!visible)
-            passwordFor = null;
-    }
+    onVisibleChanged: Network.networkPanelOpen = visible
+    Component.onDestruction: Network.networkPanelOpen = false
 
     function stateText(network): string {
         switch (network.state) {
@@ -39,19 +30,9 @@ Panel {
         }
     }
 
-    function activate(network): void {
-        if (network.connected || network.stateChanging)
-            return;
-        if (!network.known && network.security !== NM.WifiSecurityType.Open) {
-            passwordFor = network;
-            return;
-        }
-        network.connect();
-    }
-
     // Accès limité (Network.limited) : en `red`, comme les autres avertissements des panneaux.
     PanelSection {
-        visible: Network.limited
+        visible: Network.limited && Network.wiredConnected
         text: Network.connectivity === NM.NetworkConnectivity.Portal ? "Sign-in required: captive portal" : "Connected without Internet access"
         color: Theme.panel.warning
     }
@@ -85,111 +66,7 @@ Panel {
         }
     }
 
-    // --- Wi-Fi ---
-    PanelSection {
-        visible: Network.wifi !== null
-        text: !Network.wifiEnabled ? "Wi-Fi is off" : Network.wifiNetworks.length === 0 ? "Wi-Fi · searching…" : "Wi-Fi"
-    }
-
-    Flickable {
-        visible: Network.wifi !== null && Network.wifiEnabled && Network.wifiNetworks.length > 0
-        Layout.fillWidth: true
-        Layout.preferredHeight: Math.min(wifiList.implicitHeight, Theme.panel.maxListHeight)
-        contentHeight: wifiList.implicitHeight
-        clip: true
-        boundsBehavior: Flickable.StopAtBounds
-
-        ColumnLayout {
-            id: wifiList
-            width: parent.width
-            spacing: 0
-
-            Repeater {
-                model: ScriptModel {
-                    values: Network.wifiNetworks
-                }
-
-                PanelRow {
-                    required property NM.WifiNetwork modelData
-
-                    icon: `nm-signal-${Network.signalStep(modelData.signalStrength)}${modelData.security === NM.WifiSecurityType.Open ? "" : "-secure"}`
-                    text: modelData.name
-                    subtext: root.stateText(modelData) || (modelData.known ? "Saved" : modelData.security === NM.WifiSecurityType.Open ? "Open" : "")
-                    active: modelData.connected
-                    onClicked: root.activate(modelData)
-
-                    PanelButton {
-                        visible: modelData.connected
-                        text: "Disconnect"
-                        onClicked: modelData.disconnect()
-                    }
-
-                    PanelButton {
-                        visible: modelData.known && !modelData.connected
-                        text: "Forget"
-                        onClicked: modelData.forget()
-                    }
-                }
-            }
-        }
-    }
-
-    // --- Réseaux privés (Tailscale, ZeroTier), en lecture seule ---
-    PanelSection {
-        visible: Network.tailscale !== null || Network.zerotier.length > 0
-        text: "Private networks"
-    }
-
-    PanelRow {
-        visible: Network.tailscale !== null
-        clickable: false
-        icon: "network-vpn"
-        text: "Tailscale"
-        subtext: Network.tailscale?.state === "Running"
-            ? [Network.tailscale.address, `${Network.tailscale.peers} devices`].filter(s => s).join(" · ")
-            : (Network.tailscale?.state ?? "")
-        active: Network.tailscale?.state === "Running"
-    }
-
-    Repeater {
-        model: ScriptModel {
-            values: Network.zerotier
-            objectProp: "name"
-        }
-
-        PanelRow {
-            required property var modelData
-
-            clickable: false
-            icon: "zerotier-gui"
-            text: "ZeroTier"
-            subtext: `${modelData.name} · ${modelData.address}`
-            active: true
-        }
-    }
-
-    // Mot de passe d'un réseau protégé inconnu.
-    PanelSection {
-        visible: root.passwordFor !== null
-        text: `Password for ${root.passwordFor?.name ?? ""}`
-    }
-
-    PanelField {
-        id: password
-        visible: root.passwordFor !== null
-        password: true
-        placeholder: "Password"
-        onVisibleChanged: {
-            text = "";
-            if (visible)
-                focusInput();
-        }
-        onAccepted: text => {
-            if (text !== "")
-                root.passwordFor.connectWithPsk(text);
-            root.passwordFor = null;
-        }
-    }
+    PrivateNetworks {}
 
     RowLayout {
         Layout.fillWidth: true

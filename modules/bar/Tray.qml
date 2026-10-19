@@ -70,7 +70,8 @@ Item {
             }
         }
 
-        // Modules natifs, après les applications (remplacent l'icône NordVPN, nm-applet, udiskie, blueman ; phase 5).
+        // Modules natifs, après les applications (remplacent l'icône NordVPN, nm-applet, udiskie, blueman ; phase 5 ; Wi-Fi séparé
+        // du réseau le 2026-10-19).
         TrayButton {
             visible: Vpn.available
             icon: Vpn.icon
@@ -78,9 +79,25 @@ Item {
         }
 
         TrayButton {
-            visible: Network.managed
+            visible: Network.wiredShown
             icon: Network.icon
             panel: networkPanel
+        }
+
+        // Wi-Fi (ta demande du 2026-10-19) : glyphe dessiné et animé (WifiIcon.qml), niveau du signal à la manière de GNOME.
+        WifiIcon {
+            id: wifiButton
+            visible: Network.wifiShown
+            off: !Network.wifiEnabled || !Network.wifiHardwareEnabled
+            connecting: Network.connectedWifi === null && Network.connectingWifi !== null
+            level: Network.connectedWifi ? Network.wifiLevel(Network.connectedWifi.signalStrength) : 0
+            limited: Network.wifiLimited
+
+            MouseArea {
+                anchors.fill: parent
+                acceptedButtons: Qt.LeftButton | Qt.RightButton
+                onPressed: wifiPanel.toggle(wifiButton, Qt.LeftButton | Qt.RightButton)
+            }
         }
 
         TrayButton {
@@ -108,6 +125,10 @@ Item {
 
     NetworkPanel {
         id: networkPanel
+    }
+
+    WifiPanel {
+        id: wifiPanel
     }
 
     DisksPanel {

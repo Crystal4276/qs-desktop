@@ -398,6 +398,13 @@ Proposition de placement dans les phases (CLAUDE.md n'est pas modifié sans ton 
   affiché ne se redimensionne pas proprement sous Sway : les menus n'apparaissent qu'avec leurs entrées, les panneaux ont une fenêtre de
   taille fixe et une zone de clic (`mask`) limitée au cadre.
 - **Réseau** (R5) : `Quickshell.Networking` (filaire, Wi-Fi : interrupteur, réseaux, mot de passe, oubli) ; édition dans `nm-connection-editor`.
+  Depuis le 2026-10-19 (ta demande), deux icônes : **réseau** (filaire et réseaux privés ; visible si un câble est branché ou
+  sans Wi-Fi) et **Wi-Fi** (`WifiPanel.qml`). Le Wi-Fi s'inspire de GNOME (niveaux de signal et seuils 20 / 40 / 50 / 80 % de
+  `signalToIcon`, qualité en mots), de KDE (réseau courant déplié avec ses détails) et de Cinnamon / GNOME (liste avec force du
+  signal). Glyphe dessiné en QML (`WifiIcon.qml`) sur la géométrie Papirus, pour l'animer (glissement de niveau, balayage pendant
+  la connexion). Détails absents de `Quickshell.Networking` (bande, canal, largeur, débit du lien, adresse IPv4) : `nmcli`,
+  relu toutes les 5 s seulement panneau ouvert. Sans icône réseau (laptop sans câble), les réseaux privés passent dans le
+  panneau Wi-Fi (`PrivateNetworks.qml`, partagé).
 - **Bluetooth** (R6) : `Quickshell.Bluetooth` ; appairage par `bluetoothctl` lancé pour l'occasion, son agent servant à sa propre commande
   `pair` (l'agent par défaut de blueman n'est pas touché) ; demandes affichées dans le panneau, jamais acceptées automatiquement.
 - **Disques** (R7) : `busctl` / `gdbus monitor` / `udisksctl` ; règles et textes d'udiskie (montage automatique, notifications, images
