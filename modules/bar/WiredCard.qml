@@ -17,6 +17,8 @@ PanelCard {
     readonly property bool connected: device?.connected ?? false
     readonly property bool carriesTraffic: connected && Network.interfaceName !== ""
         && Network.interfaceName === (details?.ipIface ?? device?.name)
+    // Accès limité : sur la carte qui porte la route, ou sur le seul câble connecté (route sur un VPN).
+    readonly property bool limited: Network.wiredLimited && (carriesTraffic || Network.wiredDevices.filter(d => d.connected).length === 1)
 
     function speed(mbps: int): string {
         return mbps >= 1000 ? `${mbps / 1000} Gb/s` : `${mbps} Mb/s`;
@@ -31,7 +33,7 @@ PanelCard {
         case NM.ConnectionState.Disconnecting:
             return "Disconnecting…";
         case NM.ConnectionState.Connected:
-            return Network.wiredLimited ? Network.limitedText : `Connected · ${speed(device.linkSpeed)}`;
+            return limited ? Network.limitedText : `Connected · ${speed(device.linkSpeed)}`;
         default:
             return "Disconnected";
         }
@@ -63,7 +65,7 @@ PanelCard {
 
             PanelSection {
                 text: root.device ? root.stateText() : ""
-                color: root.connected && Network.wiredLimited ? Theme.panel.warning : Theme.panel.secondaryText
+                color: root.connected && root.limited ? Theme.panel.warning : Theme.panel.secondaryText
             }
         }
 

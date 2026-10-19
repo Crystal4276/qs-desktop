@@ -410,7 +410,9 @@ Proposition de placement dans les phases (CLAUDE.md n'est pas modifié sans ton 
   `debug prefs` sans droits ; actions (`up` / `down`, `set --exit-node / --accept-dns / --accept-routes / --shields-up /
   --exit-node-allow-lan-access`) grâce à `--operator=$USER` (ton choix ; à proposer par install.sh). ZeroTier
   (`services/ZeroTier.qml`) : `zerotier-cli -j` avec le jeton copié dans `~/.zeroTierOneAuthToken` (ton choix ; install.sh),
-  sinon interfaces `zt*` en lecture seule. Relus toutes les 5 s panneau ouvert, 60 s sinon. L'icône réseau reste visible
+  sinon interfaces `zt*` en lecture seule. Actions des deux par un lanceur commun (`services/CliRunner.qml` : présence du
+  programme, une commande à la fois, message d'erreur). Relus toutes les 5 s panneau ouvert ; panneau fermé, 60 s sans câble
+  seulement. L'icône réseau reste visible
   sans câble si Tailscale ou ZeroTier sont là (`network-vpn`). Copies : `wl-copy` (`Quickshell.clipboardText` n'atteint pas le
   presse-papiers sans appui récent).
 - **Bluetooth** (R6) : `Quickshell.Bluetooth` ; appairage par `bluetoothctl` lancé pour l'occasion, son agent servant à sa propre commande

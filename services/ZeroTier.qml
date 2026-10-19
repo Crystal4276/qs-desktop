@@ -13,8 +13,10 @@ Singleton {
     id: root
 
     readonly property bool polling: Network.networkPanelOpen
-    property bool available: false
+    readonly property bool available: cli.available
+    // Jeton accepté. Repasse à faux sur une erreur de jeton, ou après deux autres échecs de suite (service redémarré).
     property bool authorized: false
+    property int failures: 0
     // { address, online, version } du nœud local.
     property var info: null
     // [{ id, name, status, type, addresses, device, allowDns, allowDefault }]
@@ -25,8 +27,14 @@ Singleton {
     readonly property bool present: authorized || interfaces.length > 0
     readonly property int connectedCount: authorized ? networks.filter(n => n.status === "OK").length : interfaces.length
 
-    property bool busy: false
-    property string error: ""
+    readonly property bool busy: cli.busy
+    readonly property string error: cli.error
+
+    CliRunner {
+        id: cli
+        program: "zerotier-cli"
+        onFinished: root.refresh()
+    }
 
     // États de `listnetworks` en mots.
     function statusText(status: string): string {
@@ -46,15 +54,8 @@ Singleton {
         infoQuery.running = true;   // puis `listnetworks` s'il répond (jeton présent), sinon les interfaces
     }
 
-    // Renvoie faux si une autre commande est en cours (rien n'est lancé).
     function run(args: var): bool {
-        if (busy)
-            return false;
-        error = "";
-        busy = true;
-        command.command = ["zerotier-cli", ...args];
-        command.running = true;
-        return true;
+        return cli.run(args);
     }
 
     function join(id: string): bool {
@@ -70,12 +71,6 @@ Singleton {
         run(["set", id, `${key}=${on ? 1 : 0}`]);
     }
 
-    Process {
-        running: true
-        command: ["sh", "-c", "command -v zerotier-cli"]
-        onExited: code => root.available = code === 0
-    }
-
     Timer {
         interval: root.polling ? 5000 : 60000
         running: root.available && (root.polling || !Network.wiredLinked)
@@ -86,21 +81,33 @@ Singleton {
     onPollingChanged: if (polling) refresh()
     onAvailableChanged: if (available) refresh()
 
+    function fallBack(): void {
+        info = null;
+        authorized = false;
+        addressQuery.running = true;   // repli sans jeton
+    }
+
     Process {
         id: infoQuery
         command: ["zerotier-cli", "-j", "info"]
         stdout: StdioCollector {
-            onStreamFinished: {
-                try {
-                    const d = JSON.parse(text);
-                    root.info = { address: d.address ?? "", online: d.online ?? false, version: d.version ?? "" };
-                    root.authorized = true;
-                    networksQuery.running = true;
-                } catch (e) {
-                    root.info = null;
-                    root.authorized = false;
-                    addressQuery.running = true;   // repli sans jeton
-                }
+            id: infoOut
+        }
+        stderr: StdioCollector {
+            id: infoErr
+        }
+        onExited: code => {
+            try {
+                const d = JSON.parse(infoOut.text);
+                root.info = { address: d.address ?? "", online: d.online ?? false, version: d.version ?? "" };
+                root.authorized = true;
+                root.failures = 0;
+                networksQuery.running = true;
+            } catch (e) {
+                root.failures++;
+                // « authtoken.secret not found or readable » (code 2) : pas de jeton.
+                if (infoErr.text.includes("authtoken") || root.failures >= 2)
+                    root.fallBack();
             }
         }
     }
@@ -142,22 +149,6 @@ Singleton {
                     root.interfaces = [];
                 }
             }
-        }
-    }
-
-    Process {
-        id: command
-        stdout: StdioCollector {
-            id: commandOut
-        }
-        stderr: StdioCollector {
-            id: commandErr
-        }
-        onExited: code => {
-            root.busy = false;
-            if (code !== 0)
-                root.error = (commandErr.text.trim() || commandOut.text.trim()).split("\n").slice(-1)[0] || `zerotier-cli: exit code ${code}`;
-            root.refresh();
         }
     }
 }
