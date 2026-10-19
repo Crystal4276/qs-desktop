@@ -58,6 +58,7 @@ Singleton {
     CliRunner {
         id: loginCli
         program: "tailscale"
+        probe: false
         onFinished: root.refresh()
     }
 
@@ -140,13 +141,14 @@ Singleton {
         run(["set", `--${flag}=${on}`]);
     }
 
-    // `tailscale login` attend la fin de l'authentification (10 min au plus) : lanceur à part (les autres actions restent
-    // libres), une seule à la fois ; son adresse revient par `status` (AuthURL) et s'ouvre au clic suivant.
+    // `tailscale login` attend la fin de l'authentification : lanceur à part (les autres actions restent libres), une seule à
+    // la fois ; son adresse revient par `status` (AuthURL) et s'ouvre au clic suivant. Sans option (même règle que `up`),
+    // bornée à 10 min par `timeout`.
     function login(): void {
         if (authUrl !== "")
             Quickshell.execDetached(["xdg-open", authUrl]);
         else
-            loginCli.run(["login", "--timeout=10m"]);
+            loginCli.runCommand(["timeout", "600", "tailscale", "login"]);
         refresh();
     }
 

@@ -8,6 +8,7 @@ Scope {
     id: root
 
     required property string program
+    property bool probe: true          // chercher le programme (faux : un autre lanceur le fait déjà)
     property bool available: false
     property bool busy: false
     property string error: ""
@@ -30,7 +31,7 @@ Scope {
     }
 
     Process {
-        running: true
+        running: root.probe
         command: ["sh", "-c", 'command -v "$1"', "sh", root.program]
         onExited: code => root.available = code === 0
     }
