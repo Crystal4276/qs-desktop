@@ -339,14 +339,14 @@ Vignettes de 240 × 135 px (16:9), 4 par rangée, 3 rangées visibles (ton choix
 Voile hors de la sélection `#ffffff20` et cadre `pink` de 4 px (ta sélection `slurp` actuelle) ; écran ou fenêtre survolés : `pink`
 à 25 % ; barre d'outils au style des panneaux : ligne d'aide du mode choisi (`subtext0`, 16 px), puis modes — glyphe 24 px au-dessus de son
 nom (Inter 16 px), padding des boutons de panneau — et fermer ; mode choisi en contrastes inversés. Pas de poignées ni de bouton de
-capture : la capture part dès que la zone, l'écran ou la fenêtre est choisi (ta demande du 2026-10-19). **Nouveau, à valider** : survol, barre d'outils.
+capture : la capture part dès que la zone, l'écran ou la fenêtre est choisi (ta demande du 2026-10-19). **Validé** (2026-10-19) : survol, barre d'outils.
 Glyphes : `U+F0A6D` zone, `U+F0379` écran, `U+F0614` fenêtre, `U+F0156` fermer (Symbols Nerd Font Mono).
 
 ## 7 quater. Panneau de statistiques système (nouveau composant, phase 8b)
 
 Style des panneaux ; cartes fond `base` (champs des panneaux), titres `yellow` ; jauges : piste `surface0`, remplissage aux couleurs
 des modules de la barre (processeur `teal`, mémoire `green`, GPU `sky`), disques `green` ; ligne de processus choisie `surface0`.
-**Proposé, à valider** : largeur 1100 px, jauges de 8 px, 4 colonnes de cœurs, 14 lignes de processus visibles.
+**Validé pour une première version** (2026-10-19) : largeur 1100 px, jauges de 8 px, 4 colonnes de cœurs, 14 lignes de processus visibles.
 
 ## 8. Fenêtres (compositeur, pour mémoire)
 
