@@ -21,10 +21,6 @@ Singleton {
     property int temperature: -1      // °C
     readonly property bool available: temperature >= 0
 
-    function openMonitor(): void {
-        Quickshell.execDetached([...Settings.terminal, "nvtop"]);
-    }
-
     // Détection, une fois : « <vendor> <capteur> » de la carte retenue.
     Process {
         running: true

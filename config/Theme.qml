@@ -506,6 +506,23 @@ Singleton {
         readonly property int gap: root.panel.gap                   // barre d'outils : distance au bas de l'écran
     }
 
+    // Panneau de statistiques système (nouveau, phase 8b ; remplace btop et nvtop) : style des panneaux ; jauges aux couleurs des modules
+    // de la barre (processeur `teal`, mémoire `green`, GPU et réseau `sky`), piste `surface0`. Largeur, hauteur des jauges et nombre
+    // de lignes de processus : proposés, à valider.
+    readonly property QtObject monitor: QtObject {
+        readonly property int width: 1100
+        readonly property int barHeight: 8
+        readonly property color track: root.panel.button
+        readonly property color cpu: root.module.cpu
+        readonly property color memory: root.module.memory
+        readonly property color gpu: root.module.gpu
+        readonly property color disk: root.panel.accent
+        readonly property color network: root.module.network
+        readonly property int coreColumns: 4
+        readonly property int processRows: 14
+        readonly property color selected: root.panel.rowHover
+    }
+
     // Écran de verrouillage (nouveau design, ARCHITECTURE § 10.1 R2) : fond d'écran de chaque écran flouté et assombri, horloge, date ;
     // sur l'écran qui a le clavier, initiale et nom de l'utilisateur, champ du mot de passe. Maquette validée le 2026-10-17.
     readonly property QtObject lock: QtObject {

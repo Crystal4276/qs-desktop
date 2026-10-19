@@ -703,6 +703,14 @@ Clic : `nvtop` (gère AMD, Intel et NVIDIA). Ce desktop n'a qu'un GPU NVIDIA : l
 (équivalent de btop : CPU par cœur, mémoire et swap, températures, GPU, disques, réseau, processus) — ajoutée à la phase 8b, en dernier.
 Les données viennent de `/proc` et `/sys` (déjà lus par les services de la barre) ; la liste des processus et l'arrêt d'un processus sont à concevoir à ce moment-là.
 
+**Fait (phase 8b, 2026-10-19, tes choix)** : panneau surgissant `modules/monitor/MonitorPanel.qml` (service `services/Monitor.qml`,
+relevés seulement panneau ouvert, chaque seconde), ouvert par les modules CPU, mémoire **et GPU** (les informations de nvtop y sont
+fusionnées) et `qs ipc call monitor toggle`. Contenu : processeur (total, température coretemp / k10temp / zenpower, cœurs),
+mémoire et swap, réseau, GPU (NVIDIA : `nvidia-smi` — charge, mémoire vidéo, température, consommation, ventilateur, fréquence ;
+mémoire vidéo par processus via `nvidia-smi pmon` ; AMD : sysfs), disques locaux (`df`), processus (charge instantanée comme top,
+en % d'un cœur ; tri par colonne ; recherche) ; arrêt de **tes** processus seulement, avec confirmation (« End process » : SIGTERM,
+« Force quit » : SIGKILL). btop et nvtop ne sont plus nécessaires.
+
 ## 12. Couverture de l'API Quickshell (revue du 2026-10-16, à ta demande : « utiliser au maximum ce que Quickshell propose »)
 
 Référence : liste des types de la documentation 0.3.0 (https://quickshell.org/docs/v0.3.0/types/), comparée aux fichiers `qmltypes`

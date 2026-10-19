@@ -5,7 +5,7 @@
 # --- Shell ---
 quickshell              # le shell lui-même (barre, notifications, lanceur, menus)
 qt6-svg                 # rendu des icônes et images SVG dans Quickshell
-# Outils supposés présents (paquet `base` d'Arch, à installer ailleurs) : sh, coreutils, sed, grep, gawk, findutils
+# Outils supposés présents (paquet `base` d'Arch, à installer ailleurs) : sh, coreutils, sed, grep, gawk, findutils, procps-ng
 # (listes d'icônes, filtres des applications du lanceur), util-linux (`rfkill` : mode avion du panneau de réglages),
 # systemd (`systemctl reboot|poweroff` du panneau de réglages).
 
@@ -54,8 +54,6 @@ udisks2                 # disques amovibles (busctl / gdbus / udisksctl, ARCHITE
 xdg-utils               # xdg-open : « Open » d'un disque monté, dossiers et fichiers récents du menu d'applications
 pacman-contrib          # checkupdates (module mises à jour)
 fakeroot                # requis par checkupdates (non déclaré par pacman-contrib)
-btop                    # clic sur CPU / mémoire
-nvtop                   # clic sur la température GPU
 gnome-terminal          # terminal lancé par les modules (configurable par machine)
 libnotify               # notify-send (sortie audio suivante, tests)
 
