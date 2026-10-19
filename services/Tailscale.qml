@@ -171,15 +171,14 @@ Singleton {
         active: root.available && (root.polling || !Network.wiredLinked || !root.installed)
         busy: statusQuery.running || prefsQuery.running
         onRead: root.read()
-        onPanelClosed: {
-            root.clearErrors();
-            root.prefsStale = true;   // relues à la prochaine ouverture (réglage fait ailleurs entre-temps)
-        }
+        onPanelOpened: root.prefsStale = true   // réglage fait ailleurs (terminal) depuis la dernière ouverture
+        onPanelClosed: root.clearErrors()
     }
 
     Process {
         id: statusQuery
-        command: ["tailscale", "status", "--json"]
+        // Onglet fermé : l'état seul (`--peers=false`) ; la liste complète peut compter des centaines de nœuds Mullvad.
+        command: ["tailscale", "status", "--json", ...(root.polling ? [] : ["--peers=false"])]
         stdout: StdioCollector {
             onStreamFinished: {
                 // Code 1 quand Tailscale est arrêté (JSON quand même) comme quand le démon est injoignable (pas de JSON) : le

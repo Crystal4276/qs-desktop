@@ -25,7 +25,7 @@ Singleton {
     property var interfaces: []
 
     // Onglet visible aussi sans jeton ni réseau (machine neuve) : il donne la commande qui installe le jeton.
-    readonly property bool present: authorized || tokenMissing || interfaces.length > 0
+    readonly property bool present: authorized || (tokenMissing && serviceReady) || interfaces.length > 0
     readonly property int connectedCount: authorized ? networks.filter(n => n.status === "OK").length : interfaces.length
 
     readonly property bool busy: cli.busy
@@ -85,8 +85,16 @@ Singleton {
         if (!infoQuery.running && !networksQuery.running && !addressQuery.running)
             reading = false;
     }
-    // Pourquoi le mode lecture seule : jeton absent (sinon : service injoignable).
+    // Pourquoi le mode lecture seule : jeton absent (sinon : service injoignable). Seulement si le service a créé son jeton
+    // (`serviceReady`) : installé mais jamais démarré, zerotier-cli dit aussi « authtoken… », et il n'y a rien à copier.
     property bool tokenMissing: false
+    property bool serviceReady: false
+
+    Process {
+        running: root.available
+        command: ["test", "-e", "/var/lib/zerotier-one/authtoken.secret"]
+        onExited: code => root.serviceReady = code === 0
+    }
 
     Poller {
         id: poller

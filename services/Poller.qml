@@ -14,6 +14,7 @@ Timer {
     property bool busy: false
     property bool again: false
     signal read
+    signal panelOpened
     signal panelClosed
 
     function request(): void {
@@ -38,9 +39,10 @@ Timer {
     property Connections panel: Connections {
         target: Network
         function onNetworkPanelOpenChanged() {
-            if (Network.networkPanelOpen)
+            if (Network.networkPanelOpen) {
+                root.panelOpened();
                 root.request();
-            else
+            } else
                 root.panelClosed();
         }
     }
