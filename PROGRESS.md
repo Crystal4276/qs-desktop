@@ -941,14 +941,15 @@ changement de focus. À vérifier en phase 9 : après `hyprctl reload` au révei
   routes, Shields Up, accès au LAN), appareils (en ligne, système, direct / relayé, vu il y a…, clic = copie de l'IP).
   `sudo tailscale set --operator=$USER` lancé par toi.
 - ZeroTier (`services/ZeroTier.qml`, `ZeroTierView.qml`) : nœud, réseaux (état, adresses, DNS, quitter avec confirmation),
-  rejoindre ; lecture seule tant que le jeton n'est pas copié (`~/.zeroTierOneAuthToken`, ton choix — pas encore fait).
+  rejoindre ; lecture seule sans le jeton (`~/.zeroTierOneAuthToken`, copié par toi le 2026-10-19). Vérifié : nœud en ligne,
+  ton réseau, option DNS activée puis désactivée (`zerotier-cli` confirme, remise à son état initial).
 - Icône réseau : visible aussi sans câble si Tailscale / ZeroTier sont là (`network-vpn`). `PrivateNetworks.qml` supprimé.
 - Vérifié (Sway isolé, données réelles) : onglets, carte filaire et graphe ; Shields Up activé puis désactivé, Tailscale
   coupé puis relancé (états et prefs vérifiés par `tailscale`) ; copie (`wl-paste`). `Quickshell.clipboardText` ne remplit pas
   le presse-papiers sans clic : remplacé par `wl-copy`.
 - Phase 11 : install.sh doit proposer `tailscale set --operator` et la copie du jeton ZeroTier (avec sudo et confirmation).
-- Non testé : nœud de sortie (aucun dans ton tailnet), Accept routes, ZeroTier complet (jeton), « Sign in » (compte connecté),
-  clics réels (comme toujours en headless).
+- Non testé : nœud de sortie (aucun dans ton tailnet), Accept routes, ZeroTier « Leave » / « Join » (pour ne pas quitter ton
+  réseau), « Sign in » (compte connecté), clics réels (comme toujours en headless).
 
 ## Prochaine étape
 

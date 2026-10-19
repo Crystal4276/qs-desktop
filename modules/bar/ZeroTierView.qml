@@ -77,7 +77,7 @@ ColumnLayout {
                 PanelSection {
                     text: root.copied ? "Node ID copied"
                         : !ZeroTier.authorized ? `${ZeroTier.interfaces.length} interface(s)`
-                        : `${ZeroTier.info?.online ? "Online" : "Offline"} · node ${ZeroTier.info?.address ?? ""} · ${ZeroTier.connectedCount} network(s)`
+                        : `${ZeroTier.info?.online ? "Online" : "Offline"} · node ${ZeroTier.info?.address ?? ""}`
                 }
             }
 
@@ -95,7 +95,7 @@ ColumnLayout {
 
     // --- Réseaux ---
     PanelSection {
-        text: "Networks"
+        text: ZeroTier.authorized ? `Networks · ${ZeroTier.connectedCount} connected` : "Networks"
         visible: ZeroTier.authorized ? ZeroTier.networks.length > 0 : ZeroTier.interfaces.length > 0
     }
 
@@ -108,7 +108,28 @@ ColumnLayout {
         PanelRow {
             required property var modelData
 
-            icon: "network-vpn"
+            leading: Item {
+                implicitWidth: Theme.panel.iconSize
+                implicitHeight: Theme.panel.iconSize
+
+                IconImage {
+                    anchors.fill: parent
+                    source: "image://icon/zerotier-gui"
+                    opacity: modelData.status === "OK" ? 1 : Theme.panel.disabledOpacity
+                }
+
+                // Point d'état, comme les appareils Tailscale.
+                Rectangle {
+                    width: Theme.network.dotSize
+                    height: width
+                    radius: width / 2
+                    anchors.right: parent.right
+                    anchors.bottom: parent.bottom
+                    color: modelData.status === "OK" ? Theme.network.online : Theme.network.offline
+                    border.width: Theme.panel.border
+                    border.color: Theme.panel.background
+                }
+            }
             text: modelData.name
             subtext: [ZeroTier.statusText(modelData.status), modelData.addresses.join(", "), modelData.type.toLowerCase()].filter(s => s).join(" · ")
             active: modelData.status === "OK"
@@ -147,7 +168,7 @@ ColumnLayout {
             required property var modelData
 
             clickable: false
-            icon: "network-vpn"
+            icon: "zerotier-gui"
             text: modelData.name
             subtext: modelData.address
             active: true
