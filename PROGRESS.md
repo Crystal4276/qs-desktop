@@ -907,6 +907,22 @@ mot de passe), outil de capture qui pouvait rester invisible en bloquant le bure
 dans le test). Laissés (négligeables) : écrans de même description (choix de fond partagé), recalcul du fond à chaque
 changement de focus. À vérifier en phase 9 : après `hyprctl reload` au réveil, répartition des espaces (Outputs) et VRR/HDR.
 
+### Module Wi-Fi séparé du réseau (2026-10-19, ta demande)
+
+- Nouvelle icône Wi-Fi dans le tray (après l'icône réseau) : glyphe dessiné `modules/bar/WifiIcon.qml` (géométrie et couleurs
+  Papirus, 5 niveaux aux seuils de GNOME, balayage animé pendant la connexion, croix si coupé, « ! » si sans Internet).
+- Nouveau panneau `WifiPanel.qml` : interrupteur, carte du réseau courant (`WifiCard.qml` : qualité en mots, jauge colorée,
+  bande / canal / largeur, débit du lien, sécurité, IPv4, trafic), autres réseaux (glyphe + cadenas, bande, %), mot de passe
+  redemandé en rouge s'il est refusé, échec de connexion signalé. Détails lus par `nmcli` seulement panneau ouvert.
+- Panneau réseau réduit au filaire + réseaux privés (`PrivateNetworks.qml`, partagé) ; icône réseau masquée sans câble branché
+  quand il y a du Wi-Fi (laptop) — les réseaux privés passent alors dans le panneau Wi-Fi.
+- Vérifié : Sway isolé (vitrine hors dépôt) — tous les états du glyphe, cartes connecté fort / faible / en connexion, vrai
+  panneau avec tes réseaux réels (<Wi-Fi 5 GHz> 5 GHz, <Wi-Fi 2,4 GHz> 2.4 GHz) ; animation (images différentes) ; ton instance recharge sans
+  erreur, capture du tray `.shots/wifi-after-tray.png`.
+- Non testé (ton desktop est en filaire, je n'ai pas connecté le Wi-Fi pour ne pas changer ta route) : connexion réelle, carte
+  avec vraies valeurs (débit, IPv4, trafic), mot de passe refusé, accès limité. À tester à la main, idéalement sur le laptop.
+- Valeurs nouvelles à valider : `THEME.md` § 3 « Module Wi-Fi » (couleurs de qualité, glyphe 48 px, durées d'animation).
+
 ## Prochaine étape
 
 Phase 9 — parité Hyprland (tests à faire ensemble dans une session Hyprland : voir « Compatibilité Hyprland »).

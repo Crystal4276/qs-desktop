@@ -209,6 +209,21 @@ Singleton {
         readonly property int maxListHeight: 400            // au-delà, la liste défile
     }
 
+    // § 3 — Module Wi-Fi (nouveau composant, ta demande du 2026-10-19 ; THEME.md § 3 « Module Wi-Fi »)
+    readonly property QtObject wifi: QtObject {
+        // Glyphe du tray : couleurs des icônes Papirus voisines (classes ColorScheme-Text / NeutralText, opacité du fond).
+        readonly property color glyph: "#dfdfdf"
+        readonly property real glyphDim: 0.35
+        readonly property color glyphWarning: "#ff9800"   // accès limité, comme `network-wireless-*-limited`
+        readonly property int connectingDuration: 1200    // balayage du glyphe pendant la connexion (nouveau, à valider)
+        readonly property int levelDuration: 250          // passage d'un niveau de signal à l'autre (nouveau, à valider)
+        // Carte du réseau connecté.
+        readonly property color card: root.color.base     // comme le champ de saisie
+        readonly property int cardIconSize: 48            // nouveau, à valider
+        // Qualité du signal, de « aucun » à « excellent » (seuils de GNOME, Network.qml).
+        readonly property list<color> quality: [root.color.red, root.color.peach, root.color.yellow, root.color.green, root.color.green]
+    }
+
     // § 3 — Curseur de volume
     readonly property QtObject slider: QtObject {
         readonly property int minWidth: 50

@@ -14,10 +14,12 @@ Rectangle {
     property bool active: false
     property bool clickable: true
     default property alias trailing: trailingRow.data
+    // Icône dessinée à la place de `icon` (glyphe Wi-Fi des listes).
+    property alias leading: leadingRow.data
     signal clicked
 
     Layout.fillWidth: true
-    implicitHeight: Math.max(iconItem.implicitHeight, texts.implicitHeight, trailingRow.implicitHeight) + 2 * Theme.panel.rowPadding
+    implicitHeight: Math.max(iconItem.implicitHeight, leadingRow.implicitHeight, texts.implicitHeight, trailingRow.implicitHeight) + 2 * Theme.panel.rowPadding
     radius: Theme.panel.rowRadius
     color: clickable && hover.hovered ? Theme.panel.rowHover : "transparent"
 
@@ -49,6 +51,12 @@ Rectangle {
             visible: root.icon !== ""
             implicitSize: Theme.panel.iconSize
             source: root.icon === "" ? "" : root.icon.startsWith("image:") || root.icon.startsWith("file:") ? root.icon : `image://icon/${root.icon}`
+        }
+
+        RowLayout {
+            id: leadingRow
+            visible: children.length > 0
+            spacing: 0
         }
 
         ColumnLayout {

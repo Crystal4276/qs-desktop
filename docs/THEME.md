@@ -214,6 +214,21 @@ rapides façon GNOME). Style du calendrier ; valeurs reprises de la charte sauf 
 | Clavier | Tab / Maj+Tab ou ↑ / ↓ : élément suivant / précédent ; Entrée ou Espace : activer ; ← / → : curseur ±5 % ; élément choisi : liseré 1 px `text` (**nouveau, à valider**, visible aussi sur une bascule activée en `green`) ; indisponible : 50 % d'opacité | revue de code du 2026-10-16 |
 | Fermeture | clic sur une autre application ou sur une barre, Échap ; un clic à côté n'est pas transmis (popup « grab », nécessaire pour la saisie au clavier) | — |
 
+### Module Wi-Fi (nouveau composant, ta demande du 2026-10-19)
+
+Icône et panneau séparés du panneau réseau. Inspiration : GNOME (niveaux et seuils), KDE (réseau courant déplié avec détails),
+Cinnamon (liste). Style des panneaux ci-dessus ; valeurs nouvelles marquées.
+
+| Élément | Valeur | Origine |
+|---|---|---|
+| Glyphe du tray | dessiné (QML) sur la géométrie Papirus `network-wireless-signal-*` (16 × 16, 32 px) ; `#dfdfdf`, fond de l'éventail à 35 % ; 5 niveaux (aucun, faible, moyen, bon, excellent : seuils GNOME 20 / 40 / 50 / 80 %) | Papirus (icônes voisines du tray) ; GNOME |
+| États du glyphe | coupé : croix ; non connecté : éventail vide ; connexion : balayage en boucle **1,2 s** ; accès limité : « ! » `#ff9800` ; changement de niveau glissé **250 ms** | Papirus `-offline` / `-limited` ; **durées nouvelles, à valider** |
+| Carte du réseau courant | fond `base`, coins 10 px, padding 15 px ; glyphe **48 px** coloré selon la qualité ; nom `green` (connecté) ; état et qualité en mots, Inter 16 px `subtext0` (`red` sans Internet) ; bouton Disconnect / Cancel | champ de saisie ; **48 px nouveau, à valider** |
+| Jauge du signal | creux du curseur de volume (15 px, `crust`, coins 15 px) ; remplissage à la couleur de la qualité ; pourcentage Inter 16 px `text`, chiffres tabulaires | curseur de volume |
+| Couleurs de qualité | très faible `red`, faible `peach`, moyen `yellow`, bon et excellent `green` | palette (**choix nouveau, à valider**) |
+| Détails | libellés Inter 16 px `subtext0`, valeurs `text` : bande · canal · largeur, débit du lien, sécurité, adresse IPv4, trafic (si le Wi-Fi porte la route ; glyphes du module réseau) | KDE |
+| Liste des réseaux | ligne des panneaux ; glyphe 24 px `text` au niveau du réseau, cadenas Papirus (réduit à 85 %, dans le coin) si protégé ; « Saved / Open · bande · % » | GNOME, Papirus `-secure` |
+
 ### Calendrier de l'horloge (nouveau composant, phase 4 — ARCHITECTURE § 8.3)
 
 Remplace le tooltip calendrier. Aucune valeur nouvelle : tout est repris de la barre, du lanceur et de la palette.
