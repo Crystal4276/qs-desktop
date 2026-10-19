@@ -886,6 +886,17 @@ outil de capture ; fenêtre de statistiques système.
   de test, « End process » → confirmation → processus arrêté, liste à jour. Ton instance, panneau fermé : 1 tic CPU en 10 s.
 - À valider : largeur, jauges, lignes (`THEME.md` § 7 quater).
 
+### Retours de tes tests (2026-10-19)
+
+- Polkit testé par toi (Nemo) : fonctionne ; mot de passe refusé : champ rouge et « Wrong password », comme le verrouillage.
+- Verrouillage testé par toi : champ du mot de passe désormais sur l'écran principal (saisie prise quel que soit l'écran qui a le
+  clavier) ; vérifié dans un Sway isolé à deux écrans, focus sur le petit écran.
+- Capture : plus de poignées, de déplacement, de redimensionnement ni de bouton de capture ; capture dès que la zone (au
+  relâchement), l'écran ou la fenêtre est choisi. Toujours à vérifier sur tes écrans.
+- Statistiques : liste des processus toutes les 2,6 s (`update_ms` de ton btop) ; un processus choisi fige l'ordre des lignes
+  (vérifié : aucun pixel de différence en 8 s, contre une liste qui bouge sans sélection). « End process » / « Force quit » restent
+  à tester par toi.
+
 ## Prochaine étape
 
 Phase 8b (voir ci-dessus).
