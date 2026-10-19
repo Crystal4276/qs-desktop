@@ -222,7 +222,7 @@ Cinnamon (liste). Style des panneaux ci-dessus ; valeurs nouvelles marquées.
 | Élément | Valeur | Origine |
 |---|---|---|
 | Glyphe du tray | dessiné (QML) sur la géométrie Papirus `network-wireless-signal-*` (16 × 16, 32 px) ; `#dfdfdf`, fond de l'éventail à 35 % ; 5 niveaux (aucun, faible, moyen, bon, excellent : seuils GNOME 20 / 40 / 50 / 80 %) | Papirus (icônes voisines du tray) ; GNOME |
-| États du glyphe | coupé : croix ; non connecté : éventail vide ; connexion : balayage en boucle **1,2 s** ; accès limité : « ! » `#ff9800` ; changement de niveau glissé **250 ms** | Papirus `-offline` / `-limited` ; **durées nouvelles, à valider** |
+| États du glyphe | coupé : croix ; non connecté : éventail vide ; connecté sous 20 % : petit secteur (sommet y = 12, pour se distinguer de « non connecté ») ; connexion : balayage en boucle **1,2 s** ; accès limité : « ! » `#ff9800` ; changement de niveau glissé **250 ms** | Papirus `-offline` / `-limited` ; **durées nouvelles, à valider** |
 | Carte du réseau courant | fond `base`, coins 10 px, padding 15 px ; glyphe **48 px** coloré selon la qualité ; nom `green` (connecté) ; état et qualité en mots, Inter 16 px `subtext0` (`red` sans Internet) ; bouton Disconnect / Cancel | champ de saisie ; **48 px nouveau, à valider** |
 | Jauge du signal | creux du curseur de volume (15 px, `crust`, coins 15 px) ; remplissage à la couleur de la qualité ; pourcentage Inter 16 px `text`, chiffres tabulaires | curseur de volume |
 | Couleurs de qualité | très faible `red`, faible `peach`, moyen `yellow`, bon et excellent `green` | palette (**choix nouveau, à valider**) |

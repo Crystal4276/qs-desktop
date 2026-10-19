@@ -39,7 +39,9 @@ ColumnLayout {
 
     // Santé du démon, connecté seulement (arrêté, elle ne dit que « Tailscale is stopped », déjà dans la carte).
     Repeater {
-        model: Tailscale.running ? Tailscale.health : []
+        model: ScriptModel {
+            values: Tailscale.running ? Tailscale.health : []
+        }
 
         PanelSection {
             required property string modelData
@@ -156,20 +158,24 @@ ColumnLayout {
         text: Tailscale.exitNodes.length === 0 ? "Exit node · none offered in your tailnet" : "Exit node"
     }
 
+    // Listes relues toutes les 5 s : ScriptModel avec clé, pour garder les lignes (focus clavier, survol) d'une relecture à
+    // l'autre. « None » : clé vide.
     Repeater {
         model: ScriptModel {
-            values: Tailscale.running && Tailscale.exitNodes.length > 0 ? [null, ...Tailscale.exitNodes] : []
+            values: Tailscale.running && Tailscale.exitNodes.length > 0 ? [{ id: "", none: true }, ...Tailscale.exitNodes] : []
+            objectProp: "id"
         }
 
         PanelRow {
             required property var modelData
+            readonly property bool none: modelData.none ?? false
 
-            icon: modelData ? Tailscale.osIcon(modelData.os) : "network-vpn"
-            text: modelData ? modelData.name : "None"
-            subtext: modelData ? (modelData.online ? modelData.ip : "Offline") : "Use your own Internet connection"
-            active: modelData ? modelData.exitNode : Tailscale.exitNode === null
-            enabled: Tailscale.canAct && !Tailscale.busy && (!modelData || modelData.online)
-            onClicked: Tailscale.setExitNode(modelData ? modelData.ip : "")
+            icon: none ? "network-vpn" : Tailscale.osIcon(modelData.os)
+            text: none ? "None" : modelData.name
+            subtext: none ? "Use your own Internet connection" : (modelData.online ? modelData.ip : "Offline")
+            active: none ? Tailscale.exitNode === null : modelData.exitNode
+            enabled: Tailscale.canAct && !Tailscale.busy && (none || modelData.online)
+            onClicked: Tailscale.setExitNode(none ? "" : modelData.ip)
         }
     }
 
@@ -180,12 +186,15 @@ ColumnLayout {
     }
 
     Repeater {
-        model: Tailscale.running ? [
+        model: ScriptModel {
+            objectProp: "flag"
+            values: Tailscale.running ? [
             { flag: "accept-dns", text: "Use Tailscale DNS", subtext: "MagicDNS names and tailnet DNS settings", on: Tailscale.acceptDns, shown: true },
             { flag: "accept-routes", text: "Accept subnet routes", subtext: "Reach networks shared by other devices", on: Tailscale.acceptRoutes, shown: true },
             { flag: "shields-up", text: "Shields up", subtext: "Block incoming connections from the tailnet", on: Tailscale.shieldsUp, shown: true },
             { flag: "exit-node-allow-lan-access", text: "Allow local network access", subtext: "Keep the LAN reachable through the exit node", on: Tailscale.allowLanAccess, shown: Tailscale.exitNode !== null }
-        ].filter(o => o.shown) : []
+            ].filter(o => o.shown) : []
+        }
 
         PanelRow {
             required property var modelData

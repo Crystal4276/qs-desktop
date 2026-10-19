@@ -7,11 +7,12 @@ import Quickshell.Io
 // ZeroTier (onglet du panneau réseau, ta demande du 2026-10-19) par `zerotier-cli -j`. Il exige le jeton du service :
 // copie personnelle `~/.zeroTierOneAuthToken` (ton choix, install.sh la propose). Avec lui : nœud, réseaux (nom, état, adresses,
 // options), rejoindre / quitter. Sans lui (`authorized` faux) : repli en lecture seule sur les interfaces `zt*` (`ip -j addr`).
-// Relu toutes les 5 s panneau ouvert (`polling`), toutes les 60 s sinon.
+// Relu toutes les 5 s panneau réseau ouvert, toutes les 60 s sinon ; rien si `zerotier-cli` est absent (cherché une fois).
 Singleton {
     id: root
 
-    property bool polling: false
+    readonly property bool polling: Network.networkPanelOpen
+    property bool available: false
     property bool authorized: false
     // { address, online, version } du nœud local.
     property var info: null
@@ -39,6 +40,8 @@ Singleton {
     }
 
     function refresh(): void {
+        if (!available)
+            return;
         infoQuery.running = true;
         networksQuery.running = true;
         addressQuery.running = true;
@@ -66,9 +69,15 @@ Singleton {
         run(["set", id, `${key}=${on ? 1 : 0}`]);
     }
 
+    Process {
+        running: true
+        command: ["sh", "-c", "command -v zerotier-cli"]
+        onExited: code => root.available = code === 0
+    }
+
     Timer {
         interval: root.polling ? 5000 : 60000
-        running: true
+        running: root.available
         repeat: true
         triggeredOnStart: true
         onTriggered: root.refresh()

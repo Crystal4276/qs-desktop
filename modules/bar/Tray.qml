@@ -90,7 +90,7 @@ Item {
             visible: Network.wifiShown
             off: !Network.wifiEnabled || !Network.wifiHardwareEnabled
             connecting: Network.connectedWifi === null && Network.connectingWifi !== null
-            level: Network.connectedWifi ? Network.wifiLevel(Network.connectedWifi.signalStrength) : 0
+            level: Network.connectedWifi ? Network.wifiLevel(Network.connectedWifi.signalStrength) : -1
             limited: Network.wifiLimited
 
             MouseArea {

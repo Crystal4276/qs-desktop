@@ -21,20 +21,8 @@ Panel {
     ].filter(t => t.shown)
     readonly property string current: tabs.some(t => t.key === tab) ? tab : (tabs[0]?.key ?? "")
 
-    onVisibleChanged: Network.networkPanelOpen = visible
-    Component.onDestruction: Network.networkPanelOpen = false
-
-    Binding {
-        target: Tailscale
-        property: "polling"
-        value: root.visible
-    }
-
-    Binding {
-        target: ZeroTier
-        property: "polling"
-        value: root.visible
-    }
+    onVisibleChanged: Network.setPanelOpen("network", root, visible)
+    Component.onDestruction: Network.setPanelOpen("network", root, false)
 
     RowLayout {
         visible: root.tabs.length > 1
