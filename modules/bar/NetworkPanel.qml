@@ -63,8 +63,8 @@ Panel {
         visible: root.current === "zerotier"
     }
 
+    // Édition des connexions, quel que soit l'onglet (et même sans onglet : aucun appareil encore listé).
     RowLayout {
-        visible: root.current === "wired"
         Layout.fillWidth: true
 
         Item {

@@ -1,6 +1,5 @@
 import QtQuick
 import QtQuick.Layouts
-import Quickshell.Networking as NM
 import qs.config
 import qs.services
 
@@ -32,7 +31,7 @@ PanelCard {
         spacing: Theme.panel.spacing
 
         WifiIcon {
-            size: Theme.wifi.cardIconSize
+            size: Theme.panel.cardIconSize
             level: root.level
             connecting: !root.connected
             limited: root.connected && Network.wifiLimited
@@ -54,7 +53,7 @@ PanelCard {
 
             PanelSection {
                 text: !root.connected ? "Connecting…"
-                    : Network.wifiLimited ? (Network.connectivity === NM.NetworkConnectivity.Portal ? "Sign-in required: captive portal" : "Connected without Internet access")
+                    : Network.wifiLimited ? Network.limitedText
                     : `Connected · ${Network.qualityText(root.strength).toLowerCase()} signal`
                 color: root.connected && Network.wifiLimited ? Theme.panel.warning : Theme.panel.secondaryText
             }
