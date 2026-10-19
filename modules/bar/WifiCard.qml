@@ -10,6 +10,7 @@ PanelCard {
     id: root
 
     property var network: null   // Quickshell.Networking WifiNetwork
+    signal cancelled   // connexion annulée par l'utilisateur (le panneau ne la surveille plus)
 
     readonly property bool connected: network?.connected ?? false
     readonly property real strength: network?.signalStrength ?? 0
@@ -43,7 +44,14 @@ PanelCard {
 
         PanelButton {
             text: root.connected ? "Disconnect" : "Cancel"
-            onClicked: root.connected ? root.network.disconnect() : Network.cancelWifi()
+            onClicked: {
+                if (root.connected)
+                    root.network.disconnect();
+                else {
+                    root.cancelled();
+                    Network.cancelWifi();
+                }
+            }
         }
     }
 

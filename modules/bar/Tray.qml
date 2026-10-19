@@ -98,7 +98,7 @@ Item {
 
             WifiIcon {
                 anchors.fill: parent
-                off: !Network.wifiEnabled || !Network.wifiHardwareEnabled
+                off: !Network.wifiUsable
                 connecting: Network.connectedWifi === null && Network.connectingWifi !== null
                 level: Network.connectedWifi ? Network.wifiLevel(Network.connectedWifi.signalStrength) : -1
                 limited: Network.wifiLimited

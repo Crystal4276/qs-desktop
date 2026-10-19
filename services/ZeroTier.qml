@@ -94,7 +94,8 @@ Singleton {
     Process {
         id: serviceCheck
         running: root.available
-        command: ["test", "-e", "/var/lib/zerotier-one/authtoken.secret"]
+        // Dossier du service pas toujours lisible (0700 selon la distribution) : `systemctl` en second.
+        command: ["sh", "-c", "test -e /var/lib/zerotier-one/authtoken.secret || systemctl is-active --quiet zerotier-one"]
         onExited: code => root.serviceReady = code === 0
     }
     onTokenMissingChanged: if (tokenMissing) serviceCheck.running = true
