@@ -46,17 +46,19 @@ Singleton {
         infoQuery.running = true;   // puis `listnetworks` s'il répond (jeton présent), sinon les interfaces
     }
 
-    function run(args: var): void {
+    // Renvoie faux si une autre commande est en cours (rien n'est lancé).
+    function run(args: var): bool {
         if (busy)
-            return;
+            return false;
         error = "";
         busy = true;
         command.command = ["zerotier-cli", ...args];
         command.running = true;
+        return true;
     }
 
-    function join(id: string): void {
-        run(["join", id]);
+    function join(id: string): bool {
+        return run(["join", id]);
     }
 
     function leave(id: string): void {
@@ -78,6 +80,7 @@ Singleton {
         interval: root.polling ? 5000 : 60000
         running: root.available && (root.polling || !Network.wiredLinked)
         repeat: true
+        triggeredOnStart: true   // relu dès le démarrage du minuteur (câble débranché, panneau ouvert)
         onTriggered: root.refresh()
     }
     onPollingChanged: if (polling) refresh()
