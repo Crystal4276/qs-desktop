@@ -65,6 +65,15 @@ OverlayPopup {
     frameItem: frame
 
     onTabChanged: grid.currentIndex = 0
+    // Écrans changés, fenêtre ouverte : onglet disparu → images simples ; écran visé disparu → tous les écrans.
+    onTabsChanged: {
+        if (!tabs.some(t => t.key === tab))
+            tab = "simple";
+    }
+    onOutputsChanged: {
+        if (target !== "" && !outputs.some(o => o.description === target))
+            target = "";
+    }
 
     PanelFrame {
         id: frame

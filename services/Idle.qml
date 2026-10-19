@@ -69,10 +69,13 @@ Singleton {
 
     // --- Verrouillage avant la mise en veille du système ---
 
-    // Verrou « delay » : logind attend sa libération (quelques secondes au plus) avant de mettre en veille.
+    // Verrou « delay » : logind attend sa libération (quelques secondes au plus) avant de mettre en veille. Relâché le temps d'une
+    // veille (`holding` faux), repris au réveil.
+    property bool holding: true
+
     Process {
         id: inhibitor
-        running: root.lockBeforeSleep
+        running: root.lockBeforeSleep && root.holding
         command: ["systemd-inhibit", "--what=sleep", "--mode=delay", "--who=Quickshell", "--why=Lock the screen before sleep",
             "sleep", "infinity"]
     }
@@ -86,12 +89,16 @@ Singleton {
                 if (!line.includes("PrepareForSleep"))
                     return;
                 if (line.includes("(true,)")) {
-                    if (root.lockBeforeSleep) {
+                    if (!root.lockBeforeSleep)
+                        return;
+                    if (Session.locked) {
+                        root.holding = false;   // déjà verrouillé : rien à attendre
+                    } else {
                         Session.lock();
                         release.restart();
                     }
                 } else {
-                    inhibitor.running = root.lockBeforeSleep;   // réveil : nouveau verrou pour la prochaine veille
+                    root.holding = true;   // réveil : nouveau verrou pour la prochaine veille
                     if (Compositor.isHyprland)
                         Quickshell.execDetached(["hyprctl", "reload"]);
                 }
@@ -103,7 +110,7 @@ Singleton {
     Timer {
         id: release
         interval: 2000
-        onTriggered: inhibitor.running = false
+        onTriggered: root.holding = false
     }
 
     Connections {
@@ -111,7 +118,7 @@ Singleton {
         function onLockedChanged() {
             if (Session.locked && release.running) {
                 release.stop();
-                inhibitor.running = false;
+                root.holding = false;
             }
         }
     }
