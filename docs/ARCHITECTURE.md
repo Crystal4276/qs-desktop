@@ -567,7 +567,7 @@ Voir `WALLPAPERS.md` § « Mise en œuvre ». Remplace `swaybg` (Sway) et le fon
   context ») ; voile `#ffffff20` et cadre rose de 4 px (ta sélection slurp actuelle) ; capture dès que le choix est fait (ta
   demande du 2026-10-19 : ni redimensionnement ni bouton de capture) — zone tracée (au relâchement), écran cliqué, fenêtre cliquée
   (rectangles des fenêtres des espaces affichés donnés par le compositeur : `Toplevel` ne fournit pas leur position) ; barre
-  d'outils en bas de l'écran de départ (modes, fermer) ; Entrée / Espace capturent l'écran présélectionné, Échap ferme.
+  d'outils en bas de l'écran de départ (aide du mode choisi, modes avec leur nom, fermer) ; Entrée / Espace capturent l'écran présélectionné, Échap ferme.
 - Capture : découpe de l'image figée (`ShaderEffectSource`) à la résolution réelle de l'écran, enregistrée dans
   `Images/screenshot/AAAA-MM-JJ-HHMMSS.png` (comme ta touche Impr.) et copiée dans le presse-papiers (`wl-copy`).
 - Ouvert par le bouton du panneau de réglages (mode zone) et `qs ipc call screenshot area|screen|window` (touche Impr., phase 10).
