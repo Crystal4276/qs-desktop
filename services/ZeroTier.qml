@@ -48,10 +48,26 @@ Singleton {
         })[status] ?? status;
     }
 
+    // Lecture déjà en cours : refaite à sa fin, pour voir l'effet d'une action qui vient de finir.
+    property bool again: false
+    readonly property bool reading: infoQuery.running || networksQuery.running || addressQuery.running
     function refresh(): void {
         if (!available)
             return;
+        if (reading) {
+            again = true;
+            return;
+        }
         infoQuery.running = true;   // puis `listnetworks` s'il répond (jeton présent), sinon les interfaces
+    }
+    function settled(): void {
+        if (again && !reading) {
+            again = false;
+            refresh();
+        }
+    }
+    function clearErrors(): void {
+        cli.error = "";
     }
 
     function run(args: var): bool {
@@ -71,15 +87,24 @@ Singleton {
         run(["set", id, `${key}=${on ? 1 : 0}`]);
     }
 
-    Timer {
-        interval: root.polling ? 5000 : 60000
-        running: root.available && (root.polling || !Network.wiredLinked)
-        repeat: true
-        triggeredOnStart: true   // relu dès le démarrage du minuteur (câble débranché, panneau ouvert)
-        onTriggered: root.refresh()
+    // Relecture : onglet affiché (5 s) ; sinon 60 s, câble débranché (icône du tray) ou service pas encore joint (démarrage
+    // avant le démon, redémarrage), sans quoi l'onglet ne reviendrait jamais sur une machine câblée.
+    Poller {
+        fast: root.polling
+        active: root.available && (root.polling || !Network.wiredLinked || !root.present)
+        onPoll: root.refresh()
     }
-    onPollingChanged: if (polling) refresh()
-    onAvailableChanged: if (available) refresh()
+
+    // Panneau réseau : relu à l'ouverture (onglets à jour) ; erreur de la dernière action oubliée à la fermeture.
+    Connections {
+        target: Network
+        function onNetworkPanelOpenChanged() {
+            if (Network.networkPanelOpen)
+                root.refresh();
+            else
+                root.clearErrors();
+        }
+    }
 
     function fallBack(): void {
         info = null;
@@ -109,12 +134,14 @@ Singleton {
                 if (infoErr.text.includes("authtoken") || root.failures >= 2)
                     root.fallBack();
             }
+            Qt.callLater(root.settled);
         }
     }
 
     Process {
         id: networksQuery
         command: ["zerotier-cli", "-j", "listnetworks"]
+        onExited: Qt.callLater(root.settled)
         stdout: StdioCollector {
             onStreamFinished: {
                 try {
@@ -138,6 +165,7 @@ Singleton {
     Process {
         id: addressQuery
         command: ["ip", "-j", "addr"]
+        onExited: Qt.callLater(root.settled)
         stdout: StdioCollector {
             onStreamFinished: {
                 try {

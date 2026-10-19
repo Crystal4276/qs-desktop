@@ -67,7 +67,7 @@ ColumnLayout {
             active: Tailscale.running
             status: Tailscale.busy ? "Working…"
                 : Tailscale.loggingIn && Tailscale.state === "NeedsLogin" ? "Waiting for sign-in in the browser…"
-                : Tailscale.running ? `Connected · ${Tailscale.onlineCount} of ${Tailscale.peers.length} devices online`
+                : Tailscale.running ? `Connected · ${Tailscale.onlineCount} of ${Tailscale.devices.length} devices online`
                 : Tailscale.state === "NeedsLogin" ? "Signed out"
                 : Tailscale.state === "Stopped" ? "Disconnected"
                 : Tailscale.state
@@ -127,36 +127,25 @@ ColumnLayout {
 
     // Listes relues toutes les 5 s : ScriptModel avec clé, pour garder les lignes (focus clavier, survol) d'une relecture à
     // l'autre. « None » : clé vide. Liste qui défile au-delà de la hauteur des listes (centaines de nœuds avec Mullvad).
-    Flickable {
+    PanelList {
         visible: Tailscale.running && Tailscale.exitNodes.length > 0
-        Layout.fillWidth: true
-        Layout.preferredHeight: Math.min(exitList.implicitHeight, Theme.panel.maxListHeight)
-        contentHeight: exitList.implicitHeight
-        clip: true
-        boundsBehavior: Flickable.StopAtBounds
 
-        ColumnLayout {
-            id: exitList
-            width: parent.width
-            spacing: 0
+        Repeater {
+            model: ScriptModel {
+                values: Tailscale.running && Tailscale.exitNodes.length > 0 ? [{ id: "", none: true }, ...Tailscale.exitNodes] : []
+                objectProp: "id"
+            }
 
-            Repeater {
-                model: ScriptModel {
-                    values: Tailscale.running && Tailscale.exitNodes.length > 0 ? [{ id: "", none: true }, ...Tailscale.exitNodes] : []
-                    objectProp: "id"
-                }
+            PanelRow {
+                required property var modelData
+                readonly property bool none: modelData.none ?? false
 
-                PanelRow {
-                    required property var modelData
-                    readonly property bool none: modelData.none ?? false
-
-                    icon: none ? "network-vpn" : Tailscale.osIcon(modelData.os)
-                    text: none ? "None" : modelData.name
-                    subtext: none ? "Use your own Internet connection" : (modelData.online ? modelData.ip : "Offline")
-                    active: none ? Tailscale.exitNode === null : modelData.exitNode
-                    enabled: Tailscale.canAct && !Tailscale.busy && (none || modelData.online)
-                    onClicked: Tailscale.setExitNode(none ? "" : (modelData.ip || modelData.dns))
-                }
+                icon: none ? "network-vpn" : Tailscale.osIcon(modelData.os)
+                text: none ? "None" : modelData.name
+                subtext: none ? "Use your own Internet connection" : (modelData.online ? modelData.ip : "Offline")
+                active: none ? Tailscale.exitNode === null : modelData.exitNode
+                enabled: Tailscale.canAct && !Tailscale.busy && (none || modelData.online)
+                onClicked: Tailscale.setExitNode(none ? "" : (modelData.ip || modelData.dns))
             }
         }
     }
@@ -196,43 +185,32 @@ ColumnLayout {
 
     // --- Appareils ---
     PanelSection {
-        visible: Tailscale.running && Tailscale.peers.length > 0
+        visible: Tailscale.running && Tailscale.devices.length > 0
         text: `Devices · ${Tailscale.onlineCount} online · click to copy the IP`
     }
 
-    Flickable {
-        visible: Tailscale.running && Tailscale.peers.length > 0
-        Layout.fillWidth: true
-        Layout.preferredHeight: Math.min(peerList.implicitHeight, Theme.panel.maxListHeight)
-        contentHeight: peerList.implicitHeight
-        clip: true
-        boundsBehavior: Flickable.StopAtBounds
+    PanelList {
+        visible: Tailscale.running && Tailscale.devices.length > 0
 
-        ColumnLayout {
-            id: peerList
-            width: parent.width
-            spacing: 0
+        Repeater {
+            model: ScriptModel {
+                values: Tailscale.devices
+                objectProp: "id"
+            }
 
-            Repeater {
-                model: ScriptModel {
-                    values: Tailscale.peers
-                    objectProp: "id"
+            PanelRow {
+                required property var modelData
+
+                leading: StatusIcon {
+                    icon: Tailscale.osIcon(modelData.os)
+                    online: modelData.online
                 }
-
-                PanelRow {
-                    required property var modelData
-
-                    leading: StatusIcon {
-                        icon: Tailscale.osIcon(modelData.os)
-                        online: modelData.online
-                    }
-                    text: modelData.name
-                    subtext: root.copied === modelData.id ? `Copied ${modelData.ip}`
-                        : modelData.online ? [modelData.ip, Tailscale.osName(modelData.os), modelData.direct ? "direct" : !modelData.active ? "idle" : modelData.relay ? `relayed (${modelData.relay})` : "relayed"].filter(s => s).join(" · ")
-                        : ["Offline", Tailscale.osName(modelData.os), modelData.lastSeen ? `seen ${Tailscale.ago(modelData.lastSeen)}` : ""].filter(s => s).join(" · ")
-                    active: modelData.online
-                    onClicked: root.copy(modelData.ip, modelData.id)
-                }
+                text: modelData.name
+                subtext: root.copied === modelData.id ? `Copied ${modelData.ip}`
+                    : modelData.online ? [modelData.ip, Tailscale.osName(modelData.os), modelData.direct ? "direct" : !modelData.active ? "idle" : modelData.relay ? `relayed (${modelData.relay})` : "relayed"].filter(s => s).join(" · ")
+                    : ["Offline", Tailscale.osName(modelData.os), modelData.lastSeen ? `seen ${Tailscale.ago(modelData.lastSeen)}` : ""].filter(s => s).join(" · ")
+                active: modelData.online
+                onClicked: root.copy(modelData.ip, modelData.id)
             }
         }
     }
