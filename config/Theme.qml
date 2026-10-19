@@ -270,6 +270,8 @@ Singleton {
         readonly property string captureScreen: "\u{f0379}"    // nf-md-monitor
         readonly property string captureWindow: "\u{f0614}"    // nf-md-application_outline
         readonly property string close: "\u{f0156}"            // nf-md-close
+        readonly property string sortDown: "\u{f035d}"         // nf-md-menu_down (tri décroissant, panneau de statistiques)
+        readonly property string sortUp: "\u{f0360}"           // nf-md-menu_up
         readonly property string powerSaver: "\u{f032a}"       // nf-md-leaf
         readonly property string balanced: "\u{f05d1}"         // nf-md-scale_balance
         readonly property string performance: "\u{f04c5}"     // nf-md-speedometer
@@ -504,8 +506,8 @@ Singleton {
     }
 
     // Panneau de statistiques système (nouveau, phase 8b ; remplace btop et nvtop) : style des panneaux ; jauges aux couleurs des modules
-    // de la barre (processeur `teal`, mémoire `green`, GPU et réseau `sky`), piste `surface0`. Largeur, hauteur des jauges et nombre
-    // de lignes de processus : proposés, à valider.
+    // de la barre (processeur `teal`, mémoire `green`, GPU `sky`), piste `surface0`. Largeur, hauteur des jauges et nombre
+    // de lignes de processus : validés pour une première version (2026-10-19).
     readonly property QtObject monitor: QtObject {
         readonly property int width: 1100
         readonly property int barHeight: 8
@@ -514,7 +516,6 @@ Singleton {
         readonly property color memory: root.module.memory
         readonly property color gpu: root.module.gpu
         readonly property color disk: root.panel.accent
-        readonly property color network: root.module.network
         readonly property int coreColumns: 4
         readonly property int processRows: 14
         readonly property color selected: root.panel.rowHover

@@ -104,6 +104,8 @@ Singleton {
         id: cpu
         path: "/proc/stat"
         onLoaded: {
+            if (!root.active)   // relevé fini après la fermeture : ignoré (relevés précédents remis à zéro)
+                return;
             const rows = text().split("\n").filter(l => /^cpu\d* /.test(l)).map(l => {
                 const t = l.trim().split(/\s+/).slice(1).map(Number);
                 return { idle: t[3] + t[4], total: t.reduce((a, b) => a + b, 0) };
@@ -152,20 +154,24 @@ Singleton {
         }
     }
 
-    // Processus : temps CPU (/proc/PID/stat), utilisateurs (ps), total des cœurs (/proc/stat), en un seul passage. `user:64` : nom
-    // complet (8 caractères par défaut, au-delà tronqué ou remplacé par l'UID).
+    // Processus : temps CPU (/proc/PID/stat), mémoire résidente et utilisateurs (ps), total des cœurs (/proc/stat), en un seul
+    // passage. `user:64` : nom complet (8 caractères par défaut, au-delà tronqué ou remplacé par l'UID).
     Process {
         id: processList
-        command: ["sh", "-c", 'head -1 /proc/stat; echo ---; cat /proc/[0-9]*/stat 2>/dev/null; echo ---; ps -eo pid=,user:64=']
+        command: ["sh", "-c", 'head -1 /proc/stat; echo ---; cat /proc/[0-9]*/stat 2>/dev/null; echo ---; ps -eo pid=,rss=,user:64=']
         stdout: StdioCollector {
             onStreamFinished: {
+                if (!root.active)
+                    return;
                 const [head, stats, users] = text.split("\n---\n");
                 const total = head.trim().split(/\s+/).slice(1).map(Number).reduce((a, b) => a + b, 0);
-                const owner = {};
+                const owner = {}, rss = {};
                 for (const line of (users ?? "").split("\n")) {
-                    const m = line.trim().match(/^(\d+)\s+(\S+)/);
-                    if (m)
-                        owner[m[1]] = m[2];
+                    const m = line.trim().match(/^(\d+)\s+(\d+)\s+(\S+)/);
+                    if (m) {
+                        rss[m[1]] = Number(m[2]);   // Kio : pas de taille de page supposée
+                        owner[m[1]] = m[3];
+                    }
                 }
                 const elapsed = total - root.previousTotal;
                 const coresCount = Math.max(1, root.cores.length);
@@ -185,7 +191,7 @@ Singleton {
                         name: line.slice(open + 1, close),
                         user: owner[pid] ?? "",
                         cpu: before !== undefined && elapsed > 0 ? Math.round(1000 * (time - before) / (elapsed / coresCount)) / 10 : 0,
-                        memory: Number(rest[21]) * 4096,
+                        memory: (rss[pid] ?? 0) * 1024,
                         gpu: root.gpuProcesses[pid] ?? 0
                     });
                 }
@@ -205,6 +211,8 @@ Singleton {
             : ["sh", "-c", 'd="$(dirname "$(dirname "$(dirname "$0")")")"; for f in gpu_busy_percent mem_info_vram_used mem_info_vram_total; do echo "$f $(cat "$d/$f" 2>/dev/null)"; done', Gpu.sensorPath]
         stdout: StdioCollector {
             onStreamFinished: {
+                if (!root.active)
+                    return;
                 if (Gpu.vendor === "nvidia" && Gpu.useSmi) {
                     const [query, pmon] = text.split("\n---\n");
                     const f = (query ?? "").split("\n")[0].split(",").map(s => s.trim());

@@ -410,7 +410,10 @@ OverlayPopup {
                     Layout.fillWidth: modelData.fill === true
                     Layout.preferredWidth: modelData.fill === true ? -1 : frame.width / 9
                     horizontalAlignment: modelData.fill === true ? Text.AlignLeft : Text.AlignRight
-                    text: modelData.name + (root.sortKey === modelData.key ? (root.descending ? " ▾" : " ▴") : "")
+                    // Sens du tri : glyphe de la police d'icônes (absent d'Inter), à côté du nom.
+                    textFormat: Text.RichText
+                    text: modelData.name + (root.sortKey !== modelData.key ? ""
+                        : ` <span style="font-family: '${Theme.font.icons}'">${root.descending ? Theme.icon.sortDown : Theme.icon.sortUp}</span>`)
                     font.family: Theme.font.text
                     font.pixelSize: Theme.panel.smallFontSize
                     font.bold: true

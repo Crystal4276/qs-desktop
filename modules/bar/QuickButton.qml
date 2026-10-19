@@ -13,7 +13,6 @@ Rectangle {
     property color background: Theme.panel.button
     property color hoverBackground: Theme.panel.buttonHover
     property color hoverBorder: "transparent"
-    property color glyphColor: Theme.panel.text
     signal clicked
 
     implicitWidth: imageSize + 2 * padding
@@ -43,7 +42,7 @@ Rectangle {
         text: root.glyph
         font.family: Theme.font.icons
         font.pixelSize: Theme.quickSettings.glyphSize
-        color: root.glyphColor
+        color: Theme.panel.text
     }
 
     HoverHandler {

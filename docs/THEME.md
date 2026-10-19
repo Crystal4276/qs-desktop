@@ -344,7 +344,8 @@ Glyphes : `U+F0A6D` zone, `U+F0379` écran, `U+F0614` fenêtre, `U+F0156` fermer
 
 ## 7 quater. Panneau de statistiques système (nouveau composant, phase 8b)
 
-Style des panneaux ; cartes fond `base` (champs des panneaux), titres `yellow` ; jauges : piste `surface0`, remplissage aux couleurs
+Style des panneaux ; cartes fond `base` (champs des panneaux), titres `yellow` ; colonne triée en `yellow`, sens du tri `U+F035D` /
+`U+F0360` (Symbols Nerd Font Mono : les flèches ▾ ▴ ne sont pas dans Inter) ; jauges : piste `surface0`, remplissage aux couleurs
 des modules de la barre (processeur `teal`, mémoire `green`, GPU `sky`), disques `green` ; ligne de processus choisie `surface0`.
 **Validé pour une première version** (2026-10-19) : largeur 1100 px, jauges de 8 px, 4 colonnes de cœurs, 14 lignes de processus visibles.
 
