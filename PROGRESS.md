@@ -1021,7 +1021,42 @@ changement de focus. À vérifier en phase 9 : après `hyprctl reload` au révei
 - Échap dans les champs de recherche des panneaux (NordVPN, statistiques) : efface d'abord, puis ferme. Lanceur et menu
   inchangés (Échap ferme, comme Rofi et nwg-menu).
 - Vérifié en Sway isolé : rendu des quatre champs avec du texte (captures). À tester à la main : le clic sur la croix (pas de
-  pointeur dans la session isolée) et Échap dans les statistiques.
+  pointeur dans la session isolée) et Échap dans les statistiques. (Clic vérifié ensuite avec le pointeur virtuel, ci-dessous.)
+
+### Panneaux du tray : clavier sous Sway (2026-10-20, ton signalement)
+
+- Bug : impossible d'écrire dans la recherche NordVPN. Sous Sway 1.12, un `PopupWindow` `grabFocus` ouvert depuis une barre ne
+  reçoit jamais le clavier (ni saisie, ni Échap) — reproduit en Sway isolé avec pointeur et clavier virtuels. Touchait aussi le mot
+  de passe Wi-Fi, la phrase de passe des disques, le code Bluetooth, l'ID ZeroTier.
+- Correction : `Panel.qml` est une surface Overlay à clavier exclusif (`OverlayPopup`), comme le panneau de réglages et le lanceur
+  (`openUnder`, `initialFocus`). Fermeture : clic à côté du cadre (non transmis, comme avant), sur une barre ou un autre écran,
+  Échap ; le clavier revient ensuite à la fenêtre d'avant. Le panneau des statistiques n'était pas touché (déjà Overlay).
+- Outil de test (hors dépôt, scratchpad) : client Wayland `zwlr_virtual_pointer_v1` + `zwp_virtual_keyboard_v1` (pywayland) pour
+  cliquer et taper dans le Sway isolé. Tant qu'il tourne, le clavier virtuel existe : interroger le focus pendant, pas après.
+- À tester à la main sur tes écrans : saisie dans NordVPN, Wi-Fi (mot de passe), disques (phrase de passe) ; Échap ; clic à côté
+  d'un panneau (ferme, clic non transmis) ; clic sur une fenêtre d'un autre écran (ferme) ; panneaux réseau, Bluetooth, disques,
+  notifications, audio (clic droit sur le volume) : ouverture sous l'icône, fermeture, focus rendu à l'application.
+
+### Revue en boucle de NordVPN et des panneaux (2026-10-20, ta demande)
+
+- 15 passes de `/code-review high` sur `7368623^..HEAD`, chaque point vérifié dans le code, un commit par passe ; arrêt : la passe
+  15 ne trouve plus de défaut sérieux, seulement des coûts négligeables (création des ~150 lignes de « All countries »).
+- Principaux défauts corrigés : villes en attente affichées « unavailable » ; noms comparés à la casse près ; demande périmée
+  appliquée à une connexion faite ailleurs ; ancienne connexion qui réapparaissait un instant après une action ; commande
+  `nordvpn` figée qui verrouillait le panneau (bornes 300 s / 10 s) ; démon lent qui masquait le module ; message d'erreur
+  remplacé par la ligne de progression ; liste des pays polluée par un message d'information.
+- Ajouts : annulation d'une connexion en cours (interrupteur, ou `qs ipc call vpn disconnect`) : SIGINT puis SIGTERM après 3 s
+  (SIGINT ignoré si Quickshell a été lancé avec `&`), puis déconnexion normale ; lignes et interrupteur atténués pendant une
+  action ; raccourci refusé pendant une action signalé par une notification ; `PanelTabs`, `PanelRow.locked`,
+  `PanelSwitch.locked`, `CliRunner` (`lastLineError`, `noAnswer`, `interrupt`, `stop`).
+- Banc : Sway isolé, faux `nordvpn` (lectures transmises au vrai, actions simulées : connexion lente, figée, en échec, statut lent,
+  démon injoignable), historique séparé (`XDG_STATE_HOME`), veille désactivée (elle éteignait l'écran virtuel).
+- **Incident** : l'agent de revue de la passe 8 a lancé lui-même un `nordvpn connect` vers un pays inexistant pour vérifier une
+  hypothèse, ce qui a coupé ta VPN à 09:59 (journal de `nordvpnd`). Les passes suivantes ont reçu la consigne de lecture seule
+  (vérifiée dans leurs traces). Ta VPN est restée déconnectée : à reconnecter par toi.
+- Écarté (BACKLOG) : file unique pour toutes les commandes `nordvpn`.
+- À tester à la main (impossible sans toucher ta VPN) : vraie connexion à une ville puis interrupteur (reconnexion à la ville) ;
+  annulation d'une vraie connexion lente (le démon abandonne-t-il bien sa connexion au SIGINT ?) ; notification d'erreur réelle.
 
 ## Prochaine étape
 

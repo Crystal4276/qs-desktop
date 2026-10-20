@@ -77,9 +77,11 @@ Scope {
             if (code === 124) {
                 root.error = root.noAnswer;
             } else if (code !== 0) {
-                const text = err.text.trim() || out.text.trim();
-                // Retours chariot de l'indicateur de progression (« \r-\r\\\r ») : segments séparés, ceux du seul indicateur ôtés.
-                const lines = text.split(/[\r\n]+/).map(l => l.trim()).filter(l => l !== "" && !/^[-\\|\/]+$/.test(l));
+                // Retours chariot de l'indicateur de progression (« \r-\r\\\r ») : segments séparés, ceux du seul indicateur ôtés ;
+                // stderr d'abord, s'il reste quelque chose.
+                const clean = t => t.split(/[\r\n]+/).map(l => l.trim()).filter(l => l !== "" && !/^[-\\|\/]+$/.test(l));
+                const errLines = clean(err.text);
+                const lines = errLines.length > 0 ? errLines : clean(out.text);
                 root.error = (root.lastLineError ? lines[lines.length - 1] : lines[0]) ?? `${root.program}: exit code ${code}`;
             }
             root.finished();
