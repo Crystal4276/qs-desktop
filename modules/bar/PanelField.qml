@@ -9,6 +9,7 @@ Rectangle {
     id: root
 
     property alias text: input.text
+    readonly property Item inputItem: input   // à focaliser (OverlayPopup.initialFocus)
     property bool password: false
     property bool error: false
     property string placeholder: ""

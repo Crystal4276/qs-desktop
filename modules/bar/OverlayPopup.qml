@@ -33,20 +33,18 @@ PanelWindow {
             button = from;
     }
 
-    // Écran de `item` (un bouton de barre), cadre centré sous lui sans dépasser les marges de la barre (10 px du bord).
-    function placeUnder(item: Item): void {
+    // Élément qui reçoit le focus à l'ouverture par openUnder (champ de recherche NordVPN) ; le cadre par défaut.
+    property Item initialFocus: frameItem
+
+    // Ouverture sur l'écran de `item` (un bouton de barre), cadre centré sous lui sans dépasser les marges de la barre
+    // (10 px du bord) ; focus donné après l'affichage (la surface peut être recréée pour un autre écran).
+    function openUnder(item: Item): void {
         const window = item.QsWindow.window;
         screen = window.screen;
         const x = item.mapToItem(null, 0, 0).x;
         frameItem.x = BarState.panelLeft(x + (item.width - frameItem.width) / 2, frameItem.width, window.width);
-    }
-
-    // Ouverture sous `item` ; focus au cadre avant l'affichage : le panneau peut le donner à un champ à son ouverture
-    // (onVisibleChanged : recherche NordVPN).
-    function openUnder(item: Item): void {
-        placeUnder(item);
-        frameItem.forceActiveFocus();
         visible = true;
+        initialFocus?.forceActiveFocus();
     }
 
     function close(): void {
