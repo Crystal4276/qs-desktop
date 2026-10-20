@@ -1081,6 +1081,22 @@ changement de focus. À vérifier en phase 9 : après `hyprctl reload` au révei
   vérifié sur banc), pas comme un échec qui masquait le module ; villes redemandées gardant leur place. Arrêt : la passe 3 ne
   trouve plus que des commentaires à préciser et des cas déjà tranchés.
 
+### Centre de notifications : carte média et lignes refaites (2026-10-20, ta demande)
+
+- Inspiration lue dans le code : KDE (`plasma-workspace`, `NotificationHeader.qml`, `Summary.qml`, `Body.qml`, `HeadingButtons.qml` :
+  heure relative), GNOME (`messageList.js`, `_message-list.scss` : corps replié / déplié à 6 lignes, lecteur), Cinnamon
+  (`messageTray.js`).
+- Carte média (`MediaCard.qml`, nouveau `MediaButton.qml`) : bande compacte (≈ 96 px au lieu de ≈ 170), pochette 76 px (ta demande :
+  +25 %), titre gras, « artiste · album », boutons ronds à droite (lecture en rond `text`, le `green` étant trop fort), position en
+  trait fin avec bouton au survol, temps de part et d'autre ; clavier : Gauche / Droite ±5 s sur la position.
+- Lignes (`NotificationRow.qml`) : en-tête gris (titre sans le préfixe de l'application, heure relative, croix), corps 16 px sur
+  2 lignes (ton choix), clic pour déplier ; non vues : en-tête `green`.
+- Corrigé au passage (préexistant) : une icône nommée ou un chemin (`notify-send -i …`) arrive dans `image` en `image://icon/…` ;
+  `Notifs` la prenait pour une image en données et la remplaçait par une icône vide au rechargement de la config.
+- Vérifié sur banc (Sway isolé, bus D-Bus à part, faux lecteur MPRIS, notifications factices) : rendu, pause / lecture, survol de la
+  position et des boutons, dépliage, icônes gardées après rechargement. À tester à la main : déplacement dans le morceau (le faux
+  lecteur ne gère pas `SetPosition`), vraie notification avec image en données (avatar) après rechargement.
+
 ## Prochaine étape
 
 Phase 9 — parité Hyprland (tests à faire ensemble dans une session Hyprland : voir « Compatibilité Hyprland »).

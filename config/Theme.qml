@@ -388,6 +388,31 @@ Singleton {
         readonly property color progressFill: root.color.blue   // non fixé dans dunstrc (défauts Dunst hors palette) : `blue`, ton choix du 2026-10-16
     }
 
+    // § 4 — Carte média du centre de notifications (refaite le 2026-10-20, ta demande : compacte, une bande de trois lignes) :
+    // tailles et couleurs de la charte, combinaison nouvelle, à valider.
+    readonly property QtObject mediaCard: QtObject {
+        readonly property int padding: root.panel.spacing                // 10 px
+        readonly property int artSize: 76                                // ta demande : 3 lignes de texte (61 px) + 25 %
+        readonly property int buttonSize: root.bar.trayIconSize          // boutons ronds 32 px (taille du tray)
+        readonly property int glyphSize: root.panel.smallFontSize        // 16 px
+        // Lecture : fond `text` (remplissage des curseurs), glyphe `mantle` ; `green` jugé trop fort (ta remarque du 2026-10-20).
+        readonly property color play: root.slider.fill
+        readonly property color playGlyph: root.color.mantle
+        readonly property color buttonHover: root.panel.rowHover         // précédent / suivant : sans fond, `surface0` au survol
+        // Position : trait fin (épaisseur du cadre de la barre de progression des notifications), bouton au survol seulement.
+        readonly property int progressHeight: root.notification.progressFrame   // 4 px
+        readonly property int knobSize: 3 * progressHeight                       // 12 px
+        readonly property color trough: root.slider.trough
+        readonly property color fill: root.slider.fill
+    }
+
+    // § 4 — Centre de notifications : lignes de l'historique (refaites le 2026-10-20, ta demande ; disposition de KDE / GNOME)
+    readonly property QtObject notificationCentre: QtObject {
+        readonly property int iconSize: root.bar.trayIconSize   // icône ou image : 32 px (taille du tray)
+        readonly property int bodyLines: 2                      // corps replié ; déplié : 6 lignes (DEFAULT_EXPAND_LINES de GNOME)
+        readonly property int expandedLines: 6
+    }
+
     // § 4 — OSD (nouveau composant, 2026-10-16 ; cadre des panneaux) — position et durée proposées, à valider
     readonly property QtObject osd: QtObject {
         readonly property int marginBottom: root.bar.exclusiveZone             // au bas de l'écran, même écart que la zone de la barre en haut
