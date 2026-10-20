@@ -156,11 +156,12 @@ Singleton {
 
     // Lancée au tour suivant : la commande d'avant n'a pas fini de signaler sa fin.
     function next(): void {
-        if (current || cli.busy || queue.length === 0)
+        if (current || queue.length === 0)
             return;
         current = queue[0];   // avant de la retirer : `busy` ne retombe pas entre les deux
         queue = queue.slice(1);
-        cli.runCommand(["timeout", String(current.timeout), "nordvpn", ...current.args]);
+        // `-k` : commande qui ignore SIGTERM tuée 2 s plus tard (sinon elle bloquerait la file pour la session).
+        cli.runCommand(["timeout", "-k", "2", String(current.timeout), "nordvpn", ...current.args]);
     }
 
     property int timeouts: 0   // lectures du statut sans réponse, de suite
@@ -177,8 +178,9 @@ Singleton {
             return false;
         lastAction = args[0];   // avant `busy` : `doing` ne prend jamais le nom de l'action précédente
         requested = null;
-        // Lecture du statut en attente : remplacée par celle qui suit l'action.
-        queue = [...queue.filter(j => j.kind !== "status"), actionJob(args, quiet)];
+        // En tête de file : n'attend que la commande en cours (au plus 10 s pour une lecture). Lecture du statut en attente :
+        // remplacée par celle qui suit l'action.
+        queue = [actionJob(args, quiet), ...queue.filter(j => j.kind !== "status")];
         Qt.callLater(next);
         return true;
     }
@@ -268,10 +270,11 @@ Singleton {
     }
 
     // Tâches qui suivent celle qui finit, en tête de file : après une action, la lecture du statut (ou, après une connexion
-    // arrêtée, la déconnexion) ; lecture qui suit une action sans réponse (démon occupé) : refaite, trois fois au plus.
+    // arrêtée, la déconnexion) ; lecture qui suit une action sans réponse (démon occupé) : refaite, trois fois au plus, sauf
+    // si une autre action attend (sa propre lecture la remplace).
     function followUps(job: var, code: int): var {
         if (job.kind === "status")
-            return job.follow && code === 124 && timeouts < 3 ? [job] : [];
+            return job.follow && code === 124 && timeouts < 3 && !queue.some(j => j.kind === "action") ? [job] : [];
         if (job.kind !== "action")
             return [];
         return cancelling ? [actionJob(["disconnect"], true)] : [statusJob(true)];
@@ -285,7 +288,7 @@ Singleton {
         queue = [...followUps(job, code), ...queue];   // avant la fin de `current` : `busy` ne retombe pas entre les deux
         current = null;
         if (job.kind === "status")
-            statusRead(job, code, cli.output);
+            statusRead(code, cli.output);
         else if (job.kind === "action")
             actionDone(job);
         else if (job.kind === "countries" && code === 0)
@@ -296,11 +299,13 @@ Singleton {
     }
 
     // Lecture trop lente (124 : démon occupé) : rien n'est changé, le module ne disparaît pas ; démon figé (trois lectures de
-    // suite sans réponse) : module masqué, comme sans démon.
-    function statusRead(job: var, code: int, text: string): void {
+    // suite sans réponse) : module masqué, comme sans démon. `requested` gardé si une action attend : c'est la sienne
+    // (lecture commencée avant elle).
+    function statusRead(code: int, text: string): void {
         if (timeouts >= 3) {
             available = false;
-            requested = null;
+            if (!actionPending)
+                requested = null;
         }
         if (code === 124)
             return;
@@ -312,7 +317,7 @@ Singleton {
         }
         available = code === 0 && result["Status"] !== undefined && !/not logged in/i.test(text);
         status = result;   // remember() : `requested` n'a de sens que jusqu'à la fin de la connexion
-        if (result["Status"] !== "Connecting")
+        if (result["Status"] !== "Connecting" && !actionPending)
             requested = null;
     }
 
