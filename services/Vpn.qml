@@ -160,8 +160,9 @@ Singleton {
             return;
         current = queue[0];   // avant de la retirer : `busy` ne retombe pas entre les deux
         queue = queue.slice(1);
-        // `-k` : commande qui ignore SIGTERM tuée 2 s plus tard (sinon elle bloquerait la file pour la session).
-        cli.runCommand(["timeout", "-k", "2", String(current.timeout), "nordvpn", ...current.args]);
+        // `-k` : commande qui ignore SIGTERM tuée 5 s plus tard (sinon elle bloquerait la file pour la session) ; laisse aussi
+        // 5 s à une connexion arrêtée par SIGINT pour se terminer proprement (disconnect()).
+        cli.runCommand(["timeout", "-k", "5", String(current.timeout), "nordvpn", ...current.args]);
     }
 
     property int timeouts: 0   // lectures du statut sans réponse, de suite
@@ -254,7 +255,7 @@ Singleton {
 
     // Une seule liste de villes attend son tour : la dernière demandée.
     function loadCities(country: string): void {
-        if (cities[country] !== undefined)
+        if (cities[country] !== undefined || queue.some(j => j.kind === "cities" && j.country === country))
             return;
         queue = queue.filter(j => j.kind !== "cities");
         if (current?.kind !== "cities" || current.country !== country)

@@ -74,14 +74,16 @@ Scope {
         stderr: StdioCollector {
             id: err
         }
-        onExited: code => {
+        // Tuée par SIGKILL (`timeout -k` : commande qui ignorait SIGTERM ; `timeout` est tué avec elle, statut 1 : CrashExit) :
+        // comme 124, pas de réponse.
+        onExited: (code, status) => {
             root.busy = false;
-            root.code = code;
+            root.code = status === 1 && code === 9 ? 124 : code;
             root.output = out.text;
             // 124 : arrêtée par `timeout` (sa sortie, ex. « To authenticate, visit: » sans l'adresse, n'est pas le message).
             // Sinon la première ligne non vide (une option refusée est suivie de toute l'aide de la commande), ou la dernière
             // (`lastLineError`).
-            if (code === 124) {
+            if (root.code === 124) {
                 root.error = root.noAnswer;
             } else if (code !== 0) {
                 // Retours chariot de l'indicateur de progression (« \r-\r\\\r ») : segments séparés, ceux du seul indicateur ôtés ;
