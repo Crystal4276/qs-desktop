@@ -33,6 +33,14 @@ PanelWindow {
             button = from;
     }
 
+    // Écran de `item` (un bouton de barre), cadre centré sous lui sans dépasser les marges de la barre (10 px du bord).
+    function placeUnder(item: Item): void {
+        const window = item.QsWindow.window;
+        screen = window.screen;
+        const x = item.mapToItem(null, 0, 0).x;
+        frameItem.x = BarState.panelLeft(x + (item.width - frameItem.width) / 2, frameItem.width, window.width);
+    }
+
     function close(): void {
         if (visible)
             closing();

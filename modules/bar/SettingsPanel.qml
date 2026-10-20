@@ -23,12 +23,9 @@ OverlayPopup {
     function toggle(from: Item): void {
         if (!beginOpen(from))
             return;
-        const window = from.QsWindow.window;
-        screen = window.screen;
-        const x = from.mapToItem(null, 0, 0).x;
-        frame.x = BarState.panelLeft(x + (from.width - frame.width) / 2, frame.width, window.width);
-        visible = true;
+        placeUnder(from);
         frame.forceActiveFocus();
+        visible = true;
     }
 
     WlrLayershell.namespace: "quickshell-settings"

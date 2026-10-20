@@ -1,25 +1,33 @@
 import QtQuick
 import qs.config
 
-// Interrupteur des panneaux (THEME.md § 3 « Panneaux »).
+// Interrupteur des panneaux (THEME.md § 3 « Panneaux »). `locked` (action en cours) : atténué comme un élément indisponible,
+// bascules ignorées ; reste focalisable (pas `enabled`, qui ferait perdre le focus clavier au panneau).
 Rectangle {
     id: root
 
     property bool checked: false
+    property bool locked: false
     signal toggled(bool checked)
+
+    function flip(): void {
+        if (!locked)
+            toggled(!checked);
+    }
 
     implicitWidth: Theme.panel.switchWidth
     implicitHeight: Theme.panel.switchHeight
     radius: height / 2
     color: checked ? Theme.panel.switchOn : Theme.panel.switchOff
+    opacity: locked ? Theme.panel.disabledOpacity : 1
 
     // Clavier (Tab, flèches) : Entrée ou Espace activent ; liseré quand l'élément est choisi.
     activeFocusOnTab: true
     border.width: activeFocus ? Theme.panel.border : 0
     border.color: Theme.panel.focusRing
-    Keys.onReturnPressed: root.toggled(!root.checked)
-    Keys.onEnterPressed: root.toggled(!root.checked)
-    Keys.onSpacePressed: root.toggled(!root.checked)
+    Keys.onReturnPressed: root.flip()
+    Keys.onEnterPressed: root.flip()
+    Keys.onSpacePressed: root.flip()
 
     Rectangle {
         width: parent.height - 6
@@ -32,6 +40,6 @@ Rectangle {
 
     MouseArea {
         anchors.fill: parent
-        onClicked: root.toggled(!root.checked)
+        onClicked: root.flip()
     }
 }

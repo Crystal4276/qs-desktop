@@ -265,7 +265,7 @@ dès que le champ contient du texte ; un clic efface la recherche et laisse le f
 | Élément | Valeur | Origine |
 |---|---|---|
 | Glyphe | `U+F0156` (Symbols Nerd Font Mono), taille du texte du champ ; menu d'applications : celle de sa loupe (20 px) | « fermer » de l'outil de capture (§ 7 ter) |
-| Couleur | secondaire du champ (panneaux et menu : `subtext0` ; lanceur : `rofi.fg`, comme sa loupe), couleur du texte au survol | champs |
+| Couleur | secondaire du champ (panneaux et menu : `subtext0`), couleur du texte au survol ; lanceur : `rofi.fg` comme sa loupe, sans changement au survol (la palette Rofi n'a pas de couleur secondaire) | champs |
 | Place | à droite du champ, padding du champ ; menu d'applications : juste avant la loupe, espacement 10 px | — |
 | Échap (champs des panneaux) | efface d'abord la recherche, puis ferme ; lanceur et menu : ferme (Rofi, nwg-menu) | — |
 

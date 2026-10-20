@@ -88,7 +88,7 @@ Panel {
     }
 
     MixerButton {
-        onOpened: root.visible = false
+        onOpened: root.close()
     }
 
     // Volume d'un nœud : curseur, pourcentage, bouton muet.
