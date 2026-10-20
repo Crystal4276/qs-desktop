@@ -1176,6 +1176,16 @@ l'Unicode laissée telle quelle (au lieu d'une erreur) ; lignes archivées avant
 popups refait chaque seconde seulement une fois l'âge affiché (après 60 s) ; `Notifs.invoke` supprimé (simple relais).
 Vérifié sur banc : avatar d'une silencieuse rappelée (popup, puis ligne), mise à jour après « ne pas déranger » coupé, entités.
 
+Passe 5 (6 remarques, toutes corrigées) : remplacement par identifiant = âge et délai repartent, délai normal pour une
+rappelée (comme Dunst) ; nom d'icône absent du thème (`image-path`) → icône de l'application (plus de damier) ; doublons :
+seules les icônes du thème se comparent (Chromium écrit la même image dans un fichier différent à chaque fois ; les images en
+données ont une adresse par notification) ; étiquette de pile gardée dans la copie (une notification rappelée reste remplaçable) ;
+position du lecteur passée par le service `Media` (`seek`, `step`, `refreshPosition`) ; branche morte de `keepIcon` retirée.
+Ajout vu pendant le test Chromium : aperçu replié d'une ligne du centre sur une seule ligne logique (Chromium met l'origine du site
+et une ligne vide avant le texte).
+Vérifié sur banc : doublons Chromium fusionnés, nom d'icône absent, aperçu « chatgpt.com La distinction… », rappelée remplacée par
+son étiquette.
+
 ### Actions des notifications (2026-10-20, ta demande)
 
 - Revue : une popup montre un bouton par action nommée, sauf « default » (clic milieu). Thunderbird (« Marquer comme lu »,
