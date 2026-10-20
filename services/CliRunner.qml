@@ -44,8 +44,8 @@ Scope {
         command.signal(2);
     }
 
-    // Arrêt forcé (SIGTERM) : SIGINT est sans effet si Quickshell a été lancé en arrière-plan (`qs … &` : signal ignoré,
-    // hérité par les commandes).
+    // Arrêt forcé (SIGTERM) : SIGINT, relayé par `timeout`, est ignoré par la commande si Quickshell a été lancé en
+    // arrière-plan (`qs … &` : SIGINT ignoré, hérité à chaque exec).
     function stop(): void {
         command.running = false;
     }

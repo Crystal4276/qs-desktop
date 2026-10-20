@@ -53,24 +53,14 @@ Singleton {
         recentJson.recent = [entry, ...recent.filter(e => !sameName(entryCountry(e), country))].slice(0, recentCount);
     }
 
-    // Connexion réussie lancée d'ici (panneau, interrupteur, `qs ipc`) : son choix, pays seul ou ville. Pays connu seulement
-    // (de la liste, ou des récents si elle n'est pas lue) ; un code pays, « nl », est laissé à remember() : pays seul.
-    function record(target: var): void {
-        const country = countries.find(c => sameName(c, target[0])) ?? recent.map(entryCountry).find(c => sameName(c, target[0]));
-        if (country) {
-            push(target.length > 1 ? `${country}/${target[1]}` : country);
-            recordedHere = true;
-        }
-    }
+    // Connexion réussie lancée d'ici ([pays] ou [pays, ville]), valable pour la seule lecture du statut qui suit l'action.
+    property var chosen: null
+    property string rememberedHost: ""   // serveur de la dernière connexion retenue
 
-    // remember() ne regarde que les nouvelles connexions (serveur différent) ; celle que record() vient de retenir est
-    // laissée telle quelle (la ville du statut peut s'écrire autrement que dans `nordvpn cities`).
-    property string rememberedHost: ""
-    property bool recordedHere: false
-
-    // Connexion observée (raccourci direct, ligne de commande, fin de pause, redémarrage de Quickshell) : l'entrée déjà retenue
-    // pour ce pays, avec sa ville si c'est celle de la connexion (une autre ville choisie ailleurs : pays seul). Rien pendant
-    // une action d'ici : le statut peut encore être l'ancien, et record() retient son choix à la fin.
+    // Connexion lancée d'ici et confirmée par le statut (même pays) : son choix, pays seul ou ville (orthographe de la liste
+    // des villes). Sinon (raccourci direct, ligne de commande, fin de pause, redémarrage de Quickshell, code pays), à chaque
+    // nouveau serveur : l'entrée déjà retenue pour ce pays, avec sa ville si c'est celle de la connexion, sinon le pays seul.
+    // Rien pendant une action : le statut peut encore être l'ancien.
     // Statut lu directement : appelée depuis onStatusChanged, la liaison `connected` peut ne pas être encore à jour.
     function remember(): void {
         const country = status["Country"];
@@ -78,18 +68,18 @@ Singleton {
             return;
         if (status["Status"] !== "Connected" || !country) {
             rememberedHost = "";
-            recordedHere = false;
             return;
         }
         const host = status["Hostname"] ?? "";
+        const key = countryKey(country);
+        if (chosen && sameName(chosen[0], key)) {
+            rememberedHost = host;
+            push(chosen.length > 1 ? `${key}/${chosen[1]}` : key);
+            return;
+        }
         if (host === rememberedHost)
             return;
         rememberedHost = host;
-        if (recordedHere) {
-            recordedHere = false;
-            return;
-        }
-        const key = countryKey(country);
         const found = recent.find(e => sameName(entryCountry(e), key));
         const city = found ? entryCity(found) : "";
         push(city !== "" && sameName(city, status["City"] ?? "") ? `${key}/${city}` : key);
@@ -168,6 +158,7 @@ Singleton {
             return false;
         lastAction = args[0];   // avant `busy` : `doing` ne prend jamais le nom de l'action précédente
         requested = null;
+        chosen = null;
         actionCount++;
         // Bornée, large (une connexion lente aboutit) : une commande figée garderait `busy` (panneau verrouillé) jusqu'au
         // redémarrage de Quickshell.
@@ -274,7 +265,6 @@ Singleton {
             if (stamp !== root.actionCount || code === 124)
                 return;
             root.awaitingStatus = false;   // avant `status` : remember() voit l'action finie
-            root.requested = null;
             const text = statusOut.text;
             const result = {};
             for (const line of text.split("\n")) {
@@ -283,7 +273,9 @@ Singleton {
                     result[m[1].trim()] = m[2].trim();
             }
             root.available = code === 0 && result["Status"] !== undefined && !/not logged in/i.test(text);
-            root.status = result;
+            root.status = result;   // remember() : `chosen` n'a de sens que pour cette lecture
+            root.requested = null;
+            root.chosen = null;
         }
         onRunningChanged: {
             if (!running && root.refreshAgain) {
@@ -323,6 +315,7 @@ Singleton {
         onTriggered: {
             root.awaitingStatus = false;
             root.requested = null;
+            root.chosen = null;
         }
     }
 
@@ -347,8 +340,7 @@ Singleton {
             }
             if (error !== "")
                 Quickshell.execDetached(["notify-send", "--app-name=NordVPN", "NordVPN", error]);
-            else if (root.lastAction === "connect" && root.requested)
-                root.record(root.requested);
+            root.chosen = error === "" && root.lastAction === "connect" ? root.requested : null;
             root.refresh();
         }
     }
