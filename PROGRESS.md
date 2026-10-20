@@ -1176,6 +1176,14 @@ l'Unicode laissée telle quelle (au lieu d'une erreur) ; lignes archivées avant
 popups refait chaque seconde seulement une fois l'âge affiché (après 60 s) ; `Notifs.invoke` supprimé (simple relais).
 Vérifié sur banc : avatar d'une silencieuse rappelée (popup, puis ligne), mise à jour après « ne pas déranger » coupé, entités.
 
+### Actions des notifications (2026-10-20, ta demande)
+
+- Revue : une popup montre un bouton par action nommée, sauf « default » (clic milieu). Thunderbird (« Marquer comme lu »,
+  « Supprimer ») : gardés, ton choix. Chromium et ses applications web : bouton « Paramètres » (identifiant `settings`, vérifié dans
+  `notification_platform_bridge_linux.cc`) qui ouvre les réglages de notification du site : **masqué** (ta décision), pour
+  tout navigateur Chromium (règle sur l'identifiant, `Notifs.hiddenActions`).
+- Vérifié sur banc : popup Chromium sans bouton, popup Thunderbird avec ses deux boutons.
+
 ## Prochaine étape
 
 Phase 9 — parité Hyprland (tests à faire ensemble dans une session Hyprland : voir « Compatibilité Hyprland »).

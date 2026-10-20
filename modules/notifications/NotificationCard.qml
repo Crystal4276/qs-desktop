@@ -21,7 +21,7 @@ Item {
     readonly property int textX: t.paddingH + (hasIcon ? t.iconSize + t.textPadding : 0)
     readonly property int textWidth: innerWidth - t.paddingH - textX
     readonly property bool hasProgress: entry.progress >= 0
-    readonly property var buttons: entry.actions.filter(a => a.identifier !== "default")
+    readonly property var buttons: entry.actions.filter(a => !Notifs.hiddenActions.includes(a.identifier))
     readonly property int progressPart: hasProgress ? t.progressHeight + t.paddingV : 0
     readonly property int buttonsPart: buttons.length > 0 ? buttonRow.implicitHeight + t.paddingV : 0
     readonly property int textHeight: Math.min(label.implicitHeight, Math.max(0, t.maxHeight - progressPart - 2 * t.paddingV))
@@ -119,7 +119,7 @@ Item {
             }
         }
 
-        // Boutons des actions nommées (l'action « default » reste au clic milieu).
+        // Boutons des actions nommées, sauf celles de Notifs.hiddenActions (« default » reste au clic milieu).
         Flow {
             id: buttonRow
             visible: card.buttons.length > 0
