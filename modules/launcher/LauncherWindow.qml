@@ -265,9 +265,12 @@ OverlayPopup {
 
                     TextInput {
                         id: input
-                        x: Theme.launcher.entryPadding
-                        y: Theme.launcher.entryPadding
-                        width: parent.width - 2 * Theme.launcher.entryPadding - (launcherClear.visible ? launcherClear.width + Theme.launcher.entryPadding : 0)
+                        anchors {
+                            left: parent.left
+                            right: launcherClear.visible ? launcherClear.left : parent.right
+                            top: parent.top
+                            margins: Theme.launcher.entryPadding
+                        }
                         clip: true
                         font.family: Theme.font.text
                         font.pointSize: Theme.font.launcherPt
@@ -285,17 +288,13 @@ OverlayPopup {
 
                     ClearButton {
                         id: launcherClear
-                        visible: input.text !== ""
+                        field: input
                         anchors.right: parent.right
                         anchors.rightMargin: Theme.launcher.entryPadding
                         anchors.verticalCenter: input.verticalCenter
                         font.pointSize: Theme.font.launcherPt
                         normalColor: Theme.launcher.placeholderColor
                         hoverColor: Theme.launcher.text
-                        onClicked: {
-                            input.text = "";
-                            input.forceActiveFocus();
-                        }
                     }
                 }
             }

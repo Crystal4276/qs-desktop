@@ -636,10 +636,14 @@ OverlayPopup {
 
                     TextInput {
                         id: search
-                        x: Theme.appMenu.itemPadding
-                        y: Theme.appMenu.itemPadding
-                        width: parent.width - 2 * Theme.appMenu.itemPadding - searchGlyph.width - Theme.appMenu.spacing
-                            - (searchClear.visible ? searchClear.width + Theme.appMenu.spacing : 0)
+                        anchors {
+                            left: parent.left
+                            right: searchClear.visible ? searchClear.left : searchGlyph.left
+                            top: parent.top
+                            leftMargin: Theme.appMenu.itemPadding
+                            rightMargin: Theme.appMenu.spacing
+                            topMargin: Theme.appMenu.itemPadding
+                        }
                         clip: true
                         font.family: Theme.font.text
                         font.pixelSize: Theme.font.appMenuSearch
@@ -653,17 +657,13 @@ OverlayPopup {
 
                     ClearButton {
                         id: searchClear
-                        visible: search.text !== ""
+                        field: search
                         anchors.right: searchGlyph.left
                         anchors.rightMargin: Theme.appMenu.spacing
                         anchors.verticalCenter: search.verticalCenter
-                        font.pixelSize: Theme.font.appMenu
+                        font.pixelSize: Theme.font.appMenu   // taille de la loupe voisine
                         normalColor: Theme.appMenu.description
                         hoverColor: Theme.appMenu.text
-                        onClicked: {
-                            search.text = "";
-                            search.forceActiveFocus();
-                        }
                     }
 
                     Text {
