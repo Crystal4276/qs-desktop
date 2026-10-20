@@ -313,7 +313,7 @@ Singleton {
         readonly property string updates: "\u{f01a7}"
         readonly property string gpu: "\u{f0379}"
         readonly property string cpu: "\uec19"
-        readonly property string memory: "\u{f035b}"
+        readonly property string memory: "\uefc5"        // nf-fa-memory
         readonly property string clock: "\ue385"
         readonly property string download: "\u{f1625}"
         readonly property string upload: "\u{f1628}"
