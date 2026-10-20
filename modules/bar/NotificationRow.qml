@@ -20,22 +20,9 @@ Rectangle {
     property bool expanded: false
     readonly property bool expandable: expanded || bodyText.truncated
 
-    // Texte simple (balises retirées, entités courantes décodées), sauts de ligne gardés.
-    function plain(text: string): string {
-        return text.replace(/<br\s*\/?>/gi, "\n").replace(/<[^>]*>/g, "").replace(/[ \t]+/g, " ")
-            .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, "\"").replace(/&apos;/g, "'")
-            .replace(/&#(\d+);|&#x([0-9a-f]+);/gi, (m, d, h) => root.codePoint(d ? Number(d) : parseInt(h, 16), m))
-            .replace(/&amp;/g, "&").trim();
-    }
-
-    // Caractère d'une entité numérique ; hors de l'Unicode, l'entité telle quelle.
-    function codePoint(code: real, entity: string): string {
-        return code >= 0 && code <= 0x10ffff ? String.fromCodePoint(code) : entity;
-    }
-
     // Titre sans l'application en préfixe (« whatsdesk - Alice » → « Alice ») ; vide s'il ne dit que l'application.
     function title(summary: string, app: string): string {
-        const s = plain(summary).replace(/\s+/g, " ");
+        const s = Notifs.plain(summary).replace(/\s+/g, " ");
         if (app === "" || s.toLowerCase() === app.toLowerCase())
             return app === "" ? s : "";
         const prefix = s.slice(0, app.length).toLowerCase() === app.toLowerCase() ? s.slice(app.length).match(/^\s*[-–—:·|]\s*(.*)$/) : null;
@@ -59,7 +46,7 @@ Rectangle {
     }
 
     readonly property string titleText: title(entry.summary ?? "", entry.appName ?? "")
-    readonly property string bodyPlain: plain(entry.body ?? "")
+    readonly property string bodyPlain: Notifs.plain(entry.body ?? "")
     // L'icône affichée ne dit pas l'application (avatar envoyé en données, icône générique) : son nom s'ajoute à l'en-tête.
     readonly property bool iconNamesApp: iconItem.icon !== root.genericIcon && !Notifs.isDataImage(iconItem.icon)
     readonly property string genericIcon: Theme.notificationCentre.genericIcon
