@@ -132,7 +132,7 @@ Règles pour Qt :
 | Marge haute des pilules | 10 px |
 | Marge entre pilules | 10 px |
 | Marge gauche / droite de la barre | 10 px |
-| Padding interne des modules | `0.5rem` = 10 px (haut/bas et gauche/droite) |
+| Padding interne des modules | `0.5rem` = 10 px (haut/bas et gauche/droite) ; modules texte (`InfoModule`) d'une même pilule : un seul padding entre deux modules, et entre les deux débits du réseau (2026-10-20) |
 | Espaces de travail | glyphes 34 px, padding horizontal `0.4rem` = 8 px |
 | Bouton menu Arch | min 40x40, padding horizontal 10 px, image SVG 38 px centrée |
 | Tray | icônes 32 px, espacement 5 px, padding horizontal `0.3rem` = 6 px |
