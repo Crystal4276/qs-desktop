@@ -27,7 +27,7 @@ Panel {
     // Entrées affichées : « Pays » ou « Pays/Ville » (récents) ; aucune, panneau fermé (pas ~150 lignes gardées en mémoire).
     readonly property var rows: !visible ? [] : shown === "recent" ? Vpn.recent : matches(Vpn.countries, query)
     // Détails, trafic, pause : connexion établie et aucune action en cours (pendant un changement, le statut est encore l'ancien).
-    readonly property bool settled: Vpn.connected && Vpn.doing === ""
+    readonly property bool settled: Vpn.connected && !Vpn.busy
 
     onVisibleChanged: {
         if (visible) {
@@ -59,7 +59,7 @@ Panel {
     }
 
     function statusText(): string {
-        const target = Vpn.requested ? Vpn.requested.map(Vpn.label).join(", ") : "";
+        const target = Vpn.requested ? Vpn.requested.map((n, i) => Vpn.label(i === 0 ? Vpn.countryKey(n) : n)).join(", ") : "";
         switch (Vpn.doing) {
         case "connect":
             return target !== "" ? `Connecting to ${target}…` : "Connecting…";
@@ -163,9 +163,10 @@ Panel {
                     PanelButton {
                         text: root.expanded === entry.country ? "Hide cities" : "Cities"
                         onClicked: {
-                            root.expanded = root.expanded === entry.country ? "" : entry.country;
-                            if (root.expanded !== "")
+                            // Chargement lancé d'abord : « Loading cities… » dès l'ouverture, pas « unavailable ».
+                            if (root.expanded !== entry.country)
                                 Vpn.loadCities(entry.country);
+                            root.expanded = root.expanded === entry.country ? "" : entry.country;
                         }
                     }
                 }

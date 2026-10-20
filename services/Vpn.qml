@@ -30,10 +30,11 @@ Singleton {
     // récents) ; effacée si la commande échoue ; null : serveur recommandé.
     property var requested: null
     property var countries: []
-    readonly property bool countriesLoading: countriesProcess.running
+    property bool countriesLoading: false   // de la demande à l'arrêt (pas seulement pendant `running`)
     property var cities: ({})    // pays → villes, chargées à la demande (un échec n'est pas gardé : nouvel essai à la demande suivante)
     // Pays dont les villes se chargent ou attendent leur tour (une seule liste dépliée : la dernière demandée).
-    readonly property string citiesLoading: pendingCities !== "" ? pendingCities : citiesProcess.running ? citiesProcess.country : ""
+    readonly property string citiesLoading: pendingCities !== "" ? pendingCities : citiesFetching
+    property string citiesFetching: ""   // pays de la commande lancée, de la demande à l'arrêt
 
     // Derniers pays utilisés, du plus récent au plus ancien (ta demande du 2026-10-16) : NordVPN ne garde pas d'historique,
     // chaque connexion observée (panneau, raccourci, ligne de commande) est enregistrée dans l'état local de Quickshell
@@ -86,9 +87,10 @@ Singleton {
         push(city !== "" && sameName(city, status["City"] ?? "") ? `${key}/${city}` : key);
     }
 
-    // Pays tel qu'écrit dans `nordvpn countries` (clé des récents, des villes et du panneau), sinon celui du statut.
+    // Pays tel qu'écrit dans `nordvpn countries` (clé des récents, des villes et du panneau), sinon dans les récents, sinon tel
+    // quel.
     function countryKey(name: string): string {
-        return countries.find(c => sameName(c, name)) ?? name.replace(/ /g, "_");
+        return countries.find(c => sameName(c, name)) ?? recent.map(entryCountry).find(c => sameName(c, name)) ?? name.replace(/ /g, "_");
     }
 
     // Entrée des récents « Pays » ou « Pays/Ville » : pays, ville ("" sans ville), cible de `connect`.
@@ -165,33 +167,35 @@ Singleton {
         return action.runCommand(["timeout", String(actionTimeout), "nordvpn", ...args]);
     }
 
-    // Connexion : serveur recommandé, pays, ou « pays ville ».
-    function connect(target: var): void {
-        if (run(["connect", ...(target ?? [])]))
-            requested = target?.length > 0 ? target : null;
+    // Connexion : serveur recommandé, pays, ou « pays ville ». Faux si refusée (autre action en cours).
+    function connect(target: var): bool {
+        if (!run(["connect", ...(target ?? [])]))
+            return false;
+        requested = target?.length > 0 ? target : null;
+        return true;
     }
 
     // Reconnexion (interrupteur) : dernière entrée des récents (pays, ou pays et ville), serveur recommandé s'il n'y a pas
     // d'historique (ta demande du 2026-10-16).
-    function connectLast(): void {
-        connect(recent.length > 0 ? entryTarget(recent[0]) : []);
+    function connectLast(): bool {
+        return connect(recent.length > 0 ? entryTarget(recent[0]) : []);
     }
 
     // Pendant une connexion (figée, trop longue) : elle est arrêtée, puis la déconnexion suit (onFinished) ;
     // « Disconnecting… » dès maintenant.
     property bool cancelling: false
+    property bool afterCancel: false
     readonly property bool cancellable: action.busy && lastAction === "connect"
 
-    function disconnect(): void {
-        if (cancellable) {
-            cancelling = true;
-            lastAction = "disconnect";
-            requested = null;
-            action.interrupt();
-            cancelFallback.restart();
-        } else {
-            run(["disconnect"]);
-        }
+    function disconnect(): bool {
+        if (!cancellable)
+            return run(["disconnect"]);
+        cancelling = true;
+        lastAction = "disconnect";
+        requested = null;
+        action.interrupt();
+        cancelFallback.restart();
+        return true;
     }
 
     // Pause : 5m, 15m, 30m, 1h, 24h.
@@ -199,39 +203,33 @@ Singleton {
         run(["pause", duration]);
     }
 
-    // Raccourci pendant une action (ou une annulation) : refusé, en le disant.
-    function refused(): bool {
-        if (!action.busy && !cancelling)
-            return false;
-        Quickshell.execDetached(["notify-send", "--app-name=NordVPN", "NordVPN", "Busy: another action is running"]);
-        return true;
-    }
-
     // Raccourcis (phase 10 ; aujourd'hui `$mod+u` = `nordvpn c Netherlands`, `$mod+i` = `nordvpn d`) : `qs ipc call vpn …`.
     IpcHandler {
         target: "vpn"
 
-        // Pays donné (ex. "Netherlands"), sinon le dernier pays utilisé, comme l'interrupteur du panneau.
+        // Pays donné (ex. "Netherlands"), sinon le dernier pays utilisé, comme l'interrupteur du panneau. Refusé pendant
+        // une autre action : dit par une notification.
         function connect(country: string): void {
-            if (root.refused())
-                return;
-            if (country !== "")
-                root.connect([country]);
-            else
-                root.connectLast();
+            if (!(country !== "" ? root.connect([country]) : root.connectLast()))
+                busyNotice();
         }
 
         function disconnect(): void {
-            if (!root.cancellable && root.refused())
-                return;
-            root.disconnect();
+            if (!root.disconnect())
+                busyNotice();
+        }
+
+        function busyNotice(): void {
+            Quickshell.execDetached(["notify-send", "--app-name=NordVPN", "NordVPN", "Busy: another action is running"]);
         }
     }
 
     // Liste vide (jamais chargée, ou échec : démon pas prêt, pas de réseau) : rechargée à chaque ouverture du panneau.
     function loadCountries(): void {
-        if (countries.length === 0)
+        if (countries.length === 0 && !countriesLoading) {
+            countriesLoading = true;
             countriesProcess.running = true;
+        }
     }
 
     // Villes demandées pendant qu'une autre liste se charge : chargées ensuite (seule la dernière demande compte).
@@ -241,11 +239,12 @@ Singleton {
         if (cities[country] !== undefined)
             return;
         // Une demande attend déjà son tour (lancée au prochain tour de boucle) : celle-ci la remplace.
-        if (citiesProcess.running || pendingCities !== "") {
+        if (citiesFetching !== "" || pendingCities !== "") {
             pendingCities = country;
             return;
         }
         citiesProcess.country = country;
+        citiesFetching = country;
         citiesProcess.command = ["timeout", "10", "nordvpn", "cities", country];
         citiesProcess.running = true;
     }
@@ -285,8 +284,9 @@ Singleton {
                     result[m[1].trim()] = m[2].trim();
             }
             root.available = code === 0 && result["Status"] !== undefined && !/not logged in/i.test(text);
-            root.status = result;   // remember() : `requested` n'a de sens que pour cette lecture
-            root.requested = null;
+            root.status = result;   // remember() : `requested` n'a de sens que jusqu'à la fin de la connexion
+            if (result["Status"] !== "Connecting")
+                root.requested = null;
         }
         onRunningChanged: {
             if (!running && root.refreshAgain) {
@@ -344,13 +344,16 @@ Singleton {
             if (root.cancelling) {
                 Qt.callLater(() => {
                     root.cancelling = false;   // jusque-là, run() refuse toute autre action (raccourci)
-                    root.run(["disconnect"]);
+                    root.afterCancel = root.run(["disconnect"]);
                 });
                 return;
             }
             // Échec : ni cible retenue, ni « Connecting to … » jusqu'à la lecture du statut (l'état affiché est l'actuel).
+            const quiet = root.afterCancel;   // déconnexion d'après annulation : « not connected » n'est pas une erreur
+            root.afterCancel = false;
             if (error !== "") {
-                Quickshell.execDetached(["notify-send", "--app-name=NordVPN", "NordVPN", error]);
+                if (!quiet)
+                    Quickshell.execDetached(["notify-send", "--app-name=NordVPN", "NordVPN", error]);
                 root.requested = null;
                 root.lastAction = "";
             }
@@ -370,6 +373,7 @@ Singleton {
             if (code === 0)
                 root.countries = root.names(countriesOut.text);
         }
+        onRunningChanged: if (!running) Qt.callLater(() => root.countriesLoading = false)   // après onExited
     }
 
     Process {
@@ -386,15 +390,18 @@ Singleton {
                 root.cities = copy;
             }
         }
-        // Demande en attente : lancée à l'arrêt de celle-ci (même si elle n'a pas pu démarrer : pas d'`exited`), gardée jusque-là
-        // (affichée « Loading cities… », pas « unavailable »).
+        // À l'arrêt (même si la commande n'a pas pu démarrer : pas d'`exited`), au tour suivant, après onExited : fin du
+        // chargement, puis la demande en attente (gardée jusque-là : « Loading cities… », pas « unavailable »).
         onRunningChanged: {
-            if (!running && root.pendingCities !== "")
-                Qt.callLater(() => {
-                    const next = root.pendingCities;
-                    root.pendingCities = "";
+            if (running)
+                return;
+            Qt.callLater(() => {
+                root.citiesFetching = "";
+                const next = root.pendingCities;
+                root.pendingCities = "";
+                if (next !== "")
                     root.loadCities(next);
-                });
+            });
         }
     }
 }

@@ -17,6 +17,7 @@ Rectangle {
     // utilisables.
     property bool locked: false
     readonly property bool usable: clickable && !locked
+    readonly property real contentOpacity: locked ? Theme.panel.disabledOpacity : 1   // icône et texte (pas les boutons)
     default property alias trailing: trailingRow.data
     // Icône dessinée à la place de `icon` (glyphe Wi-Fi des listes).
     property alias leading: leadingRow.data
@@ -61,7 +62,7 @@ Rectangle {
 
         IconImage {
             id: iconItem
-            opacity: root.locked ? Theme.panel.disabledOpacity : 1
+            opacity: root.contentOpacity
             visible: root.icon !== ""
             implicitSize: Theme.panel.iconSize
             source: root.icon === "" ? "" : root.icon.startsWith("image:") || root.icon.startsWith("file:") ? root.icon : `image://icon/${root.icon}`
@@ -69,14 +70,14 @@ Rectangle {
 
         RowLayout {
             id: leadingRow
-            opacity: root.locked ? Theme.panel.disabledOpacity : 1
+            opacity: root.contentOpacity
             visible: children.length > 0
             spacing: 0
         }
 
         ColumnLayout {
             id: texts
-            opacity: root.locked ? Theme.panel.disabledOpacity : 1
+            opacity: root.contentOpacity
             Layout.fillWidth: true
             spacing: 0
 
