@@ -26,10 +26,7 @@ OverlayPopup {
         if (!beginOpen(item))
             return;
         ownerButtons = buttons;
-        placeUnder(item);
-        // Focus au cadre avant l'affichage : un panneau peut le donner à un champ à son ouverture (recherche NordVPN).
-        frame.forceActiveFocus();
-        visible = true;
+        openUnder(item);
     }
 
     WlrLayershell.namespace: "quickshell-panel"

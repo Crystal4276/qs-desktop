@@ -41,6 +41,14 @@ PanelWindow {
         frameItem.x = BarState.panelLeft(x + (item.width - frameItem.width) / 2, frameItem.width, window.width);
     }
 
+    // Ouverture sous `item` ; focus au cadre avant l'affichage : le panneau peut le donner à un champ à son ouverture
+    // (onVisibleChanged : recherche NordVPN).
+    function openUnder(item: Item): void {
+        placeUnder(item);
+        frameItem.forceActiveFocus();
+        visible = true;
+    }
+
     function close(): void {
         if (visible)
             closing();

@@ -12,6 +12,7 @@ Scope {
     property bool available: false
     property bool busy: false
     property string error: ""
+    property bool lastLineError: false   // message : dernière ligne de la sortie (sinon la première)
     signal finished
 
     // Renvoie faux si une autre commande est en cours (rien n'est lancé).
@@ -58,12 +59,14 @@ Scope {
         onExited: code => {
             root.busy = false;
             // 124 : arrêtée par `timeout` (sa sortie, ex. « To authenticate, visit: » sans l'adresse, n'est pas le message).
-            // Sinon la première ligne non vide (une option refusée est suivie de toute l'aide de la commande).
-            if (code === 124)
+            // Sinon la première ligne non vide (une option refusée est suivie de toute l'aide de la commande), ou la dernière
+            // (`lastLineError`).
+            if (code === 124) {
                 root.error = `${root.program}: no answer (sign-in needed?)`;
-            else if (code !== 0)
-                root.error = (err.text.trim() || out.text.trim()).split("\n").find(l => l.trim() !== "")?.trim()
-                    ?? `${root.program}: exit code ${code}`;
+            } else if (code !== 0) {
+                const lines = (err.text.trim() || out.text.trim()).split("\n").filter(l => l.trim() !== "");
+                root.error = (root.lastLineError ? lines[lines.length - 1] : lines[0])?.trim() ?? `${root.program}: exit code ${code}`;
+            }
             root.finished();
         }
     }

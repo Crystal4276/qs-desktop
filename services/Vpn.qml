@@ -12,6 +12,7 @@ Singleton {
     id: root
 
     property bool available: false
+    onAvailableChanged: if (available) loadCountries()   // orthographe des pays pour les récents (countryKey)
     property var status: ({})
     readonly property string state: status["Status"] ?? ""
     readonly property bool connected: state === "Connected"
@@ -21,8 +22,7 @@ Singleton {
     // Action lancée d'ici et pas encore finie : "connect", "disconnect", "pause" ou "".
     readonly property string doing: action.busy ? lastAction : ""
     property string lastAction: ""
-    // Cible de la connexion demandée d'ici ([pays] ou [pays, ville]), gardée jusqu'à la connexion (retenue dans les récents),
-    // l'échec de la commande ou l'action suivante ; null pour le serveur recommandé ou une connexion faite ailleurs.
+    // Cible de la connexion en cours lancée d'ici ([pays] ou [pays, ville]) ; null pour le serveur recommandé.
     property var requested: null
     property var countries: []
     readonly property bool countriesLoading: countriesProcess.running
@@ -34,32 +34,47 @@ Singleton {
     // chaque connexion observée (panneau, raccourci, ligne de commande) est enregistrée dans l'état local de Quickshell
     // (~/.local/state/quickshell/…/vpn.json, propre à la machine, hors du dépôt ; lu et écrit par JsonAdapter).
     // Une entrée par pays : « Netherlands », ou « Netherlands/Amsterdam » si la ville a été choisie (ta demande du 2026-10-20).
+    // Pays écrits comme dans `nordvpn countries` dès que la liste est connue (countryKey).
     readonly property int recentCount: 5
     readonly property var recent: recentJson.recent
     property bool recentLoaded: false   // l'historique n'est modifié qu'après lecture du fichier (sinon il serait écrasé)
     onStatusChanged: remember()
     onRecentLoadedChanged: remember()
 
-    // Pendant une action, le statut peut encore être l'ancien (changement de ville) : rien n'est retenu avant sa fin.
+    // Entrée mise en tête des récents, à la place de celle du même pays.
+    function push(entry: string): void {
+        if (!recentLoaded || recent[0] === entry)
+            return;
+        const country = entryCountry(entry);
+        recentJson.recent = [entry, ...recent.filter(e => !sameName(entryCountry(e), country))].slice(0, recentCount);
+    }
+
+    // Connexion réussie lancée d'ici (panneau, interrupteur, `qs ipc`) : son choix, pays seul ou ville. Seulement pour un pays de
+    // la liste (un code pays, « nl », est laissé à remember(), qui retient alors le pays seul).
+    function record(target: var): void {
+        const country = countries.find(c => sameName(c, target[0]));
+        if (country)
+            push(target.length > 1 ? `${country}/${target[1]}` : country);
+    }
+
+    // Connexion observée (raccourci direct, ligne de commande, fin de pause, redémarrage de Quickshell) : l'entrée déjà retenue
+    // pour ce pays, avec sa ville si c'est celle de la connexion (une autre ville choisie ailleurs : pays seul). Rien pendant
+    // une action d'ici : le statut peut encore être l'ancien, et record() retient son choix à la fin.
     // Statut lu directement : appelée depuis onStatusChanged, la liaison `connected` peut ne pas être encore à jour.
     function remember(): void {
         const country = status["Country"];
-        if (!recentLoaded || status["Status"] !== "Connected" || !country || busy)
+        if (status["Status"] !== "Connected" || !country || busy)
             return;
-        const key = country.replace(/ /g, "_");
-        // Connexion demandée d'ici : son choix (pays seul ou ville). Sinon (raccourci, ligne de commande, fin de pause,
-        // redémarrage de Quickshell, demande par code pays) : l'entrée déjà retenue pour ce pays, avec sa ville si c'est
-        // celle de la connexion (une autre ville du pays choisie ailleurs : pays seul).
-        let entry = recent.find(e => entryCountry(e) === key) ?? key;
+        const key = countryKey(country);
+        let entry = recent.find(e => sameName(entryCountry(e), key)) ?? key;
         if (entryCity(entry) !== "" && !sameName(entryCity(entry), status["City"] ?? ""))
             entry = key;
-        if (requested && sameName(requested[0], key)) {
-            entry = requested.length > 1 ? `${key}/${requested[1]}` : key;
-            requested = null;
-        }
-        if (recent[0] === entry)
-            return;
-        recentJson.recent = [entry, ...recent.filter(e => entryCountry(e) !== key)].slice(0, recentCount);
+        push(entry);
+    }
+
+    // Pays tel qu'écrit dans `nordvpn countries` (clé des récents, des villes et du panneau), sinon celui du statut.
+    function countryKey(name: string): string {
+        return countries.find(c => sameName(c, name)) ?? name.replace(/ /g, "_");
     }
 
     // Entrée des récents « Pays » ou « Pays/Ville » : pays, ville ("" sans ville), cible de `connect`.
@@ -97,7 +112,7 @@ Singleton {
     readonly property string icon: connected ? "nordvpn-tray-blue" : "nordvpn-tray-gray"
 
     // Lecture déjà en cours (lecture périodique) : refaite à sa fin, sinon l'effet d'une action qui vient de finir ne serait
-    // vu qu'à la lecture suivante.
+    // vu qu'à la lecture suivante. (Pas pour la lecture périodique elle-même : avec un démon lent, les lectures s'enchaîneraient.)
     property bool refreshAgain: false
 
     function refresh(): void {
@@ -214,19 +229,25 @@ Singleton {
         interval: root.available ? 5000 : 30000
         running: true
         repeat: true
-        onTriggered: root.refresh()
+        onTriggered: {
+            if (!statusProcess.running)
+                statusProcess.running = true;
+        }
     }
 
-    // Actions (connect, disconnect, pause) : une à la fois ; erreur en notification.
+    // Actions (connect, disconnect, pause) : une à la fois ; erreur en notification (dernière ligne : nordvpn écrit sa
+    // progression, « Connecting to … », avant l'erreur).
     CliRunner {
         id: action
         program: "nordvpn"
         probe: false   // présence et compte : lus par `nordvpn status`
+        lastLineError: true
         onFinished: {
-            if (error !== "") {
-                root.requested = null;
+            if (error !== "")
                 Quickshell.execDetached(["notify-send", "--app-name=NordVPN", "NordVPN", error]);
-            }
+            else if (root.lastAction === "connect" && root.requested)
+                root.record(root.requested);
+            root.requested = null;
             root.refresh();
         }
     }
