@@ -57,7 +57,7 @@ Rectangle {
     readonly property string bodyPlain: plain(entry.body ?? "")
     // L'icône affichée ne dit pas l'application (avatar envoyé en données, icône générique) : son nom s'ajoute à l'en-tête.
     readonly property bool iconNamesApp: iconItem.icon !== root.genericIcon && !Notifs.isDataImage(iconItem.icon)
-    readonly property string genericIcon: "preferences-desktop-notification"
+    readonly property string genericIcon: Theme.notificationCentre.genericIcon
     readonly property string headerText: bodyPlain === "" || titleText === "" ? entry.appName
         : iconNamesApp || (entry.appName ?? "") === "" ? titleText : `${titleText} · ${entry.appName}`
     readonly property string mainText: bodyPlain !== "" ? bodyPlain : titleText

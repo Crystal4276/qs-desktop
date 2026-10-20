@@ -59,6 +59,11 @@ Singleton {
             persist.history = JSON.stringify(history);
         pruneImages();
         pruneTimer.restart();
+        // Ligne d'une silencieuse poussée hors de l'historique (20 au plus) : elle cesse d'être suivie.
+        for (const entry of [...quiet]) {
+            if (!history.some(h => h.key === entry.historyKey))
+                entry.notification?.expire();
+        }
     }
 
     onPopupsChanged: {
@@ -152,6 +157,9 @@ Singleton {
         property int historyKey: 0
         readonly property bool quiet: historyKey !== 0
         property bool dirty: false   // changée, ligne et ordre à refaire (Notifs.applyChanges)
+        // Image en données retenue pour sa ligne (snapshot) : réutilisée tant que l'image ne change pas.
+        property string lockedImage: ""
+        property int lockedKey: 0
 
         readonly property string appName: notification ? notification.appName : (saved.appName ?? "")
         readonly property string summary: notification ? notification.summary : (saved.summary ?? "")
@@ -232,13 +240,17 @@ Singleton {
             old.dupCount = dupCount;
             old.start = old.timestamp = Date.now();
             previous?.expire();
+            // Silencieuse remplacée alors qu'elle doit s'afficher (« ne pas déranger » coupé, ou critique) : affichée. Une
+            // notification déjà affichée le reste.
+            if (old.quiet && !silent(n))
+                promote(old);
             changed(old);
             return;
         }
         const entry = entryComponent.createObject(root, { notification: n, order: ++persist.nextOrder });
         // Ne pas déranger : directement dans l'historique, suivie sans affichage jusqu'à son délai (ses mises à jour, par
         // identifiant ou étiquette de pile, remplacent sa ligne au lieu d'en ajouter une). Les critiques s'affichent.
-        if (doNotDisturb && n.urgency !== NotificationUrgency.Critical) {
+        if (silent(n)) {
             const item = snapshot(entry);
             archive(item, false);
             entry.historyKey = item.key;
@@ -260,23 +272,65 @@ Singleton {
         const dirty = [...popups, ...quiet].filter(e => e.dirty);
         if (dirty.length === 0)
             return;
-        const keys = {};
+        const rows = [];
         for (const entry of dirty) {
             entry.dirty = false;
-            if (entry.quiet)
-                keys[entry.historyKey] = entry;
+            // Devenue critique par une mise à jour (même identifiant) : affichée.
+            if (entry.quiet && entry.urgency === NotificationUrgency.Critical)
+                promote(entry);
+            else if (entry.quiet)
+                rows.push(entry);
         }
-        if (Object.keys(keys).length > 0)
-            history = history.map(h => keys[h.key] ? Object.assign(snapshot(keys[h.key]), { seen: h.seen, key: h.key }) : h);
-        popups = [...popups].sort(byUrgency);
-        saveLive();
+        updateRows(rows);
+        const sorted = [...popups].sort(byUrgency);
+        if (sorted.some((e, i) => e !== popups[i]))
+            popups = sorted;   // saveLive par onPopupsChanged
+        else
+            saveLive();
+    }
+
+    // Lignes des notifications silencieuses mises à jour : nouveau contenu, donc non vues, et en tête du centre. Nouvelle clé :
+    // le ScriptModel du centre (objectProp: "key") garde l'ancien objet d'une ligne déplacée qui garde sa clé (vu sur banc).
+    function updateRows(entries): void {
+        const byKey = {};
+        for (const entry of entries)
+            byKey[entry.historyKey] = entry;
+        const updated = [];
+        for (const h of history) {
+            const entry = byKey[h.key];
+            if (entry) {
+                entry.historyKey = ++persist.nextKey;
+                updated.push(Object.assign(snapshot(entry), { seen: false, key: entry.historyKey }));
+            }
+        }
+        if (updated.length > 0)
+            history = [...history.filter(h => !byKey[h.key]), ...updated];
+    }
+
+    function silent(n: Notification): bool {
+        return doNotDisturb && n.urgency !== NotificationUrgency.Critical;
+    }
+
+    // Silencieuse qui doit s'afficher : sa ligne quitte l'historique (elle y reviendra à sa fermeture), elle s'affiche.
+    function promote(entry): void {
+        const key = entry.historyKey;
+        entry.historyKey = 0;
+        quiet = quiet.filter(e => e !== entry);
+        history = history.filter(h => h.key !== key);
+        show(entry);
     }
 
     // Copie figée d'une notification suivie (historique). Image en données : retenue (lockImage).
     function snapshot(entry): var {
         let imageKey = entry.saved?.imageKey ?? 0;
-        if (entry.notification && isDataImage(entry.notification.image))
-            imageKey = lockImage(entry.notification);
+        const image = entry.notification?.image ?? "";
+        if (isDataImage(image)) {
+            if (image !== entry.lockedImage || entry.lockedKey === 0) {
+                entry.lockedKey = lockImage(entry.notification);
+                entry.lockedImage = image;
+            }
+            imageKey = entry.lockedKey;
+        }
         return {
             appName: entry.appName,
             summary: entry.summary,
@@ -303,7 +357,7 @@ Singleton {
     // --- Rechargement de la config ---
 
     // État des notifications suivies, gardé au rechargement : Quickshell réémet les notifications vivantes (keepOnReload),
-    // mais pas leur âge, leur délai, leur compteur ni leur rôle (affichée / silencieuse) ; une notification rappelée de
+    // mais pas leur âge, leur compteur, leur ordre ni leur rôle (affichée / silencieuse) ; une notification rappelée de
     // l'historique n'est plus connue de Quickshell : elle est recréée d'après sa copie.
     property var restored: ({})   // { id de la notification: état }, en attente de sa réémission
 
@@ -317,21 +371,25 @@ Singleton {
             redisplayed: e.redisplayed,
             order: e.order,
             dupCount: e.dupCount,
-            timestamp: e.timestamp,
-            start: e.start
+            timestamp: e.timestamp
         })));
+    }
+
+    // Propriétés d'une Entry recréée d'après son état. Le délai repart de zéro : le survol, qui le suspend, n'est pas
+    // enregistré, et un délai repris trop tôt ferait disparaître la notification dès le rechargement.
+    function stateProps(state): var {
+        return { order: state.order, dupCount: state.dupCount, timestamp: state.timestamp, redisplayed: state.redisplayed };
     }
 
     function restoreLive(states): void {
         const pending = {};
         for (const state of states) {
-            const props = { order: state.order, dupCount: state.dupCount, timestamp: state.timestamp, start: state.start, redisplayed: state.redisplayed };
             if (state.id !== 0) {
                 pending[state.id] = state;
             } else {
                 // Image en données de la copie : perdue au rechargement, icône de l'application à la place (comme l'historique).
                 const saved = isDataImage(state.saved.icon ?? "") ? Object.assign(state.saved, { icon: state.saved.fallbackIcon ?? "", imageKey: 0 }) : state.saved;
-                show(entryComponent.createObject(root, Object.assign(props, { saved })));
+                show(entryComponent.createObject(root, Object.assign(stateProps(state), { saved })));
             }
         }
         restored = pending;
@@ -340,7 +398,7 @@ Singleton {
     function restore(n: Notification): void {
         const state = restored[n.id];
         const entry = entryComponent.createObject(root, Object.assign({ notification: n, order: ++persist.nextOrder },
-            state ? { order: state.order, dupCount: state.dupCount, timestamp: state.timestamp, start: state.start, redisplayed: state.redisplayed } : {}));
+            state ? stateProps(state) : {}));
         if (state?.historyKey) {
             entry.historyKey = state.historyKey;
             quiet = [...quiet, entry];
@@ -354,7 +412,9 @@ Singleton {
     // Toute fermeture (délai, clic, application, action) : retirée de l'affichage, copiée dans l'historique.
     function closed(entry, reason: int): void {
         if (quiet.includes(entry)) {
-            // Silencieuse : déjà dans l'historique (tenue à jour), elle cesse seulement d'être suivie.
+            // Silencieuse : déjà dans l'historique, elle cesse seulement d'être suivie (mise à jour en attente appliquée).
+            if (entry.dirty)
+                updateRows([entry]);
             quiet = quiet.filter(e => e !== entry);
         } else {
             if (!popups.includes(entry))
@@ -414,13 +474,17 @@ Singleton {
         if (history.length === 0)
             return;
         const saved = history[history.length - 1];
-        const entry = entryComponent.createObject(root, {
+        // Ligne d'une notification silencieuse encore suivie : c'est elle qui s'affiche (actions utilisables, mises à jour).
+        const live = quiet.find(e => e.historyKey === saved.key);
+        if (live) {
+            promote(live);
+            return;
+        }
+        const entry = entryComponent.createObject(root, Object.assign(stateProps(saved), {
             saved,
             redisplayed: true,
-            order: ++persist.nextOrder,
-            dupCount: saved.dupCount,
-            timestamp: saved.timestamp
-        });
+            order: ++persist.nextOrder
+        }));
         show(entry);   // avant de la retirer de l'historique : son image reste retenue
         history = history.slice(0, -1);
     }
@@ -431,11 +495,15 @@ Singleton {
             history = history.map(h => Object.assign({}, h, { seen: true }));
     }
 
+    // Ligne d'une notification silencieuse encore suivie : elle est fermée (écartée par toi).
     function removeHistory(key: int): void {
+        quiet.find(e => e.historyKey === key)?.notification?.dismiss();
         history = history.filter(h => h.key !== key);
     }
 
     function clearHistory(): void {
+        for (const entry of [...quiet])
+            entry.notification?.dismiss();
         history = [];
     }
 
