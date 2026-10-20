@@ -316,12 +316,15 @@ Clic droit sur le volume ou le curseur (pavucontrol dans Waybar). Style des pann
 sections Output / Input / Applications ; périphérique par défaut en `green` ; sous chacun, curseur de volume (style du curseur de la
 barre), pourcentage, bouton Mute ; bouton « Advanced… » (pavucontrol).
 
-### Carte média (nouveau composant, ton choix du 2026-10-16)
+### Carte média (nouveau composant, ton choix du 2026-10-16 ; refaite compacte le 2026-10-20)
 
-En tête du centre de notifications, pour le lecteur suivi par le module média : pochette 100 px (taille des images de notification,
-coins 10 px des lignes de panneau), titre Inter 20 px `text`, artiste Inter 16 px `subtext0`, position dessinée comme le curseur de
-volume, temps « m:ss / m:ss » Inter 16 px, boutons de panneau à glyphes Symbols Nerd Font Mono (précédent `U+F048`, lecture `U+F04B`,
-pause `U+F04C`, suivant `U+F051`) ; bouton indisponible à 50 % d'opacité.
+En tête du centre de notifications, pour le lecteur suivi par le module média. Une bande sur fond de carte (`base`, coins 10 px,
+padding 10 px) : pochette **76 px** (ta demande : hauteur des trois lignes de texte + 25 %), coins 5 px ; à côté, en haut, titre
+Inter 20 px gras `text` et « artiste · album » Inter 16 px `subtext0`, boutons ronds 32 px à droite (glyphes Symbols Nerd Font Mono
+16 px : précédent `U+F048`, lecture `U+F04B`, pause `U+F04C`, suivant `U+F051`) ; précédent / suivant sans fond, `surface0` au
+survol ; lecture / pause en rond plein `text`, glyphe `mantle` (`green` jugé trop fort). En bas : temps écoulé et durée Inter 16 px
+`subtext0` (chiffres à chasse fixe), position en trait de 4 px (rail `crust`, partie lue `text`), bouton rond 12 px `text` au survol
+seulement. Bouton indisponible à 50 % d'opacité. **Proposé, à valider** : combinaison nouvelle de valeurs de la charte (sauf 76 px).
 
 ### Panneau de réglages façon GNOME (nouveau composant, phase 8, ton choix du 2026-10-16)
 
@@ -333,11 +336,15 @@ activée : fond `green`, texte `mantle` (contraste inversé, comme la sélection
 ligne, glyphe au-dessus du titre (16 px). **Proposé, à valider** : ces tailles reprennent celles de la charte, aucune n'est inventée,
 mais leur combinaison est nouvelle.
 
-### Centre de notifications (nouveau composant, ta demande du 2026-10-16)
+### Centre de notifications (nouveau composant, ta demande du 2026-10-16 ; lignes refaites le 2026-10-20)
 
 Cloche dans le tray, après les modules natifs ; panneau au style des panneaux (§ 3). Interrupteur du titre : notifications affichées /
-« ne pas déranger ». Lignes : icône de la notification (sinon `preferences-desktop-notification`), titre, puis « heure · application · corps »
-en texte secondaire ; non vues (expirées sans toi, ou reçues pendant « ne pas déranger ») en `green` ; bouton « Clear » par ligne, « Clear all ».
+« ne pas déranger ». Lignes (disposition de KDE et GNOME, ta demande : le contenu avant l'expéditeur) : icône ou image de la
+notification **32 px** (sinon `preferences-desktop-notification`) ; en-tête Inter 16 px `subtext0` : titre de la notification sans le
+nom de l'application qu'il répète (« whatsdesk - … »), ou l'application s'il n'y a pas de corps ; à droite l'heure relative (« now »,
+« 5 min ago », « HH:mm », « Yesterday », « 20 Oct », comme KDE) et une croix (`U+F0156`, 16 px, `subtext0`, `text` et rond `surface1`
+au survol) ; dessous le corps Inter **16 px** `text` (ton choix, 20 px essayé), 2 lignes, déplié jusqu'à 6 lignes par un clic
+(comme GNOME). Non vues (expirées sans toi, ou reçues pendant « ne pas déranger ») : en-tête en `green`. « Clear all ».
 
 ## 5. Lanceur (Rofi)
 
