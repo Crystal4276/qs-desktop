@@ -8,10 +8,11 @@ Text {
     id: root
 
     required property TextInput field
+    property bool active: true   // PanelField : seulement pour un champ de recherche
     property color normalColor: Theme.panel.secondaryText
     property color hoverColor: Theme.panel.text
 
-    visible: field.text !== ""
+    visible: active && field.text !== ""
     text: Theme.icon.close
     font.family: Theme.font.icons
     color: hover.hovered ? hoverColor : normalColor

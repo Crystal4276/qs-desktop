@@ -28,9 +28,9 @@ Rectangle {
     activeFocusOnTab: clickable
     border.width: activeFocus ? Theme.panel.border : 0
     border.color: Theme.panel.focusRing
-    Keys.onReturnPressed: root.clicked()
-    Keys.onEnterPressed: root.clicked()
-    Keys.onSpacePressed: root.clicked()
+    Keys.onReturnPressed: if (root.clickable) root.clicked()
+    Keys.onEnterPressed: if (root.clickable) root.clicked()
+    Keys.onSpacePressed: if (root.clickable) root.clicked()
 
     // Sous le contenu : reçoit les clics hors des boutons (qui consomment les leurs, PanelButton.qml).
     MouseArea {
