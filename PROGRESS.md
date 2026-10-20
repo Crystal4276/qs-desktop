@@ -994,6 +994,25 @@ changement de focus. À vérifier en phase 9 : après `hyprctl reload` au révei
 - Horloge à largeur fixe minimale : l'heure réserve la plus large de 00:00 à 23:59, la date le plus large des jours de la
   semaine (locale) × 01 à 31.
 
+### Panneau NordVPN (2026-10-20, ta demande)
+
+- Bug « plus de liste en tapant » : `nordvpn countries` lu même en échec (démon pas prêt, réseau coupé pendant les tests Wi-Fi) ;
+  des mots du message d'erreur passaient pour des pays et restaient en cache, la recherche ne trouvait rien. Listes (pays, villes)
+  lues seulement si la commande réussit, rechargées à l'ouverture suivante ; message « Countries unavailable » / « Cities unavailable ».
+- Refonte (tes choix) : onglets **Recent / All countries** ; taper bascule sur tous les pays filtrés (débuts de nom, puis de mot,
+  puis le reste), effacer revient à l'onglet ; focus dans la recherche à l'ouverture (BACKLOG) ; Entrée connecte au premier
+  résultat, Échap efface puis ferme.
+- Récents **pays + ville** : une entrée par pays (« Netherlands/Amsterdam » dans `vpn.json`, ancien historique gardé) ; une ville
+  choisie est retenue, un pays seul l'efface ; l'interrupteur et `qs ipc call vpn connect` reconnectent à la dernière entrée.
+- Ligne d'état : « Connecting to Pays, Ville… », « Disconnecting… », « Pausing… » ; détails, trafic et pause masqués pendant l'action.
+- Service : actions sur `CliRunner` (BACKLOG) ; relecture du statut refaite si une lecture périodique était en cours ; historique
+  enregistré dès la connexion (avant : jusqu'à 5 s plus tard, la liaison `connected` n'étant pas encore à jour dans `onStatusChanged`).
+- Vérifié sans toucher ta connexion : Sway isolé, faux `nordvpn` (lectures transmises au vrai, actions simulées), historique isolé
+  (`XDG_STATE_HOME`) : onglets, recherche « ne » / « un » / « ger » / sans résultat, Entrée, villes (chargement, échec puis nouvel
+  essai), ville retenue, interrupteur off / on vers la ville retenue, IPC (`netherlands`, vide, pays inconnu), échec de connexion
+  (récents inchangés), liste des pays en échec puis rechargée, pause.
+- À tester à la main : saisie au clavier réelle, Échap (efface puis ferme), clics, et une vraie connexion à une ville.
+
 ## Prochaine étape
 
 Phase 9 — parité Hyprland (tests à faire ensemble dans une session Hyprland : voir « Compatibilité Hyprland »).

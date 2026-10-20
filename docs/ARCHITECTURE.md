@@ -419,8 +419,9 @@ Proposition de placement dans les phases (CLAUDE.md n'est pas modifié sans ton 
   `pair` (l'agent par défaut de blueman n'est pas touché) ; demandes affichées dans le panneau, jamais acceptées automatiquement.
 - **Disques** (R7) : `busctl` / `gdbus monitor` / `udisksctl` ; règles et textes d'udiskie (montage automatique, notifications, images
   disque en boucle prises en charge).
-- **NordVPN** (§ 11.4) : commande `nordvpn` ; derniers pays utilisés (historique local) et recherche sur tous les pays ; l'interrupteur
-  reconnecte au dernier pays utilisé.
+- **NordVPN** (§ 11.4) : commande `nordvpn` ; onglets Recent (historique local, un pays par entrée, avec la ville si elle a été
+  choisie) / All countries ; la recherche montre tous les pays filtrés ; l'interrupteur reconnecte à la dernière entrée (refonte du
+  2026-10-20).
 
 ### 10.1.2 Mise en œuvre de la phase 6 (2026-10-16)
 

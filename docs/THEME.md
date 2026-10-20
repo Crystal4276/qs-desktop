@@ -246,6 +246,17 @@ graphique Linux), ZeroTier : `zerotier-cli`.
 | Bouton du tray sans câble | `network-vpn` (le Wi-Fi a son icône) ; à 50 % d'opacité si aucun réseau privé n'est actif (opacité « indisponible » des panneaux) | panneaux |
 | Avertissements | `red` (erreur de commande, santé du démon) ; lecture seule : `subtext0` avec la commande qui active les actions | panneaux |
 
+### Panneau NordVPN (refonte du 2026-10-20, ta demande)
+
+Style des panneaux ; aucune valeur nouvelle.
+
+| Élément | Valeur | Origine |
+|---|---|---|
+| Recherche | champ des panneaux, focus à l'ouverture ; Entrée : premier résultat ; Échap : efface, puis ferme | — |
+| Onglets | Recent / All countries, sous la recherche ; boutons de même largeur, onglet affiché « coché » ; une recherche coche All countries | panneau réseau |
+| Lignes | « Pays » ou « Pays, Ville » (récents) ; pays ou ville de la connexion en `green` ; villes en retrait de 24 + 10 px | lignes des panneaux |
+| États | « Connecting to Pays, Ville… », « Disconnecting… », « Pausing… » : détails, trafic et pause masqués pendant l'action ; messages Loading / unavailable en texte secondaire | — |
+
 ### Calendrier de l'horloge (nouveau composant, phase 4 — ARCHITECTURE § 8.3)
 
 Remplace le tooltip calendrier. Aucune valeur nouvelle : tout est repris de la barre, du lanceur et de la palette.
