@@ -203,6 +203,10 @@ Singleton {
         run(["pause", duration]);
     }
 
+    function busyNotice(): void {
+        Quickshell.execDetached(["notify-send", "--app-name=NordVPN", "NordVPN", "Busy: another action is running"]);
+    }
+
     // Raccourcis (phase 10 ; aujourd'hui `$mod+u` = `nordvpn c Netherlands`, `$mod+i` = `nordvpn d`) : `qs ipc call vpn …`.
     IpcHandler {
         target: "vpn"
@@ -211,16 +215,12 @@ Singleton {
         // une autre action : dit par une notification.
         function connect(country: string): void {
             if (!(country !== "" ? root.connect([country]) : root.connectLast()))
-                busyNotice();
+                root.busyNotice();
         }
 
         function disconnect(): void {
             if (!root.disconnect())
-                busyNotice();
-        }
-
-        function busyNotice(): void {
-            Quickshell.execDetached(["notify-send", "--app-name=NordVPN", "NordVPN", "Busy: another action is running"]);
+                root.busyNotice();
         }
     }
 
@@ -349,7 +349,8 @@ Singleton {
                 return;
             }
             // Échec : ni cible retenue, ni « Connecting to … » jusqu'à la lecture du statut (l'état affiché est l'actuel).
-            const quiet = root.afterCancel;   // déconnexion d'après annulation : « not connected » n'est pas une erreur
+            // Déconnexion d'après annulation : « not connected » n'est pas une erreur (les autres, si).
+            const quiet = root.afterCancel && /not connected/i.test(error);
             root.afterCancel = false;
             if (error !== "") {
                 if (!quiet)

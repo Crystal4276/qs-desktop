@@ -29,6 +29,15 @@ Panel {
     // Détails, trafic, pause : connexion établie et aucune action en cours (pendant un changement, le statut est encore l'ancien).
     readonly property bool settled: Vpn.connected && !Vpn.busy
 
+    // Module masqué (démon absent ou figé) panneau ouvert : fermé, son icône n'est plus là.
+    Connections {
+        target: Vpn
+        function onAvailableChanged() {
+            if (!Vpn.available)
+                root.close();
+        }
+    }
+
     onVisibleChanged: {
         if (visible) {
             Vpn.refresh();
