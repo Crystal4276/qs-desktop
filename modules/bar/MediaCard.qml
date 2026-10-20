@@ -138,12 +138,15 @@ Rectangle {
                 Item {
                     id: progress
 
-                    readonly property real value: root.length > 0 ? Math.max(0, Math.min(1, (root.player?.position ?? 0) / root.length)) : 0
+                    // Pendant un glisser, la position suit la souris ; elle n'est envoyée au lecteur qu'au relâchement (une seule
+                    // commande D-Bus, pas une par mouvement).
+                    property real dragValue: -1
+                    readonly property real playerValue: root.length > 0 ? Math.max(0, Math.min(1, (root.player?.position ?? 0) / root.length)) : 0
+                    readonly property real value: dragValue >= 0 ? dragValue : playerValue
                     readonly property bool seekable: root.player?.canSeek ?? false
 
-                    function seek(x: real): void {
-                        if (seekable && root.player)
-                            root.player.position = Math.max(0, Math.min(1, x / width)) * root.length;
+                    function valueAt(x: real): real {
+                        return Math.max(0, Math.min(1, x / width));
                     }
 
                     Layout.fillWidth: true
@@ -190,11 +193,17 @@ Rectangle {
                         anchors.fill: parent
                         enabled: progress.seekable
                         hoverEnabled: true
-                        onPressed: mouse => progress.seek(mouse.x)
+                        onPressed: mouse => progress.dragValue = progress.valueAt(mouse.x)
                         onPositionChanged: mouse => {
                             if (pressed)
-                                progress.seek(mouse.x);
+                                progress.dragValue = progress.valueAt(mouse.x);
                         }
+                        onReleased: mouse => {
+                            if (progress.seekable && root.player)
+                                root.player.position = progress.valueAt(mouse.x) * root.length;
+                            progress.dragValue = -1;
+                        }
+                        onCanceled: progress.dragValue = -1
                     }
                 }
 

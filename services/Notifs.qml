@@ -20,6 +20,8 @@ Singleton {
 
     // Notifications affichées (objets Entry), dans l'ordre d'affichage.
     property list<QtObject> popups: []
+    // Reçues pendant « ne pas déranger », encore suivies (Entry.quiet).
+    property list<QtObject> quiet: []
     // Historique : copies figées, de la plus ancienne à la plus récente ; `seen` faux si elle a expiré sans que tu la fermes
     // ou si elle est arrivée pendant « ne pas déranger » (point bleu sur la cloche jusqu'à l'ouverture du centre).
     property var history: []
@@ -37,10 +39,16 @@ Singleton {
         property int nextKey: 0
         property bool ready: false
         property string iconFiles: "{}"   // copies d'icônes faites par cette instance (keepIcon)
+        property int nextOrder: 0
+        // Notifications suivies (affichées, rappelées, ou silencieuses) : état repris au rechargement (saveLive).
+        property string live: "[]"
 
         // Images envoyées en données (avatars…) : perdues au rechargement (voir imageLocks), icône de l'application à la place.
         onLoaded: {
+            if (!ready)
+                staleIconDirs.running = true;   // premier chargement de cette instance
             root.iconFiles = Object.assign(JSON.parse(iconFiles), root.iconFiles);   // + copies faites avant ce point
+            root.restoreLive(JSON.parse(live));
             root.history = JSON.parse(history).map(h => h.imageKey ? Object.assign(h, root.isDataImage(h.icon) ? { icon: h.fallbackIcon ?? "" } : {}, { imageKey: 0 }) : h);
             ready = true;
         }
@@ -53,7 +61,14 @@ Singleton {
         pruneTimer.restart();
     }
 
-    onPopupsChanged: pruneTimer.restart()
+    onPopupsChanged: {
+        pruneTimer.restart();
+        saveLive();
+    }
+    onQuietChanged: {
+        pruneTimer.restart();
+        saveLive();
+    }
 
     // Nettoyage des copies d'icônes différé d'une seconde : une notification fermée quitte l'affichage avant d'entrer dans
     // l'historique (closed), et après un rechargement Quickshell réémet les notifications affichées après la restauration de
@@ -110,8 +125,6 @@ Singleton {
     readonly property var defaultTimeouts: [10000, 10000, 0] // basse, normale, critique (défauts Dunst, non fixés dans dunstrc)
     readonly property var stackTagHints: ["synchronous", "private-synchronous", "x-canonical-private-synchronous", "x-dunst-stack-tag"]
 
-    property int nextOrder: 0
-
     NotificationServer {
         // Capacités annoncées par Dunst (markup = full) : actions, corps avec markup et liens, icônes, étiquettes de pile.
         actionsSupported: true
@@ -135,6 +148,10 @@ Singleton {
         property real start: Date.now()        // début du délai
         property real timestamp: Date.now()    // arrivée (âge affiché)
         property bool redisplayed: false
+        // Ne pas déranger : suivie sans être affichée jusqu'à son délai ; sa ligne de l'historique (clé) suit ses mises à jour.
+        property int historyKey: 0
+        readonly property bool quiet: historyKey !== 0
+        property bool dirty: false   // changée, ligne et ordre à refaire (Notifs.applyChanges)
 
         readonly property string appName: notification ? notification.appName : (saved.appName ?? "")
         readonly property string summary: notification ? notification.summary : (saved.summary ?? "")
@@ -170,12 +187,12 @@ Singleton {
         // Remplacement par identifiant (géré par Quickshell sur le même objet) : le délai repart, comme Dunst.
         property Connections watcher: Connections {
             target: entry.notification
-            function onSummaryChanged() { entry.start = Date.now(); }
-            function onBodyChanged() { entry.start = Date.now(); }
-            function onHintsChanged() { entry.start = Date.now(); }
-            function onUrgencyChanged() { entry.start = Date.now(); }
-            function onImageChanged() { entry.keepIcons(); }
-            function onAppIconChanged() { entry.keepIcons(); }
+            function onSummaryChanged() { Notifs.changed(entry); }
+            function onBodyChanged() { Notifs.changed(entry); }
+            function onHintsChanged() { Notifs.changed(entry); }
+            function onUrgencyChanged() { Notifs.changed(entry); }
+            function onImageChanged() { entry.keepIcons(); Notifs.changed(entry); }
+            function onAppIconChanged() { entry.keepIcons(); Notifs.changed(entry); }
             function onClosed(reason) { Notifs.closed(entry, reason); }
         }
     }
@@ -188,42 +205,22 @@ Singleton {
     // --- Arrivée ---
 
     function add(n: Notification): void {
-        // Ne pas déranger : directement dans l'historique, non suivie (Quickshell la ferme aussitôt). Avec une image en données,
-        // elle est suivie juste le temps d'être retenue puis fermée : une notification non suivie est détruite sur-le-champ,
-        // verrou ou non.
-        if (doNotDisturb && n.urgency !== NotificationUrgency.Critical) {
-            let imageKey = 0;
-            if (isDataImage(n.image)) {
-                n.tracked = true;
-                imageKey = lockImage(n);
-                Qt.callLater(() => n.expire());
-            }
-            const source = iconSource(n.image, n.appIcon), fallback = iconSource("", n.appIcon);
-            const icon = keepIcon(source, n.id);
-            archive({
-                appName: n.appName,
-                summary: n.summary,
-                body: n.body,
-                urgency: n.urgency,
-                icon,
-                imageKey,
-                fallbackIcon: fallback === source ? icon : keepIcon(fallback, n.id),
-                progress: progressOf(n.hints),
-                hasActions: n.actions.length > 0,
-                dupCount: 0,
-                timestamp: Date.now()
-            }, false);
+        n.tracked = true;
+        // Réémise après un rechargement de la config : reprend son état (affichée ou silencieuse, âge, délai, compteur), sans
+        // repasser par « ne pas déranger » ni par les doublons.
+        if (n.lastGeneration) {
+            restore(n);
             return;
         }
-        n.tracked = true;
         const icon = iconSource(n.image, n.appIcon);
         const tag = stackTagOf(n.hints);
+        const live = [...popups, ...quiet];
         // Étiquette de pile : remplace la notification de même étiquette et de même application.
-        let old = tag !== "" ? popups.find(e => e.stackTag === tag && e.appName === n.appName) : undefined;
+        let old = tag !== "" ? live.find(e => e.stackTag === tag && e.appName === n.appName) : undefined;
         let dupCount = old?.dupCount ?? 0;
         // Doublon (même application, titre, corps, urgence et icône) : remplacé, compteur augmenté si la progression est la même.
         if (!old) {
-            old = popups.find(e => e.appName === n.appName && e.summary === n.summary && e.body === n.body && e.urgency === n.urgency
+            old = live.find(e => e.appName === n.appName && e.summary === n.summary && e.body === n.body && e.urgency === n.urgency
                 && (e.icon === "" || icon === "" || (e.notification ? iconSource(e.notification.image, e.notification.appIcon) : e.icon) === icon));
             if (old)
                 dupCount = old.progress === progressOf(n.hints) ? old.dupCount + 1 : old.dupCount;
@@ -235,27 +232,52 @@ Singleton {
             old.dupCount = dupCount;
             old.start = old.timestamp = Date.now();
             previous?.expire();
+            changed(old);
             return;
         }
-        const entry = entryComponent.createObject(root, { notification: n, order: ++nextOrder });
+        const entry = entryComponent.createObject(root, { notification: n, order: ++persist.nextOrder });
+        // Ne pas déranger : directement dans l'historique, suivie sans affichage jusqu'à son délai (ses mises à jour, par
+        // identifiant ou étiquette de pile, remplacent sa ligne au lieu d'en ajouter une). Les critiques s'affichent.
+        if (doNotDisturb && n.urgency !== NotificationUrgency.Critical) {
+            const item = snapshot(entry);
+            archive(item, false);
+            entry.historyKey = item.key;
+            quiet = [...quiet, entry];
+            return;
+        }
         show(entry);
     }
 
-    function show(entry): void {
-        popups = [...popups, entry].sort((a, b) => b.urgency - a.urgency || a.order - b.order);
+    // Contenu ou image changés (remplacement par identifiant, géré par Quickshell sur le même objet, ou par étiquette de pile
+    // et doublon) : le délai repart, comme Dunst ; l'ordre d'urgence est refait ; ligne de l'historique mise à jour si silencieuse.
+    function changed(entry): void {
+        entry.start = Date.now();
+        entry.dirty = true;
+        Qt.callLater(applyChanges);   // après la mise à jour des liaisons de l'Entry (le signal arrive avant)
     }
 
-    // --- Fermeture ---
-
-    // Toute fermeture (délai, clic, application, action) : retirée de l'affichage, copiée dans l'historique.
-    function closed(entry, reason: int): void {
-        if (!popups.includes(entry))
+    function applyChanges(): void {
+        const dirty = [...popups, ...quiet].filter(e => e.dirty);
+        if (dirty.length === 0)
             return;
-        popups = popups.filter(e => e !== entry);
+        const keys = {};
+        for (const entry of dirty) {
+            entry.dirty = false;
+            if (entry.quiet)
+                keys[entry.historyKey] = entry;
+        }
+        if (Object.keys(keys).length > 0)
+            history = history.map(h => keys[h.key] ? Object.assign(snapshot(keys[h.key]), { seen: h.seen, key: h.key }) : h);
+        popups = [...popups].sort(byUrgency);
+        saveLive();
+    }
+
+    // Copie figée d'une notification suivie (historique). Image en données : retenue (lockImage).
+    function snapshot(entry): var {
         let imageKey = entry.saved?.imageKey ?? 0;
         if (entry.notification && isDataImage(entry.notification.image))
             imageKey = lockImage(entry.notification);
-        archive({
+        return {
             appName: entry.appName,
             summary: entry.summary,
             body: entry.body,
@@ -267,7 +289,79 @@ Singleton {
             hasActions: entry.hasActions,
             dupCount: entry.dupCount,
             timestamp: entry.timestamp
-        }, reason !== NotificationCloseReason.Expired);
+        };
+    }
+
+    function byUrgency(a, b): int {
+        return b.urgency - a.urgency || a.order - b.order;
+    }
+
+    function show(entry): void {
+        popups = [...popups, entry].sort(byUrgency);
+    }
+
+    // --- Rechargement de la config ---
+
+    // État des notifications suivies, gardé au rechargement : Quickshell réémet les notifications vivantes (keepOnReload),
+    // mais pas leur âge, leur délai, leur compteur ni leur rôle (affichée / silencieuse) ; une notification rappelée de
+    // l'historique n'est plus connue de Quickshell : elle est recréée d'après sa copie.
+    property var restored: ({})   // { id de la notification: état }, en attente de sa réémission
+
+    function saveLive(): void {
+        if (!persist.ready)
+            return;
+        persist.live = JSON.stringify([...popups, ...quiet].map(e => ({
+            id: e.notification?.id ?? 0,
+            saved: e.notification ? null : e.saved,
+            historyKey: e.historyKey,
+            redisplayed: e.redisplayed,
+            order: e.order,
+            dupCount: e.dupCount,
+            timestamp: e.timestamp,
+            start: e.start
+        })));
+    }
+
+    function restoreLive(states): void {
+        const pending = {};
+        for (const state of states) {
+            const props = { order: state.order, dupCount: state.dupCount, timestamp: state.timestamp, start: state.start, redisplayed: state.redisplayed };
+            if (state.id !== 0) {
+                pending[state.id] = state;
+            } else {
+                // Image en données de la copie : perdue au rechargement, icône de l'application à la place (comme l'historique).
+                const saved = isDataImage(state.saved.icon ?? "") ? Object.assign(state.saved, { icon: state.saved.fallbackIcon ?? "", imageKey: 0 }) : state.saved;
+                show(entryComponent.createObject(root, Object.assign(props, { saved })));
+            }
+        }
+        restored = pending;
+    }
+
+    function restore(n: Notification): void {
+        const state = restored[n.id];
+        const entry = entryComponent.createObject(root, Object.assign({ notification: n, order: ++persist.nextOrder },
+            state ? { order: state.order, dupCount: state.dupCount, timestamp: state.timestamp, start: state.start, redisplayed: state.redisplayed } : {}));
+        if (state?.historyKey) {
+            entry.historyKey = state.historyKey;
+            quiet = [...quiet, entry];
+        } else {
+            show(entry);
+        }
+    }
+
+    // --- Fermeture ---
+
+    // Toute fermeture (délai, clic, application, action) : retirée de l'affichage, copiée dans l'historique.
+    function closed(entry, reason: int): void {
+        if (quiet.includes(entry)) {
+            // Silencieuse : déjà dans l'historique (tenue à jour), elle cesse seulement d'être suivie.
+            quiet = quiet.filter(e => e !== entry);
+        } else {
+            if (!popups.includes(entry))
+                return;
+            popups = popups.filter(e => e !== entry);
+            archive(snapshot(entry), reason !== NotificationCloseReason.Expired);
+        }
         entry.notification = null;
         entry.destroy();
     }
@@ -323,7 +417,7 @@ Singleton {
         const entry = entryComponent.createObject(root, {
             saved,
             redisplayed: true,
-            order: ++nextOrder,
+            order: ++persist.nextOrder,
             dupCount: saved.dupCount,
             timestamp: saved.timestamp
         });
@@ -348,7 +442,7 @@ Singleton {
     // --- Délais ---
 
     Timer {
-        running: root.popups.length > 0
+        running: root.popups.length > 0 || root.quiet.length > 0
         interval: 100
         repeat: true
         onTriggered: {
@@ -361,6 +455,10 @@ Singleton {
                 else if (entry.timeout > 0 && now - entry.start >= entry.timeout)
                     root.expire(entry);
             }
+            for (const entry of [...root.quiet]) {
+                if (entry.timeout > 0 && now - entry.start >= entry.timeout)
+                    root.expire(entry);
+            }
         }
     }
 
@@ -370,6 +468,10 @@ Singleton {
     // Fichiers locaux, images servies par Quickshell et icônes du thème seulement, comme Dunst : une adresse http(s) envoyée
     // par une application ferait télécharger l'image à chaque affichage (pixel espion ; revue de code).
     function iconSource(image: string, appIcon: string): string {
+        // Chemin servi par le fournisseur d'icônes : en file://, pour qu'un fichier absent soit une erreur (repli sur l'icône
+        // de l'application) et non le damier de Quickshell.
+        if (image.startsWith("image://icon//"))
+            return Icons.fileUrl(decodeURIComponent(image.slice(13).split("?")[0]));
         if (image.startsWith("image://") || image.startsWith("file:"))
             return image;
         if (image !== "" && !image.includes("://"))
@@ -385,14 +487,28 @@ Singleton {
     // dossier temporaire qu'il efface à la fermeture de la notification ; Dunst la chargeait aussitôt, ici elle est relue plus
     // tard (historique, rechargement). Une copie par notification, lue et écrite d'un bloc (pas de processus : Chromium efface
     // le fichier dès la fermeture, immédiate pendant « ne pas déranger »), dans un dossier propre à cette instance de Quickshell
-    // sous XDG_RUNTIME_DIR (vidé à la fin de la session, comme l'historique ; deux instances ne se gênent pas). Les icônes des
-    // dossiers de données (XDG_DATA_HOME, XDG_DATA_DIRS : thèmes, /usr/share/pixmaps…) ne disparaissent pas : pas de copie.
-    // Une copie qui ne sert plus (ni affichée, ni dans l'historique) est effacée (pruneIcons).
-    readonly property string iconCache: `${Quickshell.env("XDG_RUNTIME_DIR") || Quickshell.cacheDir}/quickshell-notification-icons/${Quickshell.instanceId}`
-    readonly property list<string> dataDirs: [
-        Quickshell.env("XDG_DATA_HOME") || `${Quickshell.env("HOME")}/.local/share`,
-        ...(Quickshell.env("XDG_DATA_DIRS") || "/usr/local/share:/usr/share").split(":")
-    ].filter(d => d.startsWith("/")).map(d => d.replace(/\/*$/, "/"))
+    // sous XDG_RUNTIME_DIR (vidé à la fin de la session, comme l'historique ; deux instances ne se gênent pas ; les dossiers des
+    // instances terminées sont effacés au démarrage). Seuls les fichiers des dossiers temporaires sont copiés (/tmp, TMPDIR,
+    // XDG_RUNTIME_DIR, XDG_CACHE_HOME) : thèmes, /usr/share/pixmaps ou images personnelles ne disparaissent pas d'elles-mêmes.
+    // Une copie qui ne sert plus (ni affichée, ni suivie, ni dans l'historique) est effacée (pruneIcons).
+    readonly property string iconRoot: `${Quickshell.env("XDG_RUNTIME_DIR") || Quickshell.cacheDir}/quickshell-notification-icons`
+    readonly property string iconCache: `${iconRoot}/${Quickshell.instanceId}`
+    readonly property list<string> volatileDirs: ["/tmp", Quickshell.env("TMPDIR"), Quickshell.env("XDG_RUNTIME_DIR"),
+        Quickshell.env("XDG_CACHE_HOME") || `${Quickshell.env("HOME")}/.cache`]
+        .filter(d => d && d.startsWith("/")).map(d => d.replace(/\/*$/, "/"))
+
+    // Démarrage : dossiers des instances de Quickshell terminées (dev.sh, plantage). Rien n'est effacé si la liste des instances
+    // vivantes ne contient pas celle-ci (commande en échec).
+    Process {
+        id: staleIconDirs
+        command: ["sh", "-c", `live=" $(qs list --all 2>/dev/null | sed -n 's/^Instance \\(.*\\):$/\\1/p' | tr '\\n' ' ') "
+            case "$live" in *" $2 "*) ;; *) exit 0 ;; esac
+            for dir in "$1"/*/; do
+                [ -d "$dir" ] || continue
+                id=$(basename "$dir")
+                case "$live" in *" $id "*) ;; *) rm -rf -- "$dir" ;; esac
+            done`, "sh", root.iconRoot, Quickshell.instanceId]
+    }
     // Copies faites par cette instance, { "<id de la notification>|<source>": URL de la copie }, gardées au rechargement de la
     // config (persist.iconFiles) : une notification réémise après un rechargement dont le fichier a disparu reprend sa copie.
     property var iconFiles: ({})
@@ -419,7 +535,7 @@ Singleton {
     function keepIcon(source: string, id: int): string {
         const path = source.startsWith("file://") ? decodeURIComponent(source.slice(7))
             : source.startsWith("image://icon//") ? decodeURIComponent(source.slice(13).split("?")[0]) : "";
-        if (path === "" || path.startsWith(`${iconCache}/`) || dataDirs.some(d => path.startsWith(d)))
+        if (path === "" || path.startsWith(`${iconRoot}/`) || !volatileDirs.some(d => path.startsWith(d)))
             return source;
         const key = `${id}|${source}`;
         const reader = iconFile.createObject(root, { path });
@@ -441,13 +557,15 @@ Singleton {
         // Copie précédente pour la même clé : gardée sous une autre clé, effacée par pruneIcons quand plus rien ne l'affiche.
         const previous = iconFiles[key] !== undefined ? { [`${key}|${iconFiles[key]}`]: iconFiles[key] } : {};
         iconFiles = Object.assign({}, iconFiles, previous, { [key]: url });
+        if (Object.keys(previous).length > 0)
+            pruneTimer.restart();
         return url;
     }
 
     // Efface les copies qui ne servent plus : ni dans l'historique (icône ou icône de repli), ni sur une notification affichée.
     function pruneIcons(): void {
         const used = new Set();
-        for (const item of [...history, ...popups]) {
+        for (const item of [...history, ...popups, ...quiet]) {
             used.add(item.icon);
             used.add(item.fallbackIcon);
         }

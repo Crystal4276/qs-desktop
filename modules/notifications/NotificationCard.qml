@@ -69,7 +69,17 @@ Item {
             sourceSize.width: card.t.iconSize
             sourceSize.height: card.t.iconSize
             fillMode: Image.PreserveAspectFit
-            source: card.entry.icon
+            // Image illisible (fichier effacé, nom absent du thème) : icône de l'application, comme dans l'historique.
+            property bool failed: false
+            source: failed && card.entry.fallbackIcon !== "" ? card.entry.fallbackIcon : card.entry.icon
+            onStatusChanged: {
+                if (status === Image.Error && !failed)
+                    failed = true;
+            }
+            Connections {
+                target: card.entry
+                function onIconChanged() { icon.failed = false; }
+            }
         }
 
         Text {
