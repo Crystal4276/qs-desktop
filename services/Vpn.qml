@@ -143,9 +143,7 @@ Singleton {
 
     // Renvoie faux si une autre action est en cours (rien n'est lancé).
     function run(args: var): bool {
-        // (Après l'action, l'attente du statut ne bloque pas un raccourci ; une annulation en cours, si : son
-        // `disconnect` couperait la nouvelle connexion.)
-        if (action.busy || cancel.busy)
+        if (action.busy)   // (après l'action, l'attente du statut ne bloque pas un raccourci)
             return false;
         lastAction = args[0];   // avant `busy` : `doing` ne prend jamais le nom de l'action précédente
         requested = null;
@@ -167,14 +165,19 @@ Singleton {
         connect(recent.length > 0 ? entryTarget(recent[0]) : []);
     }
 
-    // Pendant une connexion (figée, trop longue) : l'annule, à côté de la commande en cours.
+    // Pendant une connexion (figée, trop longue) : elle est arrêtée, puis la déconnexion suit (onFinished) ;
+    // « Disconnecting… » dès maintenant.
+    property bool cancelling: false
+
     function disconnect(): void {
-        if (action.busy && lastAction === "connect") {
-            if (cancel.runCommand(["timeout", "30", "nordvpn", "disconnect"]))
-                cancel.target = actionCount;
-        }
-        else
+        if (action.busy && lastAction === "connect" && !cancelling) {
+            cancelling = true;
+            lastAction = "disconnect";
+            requested = null;
+            action.stop();
+        } else {
             run(["disconnect"]);
+        }
     }
 
     // Pause : 5m, 15m, 30m, 1h, 24h.
@@ -275,25 +278,6 @@ Singleton {
         }
     }
 
-    property bool cancelled: false
-
-    // Annulation d'une connexion : réussie, la commande `connect` (peut-être figée) est arrêtée.
-    CliRunner {
-        id: cancel
-        property int target: 0   // action annulée
-        program: "nordvpn"
-        probe: false
-        lastLineError: true
-        onFinished: {
-            if (error !== "") {
-                Quickshell.execDetached(["notify-send", "--app-name=NordVPN", "NordVPN", error]);
-            } else if (action.busy && root.actionCount === target) {
-                root.cancelled = true;
-                action.stop();
-            }
-        }
-    }
-
     // Démon qui ne répond plus après une action : verrou levé au bout de 30 s (l'état affiché peut alors être l'ancien).
     Timer {
         id: awaitLimit
@@ -314,13 +298,18 @@ Singleton {
         lastLineError: true
         noAnswer: `nordvpn: no answer after ${root.actionTimeout / 60} minutes`
         onFinished: {
-            const cancelled = cancel.busy || root.cancelled;   // connexion annulée : ni erreur à signaler, ni choix à retenir
-            root.cancelled = false;
-            if (error !== "" && !cancelled)
-                Quickshell.execDetached(["notify-send", "--app-name=NordVPN", "NordVPN", error]);
-            else if (error === "" && !cancelled && root.lastAction === "connect" && root.requested)
-                root.record(root.requested);
             root.awaitingStatus = true;   // `requested` gardé jusque-là (« Connecting to … »)
+            // Connexion arrêtée (disconnect()) : ni erreur à signaler ni choix à retenir ; la déconnexion suit (`busy` reste
+            // vrai jusque-là), au tour suivant : ce processus n'a pas fini de signaler sa fin.
+            if (root.cancelling) {
+                root.cancelling = false;
+                Qt.callLater(() => root.run(["disconnect"]));
+                return;
+            }
+            if (error !== "")
+                Quickshell.execDetached(["notify-send", "--app-name=NordVPN", "NordVPN", error]);
+            else if (root.lastAction === "connect" && root.requested)
+                root.record(root.requested);
             root.refresh();
         }
     }
