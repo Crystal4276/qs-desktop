@@ -24,14 +24,17 @@ Singleton {
         ?? playing.find(p => p.dbusName === preferred) ?? playing[0]
         ?? players.find(p => p.dbusName === preferred) ?? players[0] ?? null
 
-    // Une lecture qui démarre annule le choix fait à la molette : le lecteur qui joue reprend la main.
+    // Une lecture qui démarre annule le choix fait à la molette : le lecteur qui joue reprend la main. Sauf si c'est le lecteur
+    // choisi qui démarre (lecture lancée depuis le module ou la carte média) : il reste suivi.
     property var lastPlaying: []
     onPlayingChanged: {
         const names = playing.map(p => p.dbusName);
-        if (names.some(n => !lastPlaying.includes(n)))
+        const started = names.filter(n => !lastPlaying.includes(n));
+        if (started.length > 0 && !started.includes(selected))
             selected = "";
         lastPlaying = names;
     }
+    Component.onCompleted: lastPlaying = playing.map(p => p.dbusName)   // lecteurs déjà en lecture au démarrage
     // Nom du lecteur sans le préfixe ni l'instance (« chromium.instance1234 » → « chromium ») : clé de son icône.
     readonly property string playerName: (player?.dbusName ?? "").replace("org.mpris.MediaPlayer2.", "").split(".")[0]
     readonly property bool paused: player?.playbackState === MprisPlaybackState.Paused
