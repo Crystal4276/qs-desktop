@@ -120,7 +120,7 @@ Item {
             }
         }
 
-        // Boutons des actions nommées, sauf celles de Notifs.hiddenActions (« default » reste au clic milieu).
+        // Boutons des actions nommées, sauf celles de Notifs.hiddenActions (« default » : clic gauche sur la notification).
         Flow {
             id: buttonRow
             visible: card.buttons.length > 0
@@ -135,7 +135,7 @@ Item {
                 PanelButton {
                     required property NotificationAction modelData
                     text: modelData.text
-                    onClicked: modelData.invoke()   // ferme la notification, sauf si elle est « resident » (Quickshell)
+                    onClicked: Notifs.invoke(modelData)
                 }
             }
         }

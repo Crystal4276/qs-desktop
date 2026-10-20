@@ -1186,6 +1186,12 @@ et une ligne vide avant le texte).
 Vérifié sur banc : doublons Chromium fusionnés, nom d'icône absent, aperçu « chatgpt.com La distinction… », rappelée remplacée par
 son étiquette.
 
+Passe 6 (7 remarques, toutes corrigées) : image d'une silencieuse affichée (promote) gardée ; « < » qui n'ouvre pas une balise
+connue affiché tel quel (popup et centre ; StyledText l'avalait jusqu'au « > » suivant, Dunst repassait en texte brut) ;
+boutons d'action : la fenêtre de l'application est affichée si elle demande l'activation ; « settings » seule n'est plus ouverte
+au clic gauche ; verrous d'images libérés après un remplacement ; minuterie des délais arrêtée quand aucune silencieuse n'a de
+délai ; commentaire des boutons à jour. Vérifié sur banc : « 3 < 5 passed, 2 > 1, **gras** & fin », action `settings` seule.
+
 ### Actions des notifications (2026-10-20, ta demande)
 
 - Revue : une popup montre un bouton par action nommée, sauf « default » (clic milieu). Thunderbird (« Marquer comme lu »,

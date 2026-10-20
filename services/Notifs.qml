@@ -295,6 +295,7 @@ Singleton {
                 rows.push(entry);
         }
         updateRows(rows);
+        pruneImages();   // copie d'une rappelée remplacée, ou image changée : verrou libéré
         const sorted = [...popups].sort(byUrgency);
         if (sorted.some((e, i) => e !== popups[i]))
             popups = sorted;   // saveLive par onPopupsChanged
@@ -329,8 +330,8 @@ Singleton {
         const key = entry.historyKey;
         entry.historyKey = 0;
         quiet = quiet.filter(e => e !== entry);
+        show(entry);   // avant le retrait de la ligne : son image reste retenue (pruneImages compte les notifications affichées)
         history = history.filter(h => h.key !== key);
-        show(entry);
     }
 
     // Copie figée d'une notification suivie (historique). Image en données : retenue (lockImage).
@@ -467,11 +468,19 @@ Singleton {
     // Ouvrir (clic gauche ; ton choix du 2026-10-20, comme GNOME et KDE, au lieu du clic milieu de dunstrc) : action
     // « default », ou l'unique action, sinon le lien s'il n'y en a qu'un ; puis la fenêtre de l'application est affichée
     // quand elle demande l'activation (Compositor.focusNextActivation : bon espace de travail, et pour Chromium le bon onglet).
-    // Plusieurs actions sans « default », ou plusieurs liens : Dunst ouvrait dmenu (absent) ; ici, les boutons d'action.
+    // Plusieurs actions sans « default », ou plusieurs liens : Dunst ouvrait dmenu (absent) ; ici, les boutons d'action. Les
+    // actions masquées (hiddenActions, « settings » de Chromium) ne comptent pas.
     // Rien à ouvrir : la notification est seulement fermée.
+    // Bouton d'action : l'application peut aussi demander l'activation (« Ouvrir », « Voir ») ; sa fenêtre est alors affichée.
+    function invoke(action): void {
+        Compositor.focusNextActivation();
+        action.invoke();   // ferme la notification, sauf si elle est « resident » (Quickshell)
+    }
+
     function open(entry): void {
         const actions = entry.actions;
-        const action = actions.find(a => a.identifier === "default") ?? (actions.length === 1 ? actions[0] : null);
+        const named = actions.filter(a => !hiddenActions.includes(a.identifier));
+        const action = actions.find(a => a.identifier === "default") ?? (named.length === 1 ? named[0] : null);
         if (action || (actions.length === 0 && entry.urls.length === 1))
             Compositor.focusNextActivation();
         if (action)
@@ -525,7 +534,7 @@ Singleton {
     // --- Délais ---
 
     Timer {
-        running: root.popups.length > 0 || root.quiet.length > 0
+        running: root.popups.length > 0 || root.quiet.some(e => e.timeout > 0)   // silencieuse sans délai : rien à expirer
         interval: 100
         repeat: true
         onTriggered: {
@@ -689,6 +698,19 @@ Singleton {
     }
 
     // Liens (markup.c, menu.c) : href des <a>, src des <img>, puis adresses dans le texte.
+    // Texte simple d'un corps (centre de notifications) : balises retirées, entités décodées, sauts de ligne gardés.
+    function plain(text: string): string {
+        return text.replace(/<br\s*\/?>/gi, "\n").replace(new RegExp(`<\\/?(${markupTags})\\b[^>]*>`, "gi"), "").replace(/[ \t]+/g, " ")
+            .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, "\"").replace(/&apos;/g, "'")
+            .replace(/&#(\d+);|&#x([0-9a-f]+);/gi, (m, d, h) => codePoint(d ? Number(d) : parseInt(h, 16), m))
+            .replace(/&amp;/g, "&").trim();
+    }
+
+    // Caractère d'une entité numérique ; hors de l'Unicode, l'entité telle quelle.
+    function codePoint(code: real, entity: string): string {
+        return code >= 0 && code <= 0x10ffff ? String.fromCodePoint(code) : entity;
+    }
+
     function urlsOf(summary: string, body: string): var {
         const text = `${summary} ${body}`;
         const urls = [];
@@ -709,8 +731,13 @@ Singleton {
     }
 
     // Corps (markup = full) : & isolés échappés, <br> en saut de ligne, liens réduits à leur texte, images à leur texte alt.
+    // Balises du corps : celles de la spécification (b, i, u, a, img) et du markup Pango que Dunst acceptait (markup = full).
+    // Un « < » qui n'en ouvre pas une est du texte (« 3 < 5 ») : sinon StyledText l'avalait jusqu'au « > » suivant.
+    readonly property string markupTags: "b|i|u|a|img|br|span|s|tt|big|small|sub|sup"
+
     function bodyMarkup(body: string): string {
         return body.replace(/&(?!(amp|lt|gt|quot|apos|#\d+|#x[0-9a-f]+);)/gi, "&amp;")
+            .replace(new RegExp(`<(?!\\/?(${markupTags})\\b)`, "gi"), "&lt;")
             .replace(/<br\s*\/?>/gi, "\n")
             .replace(/<a\s[^>]*>|<\/a>/gi, "")
             .replace(/<img[^>]*>/gi, tag => tag.match(/alt="([^"]*)"/i)?.[1] ?? "[image]");
