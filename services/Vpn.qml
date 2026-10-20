@@ -45,7 +45,7 @@ Singleton {
     onStatusChanged: remember()
     onRecentLoadedChanged: remember()
 
-    // Entrée mise en tête des récents, à la place de celle du même pays.
+    // Entrée mise en tête des récents, à la place de celle du même pays (orthographe éventuellement différente).
     function push(entry: string): void {
         if (!recentLoaded || recent[0] === entry)
             return;
@@ -70,10 +70,9 @@ Singleton {
         if (status["Status"] !== "Connected" || !country || busy)
             return;
         const key = countryKey(country);
-        let entry = recent.find(e => sameName(entryCountry(e), key)) ?? key;
-        if (entryCity(entry) !== "" && !sameName(entryCity(entry), status["City"] ?? ""))
-            entry = key;
-        push(entry);
+        const found = recent.find(e => sameName(entryCountry(e), key));
+        const city = found ? entryCity(found) : "";
+        push(city !== "" && sameName(city, status["City"] ?? "") ? `${key}/${city}` : key);
     }
 
     // Pays tel qu'écrit dans `nordvpn countries` (clé des récents, des villes et du panneau), sinon celui du statut.
@@ -144,7 +143,7 @@ Singleton {
 
     // Renvoie faux si une autre action est en cours (rien n'est lancé).
     function run(args: var): bool {
-        if (busy)
+        if (action.busy)   // (après l'action, l'attente du statut ne bloque pas un raccourci)
             return false;
         lastAction = args[0];   // avant `busy` : `doing` ne prend jamais le nom de l'action précédente
         requested = null;
@@ -166,8 +165,12 @@ Singleton {
         connect(recent.length > 0 ? entryTarget(recent[0]) : []);
     }
 
+    // Pendant une connexion (figée, trop longue) : l'annule, à côté de la commande en cours.
     function disconnect(): void {
-        run(["disconnect"]);
+        if (action.busy && lastAction === "connect")
+            cancel.runCommand(["timeout", "30", "nordvpn", "disconnect"]);
+        else
+            run(["disconnect"]);
     }
 
     // Pause : 5m, 15m, 30m, 1h, 24h.
@@ -215,9 +218,9 @@ Singleton {
     }
 
     // Noms des listes (un par ligne, ou séparés par des virgules) ; une ligne qui contient autre chose (« A new version of
-    // NordVPN is available! ») est ignorée entière.
+    // NordVPN is available! ») est ignorée entière ; indicateur de progression (« \r-\r ») retiré.
     function names(text: string): var {
-        return text.split("\n").map(l => l.split(/[\s,]+/).filter(w => w !== ""))
+        return text.split("\n").map(l => l.split(/[\s,]+/).filter(w => w !== "" && !/^[-\\|\/]+$/.test(w)))
             .filter(words => words.length > 0 && words.every(w => /^[A-Z][\w-]*$/.test(w)))
             .reduce((all, words) => all.concat(words), []);
     }
@@ -268,6 +271,21 @@ Singleton {
         }
     }
 
+    property bool cancelled: false
+
+    CliRunner {
+        id: cancel
+        program: "nordvpn"
+        probe: false
+        lastLineError: true
+        onFinished: {
+            if (error !== "")
+                Quickshell.execDetached(["notify-send", "--app-name=NordVPN", "NordVPN", error]);
+            else
+                root.cancelled = action.busy;
+        }
+    }
+
     // Démon qui ne répond plus après une action : verrou levé au bout de 30 s (l'état affiché peut alors être l'ancien).
     Timer {
         id: awaitLimit
@@ -288,9 +306,11 @@ Singleton {
         lastLineError: true
         noAnswer: `nordvpn: no answer after ${root.actionTimeout / 60} minutes`
         onFinished: {
-            if (error !== "")
+            const cancelled = cancel.busy || root.cancelled;   // connexion annulée : ni erreur à signaler, ni choix à retenir
+            root.cancelled = false;
+            if (error !== "" && !cancelled)
                 Quickshell.execDetached(["notify-send", "--app-name=NordVPN", "NordVPN", error]);
-            else if (root.lastAction === "connect" && root.requested)
+            else if (error === "" && !cancelled && root.lastAction === "connect" && root.requested)
                 root.record(root.requested);
             root.awaitingStatus = true;   // `requested` gardé jusque-là (« Connecting to … »)
             root.refresh();

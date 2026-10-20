@@ -13,6 +13,10 @@ Rectangle {
     property string subtext: ""
     property bool active: false
     property bool clickable: true
+    // Action en cours (NordVPN) : icône et texte atténués, inactive (souris, clavier) ; garde le focus, et ses boutons restent
+    // utilisables.
+    property bool locked: false
+    readonly property bool usable: clickable && !locked
     default property alias trailing: trailingRow.data
     // Icône dessinée à la place de `icon` (glyphe Wi-Fi des listes).
     property alias leading: leadingRow.data
@@ -21,7 +25,7 @@ Rectangle {
     Layout.fillWidth: true
     implicitHeight: Math.max(iconItem.implicitHeight, leadingRow.implicitHeight, texts.implicitHeight, trailingRow.implicitHeight) + 2 * Theme.panel.rowPadding
     radius: Theme.panel.rowRadius
-    color: clickable && hover.hovered ? Theme.panel.rowHover : "transparent"
+    color: usable && hover.hovered ? Theme.panel.rowHover : "transparent"
     opacity: enabled ? 1 : Theme.panel.disabledOpacity   // indisponible, comme PanelButton
 
     // Clavier (Tab, flèches) : Entrée ou Espace activent ; liseré quand l'élément est choisi.
@@ -34,7 +38,7 @@ Rectangle {
 
     // Ligne inactive (action en cours) : la touche n'est pas prise, elle remonte au panneau.
     function activate(event: KeyEvent): void {
-        if (clickable)
+        if (usable)
             clicked();
         else
             event.accepted = false;
@@ -43,7 +47,7 @@ Rectangle {
     // Sous le contenu : reçoit les clics hors des boutons (qui consomment les leurs, PanelButton.qml).
     MouseArea {
         anchors.fill: parent
-        enabled: root.clickable
+        enabled: root.usable
         onClicked: root.clicked()
     }
 
@@ -57,6 +61,7 @@ Rectangle {
 
         IconImage {
             id: iconItem
+            opacity: root.locked ? Theme.panel.disabledOpacity : 1
             visible: root.icon !== ""
             implicitSize: Theme.panel.iconSize
             source: root.icon === "" ? "" : root.icon.startsWith("image:") || root.icon.startsWith("file:") ? root.icon : `image://icon/${root.icon}`
@@ -64,12 +69,14 @@ Rectangle {
 
         RowLayout {
             id: leadingRow
+            opacity: root.locked ? Theme.panel.disabledOpacity : 1
             visible: children.length > 0
             spacing: 0
         }
 
         ColumnLayout {
             id: texts
+            opacity: root.locked ? Theme.panel.disabledOpacity : 1
             Layout.fillWidth: true
             spacing: 0
 

@@ -14,7 +14,7 @@ Panel {
     title: "NordVPN"
     hasSwitch: true
     switchChecked: Vpn.connected || Vpn.connecting
-    switchLocked: Vpn.busy
+    switchLocked: Vpn.busy && Vpn.doing !== "connect"   // pendant une connexion, le couper l'annule
     initialFocus: search.inputItem
     onSwitchToggled: checked => checked ? Vpn.connectLast() : Vpn.disconnect()
 
@@ -154,8 +154,7 @@ Panel {
                 // Pendant une action (connexion, pause…), lignes inactives (souris et clavier) : rien ne serait lancé. (Pas `enabled` :
                 // la ligne choisie au clavier perdrait le focus, et Échap et les flèches avec ; « Cities » reste utilisable.)
                 PanelRow {
-                    clickable: !Vpn.busy
-                    opacity: Vpn.busy ? Theme.panel.disabledOpacity : 1   // comme l'interrupteur
+                    locked: Vpn.busy
                     text: entry.city !== "" ? `${Vpn.label(entry.country)}, ${Vpn.label(entry.city)}` : Vpn.label(entry.country)
                     active: root.isCurrent(entry.country, entry.city)
                     onClicked: Vpn.connect(Vpn.entryTarget(entry.modelData))
@@ -183,8 +182,7 @@ Panel {
                     PanelRow {
                         required property string modelData
 
-                        clickable: !Vpn.busy
-                        opacity: Vpn.busy ? Theme.panel.disabledOpacity : 1
+                        locked: Vpn.busy
                         Layout.leftMargin: Theme.panel.iconSize + Theme.panel.spacing
                         text: Vpn.label(modelData)
                         active: root.isCurrent(entry.country, modelData)
