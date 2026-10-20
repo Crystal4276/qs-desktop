@@ -26,7 +26,8 @@ Singleton {
     // Action lancée d'ici et pas encore finie : "connect", "disconnect", "pause" ou "".
     readonly property string doing: busy ? lastAction : ""
     property string lastAction: ""
-    // Cible de la connexion lancée d'ici ([pays] ou [pays, ville]), jusqu'au statut qui la suit ; null : serveur recommandé.
+    // Cible de la connexion lancée d'ici ([pays] ou [pays, ville]), jusqu'au statut qui la suit (retenue alors dans les
+    // récents) ; effacée si la commande échoue ; null : serveur recommandé.
     property var requested: null
     property var countries: []
     readonly property bool countriesLoading: countriesProcess.running
@@ -53,8 +54,6 @@ Singleton {
         recentJson.recent = [entry, ...recent.filter(e => !sameName(entryCountry(e), country))].slice(0, recentCount);
     }
 
-    // Connexion réussie lancée d'ici ([pays] ou [pays, ville]), valable pour la seule lecture du statut qui suit l'action.
-    property var chosen: null
     property string rememberedHost: ""   // serveur de la dernière connexion retenue
 
     // Connexion lancée d'ici et confirmée par le statut (même pays) : son choix, pays seul ou ville (orthographe de la liste
@@ -71,10 +70,12 @@ Singleton {
             return;
         }
         const host = status["Hostname"] ?? "";
+        if (!requested && host === rememberedHost)   // (le plus souvent : même connexion, rien à faire)
+            return;
         const key = countryKey(country);
-        if (chosen && sameName(chosen[0], key)) {
+        if (requested && sameName(requested[0], key)) {
             rememberedHost = host;
-            push(chosen.length > 1 ? `${key}/${chosen[1]}` : key);
+            push(requested.length > 1 ? `${key}/${requested[1]}` : key);
             return;
         }
         if (host === rememberedHost)
@@ -158,7 +159,6 @@ Singleton {
             return false;
         lastAction = args[0];   // avant `busy` : `doing` ne prend jamais le nom de l'action précédente
         requested = null;
-        chosen = null;
         actionCount++;
         // Bornée, large (une connexion lente aboutit) : une commande figée garderait `busy` (panneau verrouillé) jusqu'au
         // redémarrage de Quickshell.
@@ -199,12 +199,22 @@ Singleton {
         run(["pause", duration]);
     }
 
+    // Raccourci pendant une action (ou une annulation) : refusé, en le disant.
+    function refused(): bool {
+        if (!action.busy && !cancelling)
+            return false;
+        Quickshell.execDetached(["notify-send", "--app-name=NordVPN", "NordVPN", "Busy: another action is running"]);
+        return true;
+    }
+
     // Raccourcis (phase 10 ; aujourd'hui `$mod+u` = `nordvpn c Netherlands`, `$mod+i` = `nordvpn d`) : `qs ipc call vpn …`.
     IpcHandler {
         target: "vpn"
 
         // Pays donné (ex. "Netherlands"), sinon le dernier pays utilisé, comme l'interrupteur du panneau.
         function connect(country: string): void {
+            if (root.refused())
+                return;
             if (country !== "")
                 root.connect([country]);
             else
@@ -212,6 +222,8 @@ Singleton {
         }
 
         function disconnect(): void {
+            if (!root.cancellable && root.refused())
+                return;
             root.disconnect();
         }
     }
@@ -273,9 +285,8 @@ Singleton {
                     result[m[1].trim()] = m[2].trim();
             }
             root.available = code === 0 && result["Status"] !== undefined && !/not logged in/i.test(text);
-            root.status = result;   // remember() : `chosen` n'a de sens que pour cette lecture
+            root.status = result;   // remember() : `requested` n'a de sens que pour cette lecture
             root.requested = null;
-            root.chosen = null;
         }
         onRunningChanged: {
             if (!running && root.refreshAgain) {
@@ -315,7 +326,6 @@ Singleton {
         onTriggered: {
             root.awaitingStatus = false;
             root.requested = null;
-            root.chosen = null;
         }
     }
 
@@ -338,9 +348,12 @@ Singleton {
                 });
                 return;
             }
-            if (error !== "")
+            // Échec : ni cible retenue, ni « Connecting to … » jusqu'à la lecture du statut (l'état affiché est l'actuel).
+            if (error !== "") {
                 Quickshell.execDetached(["notify-send", "--app-name=NordVPN", "NordVPN", error]);
-            root.chosen = error === "" && root.lastAction === "connect" ? root.requested : null;
+                root.requested = null;
+                root.lastAction = "";
+            }
             root.refresh();
         }
     }
