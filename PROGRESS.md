@@ -1097,6 +1097,22 @@ changement de focus. À vérifier en phase 9 : après `hyprctl reload` au révei
   position et des boutons, dépliage, icônes gardées après rechargement. À tester à la main : déplacement dans le morceau (le faux
   lecteur ne gère pas `SetPosition`), vraie notification avec image en données (avatar) après rechargement.
 
+### Notifications : icônes de Chromium et de ses applications web (2026-10-20, ton signalement)
+
+- Cause : Chromium (et ChatGPT, Claude… qu'il fait tourner) envoie son icône dans un fichier temporaire
+  (`/tmp/org.chromium.Chromium.scoped_dir.*/logo.png`) qu'il efface à la fermeture de la notification. Dunst la chargeait à la
+  réception ; Quickshell la relisait plus tard (historique, rechargement) : fichier disparu, icône vide (journal : « Cannot open »).
+- `Notifs.keepIcon` : toute icône en fichier local est copiée dès la réception dans `<cacheDir>/notification-icons/<md5>.<ext>`
+  (même logo, même fichier ; une vraie copie des octets via `FileView`, sans processus). Dossier vidé au démarrage de Quickshell
+  (l'historique ne survit pas à un redémarrage).
+- Deux pièges de Quickshell 0.3.2 relevés : un `FileView` dont on change `path` rend encore les données de l'ancien fichier (un
+  `FileView` par fichier) ; `FileView.setData` crée les dossiers manquants.
+- Vérifié sur banc : deux logos différents dans des fichiers temporaires (`image-path` et `app_icon` en `file://`), fichiers effacés,
+  config rechargée : chaque notification garde son logo ; un même logo n'est copié qu'une fois.
+- Les notifications ChatGPT / Claude déjà dans ton historique restent sans icône (fichiers déjà effacés) ; les prochaines l'auront.
+- Le banc partage le cache de ta session (même identifiant de shell `desktop`) : ses démarrages ont vidé le dossier ; les icônes
+  des notifications reçues pendant ces tests peuvent manquer.
+
 ## Prochaine étape
 
 Phase 9 — parité Hyprland (tests à faire ensemble dans une session Hyprland : voir « Compatibilité Hyprland »).

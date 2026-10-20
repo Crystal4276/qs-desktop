@@ -39,6 +39,8 @@ Singleton {
 
         // Images envoyées en données (avatars…) : perdues au rechargement (voir imageLocks), icône de l'application à la place.
         onLoaded: {
+            if (!ready)
+                iconCacheCleaner.running = true;
             root.history = JSON.parse(history).map(h => h.imageKey ? Object.assign(h, root.isDataImage(h.icon) ? { icon: h.fallbackIcon ?? "" } : {}, { imageKey: 0 }) : h);
             ready = true;
         }
@@ -339,14 +341,65 @@ Singleton {
     // par une application ferait télécharger l'image à chaque affichage (pixel espion ; revue de code).
     function iconSource(image: string, appIcon: string): string {
         if (image.startsWith("image://") || image.startsWith("file:"))
-            return image;
+            return keepIcon(image);
         if (image !== "" && !image.includes("://"))
-            return Icons.iconSource(image);   // chemin absolu ou nom d'icône du thème (image-path de la spécification)
+            return keepIcon(Icons.iconSource(image));   // chemin absolu ou nom d'icône du thème (image-path de la spécification)
         if (appIcon === "" || (appIcon.includes("://") && !appIcon.startsWith("file:")))
             return "";
         if (appIcon.startsWith("file:"))
-            return appIcon;
-        return Icons.iconSource(appIcon);
+            return keepIcon(appIcon);
+        return keepIcon(Icons.iconSource(appIcon));
+    }
+
+    // Icône en fichier local : copiée dans le cache dès la réception. Chromium (et ses applications web : ChatGPT, Claude…)
+    // l'écrit dans un dossier temporaire qu'il efface à la fermeture de la notification ; Dunst la chargeait aussitôt, ici elle
+    // est relue plus tard (historique, rechargement). Copie nommée d'après son contenu (même logo, même fichier) ; le dossier
+    // est vidé au démarrage de Quickshell (l'historique ne lui survit pas). { source: copie }, pour ne lire qu'une fois.
+    readonly property string iconCache: `${Quickshell.cacheDir}/notification-icons`
+    // Objet modifié en place, sans signal : les liaisons qui appellent keepIcon n'en dépendent pas (pas de boucle).
+    readonly property var iconCopies: ({})
+
+    // Un FileView par fichier : un FileView dont on change `path` rend encore les données du précédent (vérifié, 0.3.2).
+    Component {
+        id: iconFile
+
+        FileView {
+            blockLoading: true
+            printErrors: false
+        }
+    }
+
+    Process {
+        id: iconCacheCleaner
+        command: ["rm", "-rf", "--", root.iconCache]
+    }
+
+    function keepIcon(source: string): string {
+        const path = source.startsWith("file://") ? decodeURIComponent(source.slice(7))
+            : source.startsWith("image://icon//") ? decodeURIComponent(source.slice(13).split("?")[0]) : "";
+        if (path === "" || path.startsWith(`${iconCache}/`))
+            return source;
+        if (iconCopies[source] !== undefined)
+            return iconCopies[source];
+        const reader = iconFile.createObject(root, { path });
+        const data = reader.data();
+        reader.destroy();
+        let copy = source;   // illisible : laissée telle quelle
+        if (data && data.byteLength > 0) {
+            // Nom : md5 du contenu, octets décalés hors de 0 (caractère nul évité dans la chaîne).
+            const bytes = Array.from(new Uint8Array(data), b => b | 0x100);
+            let text = "";
+            for (let i = 0; i < bytes.length; i += 8192)
+                text += String.fromCharCode.apply(null, bytes.slice(i, i + 8192));
+            const file = `${iconCache}/${Qt.md5(text)}${path.match(/\.[A-Za-z0-9]+$/)?.[0] ?? ""}`;
+            const writer = iconFile.createObject(root, { path: file });
+            writer.setData(data);
+            writer.waitForJob();
+            writer.destroy();
+            copy = Icons.fileUrl(file);
+        }
+        iconCopies[source] = copy;
+        return copy;
     }
 
     // Indice « value » : progression 0–100, -1 sans barre.
