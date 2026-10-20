@@ -57,9 +57,16 @@ Singleton {
     // (de la liste, ou des récents si elle n'est pas lue) ; un code pays, « nl », est laissé à remember() : pays seul.
     function record(target: var): void {
         const country = countries.find(c => sameName(c, target[0])) ?? recent.map(entryCountry).find(c => sameName(c, target[0]));
-        if (country)
+        if (country) {
             push(target.length > 1 ? `${country}/${target[1]}` : country);
+            recordedHere = true;
+        }
     }
+
+    // remember() ne regarde que les nouvelles connexions (serveur différent) ; celle que record() vient de retenir est
+    // laissée telle quelle (la ville du statut peut s'écrire autrement que dans `nordvpn cities`).
+    property string rememberedHost: ""
+    property bool recordedHere: false
 
     // Connexion observée (raccourci direct, ligne de commande, fin de pause, redémarrage de Quickshell) : l'entrée déjà retenue
     // pour ce pays, avec sa ville si c'est celle de la connexion (une autre ville choisie ailleurs : pays seul). Rien pendant
@@ -67,8 +74,21 @@ Singleton {
     // Statut lu directement : appelée depuis onStatusChanged, la liaison `connected` peut ne pas être encore à jour.
     function remember(): void {
         const country = status["Country"];
-        if (status["Status"] !== "Connected" || !country || busy)
+        if (busy || !recentLoaded)   // (relancée au chargement de l'historique)
             return;
+        if (status["Status"] !== "Connected" || !country) {
+            rememberedHost = "";
+            recordedHere = false;
+            return;
+        }
+        const host = status["Hostname"] ?? "";
+        if (host === rememberedHost)
+            return;
+        rememberedHost = host;
+        if (recordedHere) {
+            recordedHere = false;
+            return;
+        }
         const key = countryKey(country);
         const found = recent.find(e => sameName(entryCountry(e), key));
         const city = found ? entryCity(found) : "";
@@ -144,7 +164,7 @@ Singleton {
 
     // Renvoie faux si une autre action est en cours (rien n'est lancé).
     function run(args: var): bool {
-        if (action.busy)   // (après l'action, l'attente du statut ne bloque pas un raccourci)
+        if (action.busy || cancelling)   // (après l'action, l'attente du statut ne bloque pas un raccourci)
             return false;
         lastAction = args[0];   // avant `busy` : `doing` ne prend jamais le nom de l'action précédente
         requested = null;
@@ -169,14 +189,15 @@ Singleton {
     // Pendant une connexion (figée, trop longue) : elle est arrêtée, puis la déconnexion suit (onFinished) ;
     // « Disconnecting… » dès maintenant.
     property bool cancelling: false
-    readonly property bool cancellable: action.busy && lastAction === "connect" && !cancelling
+    readonly property bool cancellable: action.busy && lastAction === "connect"
 
     function disconnect(): void {
         if (cancellable) {
             cancelling = true;
             lastAction = "disconnect";
             requested = null;
-            action.stop();
+            action.interrupt();
+            cancelFallback.restart();
         } else {
             run(["disconnect"]);
         }
@@ -284,6 +305,16 @@ Singleton {
         }
     }
 
+    // Connexion arrêtée qui ne rend pas la main (SIGINT ignoré) : arrêt forcé.
+    Timer {
+        id: cancelFallback
+        interval: 3000
+        onTriggered: {
+            if (root.cancelling && action.busy)
+                action.stop();
+        }
+    }
+
     // Démon qui ne répond plus après une action : verrou levé au bout de 30 s (l'état affiché peut alors être l'ancien).
     Timer {
         id: awaitLimit
@@ -308,8 +339,10 @@ Singleton {
             // Connexion arrêtée (disconnect()) : ni erreur à signaler ni choix à retenir ; la déconnexion suit (`busy` reste
             // vrai jusque-là), au tour suivant : ce processus n'a pas fini de signaler sa fin.
             if (root.cancelling) {
-                root.cancelling = false;
-                Qt.callLater(() => root.run(["disconnect"]));
+                Qt.callLater(() => {
+                    root.cancelling = false;   // jusque-là, run() refuse toute autre action (raccourci)
+                    root.run(["disconnect"]);
+                });
                 return;
             }
             if (error !== "")

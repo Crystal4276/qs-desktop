@@ -12,7 +12,7 @@ Scope {
     property bool available: false
     property bool busy: false
     property string error: ""
-    property bool lastLineError: false   // message : dernière ligne, de stdout d'abord (nordvpn), sinon première de stderr
+    property bool lastLineError: false   // message : dernière ligne de la sortie (nordvpn : sa progression précède l'erreur)
     property string noAnswer: `${program}: no answer (sign-in needed?)`   // arrêtée par `timeout` (124)
     signal finished
 
@@ -38,7 +38,14 @@ Scope {
         onExited: code => root.available = code === 0
     }
 
-    // Arrêt de la commande en cours (SIGTERM) : `finished` suit, avec son code de sortie.
+    // Arrêt de la commande en cours par SIGINT (Ctrl+C : annulation propre, nordvpn ; `timeout` le transmet) : `finished`
+    // suit, avec son code de sortie.
+    function interrupt(): void {
+        command.signal(2);
+    }
+
+    // Arrêt forcé (SIGTERM) : SIGINT est sans effet si Quickshell a été lancé en arrière-plan (`qs … &` : signal ignoré,
+    // hérité par les commandes).
     function stop(): void {
         command.running = false;
     }
@@ -70,7 +77,7 @@ Scope {
             if (code === 124) {
                 root.error = root.noAnswer;
             } else if (code !== 0) {
-                const text = root.lastLineError ? out.text.trim() || err.text.trim() : err.text.trim() || out.text.trim();
+                const text = err.text.trim() || out.text.trim();
                 // Retours chariot de l'indicateur de progression (« \r-\r\\\r ») : segments séparés, ceux du seul indicateur ôtés.
                 const lines = text.split(/[\r\n]+/).map(l => l.trim()).filter(l => l !== "" && !/^[-\\|\/]+$/.test(l));
                 root.error = (root.lastLineError ? lines[lines.length - 1] : lines[0]) ?? `${root.program}: exit code ${code}`;
