@@ -1150,6 +1150,24 @@ Passe 2 (fichiers complets, 10 remarques, toutes confirmées et corrigées) :
 - Vérifié sur banc : fusion des mises à jour pendant « ne pas déranger » (90 % affiché), popup gardée au rechargement avec « ne pas
   déranger » actif, `historyPop` puis rechargement, popup critique remontée, replis d'icônes, dossiers d'instances mortes effacés.
 
+Passe 3 (10 remarques ; 9 corrigées telles quelles, 1 autrement) :
+- Une silencieuse remplacée alors qu'elle doit s'afficher (« ne pas déranger » coupé, ou devenue critique, par étiquette ou
+  par identifiant) s'affiche ; sa ligne quitte l'historique jusqu'à sa fermeture. Une notification affichée le reste.
+- `historyPop` sur la ligne d'une silencieuse encore suivie : c'est elle qui s'affiche (actions, mises à jour).
+- Ligne d'une silencieuse effacée (croix, « Clear all ») : elle est fermée ; poussée hors des 20 : elle expire. Sinon ses mises à
+  jour se perdaient.
+- Mise à jour en attente appliquée à la fermeture d'une silencieuse.
+- Ligne mise à jour : non vue, en tête, nouvelle clé (le `ScriptModel` du centre gardait l'ancien objet d'une ligne déplacée de
+  même clé : contenu périmé à l'écran, vu sur banc).
+- Moins de travail par mise à jour : `popups` réassigné seulement si l'ordre change, image en données retenue une fois tant
+  qu'elle ne change pas.
+- Rechargement : le délai repart de zéro (autrement que proposé : le survol qui le suspend n'est pas enregistré, un délai repris
+  trop tôt faisait disparaître la notification) ; état recréé par une seule fonction (`stateProps`).
+- Icône générique dans `Theme.notificationCentre.genericIcon`.
+- Vérifié sur banc : mise à jour après « vu » (contenu, vert, en tête), silencieuse devenue critique (affichée), `historyPop`
+  d'une silencieuse, « ne pas déranger » coupé puis même étiquette, « Clear all » puis même étiquette (nouvelle ligne),
+  rechargement puis mise à jour (même ligne).
+
 ## Prochaine étape
 
 Phase 9 — parité Hyprland (tests à faire ensemble dans une session Hyprland : voir « Compatibilité Hyprland »).

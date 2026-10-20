@@ -410,6 +410,7 @@ Singleton {
     // § 4 — Centre de notifications : lignes de l'historique (refaites le 2026-10-20, ta demande ; disposition de KDE / GNOME)
     readonly property QtObject notificationCentre: QtObject {
         readonly property int iconSize: root.bar.trayIconSize   // icône ou image : 32 px (taille du tray)
+        readonly property string genericIcon: "preferences-desktop-notification"   // sans icône, ou icône illisible
         readonly property int bodyLines: 2                      // corps replié ; déplié : 6 lignes (DEFAULT_EXPAND_LINES de GNOME)
         readonly property int expandedLines: 6
     }
