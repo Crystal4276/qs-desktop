@@ -12,15 +12,16 @@ Singleton {
     id: root
 
     property bool available: false
-    onAvailableChanged: if (available) loadCountries()   // orthographe des pays pour les récents (countryKey)
     property var status: ({})
     readonly property string state: status["Status"] ?? ""
     readonly property bool connected: state === "Connected"
     readonly property bool paused: state === "Paused"
     readonly property bool connecting: state === "Connecting" || doing === "connect"
-    readonly property bool busy: action.busy
+    // Action en cours, jusqu'à la première lecture du statut qui la suit (sinon l'état d'avant reviendrait un instant).
+    readonly property bool busy: action.busy || awaitingStatus
+    property bool awaitingStatus: false
     // Action lancée d'ici et pas encore finie : "connect", "disconnect", "pause" ou "".
-    readonly property string doing: action.busy ? lastAction : ""
+    readonly property string doing: busy ? lastAction : ""
     property string lastAction: ""
     // Cible de la connexion en cours lancée d'ici ([pays] ou [pays, ville]) ; null pour le serveur recommandé.
     property var requested: null
@@ -127,7 +128,7 @@ Singleton {
     property int actionCount: 0
 
     function readStatus(): void {
-        statusProcess.stamp = busy ? -1 : actionCount;
+        statusProcess.stamp = action.busy ? -1 : actionCount;
         statusProcess.running = true;
     }
 
@@ -217,7 +218,10 @@ Singleton {
         }
         // Lecture ancienne (stamp) ou trop lente (124 : démon occupé) : rien n'est changé, le module ne disparaît pas.
         onExited: code => {
-            if (stamp !== root.actionCount || code === 124)
+            if (stamp !== root.actionCount)
+                return;
+            root.awaitingStatus = false;   // avant `status` : remember() voit l'action finie
+            if (code === 124)
                 return;
             const text = statusOut.text;
             const result = {};
@@ -230,6 +234,8 @@ Singleton {
             root.status = result;
         }
         onRunningChanged: {
+            if (!running && stamp === root.actionCount)
+                root.awaitingStatus = false;   // aussi si la lecture n'a pas pu démarrer (pas d'`exited`)
             if (!running && root.refreshAgain) {
                 root.refreshAgain = false;
                 Qt.callLater(root.refresh);
@@ -244,7 +250,7 @@ Singleton {
         running: true
         repeat: true
         onTriggered: {
-            if (!statusProcess.running)
+            if (!statusProcess.running && !action.busy)   // pendant une action : lecture inutile (ignorée)
                 root.readStatus();
         }
     }
@@ -263,6 +269,7 @@ Singleton {
             else if (root.lastAction === "connect" && root.requested)
                 root.record(root.requested);
             root.requested = null;
+            root.awaitingStatus = true;
             root.refresh();
         }
     }
