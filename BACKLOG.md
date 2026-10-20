@@ -27,7 +27,4 @@ Idées notées pendant le travail. Rien ici n'est implémenté sans accord.
 - **Vue des fenêtres** (accepté le 2026-10-16, après la première version) : aperçus en direct de toutes les fenêtres (`Toplevel` +
   `ScreencopyView`), clic pour y aller, ouverte par un raccourci.
 
-- NordVPN (`services/Vpn.qml`) : faire passer toutes les commandes `nordvpn` (actions et lectures du statut) par une seule file,
-  une lecture du statut suivant chaque action ; remplacerait les gardes contre les lectures anciennes (stamp, refreshAgain,
-  awaitingStatus). Proposé par les revues du 2026-10-20 ; non fait : refonte, à tester sur banc avec le faux `nordvpn`.
 - Panneau NordVPN : recherche par ville (« amsterdam ») ; demanderait les villes des ~150 pays (`nordvpn cities` pour chacun).

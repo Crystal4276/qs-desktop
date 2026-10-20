@@ -423,7 +423,8 @@ Proposition de placement dans les phases (CLAUDE.md n'est pas modifié sans ton 
   disque en boucle prises en charge).
 - **NordVPN** (§ 11.4) : commande `nordvpn` ; onglets Recent (historique local, un pays par entrée, avec la ville si elle a été
   choisie) / All countries ; la recherche montre tous les pays filtrés ; l'interrupteur reconnecte à la dernière entrée (refonte du
-  2026-10-20).
+  2026-10-20). Toutes les commandes `nordvpn` (statut, listes, actions) passent par une seule file, une à la fois : une lecture du
+  statut suit chaque action et voit toujours son effet ; prix : une liste demandée pendant une connexion attend sa fin.
 
 ### 10.1.2 Mise en œuvre de la phase 6 (2026-10-16)
 

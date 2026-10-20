@@ -12,6 +12,8 @@ Scope {
     property bool available: false
     property bool busy: false
     property string error: ""
+    property int code: 0          // code de sortie de la dernière commande (-1 : pas démarrée)
+    property string output: ""    // sa sortie standard
     property bool lastLineError: false   // message : dernière ligne de la sortie (nordvpn : sa progression précède l'erreur)
     property string noAnswer: `${program}: no answer (sign-in needed?)`   // arrêtée par `timeout` (124)
     signal finished
@@ -55,6 +57,8 @@ Scope {
     function settleIfFailed(): void {
         if (busy && !command.running) {
             busy = false;
+            code = -1;
+            output = "";
             error = `${program}: could not start`;
             finished();
         }
@@ -71,6 +75,8 @@ Scope {
         }
         onExited: code => {
             root.busy = false;
+            root.code = code;
+            root.output = out.text;
             // 124 : arrêtée par `timeout` (sa sortie, ex. « To authenticate, visit: » sans l'adresse, n'est pas le message).
             // Sinon la première ligne non vide (une option refusée est suivie de toute l'aide de la commande), ou la dernière
             // (`lastLineError`).

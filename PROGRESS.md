@@ -1055,9 +1055,25 @@ changement de focus. À vérifier en phase 9 : après `hyprctl reload` au révei
 - **Incident** : l'agent de revue de la passe 8 a lancé lui-même un `nordvpn connect` vers un pays inexistant pour vérifier une
   hypothèse, ce qui a coupé ta VPN à 09:59 (journal de `nordvpnd`). Les passes suivantes ont reçu la consigne de lecture seule
   (vérifiée dans leurs traces). Ta VPN est restée déconnectée : à reconnecter par toi.
-- Écarté (BACKLOG) : file unique pour toutes les commandes `nordvpn`.
+- Écarté (BACKLOG) : file unique pour toutes les commandes `nordvpn` (faite ensuite, voir ci-dessous).
 - À tester à la main (impossible sans toucher ta VPN) : vraie connexion à une ville puis interrupteur (reconnexion à la ville) ;
   annulation d'une vraie connexion lente (le démon abandonne-t-il bien sa connexion au SIGINT ?) ; notification d'erreur réelle.
+
+### NordVPN : file unique des commandes (2026-10-20, ta demande)
+
+- `services/Vpn.qml` : statut, listes des pays et des villes, connexion, déconnexion et pause passent par une seule file, une
+  commande à la fois (un seul `CliRunner`, qui expose maintenant `code` et `output`). Une lecture du statut est mise en tête de
+  file après chaque action : elle voit toujours son effet. Disparaissent : les quatre processus, le tampon des lectures anciennes
+  (`stamp`), `refreshAgain`, `awaitingStatus` et sa limite de 30 s (remplacée par trois essais de la lecture qui suit l'action),
+  `pendingCities`/`citiesFetching` (une seule liste de villes en attente : la dernière demandée).
+- Nouveau : une connexion encore en attente (derrière une liste) est simplement retirée de la file par l'interrupteur.
+- Prix : une liste demandée pendant une connexion (5 min au plus) attend sa fin ; le panneau est de toute façon verrouillé.
+- Banc (faux `nordvpn`, appels IPC par PID du banc seulement) : connexion, échec (notification, retour à l'état réel), annulation
+  d'une connexion figée (SIGINT, SIGTERM après 3 s, déconnexion), raccourci refusé pendant l'annulation, connexion en attente
+  retirée, file des villes (France, Germany, France : Germany abandonnée, France pas relancée), statut lent après une action
+  (« Connecting… » gardé, lecture refaite), démon figé (module masqué après trois lectures, réaffiché au retour).
+- À tester à la main : les mêmes points que ci-dessus (vraie connexion, vraie annulation), plus l'ouverture du panneau pendant une
+  connexion lente (« Loading countries… » jusqu'à sa fin si la liste n'était pas encore chargée).
 
 ## Prochaine étape
 
