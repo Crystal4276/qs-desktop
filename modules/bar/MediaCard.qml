@@ -13,7 +13,7 @@ Rectangle {
     id: root
 
     readonly property var player: Media.player
-    readonly property real length: player?.lengthSupported ? player.length : 0
+    readonly property real length: Media.length
     // Fenêtre du panneau affichée (propriété attachée lue sur l'Item lui-même : `root.QsWindow` vaut undefined).
     readonly property bool windowShown: QsWindow.window?.visible ?? false
 
@@ -36,7 +36,7 @@ Rectangle {
         running: root.visible && root.windowShown && (root.player?.isPlaying ?? false)
         interval: 1000
         repeat: true
-        onTriggered: root.player.positionChanged()
+        onTriggered: Media.refreshPosition()
     }
 
     RowLayout {
@@ -154,14 +154,9 @@ Rectangle {
 
                     // Clavier : Gauche / Droite ±5 s ; bouton affiché quand la position est choisie.
                     activeFocusOnTab: seekable
-                    Keys.onLeftPressed: step(-5)
-                    Keys.onRightPressed: step(5)
+                    Keys.onLeftPressed: Media.step(-5)
+                    Keys.onRightPressed: Media.step(5)
 
-                    // Le lecteur peut avoir disparu ou cessé d'accepter les déplacements depuis la prise du focus.
-                    function step(seconds: real): void {
-                        if (seekable && root.player)
-                            root.player.position = Math.max(0, Math.min(root.length, root.player.position + seconds));
-                    }
 
                     Rectangle {
                         anchors.verticalCenter: parent.verticalCenter
@@ -199,8 +194,7 @@ Rectangle {
                                 progress.dragValue = progress.valueAt(mouse.x);
                         }
                         onReleased: mouse => {
-                            if (progress.seekable && root.player)
-                                root.player.position = progress.valueAt(mouse.x) * root.length;
+                            Media.seek(progress.valueAt(mouse.x));
                             progress.dragValue = -1;
                         }
                         onCanceled: progress.dragValue = -1

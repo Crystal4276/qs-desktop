@@ -188,7 +188,7 @@ Singleton {
                 keepIcons();
         }
         readonly property int progress: notification ? Notifs.progressOf(notification.hints) : (saved.progress ?? -1)
-        readonly property string stackTag: notification ? Notifs.stackTagOf(notification.hints) : ""
+        readonly property string stackTag: notification ? Notifs.stackTagOf(notification.hints) : (saved.stackTag ?? "")
         readonly property bool isTransient: notification?.transient ?? false
         readonly property var actions: notification ? notification.actions : []
         readonly property bool hasActions: notification ? notification.actions.length > 0 : (saved.hasActions ?? false)
@@ -201,7 +201,7 @@ Singleton {
         readonly property real ageClock: Notifs.clock - timestamp >= Notifs.ageThreshold * 1000 ? Notifs.clock : 0
         readonly property string text: Notifs.render(entry, ageClock || timestamp)
 
-        // Remplacement par identifiant (géré par Quickshell sur le même objet) : le délai repart, comme Dunst.
+        // Remplacement par identifiant (géré par Quickshell sur le même objet) : Notifs.changed.
         property Connections watcher: Connections {
             target: entry.notification
             function onSummaryChanged() { Notifs.changed(entry); }
@@ -238,7 +238,7 @@ Singleton {
         // Doublon (même application, titre, corps, urgence et icône) : remplacé, compteur augmenté si la progression est la même.
         if (!old) {
             old = live.find(e => e.appName === n.appName && e.summary === n.summary && e.body === n.body && e.urgency === n.urgency
-                && (e.icon === "" || icon === "" || (e.notification ? iconSource(e.notification.image, e.notification.appIcon) : e.icon) === icon));
+                && sameIcon(e.notification ? iconSource(e.notification.image, e.notification.appIcon) : e.icon, icon));
             if (old)
                 dupCount = old.progress === progressOf(n.hints) ? old.dupCount + 1 : old.dupCount;
         }
@@ -273,7 +273,9 @@ Singleton {
     // Contenu ou image changés (remplacement par identifiant, géré par Quickshell sur le même objet, ou par étiquette de pile
     // et doublon) : le délai repart, comme Dunst ; l'ordre d'urgence est refait ; ligne de l'historique mise à jour si silencieuse.
     function changed(entry): void {
-        entry.start = Date.now();
+        // Remplacée : âge et délai repartent, et un délai normal reprend pour une notification rappelée (comme Dunst).
+        entry.start = entry.timestamp = Date.now();
+        entry.redisplayed = false;
         entry.dirty = true;
         Qt.callLater(applyChanges);   // après la mise à jour des liaisons de l'Entry (le signal arrive avant)
     }
@@ -353,7 +355,8 @@ Singleton {
             progress: entry.progress,
             hasActions: entry.hasActions,
             dupCount: entry.dupCount,
-            timestamp: entry.timestamp
+            timestamp: entry.timestamp,
+            stackTag: entry.stackTag   // une notification rappelée reste remplaçable par son étiquette
         };
     }
 
@@ -544,18 +547,30 @@ Singleton {
 
     // --- Lecture des notifications ---
 
+    // Doublons : seules les icônes du thème se comparent. Une image en données a une adresse par notification, et Chromium
+    // écrit la même image dans un fichier temporaire différent à chaque fois (Dunst comparait les pixels).
+    function sameIcon(a: string, b: string): bool {
+        const comparable = icon => icon !== "" && !icon.startsWith("file:") && !isDataImage(icon);
+        return !comparable(a) || !comparable(b) || a === b;
+    }
+
     // Icône : image fournie (données, chemin ou nom d'icône), sinon icône de l'application (chemin ou nom dans le thème).
     // Fichiers locaux, images servies par Quickshell et icônes du thème seulement, comme Dunst : une adresse http(s) envoyée
     // par une application ferait télécharger l'image à chaque affichage (pixel espion ; revue de code).
     function iconSource(image: string, appIcon: string): string {
-        // Chemin servi par le fournisseur d'icônes : en file://, pour qu'un fichier absent soit une erreur (repli sur l'icône
-        // de l'application) et non le damier de Quickshell.
+        let source = "";
+        // Servi par le fournisseur d'icônes : un chemin passe en file://, pour qu'un fichier absent soit une erreur (repli sur
+        // l'icône de l'application) et non le damier de Quickshell ; un nom absent du thème donne "" (repli aussi).
         if (image.startsWith("image://icon//"))
-            return Icons.fileUrl(decodeURIComponent(image.slice(13).split("?")[0]));
-        if (image.startsWith("image://") || image.startsWith("file:"))
-            return image;
-        if (image !== "" && !image.includes("://"))
-            return Icons.iconSource(image);   // chemin absolu ou nom d'icône du thème (image-path de la spécification)
+            source = Icons.fileUrl(decodeURIComponent(image.slice(13).split("?")[0]));
+        else if (image.startsWith("image://icon/"))
+            source = Icons.iconSource(decodeURIComponent(image.slice(13).split("?")[0]));
+        else if (image.startsWith("image://") || image.startsWith("file:"))
+            source = image;
+        else if (image !== "" && !image.includes("://"))
+            source = Icons.iconSource(image);   // chemin absolu ou nom d'icône du thème (image-path de la spécification)
+        if (source !== "")
+            return source;
         if (appIcon === "" || (appIcon.includes("://") && !appIcon.startsWith("file:")))
             return "";
         if (appIcon.startsWith("file:"))
@@ -613,8 +628,7 @@ Singleton {
     }
 
     function keepIcon(source: string, id: int): string {
-        const path = source.startsWith("file://") ? decodeURIComponent(source.slice(7))
-            : source.startsWith("image://icon//") ? decodeURIComponent(source.slice(13).split("?")[0]) : "";
+        const path = source.startsWith("file://") ? decodeURIComponent(source.slice(7)) : "";   // iconSource : chemins en file://
         if (path === "" || path.startsWith(`${iconRoot}/`) || !volatileDirs.some(d => path.startsWith(d)))
             return source;
         const key = `${id}|${source}`;

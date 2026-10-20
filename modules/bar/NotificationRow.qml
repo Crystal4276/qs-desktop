@@ -65,7 +65,10 @@ Rectangle {
     readonly property string genericIcon: Theme.notificationCentre.genericIcon
     readonly property string headerText: bodyPlain === "" || titleText === "" ? entry.appName
         : iconNamesApp || (entry.appName ?? "") === "" ? titleText : `${titleText} · ${entry.appName}`
-    readonly property string mainText: bodyPlain !== "" ? bodyPlain : titleText
+    // Replié : lignes réunies (Chromium met l'origine du site puis une ligne vide avant le texte : l'aperçu ne montrait que
+    // l'origine) ; déplié : sauts de ligne gardés, lignes vides retirées.
+    readonly property string mainText: bodyPlain === "" ? titleText
+        : expanded ? bodyPlain.replace(/\n\s*\n+/g, "\n") : bodyPlain.replace(/\s*\n\s*/g, " ")
 
     Layout.fillWidth: true
     implicitHeight: content.implicitHeight + 2 * Theme.panel.rowPadding

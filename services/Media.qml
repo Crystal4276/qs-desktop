@@ -73,6 +73,25 @@ Singleton {
             player.next();
     }
 
+    // Position (carte média) : en fraction du morceau, ou décalée en secondes ; sans effet si le lecteur a disparu ou
+    // n'accepte pas les déplacements. La position n'est pas signalée en continu (documentation de MprisPlayer) : relue par
+    // refreshPosition.
+    readonly property real length: player?.lengthSupported ? player.length : 0
+
+    function seek(fraction: real): void {
+        if (player?.canSeek && length > 0)
+            player.position = Math.max(0, Math.min(1, fraction)) * length;
+    }
+
+    function step(seconds: real): void {
+        if (player?.canSeek && length > 0)
+            player.position = Math.max(0, Math.min(length, player.position + seconds));
+    }
+
+    function refreshPosition(): void {
+        player?.positionChanged();
+    }
+
     // Molette : lecteur suivant (vers le haut) ou précédent, en boucle.
     function shift(up: bool): void {
         if (players.length < 2)
