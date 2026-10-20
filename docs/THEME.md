@@ -239,7 +239,8 @@ graphique Linux), ZeroTier : `zerotier-cli`.
 |---|---|---|
 | Onglets | Wired / Tailscale / ZeroTier, seulement ceux qui existent ; boutons de panneau de même largeur, onglet choisi « coché » (`green`, texte `mantle`) | sélecteur de fonds |
 | Cartes | cadre commun (`PanelCard.qml`, jetons `Theme.panel.card` / `cardIconSize`) : fond `base`, coins 10 px, padding 15 px, icône Papirus 48 px ; détails : grille partagée | module Wi-Fi |
-| Graphe de trafic | 2 min (24 relevés de 5 s) ; creux `crust`, coins 10 px, **64 px** de haut ; descendant : aire `sky` à **25 %** + ligne, montant : ligne `peach` ; lignes **2 px** ; légende Inter 16 px ↓ / ↑ aux couleurs des courbes, échelle `subtext0` | `sky` : module réseau de la barre ; **`peach`, tailles nouvelles, à valider** |
+| Graphe de trafic | 2 min (48 relevés de 2,5 s) ; creux `crust`, coins 10 px, **64 px** de haut ; descendant : aire `sky` à **25 %** + ligne, montant : ligne `peach` ; lignes **2 px** ; légende Inter 16 px ↓ / ↑ aux couleurs des courbes, échelle `subtext0` | `sky` : module réseau de la barre ; **`peach`, tailles nouvelles, à valider** |
+| Carte Tailscale | logo officiel `assets/tailscale.svg` (dépôt `tailscale/tailscale`, `client/systray/tailscale.svg` : carré `#1F1E1E`, points blancs) à la place de `network-vpn` | ta demande du 2026-10-20 |
 | Appareils Tailscale | ligne de panneau, icône Papirus du système (ordinateur / téléphone), point d'état **10 px** cerclé du fond du panneau : `green` en ligne, `surface2` hors ligne ; nom `green` en ligne | **point nouveau, à valider** |
 | Options | ligne de panneau avec interrupteur à droite (Use Tailscale DNS, Accept subnet routes, Shields up, Allow local network access) | GNOME |
 | Bouton du tray sans câble | `network-vpn` (le Wi-Fi a son icône) ; à 50 % d'opacité si aucun réseau privé n'est actif (opacité « indisponible » des panneaux) | panneaux |
@@ -455,6 +456,7 @@ Recensement de toutes les références à des fichiers image dans les configs ac
 | `~/.config/sway/assets/logout.svg` | 5 Ko | power menu : Logout | dégradés |
 | `~/.config/sway/assets/restart.svg` | 20 Ko | power menu : Reboot | dégradés + **un filtre `feGaussianBlur`** |
 | `~/.config/sway/assets/shutdown.svg` | 12 Ko | power menu : Shutdown | dégradés + **un filtre `feGaussianBlur`** |
+| `tailscale.svg` (téléchargé : `tailscale/tailscale`, `client/systray/tailscale.svg`, BSD-3) | 2,5 Ko | carte de l'onglet Tailscale | SVG simple, sans filtre ni dégradé ; ajouté le 2026-10-20 |
 
 Aucun de ces SVG ne référence de fichier externe. Les 4 icônes du power menu existent à l'identique dans `~/.config/hypr/assets/`.
 Point à vérifier au moment de leur intégration (phase 8) : rendu du flou par Qt SVG (`qt6-svg`) comparé au rendu Rofi (librsvg), sur la capture de référence.
