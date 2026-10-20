@@ -2,35 +2,28 @@ import QtQuick
 import Quickshell
 import qs.config
 
-// Horloge (INVENTORY.md § 1) : `U+E385␣␣HH:mm`, et sur la barre principale `␣␣U+F274␣ddd-dd`.
+// Horloge (INVENTORY.md § 1) : `U+E385␣HH:mm`, et sur la barre principale, 10 px puis `U+F274␣ddd-dd` (une espace après
+// l'icône et un padding de module avant le calendrier, comme les pilules système et réseau : ta demande du 2026-10-20).
 // Texte en Inter ; horloge en Hack Nerd Font, calendrier en Font Awesome 7 (THEME.md § 2).
 // Locale et fuseau : ceux du système. Survol : aperçu du calendrier ; clic : calendrier épinglé (ARCHITECTURE § 8.3).
-Item {
+InfoModule {
     id: root
 
     property bool showDate: false
 
-    implicitWidth: label.implicitWidth + 2 * Theme.bar.modulePadding
-    implicitHeight: label.implicitHeight + 2 * Theme.bar.modulePadding
+    color: Theme.module.clock
+    segments: [
+        [Theme.font.inlineIcons, Theme.icon.clock],
+        [Theme.font.text, " " + clock.date.toLocaleString(Qt.locale(), "HH:mm")],
+        ...(root.showDate ? [
+            [Theme.font.awesome, Theme.icon.calendar, [], Theme.bar.modulePadding],
+            [Theme.font.text, " " + clock.date.toLocaleString(Qt.locale(), "ddd-dd")]
+        ] : [])
+    ]
 
     SystemClock {
         id: clock
         precision: SystemClock.Minutes
-    }
-
-    RichLabel {
-        id: label
-        anchors.centerIn: parent
-        color: Theme.module.clock
-        segments: [
-            [Theme.font.inlineIcons, Theme.icon.clock],
-            [Theme.font.text, "  " + clock.date.toLocaleString(Qt.locale(), "HH:mm")],
-            ...(root.showDate ? [
-                [Theme.font.text, "  "],
-                [Theme.font.awesome, Theme.icon.calendar],
-                [Theme.font.text, " " + clock.date.toLocaleString(Qt.locale(), "ddd-dd")]
-            ] : [])
-        ]
     }
 
     HoverHandler {

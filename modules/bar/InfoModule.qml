@@ -2,7 +2,7 @@ import QtQuick
 import qs.config
 
 // Module texte de la barre : icône en Hack Nerd Font collée à du texte Inter (THEME.md § 2), dans une seule ligne.
-// Utilisé par les mises à jour, le GPU, le CPU, la mémoire et le réseau.
+// Utilisé par les mises à jour, le GPU, le CPU, la mémoire, le réseau et l'horloge.
 Item {
     id: root
 
@@ -62,9 +62,12 @@ Item {
                 readonly property var segment: root.segments[index] ?? []
 
                 anchors.baseline: reference.baseline
-                // Arrondi au pixel : la mesure et le texte affiché peuvent différer d'une fraction de pixel.
-                width: Math.ceil(Math.max(implicitWidth, leftPadding + Math.max(0, ...Array.from(segment[2] ?? []).map(s => metrics.advanceWidth(s)))))
-                horizontalAlignment: Text.AlignRight
+                // Arrondi au pixel : la mesure et le texte affiché peuvent différer d'une fraction de pixel. Le dessin compte
+                // aussi : les icônes Nerd Font débordent de leur avance (jusqu'à 11 px), l'espace qui suit doit rester visible.
+                readonly property rect ink: metrics.tightBoundingRect(text)
+                width: Math.ceil(Math.max(implicitWidth, leftPadding + ink.x + ink.width, leftPadding + Math.max(0, ...Array.from(segment[2] ?? []).map(s => metrics.advanceWidth(s)))))
+                // Valeurs à largeur réservée : alignées à droite ; icônes : à gauche, leur débord tombe dans la largeur ajoutée.
+                horizontalAlignment: segment[2] ? Text.AlignRight : Text.AlignLeft
                 leftPadding: segment[3] ?? 0
                 font.family: segment[0] ?? Theme.font.text
                 font.pixelSize: Theme.font.barText
