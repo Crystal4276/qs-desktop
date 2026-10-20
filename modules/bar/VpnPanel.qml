@@ -113,7 +113,7 @@ Panel {
     PanelField {
         id: search
         placeholder: "Search countries"
-        clearOnEscape: true
+        search: true
         onAccepted: {
             if (root.query !== "" && root.rows.length > 0)
                 Vpn.connect(root.rows[0].split("/"));

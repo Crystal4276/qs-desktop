@@ -252,10 +252,22 @@ Style des panneaux ; aucune valeur nouvelle.
 
 | Élément | Valeur | Origine |
 |---|---|---|
-| Recherche | champ des panneaux, focus à l'ouverture ; Entrée : premier résultat ; Échap : efface, puis ferme | — |
+| Recherche | champ des panneaux, focus à l'ouverture ; croix d'effacement ; Entrée : premier résultat ; Échap : efface, puis ferme | — |
 | Onglets | Recent / All countries, sous la recherche ; boutons de même largeur, onglet affiché « coché » ; une recherche coche All countries | panneau réseau |
 | Lignes | « Pays » ou « Pays, Ville » (récents) ; pays ou ville de la connexion en `green` ; villes en retrait de 24 + 10 px | lignes des panneaux |
 | États | « Connecting to Pays, Ville… », « Disconnecting… », « Pausing… » : détails, trafic et pause masqués pendant l'action ; messages Loading / unavailable en texte secondaire | — |
+
+### Croix d'effacement des champs de recherche (ta demande du 2026-10-20)
+
+Tous les champs de recherche : NordVPN, statistiques système (« Search processes »), lanceur, menu d'applications. Visible
+dès que le champ contient du texte ; un clic efface la recherche et laisse le focus dans le champ.
+
+| Élément | Valeur | Origine |
+|---|---|---|
+| Glyphe | `U+F0156` (Symbols Nerd Font Mono), taille du texte du champ | « fermer » de l'outil de capture (§ 7 ter) |
+| Couleur | secondaire du champ (panneaux et menu : `subtext0` ; lanceur : `rofi.fg`, comme sa loupe), couleur du texte au survol | champs |
+| Place | à droite du champ, padding du champ ; menu d'applications : juste avant la loupe, espacement 10 px | — |
+| Échap (champs des panneaux) | efface d'abord la recherche, puis ferme ; lanceur et menu : ferme (Rofi, nwg-menu) | — |
 
 ### Calendrier de l'horloge (nouveau composant, phase 4 — ARCHITECTURE § 8.3)
 

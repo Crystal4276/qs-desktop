@@ -347,6 +347,7 @@ OverlayPopup {
             PanelField {
                 id: search
                 placeholder: "Search processes"
+                search: true
                 onTextChanged: root.refreeze()
                 Keys.onEscapePressed: root.close()
             }

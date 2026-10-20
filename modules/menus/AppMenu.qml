@@ -620,7 +620,7 @@ OverlayPopup {
                     }
                 }
 
-                // Recherche : soulignement 1 px `overlay2`, rayon 10 px, 24 px (nwg-menu) ; loupe à droite (Cinnamon).
+                // Recherche : soulignement 1 px `overlay2`, rayon 10 px, 24 px (nwg-menu) ; loupe à droite (Cinnamon), croix d'effacement avant elle.
                 Rectangle {
                     Layout.fillWidth: true
                     implicitHeight: search.implicitHeight + 2 * Theme.appMenu.itemPadding + Theme.appMenu.searchUnderline
@@ -639,6 +639,7 @@ OverlayPopup {
                         x: Theme.appMenu.itemPadding
                         y: Theme.appMenu.itemPadding
                         width: parent.width - 2 * Theme.appMenu.itemPadding - searchGlyph.width - Theme.appMenu.spacing
+                            - (searchClear.visible ? searchClear.width + Theme.appMenu.spacing : 0)
                         clip: true
                         font.family: Theme.font.text
                         font.pixelSize: Theme.font.appMenuSearch
@@ -648,6 +649,21 @@ OverlayPopup {
                             root.resetList();
                         }
                         Keys.onPressed: event => event.accepted = root.handleKey(event)
+                    }
+
+                    ClearButton {
+                        id: searchClear
+                        visible: search.text !== ""
+                        anchors.right: searchGlyph.left
+                        anchors.rightMargin: Theme.appMenu.spacing
+                        anchors.verticalCenter: search.verticalCenter
+                        font.pixelSize: Theme.font.appMenu
+                        normalColor: Theme.appMenu.description
+                        hoverColor: Theme.appMenu.text
+                        onClicked: {
+                            search.text = "";
+                            search.forceActiveFocus();
+                        }
                     }
 
                     Text {
