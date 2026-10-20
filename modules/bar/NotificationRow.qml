@@ -24,8 +24,13 @@ Rectangle {
     function plain(text: string): string {
         return text.replace(/<br\s*\/?>/gi, "\n").replace(/<[^>]*>/g, "").replace(/[ \t]+/g, " ")
             .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, "\"").replace(/&apos;/g, "'")
-            .replace(/&#(\d+);/g, (m, d) => String.fromCodePoint(Number(d))).replace(/&#x([0-9a-f]+);/gi, (m, h) => String.fromCodePoint(parseInt(h, 16)))
+            .replace(/&#(\d+);|&#x([0-9a-f]+);/gi, (m, d, h) => root.codePoint(d ? Number(d) : parseInt(h, 16), m))
             .replace(/&amp;/g, "&").trim();
+    }
+
+    // Caractère d'une entité numérique ; hors de l'Unicode, l'entité telle quelle.
+    function codePoint(code: real, entity: string): string {
+        return code >= 0 && code <= 0x10ffff ? String.fromCodePoint(code) : entity;
     }
 
     // Titre sans l'application en préfixe (« whatsdesk - Alice » → « Alice ») ; vide s'il ne dit que l'application.

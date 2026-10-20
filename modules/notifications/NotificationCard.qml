@@ -134,7 +134,7 @@ Item {
                 PanelButton {
                     required property NotificationAction modelData
                     text: modelData.text
-                    onClicked: Notifs.invoke(modelData)
+                    onClicked: modelData.invoke()   // ferme la notification, sauf si elle est « resident » (Quickshell)
                 }
             }
         }

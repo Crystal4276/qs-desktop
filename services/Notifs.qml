@@ -49,7 +49,8 @@ Singleton {
                 staleIconDirs.running = true;   // premier chargement de cette instance
             root.iconFiles = Object.assign(JSON.parse(iconFiles), root.iconFiles);   // + copies faites avant ce point
             root.restoreLive(JSON.parse(live));
-            root.history = JSON.parse(history).map(h => h.imageKey ? Object.assign(h, root.isDataImage(h.icon) ? { icon: h.fallbackIcon ?? "" } : {}, { imageKey: 0 }) : h);
+            // + lignes archivées avant ce point (rare : notification fermée au démarrage).
+            root.history = [...JSON.parse(history).map(h => h.imageKey ? Object.assign(h, root.isDataImage(h.icon) ? { icon: h.fallbackIcon ?? "" } : {}, { imageKey: 0 }) : h), ...root.history].slice(-root.historyLength);
             ready = true;
         }
     }
@@ -110,7 +111,9 @@ Singleton {
     }
 
     function pruneImages(): void {
-        const used = new Set([...history.map(h => h.imageKey), ...popups.map(e => e.saved?.imageKey)].filter(k => k));
+        // Lignes, copies des notifications rappelées, et images retenues par les notifications suivies (snapshot les réutilise).
+        const live = [...popups, ...quiet];
+        const used = new Set([...history.map(h => h.imageKey), ...live.map(e => e.saved?.imageKey), ...live.map(e => e.lockedKey)].filter(k => k));
         const kept = {};
         for (const [key, lock] of Object.entries(imageLocks)) {
             if (used.has(Number(key)))
@@ -190,7 +193,9 @@ Singleton {
         readonly property real timeout: redisplayed ? 0 : notification && notification.expireTimeout >= 0 ? notification.expireTimeout
             : Notifs.defaultTimeouts[urgency] ?? 10000
         // Texte affiché (StyledText).
-        readonly property string text: Notifs.render(entry, Notifs.clock)
+        // L'âge n'apparaît qu'après ageThreshold : avant, l'horloge ne refait pas le texte (ageClock reste à 0).
+        readonly property real ageClock: Notifs.clock - timestamp >= Notifs.ageThreshold * 1000 ? Notifs.clock : 0
+        readonly property string text: Notifs.render(entry, ageClock || timestamp)
 
         // Remplacement par identifiant (géré par Quickshell sur le même objet) : le délai repart, comme Dunst.
         property Connections watcher: Connections {
@@ -236,6 +241,7 @@ Singleton {
         if (old) {
             const previous = old.notification;
             old.notification = n;       // la surveillance passe à la nouvelle avant la fermeture de l'ancienne (pas d'historique)
+            old.saved = {};             // rappelée de l'historique : le contenu vient maintenant de la nouvelle
             old.redisplayed = false;
             old.dupCount = dupCount;
             old.start = old.timestamp = Date.now();
@@ -275,8 +281,9 @@ Singleton {
         const rows = [];
         for (const entry of dirty) {
             entry.dirty = false;
-            // Devenue critique par une mise à jour (même identifiant) : affichée.
-            if (entry.quiet && entry.urgency === NotificationUrgency.Critical)
+            // Mise à jour par identifiant alors qu'elle doit s'afficher (critique, ou « ne pas déranger » coupé) : affichée,
+            // comme un remplacement par étiquette (add).
+            if (entry.quiet && !silent(entry.notification))
                 promote(entry);
             else if (entry.quiet)
                 rows.push(entry);
@@ -458,14 +465,9 @@ Singleton {
         if (action)
             action.invoke();
         else if (actions.length === 0 && entry.urls.length === 1)
-            Quickshell.execDetached(["xdg-open", entry.urls[0]]);
+            Quickshell.execDetached(["xdg-open", entry.urls[0].replace(/^www\./i, "http://www.")]);   // « www. » seul : un fichier pour xdg-open
         if (popups.includes(entry))
             close(entry);
-    }
-
-    // Bouton d'action : ferme la notification, sauf si elle est « resident » (Quickshell).
-    function invoke(action): void {
-        action.invoke();
     }
 
     // --- Historique ---
@@ -477,6 +479,7 @@ Singleton {
         // Ligne d'une notification silencieuse encore suivie : c'est elle qui s'affiche (actions utilisables, mises à jour).
         const live = quiet.find(e => e.historyKey === saved.key);
         if (live) {
+            live.redisplayed = true;   // reste affichée, comme toute notification rappelée (sticky_history)
             promote(live);
             return;
         }

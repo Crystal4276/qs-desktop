@@ -1168,6 +1168,14 @@ Passe 3 (10 remarques ; 9 corrigées telles quelles, 1 autrement) :
   d'une silencieuse, « ne pas déranger » coupé puis même étiquette, « Clear all » puis même étiquette (nouvelle ligne),
   rechargement puis mise à jour (même ligne).
 
+Passe 4 (9 remarques, toutes corrigées) : image en données d'une silencieuse rappelée gardée jusque dans l'historique (verrou
+compté tant que la notification est suivie) ; silencieuse rappelée par `historyPop` : reste affichée comme toute notification
+rappelée ; mise à jour par identifiant après « ne pas déranger » coupé : affichée (comme par étiquette) ; notification rappelée
+remplacée par une nouvelle : l'ancienne copie n'est plus reprise ; lien « www.… » ouvert en `http://` ; entité numérique hors de
+l'Unicode laissée telle quelle (au lieu d'une erreur) ; lignes archivées avant la restauration de l'historique gardées ; texte des
+popups refait chaque seconde seulement une fois l'âge affiché (après 60 s) ; `Notifs.invoke` supprimé (simple relais).
+Vérifié sur banc : avatar d'une silencieuse rappelée (popup, puis ligne), mise à jour après « ne pas déranger » coupé, entités.
+
 ## Prochaine étape
 
 Phase 9 — parité Hyprland (tests à faire ensemble dans une session Hyprland : voir « Compatibilité Hyprland »).
