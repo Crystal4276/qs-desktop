@@ -1132,6 +1132,24 @@ Passe 1 (`/code-review high`, 10 remarques, vérifiées une à une) :
 - Vérifié sur banc : icônes temporaires (`image-path`, `app_icon` en `file://`), thème et `/usr/share` non copiés, rechargement
   avec popup affichée (icône gardée), fermeture, croix, « Clear all » (copies effacées), avatar en données, sans icône.
 
+Passe 2 (fichiers complets, 10 remarques, toutes confirmées et corrigées) :
+- « Ne pas déranger » : une notification reste suivie sans affichage jusqu'à son délai ; ses mises à jour (`replaces_id`,
+  étiquette de pile, doublon) modifient sa ligne au lieu d'en ajouter une (vu sur banc : Quickshell réutilise l'identifiant d'une
+  notification suivie, en donne un nouveau sinon).
+- Rechargement de la config : les notifications réémises (`lastGeneration`) reprennent leur rôle (affichée / silencieuse), âge,
+  délai, compteur et ordre, sans repasser par « ne pas déranger » ; une notification rappelée de l'historique est recréée.
+- Remplacement en place : l'ordre par urgence est refait (une mise à jour critique passe en tête).
+- Ligne de l'historique mise à jour après les liaisons de l'Entry (`Qt.callLater` : le signal arrivait avant, la ligne gardait
+  l'ancien texte).
+- Icônes : chemin `image://icon//…` converti en `file://` (sinon damier de Quickshell au lieu d'une erreur) ; image illisible →
+  icône de l'application → icône générique (popup et ligne) ; nom de l'application dans l'en-tête si l'icône générique s'affiche.
+- Copies limitées aux dossiers temporaires (`/tmp`, `TMPDIR`, `XDG_RUNTIME_DIR`, `XDG_CACHE_HOME`) ; dossiers des instances
+  terminées effacés au démarrage (`qs list --all` ; rien effacé si la liste ne contient pas l'instance elle-même).
+- Entités numériques (`&#39;`, `&#x2014;`) décodées dans le centre ; pas de « · » orphelin sans nom d'application.
+- Position du lecteur : envoyée au relâchement seulement (une commande D-Bus au lieu d'une par mouvement).
+- Vérifié sur banc : fusion des mises à jour pendant « ne pas déranger » (90 % affiché), popup gardée au rechargement avec « ne pas
+  déranger » actif, `historyPop` puis rechargement, popup critique remontée, replis d'icônes, dossiers d'instances mortes effacés.
+
 ## Prochaine étape
 
 Phase 9 — parité Hyprland (tests à faire ensemble dans une session Hyprland : voir « Compatibilité Hyprland »).

@@ -23,7 +23,9 @@ Rectangle {
     // Texte simple (balises retirées, entités courantes décodées), sauts de ligne gardés.
     function plain(text: string): string {
         return text.replace(/<br\s*\/?>/gi, "\n").replace(/<[^>]*>/g, "").replace(/[ \t]+/g, " ")
-            .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, "\"").replace(/&apos;/g, "'").replace(/&amp;/g, "&").trim();
+            .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, "\"").replace(/&apos;/g, "'")
+            .replace(/&#(\d+);/g, (m, d) => String.fromCodePoint(Number(d))).replace(/&#x([0-9a-f]+);/gi, (m, h) => String.fromCodePoint(parseInt(h, 16)))
+            .replace(/&amp;/g, "&").trim();
     }
 
     // Titre sans l'application en préfixe (« whatsdesk - Alice » → « Alice ») ; vide s'il ne dit que l'application.
@@ -53,10 +55,11 @@ Rectangle {
 
     readonly property string titleText: title(entry.summary ?? "", entry.appName ?? "")
     readonly property string bodyPlain: plain(entry.body ?? "")
-    // L'icône ne dit pas l'application (avatar envoyé en données, ou pas d'icône) : son nom s'ajoute à l'en-tête.
-    readonly property bool iconNamesApp: (entry.icon ?? "") !== "" && !Notifs.isDataImage(entry.icon)
+    // L'icône affichée ne dit pas l'application (avatar envoyé en données, icône générique) : son nom s'ajoute à l'en-tête.
+    readonly property bool iconNamesApp: iconItem.icon !== root.genericIcon && !Notifs.isDataImage(iconItem.icon)
+    readonly property string genericIcon: "preferences-desktop-notification"
     readonly property string headerText: bodyPlain === "" || titleText === "" ? entry.appName
-        : iconNamesApp ? titleText : `${titleText} · ${entry.appName}`
+        : iconNamesApp || (entry.appName ?? "") === "" ? titleText : `${titleText} · ${entry.appName}`
     readonly property string mainText: bodyPlain !== "" ? bodyPlain : titleText
 
     Layout.fillWidth: true
@@ -94,11 +97,22 @@ Rectangle {
         spacing: Theme.panel.spacing
 
         IconImage {
+            id: iconItem
+
+            // Sans icône : icône générique (alignement). Illisible : icône de l'application, puis l'icône générique.
+            readonly property list<string> candidates: [root.entry.icon, root.entry.fallbackIcon, root.genericIcon]
+                .filter((c, i, all) => c && all.indexOf(c) === i)
+            property int attempt: 0
+            readonly property string icon: candidates[Math.min(attempt, candidates.length - 1)]
+
             Layout.alignment: Qt.AlignTop
             implicitSize: Theme.notificationCentre.iconSize
-            // Sans icône : icône générique (alignement).
-            readonly property string icon: root.entry.icon || "preferences-desktop-notification"
             source: icon.startsWith("image:") || icon.startsWith("file:") ? icon : `image://icon/${icon}`
+            onStatusChanged: {
+                if (status === Image.Error && attempt < candidates.length - 1)
+                    attempt++;
+            }
+            onCandidatesChanged: attempt = 0
         }
 
         ColumnLayout {
