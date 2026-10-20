@@ -15,6 +15,7 @@ Panel {
     hasSwitch: true
     switchChecked: Vpn.connected || Vpn.connecting
     switchLocked: Vpn.busy
+    initialFocus: search.inputItem
     onSwitchToggled: checked => checked ? Vpn.connectLast() : Vpn.disconnect()
 
     property string tab: "recent"   // onglet choisi : "recent" ou "all"
@@ -22,7 +23,7 @@ Panel {
     readonly property string query: search.text.trim().toLowerCase().replace(/_/g, " ")
     // Liste affichée : une recherche montre tous les pays, quel que soit l'onglet (effacée, l'onglet revient).
     readonly property string shown: query !== "" ? "all" : tab
-    // Entrées affichées : « Pays » ou « Pays/Ville » (récents) ; aucune panneau fermé (pas ~150 lignes gardées en mémoire).
+    // Entrées affichées : « Pays » ou « Pays/Ville » (récents) ; aucune, panneau fermé (pas ~150 lignes gardées en mémoire).
     readonly property var rows: !visible ? [] : shown === "recent" ? Vpn.recent : matches(Vpn.countries, query)
     // Détails, trafic, pause : connexion établie et aucune action en cours (pendant un changement, le statut est encore l'ancien).
     readonly property bool settled: Vpn.connected && Vpn.doing === ""
@@ -32,7 +33,6 @@ Panel {
             Vpn.refresh();
             Vpn.loadCountries();
             tab = Vpn.recent.length > 0 ? "recent" : "all";
-            search.focusInput();
         } else {
             search.text = "";
             expanded = "";

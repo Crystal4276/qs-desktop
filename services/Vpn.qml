@@ -49,10 +49,10 @@ Singleton {
         recentJson.recent = [entry, ...recent.filter(e => !sameName(entryCountry(e), country))].slice(0, recentCount);
     }
 
-    // Connexion réussie lancée d'ici (panneau, interrupteur, `qs ipc`) : son choix, pays seul ou ville. Pays de la liste
-    // seulement (un code pays, « nl », est laissé à remember() : pays seul) ; liste pas encore lue : nom tel quel.
+    // Connexion réussie lancée d'ici (panneau, interrupteur, `qs ipc`) : son choix, pays seul ou ville. Pays connu seulement
+    // (de la liste, ou des récents si elle n'est pas lue) ; un code pays, « nl », est laissé à remember() : pays seul.
     function record(target: var): void {
-        const country = countries.length === 0 ? target[0] : countries.find(c => sameName(c, target[0]));
+        const country = countries.find(c => sameName(c, target[0])) ?? recent.map(entryCountry).find(c => sameName(c, target[0]));
         if (country)
             push(target.length > 1 ? `${country}/${target[1]}` : country);
     }
@@ -138,8 +138,9 @@ Singleton {
         lastAction = args[0];   // avant `busy` : `doing` ne prend jamais le nom de l'action précédente
         requested = null;
         actionCount++;
-        // Bornée : une commande figée garderait `busy` (panneau verrouillé) jusqu'au redémarrage de Quickshell.
-        return action.runCommand(["timeout", "60", "nordvpn", ...args]);
+        // Bornée, large (une connexion lente aboutit) : une commande figée garderait `busy` (panneau verrouillé) jusqu'au
+        // redémarrage de Quickshell.
+        return action.runCommand(["timeout", "300", "nordvpn", ...args]);
     }
 
     // Connexion : serveur recommandé, pays, ou « pays ville ».
@@ -212,22 +213,21 @@ Singleton {
         command: ["timeout", "10", "nordvpn", "status"]   // bornées : démon figé
         running: true
         stdout: StdioCollector {
-            onStreamFinished: {
-                if (statusProcess.stamp !== root.actionCount)
-                    return;
-                const result = {};
-                for (const line of text.split("\n")) {
-                    const m = line.match(/^\s*([^:]+):\s*(.*)$/);
-                    if (m)
-                        result[m[1].trim()] = m[2].trim();
-                }
-                root.available = result["Status"] !== undefined && !/not logged in/i.test(text);
-                root.status = result;
-            }
+            id: statusOut
         }
+        // Lecture ancienne (stamp) ou trop lente (124 : démon occupé) : rien n'est changé, le module ne disparaît pas.
         onExited: code => {
-            if (code !== 0)
-                root.available = false;
+            if (stamp !== root.actionCount || code === 124)
+                return;
+            const text = statusOut.text;
+            const result = {};
+            for (const line of text.split("\n")) {
+                const m = line.match(/^\s*([^:]+):\s*(.*)$/);
+                if (m)
+                    result[m[1].trim()] = m[2].trim();
+            }
+            root.available = code === 0 && result["Status"] !== undefined && !/not logged in/i.test(text);
+            root.status = result;
         }
         onRunningChanged: {
             if (!running && root.refreshAgain) {
@@ -256,7 +256,7 @@ Singleton {
         program: "nordvpn"
         probe: false   // présence et compte : lus par `nordvpn status`
         lastLineError: true
-        noAnswer: "nordvpn: no answer after 60 s"
+        noAnswer: "nordvpn: no answer after 5 minutes"
         onFinished: {
             if (error !== "")
                 Quickshell.execDetached(["notify-send", "--app-name=NordVPN", "NordVPN", error]);
