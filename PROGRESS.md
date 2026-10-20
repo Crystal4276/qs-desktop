@@ -1066,7 +1066,8 @@ changement de focus. À vérifier en phase 9 : après `hyprctl reload` au révei
   file après chaque action : elle voit toujours son effet. Disparaissent : les quatre processus, le tampon des lectures anciennes
   (`stamp`), `refreshAgain`, `awaitingStatus` et sa limite de 30 s (remplacée par trois essais de la lecture qui suit l'action),
   `pendingCities`/`citiesFetching` (une seule liste de villes en attente : la dernière demandée).
-- Nouveau : une connexion encore en attente (derrière une liste) est simplement retirée de la file par l'interrupteur.
+- Nouveau : une connexion encore en attente (derrière une liste) est retirée de la file par l'interrupteur, puis la déconnexion
+  suit (sens de l'interrupteur ; sans message si tu n'étais pas connecté).
 - Prix : une liste demandée pendant une connexion (5 min au plus) attend sa fin ; le panneau est de toute façon verrouillé.
 - Banc (faux `nordvpn`, appels IPC par PID du banc seulement) : connexion, échec (notification, retour à l'état réel), annulation
   d'une connexion figée (SIGINT, SIGTERM après 3 s, déconnexion), raccourci refusé pendant l'annulation, connexion en attente
@@ -1074,6 +1075,11 @@ changement de focus. À vérifier en phase 9 : après `hyprctl reload` au révei
   (« Connecting… » gardé, lecture refaite), démon figé (module masqué après trois lectures, réaffiché au retour).
 - À tester à la main : les mêmes points que ci-dessus (vraie connexion, vraie annulation), plus l'ouverture du panneau pendant une
   connexion lente (« Loading countries… » jusqu'à sa fin si la liste n'était pas encore chargée).
+- Revue en boucle (3 passes de `/code-review high`, lecture seule) : cible d'une connexion en attente effacée par une lecture
+  commencée avant elle (ville perdue dans les récents) ; relecture passée devant une action en attente ; actions mises en tête
+  de file ; `timeout -k 5` (commande qui ignore SIGTERM) et lecture ainsi tuée comptée comme sans réponse (code 9, CrashExit,
+  vérifié sur banc), pas comme un échec qui masquait le module ; villes redemandées gardant leur place. Arrêt : la passe 3 ne
+  trouve plus que des commentaires à préciser et des cas déjà tranchés.
 
 ## Prochaine étape
 

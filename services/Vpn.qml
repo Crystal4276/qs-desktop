@@ -160,8 +160,7 @@ Singleton {
             return;
         current = queue[0];   // avant de la retirer : `busy` ne retombe pas entre les deux
         queue = queue.slice(1);
-        // `-k` : commande qui ignore SIGTERM tuée 5 s plus tard (sinon elle bloquerait la file pour la session) ; laisse aussi
-        // 5 s à une connexion arrêtée par SIGINT pour se terminer proprement (disconnect()).
+        // `-k` : commande qui ignore SIGTERM tuée 5 s plus tard (sinon elle bloquerait la file pour la session).
         cli.runCommand(["timeout", "-k", "5", String(current.timeout), "nordvpn", ...current.args]);
     }
 
@@ -179,7 +178,7 @@ Singleton {
             return false;
         lastAction = args[0];   // avant `busy` : `doing` ne prend jamais le nom de l'action précédente
         requested = null;
-        // En tête de file : n'attend que la commande en cours (au plus 10 s pour une lecture). Lecture du statut en attente :
+        // En tête de file : n'attend que la commande en cours (au plus 15 s pour une lecture). Lecture du statut en attente :
         // remplacée par celle qui suit l'action.
         queue = [actionJob(args, quiet), ...queue.filter(j => j.kind !== "status")];
         Qt.callLater(next);
@@ -201,7 +200,8 @@ Singleton {
     }
 
     // Pendant une connexion (figée, trop longue) : elle est arrêtée, puis la déconnexion suit (finish()) ;
-    // « Disconnecting… » dès maintenant. Connexion encore en attente (une liste se charge) : retirée de la file.
+    // « Disconnecting… » dès maintenant. Connexion encore en attente (une liste se charge) : retirée de la file, puis
+    // déconnexion (sens de l'interrupteur).
     property bool cancelling: false
     readonly property bool cancellable: jobs.some(j => j.kind === "action" && j.args[0] === "connect") && !cancelling
 
@@ -373,6 +373,7 @@ Singleton {
         program: "nordvpn"
         probe: false   // présence et compte : lus par `nordvpn status`
         lastLineError: true
+        killedIsTimeout: true   // (`timeout -k`)
         noAnswer: `nordvpn: no answer after ${root.actionTimeout / 60} minutes`   // (seul le message des actions est lu)
         onFinished: root.finish()
     }

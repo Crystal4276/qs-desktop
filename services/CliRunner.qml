@@ -16,6 +16,7 @@ Scope {
     property int code: 0          // code de sortie de la dernière commande (-1 : pas démarrée)
     property string output: ""    // sa sortie standard
     property bool lastLineError: false   // message : dernière ligne de la sortie (nordvpn : sa progression précède l'erreur)
+    property bool killedIsTimeout: false   // SIGKILL compté comme 124 (commandes lancées par `timeout -k`)
     property string noAnswer: `${program}: no answer (sign-in needed?)`   // arrêtée par `timeout` (124)
     signal finished
 
@@ -75,10 +76,10 @@ Scope {
             id: err
         }
         // Tuée par SIGKILL (`timeout -k` : commande qui ignorait SIGTERM ; `timeout` est tué avec elle, statut 1 : CrashExit) :
-        // comme 124, pas de réponse.
+        // comme 124, pas de réponse (`killedIsTimeout`).
         onExited: (code, status) => {
             root.busy = false;
-            root.code = status === 1 && code === 9 ? 124 : code;
+            root.code = root.killedIsTimeout && status === 1 && code === 9 ? 124 : code;
             root.output = out.text;
             // 124 : arrêtée par `timeout` (sa sortie, ex. « To authenticate, visit: » sans l'adresse, n'est pas le message).
             // Sinon la première ligne non vide (une option refusée est suivie de toute l'aide de la commande), ou la dernière
