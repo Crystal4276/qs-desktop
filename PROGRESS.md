@@ -1200,6 +1200,12 @@ dans la popup ; états de rechargement pas encore repris gardés si un second re
 Vérifié sur banc : rappelée sans « (A) », lien doublé compté une fois. Non vérifiable sur banc : « resident » (notify-send ferme
 lui-même sa notification après l'action).
 
+Passe 8 (3 remarques, aucune dans le code des notifications lui-même : fin de la boucle) : ouverture d'une notification dont la
+fenêtre était déjà urgente (Sway n'envoie pas de nouvel « urgent » ; le changement de titre, Chromium changeant d'onglet, est
+aussi pris) ; lecteur choisi à la molette gardé quand c'est lui qui démarre ; lecteurs déjà en lecture au démarrage de
+Quickshell (`lastPlaying` initialisé). Vérifié sur banc : Chromium marqué urgent avant la notification, clic gauche → espace 2,
+onglet A.
+
 ### Actions des notifications (2026-10-20, ta demande)
 
 - Revue : une popup montre un bouton par action nommée, sauf « default » (clic milieu). Thunderbird (« Marquer comme lu »,

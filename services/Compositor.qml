@@ -230,7 +230,10 @@ Singleton {
 
         onIpcEvent: event => {
             const data = JSON.parse(event.data);
-            if (event.type === "window" && data.change === "urgent" && data.container?.urgent && root.takeActivation())
+            // Fenêtre déjà urgente avant le clic : Sway n'envoie pas de nouvel « urgent » ; Chromium change alors d'onglet, donc
+            // de titre (revue de code, passe 8).
+            if (event.type === "window" && ["urgent", "title"].includes(data.change) && data.container?.urgent
+                    && !data.container.focused && root.takeActivation())
                 I3.dispatch(`[con_id=${data.container.id}] focus`);
             if (event.type === "workspace") {
                 if (data.change === "init" && data.current)
