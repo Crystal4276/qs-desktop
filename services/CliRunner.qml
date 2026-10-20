@@ -2,8 +2,9 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 
-// Commande d'action d'un service en ligne de commande (Tailscale, ZeroTier) : présence du programme cherchée une fois
-// (`command -v`), une commande à la fois (`busy`), message d'erreur gardé (`error`), `finished` à la fin.
+// Commande d'un service en ligne de commande (actions de Tailscale et ZeroTier ; toutes les commandes de NordVPN, lectures
+// comprises) : présence du programme cherchée une fois (`command -v`), une commande à la fois (`busy`), code de sortie, sortie
+// standard et message d'erreur gardés (`code`, `output`, `error`), `finished` à la fin.
 Scope {
     id: root
 
