@@ -974,6 +974,12 @@ changement de focus. À vérifier en phase 9 : après `hyprctl reload` au révei
 - À tester à la main : défilement à la souris d'un panneau sur petit écran, clics réels, nœud de sortie, Accept routes,
   Join / Leave ZeroTier, Sign in Tailscale, et tout le Wi-Fi sur le laptop (mot de passe, portail captif).
 
+### Pill système (2026-10-20, ta demande)
+
+- Module GPU : **utilisation** (`{usage:2}%`, comme le CPU) au lieu de la température ; `nvidia-smi` (NVIDIA),
+  `gpu_busy_percent` (AMD) ; masqué sur Intel (aucune utilisation dans sysfs). Température toujours lue pour le moniteur.
+- Icône mémoire : `U+EFC5` (`nf-fa-memory`, barrette de RAM) au lieu de `U+F035B` (puce, trop proche de l'icône CPU).
+
 ## Prochaine étape
 
 Phase 9 — parité Hyprland (tests à faire ensemble dans une session Hyprland : voir « Compatibilité Hyprland »).

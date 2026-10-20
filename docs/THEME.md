@@ -93,7 +93,7 @@ Relevé avec l'ordre de repli de `fc-match -s Inter`, puis confirmé en dessinan
 | Glyphes | Module | Police réellement utilisée | Fichier embarqué |
 |---|---|---|---|
 | `U+E79A` … `U+F1B6` (espaces), `U+F026–F028`, `U+F466` (volume), `U+F011` (power), `U+E38D…` (rétroéclairage) | modules sans `font-family` → `*` | **Symbols Nerd Font Mono** | `assets/fonts/SymbolsNerdFontMono-Regular.ttf` |
-| `U+E385` horloge, `U+EC19` CPU, `U+F035B` mémoire, `U+F0379` GPU, `U+F01A7` mises à jour, `U+F1625` / `U+F1628` réseau | Inter → repli | **Hack Nerd Font** (Regular) | `assets/fonts/HackNerdFont-Regular.ttf` |
+| `U+E385` horloge, `U+EC19` CPU, `U+EFC5` mémoire (`U+F035B` avant le 2026-10-20), `U+F0379` GPU, `U+F01A7` mises à jour, `U+F1625` / `U+F1628` réseau | Inter → repli | **Hack Nerd Font** (Regular) | `assets/fonts/HackNerdFont-Regular.ttf` |
 | `U+F274` calendrier | Inter → repli | **Font Awesome 7 Free** (Regular 400, contour fin) | `assets/fonts/FontAwesome7Free-Regular-400.otf` |
 | `U+F1BC` Spotify | Inter → repli | **Font Awesome 7 Brands** | `assets/fonts/FontAwesome7Brands-Regular-400.otf` |
 | `U+F04C` pause | Inter → repli | **FontAwesome** (Font Awesome 4.7) | `assets/fonts/FontAwesome4-Regular.ttf` |

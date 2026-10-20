@@ -717,6 +717,8 @@ Emplacement du widget dans la barre : à décider en phase 5 (nouveau widget, sa
 
 3. aucune température GPU lisible → module masqué (cas iGPU seul).
 
+**Changé le 2026-10-20 (ta demande)** : le module de la barre affiche l'**utilisation** du GPU (`{usage:2}%`, comme le CPU) au lieu de la température : `nvidia-smi --query-gpu=utilization.gpu` (NVIDIA), `device/gpu_busy_percent` (AMD). Intel n'expose pas d'utilisation dans sysfs → module masqué (la température reste lue pour le moniteur système).
+
 Clic : `nvtop` (gère AMD, Intel et NVIDIA). Ce desktop n'a qu'un GPU NVIDIA : les branches AMD et Intel seront testées avec une fausse arborescence sysfs
 (dossier de test passé au service), puis sur une vraie machine quand l'occasion se présente — à signaler dans le rapport de phase 4.
 

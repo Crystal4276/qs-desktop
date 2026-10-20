@@ -2,11 +2,11 @@ import QtQuick
 import qs.config
 import qs.services
 
-// Température du GPU (INVENTORY.md § 1, `custom/nvidia` ; multi-constructeur, ARCHITECTURE § 11.5) : `U+F0379␣␣N°C`.
-// Masqué sans température lisible. Clic : panneau de statistiques système (avec les informations de nvtop).
+// Utilisation du GPU (INVENTORY.md § 1, `custom/nvidia`, qui affichait la température ; multi-constructeur, ARCHITECTURE § 11.5) :
+// `U+F0379␣␣{usage:2}%`, comme le CPU (ta demande du 2026-10-20). Masqué sans utilisation lisible (Intel). Clic : panneau de statistiques système (avec les informations de nvtop).
 InfoModule {
     shown: Gpu.available
     color: Theme.module.gpu
-    segments: [[Theme.font.inlineIcons, Theme.icon.gpu], [Theme.font.text, `  ${Gpu.temperature}°C`]]
+    segments: [[Theme.font.inlineIcons, Theme.icon.gpu], [Theme.font.text, `  ${String(Gpu.usage).padStart(2)}%`]]
     onClicked: Monitor.toggle()
 }
