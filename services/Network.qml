@@ -30,7 +30,8 @@ Singleton {
     function format(bytesPerSecond: real): string {
         const prefixes = ["", "k", "M", "G", "T", "P"];
         let value = bytesPerSecond, pow = 0;
-        while (pow < prefixes.length - 1 && value / 1000 >= 1) {
+        // 999.95 et plus s'affiche « 1000.0 » : unité suivante, pour ne jamais dépasser 999.9 (largeur fixe du module).
+        while (pow < prefixes.length - 1 && value >= 999.95) {
             value /= 1000;
             pow++;
         }
