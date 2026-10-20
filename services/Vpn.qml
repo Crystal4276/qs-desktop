@@ -122,6 +122,7 @@ Singleton {
     // Lecture déjà en cours (lecture périodique) : refaite à sa fin, sinon l'effet d'une action qui vient de finir ne serait
     // vu qu'à la lecture suivante. (Pas pour la lecture périodique elle-même : avec un démon lent, les lectures s'enchaîneraient.)
     property bool refreshAgain: false
+    property int timeouts: 0   // lectures du statut sans réponse, de suite
 
     function refresh(): void {
         if (action.busy)   // résultat ignoré ; la lecture qui suit l'action est demandée à sa fin
@@ -168,9 +169,10 @@ Singleton {
     // Pendant une connexion (figée, trop longue) : elle est arrêtée, puis la déconnexion suit (onFinished) ;
     // « Disconnecting… » dès maintenant.
     property bool cancelling: false
+    readonly property bool cancellable: action.busy && lastAction === "connect" && !cancelling
 
     function disconnect(): void {
-        if (action.busy && lastAction === "connect" && !cancelling) {
+        if (cancellable) {
             cancelling = true;
             lastAction = "disconnect";
             requested = null;
@@ -244,6 +246,10 @@ Singleton {
         onExited: code => {
             // Pas de réponse après une action : elle reste « en cours » (l'état d'avant n'est pas montré comme actuel) ;
             // la lecture périodique réessaie.
+            // Démon figé (trois lectures de suite sans réponse) : module masqué, comme sans démon.
+            root.timeouts = code === 124 ? root.timeouts + 1 : 0;
+            if (root.timeouts >= 3)
+                root.available = false;
             if (stamp !== root.actionCount || code === 124)
                 return;
             root.awaitingStatus = false;   // avant `status` : remember() voit l'action finie
@@ -335,9 +341,10 @@ Singleton {
             id: citiesOut
         }
         onExited: code => {
-            if (code === 0) {
+            const list = code === 0 ? root.names(citiesOut.text) : [];
+            if (list.length > 0) {   // liste vide : « Cities unavailable », nouvel essai à la demande suivante
                 const copy = Object.assign({}, root.cities);
-                copy[citiesProcess.country] = root.names(citiesOut.text);
+                copy[citiesProcess.country] = list;
                 root.cities = copy;
             }
         }
