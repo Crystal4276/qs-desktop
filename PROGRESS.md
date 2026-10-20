@@ -1113,6 +1113,25 @@ changement de focus. À vérifier en phase 9 : après `hyprctl reload` au révei
 - Le banc partage le cache de ta session (même identifiant de shell `desktop`) : ses démarrages ont vidé le dossier ; les icônes
   des notifications reçues pendant ces tests peuvent manquer.
 
+### Revue en boucle du système de notifications (2026-10-20, ta demande)
+
+Passe 1 (`/code-review high`, 10 remarques, vérifiées une à une) :
+- Copie des icônes refaite : plus de nom par contenu (`Qt.md5` donne le même hash à deux PNG différents, vérifié) ; une copie par
+  notification, faite à l'arrivée et à chaque changement d'image (plus dans une liaison), dans
+  `$XDG_RUNTIME_DIR/quickshell-notification-icons/<instance>` (vidé en fin de session ; plus de `rm -rf` au démarrage, ni de
+  dossier partagé entre instances). Pas de copie pour les fichiers des dossiers de données (thèmes, `/usr/share/pixmaps`).
+  Écriture bloquante, échec détecté (`saveFailed`). Fichier relu à chaque fois (même chemin réécrit : nouvelle image) ; illisible :
+  dernière copie de cette notification. Copies inutilisées effacées une seconde après (croix, « Clear all », historique plein) ;
+  table des copies gardée au rechargement (`PersistentProperties`). Extension prise sur le nom du fichier seulement.
+- Pièges vus sur banc : `flatMap` / `Object.fromEntries` absents du moteur JS ; `onNotificationChanged` émis aussi à la création
+  (copie en double) ; au rechargement, Quickshell réémet les notifications affichées *après* la restauration de l'historique
+  (un nettoyage immédiat effaçait la copie de la popup).
+- En-tête des lignes : « titre · application » quand l'icône ne montre pas l'application (avatar, aucune icône).
+- Position du lecteur : touches et clic sans effet si le lecteur a disparu ou n'accepte plus les déplacements.
+- `GlyphButton` (ex-`MediaButton`) : bouton rond commun au lecteur et à la croix des lignes ; rayon de la pochette dans `Theme`.
+- Vérifié sur banc : icônes temporaires (`image-path`, `app_icon` en `file://`), thème et `/usr/share` non copiés, rechargement
+  avec popup affichée (icône gardée), fermeture, croix, « Clear all » (copies effacées), avatar en données, sans icône.
+
 ## Prochaine étape
 
 Phase 9 — parité Hyprland (tests à faire ensemble dans une session Hyprland : voir « Compatibilité Hyprland »).

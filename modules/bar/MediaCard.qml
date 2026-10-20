@@ -53,7 +53,7 @@ Rectangle {
             visible: (root.player?.trackArtUrl ?? "") !== ""
             implicitWidth: Theme.mediaCard.artSize
             implicitHeight: Theme.mediaCard.artSize
-            radius: Theme.panel.rowRadius / 2   // dans une carte à coins 10 px
+            radius: Theme.mediaCard.artRadius
             color: "transparent"
 
             Image {
@@ -98,20 +98,20 @@ Rectangle {
                 RowLayout {
                     spacing: 0
 
-                    MediaButton {
+                    GlyphButton {
                         glyph: Theme.icon.mediaPrevious
                         enabled: root.player?.canGoPrevious ?? false
                         onClicked: Media.previous()
                     }
 
-                    MediaButton {
+                    GlyphButton {
                         glyph: root.player?.isPlaying ? Theme.icon.mediaPause : Theme.icon.mediaPlay
                         filled: true
                         enabled: root.player?.canTogglePlaying ?? false
                         onClicked: Media.togglePlaying()
                     }
 
-                    MediaButton {
+                    GlyphButton {
                         glyph: Theme.icon.mediaNext
                         enabled: root.player?.canGoNext ?? false
                         onClicked: Media.next()
@@ -142,7 +142,8 @@ Rectangle {
                     readonly property bool seekable: root.player?.canSeek ?? false
 
                     function seek(x: real): void {
-                        root.player.position = Math.max(0, Math.min(1, x / width)) * root.length;
+                        if (seekable && root.player)
+                            root.player.position = Math.max(0, Math.min(1, x / width)) * root.length;
                     }
 
                     Layout.fillWidth: true
@@ -150,8 +151,14 @@ Rectangle {
 
                     // Clavier : Gauche / Droite ±5 s ; bouton affiché quand la position est choisie.
                     activeFocusOnTab: seekable
-                    Keys.onLeftPressed: root.player.position = Math.max(0, root.player.position - 5)
-                    Keys.onRightPressed: root.player.position = Math.min(root.length, root.player.position + 5)
+                    Keys.onLeftPressed: step(-5)
+                    Keys.onRightPressed: step(5)
+
+                    // Le lecteur peut avoir disparu ou cessé d'accepter les déplacements depuis la prise du focus.
+                    function step(seconds: real): void {
+                        if (seekable && root.player)
+                            root.player.position = Math.max(0, Math.min(root.length, root.player.position + seconds));
+                    }
 
                     Rectangle {
                         anchors.verticalCenter: parent.verticalCenter

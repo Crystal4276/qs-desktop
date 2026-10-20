@@ -6,7 +6,8 @@ import qs.services
 
 // Ligne de l'historique du centre de notifications (refaite le 2026-10-20, ta demande ; disposition de KDE et GNOME) : l'icône
 // dit déjà l'application, le contenu passe donc en premier. En-tête en texte secondaire : titre de la notification (expéditeur,
-// numéro…) sans le nom de l'application qu'il répète parfois (« whatsdesk - … »), heure relative à droite (comme KDE), croix.
+// numéro…) sans le nom de l'application qu'il répète parfois (« whatsdesk - … ») ; le nom de l'application s'y ajoute si
+// l'icône ne la montre pas (avatar, aucune icône). Heure relative à droite (comme KDE), croix.
 // Dessous, le corps en `text` sur 2 lignes (même taille que l'en-tête, la couleur fait la différence) ; un clic déplie jusqu'à
 // 6 lignes (comme GNOME). Sans corps : le titre devient le texte principal, et l'application l'en-tête. Non vue : en-tête en
 // `green`.
@@ -52,7 +53,10 @@ Rectangle {
 
     readonly property string titleText: title(entry.summary ?? "", entry.appName ?? "")
     readonly property string bodyPlain: plain(entry.body ?? "")
-    readonly property string headerText: bodyPlain !== "" ? (titleText || entry.appName) : entry.appName
+    // L'icône ne dit pas l'application (avatar envoyé en données, ou pas d'icône) : son nom s'ajoute à l'en-tête.
+    readonly property bool iconNamesApp: (entry.icon ?? "") !== "" && !Notifs.isDataImage(entry.icon)
+    readonly property string headerText: bodyPlain === "" || titleText === "" ? entry.appName
+        : iconNamesApp ? titleText : `${titleText} · ${entry.appName}`
     readonly property string mainText: bodyPlain !== "" ? bodyPlain : titleText
 
     Layout.fillWidth: true
@@ -116,34 +120,14 @@ Rectangle {
                 }
 
                 // Croix : retire la notification de l'historique.
-                Rectangle {
-                    implicitWidth: Theme.panel.iconSize
-                    implicitHeight: Theme.panel.iconSize
-                    radius: width / 2
-                    color: closeHover.hovered ? Theme.panel.buttonHover : "transparent"
-                    activeFocusOnTab: true
-                    border.width: activeFocus ? Theme.panel.border : 0
-                    border.color: Theme.panel.focusRing
-                    Keys.onReturnPressed: Notifs.removeHistory(root.entry.key)
-                    Keys.onEnterPressed: Notifs.removeHistory(root.entry.key)
-                    Keys.onSpacePressed: Notifs.removeHistory(root.entry.key)
-
-                    Text {
-                        anchors.centerIn: parent
-                        text: Theme.icon.close
-                        font.family: Theme.font.icons
-                        font.pixelSize: Theme.panel.smallFontSize
-                        color: closeHover.hovered ? Theme.panel.text : Theme.panel.secondaryText
-                    }
-
-                    HoverHandler {
-                        id: closeHover
-                    }
-
-                    MouseArea {
-                        anchors.fill: parent
-                        onClicked: Notifs.removeHistory(root.entry.key)
-                    }
+                GlyphButton {
+                    size: Theme.panel.iconSize
+                    glyphSize: Theme.panel.smallFontSize
+                    glyph: Theme.icon.close
+                    glyphColor: Theme.panel.secondaryText
+                    glyphHoverColor: Theme.panel.text
+                    hoverColor: Theme.panel.buttonHover
+                    onClicked: Notifs.removeHistory(root.entry.key)
                 }
             }
 
