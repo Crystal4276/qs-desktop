@@ -21,11 +21,8 @@ OverlayPopup {
 
     // Sous le bouton, centré, sans dépasser les marges de la barre (comme les panneaux du tray).
     function toggle(from: Item): void {
-        if (!beginOpen(from))
-            return;
-        placeUnder(from);
-        frame.forceActiveFocus();
-        visible = true;
+        if (beginOpen(from))
+            openUnder(from);
     }
 
     WlrLayershell.namespace: "quickshell-settings"
