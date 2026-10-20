@@ -26,20 +26,23 @@ Singleton {
     property var history: []
 
     // Textes les plus larges que `format` peut produire, pour la largeur fixe du module : chaque chiffre répété (la largeur
-    // d'un chiffre ne dépend pas de sa place), chaque préfixe jusqu'à G.
-    readonly property var widestRates: [].concat(...Array.from({ length: 10 }, (_, d) => ["", "k", "M", "G"].map(p => `${d}${d}${d}.${d}${p}B/s`.padStart(9))))
+    // d'un chiffre ne dépend pas de sa place), chaque forme (d.dd, dd.d, ddd), chaque préfixe jusqu'à G.
+    readonly property var widestRates: [].concat(...Array.from({ length: 10 }, (_, d) => [].concat(...[`${d}.${d}${d}`, `${d}${d}.${d}`, `${d}${d}${d}`].map(n => ["", "k", "M", "G"].map(p => `${n}${p}B/s`.padStart(8))))))
 
-    // Format `{bandwidthDownBytes:>3}` de Waybar (util/format.hpp) : une décimale, préfixe k / M / G… en base 1000,
-    // aligné à droite sur 9 caractères (« 833.6kB/s », «   2.5MB/s »).
+    // Préfixe k / M / G… en base 1000 comme Waybar (`{bandwidthDownBytes}`), mais 3 chiffres significatifs au lieu d'une
+    // décimale, pour une pilule plus étroite (ta demande du 2026-10-20) : « 4.32MB/s », « 14.3MB/s », « 833kB/s » ; aligné
+    // à droite sur 8 caractères.
     function format(bytesPerSecond: real): string {
         const prefixes = ["", "k", "M", "G", "T", "P"];
         let value = bytesPerSecond, pow = 0;
-        // 999.95 et plus s'affiche « 1000.0 » : unité suivante, pour ne jamais dépasser 999.9 (largeur fixe du module).
-        while (pow < prefixes.length - 1 && value >= 999.95) {
+        // 999.5 et plus s'arrondit à « 1000 » : unité suivante, pour ne jamais dépasser 3 chiffres (largeur fixe du module).
+        while (pow < prefixes.length - 1 && value >= 999.5) {
             value /= 1000;
             pow++;
         }
-        return `${value.toFixed(1)}${prefixes[pow]}B/s`.padStart(9);
+        // Décimales selon la valeur arrondie : 9.996 s'affiche « 10.0 », pas « 10.00 ».
+        const decimals = value >= 99.95 ? 0 : value >= 9.995 ? 1 : 2;
+        return `${value.toFixed(decimals)}${prefixes[pow]}B/s`.padStart(8);
     }
 
     // Appelé à la fin de chaque lecture de /proc/net/dev (reload() est asynchrone) ; la route a été relue juste avant.

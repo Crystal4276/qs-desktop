@@ -982,6 +982,8 @@ changement de focus. À vérifier en phase 9 : après `hyprctl reload` au révei
 - Largeur fixe des pills système et réseau, la plus petite possible : chaque valeur prend la largeur de la plus large de ses
   valeurs possibles (0-100 %, 0 à la mémoire totale, débits jusqu'à `999.9GB/s`), mesurée avec la police (`FontMetrics`),
   alignée à droite ; chiffres proportionnels (`tnum` les élargissait). `InfoModule` : un `Text` par segment.
+- Pour réduire encore (tes choix) : CPU et GPU plafonnés à 99 % ; débits à 3 chiffres significatifs (« 4.32MB/s »,
+  « 14.3MB/s », « 833kB/s ») au lieu d'une décimale, aussi dans le graphe du panneau réseau.
 
 ## Prochaine étape
 
