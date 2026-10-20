@@ -988,6 +988,9 @@ changement de focus. À vérifier en phase 9 : après `hyprctl reload` au révei
   à jour gardent deux espaces.
 - Écart valeur → icône suivante : un seul padding de module (10 px) au lieu de deux (20 px) entre deux modules texte d'une
   même pilule (`InfoModule.trailing`, fixé par Bar.qml), et 10 px au lieu de deux espaces entre les deux débits.
+- Horloge : même règle (`Clock` devient un `InfoModule`) : une espace après l'icône, 10 px avant le calendrier.
+- Les icônes Nerd Font débordent de leur avance (3,8 à 11,3 px) : chaque segment prend sa largeur dessinée
+  (`tightBoundingRect`), sinon une seule espace laisse l'icône toucher le chiffre.
 
 ## Prochaine étape
 
