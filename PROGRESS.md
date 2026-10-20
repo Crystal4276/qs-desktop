@@ -979,6 +979,8 @@ changement de focus. À vérifier en phase 9 : après `hyprctl reload` au révei
 - Module GPU : **utilisation** (`{usage:2}%`, comme le CPU) au lieu de la température ; `nvidia-smi` (NVIDIA),
   `gpu_busy_percent` (AMD) ; masqué sur Intel (aucune utilisation dans sysfs). Température toujours lue pour le moniteur.
 - Icône mémoire : `U+EFC5` (`nf-fa-memory`, barrette de RAM) au lieu de `U+F035B` (puce, trop proche de l'icône CPU).
+- Largeur fixe des pills système et réseau : chaque valeur réserve la place de sa valeur la plus large (`100%`, mémoire
+  totale, `999.9MB/s`), alignée à droite, chiffres à chasse fixe (`tnum`) ; `InfoModule` : un `Text` par segment, avec gabarit.
 
 ## Prochaine étape
 
