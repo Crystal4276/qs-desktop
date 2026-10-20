@@ -18,7 +18,6 @@ Idées notées pendant le travail. Rien ici n'est implémenté sans accord.
 - Panneaux natifs (phase 5), fonctions des applets non reprises : nm-applet (« Enable Networking » global, connexions VPN de NetworkManager,
   réseau Wi-Fi caché, création d'un point d'accès, fenêtre d'informations), blueman (envoi de fichiers, gestion des adaptateurs),
   udiskie (« Mount disc image », interrupteurs montage automatique / notifications), NordVPN (réglages, compte).
-- Panneau NordVPN : focus direct dans la recherche à l'ouverture (taper sans cliquer).
 - Notifications (phase 6) : raccourcis clavier pour le centre et « ne pas déranger » (IPC à ajouter) ; historique et « ne pas déranger »
   conservés après un redémarrage de Quickshell (en mémoire aujourd'hui, comme Dunst) ; menu pour choisir parmi plusieurs liens d'une
   notification (Dunst passait par `dmenu`, absent) ; couleurs par notification (`fgcolor`, `bgcolor`… : ignorées).
@@ -28,6 +27,4 @@ Idées notées pendant le travail. Rien ici n'est implémenté sans accord.
 - **Vue des fenêtres** (accepté le 2026-10-16, après la première version) : aperçus en direct de toutes les fenêtres (`Toplevel` +
   `ScreencopyView`), clic pour y aller, ouverte par un raccourci.
 
-- NordVPN (`services/Vpn.qml`) : son lanceur de commandes (busy / run / error) date de la phase 5 ; le passer sur
-  `services/CliRunner.qml`, qui gère en plus une commande qui ne démarre pas (sinon `busy` resterait vrai pour la session).
-  Relevé par la revue du 2026-10-19 ; non fait sans test, pour ne pas toucher à ta connexion VPN.
+- Panneau NordVPN : recherche par ville (« amsterdam ») ; demanderait les villes des ~150 pays (`nordvpn cities` pour chacun).

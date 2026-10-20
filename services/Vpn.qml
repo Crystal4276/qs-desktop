@@ -16,28 +16,50 @@ Singleton {
     readonly property string state: status["Status"] ?? ""
     readonly property bool connected: state === "Connected"
     readonly property bool paused: state === "Paused"
-    readonly property bool connecting: state === "Connecting" || busy
-    property bool busy: false
+    readonly property bool connecting: state === "Connecting" || doing === "connect"
+    readonly property bool busy: action.busy
+    // Action lancée d'ici et pas encore finie : "connect", "disconnect", "pause" ou "".
+    readonly property string doing: action.busy ? lastAction : ""
+    property string lastAction: ""
+    // Cible de la connexion demandée d'ici ([pays] ou [pays, ville]), gardée jusqu'à la connexion (retenue dans les récents)
+    // ou l'échec de la commande ; null pour le serveur recommandé ou une connexion faite ailleurs.
+    property var requested: null
     property var countries: []
-    property var cities: ({})    // pays → villes, chargées à la demande
+    readonly property bool countriesLoading: countriesProcess.running
+    property var cities: ({})    // pays → villes, chargées à la demande (un échec n'est pas gardé : nouvel essai à la demande suivante)
+    readonly property string citiesLoading: citiesProcess.running ? citiesProcess.country : pendingCities
 
     // Derniers pays utilisés, du plus récent au plus ancien (ta demande du 2026-10-16) : NordVPN ne garde pas d'historique,
     // chaque connexion observée (panneau, raccourci, ligne de commande) est enregistrée dans l'état local de Quickshell
     // (~/.local/state/quickshell/…/vpn.json, propre à la machine, hors du dépôt ; lu et écrit par JsonAdapter).
+    // Une entrée par pays : « Netherlands », ou « Netherlands/Amsterdam » si la ville a été choisie (ta demande du 2026-10-20).
     readonly property int recentCount: 5
     readonly property var recent: recentJson.recent
     property bool recentLoaded: false   // l'historique n'est modifié qu'après lecture du fichier (sinon il serait écrasé)
     onStatusChanged: remember()
     onRecentLoadedChanged: remember()
 
+    // Pendant une action, le statut peut encore être l'ancien (changement de ville) : rien n'est retenu avant sa fin.
+    // Statut lu directement : appelée depuis onStatusChanged, la liaison `connected` peut ne pas être encore à jour.
     function remember(): void {
         const country = status["Country"];
-        if (!recentLoaded || !connected || !country)
+        if (!recentLoaded || status["Status"] !== "Connected" || !country || busy)
             return;
         const key = country.replace(/ /g, "_");
-        if (recent[0] === key)
+        // Connexion demandée d'ici : son choix (pays seul ou ville). Sinon (raccourci, ligne de commande, fin de pause,
+        // redémarrage de Quickshell, demande par code pays) : l'entrée déjà retenue pour ce pays, ville comprise.
+        let entry = recent.find(e => entryCountry(e) === key) ?? key;
+        if (requested && requested[0].toLowerCase() === key.toLowerCase()) {
+            entry = requested.length > 1 ? `${key}/${requested[1]}` : key;
+            requested = null;
+        }
+        if (recent[0] === entry)
             return;
-        recentJson.recent = [key, ...recent.filter(c => c !== key)].slice(0, recentCount);
+        recentJson.recent = [entry, ...recent.filter(e => entryCountry(e) !== key)].slice(0, recentCount);
+    }
+
+    function entryCountry(entry: string): string {
+        return entry.split("/")[0];
     }
 
     FileView {
@@ -56,26 +78,36 @@ Singleton {
     // Icône du tray, celles du paquet nordvpn : bleue connecté, grise sinon.
     readonly property string icon: connected ? "nordvpn-tray-blue" : "nordvpn-tray-gray"
 
+    // Lecture déjà en cours (lecture périodique) : refaite à sa fin, sinon l'effet d'une action qui vient de finir ne serait
+    // vu qu'à la lecture suivante.
+    property bool refreshAgain: false
+
     function refresh(): void {
-        statusProcess.running = true;
+        if (statusProcess.running)
+            refreshAgain = true;
+        else
+            statusProcess.running = true;
     }
 
-    function run(args: var): void {
-        if (busy)
-            return;
-        busy = true;
-        action.command = ["nordvpn", ...args];
-        action.running = true;
+    // Renvoie faux si une autre action est en cours (rien n'est lancé).
+    function run(args: var): bool {
+        if (!action.run(args))
+            return false;
+        lastAction = args[0];
+        requested = null;
+        return true;
     }
 
     // Connexion : serveur recommandé, pays, ou « pays ville ».
     function connect(target: var): void {
-        run(["connect", ...(target ?? [])]);
+        if (run(["connect", ...(target ?? [])]))
+            requested = target?.length > 0 ? target : null;
     }
 
-    // Reconnexion (interrupteur) : dernier pays utilisé, serveur recommandé s'il n'y a pas d'historique (ta demande du 2026-10-16).
+    // Reconnexion (interrupteur) : dernière entrée des récents (pays, ou pays et ville), serveur recommandé s'il n'y a pas
+    // d'historique (ta demande du 2026-10-16).
     function connectLast(): void {
-        connect(recent.length > 0 ? [recent[0]] : []);
+        connect(recent.length > 0 ? recent[0].split("/") : []);
     }
 
     function disconnect(): void {
@@ -104,6 +136,7 @@ Singleton {
         }
     }
 
+    // Liste vide (jamais chargée, ou échec : démon pas prêt, pas de réseau) : rechargée à chaque ouverture du panneau.
     function loadCountries(): void {
         if (countries.length === 0)
             countriesProcess.running = true;
@@ -148,6 +181,12 @@ Singleton {
             if (code !== 0)
                 root.available = false;
         }
+        onRunningChanged: {
+            if (!running && root.refreshAgain) {
+                root.refreshAgain = false;
+                Qt.callLater(root.refresh);
+            }
+        }
     }
 
     // Statut toutes les 5 s ; module masqué (démon pas encore prêt à l'ouverture de session, compte connecté plus tard) :
@@ -159,25 +198,31 @@ Singleton {
         onTriggered: root.refresh()
     }
 
-    Process {
+    // Actions (connect, disconnect, pause) : une à la fois ; erreur en notification.
+    CliRunner {
         id: action
-        stdout: StdioCollector {}
-        stderr: StdioCollector {
-            id: actionErrors
-        }
-        onExited: code => {
-            root.busy = false;
-            if (code !== 0)
-                Quickshell.execDetached(["notify-send", "--app-name=NordVPN", "NordVPN", actionErrors.text.trim() || "Command failed"]);
+        program: "nordvpn"
+        probe: false   // présence et compte : lus par `nordvpn status`
+        onFinished: {
+            if (error !== "") {
+                root.requested = null;
+                Quickshell.execDetached(["notify-send", "--app-name=NordVPN", "NordVPN", error]);
+            }
             root.refresh();
         }
     }
 
+    // Listes lues seulement si la commande réussit : en cas d'erreur, des mots du message (« Cannot reach System Daemon »)
+    // passeraient pour des noms de pays et resteraient en cache.
     Process {
         id: countriesProcess
         command: ["nordvpn", "countries"]
         stdout: StdioCollector {
-            onStreamFinished: root.countries = root.names(text)
+            id: countriesOut
+        }
+        onExited: code => {
+            if (code === 0)
+                root.countries = root.names(countriesOut.text);
         }
     }
 
@@ -185,13 +230,14 @@ Singleton {
         id: citiesProcess
         property string country: ""
         stdout: StdioCollector {
-            onStreamFinished: {
+            id: citiesOut
+        }
+        onExited: code => {
+            if (code === 0) {
                 const copy = Object.assign({}, root.cities);
-                copy[citiesProcess.country] = root.names(text);
+                copy[citiesProcess.country] = root.names(citiesOut.text);
                 root.cities = copy;
             }
-        }
-        onExited: {
             const next = root.pendingCities;
             root.pendingCities = "";
             if (next !== "")
