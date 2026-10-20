@@ -393,10 +393,12 @@ Proposition de placement dans les phases (CLAUDE.md n'est pas modifié sans ton 
   leur **panneau** (`Panel.qml`, style du calendrier). L'icône StatusNotifier d'une application remplacée (nm-applet, blueman,
   udiskie, NordVPN) est masquée quand son module natif est présent (pas de doublon : ta demande ; utile aussi après la bascule si
   l'une d'elles est lancée par ailleurs) ; sans module natif (ex. NordVPN absent), l'icône de l'application reste.
-- **Popups** : panneaux et menus du tray sont des popups « grab » (clavier pour la saisie) ; wlroots les ferme au clic sur une autre
-  application (ce clic n'est pas transmis, comme les menus GTK), un clic sur une barre les ferme (`BarState.closePopups`). Un popup
-  affiché ne se redimensionne pas proprement sous Sway : les menus n'apparaissent qu'avec leurs entrées, les panneaux ont une fenêtre de
-  taille fixe et une zone de clic (`mask`) limitée au cadre.
+- **Popups** : les menus du tray sont des popups « grab » ; wlroots les ferme au clic sur une autre application (ce clic n'est pas
+  transmis, comme les menus GTK), un clic sur une barre les ferme (`BarState.closePopups`). Un popup affiché ne se redimensionne pas
+  proprement sous Sway : les menus n'apparaissent qu'avec leurs entrées.
+- **Panneaux du tray** (corrigé le 2026-10-20) : surfaces Overlay à clavier exclusif (`OverlayPopup`, comme le panneau de réglages et
+  le lanceur), et non plus des popups « grab » : sous Sway, un popup `grabFocus` ouvert depuis une barre ne reçoit jamais le clavier
+  (ni saisie, ni Échap). Fermés par un appui à côté du cadre (non transmis), sur une barre ou sur un autre écran, ou par Échap.
 - **Réseau** (R5) : `Quickshell.Networking` (filaire, Wi-Fi : interrupteur, réseaux, mot de passe, oubli) ; édition dans `nm-connection-editor`.
   Depuis le 2026-10-19 (ta demande), deux icônes : **réseau** (filaire et réseaux privés ; visible si un câble est branché ou
   sans Wi-Fi) et **Wi-Fi** (`WifiPanel.qml`). Le Wi-Fi s'inspire de GNOME (niveaux de signal et seuils 20 / 40 / 50 / 80 % de

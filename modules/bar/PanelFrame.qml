@@ -3,8 +3,8 @@ import QtQuick.Layouts
 import qs.config
 
 // Cadre des panneaux (THEME.md § 3 « Panneaux ») : fond `mantle`, bordure, titre et interrupteur facultatifs, contenu libre.
-// Hauteur : celle du contenu, au plus `maxHeight`. Échap demande la fermeture. Utilisé par Panel.qml (popup sous une icône
-// du tray) et SettingsPanel.qml (surface de la couche Overlay, ouvrable au clavier).
+// Hauteur : celle du contenu, au plus `maxHeight`. Échap demande la fermeture. Utilisé par Panel.qml (panneaux sous une icône
+// du tray) et SettingsPanel.qml, deux surfaces de la couche Overlay à clavier exclusif (OverlayPopup.qml).
 Rectangle {
     id: root
 

@@ -1,14 +1,14 @@
 import QtQuick
-import QtQuick.Layouts
 import Quickshell
+import Quickshell.Wayland
 import qs.config
 
 // Panneau d'un module natif du tray (THEME.md § 3 « Panneaux ») : cadre du calendrier, titre, interrupteur facultatif,
-// contenu libre. Popup avec prise du clavier (saisie possible) : fermé par un clic sur une autre application (wlroots),
-// sur une barre (BarState.closePopups) ou par Échap. `toggle(item, boutons)` l'ouvre sous l'icône ou le ferme.
-// La fenêtre a une taille fixe (toute la hauteur sous la barre) et seul le cadre reçoit les clics (`mask`) : un popup déjà
-// affiché ne se redimensionne pas proprement sous Sway (l'ancienne image est étirée), or le contenu change (Wi-Fi coupé…).
-PopupWindow {
+// contenu libre. `toggle(item, boutons)` l'ouvre sous l'icône ou le ferme.
+// Surface Overlay à clavier exclusif, comme le panneau de réglages (OverlayPopup.qml) : sous Sway, un popup `grabFocus`
+// ouvert depuis une barre ne reçoit jamais le clavier (ni saisie ni Échap ; vu le 2026-10-20, Sway 1.12). Fermé par un
+// appui à côté du cadre, sur une barre ou sur un autre écran, ou par Échap.
+OverlayPopup {
     id: root
 
     property string title: ""
@@ -22,57 +22,33 @@ PopupWindow {
     // `buttons` : boutons de souris avec lesquels l'élément ouvre et ferme ce panneau (un appui de ces boutons sur lui ne le
     // fait pas fermer par la barre : c'est l'élément qui le ferme).
     function toggle(item: Item, buttons: int): void {
-        if (visible) {
-            visible = false;
+        if (!beginOpen(item))
             return;
-        }
         ownerButtons = buttons;
-        anchor.item = item;
+        const window = item.QsWindow.window;
+        screen = window.screen;
         // Centré sous l'élément, sans dépasser les marges de la barre (10 px du bord de l'écran).
-        const itemX = item.mapToItem(null, 0, 0).x;
-        const windowWidth = item.QsWindow.window?.width ?? 0;
-        const left = BarState.panelLeft(itemX + (item.width - width) / 2, width, windowWidth);
-        anchor.rect.x = left - itemX;
-        // 10 px sous la pilule (bas de la zone réservée de la barre), quel que soit l'élément d'origine ;
-        // hauteur : tout l'espace jusqu'à 10 px du bas de l'écran.
-        anchor.rect.y = Theme.bar.exclusiveZone + Theme.panel.gap - item.mapToItem(null, 0, 0).y;
-        implicitHeight = (item.QsWindow.window?.screen?.height ?? 1000) - Theme.bar.exclusiveZone - Theme.panel.gap - Theme.bar.marginSide;
+        const x = item.mapToItem(null, 0, 0).x;
+        frame.x = BarState.panelLeft(x + (item.width - frame.width) / 2, frame.width, window.width);
+        // Focus au cadre avant l'affichage : un panneau peut le donner à un champ à son ouverture (recherche NordVPN).
+        frame.forceActiveFocus();
         visible = true;
     }
 
-    grabFocus: true
-    color: "transparent"
-    implicitWidth: Theme.panel.width
-    implicitHeight: 1
-    mask: Region {
-        item: frame
-    }
-    anchor.adjustment: PopupAdjustment.Slide
-
-    onVisibleChanged: BarState.setPopupOpen(root, visible)
-    Component.onDestruction: BarState.setPopupOpen(root, false)
-
-    // Appui sur l'élément qui a ouvert le panneau, avec un de ses boutons : la barre le laisse, l'élément le ferme.
-    readonly property Item owner: visible ? anchor.item : null
-    property int ownerButtons: Qt.LeftButton
-
-    Connections {
-        target: BarState
-        function onClosePopups(keep) {
-            if (!keep.includes(root))
-                root.visible = false;
-        }
-    }
+    WlrLayershell.namespace: "quickshell-panel"
+    frameItem: frame
 
     PanelFrame {
         id: frame
 
-        width: parent.width
-        maxHeight: parent.height
+        // 10 px sous la pilule ; hauteur : au plus jusqu'à 10 px du bas de l'écran.
+        y: Theme.panel.gap
+        width: Theme.panel.width
+        maxHeight: parent.height - Theme.panel.gap - Theme.bar.marginSide
         title: root.title
         hasSwitch: root.hasSwitch
         switchChecked: root.switchChecked
         onSwitchToggled: checked => root.switchToggled(checked)
-        onCloseRequested: root.visible = false
+        onCloseRequested: root.close()
     }
 }

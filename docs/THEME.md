@@ -212,7 +212,7 @@ rapides façon GNOME). Style du calendrier ; valeurs reprises de la charte sauf 
 | Champ de saisie | fond `base`, bordure 1 px `overlay0` (`green` quand il a le focus, `red` après un mot de passe refusé), coins 10 px, Inter 20 px | soulignement du lanceur ; erreur : comme l'écran de verrouillage |
 | Liste longue | au-delà de 400 px, elle défile | — |
 | Clavier | Tab / Maj+Tab ou ↑ / ↓ : élément suivant / précédent ; Entrée ou Espace : activer ; ← / → : curseur ±5 % ; élément choisi : liseré 1 px `text` (**nouveau, à valider**, visible aussi sur une bascule activée en `green`) ; indisponible : 50 % d'opacité | revue de code du 2026-10-16 |
-| Fermeture | clic sur une autre application ou sur une barre, Échap ; un clic à côté n'est pas transmis (popup « grab », nécessaire pour la saisie au clavier) | — |
+| Fermeture | clic à côté du cadre ou sur une barre, Échap ; un clic à côté n'est pas transmis (surface à clavier exclusif, nécessaire pour la saisie au clavier, comme le panneau de réglages) | — |
 
 ### Module Wi-Fi (nouveau composant, ta demande du 2026-10-19)
 
