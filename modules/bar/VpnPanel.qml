@@ -58,8 +58,7 @@ Panel {
     }
 
     function isCurrent(country: string, city: string): bool {
-        return Vpn.connected && Vpn.sameName(Vpn.status["Country"] ?? "", country)
-            && (city === "" || Vpn.sameName(Vpn.status["City"] ?? "", city));
+        return root.settled && Vpn.sameName(Vpn.country, country) && (city === "" || Vpn.sameName(Vpn.city, city));
     }
 
     function statusText(): string {
@@ -73,7 +72,7 @@ Panel {
             return "Pausing…";
         }
         return Vpn.state === "Connecting" ? "Connecting…"
-            : Vpn.connected ? `${Vpn.status["Country"] ?? ""}, ${Vpn.status["City"] ?? ""}`
+            : Vpn.connected ? `${Vpn.country}, ${Vpn.city}`
             : Vpn.paused ? "Paused" : "Not connected";
     }
 

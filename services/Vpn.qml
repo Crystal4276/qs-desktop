@@ -16,14 +16,17 @@ Singleton {
     readonly property string state: status["Status"] ?? ""
     readonly property bool connected: state === "Connected"
     readonly property bool paused: state === "Paused"
+    readonly property string country: status["Country"] ?? ""
+    readonly property string city: status["City"] ?? ""
     readonly property bool connecting: state === "Connecting" || doing === "connect"
     // Action en cours, jusqu'à la première lecture du statut qui la suit (sinon l'état d'avant reviendrait un instant).
     readonly property bool busy: action.busy || awaitingStatus
     property bool awaitingStatus: false
+    readonly property int actionTimeout: 300   // s
     // Action lancée d'ici et pas encore finie : "connect", "disconnect", "pause" ou "".
     readonly property string doing: busy ? lastAction : ""
     property string lastAction: ""
-    // Cible de la connexion en cours lancée d'ici ([pays] ou [pays, ville]) ; null pour le serveur recommandé.
+    // Cible de la connexion lancée d'ici ([pays] ou [pays, ville]), jusqu'au statut qui la suit ; null : serveur recommandé.
     property var requested: null
     property var countries: []
     readonly property bool countriesLoading: countriesProcess.running
@@ -117,6 +120,8 @@ Singleton {
     property bool refreshAgain: false
 
     function refresh(): void {
+        if (action.busy)   // résultat ignoré ; la lecture qui suit l'action est demandée à sa fin
+            return;
         if (statusProcess.running)
             refreshAgain = true;
         else
@@ -141,7 +146,7 @@ Singleton {
         actionCount++;
         // Bornée, large (une connexion lente aboutit) : une commande figée garderait `busy` (panneau verrouillé) jusqu'au
         // redémarrage de Quickshell.
-        return action.runCommand(["timeout", "300", "nordvpn", ...args]);
+        return action.runCommand(["timeout", String(actionTimeout), "nordvpn", ...args]);
     }
 
     // Connexion : serveur recommandé, pays, ou « pays ville ».
@@ -204,8 +209,12 @@ Singleton {
         citiesProcess.running = true;
     }
 
+    // Noms des listes (un par ligne, ou séparés par des virgules) ; une ligne qui contient autre chose (« A new version of
+    // NordVPN is available! ») est ignorée entière.
     function names(text: string): var {
-        return text.split(/[\s,]+/).map(s => s.trim()).filter(s => /^[A-Z][\w-]*$/.test(s));
+        return text.split("\n").map(l => l.split(/[\s,]+/).filter(w => w !== ""))
+            .filter(words => words.length > 0 && words.every(w => /^[A-Z][\w-]*$/.test(w)))
+            .reduce((all, words) => all.concat(words), []);
     }
 
     Process {
@@ -218,11 +227,12 @@ Singleton {
         }
         // Lecture ancienne (stamp) ou trop lente (124 : démon occupé) : rien n'est changé, le module ne disparaît pas.
         onExited: code => {
-            if (stamp !== root.actionCount)
+            // Pas de réponse après une action : elle reste « en cours » (l'état d'avant n'est pas montré comme actuel) ;
+            // la lecture périodique réessaie.
+            if (stamp !== root.actionCount || code === 124)
                 return;
             root.awaitingStatus = false;   // avant `status` : remember() voit l'action finie
-            if (code === 124)
-                return;
+            root.requested = null;
             const text = statusOut.text;
             const result = {};
             for (const line of text.split("\n")) {
@@ -234,8 +244,6 @@ Singleton {
             root.status = result;
         }
         onRunningChanged: {
-            if (!running && stamp === root.actionCount)
-                root.awaitingStatus = false;   // aussi si la lecture n'a pas pu démarrer (pas d'`exited`)
             if (!running && root.refreshAgain) {
                 root.refreshAgain = false;
                 Qt.callLater(root.refresh);
@@ -262,14 +270,13 @@ Singleton {
         program: "nordvpn"
         probe: false   // présence et compte : lus par `nordvpn status`
         lastLineError: true
-        noAnswer: "nordvpn: no answer after 5 minutes"
+        noAnswer: `nordvpn: no answer after ${root.actionTimeout / 60} minutes`
         onFinished: {
             if (error !== "")
                 Quickshell.execDetached(["notify-send", "--app-name=NordVPN", "NordVPN", error]);
             else if (root.lastAction === "connect" && root.requested)
                 root.record(root.requested);
-            root.requested = null;
-            root.awaitingStatus = true;
+            root.awaitingStatus = true;   // `requested` gardé jusque-là (« Connecting to … »)
             root.refresh();
         }
     }
