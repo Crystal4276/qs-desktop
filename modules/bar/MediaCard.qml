@@ -36,6 +36,7 @@ Rectangle {
         running: root.visible && root.windowShown && (root.player?.isPlaying ?? false)
         interval: 1000
         repeat: true
+        triggeredOnStart: true   // panneau rouvert : position à jour tout de suite
         onTriggered: Media.refreshPosition()
     }
 
