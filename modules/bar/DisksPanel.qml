@@ -101,7 +101,7 @@ Panel {
                         visible: volume.mounted
                         text: "Open"
                         onClicked: {
-                            root.visible = false;
+                            root.close();
                             Disks.browse(volume);
                         }
                     }

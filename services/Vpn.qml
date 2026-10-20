@@ -109,11 +109,11 @@ Singleton {
 
     // Renvoie faux si une autre action est en cours (rien n'est lancé).
     function run(args: var): bool {
-        if (!action.run(args))
+        if (busy)
             return false;
-        lastAction = args[0];
+        lastAction = args[0];   // avant `busy` : `doing` ne prend jamais le nom de l'action précédente
         requested = null;
-        return true;
+        return action.run(args);
     }
 
     // Connexion : serveur recommandé, pays, ou « pays ville ».
@@ -166,7 +166,8 @@ Singleton {
     function loadCities(country: string): void {
         if (cities[country] !== undefined)
             return;
-        if (citiesProcess.running) {
+        // Une demande attend déjà son tour (lancée au prochain tour de boucle) : celle-ci la remplace.
+        if (citiesProcess.running || pendingCities !== "") {
             pendingCities = country;
             return;
         }
@@ -256,8 +257,11 @@ Singleton {
                 copy[citiesProcess.country] = root.names(citiesOut.text);
                 root.cities = copy;
             }
-            // Demande en attente gardée jusqu'à son lancement : affichée « Loading cities… », pas « unavailable ».
-            if (root.pendingCities !== "")
+        }
+        // Demande en attente : lancée à l'arrêt de celle-ci (même si elle n'a pas pu démarrer : pas d'`exited`), gardée jusque-là
+        // (affichée « Loading cities… », pas « unavailable »).
+        onRunningChanged: {
+            if (!running && root.pendingCities !== "")
                 Qt.callLater(() => {
                     const next = root.pendingCities;
                     root.pendingCities = "";

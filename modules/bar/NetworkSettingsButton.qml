@@ -17,7 +17,7 @@ RowLayout {
     PanelButton {
         text: "Network settings…"
         onClicked: {
-            parent.panel.visible = false;
+            parent.panel.close();
             Network.openEditor();
         }
     }

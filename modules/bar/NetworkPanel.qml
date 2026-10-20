@@ -44,26 +44,14 @@ Panel {
     onCurrentChanged: if (visible) Network.networkTab = current
     Component.onDestruction: Network.setPanelOpen("network", root, false)
 
-    RowLayout {
+    PanelTabs {
         visible: root.tabs.length > 1
-        Layout.fillWidth: true
-        spacing: Theme.panel.spacing
-
-        Repeater {
-            model: root.tabs
-
-            PanelButton {
-                required property var modelData
-
-                Layout.fillWidth: true
-                text: modelData.text
-                checked: root.current === modelData.key
-                onClicked: {
-                    root.tab = modelData.key;
-                    root.autoTab = false;
-                    root.picked = true;
-                }
-            }
+        model: root.tabs
+        current: root.current
+        onPicked: key => {
+            root.tab = key;
+            root.autoTab = false;
+            root.picked = true;
         }
     }
 

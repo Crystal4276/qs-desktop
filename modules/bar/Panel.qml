@@ -15,6 +15,7 @@ OverlayPopup {
     // Interrupteur du titre (Wi-Fi, Bluetooth…) : visible si `hasSwitch`.
     property bool hasSwitch: false
     property bool switchChecked: false
+    property bool switchLocked: false   // action en cours : atténué, ignoré
     signal switchToggled(bool checked)
 
     default property alias content: frame.content
@@ -25,11 +26,7 @@ OverlayPopup {
         if (!beginOpen(item))
             return;
         ownerButtons = buttons;
-        const window = item.QsWindow.window;
-        screen = window.screen;
-        // Centré sous l'élément, sans dépasser les marges de la barre (10 px du bord de l'écran).
-        const x = item.mapToItem(null, 0, 0).x;
-        frame.x = BarState.panelLeft(x + (item.width - frame.width) / 2, frame.width, window.width);
+        placeUnder(item);
         // Focus au cadre avant l'affichage : un panneau peut le donner à un champ à son ouverture (recherche NordVPN).
         frame.forceActiveFocus();
         visible = true;
@@ -48,6 +45,7 @@ OverlayPopup {
         title: root.title
         hasSwitch: root.hasSwitch
         switchChecked: root.switchChecked
+        switchLocked: root.switchLocked
         onSwitchToggled: checked => root.switchToggled(checked)
         onCloseRequested: root.close()
     }

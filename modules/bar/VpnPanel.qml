@@ -14,6 +14,7 @@ Panel {
     title: "NordVPN"
     hasSwitch: true
     switchChecked: Vpn.connected || Vpn.connecting
+    switchLocked: Vpn.busy
     onSwitchToggled: checked => checked ? Vpn.connectLast() : Vpn.disconnect()
 
     property string tab: "recent"   // onglet choisi : "recent" ou "all"
@@ -57,8 +58,8 @@ Panel {
     }
 
     function isCurrent(country: string, city: string): bool {
-        return Vpn.connected && label(Vpn.status["Country"] ?? "") === label(country)
-            && (city === "" || label(Vpn.status["City"] ?? "") === label(city));
+        return Vpn.connected && Vpn.sameName(Vpn.status["Country"] ?? "", country)
+            && (city === "" || Vpn.sameName(Vpn.status["City"] ?? "", city));
     }
 
     function statusText(): string {
@@ -121,25 +122,13 @@ Panel {
     }
 
     // Onglets, comme le panneau réseau ; « Recent » efface la recherche.
-    RowLayout {
-        Layout.fillWidth: true
-        spacing: Theme.panel.spacing
-
-        Repeater {
-            model: [{ key: "recent", text: "Recent" }, { key: "all", text: "All countries" }]
-
-            PanelButton {
-                required property var modelData
-
-                Layout.fillWidth: true
-                text: modelData.text
-                checked: root.shown === modelData.key
-                onClicked: {
-                    root.tab = modelData.key;
-                    if (modelData.key === "recent")
-                        search.text = "";
-                }
-            }
+    PanelTabs {
+        model: [{ key: "recent", text: "Recent" }, { key: "all", text: "All countries" }]
+        current: root.shown
+        onPicked: key => {
+            root.tab = key;
+            if (key === "recent")
+                search.text = "";
         }
     }
 
@@ -167,9 +156,10 @@ Panel {
                 Layout.fillWidth: true
                 spacing: 0
 
-                // Pendant une action (connexion, pause…), lignes indisponibles : un clic ne lancerait rien.
+                // Pendant une action (connexion, pause…), lignes non cliquables : un clic ne lancerait rien. (Pas `enabled` :
+                // la ligne choisie au clavier perdrait le focus, et Échap et les flèches avec ; « Cities » reste utilisable.)
                 PanelRow {
-                    enabled: !Vpn.busy
+                    clickable: !Vpn.busy
                     text: entry.city !== "" ? `${root.label(entry.country)}, ${root.label(entry.city)}` : root.label(entry.country)
                     active: root.isCurrent(entry.country, entry.city)
                     onClicked: Vpn.connect(Vpn.entryTarget(entry.modelData))
@@ -196,7 +186,7 @@ Panel {
                     PanelRow {
                         required property string modelData
 
-                        enabled: !Vpn.busy
+                        clickable: !Vpn.busy
                         Layout.leftMargin: Theme.panel.iconSize + Theme.panel.spacing
                         text: root.label(modelData)
                         active: root.isCurrent(entry.country, modelData)
