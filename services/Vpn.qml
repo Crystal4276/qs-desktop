@@ -49,10 +49,10 @@ Singleton {
         recentJson.recent = [entry, ...recent.filter(e => !sameName(entryCountry(e), country))].slice(0, recentCount);
     }
 
-    // Connexion réussie lancée d'ici (panneau, interrupteur, `qs ipc`) : son choix, pays seul ou ville. Seulement pour un pays de
-    // la liste (un code pays, « nl », est laissé à remember(), qui retient alors le pays seul).
+    // Connexion réussie lancée d'ici (panneau, interrupteur, `qs ipc`) : son choix, pays seul ou ville. Pays de la liste
+    // seulement (un code pays, « nl », est laissé à remember() : pays seul) ; liste pas encore lue : nom tel quel.
     function record(target: var): void {
-        const country = countries.find(c => sameName(c, target[0]));
+        const country = countries.length === 0 ? target[0] : countries.find(c => sameName(c, target[0]));
         if (country)
             push(target.length > 1 ? `${country}/${target[1]}` : country);
     }
@@ -119,7 +119,16 @@ Singleton {
         if (statusProcess.running)
             refreshAgain = true;
         else
-            statusProcess.running = true;
+            readStatus();
+    }
+
+    // Lecture commencée pendant une action, ou avant la dernière : résultat ignoré (statut ancien ; la relecture qui suit
+    // l'action le remplace), sinon l'ancienne connexion reviendrait un instant et dans les récents.
+    property int actionCount: 0
+
+    function readStatus(): void {
+        statusProcess.stamp = busy ? -1 : actionCount;
+        statusProcess.running = true;
     }
 
     // Renvoie faux si une autre action est en cours (rien n'est lancé).
@@ -128,7 +137,9 @@ Singleton {
             return false;
         lastAction = args[0];   // avant `busy` : `doing` ne prend jamais le nom de l'action précédente
         requested = null;
-        return action.run(args);
+        actionCount++;
+        // Bornée : une commande figée garderait `busy` (panneau verrouillé) jusqu'au redémarrage de Quickshell.
+        return action.runCommand(["timeout", "60", "nordvpn", ...args]);
     }
 
     // Connexion : serveur recommandé, pays, ou « pays ville ».
@@ -187,7 +198,7 @@ Singleton {
             return;
         }
         citiesProcess.country = country;
-        citiesProcess.command = ["nordvpn", "cities", country];
+        citiesProcess.command = ["timeout", "10", "nordvpn", "cities", country];
         citiesProcess.running = true;
     }
 
@@ -197,10 +208,13 @@ Singleton {
 
     Process {
         id: statusProcess
-        command: ["nordvpn", "status"]
+        property int stamp: 0
+        command: ["timeout", "10", "nordvpn", "status"]   // bornées : démon figé
         running: true
         stdout: StdioCollector {
             onStreamFinished: {
+                if (statusProcess.stamp !== root.actionCount)
+                    return;
                 const result = {};
                 for (const line of text.split("\n")) {
                     const m = line.match(/^\s*([^:]+):\s*(.*)$/);
@@ -231,7 +245,7 @@ Singleton {
         repeat: true
         onTriggered: {
             if (!statusProcess.running)
-                statusProcess.running = true;
+                root.readStatus();
         }
     }
 
@@ -242,6 +256,7 @@ Singleton {
         program: "nordvpn"
         probe: false   // présence et compte : lus par `nordvpn status`
         lastLineError: true
+        noAnswer: "nordvpn: no answer after 60 s"
         onFinished: {
             if (error !== "")
                 Quickshell.execDetached(["notify-send", "--app-name=NordVPN", "NordVPN", error]);
@@ -256,7 +271,7 @@ Singleton {
     // passeraient pour des noms de pays et resteraient en cache.
     Process {
         id: countriesProcess
-        command: ["nordvpn", "countries"]
+        command: ["timeout", "10", "nordvpn", "countries"]
         stdout: StdioCollector {
             id: countriesOut
         }

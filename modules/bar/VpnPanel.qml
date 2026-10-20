@@ -156,7 +156,7 @@ Panel {
                 Layout.fillWidth: true
                 spacing: 0
 
-                // Pendant une action (connexion, pause…), lignes non cliquables : un clic ne lancerait rien. (Pas `enabled` :
+                // Pendant une action (connexion, pause…), lignes inactives (souris et clavier) : rien ne serait lancé. (Pas `enabled` :
                 // la ligne choisie au clavier perdrait le focus, et Échap et les flèches avec ; « Cities » reste utilisable.)
                 PanelRow {
                     clickable: !Vpn.busy
@@ -168,7 +168,8 @@ Panel {
                         text: root.expanded === entry.country ? "Hide cities" : "Cities"
                         onClicked: {
                             root.expanded = root.expanded === entry.country ? "" : entry.country;
-                            Vpn.loadCities(entry.country);
+                            if (root.expanded !== "")
+                                Vpn.loadCities(entry.country);
                         }
                     }
                 }
