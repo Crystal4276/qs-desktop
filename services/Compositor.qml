@@ -192,6 +192,23 @@ Singleton {
             Hyprland.dispatch(Hyprland.usingLua ? "hl.dsp.exit()" : "exit");
     }
 
+    // Ouverture d'une notification (Notifs.open) : l'application demande ensuite l'activation de sa fenêtre (Chromium après
+    // avoir choisi l'onglet de la notification, vu sur banc) ; Sway (focus_on_window_activation par défaut : urgent) et
+    // Hyprland la marquent seulement urgente. La première fenêtre devenue urgente dans les 3 s est affichée, son espace de
+    // travail avec ; les autres fenêtres urgentes ne sont pas touchées.
+    property real activationDeadline: 0
+
+    function focusNextActivation(): void {
+        activationDeadline = Date.now() + 3000;
+    }
+
+    function takeActivation(): bool {
+        if (Date.now() > activationDeadline)
+            return false;
+        activationDeadline = 0;
+        return true;
+    }
+
     function focusWorkspace(n: int): void {
         if (isSway)
             I3.dispatch(`workspace number ${n}`);
@@ -213,6 +230,8 @@ Singleton {
 
         onIpcEvent: event => {
             const data = JSON.parse(event.data);
+            if (event.type === "window" && data.change === "urgent" && data.container?.urgent && root.takeActivation())
+                I3.dispatch(`[con_id=${data.container.id}] focus`);
             if (event.type === "workspace") {
                 if (data.change === "init" && data.current)
                     root.workspaceCreated(data.current.num, data.current.output ?? "");
@@ -306,6 +325,8 @@ Singleton {
             }
             else if (event.name === "activewindowv2" && event.data !== "")
                 root.windowFocused();
+            else if (event.name === "urgent" && root.takeActivation())   // « ADRESSE » (hexadécimal, sans 0x) ; à vérifier en phase 9
+                Hyprland.dispatch(Hyprland.usingLua ? `hl.dsp.focus({ window = "address:0x${event.data}" })` : `focuswindow address:0x${event.data}`);
         }
     }
 }

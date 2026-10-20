@@ -1184,6 +1184,23 @@ Vérifié sur banc : avatar d'une silencieuse rappelée (popup, puis ligne), mis
   tout navigateur Chromium (règle sur l'identifiant, `Notifs.hiddenActions`).
 - Vérifié sur banc : popup Chromium sans bouton, popup Thunderbird avec ses deux boutons.
 
+### Ouvrir une notification : bon espace de travail, bon onglet (2026-10-20, ta demande)
+
+- Constat sur banc (Chromium jetable, profil temporaire, page locale qui notifie depuis un onglet en arrière-plan) : à
+  l'activation, Chromium choisit lui-même l'onglet de la notification puis demande l'activation de sa fenêtre ; Sway
+  (`focus_on_window_activation` par défaut : `urgent`) la marque seulement urgente. Quickshell 0.3.2 ne transmet pas de jeton
+  d'activation.
+- `Compositor.focusNextActivation()` : la première fenêtre devenue urgente dans les 3 s suivant l'ouverture est affichée
+  (Sway : `[con_id=…] focus` sur l'événement `window`/`urgent` ; Hyprland : événement `urgent`, `focuswindow`, à vérifier en
+  phase 9). Les autres fenêtres urgentes ne sont pas touchées.
+- Souris (ton choix) : **gauche ouvre** (action par défaut, ou lien, puis fenêtre affichée) et ferme, **milieu ferme**, droit
+  ferme tout (dunstrc : gauche et milieu inversés). Centre de notifications : clic sur une ligne = déplier seulement (ton choix ;
+  la notification y est déjà fermée, Chromium ne peut plus choisir l'onglet).
+- Vérifié sur banc : Chromium sur l'espace 2, onglet B actif, notification de l'onglet A ; clic gauche sur la popup depuis
+  l'espace 1 → espace 2, Chromium au premier plan, onglet A.
+- À tester à la main : tes vraies applis web (ChatGPT, WhatsApp web…) : l'onglet n'est choisi que si le site le demande au
+  clic (la plupart le font) ; Thunderbird (ouvre le message).
+
 ## Prochaine étape
 
 Phase 9 — parité Hyprland (tests à faire ensemble dans une session Hyprland : voir « Compatibilité Hyprland »).
