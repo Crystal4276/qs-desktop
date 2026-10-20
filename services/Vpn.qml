@@ -21,13 +21,14 @@ Singleton {
     // Action lancée d'ici et pas encore finie : "connect", "disconnect", "pause" ou "".
     readonly property string doing: action.busy ? lastAction : ""
     property string lastAction: ""
-    // Cible de la connexion demandée d'ici ([pays] ou [pays, ville]), gardée jusqu'à la connexion (retenue dans les récents)
-    // ou l'échec de la commande ; null pour le serveur recommandé ou une connexion faite ailleurs.
+    // Cible de la connexion demandée d'ici ([pays] ou [pays, ville]), gardée jusqu'à la connexion (retenue dans les récents),
+    // l'échec de la commande ou l'action suivante ; null pour le serveur recommandé ou une connexion faite ailleurs.
     property var requested: null
     property var countries: []
     readonly property bool countriesLoading: countriesProcess.running
     property var cities: ({})    // pays → villes, chargées à la demande (un échec n'est pas gardé : nouvel essai à la demande suivante)
-    readonly property string citiesLoading: citiesProcess.running ? citiesProcess.country : pendingCities
+    // Pays dont les villes se chargent ou attendent leur tour (une seule liste dépliée : la dernière demandée).
+    readonly property string citiesLoading: pendingCities !== "" ? pendingCities : citiesProcess.running ? citiesProcess.country : ""
 
     // Derniers pays utilisés, du plus récent au plus ancien (ta demande du 2026-10-16) : NordVPN ne garde pas d'historique,
     // chaque connexion observée (panneau, raccourci, ligne de commande) est enregistrée dans l'état local de Quickshell
@@ -47,9 +48,12 @@ Singleton {
             return;
         const key = country.replace(/ /g, "_");
         // Connexion demandée d'ici : son choix (pays seul ou ville). Sinon (raccourci, ligne de commande, fin de pause,
-        // redémarrage de Quickshell, demande par code pays) : l'entrée déjà retenue pour ce pays, ville comprise.
+        // redémarrage de Quickshell, demande par code pays) : l'entrée déjà retenue pour ce pays, avec sa ville si c'est
+        // celle de la connexion (une autre ville du pays choisie ailleurs : pays seul).
         let entry = recent.find(e => entryCountry(e) === key) ?? key;
-        if (requested && requested[0].toLowerCase() === key.toLowerCase()) {
+        if (entryCity(entry) !== "" && !sameName(entryCity(entry), status["City"] ?? ""))
+            entry = key;
+        if (requested && sameName(requested[0], key)) {
             entry = requested.length > 1 ? `${key}/${requested[1]}` : key;
             requested = null;
         }
@@ -58,8 +62,22 @@ Singleton {
         recentJson.recent = [entry, ...recent.filter(e => entryCountry(e) !== key)].slice(0, recentCount);
     }
 
+    // Entrée des récents « Pays » ou « Pays/Ville » : pays, ville ("" sans ville), cible de `connect`.
     function entryCountry(entry: string): string {
         return entry.split("/")[0];
+    }
+
+    function entryCity(entry: string): string {
+        return entry.split("/")[1] ?? "";
+    }
+
+    function entryTarget(entry: string): var {
+        return entry.split("/");
+    }
+
+    // Noms NordVPN : « United_States » (listes, commandes) ou « United States » (statut), casse libre en ligne de commande.
+    function sameName(a: string, b: string): bool {
+        return a.toLowerCase().replace(/ /g, "_") === b.toLowerCase().replace(/ /g, "_");
     }
 
     FileView {
@@ -107,7 +125,7 @@ Singleton {
     // Reconnexion (interrupteur) : dernière entrée des récents (pays, ou pays et ville), serveur recommandé s'il n'y a pas
     // d'historique (ta demande du 2026-10-16).
     function connectLast(): void {
-        connect(recent.length > 0 ? recent[0].split("/") : []);
+        connect(recent.length > 0 ? entryTarget(recent[0]) : []);
     }
 
     function disconnect(): void {
@@ -238,10 +256,13 @@ Singleton {
                 copy[citiesProcess.country] = root.names(citiesOut.text);
                 root.cities = copy;
             }
-            const next = root.pendingCities;
-            root.pendingCities = "";
-            if (next !== "")
-                Qt.callLater(() => root.loadCities(next));
+            // Demande en attente gardée jusqu'à son lancement : affichée « Loading cities… », pas « unavailable ».
+            if (root.pendingCities !== "")
+                Qt.callLater(() => {
+                    const next = root.pendingCities;
+                    root.pendingCities = "";
+                    root.loadCities(next);
+                });
         }
     }
 }

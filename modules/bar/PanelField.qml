@@ -57,16 +57,13 @@ Rectangle {
 
     ClearButton {
         id: clear
+        field: input
         visible: root.search && input.text !== ""
         font.pixelSize: Theme.panel.fontSize
         anchors {
             right: parent.right
             rightMargin: Theme.panel.rowPadding
             verticalCenter: parent.verticalCenter
-        }
-        onClicked: {
-            input.text = "";
-            input.forceActiveFocus();
         }
     }
 }

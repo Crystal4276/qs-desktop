@@ -116,7 +116,7 @@ Panel {
         search: true
         onAccepted: {
             if (root.query !== "" && root.rows.length > 0)
-                Vpn.connect(root.rows[0].split("/"));
+                Vpn.connect(Vpn.entryTarget(root.rows[0]));
         }
     }
 
@@ -162,15 +162,17 @@ Panel {
 
                 required property string modelData
                 readonly property string country: Vpn.entryCountry(modelData)
-                readonly property string city: modelData.split("/")[1] ?? ""
+                readonly property string city: Vpn.entryCity(modelData)
 
                 Layout.fillWidth: true
                 spacing: 0
 
+                // Pendant une action (connexion, pause…), lignes indisponibles : un clic ne lancerait rien.
                 PanelRow {
+                    enabled: !Vpn.busy
                     text: entry.city !== "" ? `${root.label(entry.country)}, ${root.label(entry.city)}` : root.label(entry.country)
                     active: root.isCurrent(entry.country, entry.city)
-                    onClicked: Vpn.connect(entry.modelData.split("/"))
+                    onClicked: Vpn.connect(Vpn.entryTarget(entry.modelData))
 
                     PanelButton {
                         text: root.expanded === entry.country ? "Hide cities" : "Cities"
@@ -185,7 +187,7 @@ Panel {
                     readonly property bool open: root.expanded === entry.country
                     visible: open && Vpn.cities[entry.country] === undefined
                     Layout.leftMargin: Theme.panel.iconSize + Theme.panel.spacing + Theme.panel.rowPadding   // aligné sur le texte des villes
-                    text: Vpn.citiesLoading === entry.country ? "Loading cities…" : "Cities unavailable"
+                    text: open ? (Vpn.citiesLoading === entry.country ? "Loading cities…" : "Cities unavailable") : ""
                 }
 
                 Repeater {
@@ -194,6 +196,7 @@ Panel {
                     PanelRow {
                         required property string modelData
 
+                        enabled: !Vpn.busy
                         Layout.leftMargin: Theme.panel.iconSize + Theme.panel.spacing
                         text: root.label(modelData)
                         active: root.isCurrent(entry.country, modelData)
