@@ -10,18 +10,22 @@ Item {
     property bool shown: true
     property int horizontalPadding: Theme.bar.modulePadding
     property int minWidth: 0
+    // Dernier module affiché de sa pilule (Bar.qml) : lui seul a un padding droit. Entre deux modules, un seul padding
+    // au lieu de deux (ta demande du 2026-10-20).
+    property bool trailing: true
+    readonly property int rightPadding: trailing ? horizontalPadding : 0
     // Survol : contrastes inversés, comme le bouton Arch (fond de la couleur du module, texte `mantle`).
     property bool highlightOnHover: false
     readonly property bool highlighted: highlightOnHover && hover.hovered
 
-    // [[police, texte, valeurs?], …] ; valeurs : tous les textes que le segment peut afficher. Il prend la largeur du plus large,
+    // [[police, texte, valeurs?, écart?], …] ; valeurs : tous les textes que le segment peut afficher. Il prend la largeur du plus large,
     // mesurée dans sa police, et s'aligne à droite dedans : la pilule ne change jamais de taille, et n'est pas plus large que
-    // nécessaire (ta demande du 2026-10-20).
+    // nécessaire (ta demande du 2026-10-20). Écart : marge gauche du segment, en pixels.
     property var segments: []
 
     signal clicked
 
-    implicitWidth: Math.max(minWidth, row.implicitWidth + 2 * horizontalPadding)
+    implicitWidth: Math.max(minWidth, row.implicitWidth + horizontalPadding + rightPadding)
     implicitHeight: reference.implicitHeight + 2 * Theme.bar.modulePadding
 
     Rectangle {
@@ -35,7 +39,9 @@ Item {
     // Un Text par segment, pour la largeur fixe.
     Row {
         id: row
-        anchors.centerIn: parent
+        // Centrée dans l'espace entre les paddings (largeur minimale plus grande que le contenu : réseau).
+        x: root.horizontalPadding + Math.max(0, root.width - root.horizontalPadding - root.rightPadding - implicitWidth) / 2
+        anchors.verticalCenter: parent.verticalCenter
         height: reference.implicitHeight
 
         // Hauteur et ligne de base de la ligne entière (texte d'un seul tenant), que suivent les segments.
@@ -57,8 +63,9 @@ Item {
 
                 anchors.baseline: reference.baseline
                 // Arrondi au pixel : la mesure et le texte affiché peuvent différer d'une fraction de pixel.
-                width: Math.ceil(Math.max(implicitWidth, ...Array.from(segment[2] ?? []).map(s => metrics.advanceWidth(s))))
+                width: Math.ceil(Math.max(implicitWidth, leftPadding + Math.max(0, ...Array.from(segment[2] ?? []).map(s => metrics.advanceWidth(s)))))
                 horizontalAlignment: Text.AlignRight
+                leftPadding: segment[3] ?? 0
                 font.family: segment[0] ?? Theme.font.text
                 font.pixelSize: Theme.font.barText
                 color: root.highlighted ? Theme.module.highlightText : root.color

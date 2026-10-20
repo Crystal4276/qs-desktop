@@ -986,6 +986,8 @@ changement de focus. À vérifier en phase 9 : après `hyprctl reload` au révei
   « 14.3MB/s », « 833kB/s ») au lieu d'une décimale, aussi dans le graphe du panneau réseau.
 - Écart icône → valeur : une espace au lieu de deux (format Waybar) dans ces deux pills (ta demande) ; horloge, date et mises
   à jour gardent deux espaces.
+- Écart valeur → icône suivante : un seul padding de module (10 px) au lieu de deux (20 px) entre deux modules texte d'une
+  même pilule (`InfoModule.trailing`, fixé par Bar.qml), et 10 px au lieu de deux espaces entre les deux débits.
 
 ## Prochaine étape
 

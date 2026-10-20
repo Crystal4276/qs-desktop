@@ -172,6 +172,13 @@ Variants {
                                 property: "leading"
                                 value: !Array.from({ length: slot.index }, (_, i) => pillModules.itemAt(i)).some(l => l?.wanted)
                             }
+                            // Dernier module affiché de la pilule (InfoModule : seul à garder un padding droit).
+                            Binding {
+                                when: slot.item !== null && slot.item.trailing !== undefined
+                                target: slot.item
+                                property: "trailing"
+                                value: !Array.from({ length: pillModules.count - slot.index - 1 }, (_, i) => pillModules.itemAt(slot.index + 1 + i)).some(l => l?.wanted)
+                            }
                         }
                     }
                 }
