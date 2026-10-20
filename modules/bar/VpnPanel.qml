@@ -20,7 +20,7 @@ Panel {
 
     property string tab: "recent"   // onglet choisi : "recent" ou "all"
     property string expanded: ""    // pays dont les villes sont affichées
-    readonly property string query: search.text.trim().toLowerCase().replace(/_/g, " ")
+    readonly property string query: Vpn.label(search.text.trim()).toLowerCase()
     // Liste affichée : une recherche montre tous les pays, quel que soit l'onglet (effacée, l'onglet revient).
     readonly property string shown: query !== "" ? "all" : tab
     // Entrées affichées : « Pays » ou « Pays/Ville » (récents) ; aucune, panneau fermé (pas ~150 lignes gardées en mémoire).
@@ -39,10 +39,6 @@ Panel {
         }
     }
 
-    function label(name: string): string {
-        return name.replace(/_/g, " ");
-    }
-
     // Pays contenant la recherche : ceux qui commencent par elle, puis ceux dont un mot commence par elle, puis les autres ;
     // ordre alphabétique dans chaque groupe.
     function matches(countries: var, q: string): var {
@@ -50,7 +46,7 @@ Panel {
             return countries;
         const found = [];
         countries.forEach((c, i) => {
-            const name = label(c).toLowerCase();
+            const name = Vpn.label(c).toLowerCase();
             if (name.includes(q))
                 found.push({ c, i, rank: name.startsWith(q) ? 0 : name.includes(" " + q) ? 1 : 2 });
         });
@@ -62,7 +58,7 @@ Panel {
     }
 
     function statusText(): string {
-        const target = Vpn.requested ? Vpn.requested.map(label).join(", ") : "";
+        const target = Vpn.requested ? Vpn.requested.map(Vpn.label).join(", ") : "";
         switch (Vpn.doing) {
         case "connect":
             return target !== "" ? `Connecting to ${target}…` : "Connecting…";
@@ -159,7 +155,8 @@ Panel {
                 // la ligne choisie au clavier perdrait le focus, et Échap et les flèches avec ; « Cities » reste utilisable.)
                 PanelRow {
                     clickable: !Vpn.busy
-                    text: entry.city !== "" ? `${root.label(entry.country)}, ${root.label(entry.city)}` : root.label(entry.country)
+                    opacity: Vpn.busy ? Theme.panel.disabledOpacity : 1   // comme l'interrupteur
+                    text: entry.city !== "" ? `${Vpn.label(entry.country)}, ${Vpn.label(entry.city)}` : Vpn.label(entry.country)
                     active: root.isCurrent(entry.country, entry.city)
                     onClicked: Vpn.connect(Vpn.entryTarget(entry.modelData))
 
@@ -187,8 +184,9 @@ Panel {
                         required property string modelData
 
                         clickable: !Vpn.busy
+                        opacity: Vpn.busy ? Theme.panel.disabledOpacity : 1
                         Layout.leftMargin: Theme.panel.iconSize + Theme.panel.spacing
-                        text: root.label(modelData)
+                        text: Vpn.label(modelData)
                         active: root.isCurrent(entry.country, modelData)
                         onClicked: Vpn.connect([entry.country, modelData])
                     }

@@ -94,7 +94,12 @@ Singleton {
         return entry.split("/");
     }
 
-    // Noms NordVPN : « United_States » (listes, commandes) ou « United States » (statut), casse libre en ligne de commande.
+    // Noms NordVPN : « United_States » (listes, commandes) ou « United States » (statut, affichage), casse libre en ligne de
+    // commande.
+    function label(name: string): string {
+        return name.replace(/_/g, " ");
+    }
+
     function sameName(a: string, b: string): bool {
         return a.toLowerCase().replace(/ /g, "_") === b.toLowerCase().replace(/ /g, "_");
     }
@@ -133,7 +138,7 @@ Singleton {
     property int actionCount: 0
 
     function readStatus(): void {
-        statusProcess.stamp = action.busy ? -1 : actionCount;
+        statusProcess.stamp = actionCount;
         statusProcess.running = true;
     }
 
@@ -260,6 +265,17 @@ Singleton {
         onTriggered: {
             if (!statusProcess.running && !action.busy)   // pendant une action : lecture inutile (ignorée)
                 root.readStatus();
+        }
+    }
+
+    // Démon qui ne répond plus après une action : verrou levé au bout de 30 s (l'état affiché peut alors être l'ancien).
+    Timer {
+        id: awaitLimit
+        interval: 30000
+        running: root.awaitingStatus
+        onTriggered: {
+            root.awaitingStatus = false;
+            root.requested = null;
         }
     }
 

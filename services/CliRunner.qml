@@ -12,7 +12,7 @@ Scope {
     property bool available: false
     property bool busy: false
     property string error: ""
-    property bool lastLineError: false   // message : dernière ligne de la sortie (sinon la première)
+    property bool lastLineError: false   // message : dernière ligne, de stdout d'abord (nordvpn), sinon première de stderr
     property string noAnswer: `${program}: no answer (sign-in needed?)`   // arrêtée par `timeout` (124)
     signal finished
 
@@ -65,7 +65,8 @@ Scope {
             if (code === 124) {
                 root.error = root.noAnswer;
             } else if (code !== 0) {
-                const lines = (err.text.trim() || out.text.trim()).split("\n").filter(l => l.trim() !== "");
+                const text = root.lastLineError ? out.text.trim() || err.text.trim() : err.text.trim() || out.text.trim();
+                const lines = text.split("\n").filter(l => l.trim() !== "");
                 root.error = (root.lastLineError ? lines[lines.length - 1] : lines[0])?.trim() ?? `${root.program}: exit code ${code}`;
             }
             root.finished();

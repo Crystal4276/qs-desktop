@@ -28,9 +28,17 @@ Rectangle {
     activeFocusOnTab: clickable
     border.width: activeFocus ? Theme.panel.border : 0
     border.color: Theme.panel.focusRing
-    Keys.onReturnPressed: if (root.clickable) root.clicked()
-    Keys.onEnterPressed: if (root.clickable) root.clicked()
-    Keys.onSpacePressed: if (root.clickable) root.clicked()
+    Keys.onReturnPressed: event => root.activate(event)
+    Keys.onEnterPressed: event => root.activate(event)
+    Keys.onSpacePressed: event => root.activate(event)
+
+    // Ligne inactive (action en cours) : la touche n'est pas prise, elle remonte au panneau.
+    function activate(event: KeyEvent): void {
+        if (clickable)
+            clicked();
+        else
+            event.accepted = false;
+    }
 
     // Sous le contenu : reçoit les clics hors des boutons (qui consomment les leurs, PanelButton.qml).
     MouseArea {
