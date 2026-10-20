@@ -267,7 +267,7 @@ OverlayPopup {
                         id: input
                         x: Theme.launcher.entryPadding
                         y: Theme.launcher.entryPadding
-                        width: parent.width - 2 * Theme.launcher.entryPadding
+                        width: parent.width - 2 * Theme.launcher.entryPadding - (launcherClear.visible ? launcherClear.width + Theme.launcher.entryPadding : 0)
                         clip: true
                         font.family: Theme.font.text
                         font.pointSize: Theme.font.launcherPt
@@ -280,6 +280,21 @@ OverlayPopup {
                             text: Theme.launcher.placeholder
                             font: input.font
                             color: Theme.launcher.placeholderColor
+                        }
+                    }
+
+                    ClearButton {
+                        id: launcherClear
+                        visible: input.text !== ""
+                        anchors.right: parent.right
+                        anchors.rightMargin: Theme.launcher.entryPadding
+                        anchors.verticalCenter: input.verticalCenter
+                        font.pointSize: Theme.font.launcherPt
+                        normalColor: Theme.launcher.placeholderColor
+                        hoverColor: Theme.launcher.text
+                        onClicked: {
+                            input.text = "";
+                            input.forceActiveFocus();
                         }
                     }
                 }

@@ -1013,6 +1013,16 @@ changement de focus. À vérifier en phase 9 : après `hyprctl reload` au révei
   (récents inchangés), liste des pays en échec puis rechargée, pause.
 - À tester à la main : saisie au clavier réelle, Échap (efface puis ferme), clics, et une vraie connexion à une ville.
 
+### Croix d'effacement des recherches (2026-10-20, ta demande)
+
+- `modules/bar/ClearButton.qml` : croix `U+F0156` (glyphe « fermer » déjà dans la charte), dans tous les champs de recherche :
+  NordVPN et statistiques système (`PanelField.search`), lanceur, menu d'applications (avant la loupe). Visible si le champ
+  n'est pas vide ; clic : recherche effacée, focus gardé — NordVPN revient à l'onglet d'avant.
+- Échap dans les champs de recherche des panneaux (NordVPN, statistiques) : efface d'abord, puis ferme. Lanceur et menu
+  inchangés (Échap ferme, comme Rofi et nwg-menu).
+- Vérifié en Sway isolé : rendu des quatre champs avec du texte (captures). À tester à la main : le clic sur la croix (pas de
+  pointeur dans la session isolée) et Échap dans les statistiques.
+
 ## Prochaine étape
 
 Phase 9 — parité Hyprland (tests à faire ensemble dans une session Hyprland : voir « Compatibilité Hyprland »).
