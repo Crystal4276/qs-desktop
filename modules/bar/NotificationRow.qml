@@ -22,7 +22,7 @@ Rectangle {
 
     // Titre sans l'application en préfixe (« whatsdesk - Alice » → « Alice ») ; vide s'il ne dit que l'application.
     function title(summary: string, app: string): string {
-        const s = Notifs.plain(summary).replace(/\s+/g, " ");
+        const s = summary.replace(/\s+/g, " ").trim();   // texte brut, comme dans la popup (spécification : pas de markup)
         if (app === "" || s.toLowerCase() === app.toLowerCase())
             return app === "" ? s : "";
         const prefix = s.slice(0, app.length).toLowerCase() === app.toLowerCase() ? s.slice(app.length).match(/^\s*[-–—:·|]\s*(.*)$/) : null;

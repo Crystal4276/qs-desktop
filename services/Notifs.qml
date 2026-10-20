@@ -191,7 +191,8 @@ Singleton {
         readonly property string stackTag: notification ? Notifs.stackTagOf(notification.hints) : (saved.stackTag ?? "")
         readonly property bool isTransient: notification?.transient ?? false
         readonly property var actions: notification ? notification.actions : []
-        readonly property bool hasActions: notification ? notification.actions.length > 0 : (saved.hasActions ?? false)
+        // Rappelée de l'historique : plus d'action utilisable, donc pas d'indicateur « A ».
+        readonly property bool hasActions: notification ? notification.actions.length > 0 : false
         readonly property var urls: Notifs.urlsOf(summary, body)
         // Délai en ms (0 : jamais). Rappelée de l'historique : jamais (sticky_history).
         readonly property real timeout: redisplayed ? 0 : notification && notification.expireTimeout >= 0 ? notification.expireTimeout
@@ -379,7 +380,9 @@ Singleton {
     function saveLive(): void {
         if (!persist.ready)
             return;
-        persist.live = JSON.stringify([...popups, ...quiet].map(e => ({
+        // + états pas encore repris : Quickshell réémet les notifications après la restauration (deux rechargements de suite).
+        const pending = Object.values(restored).filter(state => state);
+        persist.live = JSON.stringify([...pending, ...[...popups, ...quiet].map(e => ({
             id: e.notification?.id ?? 0,
             saved: e.notification ? null : e.saved,
             historyKey: e.historyKey,
@@ -387,7 +390,7 @@ Singleton {
             order: e.order,
             dupCount: e.dupCount,
             timestamp: e.timestamp
-        })));
+        }))]);
     }
 
     // Propriétés d'une Entry recréée d'après son état. Le délai repart de zéro : le survol, qui le suspend, n'est pas
@@ -408,10 +411,23 @@ Singleton {
             }
         }
         restored = pending;
+        restoredExpiry.restart();
+    }
+
+    // États dont la notification n'est pas revenue (fermée pendant le rechargement) : abandonnés.
+    Timer {
+        id: restoredExpiry
+        interval: 2000
+        onTriggered: {
+            root.restored = {};
+            root.saveLive();
+        }
     }
 
     function restore(n: Notification): void {
         const state = restored[n.id];
+        if (state)
+            restored = Object.assign({}, restored, { [n.id]: undefined });
         const entry = entryComponent.createObject(root, Object.assign({ notification: n, order: ++persist.nextOrder },
             state ? stateProps(state) : {}));
         if (state?.historyKey) {
@@ -481,12 +497,15 @@ Singleton {
         const actions = entry.actions;
         const named = actions.filter(a => !hiddenActions.includes(a.identifier));
         const action = actions.find(a => a.identifier === "default") ?? (named.length === 1 ? named[0] : null);
-        if (action || (actions.length === 0 && entry.urls.length === 1))
+        const link = !action && named.length === 0 && entry.urls.length === 1 ? entry.urls[0] : "";
+        if (action || link !== "")
             Compositor.focusNextActivation();
-        if (action)
-            action.invoke();
-        else if (actions.length === 0 && entry.urls.length === 1)
-            Quickshell.execDetached(["xdg-open", entry.urls[0].replace(/^www\./i, "http://www.")]);   // « www. » seul : un fichier pour xdg-open
+        if (action) {
+            action.invoke();   // Quickshell ferme la notification, sauf si elle est « resident » (elle reste alors affichée)
+            return;
+        }
+        if (link !== "")
+            Quickshell.execDetached(["xdg-open", link.replace(/^www\./i, "http://www.")]);   // « www. » seul : un fichier pour xdg-open
         if (popups.includes(entry))
             close(entry);
     }
@@ -521,13 +540,19 @@ Singleton {
 
     // Ligne d'une notification silencieuse encore suivie : elle est fermée (écartée par toi).
     function removeHistory(key: int): void {
-        quiet.find(e => e.historyKey === key)?.notification?.dismiss();
+        const entry = quiet.find(e => e.historyKey === key);
+        if (entry) {
+            entry.dirty = false;   // sinon closed() referait la ligne sous une nouvelle clé
+            entry.notification?.dismiss();
+        }
         history = history.filter(h => h.key !== key);
     }
 
     function clearHistory(): void {
-        for (const entry of [...quiet])
+        for (const entry of [...quiet]) {
+            entry.dirty = false;
             entry.notification?.dismiss();
+        }
         history = [];
     }
 
@@ -723,7 +748,7 @@ Singleton {
         collect(/<img\s[^>]*src="([^"]*)"/gi, text, 1);
         const plain = text.replace(/<a\s[^>]*>|<\/a>|<img[^>]*>/gi, "");
         collect(/\b(https?:\/\/|ftps?:\/\/|news:\/\/|mailto:|file:\/\/|www\.)[-\w@;\/?:&=%$.+!*',~#]*(\([-\w@;\/?:&=%$.+!*',~#]*\)|[-\w@;\/?:&=%$+*~])+/gi, plain, 0);
-        return urls;
+        return [...new Set(urls)];   // <a href="X">X</a> : une seule adresse
     }
 
     function escapeMarkup(text: string): string {

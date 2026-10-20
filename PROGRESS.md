@@ -1192,6 +1192,14 @@ boutons d'action : la fenêtre de l'application est affichée si elle demande l'
 au clic gauche ; verrous d'images libérés après un remplacement ; minuterie des délais arrêtée quand aucune silencieuse n'a de
 délai ; commentaire des boutons à jour. Vérifié sur banc : « 3 < 5 passed, 2 > 1, **gras** & fin », action `settings` seule.
 
+Passe 7 (8 remarques, toutes corrigées) : liens dédoublonnés (`<a href="X">X</a>` comptait deux liens : rien ne s'ouvrait) ;
+lien ouvert au clic gauche même si la seule action est masquée ; notification « resident » plus fermée après son action ; ligne
+effacée d'une silencieuse en cours de mise à jour qui revenait sous une nouvelle clé ; rappelée sans indicateur « A » (plus
+d'action utilisable) ; position du lecteur relue dès l'ouverture du panneau ; titre affiché en texte brut dans le centre comme
+dans la popup ; états de rechargement pas encore repris gardés si un second rechargement suit (abandonnés après 2 s).
+Vérifié sur banc : rappelée sans « (A) », lien doublé compté une fois. Non vérifiable sur banc : « resident » (notify-send ferme
+lui-même sa notification après l'action).
+
 ### Actions des notifications (2026-10-20, ta demande)
 
 - Revue : une popup montre un bouton par action nommée, sauf « default » (clic milieu). Thunderbird (« Marquer comme lu »,
