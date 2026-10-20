@@ -38,13 +38,13 @@ Scope {
         onExited: code => root.available = code === 0
     }
 
-    // Commande qui ne démarre pas (programme retiré pendant une mise à jour) : Quickshell n'émet pas `exited`, seulement
-    // `running` faux ; sans ce rattrapage, `busy` resterait vrai pour la session.
     // Arrêt de la commande en cours (SIGTERM) : `finished` suit, avec son code de sortie.
     function stop(): void {
         command.running = false;
     }
 
+    // Commande qui ne démarre pas (programme retiré pendant une mise à jour) : Quickshell n'émet pas `exited`, seulement
+    // `running` faux ; sans ce rattrapage, `busy` resterait vrai pour la session.
     function settleIfFailed(): void {
         if (busy && !command.running) {
             busy = false;
