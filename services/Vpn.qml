@@ -7,6 +7,8 @@ import Quickshell.Io
 // NordVPN (module natif du tray, remplace l'icône de norduserd ; ARCHITECTURE § 11.4). Aucune API : commande `nordvpn`,
 // statut relu toutes les 5 s et après chaque action. Masqué si `nordvpn` est absent ou si tu n'es pas connecté au compte
 // (revérifié toutes les 30 s).
+// Toutes les commandes passent par une seule file (ta demande du 2026-10-20) : une à la fois, dans l'ordre ; une lecture
+// du statut voit donc toujours l'effet de l'action d'avant.
 // Format lu (nordvpn 5.4) : lignes « Clé: valeur » (Status, Server, Hostname, Country, City, Current technology, Transfer, Uptime).
 Singleton {
     id: root
@@ -19,9 +21,9 @@ Singleton {
     readonly property string country: status["Country"] ?? ""
     readonly property string city: status["City"] ?? ""
     readonly property bool connecting: state === "Connecting" || doing === "connect"
-    // Action en cours, jusqu'à la première lecture du statut qui la suit (sinon l'état d'avant reviendrait un instant).
-    readonly property bool busy: action.busy || awaitingStatus
-    property bool awaitingStatus: false
+    // Action en attente ou en cours, jusqu'à la lecture du statut qui la suit (sinon l'état d'avant reviendrait un instant).
+    readonly property bool busy: jobs.some(j => j.kind === "action" || j.follow)
+    readonly property bool actionPending: jobs.some(j => j.kind === "action")
     readonly property int actionTimeout: 300   // s
     // Action lancée d'ici et pas encore finie : "connect", "disconnect", "pause" ou "".
     readonly property string doing: busy ? lastAction : ""
@@ -30,11 +32,10 @@ Singleton {
     // récents) ; effacée si la commande échoue ; null : serveur recommandé.
     property var requested: null
     property var countries: []
-    property bool countriesLoading: false   // de la demande à l'arrêt (pas seulement pendant `running`)
+    readonly property bool countriesLoading: jobs.some(j => j.kind === "countries")
     property var cities: ({})    // pays → villes, chargées à la demande (un échec n'est pas gardé : nouvel essai à la demande suivante)
     // Pays dont les villes se chargent ou attendent leur tour (une seule liste dépliée : la dernière demandée).
-    readonly property string citiesLoading: pendingCities !== "" ? pendingCities : citiesFetching
-    property string citiesFetching: ""   // pays de la commande lancée, de la demande à l'arrêt
+    readonly property string citiesLoading: jobs.filter(j => j.kind === "cities").map(j => j.country).pop() ?? ""
 
     // Derniers pays utilisés, du plus récent au plus ancien (ta demande du 2026-10-16) : NordVPN ne garde pas d'historique,
     // chaque connexion observée (panneau, raccourci, ligne de commande) est enregistrée dans l'état local de Quickshell
@@ -132,44 +133,59 @@ Singleton {
     // Icône du tray, celles du paquet nordvpn : bleue connecté, grise sinon.
     readonly property string icon: connected ? "nordvpn-tray-blue" : "nordvpn-tray-gray"
 
-    // Lecture déjà en cours (lecture périodique) : refaite à sa fin, sinon l'effet d'une action qui vient de finir ne serait
-    // vu qu'à la lecture suivante. (Pas pour la lecture périodique elle-même : avec un démon lent, les lectures s'enchaîneraient.)
-    property bool refreshAgain: false
+    // File : tâches { kind: "status" | "countries" | "cities" | "action", args, timeout (s), country (villes), follow
+    // (lecture qui suit une action), quiet (déconnexion sans message « not connected ») }. Bornées par `timeout` : une
+    // commande figée bloquerait la file.
+    property var queue: []      // en attente
+    property var current: null  // en cours
+    readonly property var jobs: current ? [current, ...queue] : queue
+
+    function statusJob(follow: bool): var {
+        return { kind: "status", args: ["status"], timeout: 10, follow };
+    }
+
+    // Action bornée large (une connexion lente aboutit).
+    function actionJob(args: var, quiet: bool): var {
+        return { kind: "action", args, timeout: actionTimeout, quiet };
+    }
+
+    function enqueue(job: var): void {
+        queue = [...queue, job];
+        Qt.callLater(next);
+    }
+
+    // Lancée au tour suivant : la commande d'avant n'a pas fini de signaler sa fin.
+    function next(): void {
+        if (current || cli.busy || queue.length === 0)
+            return;
+        current = queue[0];   // avant de la retirer : `busy` ne retombe pas entre les deux
+        queue = queue.slice(1);
+        cli.runCommand(["timeout", String(current.timeout), "nordvpn", ...current.args]);
+    }
+
     property int timeouts: 0   // lectures du statut sans réponse, de suite
 
+    // Statut relu, sauf s'il l'est déjà ou si une action attend ou tourne (la lecture qui la suit suffit).
     function refresh(): void {
-        if (action.busy)   // résultat ignoré ; la lecture qui suit l'action est demandée à sa fin
-            return;
-        if (statusProcess.running)
-            refreshAgain = true;
-        else
-            readStatus();
+        if (!jobs.some(j => j.kind === "status" || j.kind === "action"))
+            enqueue(statusJob(false));
     }
 
-    // Lecture commencée pendant une action, ou avant la dernière : résultat ignoré (statut ancien ; la relecture qui suit
-    // l'action le remplace), sinon l'ancienne connexion reviendrait un instant et dans les récents.
-    property int actionCount: 0
-
-    function readStatus(): void {
-        statusProcess.stamp = actionCount;
-        statusProcess.running = true;
-    }
-
-    // Renvoie faux si une autre action est en cours (rien n'est lancé).
-    function run(args: var): bool {
-        if (action.busy || cancelling)   // (après l'action, l'attente du statut ne bloque pas un raccourci)
+    // Renvoie faux si une autre action attend ou tourne (rien n'est lancé).
+    function run(args: var, quiet: bool): bool {
+        if (actionPending || cancelling)   // (après l'action, l'attente du statut ne bloque pas un raccourci)
             return false;
         lastAction = args[0];   // avant `busy` : `doing` ne prend jamais le nom de l'action précédente
         requested = null;
-        actionCount++;
-        // Bornée, large (une connexion lente aboutit) : une commande figée garderait `busy` (panneau verrouillé) jusqu'au
-        // redémarrage de Quickshell.
-        return action.runCommand(["timeout", String(actionTimeout), "nordvpn", ...args]);
+        // Lecture du statut en attente : remplacée par celle qui suit l'action.
+        queue = [...queue.filter(j => j.kind !== "status"), actionJob(args, quiet)];
+        Qt.callLater(next);
+        return true;
     }
 
     // Connexion : serveur recommandé, pays, ou « pays ville ». Faux si refusée (autre action en cours).
     function connect(target: var): bool {
-        if (!run(["connect", ...(target ?? [])]))
+        if (!run(["connect", ...(target ?? [])], false))
             return false;
         requested = target?.length > 0 ? target : null;
         return true;
@@ -181,26 +197,30 @@ Singleton {
         return connect(recent.length > 0 ? entryTarget(recent[0]) : []);
     }
 
-    // Pendant une connexion (figée, trop longue) : elle est arrêtée, puis la déconnexion suit (onFinished) ;
-    // « Disconnecting… » dès maintenant.
+    // Pendant une connexion (figée, trop longue) : elle est arrêtée, puis la déconnexion suit (finish()) ;
+    // « Disconnecting… » dès maintenant. Connexion encore en attente (une liste se charge) : retirée de la file.
     property bool cancelling: false
-    property bool afterCancel: false
-    readonly property bool cancellable: action.busy && lastAction === "connect"
+    readonly property bool cancellable: jobs.some(j => j.kind === "action" && j.args[0] === "connect") && !cancelling
 
     function disconnect(): bool {
+        const waiting = queue.find(j => j.kind === "action");
+        if (waiting?.args[0] === "connect") {
+            queue = queue.filter(j => j !== waiting);
+            return run(["disconnect"], true);   // (déjà déconnecté : pas de message)
+        }
         if (!cancellable)
-            return run(["disconnect"]);
+            return run(["disconnect"], false);
         cancelling = true;
         lastAction = "disconnect";
         requested = null;
-        action.interrupt();
+        cli.interrupt();
         cancelFallback.restart();
         return true;
     }
 
     // Pause : 5m, 15m, 30m, 1h, 24h.
     function pause(duration: string): void {
-        run(["pause", duration]);
+        run(["pause", duration], false);
     }
 
     function busyNotice(): void {
@@ -226,27 +246,17 @@ Singleton {
 
     // Liste vide (jamais chargée, ou échec : démon pas prêt, pas de réseau) : rechargée à chaque ouverture du panneau.
     function loadCountries(): void {
-        if (countries.length === 0 && !countriesLoading) {
-            countriesLoading = true;
-            countriesProcess.running = true;
-        }
+        if (countries.length === 0 && !countriesLoading)
+            enqueue({ kind: "countries", args: ["countries"], timeout: 10 });
     }
 
-    // Villes demandées pendant qu'une autre liste se charge : chargées ensuite (seule la dernière demande compte).
-    property string pendingCities: ""
-
+    // Une seule liste de villes attend son tour : la dernière demandée.
     function loadCities(country: string): void {
         if (cities[country] !== undefined)
             return;
-        // Une demande attend déjà son tour (lancée au prochain tour de boucle) : celle-ci la remplace.
-        if (citiesFetching !== "" || pendingCities !== "") {
-            pendingCities = country;
-            return;
-        }
-        citiesProcess.country = country;
-        citiesFetching = country;
-        citiesProcess.command = ["timeout", "10", "nordvpn", "cities", country];
-        citiesProcess.running = true;
+        queue = queue.filter(j => j.kind !== "cities");
+        if (current?.kind !== "cities" || current.country !== country)
+            enqueue({ kind: "cities", args: ["cities", country], timeout: 10, country });
     }
 
     // Noms des listes (un par ligne, ou séparés par des virgules) ; une ligne qui contient autre chose (« A new version of
@@ -257,43 +267,79 @@ Singleton {
             .reduce((all, words) => all.concat(words), []);
     }
 
-    Process {
-        id: statusProcess
-        property int stamp: 0
-        command: ["timeout", "10", "nordvpn", "status"]   // bornées : démon figé
-        running: true
-        stdout: StdioCollector {
-            id: statusOut
+    // Tâches qui suivent celle qui finit, en tête de file : après une action, la lecture du statut (ou, après une connexion
+    // arrêtée, la déconnexion) ; lecture qui suit une action sans réponse (démon occupé) : refaite, trois fois au plus.
+    function followUps(job: var, code: int): var {
+        if (job.kind === "status")
+            return job.follow && code === 124 && timeouts < 3 ? [job] : [];
+        if (job.kind !== "action")
+            return [];
+        return cancelling ? [actionJob(["disconnect"], true)] : [statusJob(true)];
+    }
+
+    function finish(): void {
+        const job = current;
+        const code = cli.code;
+        if (job.kind === "status")
+            timeouts = code === 124 ? timeouts + 1 : 0;
+        queue = [...followUps(job, code), ...queue];   // avant la fin de `current` : `busy` ne retombe pas entre les deux
+        current = null;
+        if (job.kind === "status")
+            statusRead(job, code, cli.output);
+        else if (job.kind === "action")
+            actionDone(job);
+        else if (job.kind === "countries" && code === 0)
+            countries = names(cli.output);
+        else if (job.kind === "cities")
+            citiesRead(job.country, code === 0 ? names(cli.output) : []);
+        Qt.callLater(next);
+    }
+
+    // Lecture trop lente (124 : démon occupé) : rien n'est changé, le module ne disparaît pas ; démon figé (trois lectures de
+    // suite sans réponse) : module masqué, comme sans démon.
+    function statusRead(job: var, code: int, text: string): void {
+        if (timeouts >= 3) {
+            available = false;
+            requested = null;
         }
-        // Lecture ancienne (stamp) ou trop lente (124 : démon occupé) : rien n'est changé, le module ne disparaît pas.
-        onExited: code => {
-            // Pas de réponse après une action : elle reste « en cours » (l'état d'avant n'est pas montré comme actuel) ;
-            // la lecture périodique réessaie.
-            // Démon figé (trois lectures de suite sans réponse) : module masqué, comme sans démon.
-            root.timeouts = code === 124 ? root.timeouts + 1 : 0;
-            if (root.timeouts >= 3)
-                root.available = false;
-            if (stamp !== root.actionCount || code === 124)
-                return;
-            root.awaitingStatus = false;   // avant `status` : remember() voit l'action finie
-            const text = statusOut.text;
-            const result = {};
-            for (const line of text.split("\n")) {
-                const m = line.match(/^\s*([^:]+):\s*(.*)$/);
-                if (m)
-                    result[m[1].trim()] = m[2].trim();
-            }
-            root.available = code === 0 && result["Status"] !== undefined && !/not logged in/i.test(text);
-            root.status = result;   // remember() : `requested` n'a de sens que jusqu'à la fin de la connexion
-            if (result["Status"] !== "Connecting")
-                root.requested = null;
+        if (code === 124)
+            return;
+        const result = {};
+        for (const line of text.split("\n")) {
+            const m = line.match(/^\s*([^:]+):\s*(.*)$/);
+            if (m)
+                result[m[1].trim()] = m[2].trim();
         }
-        onRunningChanged: {
-            if (!running && root.refreshAgain) {
-                root.refreshAgain = false;
-                Qt.callLater(root.refresh);
-            }
+        available = code === 0 && result["Status"] !== undefined && !/not logged in/i.test(text);
+        status = result;   // remember() : `requested` n'a de sens que jusqu'à la fin de la connexion
+        if (result["Status"] !== "Connecting")
+            requested = null;
+    }
+
+    // Erreur en notification (dernière ligne : nordvpn écrit sa progression, « Connecting to … », avant l'erreur) ; échec :
+    // ni cible retenue, ni « Connecting to … » jusqu'à la lecture du statut (l'état affiché est l'actuel). Connexion arrêtée
+    // (disconnect()) : ni erreur ni choix à retenir.
+    function actionDone(job: var): void {
+        if (cancelling) {
+            cancelling = false;   // jusque-là, run() refuse toute autre action (raccourci)
+            return;
         }
+        const error = cli.error;
+        if (error === "")
+            return;
+        if (!(job.quiet && /not connected/i.test(error)))
+            Quickshell.execDetached(["notify-send", "--app-name=NordVPN", "NordVPN", error]);
+        requested = null;
+        lastAction = "";
+    }
+
+    // Liste vide (« Cities unavailable », échec) : pas gardée, nouvel essai à la demande suivante.
+    function citiesRead(country: string, list: var): void {
+        if (list.length === 0)
+            return;
+        const copy = Object.assign({}, cities);
+        copy[country] = list;
+        cities = copy;
     }
 
     // Statut toutes les 5 s ; module masqué (démon pas encore prêt à l'ouverture de session, compte connecté plus tard) :
@@ -302,107 +348,26 @@ Singleton {
         interval: root.available ? 5000 : 30000
         running: true
         repeat: true
-        onTriggered: {
-            if (!statusProcess.running && !action.busy)   // pendant une action : lecture inutile (ignorée)
-                root.readStatus();
-        }
+        onTriggered: root.refresh()
     }
+    Component.onCompleted: refresh()
 
     // Connexion arrêtée qui ne rend pas la main (SIGINT ignoré) : arrêt forcé.
     Timer {
         id: cancelFallback
         interval: 3000
         onTriggered: {
-            if (root.cancelling && action.busy)
-                action.stop();
+            if (root.cancelling && root.current?.kind === "action")
+                cli.stop();
         }
     }
 
-    // Démon qui ne répond plus après une action : verrou levé au bout de 30 s (l'état affiché peut alors être l'ancien).
-    Timer {
-        id: awaitLimit
-        interval: 30000
-        running: root.awaitingStatus && !action.busy   // repart de zéro à la fin de chaque action
-        onTriggered: {
-            root.awaitingStatus = false;
-            root.requested = null;
-        }
-    }
-
-    // Actions (connect, disconnect, pause) : une à la fois ; erreur en notification (dernière ligne : nordvpn écrit sa
-    // progression, « Connecting to … », avant l'erreur).
     CliRunner {
-        id: action
+        id: cli
         program: "nordvpn"
         probe: false   // présence et compte : lus par `nordvpn status`
         lastLineError: true
-        noAnswer: `nordvpn: no answer after ${root.actionTimeout / 60} minutes`
-        onFinished: {
-            root.awaitingStatus = true;   // `requested` gardé jusque-là (« Connecting to … »)
-            // Connexion arrêtée (disconnect()) : ni erreur à signaler ni choix à retenir ; la déconnexion suit (`busy` reste
-            // vrai jusque-là), au tour suivant : ce processus n'a pas fini de signaler sa fin.
-            if (root.cancelling) {
-                Qt.callLater(() => {
-                    root.cancelling = false;   // jusque-là, run() refuse toute autre action (raccourci)
-                    root.afterCancel = root.run(["disconnect"]);
-                });
-                return;
-            }
-            // Échec : ni cible retenue, ni « Connecting to … » jusqu'à la lecture du statut (l'état affiché est l'actuel).
-            // Déconnexion d'après annulation : « not connected » n'est pas une erreur (les autres, si).
-            const quiet = root.afterCancel && /not connected/i.test(error);
-            root.afterCancel = false;
-            if (error !== "") {
-                if (!quiet)
-                    Quickshell.execDetached(["notify-send", "--app-name=NordVPN", "NordVPN", error]);
-                root.requested = null;
-                root.lastAction = "";
-            }
-            root.refresh();
-        }
-    }
-
-    // Listes lues seulement si la commande réussit : en cas d'erreur, des mots du message (« Cannot reach System Daemon »)
-    // passeraient pour des noms de pays et resteraient en cache.
-    Process {
-        id: countriesProcess
-        command: ["timeout", "10", "nordvpn", "countries"]
-        stdout: StdioCollector {
-            id: countriesOut
-        }
-        onExited: code => {
-            if (code === 0)
-                root.countries = root.names(countriesOut.text);
-        }
-        onRunningChanged: if (!running) Qt.callLater(() => root.countriesLoading = false)   // après onExited
-    }
-
-    Process {
-        id: citiesProcess
-        property string country: ""
-        stdout: StdioCollector {
-            id: citiesOut
-        }
-        onExited: code => {
-            const list = code === 0 ? root.names(citiesOut.text) : [];
-            if (list.length > 0) {   // liste vide : « Cities unavailable », nouvel essai à la demande suivante
-                const copy = Object.assign({}, root.cities);
-                copy[citiesProcess.country] = list;
-                root.cities = copy;
-            }
-        }
-        // À l'arrêt (même si la commande n'a pas pu démarrer : pas d'`exited`), au tour suivant, après onExited : fin du
-        // chargement, puis la demande en attente (gardée jusque-là : « Loading cities… », pas « unavailable »).
-        onRunningChanged: {
-            if (running)
-                return;
-            Qt.callLater(() => {
-                root.citiesFetching = "";
-                const next = root.pendingCities;
-                root.pendingCities = "";
-                if (next !== "")
-                    root.loadCities(next);
-            });
-        }
+        noAnswer: `nordvpn: no answer after ${root.actionTimeout / 60} minutes`   // (seul le message des actions est lu)
+        onFinished: root.finish()
     }
 }
