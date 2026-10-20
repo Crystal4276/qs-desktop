@@ -40,6 +40,11 @@ Scope {
 
     // Commande qui ne démarre pas (programme retiré pendant une mise à jour) : Quickshell n'émet pas `exited`, seulement
     // `running` faux ; sans ce rattrapage, `busy` resterait vrai pour la session.
+    // Arrêt de la commande en cours (SIGTERM) : `finished` suit, avec son code de sortie.
+    function stop(): void {
+        command.running = false;
+    }
+
     function settleIfFailed(): void {
         if (busy && !command.running) {
             busy = false;
@@ -66,8 +71,9 @@ Scope {
                 root.error = root.noAnswer;
             } else if (code !== 0) {
                 const text = root.lastLineError ? out.text.trim() || err.text.trim() : err.text.trim() || out.text.trim();
-                const lines = text.split("\n").filter(l => l.trim() !== "");
-                root.error = (root.lastLineError ? lines[lines.length - 1] : lines[0])?.trim() ?? `${root.program}: exit code ${code}`;
+                // Retours chariot de l'indicateur de progression (« \r-\r\\\r ») : segments séparés, ceux du seul indicateur ôtés.
+                const lines = text.split(/[\r\n]+/).map(l => l.trim()).filter(l => l !== "" && !/^[-\\|\/]+$/.test(l));
+                root.error = (root.lastLineError ? lines[lines.length - 1] : lines[0]) ?? `${root.program}: exit code ${code}`;
             }
             root.finished();
         }

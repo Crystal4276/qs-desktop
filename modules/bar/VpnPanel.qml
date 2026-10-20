@@ -111,7 +111,7 @@ Panel {
         placeholder: "Search countries"
         search: true
         onAccepted: {
-            if (root.query !== "" && root.rows.length > 0)
+            if (root.query !== "" && root.rows.length > 0 && !Vpn.busy)   // verrouillée comme les lignes
                 Vpn.connect(Vpn.entryTarget(root.rows[0]));
         }
     }

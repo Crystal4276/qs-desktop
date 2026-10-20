@@ -143,7 +143,9 @@ Singleton {
 
     // Renvoie faux si une autre action est en cours (rien n'est lancé).
     function run(args: var): bool {
-        if (action.busy)   // (après l'action, l'attente du statut ne bloque pas un raccourci)
+        // (Après l'action, l'attente du statut ne bloque pas un raccourci ; une annulation en cours, si : son
+        // `disconnect` couperait la nouvelle connexion.)
+        if (action.busy || cancel.busy)
             return false;
         lastAction = args[0];   // avant `busy` : `doing` ne prend jamais le nom de l'action précédente
         requested = null;
@@ -167,8 +169,10 @@ Singleton {
 
     // Pendant une connexion (figée, trop longue) : l'annule, à côté de la commande en cours.
     function disconnect(): void {
-        if (action.busy && lastAction === "connect")
-            cancel.runCommand(["timeout", "30", "nordvpn", "disconnect"]);
+        if (action.busy && lastAction === "connect") {
+            if (cancel.runCommand(["timeout", "30", "nordvpn", "disconnect"]))
+                cancel.target = actionCount;
+        }
         else
             run(["disconnect"]);
     }
@@ -273,16 +277,20 @@ Singleton {
 
     property bool cancelled: false
 
+    // Annulation d'une connexion : réussie, la commande `connect` (peut-être figée) est arrêtée.
     CliRunner {
         id: cancel
+        property int target: 0   // action annulée
         program: "nordvpn"
         probe: false
         lastLineError: true
         onFinished: {
-            if (error !== "")
+            if (error !== "") {
                 Quickshell.execDetached(["notify-send", "--app-name=NordVPN", "NordVPN", error]);
-            else
-                root.cancelled = action.busy;
+            } else if (action.busy && root.actionCount === target) {
+                root.cancelled = true;
+                action.stop();
+            }
         }
     }
 
@@ -290,7 +298,7 @@ Singleton {
     Timer {
         id: awaitLimit
         interval: 30000
-        running: root.awaitingStatus
+        running: root.awaitingStatus && !action.busy   // repart de zéro à la fin de chaque action
         onTriggered: {
             root.awaitingStatus = false;
             root.requested = null;
