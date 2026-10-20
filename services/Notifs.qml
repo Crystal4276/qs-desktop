@@ -132,6 +132,10 @@ Singleton {
     readonly property int ageThreshold: 60                // dunstrc show_age_threshold, en secondes
     readonly property var defaultTimeouts: [10000, 10000, 0] // basse, normale, critique (défauts Dunst, non fixés dans dunstrc)
     readonly property var stackTagHints: ["synchronous", "private-synchronous", "x-canonical-private-synchronous", "x-dunst-stack-tag"]
+    // Actions sans bouton : « default » (clic milieu, dunstrc) ; « settings » de Chromium et de ses applications web (ouvre les
+    // réglages de notification du site : pas une action sur la notification ; ta décision du 2026-10-20). Identifiants vérifiés
+    // dans notification_platform_bridge_linux.cc (kDefaultButtonId, kSettingsButtonId).
+    readonly property var hiddenActions: ["default", "settings"]
 
     NotificationServer {
         // Capacités annoncées par Dunst (markup = full) : actions, corps avec markup et liens, icônes, étiquettes de pile.
