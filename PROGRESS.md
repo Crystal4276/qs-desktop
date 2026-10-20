@@ -1039,8 +1039,9 @@ changement de focus. À vérifier en phase 9 : après `hyprctl reload` au révei
 
 ### Revue en boucle de NordVPN et des panneaux (2026-10-20, ta demande)
 
-- 15 passes de `/code-review high` sur `7368623^..HEAD`, chaque point vérifié dans le code, un commit par passe ; arrêt : la passe
-  15 ne trouve plus de défaut sérieux, seulement des coûts négligeables (création des ~150 lignes de « All countries »).
+- 17 passes de `/code-review high` sur `7368623^..HEAD`, chaque point vérifié dans le code puis rejoué sur banc, un commit par
+  passe ; arrêt : la passe 17 ne trouve plus que des cas limites (démon lent plus de 30 s après le choix d'une ville, casse
+  « and » / « And » avant le chargement de la liste), des redites et du style.
 - Principaux défauts corrigés : villes en attente affichées « unavailable » ; noms comparés à la casse près ; demande périmée
   appliquée à une connexion faite ailleurs ; ancienne connexion qui réapparaissait un instant après une action ; commande
   `nordvpn` figée qui verrouillait le panneau (bornes 300 s / 10 s) ; démon lent qui masquait le module ; message d'erreur
