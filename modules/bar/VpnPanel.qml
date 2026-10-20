@@ -13,8 +13,9 @@ Panel {
 
     title: "NordVPN"
     hasSwitch: true
-    switchChecked: Vpn.connected || Vpn.connecting
-    switchLocked: Vpn.busy && Vpn.doing !== "connect"   // pendant une connexion, le couper l'annule
+    // Déconnexion ou pause en cours : déjà coupé ; connexion en cours (commande lancée) : la couper l'annule.
+    switchChecked: Vpn.doing === "disconnect" || Vpn.doing === "pause" ? false : Vpn.connected || Vpn.connecting
+    switchLocked: Vpn.busy && !Vpn.cancellable
     initialFocus: search.inputItem
     onSwitchToggled: checked => checked ? Vpn.connectLast() : Vpn.disconnect()
 

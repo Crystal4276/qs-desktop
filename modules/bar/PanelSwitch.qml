@@ -10,9 +10,11 @@ Rectangle {
     property bool locked: false
     signal toggled(bool checked)
 
-    function flip(): void {
+    function flip(event: KeyEvent): void {
         if (!locked)
             toggled(!checked);
+        else if (event)
+            event.accepted = false;   // comme une ligne verrouillée : la touche remonte au panneau
     }
 
     implicitWidth: Theme.panel.switchWidth
@@ -25,9 +27,9 @@ Rectangle {
     activeFocusOnTab: true
     border.width: activeFocus ? Theme.panel.border : 0
     border.color: Theme.panel.focusRing
-    Keys.onReturnPressed: root.flip()
-    Keys.onEnterPressed: root.flip()
-    Keys.onSpacePressed: root.flip()
+    Keys.onReturnPressed: event => root.flip(event)
+    Keys.onEnterPressed: event => root.flip(event)
+    Keys.onSpacePressed: event => root.flip(event)
 
     Rectangle {
         width: parent.height - 6
@@ -40,6 +42,6 @@ Rectangle {
 
     MouseArea {
         anchors.fill: parent
-        onClicked: root.flip()
+        onClicked: root.flip(null)
     }
 }
