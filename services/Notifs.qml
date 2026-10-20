@@ -36,11 +36,11 @@ Singleton {
         property bool doNotDisturb: false
         property int nextKey: 0
         property bool ready: false
+        property string iconFiles: "{}"   // copies d'icônes faites par cette instance (keepIcon)
 
         // Images envoyées en données (avatars…) : perdues au rechargement (voir imageLocks), icône de l'application à la place.
         onLoaded: {
-            if (!ready)
-                iconCacheCleaner.running = true;
+            root.iconFiles = Object.assign(JSON.parse(iconFiles), root.iconFiles);   // + copies faites avant ce point
             root.history = JSON.parse(history).map(h => h.imageKey ? Object.assign(h, root.isDataImage(h.icon) ? { icon: h.fallbackIcon ?? "" } : {}, { imageKey: 0 }) : h);
             ready = true;
         }
@@ -50,6 +50,18 @@ Singleton {
         if (persist.ready)
             persist.history = JSON.stringify(history);
         pruneImages();
+        pruneTimer.restart();
+    }
+
+    onPopupsChanged: pruneTimer.restart()
+
+    // Nettoyage des copies d'icônes différé d'une seconde : une notification fermée quitte l'affichage avant d'entrer dans
+    // l'historique (closed), et après un rechargement Quickshell réémet les notifications affichées après la restauration de
+    // l'historique (vu dans le journal) ; elles reprennent leur copie entre-temps.
+    Timer {
+        id: pruneTimer
+        interval: 1000
+        onTriggered: root.pruneIcons()
     }
 
     // Image envoyée en données (indice image-data) : Quickshell la sert depuis l'objet Notification, détruit à la fermeture.
@@ -128,7 +140,21 @@ Singleton {
         readonly property string summary: notification ? notification.summary : (saved.summary ?? "")
         readonly property string body: notification ? notification.body : (saved.body ?? "")
         readonly property int urgency: notification ? notification.urgency : (saved.urgency ?? NotificationUrgency.Normal)
-        readonly property string icon: notification ? Notifs.iconSource(notification.image, notification.appIcon) : (saved.icon ?? "")
+        // Icône et icône de l'application (repli dans l'historique) : copiées à l'arrivée et à chaque changement d'image
+        // (Notifs.keepIcon), pas dans une liaison.
+        property string icon: saved.icon ?? ""
+        property string fallbackIcon: saved.fallbackIcon ?? ""
+        function keepIcons(): void {
+            const source = Notifs.iconSource(notification.image, notification.appIcon);
+            const fallback = Notifs.iconSource("", notification.appIcon);
+            icon = Notifs.keepIcon(source, notification.id);
+            fallbackIcon = fallback === source ? icon : Notifs.keepIcon(fallback, notification.id);   // même fichier : une copie
+        }
+        // Émis aussi pour la valeur passée à createObject (vérifié).
+        onNotificationChanged: {
+            if (notification)
+                keepIcons();
+        }
         readonly property int progress: notification ? Notifs.progressOf(notification.hints) : (saved.progress ?? -1)
         readonly property string stackTag: notification ? Notifs.stackTagOf(notification.hints) : ""
         readonly property bool isTransient: notification?.transient ?? false
@@ -148,6 +174,8 @@ Singleton {
             function onBodyChanged() { entry.start = Date.now(); }
             function onHintsChanged() { entry.start = Date.now(); }
             function onUrgencyChanged() { entry.start = Date.now(); }
+            function onImageChanged() { entry.keepIcons(); }
+            function onAppIconChanged() { entry.keepIcons(); }
             function onClosed(reason) { Notifs.closed(entry, reason); }
         }
     }
@@ -170,14 +198,16 @@ Singleton {
                 imageKey = lockImage(n);
                 Qt.callLater(() => n.expire());
             }
+            const source = iconSource(n.image, n.appIcon), fallback = iconSource("", n.appIcon);
+            const icon = keepIcon(source, n.id);
             archive({
                 appName: n.appName,
                 summary: n.summary,
                 body: n.body,
                 urgency: n.urgency,
-                icon: iconSource(n.image, n.appIcon),
+                icon,
                 imageKey,
-                fallbackIcon: iconSource("", n.appIcon),
+                fallbackIcon: fallback === source ? icon : keepIcon(fallback, n.id),
                 progress: progressOf(n.hints),
                 hasActions: n.actions.length > 0,
                 dupCount: 0,
@@ -194,7 +224,7 @@ Singleton {
         // Doublon (même application, titre, corps, urgence et icône) : remplacé, compteur augmenté si la progression est la même.
         if (!old) {
             old = popups.find(e => e.appName === n.appName && e.summary === n.summary && e.body === n.body && e.urgency === n.urgency
-                && (e.icon === "" || icon === "" || e.icon === icon));
+                && (e.icon === "" || icon === "" || (e.notification ? iconSource(e.notification.image, e.notification.appIcon) : e.icon) === icon));
             if (old)
                 dupCount = old.progress === progressOf(n.hints) ? old.dupCount + 1 : old.dupCount;
         }
@@ -232,7 +262,7 @@ Singleton {
             urgency: entry.urgency,
             icon: entry.icon,
             imageKey,
-            fallbackIcon: entry.notification ? iconSource("", entry.notification.appIcon) : (entry.saved?.fallbackIcon ?? ""),
+            fallbackIcon: entry.fallbackIcon,
             progress: entry.progress,
             hasActions: entry.hasActions,
             dupCount: entry.dupCount,
@@ -341,65 +371,96 @@ Singleton {
     // par une application ferait télécharger l'image à chaque affichage (pixel espion ; revue de code).
     function iconSource(image: string, appIcon: string): string {
         if (image.startsWith("image://") || image.startsWith("file:"))
-            return keepIcon(image);
+            return image;
         if (image !== "" && !image.includes("://"))
-            return keepIcon(Icons.iconSource(image));   // chemin absolu ou nom d'icône du thème (image-path de la spécification)
+            return Icons.iconSource(image);   // chemin absolu ou nom d'icône du thème (image-path de la spécification)
         if (appIcon === "" || (appIcon.includes("://") && !appIcon.startsWith("file:")))
             return "";
         if (appIcon.startsWith("file:"))
-            return keepIcon(appIcon);
-        return keepIcon(Icons.iconSource(appIcon));
+            return appIcon;
+        return Icons.iconSource(appIcon);
     }
 
-    // Icône en fichier local : copiée dans le cache dès la réception. Chromium (et ses applications web : ChatGPT, Claude…)
-    // l'écrit dans un dossier temporaire qu'il efface à la fermeture de la notification ; Dunst la chargeait aussitôt, ici elle
-    // est relue plus tard (historique, rechargement). Copie nommée d'après son contenu (même logo, même fichier) ; le dossier
-    // est vidé au démarrage de Quickshell (l'historique ne lui survit pas). { source: copie }, pour ne lire qu'une fois.
-    readonly property string iconCache: `${Quickshell.cacheDir}/notification-icons`
-    // Objet modifié en place, sans signal : les liaisons qui appellent keepIcon n'en dépendent pas (pas de boucle).
-    readonly property var iconCopies: ({})
+    // Icône en fichier local : copiée dès la réception. Chromium (et ses applications web : ChatGPT, Claude…) l'écrit dans un
+    // dossier temporaire qu'il efface à la fermeture de la notification ; Dunst la chargeait aussitôt, ici elle est relue plus
+    // tard (historique, rechargement). Une copie par notification, lue et écrite d'un bloc (pas de processus : Chromium efface
+    // le fichier dès la fermeture, immédiate pendant « ne pas déranger »), dans un dossier propre à cette instance de Quickshell
+    // sous XDG_RUNTIME_DIR (vidé à la fin de la session, comme l'historique ; deux instances ne se gênent pas). Les icônes des
+    // dossiers de données (XDG_DATA_HOME, XDG_DATA_DIRS : thèmes, /usr/share/pixmaps…) ne disparaissent pas : pas de copie.
+    // Une copie qui ne sert plus (ni affichée, ni dans l'historique) est effacée (pruneIcons).
+    readonly property string iconCache: `${Quickshell.env("XDG_RUNTIME_DIR") || Quickshell.cacheDir}/quickshell-notification-icons/${Quickshell.instanceId}`
+    readonly property list<string> dataDirs: [
+        Quickshell.env("XDG_DATA_HOME") || `${Quickshell.env("HOME")}/.local/share`,
+        ...(Quickshell.env("XDG_DATA_DIRS") || "/usr/local/share:/usr/share").split(":")
+    ].filter(d => d.startsWith("/")).map(d => d.replace(/\/*$/, "/"))
+    // Copies faites par cette instance, { "<id de la notification>|<source>": URL de la copie }, gardées au rechargement de la
+    // config (persist.iconFiles) : une notification réémise après un rechargement dont le fichier a disparu reprend sa copie.
+    property var iconFiles: ({})
+    onIconFilesChanged: {
+        if (persist.ready)
+            persist.iconFiles = JSON.stringify(iconFiles);
+    }
 
     // Un FileView par fichier : un FileView dont on change `path` rend encore les données du précédent (vérifié, 0.3.2).
+    // Écriture bloquante : `saveFailed` est émis avant le retour de setData.
     Component {
         id: iconFile
 
         FileView {
+            property bool failed: false
+
             blockLoading: true
+            blockWrites: true
             printErrors: false
+            onSaveFailed: failed = true
         }
     }
 
-    Process {
-        id: iconCacheCleaner
-        command: ["rm", "-rf", "--", root.iconCache]
-    }
-
-    function keepIcon(source: string): string {
+    function keepIcon(source: string, id: int): string {
         const path = source.startsWith("file://") ? decodeURIComponent(source.slice(7))
             : source.startsWith("image://icon//") ? decodeURIComponent(source.slice(13).split("?")[0]) : "";
-        if (path === "" || path.startsWith(`${iconCache}/`))
+        if (path === "" || path.startsWith(`${iconCache}/`) || dataDirs.some(d => path.startsWith(d)))
             return source;
-        if (iconCopies[source] !== undefined)
-            return iconCopies[source];
+        const key = `${id}|${source}`;
         const reader = iconFile.createObject(root, { path });
         const data = reader.data();
         reader.destroy();
-        let copy = source;   // illisible : laissée telle quelle
-        if (data && data.byteLength > 0) {
-            // Nom : md5 du contenu, octets décalés hors de 0 (caractère nul évité dans la chaîne).
-            const bytes = Array.from(new Uint8Array(data), b => b | 0x100);
-            let text = "";
-            for (let i = 0; i < bytes.length; i += 8192)
-                text += String.fromCharCode.apply(null, bytes.slice(i, i + 8192));
-            const file = `${iconCache}/${Qt.md5(text)}${path.match(/\.[A-Za-z0-9]+$/)?.[0] ?? ""}`;
-            const writer = iconFile.createObject(root, { path: file });
-            writer.setData(data);
-            writer.waitForJob();
-            writer.destroy();
-            copy = Icons.fileUrl(file);
+        // Illisible (effacé) : dernière copie pour cette notification, sinon la source telle quelle. Lisible : copié à nouveau
+        // (même chemin réécrit avec une autre image).
+        if (!data || data.byteLength === 0)
+            return iconFiles[key] ?? source;
+        // Extension du nom de fichier (pas d'un « .xxxxxx » de fichier caché ou temporaire).
+        const file = `${iconCache}/${++persist.nextKey}${path.split("/").pop().match(/^[^.].*(\.[A-Za-z0-9]+)$/)?.[1] ?? ""}`;
+        const writer = iconFile.createObject(root, { path: file });
+        writer.setData(data);
+        const failed = writer.failed;
+        writer.destroy();
+        if (failed)
+            return iconFiles[key] ?? source;
+        const url = Icons.fileUrl(file);
+        // Copie précédente pour la même clé : gardée sous une autre clé, effacée par pruneIcons quand plus rien ne l'affiche.
+        const previous = iconFiles[key] !== undefined ? { [`${key}|${iconFiles[key]}`]: iconFiles[key] } : {};
+        iconFiles = Object.assign({}, iconFiles, previous, { [key]: url });
+        return url;
+    }
+
+    // Efface les copies qui ne servent plus : ni dans l'historique (icône ou icône de repli), ni sur une notification affichée.
+    function pruneIcons(): void {
+        const used = new Set();
+        for (const item of [...history, ...popups]) {
+            used.add(item.icon);
+            used.add(item.fallbackIcon);
         }
-        iconCopies[source] = copy;
-        return copy;
+        const unused = Object.values(iconFiles).filter(f => !used.has(f));
+        if (unused.length === 0)
+            return;
+        const kept = {};
+        for (const [key, f] of Object.entries(iconFiles)) {
+            if (used.has(f))
+                kept[key] = f;
+        }
+        iconFiles = kept;
+        Quickshell.execDetached(["rm", "-f", "--", ...unused.map(f => decodeURIComponent(f.slice(7)))]);
     }
 
     // Indice « value » : progression 0–100, -1 sans barre.

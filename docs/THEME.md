@@ -341,7 +341,8 @@ mais leur combinaison est nouvelle.
 Cloche dans le tray, après les modules natifs ; panneau au style des panneaux (§ 3). Interrupteur du titre : notifications affichées /
 « ne pas déranger ». Lignes (disposition de KDE et GNOME, ta demande : le contenu avant l'expéditeur) : icône ou image de la
 notification **32 px** (sinon `preferences-desktop-notification`) ; en-tête Inter 16 px `subtext0` : titre de la notification sans le
-nom de l'application qu'il répète (« whatsdesk - … »), ou l'application s'il n'y a pas de corps ; à droite l'heure relative (« now »,
+nom de l'application qu'il répète (« whatsdesk - … »), suivi de « · application » si l'icône ne la montre pas (avatar, aucune
+icône), ou l'application seule s'il n'y a pas de corps ; à droite l'heure relative (« now »,
 « 5 min ago », « HH:mm », « Yesterday », « 20 Oct », comme KDE) et une croix (`U+F0156`, 16 px, `subtext0`, `text` et rond `surface1`
 au survol) ; dessous le corps Inter **16 px** `text` (ton choix, 20 px essayé), 2 lignes, déplié jusqu'à 6 lignes par un clic
 (comme GNOME). Non vues (expirées sans toi, ou reçues pendant « ne pas déranger ») : en-tête en `green`. « Clear all ».

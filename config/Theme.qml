@@ -393,6 +393,7 @@ Singleton {
     readonly property QtObject mediaCard: QtObject {
         readonly property int padding: root.panel.spacing                // 10 px
         readonly property int artSize: 76                                // ta demande : 3 lignes de texte (61 px) + 25 %
+        readonly property int artRadius: root.panel.rowRadius / 2        // 5 px : dans une carte à coins 10 px, padding 10 px
         readonly property int buttonSize: root.bar.trayIconSize          // boutons ronds 32 px (taille du tray)
         readonly property int glyphSize: root.panel.smallFontSize        // 16 px
         // Lecture : fond `text` (remplissage des curseurs), glyphe `mantle` ; `green` jugé trop fort (ta remarque du 2026-10-20).
