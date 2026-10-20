@@ -6,8 +6,9 @@ import qs.modules.bar
 
 // Une notification, géométrie de Dunst 1.13 (draw.c) : cadre de 1 px compris, largeur 600 + 3 × cadre comme Dunst ;
 // icône à gauche (100 px), texte centré verticalement, barre de progression centrée sous le texte. Ajout (ton choix du
-// 2026-10-16) : boutons des actions nommées sous le texte. Souris (dunstrc) : gauche ferme, milieu lance l'action par défaut
-// (ou ouvre le lien) puis ferme, droit ferme tout.
+// 2026-10-16) : boutons des actions nommées sous le texte. Souris (ton choix du 2026-10-20, comme GNOME et KDE ; dunstrc avait
+// gauche et milieu inversés) : gauche ouvre (action par défaut ou lien, puis fenêtre de l'application affichée) et ferme,
+// milieu ferme, droit ferme tout.
 Item {
     id: card
 
@@ -44,9 +45,9 @@ Item {
         acceptedButtons: Qt.LeftButton | Qt.MiddleButton | Qt.RightButton
         onClicked: mouse => {
             if (mouse.button === Qt.LeftButton)
-                Notifs.close(card.entry);
+                Notifs.open(card.entry);
             else if (mouse.button === Qt.MiddleButton)
-                Notifs.doAction(card.entry);
+                Notifs.close(card.entry);
             else
                 Notifs.closeAll();
         }

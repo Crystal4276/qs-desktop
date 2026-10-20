@@ -461,11 +461,16 @@ Singleton {
             closed(entry, NotificationCloseReason.Expired);
     }
 
-    // Clic milieu (dunstrc : do_action, close_current) : action « default », ou l'unique action, sinon le lien s'il n'y en a qu'un.
+    // Ouvrir (clic gauche ; ton choix du 2026-10-20, comme GNOME et KDE, au lieu du clic milieu de dunstrc) : action
+    // « default », ou l'unique action, sinon le lien s'il n'y en a qu'un ; puis la fenêtre de l'application est affichée
+    // quand elle demande l'activation (Compositor.focusNextActivation : bon espace de travail, et pour Chromium le bon onglet).
     // Plusieurs actions sans « default », ou plusieurs liens : Dunst ouvrait dmenu (absent) ; ici, les boutons d'action.
-    function doAction(entry): void {
+    // Rien à ouvrir : la notification est seulement fermée.
+    function open(entry): void {
         const actions = entry.actions;
         const action = actions.find(a => a.identifier === "default") ?? (actions.length === 1 ? actions[0] : null);
+        if (action || (actions.length === 0 && entry.urls.length === 1))
+            Compositor.focusNextActivation();
         if (action)
             action.invoke();
         else if (actions.length === 0 && entry.urls.length === 1)
