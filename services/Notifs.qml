@@ -39,7 +39,7 @@ Singleton {
 
         // Images envoyées en données (avatars…) : perdues au rechargement (voir imageLocks), icône de l'application à la place.
         onLoaded: {
-            root.history = JSON.parse(history).map(h => h.imageKey ? Object.assign(h, { icon: h.fallbackIcon ?? "", imageKey: 0 }) : h);
+            root.history = JSON.parse(history).map(h => h.imageKey ? Object.assign(h, root.isDataImage(h.icon) ? { icon: h.fallbackIcon ?? "" } : {}, { imageKey: 0 }) : h);
             ready = true;
         }
     }
@@ -61,6 +61,12 @@ Singleton {
         RetainableLock {
             locked: true
         }
+    }
+
+    // Image en données, servie par Quickshell (une icône nommée ou un chemin arrive aussi en `image`, mais en image://icon/ :
+    // l'icône du thème reste lisible après un rechargement, rien à retenir).
+    function isDataImage(image: string): bool {
+        return image.startsWith("image://") && !image.startsWith("image://icon/");
     }
 
     function lockImage(n: Notification): int {
@@ -157,7 +163,7 @@ Singleton {
         // verrou ou non.
         if (doNotDisturb && n.urgency !== NotificationUrgency.Critical) {
             let imageKey = 0;
-            if (n.image.startsWith("image://")) {
+            if (isDataImage(n.image)) {
                 n.tracked = true;
                 imageKey = lockImage(n);
                 Qt.callLater(() => n.expire());
@@ -215,7 +221,7 @@ Singleton {
             return;
         popups = popups.filter(e => e !== entry);
         let imageKey = entry.saved?.imageKey ?? 0;
-        if (entry.notification && entry.notification.image.startsWith("image://"))
+        if (entry.notification && isDataImage(entry.notification.image))
             imageKey = lockImage(entry.notification);
         archive({
             appName: entry.appName,
