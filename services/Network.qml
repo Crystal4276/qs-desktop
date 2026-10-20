@@ -25,6 +25,10 @@ Singleton {
     readonly property int historyLength: 48
     property var history: []
 
+    // Textes les plus larges que `format` peut produire, pour la largeur fixe du module : chaque chiffre répété (la largeur
+    // d'un chiffre ne dépend pas de sa place), chaque préfixe jusqu'à G.
+    readonly property var widestRates: [].concat(...Array.from({ length: 10 }, (_, d) => ["", "k", "M", "G"].map(p => `${d}${d}${d}.${d}${p}B/s`.padStart(9))))
+
     // Format `{bandwidthDownBytes:>3}` de Waybar (util/format.hpp) : une décimale, préfixe k / M / G… en base 1000,
     // aligné à droite sur 9 caractères (« 833.6kB/s », «   2.5MB/s »).
     function format(bytesPerSecond: real): string {

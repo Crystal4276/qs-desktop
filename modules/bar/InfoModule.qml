@@ -14,8 +14,9 @@ Item {
     property bool highlightOnHover: false
     readonly property bool highlighted: highlightOnHover && hover.hovered
 
-    // [[police, texte, gabarit?], …] ; gabarit : le texte le plus large que le segment puisse afficher. Le segment prend
-    // sa largeur et s'aligne à droite dedans : la pilule ne change pas de taille quand la valeur change (ta demande du 2026-10-20).
+    // [[police, texte, valeurs?], …] ; valeurs : tous les textes que le segment peut afficher. Il prend la largeur du plus large,
+    // mesurée dans sa police, et s'aligne à droite dedans : la pilule ne change jamais de taille, et n'est pas plus large que
+    // nécessaire (ta demande du 2026-10-20).
     property var segments: []
 
     signal clicked
@@ -31,7 +32,7 @@ Item {
         color: root.color
     }
 
-    // Un Text par segment, pour la largeur fixe ; chiffres à chasse fixe (`tnum`), comme le graphe réseau.
+    // Un Text par segment, pour la largeur fixe.
     Row {
         id: row
         anchors.centerIn: parent
@@ -55,19 +56,17 @@ Item {
                 readonly property var segment: root.segments[index] ?? []
 
                 anchors.baseline: reference.baseline
-                width: Math.max(implicitWidth, gauge.implicitWidth)
+                // Arrondi au pixel : la mesure et le texte affiché peuvent différer d'une fraction de pixel.
+                width: Math.ceil(Math.max(implicitWidth, ...Array.from(segment[2] ?? []).map(s => metrics.advanceWidth(s))))
                 horizontalAlignment: Text.AlignRight
                 font.family: segment[0] ?? Theme.font.text
                 font.pixelSize: Theme.font.barText
-                font.features: { "tnum": 1 }
                 color: root.highlighted ? Theme.module.highlightText : root.color
                 text: segment[1] ?? ""
 
-                Text {
-                    id: gauge
-                    visible: false
+                FontMetrics {
+                    id: metrics
                     font: label.font
-                    text: label.segment[2] ?? ""
                 }
             }
         }
