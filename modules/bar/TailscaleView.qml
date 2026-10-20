@@ -61,7 +61,7 @@ ColumnLayout {
     // --- Carte ---
     PanelCard {
         CardHeader {
-            icon: "network-vpn"
+            icon: Theme.image.tailscale
             iconOpacity: Tailscale.running ? 1 : Theme.panel.disabledOpacity
             title: "Tailscale"
             active: Tailscale.running

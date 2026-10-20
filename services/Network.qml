@@ -7,20 +7,22 @@ import Quickshell.Networking
 
 // Réseau : débit (module `network`) et connexions NetworkManager (module natif du tray, remplace nm-applet ; ARCHITECTURE R5).
 //
-// Débit (INVENTORY.md § 1, module `network`), toutes les 5 s comme Waybar.
+// Débit (INVENTORY.md § 1, module `network`), toutes les 2,5 s (5 s dans Waybar ; ta demande du 2026-10-20).
 // Interface : celle de la route par défaut (/proc/net/route), au lieu du nom écrit en dur dans Waybar (`eno2`).
 // Octets de /proc/net/dev, différence divisée par l'intervalle nominal (network.cpp de Waybar 0.15).
 Singleton {
     id: root
 
-    readonly property int interval: 5000
+    readonly property int interval: 2500
+    // Détails nmcli des cartes Wi-Fi et filaire : toutes les 5 s.
+    readonly property int detailsInterval: 5000
     property string interfaceName: ""
     property real downBytesPerSecond: 0
     property real upBytesPerSecond: 0
     property var previous: null
     // Graphe de trafic des cartes (TrafficGraph.qml, comme l'onglet « Speed » de KDE) : débits des 2 dernières minutes
-    // ({ down, up }, un relevé toutes les 5 s) sur l'interface de la route par défaut.
-    readonly property int historyLength: 24
+    // ({ down, up }, un relevé toutes les 2,5 s) sur l'interface de la route par défaut.
+    readonly property int historyLength: 48
     property var history: []
 
     // Format `{bandwidthDownBytes:>3}` de Waybar (util/format.hpp) : une décimale, préfixe k / M / G… en base 1000,
@@ -260,7 +262,7 @@ Singleton {
     Timer {
         running: root.wifiPanelOpen && root.wifi !== null && root.wifiUsable
         triggeredOnStart: true
-        interval: root.interval
+        interval: root.detailsInterval
         repeat: true
         onTriggered: {
             apQuery.running = true;
@@ -337,7 +339,7 @@ Singleton {
     Timer {
         running: root.networkPanelOpen && root.networkTab === "wired" && root.wiredDevices.length > 0
         triggeredOnStart: true
-        interval: root.interval
+        interval: root.detailsInterval
         repeat: true
         onTriggered: {
             wiredQuery.command = ["sh", "-c", root.wiredScript, "sh", ...root.wiredDevices.map(d => d.name)];

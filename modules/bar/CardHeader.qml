@@ -29,7 +29,7 @@ RowLayout {
     IconImage {
         visible: root.icon !== ""
         implicitSize: Theme.panel.cardIconSize
-        source: root.icon === "" ? "" : `image://icon/${root.icon}`
+        source: root.icon === "" ? "" : root.icon.startsWith("file:") ? root.icon : `image://icon/${root.icon}`
         opacity: root.iconOpacity
     }
 

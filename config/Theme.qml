@@ -351,6 +351,8 @@ Singleton {
         readonly property url logout: Quickshell.shellPath("assets/logout.svg")
         readonly property url restart: Quickshell.shellPath("assets/restart.svg")
         readonly property url shutdown: Quickshell.shellPath("assets/shutdown.svg")
+        // Logo officiel (dépôt tailscale/tailscale, client/systray/tailscale.svg) : carte de l'onglet Tailscale.
+        readonly property url tailscale: Quickshell.shellPath("assets/tailscale.svg")
     }
 
     // § 3 — Panneau de réglages façon GNOME (style des panneaux)
