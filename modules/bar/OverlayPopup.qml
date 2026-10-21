@@ -12,6 +12,7 @@ PanelWindow {
     property Item button       // bouton sous lequel il est (ou a été) ouvert
     readonly property Item owner: visible ? button : null   // appui sur ce bouton : la barre laisse le bouton le fermer
     property int ownerButtons: Qt.LeftButton                 // boutons de souris que gère ce bouton
+    property bool catchOutside: true                         // appui sur un autre écran : fermeture (OutsideClick)
 
     signal closing   // juste avant la fermeture (lanceur : enregistre la saisie)
 
@@ -98,7 +99,7 @@ PanelWindow {
     }
 
     OutsideClick {
-        active: root.visible
+        active: root.visible && root.catchOutside
         screen: root.screen
         onPressed: root.close()
     }

@@ -17,7 +17,6 @@ Rectangle {
     signal closeRequested
 
     default property alias content: body.data
-    readonly property alias hovered: hover.hovered
 
     height: Math.min(column.implicitHeight + 2 * Theme.panel.padding, maxHeight)
     clip: true
@@ -25,10 +24,6 @@ Rectangle {
     color: Theme.panel.background
     border.width: Theme.panel.border
     border.color: Theme.panel.borderColor
-
-    HoverHandler {
-        id: hover
-    }
 
     focus: true
     Component.onCompleted: forceActiveFocus()
