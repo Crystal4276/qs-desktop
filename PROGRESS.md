@@ -1275,6 +1275,9 @@ onglet A.
 - Passe 7 : colonnes du menu remises en haut à l'ouverture (petit écran : la colonne des catégories restait défilée) ; sélection remise
   à zéro tout de suite à chaque nouvelle liste (une flèche tapée juste après une lettre était écrasée). Question pour toi : un
   raccourci (lanceur, menu…) pressé pendant une demande polkit l'annule, comme un clic à côté (règle « un seul popup ») — à garder ?
+- Passe 8 : rien de sérieux ; défilement à la molette encore animé arrêté avant de remettre une colonne en haut. **Boucle terminée.**
+- À tester à la main : première ouverture du menu après le démarrage de Quickshell (rapide) ; défilement au survol / au clavier ;
+  menu et lanceur sur un petit écran (laptop).
 
 ## Prochaine étape
 

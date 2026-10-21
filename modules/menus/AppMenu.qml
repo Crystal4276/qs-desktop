@@ -359,12 +359,14 @@ OverlayPopup {
 
         // Colonne remise en haut (ouverture du menu).
         function scrollToTop(): void {
+            flick.cancelFlick();   // défilement à la molette encore animé : il ne reprend pas après la remise en haut
             flick.contentY = 0;
         }
 
         // Ligne `item` amenée dans la partie visible (colonne qui défile sur un petit écran).
         function reveal(item: Item): void {
             const y = item.mapToItem(column, 0, 0).y;
+            flick.cancelFlick();
             flick.contentY = Math.max(0, Math.min(flick.contentHeight - flick.height,
                 Math.max(Math.min(flick.contentY, y), y + item.height - flick.height)));
         }
