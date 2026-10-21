@@ -167,7 +167,8 @@ Règles pour Qt :
 | `custom/nvidia` | `sky` |
 | `cpu` | `teal` |
 | `memory` | `green` |
-| `clock` | `yellow` |
+| pilule `custom/nvidia` + `cpu` + `memory` | survol (ta demande du 2026-10-21) : contrastes inversés en bloc — fond `green` (couleur de `memory`) sur toute la pilule (arrondi intérieur), textes et icônes `mantle`, sans transition |
+| `clock` | `yellow` ; survol ou calendrier épinglé (ta demande du 2026-10-21) : contrastes inversés — fond `yellow`, texte `mantle`, sans transition |
 | `network` | `sky` |
 | `pulseaudio` | `text` |
 | `mpris` | `text` (défaut) |

@@ -7,6 +7,7 @@ import qs.services
 InfoModule {
     shown: Gpu.available
     color: Theme.module.gpu
+    pillHighlight: Theme.module.statsHighlight
     segments: [[Theme.font.inlineIcons, Theme.icon.gpu], [Theme.font.text, ` ${Math.min(Gpu.usage, 99)}%`, Array.from({ length: 100 }, (_, i) => ` ${i}%`)]]
     onClicked: Monitor.toggle()
 }

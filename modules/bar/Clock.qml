@@ -7,6 +7,7 @@ import qs.config
 // Texte en Inter ; horloge en Hack Nerd Font, calendrier en Font Awesome 7 (THEME.md § 2).
 // Largeur fixe et minimale (ta demande du 2026-10-20) : l'heure et la date prennent la largeur de la plus large de leurs valeurs.
 // Locale et fuseau : ceux du système. Survol : aperçu du calendrier ; clic : calendrier épinglé (ARCHITECTURE § 8.3).
+// Survol ou calendrier épinglé : contrastes inversés, fond `yellow` et texte `mantle`, comme le bouton Arch (ta demande du 2026-10-21).
 InfoModule {
     id: root
 
@@ -17,6 +18,8 @@ InfoModule {
     readonly property var dates: [].concat(...Array.from({ length: 7 }, (_, d) => Array.from({ length: 31 }, (_, i) => ` ${Qt.locale().dayName(d, Locale.ShortFormat)}-${String(i + 1).padStart(2, "0")}`)))
 
     color: Theme.module.clock
+    highlightOnHover: true
+    held: calendar.pinned
     segments: [
         [Theme.font.inlineIcons, Theme.icon.clock],
         [Theme.font.text, " " + clock.date.toLocaleString(Qt.locale(), "HH:mm"), root.times],

@@ -14,9 +14,16 @@ Item {
     // au lieu de deux (ta demande du 2026-10-20).
     property bool trailing: true
     readonly property int rightPadding: trailing ? horizontalPadding : 0
-    // Survol : contrastes inversés, comme le bouton Arch (fond de la couleur du module, texte `mantle`).
+    // Survol : contrastes inversés, comme le bouton Arch (fond de la couleur du module, texte `mantle`) ; `held` : gardé sans survol
+    // (calendrier épinglé).
     property bool highlightOnHover: false
-    readonly property bool highlighted: highlightOnHover && hover.hovered
+    property bool held: false
+    readonly property bool ownHighlight: highlightOnHover && (hover.hovered || held)
+    // Pilule survolée en bloc (Bar.qml) : `pillHighlight` en donne la couleur (transparent : pas de survol en bloc), la pilule
+    // dessine le fond et met `pillHighlighted` ; le texte passe en `mantle`.
+    property color pillHighlight: "transparent"
+    property bool pillHighlighted: false
+    readonly property bool highlighted: ownHighlight || pillHighlighted
 
     // [[police, texte, valeurs?, écart?], …] ; valeurs : tous les textes que le segment peut afficher. Il prend la largeur du plus large,
     // mesurée dans sa police, et s'aligne à droite dedans : la pilule ne change jamais de taille, et n'est pas plus large que
@@ -30,7 +37,7 @@ Item {
 
     Rectangle {
         anchors.fill: parent
-        visible: root.highlighted
+        visible: root.ownHighlight
         // Le fond suit l'arrondi intérieur de la pilule (module seul dans sa pilule).
         radius: Theme.bar.pillRadius - Theme.bar.pillBorder
         color: root.color
