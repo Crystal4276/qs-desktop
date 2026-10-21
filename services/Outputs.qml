@@ -252,4 +252,11 @@ Singleton {
     function isPrimary(name: string): bool {
         return primary?.name === name;
     }
+
+    // Écran où ouvrir une fenêtre (lanceur, sélecteur de fonds, polkit, moniteur) : l'écran focalisé, sinon l'écran principal
+    // (focalisé inconnu : démarrage, écran retiré), sinon le premier.
+    function focusedScreen(): ShellScreen {
+        return Quickshell.screens.find(s => s.name === Compositor.focusedOutput)
+            ?? Quickshell.screens.find(s => s.name === primary?.name) ?? Quickshell.screens[0] ?? null;
+    }
 }

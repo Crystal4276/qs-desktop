@@ -181,6 +181,12 @@ OverlayPopup {
         search.forceActiveFocus();
     }
 
+    // Retour au clavier à la colonne des applications : sa sélection amenée en vue (liste défilée à la molette entre-temps).
+    function showApps(): void {
+        pane = "apps";
+        list.positionViewAtIndex(selected, ListView.Contain);
+    }
+
     // Catégorie choisie amenée en vue dans sa colonne (petit écran), au clavier seulement (comme la liste des applications).
     function revealCategory(): void {
         const row = categoryRows.itemAt(categories.findIndex(c => c.key === category));
@@ -189,6 +195,8 @@ OverlayPopup {
     }
 
     function setCategory(key: string): void {
+        if (key === category && search.text === "")   // déjà choisie (Haut sur la première, clic) : sélection et défilement gardés
+            return;
         resetList();   // avant le changement de liste : rien de choisi à suivre
         search.text = "";
         category = key;
@@ -235,7 +243,7 @@ OverlayPopup {
                 close();
         } else if (k === Qt.Key_Return || k === Qt.Key_Enter) {
             if (pane === "categories")
-                pane = "apps";
+                showApps();
             else
                 activate(items[selected]);
         } else if (k === Qt.Key_Left && search.text === "") {
@@ -243,7 +251,7 @@ OverlayPopup {
             revealCategory();
         }
         else if (k === Qt.Key_Right && search.text === "")
-            pane = "apps";
+            showApps();
         else if ([Qt.Key_Up, Qt.Key_Down, Qt.Key_Tab, Qt.Key_Backtab].includes(k)) {
             // Tab / Maj+Tab comme Bas / Haut (comme le lanceur), dans la colonne active ; le focus ne quitte pas la recherche.
             const step = k === Qt.Key_Up || k === Qt.Key_Backtab ? -1 : 1;
@@ -269,8 +277,11 @@ OverlayPopup {
     // Recherche effacée à la fermeture : le menu caché ne recalcule pas ses résultats (historique changé par un lancement), et la
     // liste complète est reconstruite maintenant plutôt qu'à la prochaine ouverture.
     onClosing: {
+        aimStop.stop();
+        moves++;   // survols en attente (afterMove) annulés : le menu caché ne change plus de catégorie
         search.text = "";
         category = "all";
+        resetList();
     }
 
     // Ligne de liste (style nwg-menu) : icône, nom, description facultative ; survol ou sélection : fond `surface0` (survol des panneaux).

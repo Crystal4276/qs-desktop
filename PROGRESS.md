@@ -1266,6 +1266,10 @@ onglet A.
   choix au clavier restait « collé » : la liste sautait ensuite d'elle-même) ; Gauche montre la catégorie active ; catégorie
   disparue : liste remise en haut ; entités XML décodées en une passe (`&#38;amp;`) ; lanceur ouvert sur l'écran principal quand
   l'écran focalisé est inconnu, comme le menu.
+- Passe 5 (aucune régression, points mineurs) : catégorie déjà choisie (Haut sur la première, clic) : sélection et défilement gardés ;
+  Droite / Entrée vers les applications ramènent la sélection en vue ; survols en attente annulés à la fermeture ; entité numérique
+  invalide gardée telle quelle ; `Outputs.focusedScreen()` (écran focalisé, sinon principal, sinon le premier) partagé par le lanceur,
+  le sélecteur de fonds, le dialogue polkit et le moniteur.
 
 ## Prochaine étape
 
