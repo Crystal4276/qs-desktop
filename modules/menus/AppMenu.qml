@@ -357,6 +357,9 @@ OverlayPopup {
         }
     }
 
+    // Recherche sans résultat : soulignement du champ en `red` et message dans la liste (ton choix du 2026-10-21).
+    readonly property bool noResults: search.text !== "" && items.length === 0
+
     // Boîte de liste : fond `base`, bordure `overlay0`, rayon 20 px (nwg-menu).
     component ListBox: Rectangle {
         default property alias content: column.data
@@ -642,6 +645,22 @@ OverlayPopup {
                             }
                         }
 
+                        EmptyState {
+                            visible: root.noResults
+                            glyph: Theme.icon.search
+                            title: `No results for “${search.text}”`
+                            hint: "Try another name, or a word from its description"
+                        }
+
+                        // Aucun fichier récent : une fois la liste relue (vide pendant la vérification des fichiers).
+                        EmptyState {
+                            visible: search.text === "" && root.category === "recent" && Places.recentReady
+                                && Places.recent.length === 0
+                            glyph: Theme.icon.history
+                            title: "No recent files"
+                            hint: "Files you open will appear here"
+                        }
+
                         // Curseur de défilement (thème GTK) : dans une gouttière de 25 px, bordure transparente de 4 px, au moins
                         // 24 px de haut ; se fait glisser.
                         Rectangle {
@@ -690,7 +709,7 @@ OverlayPopup {
                     Layout.fillWidth: true
                     implicitHeight: search.implicitHeight + 2 * Theme.appMenu.itemPadding + Theme.appMenu.searchUnderline
                     radius: Theme.appMenu.searchRadius
-                    color: Theme.appMenu.searchUnderlineColor
+                    color: root.noResults ? Theme.appMenu.searchNoResults : Theme.appMenu.searchUnderlineColor
 
                     Rectangle {
                         width: parent.width

@@ -22,6 +22,7 @@ Singleton {
     property string pictures: ""
     // [{ path, name, mime, time }]
     property var recent: []
+    property bool recentReady: false   // liste relue et vérifiée au moins une fois (message « No recent files » seulement ensuite)
     property bool recentWanted: false
     property var parsed: []   // entrées lues, avant le filtre des fichiers absents
 
@@ -81,6 +82,7 @@ Singleton {
             root.existsAgain = false;
             root.parsed = [];
             root.recent = [];
+            root.recentReady = true;
         }
         onLoaded: {
             const list = [];
@@ -146,6 +148,7 @@ Singleton {
                 const finished = lines.length >= 3 && lines[lines.length - 2] === number;   // marque de fin : ligne vide puis le numéro
                 const present = new Set(lines.slice(1));
                 root.recent = finished ? root.checking.filter(f => present.has(f.path)) : root.checking;
+                root.recentReady = true;
             }
         }
         onExited: {

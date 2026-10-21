@@ -1284,6 +1284,12 @@ onglet A.
 - Pointeur sorti du cadre (barre, fenêtre, autre écran) et resté dehors 5 s (même délai que le calendrier épinglé) → fermeture.
   Jamais pendant une recherche (un clic à côté ferme alors), ni sous le menu contextuel, ni si le pointeur n'est jamais entré
   (ouverture au raccourci) ; une touche relance le délai. Vérifié sur banc (les trois cas).
+- Délai ramené à 2 s (ton choix), pour le menu et le calendrier épinglé.
+- Calendrier épinglé : il se fermait dès la sortie du pointeur au lieu d'attendre (ton signalement). Cause : `focus_follows_mouse`
+  (actif par défaut dans ta config Sway, `follow_mouse = 1` sous Hyprland) focalise la fenêtre survolée, et ce changement de focus
+  fermait le calendrier aussitôt. Pointeur dehors, c'est maintenant le délai de 2 s qui ferme.
+- Recherche sans résultat (ton choix, maquette C) : « No results for “…” » au centre de la liste avec une loupe 48 px et une astuce,
+  soulignement du champ en `red`. Fichiers récents vides : « No recent files » au même format, une fois la liste vérifiée.
 - Polkit : un raccourci pressé pendant une demande l'annule — gardé (ton choix).
 
 ## Prochaine étape

@@ -304,7 +304,8 @@ Décision : le tooltip calendrier de l'horloge devient une **fenêtre Quickshell
 C'est une évolution assumée de la parité : même contenu (mois en cours, aujourd'hui mis en évidence), présentation plus riche.
 Ouverture — **tranché le 2026-10-16 : survol + clic**. Le survol montre le mois en cours et se ferme quand le pointeur quitte l'horloge ;
 un clic l'épingle (navigation : flèches, molette, clavier ←/→ ; clic sur le titre : mois en cours). Fermeture de l'épinglé (ta demande) :
-Échap ; clic n'importe où ailleurs, **qui atteint aussi ce qui est dessous** (fenêtre, module) ; pointeur hors du calendrier et de l'horloge pendant 5 s.
+Échap ; clic n'importe où ailleurs, **qui atteint aussi ce qui est dessous** (fenêtre, module) ; pointeur hors du calendrier et de l'horloge pendant 2 s (aussi quand le survol d'une fenêtre la
+focalise : `focus_follows_mouse` ; le calendrier se fermait sinon dès la sortie du pointeur, corrigé le 2026-10-21).
 
 Mise en œuvre (Sway 1.12, code source lu) :
 - le calendrier est un `PopupWindow` attaché à l'horloge, sans `grabFocus` (Sway ne ferme pas un tel popup au clic extérieur et il bloque le clic sur l'horloge) ;
@@ -316,7 +317,7 @@ Mise en œuvre (Sway 1.12, code source lu) :
   ensuite, c'est l'événement IPC « une fenêtre reçoit le focus » (`Compositor.windowFocused`, filtré sur `focused` : Sway l'envoie aussi à tort
   lors d'un clic sur un popup) qui ferme au clic sur une fenêtre ;
 - à la fermeture, la barre repasse sans clavier : Sway rend le focus à la fenêtre qui l'avait.
-Limites : après un clic dans le calendrier, Échap ne marche plus (focus perdu) ; la fermeture automatique (5 s) s'en charge.
+Limites : après un clic dans le calendrier, Échap ne marche plus (focus perdu) ; la fermeture automatique (2 s) s'en charge.
 Clic sur le fond d'écran : `swaybg` déclare une zone d'entrée vide (code lu) ; le clic atteint l'espace de travail, Sway le focalise,
 la barre perd le clavier et le calendrier se ferme (vérifié sur DP-2 et DP-1). Seule exception : juste après un clic dans le calendrier,
 le focus est déjà sur l'espace de travail et un clic sur le fond ne change rien → la fermeture automatique s'en charge.
@@ -514,7 +515,7 @@ ce projet, **sans dépendance ni emprunt à Cinnamon** (ta consigne) : catégori
   dans l'historique du lanceur) ; dossiers et fichiers : `xdg-open`.
 - **Clavier** : Haut / Bas, Pages : sélection ; Gauche (hors recherche) : colonne des catégories, que Haut / Bas parcourent ; Droite ou
   Entrée : retour aux applications ; Échap : ferme le menu contextuel, puis le menu.
-- **Fermeture automatique** (ta demande du 2026-10-21) : pointeur sorti du cadre et resté dehors 5 s (délai du calendrier épinglé) ;
+- **Fermeture automatique** (ta demande du 2026-10-21) : pointeur sorti du cadre et resté dehors 2 s (délai du calendrier épinglé) ;
   pas pendant une recherche (un clic à côté ferme alors), ni sous le menu contextuel, ni si le pointeur n'est jamais entré (menu
   ouvert au raccourci) ; une touche relance le délai.
 - Services : `Apps` (catégories, favoris, partagé avec le lanceur), `Icons` (`iconSource`, `mimeIcon`), `Places` (dossiers, fichiers récents, ouverture).

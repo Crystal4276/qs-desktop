@@ -10,8 +10,9 @@ import qs.services
 //    Fermeture : Échap, clic n'importe où ailleurs (il atteint aussi ce qui est dessous : fenêtre, module de la barre),
 //    ou pointeur resté hors du calendrier et de l'horloge pendant Theme.calendar.autoCloseDelay.
 //    Mécanisme (ARCHITECTURE § 8.3) : pendant le survol de l'horloge, sa barre accepte le clavier « à la demande » ; le clic
-//    qui épingle lui donne donc le focus (Échap, ←/→). Un clic sur une fenêtre le lui reprend : le calendrier se ferme.
-//    Un appui sur une barre le ferme directement (Bar.qml), tout comme le passage du focus à une fenêtre (événement du
+//    qui épingle lui donne donc le focus (Échap, ←/→). Un clic sur une fenêtre le lui reprend : le calendrier se ferme au plus
+//    tard après le délai automatique (pointeur dehors), pas aussitôt : le survol d'une fenêtre la focalise aussi (focus_follows_mouse).
+//    Un appui sur une barre le ferme directement (Bar.qml), tout comme le passage du focus à une fenêtre, pointeur sur le calendrier (événement du
 //    compositeur : nécessaire après un clic dans le calendrier, que Sway traite comme un clic sur l'espace de travail). À la fermeture, la barre repasse sans clavier et Sway rend
 //    le focus à la fenêtre précédente. Un clic sur le fond d'écran traverse `swaybg` et focalise l'espace de travail : il ferme
 //    aussi, sauf juste après un clic dans le calendrier (focus déjà sur l'espace) ; [phase 8b] voir WALLPAPERS.md. (Sway retire le focus à une surface « à la demande » à chaque réarrangement des
@@ -40,10 +41,14 @@ Item {
         }
     }
 
+    // Focus passé à une fenêtre : fermeture si le pointeur est sur le calendrier ou l'horloge (raccourci clavier). Pointeur dehors :
+    // c'est souvent le survol d'une fenêtre qui la focalise (`focus_follows_mouse` de Sway, `follow_mouse` de Hyprland, actifs
+    // chez toi) ; le délai de fermeture automatique s'en charge (le calendrier se fermait sinon dès la sortie du pointeur).
     Connections {
         target: Compositor
         function onWindowFocused() {
-            root.pinned = false;
+            if (root.hovered || root.popupHovered)
+                root.pinned = false;
         }
     }
 
@@ -265,8 +270,9 @@ Item {
         Keys.onLeftPressed: root.monthOffset--
         Keys.onRightPressed: root.monthOffset++
         onActiveFocusChanged: {
-            // Un clic dans le calendrier retire aussi le focus à la barre : il ne doit pas le fermer.
-            if (!activeFocus && root.pinned && !root.popupHovered)
+            // Un clic dans le calendrier retire aussi le focus à la barre : il ne doit pas le fermer. Pointeur hors du calendrier et
+            // de l'horloge (fenêtre focalisée au survol, clic sur une fenêtre) : fermeture par le délai automatique.
+            if (!activeFocus && root.pinned && root.hovered && !root.popupHovered)
                 root.pinned = false;
         }
     }
