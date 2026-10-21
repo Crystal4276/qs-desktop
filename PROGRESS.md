@@ -1252,6 +1252,12 @@ onglet A.
   déplaçaient en aveugle la sélection des applications) ; fichiers récents : entités numériques (`&#39;`) décodées ; raccourci
   `menu|settings toggle` : repli sur la barre de l'écran principal ; commentaires périmés. Écartés : historique de saisie du lanceur
   (identique à Rofi 2.0.0, `view.c` relu), relecture des dossiers XDG à chaque ouverture (asynchrone, négligeable).
+- Passe 2 : le survol d'une ligne à moitié visible ne fait plus défiler la liste (seul le clavier la fait défiler) ; catégorie vidée
+  pendant l'ouverture → toutes les applications ; recherche effacée à la fermeture (le menu caché ne recalcule plus ses résultats) ;
+  fichiers récents dédoublonnés par chemin. Écartés après mesure : fenêtres « clic à côté » des autres écrans (les garder ne change
+  rien : ~200 ms par ouverture sur banc à trois écrans dans les deux cas, rendu logiciel du banc), préchargement du menu (sa création
+  coûte 25 ms), icônes asynchrones (aucun gain mesuré). Négligeables : objets de ligne recréés à chaque frappe, pas de Page Haut/Bas
+  approximatif quand des lignes n'ont pas de description.
 
 ## Prochaine étape
 
