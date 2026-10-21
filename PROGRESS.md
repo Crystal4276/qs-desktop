@@ -1332,8 +1332,8 @@ onglet A.
   touches volume et micro (OSD), `$mod+s` sortie audio, luminosité, `$mod+d` HDR, `$mod+Ctrl+w` relance du shell (nouveau sous
   Sway). VPN inchangé. `scripts/takeover.sh restore` : ancien bureau. Lancé par toi le 2026-10-21 : tous les outils arrêtés,
   polkit inscrit sans erreur.
-- À tester à la main : `pkexec true` (dialogue polkit), chaque raccourci ci-dessus, veille à 300 s, montage d'une clé USB,
-  `restore` puis `takeover` à nouveau.
+- Validé par toi le 2026-10-21 : dialogue polkit (`pkexec true`), tous les raccourcis ci-dessus.
+- Reste à tester à la main : veille à 300 s, montage automatique d'une clé USB, `restore` puis `takeover` à nouveau.
 - Lien `~/.config/quickshell/desktop` corrigé (il pointait vers `qs-dektop`, faute de frappe) : `qs -c desktop` fonctionne.
 - Reste : démarrage automatique = phase 10 (config Sway).
 
