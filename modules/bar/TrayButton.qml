@@ -36,8 +36,17 @@ Item {
     // Relancé aussi quand un popup épinglé qui bloquait l'aperçu se ferme, pointeur resté sur l'icône.
     Timer {
         interval: Theme.panel.previewDelay
-        running: hover.hovered && !root.panel.previewSuppressed && !root.panel.visible && !BarState.popupPinned
+        running: root.visible && hover.hovered && !root.panel.previewSuppressed && !root.panel.visible && !BarState.popupPinned
         onTriggered: root.panel.preview(root, root.buttons)
+    }
+
+    // Icône masquée sous le pointeur (câble débranché, Bluetooth retiré…) : ni survol restant, ni aperçu accroché à elle.
+    onVisibleChanged: {
+        if (visible)
+            return;
+        BarState.setTrayHover(root, false);
+        if (panel.previewing && panel.button === root)
+            panel.close();
     }
 
     MouseArea {

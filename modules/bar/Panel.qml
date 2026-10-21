@@ -28,22 +28,23 @@ OverlayPopup {
     // `buttons` : boutons de souris avec lesquels l'élément ouvre et ferme ce panneau (un appui de ces boutons sur lui ne le
     // fait pas fermer par la barre : c'est l'élément qui le ferme).
     function toggle(item: Item, buttons: int): void {
-        if (visible && previewing && button === item) {
+        if (visible && previewing) {
             previewing = false;
             return;
         }
         if (!beginOpen(item))
             return;
         ownerButtons = buttons;
-        engaged = true;
+        wasPinned = true;
         openUnder(item);
     }
 
     property bool previewing: false
     // Fermé pointeur sur l'icône : pas d'aperçu avant que le pointeur l'ait quittée.
     property bool previewSuppressed: false
-    // Ouverture voulue : épinglé, ou pointeur entré dans le cadre de l'aperçu (centre de notifications : marquées vues).
-    property bool engaged: false
+    // Épinglé pendant cette ouverture (centre de notifications : marquées vues seulement alors, pas après un simple aperçu, même
+    // traversé par le pointeur).
+    property bool wasPinned: false
 
     // Survol de `item` (TrayButton.qml, qui le déclare en `hovered`) ; `buttons` : comme pour toggle().
     function preview(item: Item, buttons: int): void {
@@ -51,7 +52,7 @@ OverlayPopup {
             return;
         prepareOpen(item);
         ownerButtons = buttons;
-        engaged = false;
+        wasPinned = false;
         previewing = true;
         openUnder(item);
     }
@@ -66,7 +67,7 @@ OverlayPopup {
     onPreviewingChanged: {
         if (previewing || !visible)
             return;
-        engaged = true;
+        wasPinned = true;
         initialFocus?.forceActiveFocus();
     }
 
@@ -128,7 +129,6 @@ OverlayPopup {
 
         HoverHandler {
             id: frameHover
-            onHoveredChanged: if (hovered) root.engaged = true
         }
     }
 }
