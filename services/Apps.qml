@@ -26,7 +26,23 @@ Singleton {
 
     // Applications affichables, sans ordre : base des listes du lanceur (par historique) et du menu (par nom, par catégorie), pour
     // que le tri par nom et les catégories ne soient pas recalculés à chaque lancement (l'historique change).
-    readonly property var available: DesktopEntries.applications.values.filter(e => !hidden[e.id] && e.execString !== "")
+    readonly property var available: desktopApps.filter(e => !hidden[e.id] && e.execString !== "")
+
+    // Applications de DesktopEntries relues en une fois : au chargement, la liste arrive application par application (230
+    // changements d'affilée) ; liées directement, les tris, les catégories et le menu étaient recalculés à chaque fois (~1 s de
+    // blocage à la première ouverture, mesuré le 2026-10-21).
+    property var desktopApps: []
+    Component.onCompleted: readApps()
+    Connections {
+        target: DesktopEntries.applications
+        function onValuesChanged() {
+            Qt.callLater(root.readApps);
+        }
+    }
+
+    function readApps(): void {
+        desktopApps = DesktopEntries.applications.values;
+    }
 
     readonly property var entries: {
         const rank = {};
