@@ -1262,6 +1262,10 @@ onglet A.
   en 1024 × 600) ; Haut / Bas ramènent en vue une sélection sortie par la molette ; saisie du lanceur effacée à la fermeture ;
   Ctrl+G et Ctrl+[ ferment le lanceur (`kb-cancel` de Rofi) ; filtres des applications : listes recalculées seulement si le résultat
   change. Négligeable : catégorie survolée au tout premier mouvement après l'ouverture, prise à l'arrêt du pointeur.
+- Passe 4 : défilement des listes réservé aux touches (la passe 3 faisait aussi défiler la colonne des catégories au survol, et un
+  choix au clavier restait « collé » : la liste sautait ensuite d'elle-même) ; Gauche montre la catégorie active ; catégorie
+  disparue : liste remise en haut ; entités XML décodées en une passe (`&#38;amp;`) ; lanceur ouvert sur l'écran principal quand
+  l'écran focalisé est inconnu, comme le menu.
 
 ## Prochaine étape
 

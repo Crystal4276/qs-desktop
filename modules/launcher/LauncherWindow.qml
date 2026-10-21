@@ -36,7 +36,8 @@ OverlayPopup {
     // changer d'écran).
     function open(): void {
         if (!visible)
-            screen = Quickshell.screens.find(s => s.name === Compositor.focusedOutput) ?? Quickshell.screens[0];
+            screen = Quickshell.screens.find(s => s.name === Compositor.focusedOutput)
+                ?? Quickshell.screens.find(s => s.name === Outputs.primary?.name) ?? Quickshell.screens[0];   // comme le menu
         prepareOpen(null);   // les autres popups se ferment (OverlayPopup)
         inputHistory = [...Apps.inputs, ""];
         inputIndex = inputHistory.length - 1;
