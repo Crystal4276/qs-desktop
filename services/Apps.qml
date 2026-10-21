@@ -254,7 +254,8 @@ Singleton {
             onStreamFinished: {
                 const map = {};
                 text.split("\n").filter(l => l !== "").forEach(id => map[id] = true);
-                root.hidden = map;
+                if (JSON.stringify(map) !== JSON.stringify(root.hidden))   // inchangé : listes et menu non recalculés
+                    root.hidden = map;
             }
         }
         onExited: {

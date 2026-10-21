@@ -12,7 +12,7 @@ import qs.modules.bar
 // le clavier lui est réservé, un clic à côté du cadre, sur une barre ou sur un autre écran le ferme (`click-to-exit`).
 // Clavier : Entrée lance (sans résultat : le texte comme commande ; Maj+Entrée : dans un terminal), Ctrl+Entrée lance le texte,
 // Ctrl+Maj+Entrée dans un terminal, Haut/Bas/Tab/Pages/Début/Fin pour la sélection, Ctrl+Haut/Bas pour les textes déjà saisis,
-// Maj+Suppr retire de l'historique, raccourcis d'édition Emacs de Rofi, Échap ferme.
+// Maj+Suppr retire de l'historique, raccourcis d'édition Emacs de Rofi, Échap (ou Ctrl+G, Ctrl+[) ferme.
 // Souris : clic = sélection, double clic = lancement, molette = ligne suivante ou précédente. Défilement par page.
 OverlayPopup {
     id: root
@@ -105,7 +105,7 @@ OverlayPopup {
         const enter = k === Qt.Key_Return || k === Qt.Key_Enter;
         const pos = input.cursorPosition;
 
-        if (k === Qt.Key_Escape)
+        if (k === Qt.Key_Escape || (ctrl && (k === Qt.Key_G || k === Qt.Key_BracketLeft)))   // kb-cancel de Rofi
             close();
         else if (enter && ctrl)
             runText(shift);
@@ -167,6 +167,7 @@ OverlayPopup {
     onClosing: {
         inputHistory[inputIndex] = input.text;
         Apps.saveInputs(inputHistory);
+        input.text = "";   // le lanceur caché ne recalcule pas ses résultats (comme le menu)
     }
 
     Rectangle {

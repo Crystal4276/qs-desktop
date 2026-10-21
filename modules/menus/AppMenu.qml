@@ -198,8 +198,10 @@ OverlayPopup {
     }
 
     function select(index: int): void {
-        if (items.length > 0)
-            choose(Math.max(0, Math.min(index, items.length - 1)), true);
+        if (items.length === 0)
+            return;
+        choose(Math.max(0, Math.min(index, items.length - 1)), true);
+        Qt.callLater(() => list.positionViewAtIndex(selected, ListView.Contain));   // aussi sans changement (liste défilée à la molette)
     }
 
     function activate(item: var): void {
@@ -334,6 +336,13 @@ OverlayPopup {
     // Boîte de liste : fond `base`, bordure `overlay0`, rayon 20 px (nwg-menu).
     component ListBox: Rectangle {
         default property alias content: column.data
+
+        // Ligne `item` amenée dans la partie visible (colonne qui défile sur un petit écran).
+        function reveal(item: Item): void {
+            const y = item.mapToItem(column, 0, 0).y;
+            flick.contentY = Math.max(0, Math.min(flick.contentHeight - flick.height,
+                Math.max(Math.min(flick.contentY, y), y + item.height - flick.height)));
+        }
 
         implicitWidth: column.implicitWidth + 2 * (Theme.appMenu.itemPadding + Theme.appMenu.itemMargin)
         implicitHeight: column.implicitHeight + 2 * (Theme.appMenu.itemPadding + Theme.appMenu.itemMargin)
@@ -523,6 +532,11 @@ OverlayPopup {
                                 icon: Quickshell.iconPath(modelData.icon, true)
                                 label: modelData.name
                                 highlighted: search.text === "" && root.category === modelData.key
+                                // Choisie au clavier (colonne des catégories active) : gardée visible.
+                                onHighlightedChanged: {
+                                    if (highlighted && root.pane === "categories")
+                                        categoryBox.reveal(categoryRow);
+                                }
                                 // Survol : hors recherche et hors visée (hoverCategory) ; un clic, lui, quitte la recherche.
                                 onHoveredChanged: root.hoverCategory(modelData.key, hovered)
                                 onClicked: root.setCategory(modelData.key)
