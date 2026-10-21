@@ -34,10 +34,6 @@ InfoModule {
         precision: SystemClock.Minutes
     }
 
-    HoverHandler {
-        id: hover
-    }
-
     // Calendrier épinglé : fermé dès l'appui (même long ou glissé) ; sinon épinglé au clic.
     TapHandler {
         property bool closedOnPress: false
@@ -54,6 +50,6 @@ InfoModule {
     CalendarPopup {
         id: calendar
         anchorItem: root
-        hovered: hover.hovered
+        hovered: root.hovered
     }
 }

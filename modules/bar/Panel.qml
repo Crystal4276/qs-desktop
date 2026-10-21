@@ -8,9 +8,10 @@ import qs.config
 // Surface Overlay à clavier exclusif, comme le panneau de réglages (OverlayPopup.qml) : sous Sway, un popup `grabFocus`
 // ouvert depuis une barre ne reçoit jamais le clavier (ni saisie ni Échap ; vu le 2026-10-20, Sway 1.12). Fermé par un
 // appui à côté du cadre, sur une barre ou sur un autre écran, ou par Échap.
-// Aperçu (ta demande du 2026-10-21, comme l'horloge) : `preview(item)` l'ouvre au survol de l'icône, sans clavier (la fenêtre où
-// l'on tape le garde) ; fermé quand le pointeur quitte l'icône et le cadre. Un clic sur l'icône ou dans le cadre l'épingle : il
-// prend alors le clavier et se comporte comme ouvert au clic. Pas d'aperçu par-dessus un autre popup épinglé.
+// Aperçu (ta demande du 2026-10-21, comme l'horloge) : `preview(item, boutons)` l'ouvre au survol de l'icône, sans clavier (la
+// fenêtre où l'on tape le garde) ni pointeur hors du cadre (clics et survols atteignent les fenêtres) ; fermé quand le pointeur
+// quitte l'icône et le cadre. Un clic sur l'icône ou dans le cadre l'épingle : il prend alors le clavier et se comporte comme
+// ouvert au clic. Pas d'aperçu par-dessus un autre popup épinglé.
 OverlayPopup {
     id: root
 
@@ -38,12 +39,12 @@ OverlayPopup {
 
     property bool previewing: false
 
-    // Survol de `item` (TrayButton.qml, qui le déclare en `hovered`), boutons gauche et droit.
-    function preview(item: Item): void {
+    // Survol de `item` (TrayButton.qml, qui le déclare en `hovered`) ; `buttons` : comme pour toggle().
+    function preview(item: Item, buttons: int): void {
         if (visible || BarState.openList.some(p => !p.previewing))
             return;
         prepareOpen(item);
-        ownerButtons = Qt.LeftButton | Qt.RightButton;
+        ownerButtons = buttons;
         previewing = true;
         openUnder(item);
     }
@@ -52,12 +53,19 @@ OverlayPopup {
 
     WlrLayershell.namespace: "quickshell-panel"
     WlrLayershell.keyboardFocus: previewing ? WlrKeyboardFocus.None : WlrKeyboardFocus.Exclusive
+    mask: previewing ? previewInput : null
+    catchOutside: !previewing
     frameItem: frame
+
+    Region {
+        id: previewInput
+        item: frame
+    }
 
     // Aperçu : fermé une fois le pointeur hors de l'icône et du cadre (délai bref : passage de l'une à l'autre).
     Timer {
         interval: Theme.panel.previewGrace
-        running: root.visible && root.previewing && !frame.hovered && !(root.button?.hovered ?? false)
+        running: root.visible && root.previewing && !frameHover.hovered && !(root.button?.hovered ?? false)
         onTriggered: root.close()
     }
 
@@ -76,7 +84,8 @@ OverlayPopup {
         onCloseRequested: root.close()
     }
 
-    // Aperçu : un appui dans le cadre l'épingle, puis atteint l'élément visé.
+    // Au-dessus du cadre : survol vu avant ses enfants (un enfant qui accepte le survol, `hoverEnabled`, le cacherait à un
+    // HoverHandler du cadre) ; en aperçu, un appui l'épingle puis atteint l'élément visé.
     MouseArea {
         x: frame.x
         y: frame.y
@@ -87,6 +96,10 @@ OverlayPopup {
         onPressed: mouse => {
             root.previewing = false;
             mouse.accepted = false;
+        }
+
+        HoverHandler {
+            id: frameHover
         }
     }
 }
