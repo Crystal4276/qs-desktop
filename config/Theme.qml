@@ -170,7 +170,8 @@ Singleton {
     // valeurs reprises de la barre, du calendrier et du lanceur (THEME.md § 3 « Panneaux »).
     readonly property QtObject panel: QtObject {
         readonly property int gap: 10                       // sous la pilule, comme le calendrier
-        readonly property int previewDelay: 300             // ms : arrêt sur une icône du tray avant l'aperçu de sa carte (pas en passant)
+        readonly property int previewDelay: 150             // ms : arrêt sur une icône du tray avant l'aperçu de sa carte (pas en passant ; ton choix du 2026-10-21)
+        readonly property int autoCloseDelay: root.calendar.autoCloseDelay   // épinglé, pointeur hors de la carte et de l'icône → fermeture (ta demande du 2026-10-21)
         readonly property int previewGrace: 300             // ms : aperçu au survol (tray), pointeur hors de l'icône et de la carte → fermeture (passage de l'une à l'autre)
         readonly property int width: 500                    // largeur du lanceur
         readonly property color background: root.color.mantle
