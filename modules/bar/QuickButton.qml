@@ -2,7 +2,7 @@ import QtQuick
 import qs.config
 
 // Bouton carré à image SVG (verrouiller, déconnexion, redémarrer, éteindre) ou glyphe (capture d'écran). Par défaut, bouton de
-// panneau (fond `surface0`, survol `surface1`, coins 10 px) ; le menu d'applications lui donne le style de nwg-menu.
+// panneau (fond `surface0`, survol `surface1`, coins 10 px), aussi dans le menu d'applications.
 Rectangle {
     id: root
 

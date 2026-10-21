@@ -220,14 +220,13 @@ OverlayPopup {
                 pane = "apps";
             else
                 activate(items[selected]);
-        } else if (k === Qt.Key_Tab || k === Qt.Key_Backtab) {
-            select(selected + (k === Qt.Key_Tab ? 1 : -1));   // comme le lanceur ; le focus ne quitte pas la recherche
         } else if (k === Qt.Key_Left && search.text === "")
             pane = "categories";
         else if (k === Qt.Key_Right && search.text === "")
             pane = "apps";
-        else if (k === Qt.Key_Up || k === Qt.Key_Down) {
-            const step = k === Qt.Key_Up ? -1 : 1;
+        else if ([Qt.Key_Up, Qt.Key_Down, Qt.Key_Tab, Qt.Key_Backtab].includes(k)) {
+            // Tab / Maj+Tab comme Bas / Haut (comme le lanceur), dans la colonne active ; le focus ne quitte pas la recherche.
+            const step = k === Qt.Key_Up || k === Qt.Key_Backtab ? -1 : 1;
             if (pane === "categories") {
                 const i = categories.findIndex(c => c.key === category);
                 setCategory(categories[Math.max(0, Math.min(i + step, categories.length - 1))].key);
