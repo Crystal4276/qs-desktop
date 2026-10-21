@@ -18,6 +18,7 @@ OverlayPopup {
     property var contextEntry: null // application du menu contextuel (clic droit), null : fermé
     property real anchorX: 0        // bord gauche voulu du cadre (pilule du bouton) ; le cadre reste dans l'écran
     property bool recentRead: false // fichiers récents relus depuis l'ouverture
+    property bool pointerLeft: false // pointeur sorti du cadre depuis son dernier passage (fermeture automatique)
 
     // Souris : dernière position dans le cadre (-1 : aucune depuis l'ouverture), visée vers la liste des applications.
     property point pointer: Qt.point(-1, -1)
@@ -173,6 +174,7 @@ OverlayPopup {
         pointer = Qt.point(-1, -1);
         moves = 0;
         recentRead = false;
+        pointerLeft = false;
         Places.refreshFolders();
         list.positionViewAtBeginning();
         for (const box of [places, favorites, categoryBox])   // colonnes défilées à l'ouverture précédente (petit écran)
@@ -227,6 +229,8 @@ OverlayPopup {
 
     function handleKey(event: var): bool {
         const k = event.key;
+        if (autoClose.running)
+            autoClose.restart();   // clavier utilisé : délai de fermeture automatique relancé
         // Menu contextuel ouvert : Entrée valide son action, Échap le ferme, les flèches et Pages ne touchent pas la liste derrière.
         if (contextEntry && [Qt.Key_Return, Qt.Key_Enter, Qt.Key_Up, Qt.Key_Down, Qt.Key_PageUp, Qt.Key_PageDown, Qt.Key_Left,
                 Qt.Key_Right, Qt.Key_Tab, Qt.Key_Backtab].includes(k)) {
@@ -428,6 +432,17 @@ OverlayPopup {
         HoverHandler {
             id: frameHover
             onPointChanged: root.movePointer(point.position)
+            onHoveredChanged: root.pointerLeft = !hovered
+        }
+
+        // Fermeture automatique (ta demande du 2026-10-21) : pointeur sorti du cadre (vers une barre, une fenêtre, un autre écran) et
+        // resté dehors `autoCloseDelay` ; jamais pendant une recherche (un clic à côté ferme alors) ni sous le menu contextuel. Menu
+        // ouvert au raccourci, pointeur jamais entré : pas de fermeture. Une touche relance le délai.
+        Timer {
+            id: autoClose
+            interval: Theme.appMenu.autoCloseDelay
+            running: root.visible && root.pointerLeft && search.text === "" && !root.contextEntry
+            onTriggered: root.close()
         }
 
         // Pointeur arrêté (intervalle de suivi du pointeur de Cinnamon, 30 ms) : fin de la visée, catégorie survolée prise.
