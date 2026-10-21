@@ -355,7 +355,7 @@ OverlayPopup {
                                     text: row.modelData.name
                                     font.family: Theme.font.text
                                     font.pointSize: Theme.font.launcherPt
-                                    color: row.current ? Theme.launcher.selectedText : Theme.launcher.text
+                                    color: Theme.launcher.text
                                     elide: Text.ElideRight
                                 }
                             }

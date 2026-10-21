@@ -28,3 +28,7 @@ Idées notées pendant le travail. Rien ici n'est implémenté sans accord.
   `ScreencopyView`), clic pour y aller, ouverte par un raccourci.
 
 - Panneau NordVPN : recherche par ville (« amsterdam ») ; demanderait les villes des ~150 pays (`nordvpn cities` pour chacun).
+- **Effet verre façon iOS** (ta idée du 2026-10-21) : panneaux, menu et lanceur semi-transparents sur le fond d'écran flouté. Sur un
+  panneau opaque, un surlignage translucide ne se distingue pas d'un gris uni : il faut un fond flouté derrière. Sway ne floute pas
+  (SwayFX ou Hyprland oui, seulement pour l'ensemble de la fenêtre) ; Quickshell peut l'imiter en floutant le fond d'écran qu'il dessine
+  lui-même (`MultiEffect`) sous chaque panneau — les fenêtres derrière n'apparaîtraient pas. Valeurs de transparence à choisir ensemble.

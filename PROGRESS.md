@@ -1231,6 +1231,16 @@ onglet A.
 - À tester à la main : tes vraies applis web (ChatGPT, WhatsApp web…) : l'onglet n'est choisi que si le site le demande au
   clic (la plupart le font) ; Thunderbird (ouvre le message).
 
+### Menu d'applications et lanceur : surlignage et boutons de session (2026-10-21, ta demande)
+
+- Surlignage (survol, sélection, catégorie choisie) du menu et du lanceur : le `green` plein (texte `mantle`) devient le fond
+  `surface0` du survol des cartes des panneaux, texte inchangé (ton choix parmi 4 maquettes : `surface0`, blanc 10 %, verre, vert
+  teinté). Le sélecteur de fonds garde son cadre `green` : il marque le fond actuel (un état), le survol y est déjà en `surface0`.
+- Boutons lock / logout / reboot / shutdown du menu : boutons carrés du panneau de réglages (fond `surface0`, survol `surface1`,
+  coins 10 px, mêmes dimensions) au lieu du survol rond de nwg-menu (ton choix).
+- Effet verre façon iOS : noté dans `BACKLOG.md` (sur un panneau opaque, la transparence ne se voit pas).
+- Vérifié sur banc (captures). À tester à la main : survol au pointeur dans le menu et le lanceur.
+
 ## Prochaine étape
 
 Phase 9 — parité Hyprland (tests à faire ensemble dans une session Hyprland : voir « Compatibilité Hyprland »).
