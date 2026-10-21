@@ -53,8 +53,11 @@ OverlayPopup {
     // choisie disparue (sa dernière application retirée) : toutes les applications, recherche en cours gardée.
     onCategoriesChanged: {
         hoveredCategory = "";
-        if (!categories.some(c => c.key === category))
+        if (!categories.some(c => c.key === category)) {
+            if (search.text === "")
+                resetList();   // première ligne, rien de choisi, liste en haut
             category = "all";
+        }
     }
 
     // Applications relues (paquet installé ou retiré) : le menu contextuel pourrait viser une entrée disparue.
@@ -68,13 +71,6 @@ OverlayPopup {
     // Élément choisi (clavier, souris : `choose`) : la sélection le suit quand la liste change d'elle-même (fichiers récents relus,
     // applications installées). Rien de choisi ("") : la sélection garde sa place (liste qui se remplit au démarrage).
     property string selectedId: ""
-    // Dernier choix au clavier : la liste défile pour montrer la sélection (après la mise à jour du modèle). Choix à la souris : pas
-    // de défilement, la ligne visée ne doit pas bouger sous le pointeur.
-    property bool keyboardChoice: false
-    onSelectedChanged: {
-        if (keyboardChoice)
-            Qt.callLater(() => list.positionViewAtIndex(selected, ListView.Contain));
-    }
     onItemsChanged: {
         const i = selectedId === "" ? -1 : items.findIndex(item => item.id === selectedId);
         if (i >= 0) {
@@ -86,10 +82,9 @@ OverlayPopup {
             selectedId = items[selected]?.id ?? "";   // élément disparu : celui qui prend sa place est suivi
     }
 
-    function choose(index: int, keyboard: bool): void {
+    function choose(index: int): void {
         if (index < 0 || index >= items.length)   // ligne en cours de retrait
             return;
-        keyboardChoice = keyboard;
         selected = index;
         selectedId = items[index]?.id ?? "";
     }
@@ -129,7 +124,7 @@ OverlayPopup {
         if (row && !contextEntry && row.index >= 0 && items[row.index]?.id === row.modelData.id
                 && (pane !== "apps" || selected !== row.index)) {
             pane = "apps";
-            choose(row.index, false);
+            choose(row.index);
         }
     }
 
@@ -174,7 +169,6 @@ OverlayPopup {
         category = "all";
         pane = "apps";
         selected = 0;
-        keyboardChoice = false;
         aiming = false;
         hoveredCategory = "";
         hoveredRow = null;
@@ -185,6 +179,13 @@ OverlayPopup {
         list.positionViewAtBeginning();
         visible = true;
         search.forceActiveFocus();
+    }
+
+    // Catégorie choisie amenée en vue dans sa colonne (petit écran), au clavier seulement (comme la liste des applications).
+    function revealCategory(): void {
+        const row = categoryRows.itemAt(categories.findIndex(c => c.key === category));
+        if (row)
+            categoryBox.reveal(row);
     }
 
     function setCategory(key: string): void {
@@ -200,8 +201,10 @@ OverlayPopup {
     function select(index: int): void {
         if (items.length === 0)
             return;
-        choose(Math.max(0, Math.min(index, items.length - 1)), true);
-        Qt.callLater(() => list.positionViewAtIndex(selected, ListView.Contain));   // aussi sans changement (liste défilée à la molette)
+        choose(Math.max(0, Math.min(index, items.length - 1)));
+        // Seul le clavier fait défiler la liste (la souris : la ligne visée ne doit pas bouger sous le pointeur), aussi quand la
+        // sélection ne change pas (liste défilée à la molette) ; après la mise à jour du modèle.
+        Qt.callLater(() => list.positionViewAtIndex(selected, ListView.Contain));
     }
 
     function activate(item: var): void {
@@ -235,8 +238,10 @@ OverlayPopup {
                 pane = "apps";
             else
                 activate(items[selected]);
-        } else if (k === Qt.Key_Left && search.text === "")
+        } else if (k === Qt.Key_Left && search.text === "") {
             pane = "categories";
+            revealCategory();
+        }
         else if (k === Qt.Key_Right && search.text === "")
             pane = "apps";
         else if ([Qt.Key_Up, Qt.Key_Down, Qt.Key_Tab, Qt.Key_Backtab].includes(k)) {
@@ -245,10 +250,12 @@ OverlayPopup {
             if (pane === "categories") {
                 const i = categories.findIndex(c => c.key === category);
                 setCategory(categories[Math.max(0, Math.min(i + step, categories.length - 1))].key);
+                revealCategory();
             } else
                 select(selected + step);
         } else if ((k === Qt.Key_PageUp || k === Qt.Key_PageDown) && pane === "categories") {
             setCategory(categories[k === Qt.Key_PageUp ? 0 : categories.length - 1].key);
+            revealCategory();
         } else if (k === Qt.Key_PageUp || k === Qt.Key_PageDown) {
             const rows = Math.max(1, Math.floor((list.height + list.spacing) / (largeRow.height + list.spacing)));
             select(selected + (k === Qt.Key_PageUp ? -rows : rows));
@@ -523,6 +530,7 @@ OverlayPopup {
                         Layout.maximumHeight: implicitHeight
 
                         Repeater {
+                            id: categoryRows
                             model: root.categories
 
                             MenuRow {
@@ -532,11 +540,6 @@ OverlayPopup {
                                 icon: Quickshell.iconPath(modelData.icon, true)
                                 label: modelData.name
                                 highlighted: search.text === "" && root.category === modelData.key
-                                // Choisie au clavier (colonne des catégories active) : gardée visible.
-                                onHighlightedChanged: {
-                                    if (highlighted && root.pane === "categories")
-                                        categoryBox.reveal(categoryRow);
-                                }
                                 // Survol : hors recherche et hors visée (hoverCategory) ; un clic, lui, quitte la recherche.
                                 onHoveredChanged: root.hoverCategory(modelData.key, hovered)
                                 onClicked: root.setCategory(modelData.key)
@@ -592,7 +595,7 @@ OverlayPopup {
                                         root.afterMove(() => {
                                             if (root.hoveredRow === appRow && !root.contextEntry) {
                                                 root.pane = "apps";
-                                                root.choose(index, false);
+                                                root.choose(index);
                                             }
                                         });
                                 }
