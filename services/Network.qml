@@ -221,6 +221,8 @@ Singleton {
     // Onglet affiché du panneau réseau (NetworkPanel) : Tailscale et ZeroTier ne sont relus toutes les 5 s que sur le leur.
     property string networkTab: ""
     readonly property bool wifiPanelOpen: openPanels.some(p => p.kind === "wifi")
+    // Recherche des réseaux : panneau Wi-Fi épinglé seulement, pas pendant un aperçu au survol (Panel.qml, `previewing`).
+    readonly property bool wifiScanning: openPanels.some(p => p.kind === "wifi" && p.panel.previewing !== true)
 
     function setPanelOpen(kind: string, panel: QtObject, open: bool): void {
         const others = openPanels.filter(p => p.panel !== panel);
@@ -231,7 +233,7 @@ Singleton {
         when: root.wifi !== null
         target: root.wifi
         property: "scannerEnabled"
-        value: root.wifiPanelOpen
+        value: root.wifiScanning
     }
 
     function setWifiEnabled(enabled: bool): void {

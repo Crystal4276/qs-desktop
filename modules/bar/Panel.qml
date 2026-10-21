@@ -10,7 +10,7 @@ import qs.config
 // appui à côté du cadre, sur une barre ou sur un autre écran, ou par Échap.
 // Aperçu (ta demande du 2026-10-21, comme l'horloge) : `preview(item, boutons)` l'ouvre au survol de l'icône, sans clavier (la
 // fenêtre où l'on tape le garde) ni pointeur hors du cadre (clics et survols atteignent les fenêtres) ; fermé quand le pointeur
-// quitte le cadre et les icônes du tray. Un clic sur l'icône ou dans le cadre l'épingle : il prend alors le clavier et se
+// quitte le cadre et les icônes des modules natifs du tray. Un clic sur l'icône ou dans le cadre l'épingle : il prend alors le clavier et se
 // comporte comme ouvert au clic. Pas d'aperçu par-dessus un autre popup épinglé, ni après une fermeture (Échap, clic sur
 // l'icône…) tant que le pointeur reste sur l'icône.
 OverlayPopup {
@@ -40,6 +40,8 @@ OverlayPopup {
     }
 
     property bool previewing: false
+    // Ouvert et épinglé (pas un aperçu) : recherche Bluetooth et Wi-Fi seulement alors (radio, batterie du laptop).
+    readonly property bool pinned: visible && !previewing
     // Fermé pointeur sur l'icône : pas d'aperçu avant que le pointeur l'ait quittée.
     property bool previewSuppressed: false
     // Épinglé pendant cette ouverture (centre de notifications : marquées vues seulement alors, pas après un simple aperçu, même
