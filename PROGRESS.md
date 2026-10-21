@@ -1337,6 +1337,32 @@ onglet A.
 - Lien `~/.config/quickshell/desktop` corrigé (il pointait vers `qs-dektop`, faute de frappe) : `qs -c desktop` fonctionne.
 - Reste : démarrage automatique = phase 10 (config Sway).
 
+### Fichiers qui ne s'ouvraient plus (Nemo, torrents) — 2026-10-21, ta demande
+
+- **Cause** : le montage FUSE du portail de documents (`/run/user/1000/doc`) avait disparu alors que `xdg-document-portal` tournait
+  toujours. Tout lancement d'application Flatpak (dont Deluge, `org.deluge_torrent.deluge`) échouait dans `bwrap` (« Can't find source
+  path /run/user/1000/doc/by-app/… »), en silence : `xdg-open` renvoie 0. Origine inconnue (service démarré le 2026-10-20, journal
+  inaccessible) ; rien dans ce dépôt ne démonte quoi que ce soit.
+- **Corrigé** : `systemctl --user restart xdg-document-portal` → montage revenu ; lancement vérifié dans le bac à sable de Deluge
+  (commande neutre, aucun torrent ajouté).
+- `~/.config/mimeapps.list` nettoyé (sauvegarde `~/.config/mimeapps.list.bak-2026-10-21`) : `deluge.desktop` →
+  `org.deluge_torrent.deluge.desktop` (+ `x-scheme-handler/magnet`), `xed.desktop` (désinstallé) retiré ou remplacé par
+  `geany.desktop` (déjà l'éditeur effectif ; `text/x-qml` n'avait plus aucune application), entrées `teams`, `SideQuest` et
+  `transmission-gtk` (désinstallés) retirées.
+- `scripts/dev.sh` : l'instance lancée depuis un terminal n'avait pas `XDG_CURRENT_DESKTOP` et gardait les jetons d'activation
+  (`DESKTOP_STARTUP_ID`, `XDG_ACTIVATION_TOKEN`) du terminal, hérités par toutes les applications lancées depuis Quickshell. Désormais :
+  jetons retirés, `XDG_CURRENT_DESKTOP` repris de l'environnement systemd s'il manque. Vérifié (`sway` dans l'environnement de `qs`).
+- `scripts/takeover.sh` : bit exécutable rétabli (perdu dans la copie de travail).
+- Avertissements `quickshell.desktopentry` « invalid line (no =) » au démarrage : fichiers SteamVR de
+  `~/.local/share/applications` (`valve-*.desktop`), sans effet.
+- **À faire / surveiller** :
+  - à tester à la main : ouvrir un `.torrent` depuis Nemo et depuis Chromium, un lien `magnet:` ;
+  - le Deluge déjà lancé garde l'ancien montage mort : sans effet pour `~/Downloads` et `/mnt` (accès direct), mais pour un torrent
+    situé ailleurs, redémarrer Deluge ;
+  - si le problème revient (`mount | grep /run/user/1000/doc` vide) : relancer le service et chercher ce qui démonte le dossier ;
+  - phase 10 : `qs` lancé par `exec` de Sway / `exec-once` de Hyprland hérite de l'environnement de session ; garder l'import de
+    `XDG_CURRENT_DESKTOP` (`systemctl --user import-environment`) dans les configs rapatriées.
+
 ## Prochaine étape
 
 Phase 9 — parité Hyprland (tests à faire ensemble dans une session Hyprland : voir « Compatibilité Hyprland »).

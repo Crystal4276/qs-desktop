@@ -25,6 +25,13 @@ done
 [[ "${1:-}" == "stop" ]] && exit 0
 
 cd "$repo"
+# Environnement hérité par les applications lancées depuis Quickshell. Lancé d'un terminal : XDG_CURRENT_DESKTOP repris de la
+# session systemd (importé par Sway), sans les jetons d'activation à usage unique du terminal.
+unset DESKTOP_STARTUP_ID XDG_ACTIVATION_TOKEN
+if [[ -z "${XDG_CURRENT_DESKTOP:-}" ]]; then
+    desktop=$(systemctl --user show-environment 2>/dev/null | sed -n 's/^XDG_CURRENT_DESKTOP=//p')
+    [[ -n "$desktop" ]] && export XDG_CURRENT_DESKTOP="$desktop"
+fi
 nohup qs -p . >"$log" 2>&1 &
 disown
 
