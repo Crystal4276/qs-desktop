@@ -1272,6 +1272,9 @@ onglet A.
   le sélecteur de fonds, le dialogue polkit et le moniteur.
 - Passe 6 : survols en attente vraiment annulés à la fermeture (la passe 5 les déclenchait au lieu de les annuler ; sans effet visible,
   l'ouverture suivante remettait tout à zéro) ; code mort retiré.
+- Passe 7 : colonnes du menu remises en haut à l'ouverture (petit écran : la colonne des catégories restait défilée) ; sélection remise
+  à zéro tout de suite à chaque nouvelle liste (une flèche tapée juste après une lettre était écrasée). Question pour toi : un
+  raccourci (lanceur, menu…) pressé pendant une demande polkit l'annule, comme un clic à côté (règle « un seul popup ») — à garder ?
 
 ## Prochaine étape
 

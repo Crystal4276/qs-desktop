@@ -93,10 +93,8 @@ OverlayPopup {
     function resetList(): void {
         contextEntry = null;
         selectedId = "";
-        Qt.callLater(() => {
-            selected = 0;
-            list.positionViewAtBeginning();
-        });
+        selected = 0;   // tout de suite : une touche traitée juste après (même lot d'événements) n'est pas écrasée
+        Qt.callLater(() => list.positionViewAtBeginning());
     }
 
     function appItem(entry: var): var {
@@ -177,6 +175,8 @@ OverlayPopup {
         recentRead = false;
         Places.refreshFolders();
         list.positionViewAtBeginning();
+        for (const box of [places, favorites, categoryBox])   // colonnes défilées à l'ouverture précédente (petit écran)
+            box.scrollToTop();
         visible = true;
         search.forceActiveFocus();
     }
@@ -356,6 +356,11 @@ OverlayPopup {
     // Boîte de liste : fond `base`, bordure `overlay0`, rayon 20 px (nwg-menu).
     component ListBox: Rectangle {
         default property alias content: column.data
+
+        // Colonne remise en haut (ouverture du menu).
+        function scrollToTop(): void {
+            flick.contentY = 0;
+        }
 
         // Ligne `item` amenée dans la partie visible (colonne qui défile sur un petit écran).
         function reveal(item: Item): void {
