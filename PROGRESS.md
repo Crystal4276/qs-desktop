@@ -1270,6 +1270,8 @@ onglet A.
   Droite / Entrée vers les applications ramènent la sélection en vue ; survols en attente annulés à la fermeture ; entité numérique
   invalide gardée telle quelle ; `Outputs.focusedScreen()` (écran focalisé, sinon principal, sinon le premier) partagé par le lanceur,
   le sélecteur de fonds, le dialogue polkit et le moniteur.
+- Passe 6 : survols en attente vraiment annulés à la fermeture (la passe 5 les déclenchait au lieu de les annuler ; sans effet visible,
+  l'ouverture suivante remettait tout à zéro) ; code mort retiré.
 
 ## Prochaine étape
 
