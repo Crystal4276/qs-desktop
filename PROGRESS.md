@@ -1321,6 +1321,21 @@ onglet A.
   l'écran virtuel (`grim` bloque) → `inhibit_idle` sur une fenêtre du banc, ou `swaymsg output '*' power on`.
 - À tester à la main : saisie au clavier après épinglage (mot de passe Wi-Fi, recherche NordVPN) ; trajet naturel icône → carte ;
   ressenti des deux délais.
+### Cartes du tray : réglages et prise en main de la session (2026-10-21, ta demande)
+
+- Aperçu après **150 ms** d'arrêt (ton choix) ; carte épinglée fermée quand le pointeur reste **2 s** hors d'elle et de son icône
+  (comme le calendrier et le menu), jamais pendant une saisie (champ non vide focalisé). Vérifié sur banc (sauf la saisie).
+- `scripts/takeover.sh` : prend la main sur la session Sway en cours, sans toucher aux configs (bascule durable : phase 10).
+  Arrête Waybar, Dunst, swaybg, swayidle, polkit-gnome, nm-applet, blueman, udiskie (lignes de commande notées dans
+  `$XDG_RUNTIME_DIR/qs-takeover.cmds`), relance l'instance de dev (agent polkit inscrit), raccourcis → `qs ipc` jusqu'au prochain
+  `reload` : `$mod+w` lanceur, `$mod+Escape` réglages, `Print` / `$mod+Print` / `$mod+Shift+Print` captures zone / écran / fenêtre,
+  touches volume et micro (OSD), `$mod+s` sortie audio, luminosité, `$mod+d` HDR, `$mod+Ctrl+w` relance du shell (nouveau sous
+  Sway). VPN inchangé. `scripts/takeover.sh restore` : ancien bureau. Lancé par toi le 2026-10-21 : tous les outils arrêtés,
+  polkit inscrit sans erreur.
+- À tester à la main : `pkexec true` (dialogue polkit), chaque raccourci ci-dessus, veille à 300 s, montage d'une clé USB,
+  `restore` puis `takeover` à nouveau.
+- Reste : lien `~/.config/quickshell/desktop` cassé (pointe vers `qs-dektop`) ; démarrage automatique = phase 10 (config Sway).
+
 ## Prochaine étape
 
 Phase 9 — parité Hyprland (tests à faire ensemble dans une session Hyprland : voir « Compatibilité Hyprland »).
