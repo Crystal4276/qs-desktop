@@ -18,7 +18,6 @@ OverlayPopup {
     id: root
 
     property int selected: 0
-    property alias query: input.text
     readonly property var results: Apps.filter(input.text)
     // Liste raccourcie sans saisie (application désinstallée, filtres relus) : sélection gardée dans la liste, sinon Entrée lancerait
     // le texte comme commande.

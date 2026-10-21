@@ -153,7 +153,7 @@ OverlayPopup {
 
     // Catégorie survolée prise, sauf pendant une recherche (le survol ne l'efface pas), sous le menu contextuel, ou déjà choisie.
     function takeHoveredCategory(): void {
-        if (hoveredCategory !== "" && hoveredCategory !== category && search.text === "" && !contextEntry)
+        if (hoveredCategory !== "" && search.text === "" && !contextEntry)
             setCategory(hoveredCategory);
     }
 
@@ -277,11 +277,13 @@ OverlayPopup {
     // Recherche effacée à la fermeture : le menu caché ne recalcule pas ses résultats (historique changé par un lancement), et la
     // liste complète est reconstruite maintenant plutôt qu'à la prochaine ouverture.
     onClosing: {
+        // Survols en attente annulés (aimStop, afterMove : ils vérifient la ligne ou la catégorie survolée) : le menu caché ne
+        // change plus de catégorie.
         aimStop.stop();
-        moves++;   // survols en attente (afterMove) annulés : le menu caché ne change plus de catégorie
+        hoveredCategory = "";
+        hoveredRow = null;
         search.text = "";
         category = "all";
-        resetList();
     }
 
     // Ligne de liste (style nwg-menu) : icône, nom, description facultative ; survol ou sélection : fond `surface0` (survol des panneaux).
