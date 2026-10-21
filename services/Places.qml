@@ -92,9 +92,12 @@ Singleton {
                     continue;
                 let path;
                 try {
-                    // Entités XML, `&amp;` en dernier (sinon « &amp;lt; » serait décodé deux fois), puis l'encodage de l'URI.
+                    // Entités XML (nommées et numériques, `&#39;` selon l'application), `&amp;` en dernier (sinon « &amp;lt; »
+                    // serait décodé deux fois), puis l'encodage de l'URI.
                     path = decodeURIComponent(href.slice("file://".length).replace(/&apos;/g, "'").replace(/&quot;/g, "\"")
-                        .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&"));
+                        .replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+                        .replace(/&#(x[0-9a-f]+|[0-9]+);/gi, (e, n) => String.fromCodePoint(Number(n[0] === "x" || n[0] === "X" ? `0${n}` : n)))
+                        .replace(/&amp;/g, "&"));
                 } catch (e) {
                     continue;
                 }

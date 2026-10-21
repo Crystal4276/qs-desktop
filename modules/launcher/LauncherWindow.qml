@@ -20,6 +20,9 @@ OverlayPopup {
     property int selected: 0
     property alias query: input.text
     readonly property var results: Apps.filter(input.text)
+    // Liste raccourcie sans saisie (application désinstallée, filtres relus) : sélection gardée dans la liste, sinon Entrée lancerait
+    // le texte comme commande.
+    onResultsChanged: selected = Math.max(0, Math.min(selected, results.length - 1))
     readonly property int rowHeight: Math.max(Theme.launcher.itemIconSize, measure.implicitHeight + 2 * Theme.launcher.itemTextMargin)
         + 2 * Theme.launcher.itemPadding
     readonly property int rows: Math.max(1, Math.floor((list.height + Theme.launcher.listSpacing) / (rowHeight + Theme.launcher.listSpacing)))
@@ -173,7 +176,8 @@ OverlayPopup {
         x: Math.floor((parent.width - width) / 2)
         y: Math.floor((parent.height - height) / 2)
         width: Theme.launcher.width
-        height: Theme.launcher.height
+        // Au plus la hauteur de la zone utile moins les marges de la barre (écran de laptop) : la liste montre moins de lignes.
+        height: Math.min(Theme.launcher.height, parent.height - 2 * Theme.bar.marginSide)
         color: Theme.launcher.background
         border.width: Theme.launcher.border
         border.color: Theme.launcher.borderColor

@@ -1241,6 +1241,18 @@ onglet A.
 - Effet verre façon iOS : noté dans `BACKLOG.md` (sur un panneau opaque, la transparence ne se voit pas).
 - Vérifié sur banc (captures). À tester à la main : survol au pointeur dans le menu et le lanceur.
 
+### Menu d'applications et lanceur : profilage et revue en boucle (2026-10-21, ta demande)
+
+- **Première ouverture lente** (ton signalement) : mesurée sur banc à ~1,15 s avant la première image (puis ~0,1 s). Cause : le
+  service `Apps` n'était créé qu'au premier accès, et DesktopEntries livre les applications une par une (230 changements d'affilée) ;
+  chaque changement recalculait tris, catégories et liste du menu (~1 s de JavaScript, pile d'appels relevée sous gdb). Liste relue en
+  une fois (`Qt.callLater`), `Apps` créé au démarrage : première ouverture ~0,11 s, comme les suivantes (2 calculs au lieu de 230).
+- Passe 1 : lanceur borné à la hauteur de l'écran (laptop : le haut sortait de l'écran) ; sélection du lanceur gardée dans la liste
+  quand elle raccourcit d'elle-même (Entrée lançait le texte comme commande) ; Tab / Maj+Tab du menu suivent la colonne active (ils
+  déplaçaient en aveugle la sélection des applications) ; fichiers récents : entités numériques (`&#39;`) décodées ; raccourci
+  `menu|settings toggle` : repli sur la barre de l'écran principal ; commentaires périmés. Écartés : historique de saisie du lanceur
+  (identique à Rofi 2.0.0, `view.c` relu), relecture des dossiers XDG à chaque ouverture (asynchrone, négligeable).
+
 ## Prochaine étape
 
 Phase 9 — parité Hyprland (tests à faire ensemble dans une session Hyprland : voir « Compatibilité Hyprland »).

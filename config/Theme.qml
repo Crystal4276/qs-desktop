@@ -536,8 +536,8 @@ Singleton {
         readonly property string fileIcon: "text-x-generic"
     }
 
-    // Utilitaire de changement de fond (nouveau composant) : style des panneaux ; vignette choisie entourée de `green` (sélection
-    // du menu d'applications). Taille des vignettes : ton choix du 2026-10-17.
+    // Utilitaire de changement de fond (nouveau composant) : style des panneaux ; fond actuel entouré de `green` (comme une bascule
+    // activée). Taille des vignettes : ton choix du 2026-10-17.
     readonly property QtObject wallpaperPicker: QtObject {
         readonly property int thumbWidth: 240
         readonly property int thumbHeight: 135      // 16:9

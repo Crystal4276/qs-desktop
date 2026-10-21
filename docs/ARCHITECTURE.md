@@ -514,7 +514,7 @@ ce projet, **sans dépendance ni emprunt à Cinnamon** (ta consigne) : catégori
   dans l'historique du lanceur) ; dossiers et fichiers : `xdg-open`.
 - **Clavier** : Haut / Bas, Pages : sélection ; Gauche (hors recherche) : colonne des catégories, que Haut / Bas parcourent ; Droite ou
   Entrée : retour aux applications ; Échap : ferme le menu contextuel, puis le menu.
-- Services : `Apps` (catégories, favoris, `iconSource` partagé avec le lanceur), `Places` (dossiers, fichiers récents, ouverture).
+- Services : `Apps` (catégories, favoris, partagé avec le lanceur), `Icons` (`iconSource`, `mimeIcon`), `Places` (dossiers, fichiers récents, ouverture).
 
 ### 10.1.4 Panneau de réglages façon GNOME (phase 8, décidé le 2026-10-16)
 
