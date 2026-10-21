@@ -60,7 +60,7 @@ Scope {
         frameItem: frame
 
         function show(): void {
-            screen = Quickshell.screens.find(s => s.name === Compositor.focusedOutput) ?? Quickshell.screens[0];
+            screen = Outputs.focusedScreen();
             field.text = "";
             root.wrong = false;
             prepareOpen(null);

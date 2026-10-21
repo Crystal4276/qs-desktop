@@ -31,7 +31,7 @@ OverlayPopup {
     }
 
     function open(): void {
-        screen = Quickshell.screens.find(s => s.name === Compositor.focusedOutput) ?? Quickshell.screens[0];
+        screen = Outputs.focusedScreen();
         Wallpapers.refresh();
         if (!tabs.some(t => t.key === tab))
             tab = "simple";

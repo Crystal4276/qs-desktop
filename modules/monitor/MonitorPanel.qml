@@ -70,7 +70,7 @@ OverlayPopup {
             close();
             return;
         }
-        screen = Quickshell.screens.find(s => s.name === Compositor.focusedOutput) ?? Quickshell.screens[0];
+        screen = Outputs.focusedScreen();
         prepareOpen(null);
         search.text = "";
         select(-1);

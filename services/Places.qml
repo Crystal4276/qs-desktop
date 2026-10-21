@@ -95,7 +95,7 @@ Singleton {
                     // Entités XML (nommées et numériques, `&#39;` selon l'application), en une passe (sinon « &amp;lt; » serait
                     // décodé deux fois), puis l'encodage de l'URI.
                     path = decodeURIComponent(href.slice("file://".length).replace(/&(amp|lt|gt|quot|apos|#x[0-9a-f]+|#[0-9]+);/gi,
-                        (e, n) => n[0] === "#" ? String.fromCodePoint(Number(`0${n.slice(1)}`))
+                        (e, n) => n[0] === "#" ? (Number(`0${n.slice(1)}`) <= 0x10ffff ? String.fromCodePoint(Number(`0${n.slice(1)}`)) : e)
                             : ({ amp: "&", lt: "<", gt: ">", quot: "\"", apos: "'" })[n.toLowerCase()]));
                 } catch (e) {
                     continue;
