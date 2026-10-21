@@ -17,6 +17,19 @@ Singleton {
     // Écran dont la barre accepte le clavier « à la demande » ("" : aucune) : celle de l'horloge survolée ou du calendrier épinglé.
     property string keyboardScreen: ""
 
+    // Un popup inscrit est épinglé, sauf l'aperçu d'une carte du tray (`previewing` vrai, Panel.qml) : pas d'aperçu par-dessus.
+    readonly property bool popupPinned: openList.some(p => p.previewing !== true)
+    // Bouton du tray sous le pointeur (TrayButton.qml) : un aperçu reste ouvert tant que le pointeur est sur l'un d'eux, jusqu'à
+    // ce que l'aperçu du bouton survolé le remplace.
+    property Item hoveredTrayButton: null
+
+    function setTrayHover(button: Item, hovered: bool): void {
+        if (hovered)
+            hoveredTrayButton = button;
+        else if (hoveredTrayButton === button)
+            hoveredTrayButton = null;
+    }
+
     // Fermeture des popups (ouverture d'un autre, appui sur une barre), sauf ceux de `keep`.
     signal closePopups(var keep)
 

@@ -10,8 +10,9 @@ import qs.config
 // appui à côté du cadre, sur une barre ou sur un autre écran, ou par Échap.
 // Aperçu (ta demande du 2026-10-21, comme l'horloge) : `preview(item, boutons)` l'ouvre au survol de l'icône, sans clavier (la
 // fenêtre où l'on tape le garde) ni pointeur hors du cadre (clics et survols atteignent les fenêtres) ; fermé quand le pointeur
-// quitte l'icône et le cadre. Un clic sur l'icône ou dans le cadre l'épingle : il prend alors le clavier et se comporte comme
-// ouvert au clic. Pas d'aperçu par-dessus un autre popup épinglé.
+// quitte le cadre et les icônes du tray. Un clic sur l'icône ou dans le cadre l'épingle : il prend alors le clavier et se
+// comporte comme ouvert au clic. Pas d'aperçu par-dessus un autre popup épinglé, ni après une fermeture (Échap, clic sur
+// l'icône…) tant que le pointeur reste sur l'icône.
 OverlayPopup {
     id: root
 
@@ -34,22 +35,49 @@ OverlayPopup {
         if (!beginOpen(item))
             return;
         ownerButtons = buttons;
+        engaged = true;
         openUnder(item);
     }
 
     property bool previewing: false
+    // Fermé pointeur sur l'icône : pas d'aperçu avant que le pointeur l'ait quittée.
+    property bool previewSuppressed: false
+    // Ouverture voulue : épinglé, ou pointeur entré dans le cadre de l'aperçu (centre de notifications : marquées vues).
+    property bool engaged: false
 
     // Survol de `item` (TrayButton.qml, qui le déclare en `hovered`) ; `buttons` : comme pour toggle().
     function preview(item: Item, buttons: int): void {
-        if (visible || BarState.openList.some(p => !p.previewing))
+        if (visible || BarState.popupPinned)
             return;
         prepareOpen(item);
         ownerButtons = buttons;
+        engaged = false;
         previewing = true;
         openUnder(item);
     }
 
-    onVisibleChanged: if (!visible) previewing = false
+    onVisibleChanged: {
+        if (visible)
+            return;
+        previewing = false;
+        previewSuppressed = button?.hovered ?? false;
+    }
+    // Épinglé depuis l'aperçu : clavier exclusif, focus redemandé pour l'élément d'entrée.
+    onPreviewingChanged: {
+        if (previewing || !visible)
+            return;
+        engaged = true;
+        initialFocus?.forceActiveFocus();
+    }
+
+    Connections {
+        target: root.button
+        ignoreUnknownSignals: true   // panneau audio : bouton sans `hovered`
+        function onHoveredChanged() {
+            if (!root.button.hovered)
+                root.previewSuppressed = false;
+        }
+    }
 
     WlrLayershell.namespace: "quickshell-panel"
     WlrLayershell.keyboardFocus: previewing ? WlrKeyboardFocus.None : WlrKeyboardFocus.Exclusive
@@ -65,7 +93,7 @@ OverlayPopup {
     // Aperçu : fermé une fois le pointeur hors de l'icône et du cadre (délai bref : passage de l'une à l'autre).
     Timer {
         interval: Theme.panel.previewGrace
-        running: root.visible && root.previewing && !frameHover.hovered && !(root.button?.hovered ?? false)
+        running: root.visible && root.previewing && !frameHover.hovered && BarState.hoveredTrayButton === null
         onTriggered: root.close()
     }
 
@@ -100,6 +128,7 @@ OverlayPopup {
 
         HoverHandler {
             id: frameHover
+            onHoveredChanged: if (hovered) root.engaged = true
         }
     }
 }
