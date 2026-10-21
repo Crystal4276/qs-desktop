@@ -13,6 +13,8 @@ import qs.config
 // quitte le cadre et les icônes des modules natifs du tray. Un clic sur l'icône ou dans le cadre l'épingle : il prend alors le clavier et se
 // comporte comme ouvert au clic. Pas d'aperçu par-dessus un autre popup épinglé, ni après une fermeture (Échap, clic sur
 // l'icône…) tant que le pointeur reste sur l'icône.
+// Épinglé : fermé aussi quand le pointeur est resté `autoCloseDelay` hors du cadre et de l'icône (ta demande du 2026-10-21, comme
+// le calendrier et le menu), une fois entré dans l'un d'eux ; jamais pendant une saisie (champ non vide qui a le focus).
 OverlayPopup {
     id: root
 
@@ -36,6 +38,7 @@ OverlayPopup {
             return;
         ownerButtons = buttons;
         wasPinned = true;
+        pointerEntered = item.hovered === true;
         openUnder(item);
     }
 
@@ -47,6 +50,9 @@ OverlayPopup {
     // Épinglé pendant cette ouverture (centre de notifications : marquées vues seulement alors, pas après un simple aperçu, même
     // traversé par le pointeur).
     property bool wasPinned: false
+    // Pointeur entré dans le cadre ou sur l'icône depuis l'ouverture : la fermeture automatique peut compter.
+    property bool pointerEntered: false
+    readonly property bool typing: frame.focusedItem?.cursorPosition !== undefined && (frame.focusedItem?.text ?? "") !== ""
 
     // Survol de `item` (TrayButton.qml, qui le déclare en `hovered`) ; `buttons` : comme pour toggle().
     function preview(item: Item, buttons: int): void {
@@ -55,6 +61,7 @@ OverlayPopup {
         prepareOpen(item);
         ownerButtons = buttons;
         wasPinned = false;
+        pointerEntered = true;
         previewing = true;
         openUnder(item);
     }
@@ -77,7 +84,9 @@ OverlayPopup {
         target: root.button
         ignoreUnknownSignals: true   // panneau audio : bouton sans `hovered`
         function onHoveredChanged() {
-            if (!root.button.hovered)
+            if (root.button.hovered)
+                root.pointerEntered = true;
+            else
                 root.previewSuppressed = false;
         }
     }
@@ -100,6 +109,12 @@ OverlayPopup {
         onTriggered: root.close()
     }
 
+    Timer {
+        interval: Theme.panel.autoCloseDelay
+        running: root.pinned && root.pointerEntered && !root.typing && !frameHover.hovered && !(root.button?.hovered ?? false)
+        onTriggered: root.close()
+    }
+
     PanelFrame {
         id: frame
 
@@ -116,7 +131,20 @@ OverlayPopup {
     }
 
     // Au-dessus du cadre : survol vu avant ses enfants (un enfant qui accepte le survol, `hoverEnabled`, le cacherait à un
-    // HoverHandler du cadre) ; en aperçu, un appui l'épingle puis atteint l'élément visé.
+    // HoverHandler du cadre).
+    Item {
+        x: frame.x
+        y: frame.y
+        width: frame.width
+        height: frame.height
+
+        HoverHandler {
+            id: frameHover
+            onHoveredChanged: if (hovered) root.pointerEntered = true
+        }
+    }
+
+    // Aperçu : un appui dans le cadre l'épingle, puis atteint l'élément visé.
     MouseArea {
         x: frame.x
         y: frame.y
@@ -127,10 +155,6 @@ OverlayPopup {
         onPressed: mouse => {
             root.previewing = false;
             mouse.accepted = false;
-        }
-
-        HoverHandler {
-            id: frameHover
         }
     }
 }
