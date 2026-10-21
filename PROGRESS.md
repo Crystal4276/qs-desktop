@@ -1334,7 +1334,8 @@ onglet A.
   polkit inscrit sans erreur.
 - À tester à la main : `pkexec true` (dialogue polkit), chaque raccourci ci-dessus, veille à 300 s, montage d'une clé USB,
   `restore` puis `takeover` à nouveau.
-- Reste : lien `~/.config/quickshell/desktop` cassé (pointe vers `qs-dektop`) ; démarrage automatique = phase 10 (config Sway).
+- Lien `~/.config/quickshell/desktop` corrigé (il pointait vers `qs-dektop`, faute de frappe) : `qs -c desktop` fonctionne.
+- Reste : démarrage automatique = phase 10 (config Sway).
 
 ## Prochaine étape
 
