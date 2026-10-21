@@ -170,6 +170,7 @@ Singleton {
     // valeurs reprises de la barre, du calendrier et du lanceur (THEME.md § 3 « Panneaux »).
     readonly property QtObject panel: QtObject {
         readonly property int gap: 10                       // sous la pilule, comme le calendrier
+        readonly property int previewGrace: 300             // ms : aperçu au survol (tray), pointeur hors de l'icône et de la carte → fermeture (passage de l'une à l'autre)
         readonly property int width: 500                    // largeur du lanceur
         readonly property color background: root.color.mantle
         readonly property int border: 1
@@ -268,7 +269,8 @@ Singleton {
         readonly property color menuLogo: root.color.green
         readonly property color menuBackground: root.color.mantle
         readonly property color menuActiveBackground: root.color.green
-        readonly property color highlightText: root.color.mantle   // survol en contrastes inversés (bouton Arch, mises à jour)
+        readonly property color highlightText: root.color.mantle   // survol en contrastes inversés (bouton Arch, mises à jour, horloge)
+        readonly property color statsHighlight: root.module.memory // survol de la pilule GPU / CPU / mémoire, en bloc (ta demande du 2026-10-21)
     }
 
     // Glyphes (INVENTORY.md § 1, planche docs/reference/glyphs.png), avec leur police

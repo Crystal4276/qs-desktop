@@ -1292,6 +1292,22 @@ onglet A.
   soulignement du champ en `red`. Fichiers récents vides : « No recent files » au même format, une fois la liste vérifiée.
 - Polkit : un raccourci pressé pendant une demande l'annule — gardé (ton choix).
 
+### Survols de la barre et aperçu des cartes du tray (2026-10-21, ta demande)
+
+- Pilule GPU / CPU / mémoire : au survol de n'importe quel point, fond `green` (couleur de la mémoire) sur toute la pilule, textes et
+  icônes `mantle`, comme le bouton Arch (`Pill.highlightColor`, choisi par `pillHighlight` des modules).
+- Horloge (avec ou sans date) : survol, ou calendrier épinglé, → fond `yellow`, texte `mantle`.
+- Tray (NordVPN, réseau, Wi-Fi, disques, Bluetooth, notifications ; tes choix) : survol de l'icône → aperçu de sa carte, **sans
+  clavier** (la fenêtre où tu tapes le garde) ; fermé quand le pointeur quitte l'icône et la carte (300 ms pour passer de l'une à
+  l'autre) ; survol d'une autre icône → sa carte remplace l'aperçu. Clic sur l'icône ou dans la carte → épinglée : clavier, et
+  fermeture comme avant (clic à côté, Échap). Clic sur l'icône d'une carte épinglée → fermée, pas d'aperçu tant que le pointeur reste
+  dessus. Pas d'aperçu par-dessus un popup épinglé (menu, réglages, calendrier, menu d'application du tray). Icônes d'applications
+  (menus StatusNotifier) et engrenage : inchangés.
+- Vérifié sur banc (Sway isolé, pointeur virtuel) : surbrillances (captures), aperçu, bascule cloche → Bluetooth, fermeture en
+  sortant, glissement icône → carte, épinglage par clic dans la carte et sur l'icône, re-clic, ré-entrée, horloge épinglée.
+- À tester à la main : saisie au clavier après épinglage par clic dans la carte (mot de passe Wi-Fi, recherche NordVPN) ; frappe dans
+  un terminal pendant qu'un aperçu est ouvert (le clavier doit rester au terminal) ; trajet naturel icône → carte.
+
 ## Prochaine étape
 
 Phase 9 — parité Hyprland (tests à faire ensemble dans une session Hyprland : voir « Compatibilité Hyprland »).

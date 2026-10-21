@@ -147,6 +147,9 @@ Variants {
                     // Visible si l'un de ses modules veut s'afficher. Pas d'après la largeur de la rangée : une pilule
                     // cachée rend ses modules invisibles pour la mise en page, elle ne réapparaîtrait jamais.
                     visible: Array.from({ length: pillModules.count }, (_, i) => pillModules.itemAt(i)).some(l => l?.wanted)
+                    // Survol en bloc : couleur du premier module qui en demande un (statistiques, InfoModule.qml).
+                    highlightColor: Array.from({ length: pillModules.count }, (_, i) => pillModules.itemAt(i)?.item)
+                        .find(m => m?.pillHighlight?.a > 0)?.pillHighlight ?? "transparent"
 
                     Repeater {
                         id: pillModules
@@ -171,6 +174,12 @@ Variants {
                                 target: slot.item
                                 property: "leading"
                                 value: !Array.from({ length: slot.index }, (_, i) => pillModules.itemAt(i)).some(l => l?.wanted)
+                            }
+                            Binding {
+                                when: slot.item !== null && slot.item.pillHighlighted !== undefined
+                                target: slot.item
+                                property: "pillHighlighted"
+                                value: pill.highlighted
                             }
                             // Dernier module affiché de la pilule (InfoModule : seul à garder un padding droit).
                             Binding {

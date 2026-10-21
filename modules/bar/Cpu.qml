@@ -6,6 +6,7 @@ import qs.services
 // valeur de 0 à 99 % (largeur fixe et minimale, ta demande du 2026-10-20). Clic : panneau de statistiques système.
 InfoModule {
     color: Theme.module.cpu
+    pillHighlight: Theme.module.statsHighlight
     segments: [[Theme.font.inlineIcons, Theme.icon.cpu], [Theme.font.text, ` ${Math.min(SystemStats.cpuUsage, 99)}%`, Array.from({ length: 100 }, (_, i) => ` ${i}%`)]]
     onClicked: Monitor.toggle()
 }
