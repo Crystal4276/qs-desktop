@@ -49,8 +49,13 @@ OverlayPopup {
         return (category === "all" ? Apps.byName : Apps.byCategory[category] ?? []).map(appItem);
     }
 
-    // Liste des catégories recréée (applications relues) : une ligne détruite sous le pointeur ne signale pas sa sortie.
-    onCategoriesChanged: hoveredCategory = ""
+    // Liste des catégories recréée (applications relues) : une ligne détruite sous le pointeur ne signale pas sa sortie. Catégorie
+    // choisie disparue (sa dernière application retirée) : toutes les applications, recherche en cours gardée.
+    onCategoriesChanged: {
+        hoveredCategory = "";
+        if (!categories.some(c => c.key === category))
+            category = "all";
+    }
 
     // Applications relues (paquet installé ou retiré) : le menu contextuel pourrait viser une entrée disparue.
     Connections {
@@ -63,7 +68,13 @@ OverlayPopup {
     // Élément choisi (clavier, souris : `choose`) : la sélection le suit quand la liste change d'elle-même (fichiers récents relus,
     // applications installées). Rien de choisi ("") : la sélection garde sa place (liste qui se remplit au démarrage).
     property string selectedId: ""
-    onSelectedChanged: Qt.callLater(() => list.positionViewAtIndex(selected, ListView.Contain))   // après la mise à jour du modèle
+    // Dernier choix au clavier : la liste défile pour montrer la sélection (après la mise à jour du modèle). Choix à la souris : pas
+    // de défilement, la ligne visée ne doit pas bouger sous le pointeur.
+    property bool keyboardChoice: false
+    onSelectedChanged: {
+        if (keyboardChoice)
+            Qt.callLater(() => list.positionViewAtIndex(selected, ListView.Contain));
+    }
     onItemsChanged: {
         const i = selectedId === "" ? -1 : items.findIndex(item => item.id === selectedId);
         if (i >= 0) {
@@ -75,9 +86,10 @@ OverlayPopup {
             selectedId = items[selected]?.id ?? "";   // élément disparu : celui qui prend sa place est suivi
     }
 
-    function choose(index: int): void {
+    function choose(index: int, keyboard: bool): void {
         if (index < 0 || index >= items.length)   // ligne en cours de retrait
             return;
+        keyboardChoice = keyboard;
         selected = index;
         selectedId = items[index]?.id ?? "";
     }
@@ -117,7 +129,7 @@ OverlayPopup {
         if (row && !contextEntry && row.index >= 0 && items[row.index]?.id === row.modelData.id
                 && (pane !== "apps" || selected !== row.index)) {
             pane = "apps";
-            choose(row.index);
+            choose(row.index, false);
         }
     }
 
@@ -162,6 +174,7 @@ OverlayPopup {
         category = "all";
         pane = "apps";
         selected = 0;
+        keyboardChoice = false;
         aiming = false;
         hoveredCategory = "";
         hoveredRow = null;
@@ -186,7 +199,7 @@ OverlayPopup {
 
     function select(index: int): void {
         if (items.length > 0)
-            choose(Math.max(0, Math.min(index, items.length - 1)));
+            choose(Math.max(0, Math.min(index, items.length - 1)), true);
     }
 
     function activate(item: var): void {
@@ -244,6 +257,12 @@ OverlayPopup {
 
     WlrLayershell.namespace: "quickshell-menu"
     frameItem: frame
+    // Recherche effacée à la fermeture : le menu caché ne recalcule pas ses résultats (historique changé par un lancement), et la
+    // liste complète est reconstruite maintenant plutôt qu'à la prochaine ouverture.
+    onClosing: {
+        search.text = "";
+        category = "all";
+    }
 
     // Ligne de liste (style nwg-menu) : icône, nom, description facultative ; survol ou sélection : fond `surface0` (survol des panneaux).
     component MenuRow: Rectangle {
@@ -559,7 +578,7 @@ OverlayPopup {
                                         root.afterMove(() => {
                                             if (root.hoveredRow === appRow && !root.contextEntry) {
                                                 root.pane = "apps";
-                                                root.choose(index);
+                                                root.choose(index, false);
                                             }
                                         });
                                 }

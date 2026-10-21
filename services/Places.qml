@@ -108,7 +108,10 @@ Singleton {
                     time: Date.parse(m[1].match(/\b(?:modified|visited)="([^"]*)"/)?.[1] ?? "") || 0
                 });
             }
-            root.parsed = list.sort((a, b) => b.time - a.time);
+            // Un fichier par chemin, le plus récent (deux signets du même fichier, encodés autrement par deux applications) :
+            // les identifiants de la liste du menu doivent être uniques.
+            const seen = new Set();
+            root.parsed = list.sort((a, b) => b.time - a.time).filter(f => !seen.has(f.path) && seen.add(f.path));
             root.checkExists();
         }
     }
