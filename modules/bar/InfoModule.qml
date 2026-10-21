@@ -20,9 +20,9 @@ Item {
     property bool held: false
     readonly property alias hovered: hover.hovered
     readonly property bool ownHighlight: highlightOnHover && (hovered || held)
-    // Pilule survolée en bloc (Bar.qml) : `pillHighlight` en donne la couleur (transparent : pas de survol en bloc), la pilule
+    // Pilule survolée en bloc (Bar.qml) : `pillHighlight` en donne la couleur (null : pas de survol en bloc), la pilule
     // dessine le fond et met `pillHighlighted` ; le texte passe en `mantle`.
-    property color pillHighlight: "transparent"
+    property var pillHighlight: null
     property bool pillHighlighted: false
     readonly property bool highlighted: ownHighlight || pillHighlighted
 

@@ -17,9 +17,9 @@ Panel {
     switchChecked: !Notifs.doNotDisturb
     onSwitchToggled: checked => Notifs.doNotDisturb = !checked
 
-    // Pas après un simple aperçu au survol de la cloche (Panel.qml, `engaged`).
+    // Pas après un simple aperçu au survol de la cloche (Panel.qml, `wasPinned`).
     onVisibleChanged: {
-        if (!visible && engaged)
+        if (!visible && wasPinned)
             Notifs.markSeen();
     }
 
