@@ -1297,17 +1297,30 @@ onglet A.
 - Pilule GPU / CPU / mémoire : au survol de n'importe quel point, fond `green` (couleur de la mémoire) sur toute la pilule, textes et
   icônes `mantle`, comme le bouton Arch (`Pill.highlightColor`, choisi par `pillHighlight` des modules).
 - Horloge (avec ou sans date) : survol, ou calendrier épinglé, → fond `yellow`, texte `mantle`.
-- Tray (NordVPN, réseau, Wi-Fi, disques, Bluetooth, notifications ; tes choix) : survol de l'icône → aperçu de sa carte, **sans
-  clavier** (la fenêtre où tu tapes le garde) ; fermé quand le pointeur quitte l'icône et la carte (300 ms pour passer de l'une à
-  l'autre) ; survol d'une autre icône → sa carte remplace l'aperçu. Clic sur l'icône ou dans la carte → épinglée : clavier, et
-  fermeture comme avant (clic à côté, Échap). Clic sur l'icône d'une carte épinglée → fermée, pas d'aperçu tant que le pointeur reste
-  dessus. Pas d'aperçu par-dessus un popup épinglé (menu, réglages, calendrier, menu d'application du tray). Icônes d'applications
-  (menus StatusNotifier) et engrenage : inchangés.
-- Vérifié sur banc (Sway isolé, pointeur virtuel) : surbrillances (captures), aperçu, bascule cloche → Bluetooth, fermeture en
-  sortant, glissement icône → carte, épinglage par clic dans la carte et sur l'icône, re-clic, ré-entrée, horloge épinglée.
-- À tester à la main : saisie au clavier après épinglage par clic dans la carte (mot de passe Wi-Fi, recherche NordVPN) ; frappe dans
-  un terminal pendant qu'un aperçu est ouvert (le clavier doit rester au terminal) ; trajet naturel icône → carte.
-
+- Tray (NordVPN, réseau, Wi-Fi, disques, Bluetooth, notifications ; tes choix) : arrêt de **300 ms** sur l'icône → aperçu de sa
+  carte (pas en passant), **sans clavier** (la fenêtre où tu tapes le garde ; vérifié : Échap atteint la fenêtre) et sans capter
+  les clics hors du cadre (ils atteignent les fenêtres, masque d'entrée). Fermé **300 ms** après que le pointeur a quitté la carte
+  et les icônes natives du tray ; glisser d'une icône à l'autre garde la carte jusqu'à ce que la suivante la remplace. Clic sur
+  l'icône ou dans la carte → épinglée : clavier (Échap vérifié), fermeture comme avant (clic à côté, Échap). Fermée pointeur sur
+  l'icône (clic, Échap…) → pas d'aperçu tant que le pointeur y reste. Pas d'aperçu par-dessus un popup épinglé (menu, réglages,
+  calendrier, menu d'application du tray ; sauf les menus natifs ouverts par `display()`, dont la fermeture n'est pas connue).
+  Icônes d'applications et engrenage : inchangés.
+- Aperçu « léger » : recherche Bluetooth et scan Wi-Fi seulement une fois la carte épinglée (vérifié sur l'adaptateur :
+  `Discovering` faux en aperçu, vrai épinglé) ; notifications marquées vues seulement après épinglage (un simple aperçu garde le
+  point bleu). Les lectures (statut NordVPN, détails `nmcli`, Tailscale / ZeroTier) restent : elles remplissent la carte affichée.
+- **Durées à valider** : 300 ms d'arrêt avant l'aperçu, 300 ms avant sa fermeture (`Theme.panel.previewDelay` / `previewGrace`,
+  THEME.md § 3 « Panneaux »). Pas dans ta charte : choisies par moi.
+- Revue en boucle (`/code-review high`, 5 passes) : passe 1 délai d'intention, clics transmis pendant l'aperçu, survol du cadre vu
+  avant ses enfants, survol de l'horloge partagé ; passe 2 suppression après toute fermeture, balayage du tray sans aperçus en
+  cascade, état épinglé explicite (`BarState.popupPinned`), survol en bloc seulement si tous les modules de la pilule le demandent,
+  délai repris quand un popup bloquant se ferme ; passe 3 « vues » seulement après épinglage, icône masquée sous le pointeur, plus
+  de couleur littérale ; passe 4 recherches radio réservées aux cartes épinglées ; passe 5 recherche Bluetooth arrêtée si la barre
+  est détruite carte épinglée. Écartés : fusion avec la machine d'états du calendrier (remaniement), lectures de l'aperçu. **Boucle
+  terminée** (passe 5 : plus que des détails).
+- Banc : Sway isolé + pointeur **et clavier** virtuels (pywayland, scratchpad). Piège : la veille de l'instance de test éteint
+  l'écran virtuel (`grim` bloque) → `inhibit_idle` sur une fenêtre du banc, ou `swaymsg output '*' power on`.
+- À tester à la main : saisie au clavier après épinglage (mot de passe Wi-Fi, recherche NordVPN) ; trajet naturel icône → carte ;
+  ressenti des deux délais.
 ## Prochaine étape
 
 Phase 9 — parité Hyprland (tests à faire ensemble dans une session Hyprland : voir « Compatibilité Hyprland »).

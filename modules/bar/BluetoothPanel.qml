@@ -22,6 +22,13 @@ Panel {
         if (!visible)
             Bluez.cancelPairing();
     }
+    // Barre détruite panneau épinglé (écran retiré) : ni recherche ni appairage sans panneau.
+    Component.onDestruction: {
+        if (!pinned)
+            return;
+        Bluez.scanning = false;
+        Bluez.cancelPairing();
+    }
 
     function stateText(device: BluetoothDevice): string {
         if (device.pairing)
