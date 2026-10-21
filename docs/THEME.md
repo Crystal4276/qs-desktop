@@ -282,7 +282,7 @@ Remplace le tooltip calendrier. Aucune valeur nouvelle : tout est repris de la b
 | Jours | Inter 20 px, `text` ; mois voisins `surface2` ; cases de 40 px | taille min. du bouton Arch |
 | Aujourd'hui | fond `green`, texte `mantle` en gras, rayon 10 px | sélection du lanceur et de nwg-menu |
 | Flèches (épinglé) | `U+F053` / `U+F054`, Symbols Nerd Font Mono 20 px, `text`, `yellow` au survol | — |
-| Fermeture automatique (épinglé) | pointeur hors du calendrier et de l'horloge pendant **5 s** | ta demande du 2026-10-16 (durée choisie par moi, à ajuster) |
+| Fermeture automatique (épinglé) | pointeur hors du calendrier et de l'horloge pendant **2 s** | ta demande du 2026-10-16 ; 2 s : ton choix du 2026-10-21 (5 s avant) |
 
 ## 4. Notifications (Dunst)
 
@@ -384,7 +384,9 @@ boutons lock/logout/reboot/power : survol `rgba(255,255,255,0.1)` + bordure `ove
 Menu QML (phase 8, disposition de Cinnamon) : texte Inter 20 px, recherche 24 px, descriptions 16 px `subtext0` ; cadre : padding et
 écarts des panneaux (15 / 10 px) ; colonne des applications : largeur du lanceur (500 px) ; survol/sélection : fond `surface0` comme les
 cartes des panneaux, texte inchangé (ton choix du 2026-10-21, le `green` de nwg-menu jugé trop fort) ; boutons de session : boutons
-carrés du panneau de réglages (fond `surface0`, survol `surface1`, coins 10 px, tes SVG en 32 px ; ton choix du 2026-10-21) ; curseur de défilement du thème GTK : gouttière 25 px, bordure transparente 4 px, au moins 24 px de haut.
+carrés du panneau de réglages (fond `surface0`, survol `surface1`, coins 10 px, tes SVG en 32 px ; ton choix du 2026-10-21) ;
+liste vide (ton choix du 2026-10-21) : au centre, glyphe loupe (recherche) ou `nf-md-history` (fichiers récents, nouveau) 48 px
+`subtext0`, message Inter 20 px `text`, astuce 16 px `subtext0` ; recherche sans résultat : soulignement du champ en `red` ; curseur de défilement du thème GTK : gouttière 25 px, bordure transparente 4 px, au moins 24 px de haut.
 Colonne de gauche de 270 px au plus (les 180 px de Cinnamon pour un texte de 10 pt, ramenés au texte de 20 px ; ton choix du
 2026-10-17). Ton choix du 2026-10-17 : les deux tailles d'icônes de nwg-menu réparties sur la disposition de Cinnamon — **48 px pour les applications**
 (nom + description sur deux lignes), **24 px pour les catégories, dossiers et favoris** (nwg-menu : 48 px pour ses catégories).

@@ -135,7 +135,7 @@ Singleton {
         readonly property color otherMonth: root.color.surface2
         readonly property color today: root.color.green
         readonly property color todayText: root.color.mantle
-        readonly property int autoCloseDelay: 5000       // ms : épinglé, pointeur hors du calendrier et de l'horloge → fermeture
+        readonly property int autoCloseDelay: 2000       // ms : épinglé, pointeur hors du calendrier et de l'horloge → fermeture (ton choix du 2026-10-21, 5 s avant)
     }
 
     // § 3 — Menus du tray : copie des menus GTK du thème catppuccin-mocha-green (gtk-3.0/gtk-dark.css), mesurée sur capture ;
@@ -308,6 +308,7 @@ Singleton {
         readonly property string hdr: "\u{f0d7d}"              // nf-md-hdr
         readonly property string vrr: "\u{f1104}"              // nf-md-monitor_shimmer
         readonly property string airplane: "\u{f001d}"         // nf-md-airplane
+        readonly property string history: "\u{f02da}"          // nf-md-history : menu, aucun fichier récent (2026-10-21)
 
         // font.inlineIcons (Hack Nerd Font)
         readonly property string updates: "\u{f01a7}"
@@ -489,6 +490,7 @@ Singleton {
         readonly property color selected: root.panel.rowHover
         readonly property int searchUnderline: 1
         readonly property color searchUnderlineColor: root.color.overlay2
+        readonly property color searchNoResults: root.color.red   // recherche sans résultat (ton choix du 2026-10-21)
         readonly property int searchRadius: 10
         readonly property int scrollbarWidth: 25
         readonly property color scrollbar: root.color.overlay0
@@ -505,7 +507,7 @@ Singleton {
         // Colonne de gauche au plus : 180 px de Cinnamon pour un texte de 10 pt (13,3 px), ramenés au texte de 20 px (ton choix
         // du 2026-10-17) ; au-delà, les noms de favoris sont abrégés.
         readonly property int sidebarMaxWidth: 270
-        // Pointeur hors du menu → fermeture (ta demande du 2026-10-21) : même délai que le calendrier épinglé.
+        // Pointeur hors du menu → fermeture (ta demande du 2026-10-21 : 2 s), comme le calendrier épinglé.
         readonly property int autoCloseDelay: root.calendar.autoCloseDelay
         // Curseur de défilement du thème GTK (catppuccin) : bordure transparente de 4 px, au moins 24 px de haut, arrondi complet.
         readonly property int scrollbarInset: 4
