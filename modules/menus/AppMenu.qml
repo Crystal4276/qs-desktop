@@ -246,7 +246,7 @@ OverlayPopup {
     WlrLayershell.namespace: "quickshell-menu"
     frameItem: frame
 
-    // Ligne de liste (style nwg-menu) : icône, nom, description facultative ; survol ou sélection : fond `green`, texte `mantle`.
+    // Ligne de liste (style nwg-menu) : icône, nom, description facultative ; survol ou sélection : fond `surface0` (survol des panneaux).
     component MenuRow: Rectangle {
         id: row
 
@@ -286,7 +286,7 @@ OverlayPopup {
                     text: row.label
                     font.family: Theme.font.text
                     font.pixelSize: Theme.font.appMenu
-                    color: row.highlighted ? Theme.appMenu.selectedText : Theme.appMenu.text
+                    color: Theme.appMenu.text
                     elide: Text.ElideRight
                 }
 
@@ -296,7 +296,7 @@ OverlayPopup {
                     text: row.description
                     font.family: Theme.font.text
                     font.pixelSize: Theme.appMenu.descriptionFontSize
-                    color: row.highlighted ? Theme.appMenu.selectedText : Theme.appMenu.description
+                    color: Theme.appMenu.description
                     elide: Text.ElideRight
                 }
             }
@@ -342,15 +342,10 @@ OverlayPopup {
         }
     }
 
-    // Bouton de session : ton SVG, sans fond ; survol : `rgba(255,255,255,0.1)` et bordure `overlay0` (nwg-menu).
+    // Bouton de session : ton SVG sur un bouton carré du panneau de réglages (fond `surface0`, survol `surface1`, coins 10 px ; ton
+    // choix du 2026-10-21, nwg-menu : sans fond, survol rond).
     component SessionButton: QuickButton {
         activeFocusOnTab: false   // le clavier reste à la recherche (Entrée n'éteint jamais par surprise)
-        imageSize: Theme.appMenu.sessionIconSize
-        padding: Theme.appMenu.itemPadding
-        radius: Theme.appMenu.itemRadius
-        background: "transparent"
-        hoverBackground: Theme.appMenu.buttonHover
-        hoverBorder: Theme.appMenu.buttonHoverBorder
     }
 
     Rectangle {

@@ -332,7 +332,7 @@ Remplace le power menu (§ 6). Cadre des panneaux (§ 3), sans titre. Ligne du h
 `surface1`, coins 10 px, padding 6 px) avec tes 4 SVG en **32 px** (taille des icônes du tray ; 48 dans Rofi) ou un glyphe 24 px.
 Curseurs : glyphe 24 px (`text` ; luminosité `yellow`), curseur de volume, pourcentage Inter 16 px `subtext0`, flèche (bouton de panneau,
 `U+F054` / `U+F078`). Bascules en 2 colonnes : bouton de panneau, glyphe 24 px, titre Inter 20 px, sous-titre Inter 16 px `subtext0` ;
-activée : fond `green`, texte `mantle` (contraste inversé, comme la sélection du lanceur). Profils d'énergie : trois bascules sur une
+activée : fond `green`, texte `mantle` (contraste inversé, comme le bouton Arch actif). Profils d'énergie : trois bascules sur une
 ligne, glyphe au-dessus du titre (16 px). **Proposé, à valider** : ces tailles reprennent celles de la charte, aucune n'est inventée,
 mais leur combinaison est nouvelle.
 
@@ -359,7 +359,7 @@ au survol) ; dessous le corps Inter **16 px** `text` (ton choix, 20 px essayé),
 | Champ | placeholder « Search... » couleur `#D9E0EE`, soulignement 2 px `overlay0`, rayon 10 px, padding 8 px |
 | Liste | 1 colonne, espacement 4 px, pas de cycle |
 | Élément | padding 6 px, rayon 4 px, icône 24 px, texte marge 2 px, 2 px entre icône et texte (défaut Rofi) ; hauteur mesurée 49 px, pas de 53 px |
-| Élément sélectionné | fond `green` (`#a6e3a1`), texte `#1E1E2E`, rayon 10 px |
+| Élément sélectionné | Rofi : fond `green` (`#a6e3a1`), texte `#1E1E2E`, rayon 10 px. Lanceur QML (ton choix du 2026-10-21) : fond `surface0` comme le survol des cartes des panneaux, texte inchangé, rayon 10 px |
 | Police | Inter Regular **20 pt** (taille Pango) = 26,67 px : vérifié sur la capture (majuscules de 20 px, lignes de 53 px) ; à ne pas confondre avec les 20 px des panneaux |
 
 ## 6. Power menu (Rofi)
@@ -382,8 +382,9 @@ recherche : soulignement 1 px `overlay2`, rayon 10 px, 24 px ; barre de défilem
 boutons lock/logout/reboot/power : survol `rgba(255,255,255,0.1)` + bordure `overlay0`. Icônes : catégories 48 px, éléments 24 px.
 
 Menu QML (phase 8, disposition de Cinnamon) : texte Inter 20 px, recherche 24 px, descriptions 16 px `subtext0` ; cadre : padding et
-écarts des panneaux (15 / 10 px) ; colonne des applications : largeur du lanceur (500 px) ; boutons de session : tes SVG en 32 px (comme
-le panneau de réglages) ; curseur de défilement du thème GTK : gouttière 25 px, bordure transparente 4 px, au moins 24 px de haut.
+écarts des panneaux (15 / 10 px) ; colonne des applications : largeur du lanceur (500 px) ; survol/sélection : fond `surface0` comme les
+cartes des panneaux, texte inchangé (ton choix du 2026-10-21, le `green` de nwg-menu jugé trop fort) ; boutons de session : boutons
+carrés du panneau de réglages (fond `surface0`, survol `surface1`, coins 10 px, tes SVG en 32 px ; ton choix du 2026-10-21) ; curseur de défilement du thème GTK : gouttière 25 px, bordure transparente 4 px, au moins 24 px de haut.
 Colonne de gauche de 270 px au plus (les 180 px de Cinnamon pour un texte de 10 pt, ramenés au texte de 20 px ; ton choix du
 2026-10-17). Ton choix du 2026-10-17 : les deux tailles d'icônes de nwg-menu réparties sur la disposition de Cinnamon — **48 px pour les applications**
 (nom + description sur deux lignes), **24 px pour les catégories, dossiers et favoris** (nwg-menu : 48 px pour ses catégories).
@@ -394,7 +395,7 @@ Icônes Papirus : `applications-*` pour les catégories, `preferences-desktop` (
 
 Cadre des panneaux (`mantle`, bordure `overlay0`, rayon 20, padding 15) ; onglets et choix d'écran : boutons de panneau, le choisi
 en contrastes inversés (fond `green`, texte `mantle`, comme une bascule activée) ; vignettes arrondies (10 px), fond actuel entouré de
-`green` (marge 5 px, sélection du menu d'applications), vignette survolée ou au clavier entourée de `surface0`.
+`green` (marge 5 px, comme une bascule activée), vignette survolée ou au clavier entourée de `surface0`.
 Vignettes de 240 × 135 px (16:9), 4 par rangée, 3 rangées visibles (ton choix du 2026-10-17) ; panoramas et triptyques sur deux colonnes.
 
 ## 7 ter. Outil de capture (nouveau composant, phase 8b)
