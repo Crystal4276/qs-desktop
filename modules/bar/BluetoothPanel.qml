@@ -15,9 +15,10 @@ Panel {
     switchChecked: Bluez.enabled
     onSwitchToggled: checked => Bluez.setEnabled(checked)
 
-    // Fermer le panneau arrête la recherche et annule un appairage en cours (l'agent ne tourne jamais sans le panneau).
+    // Recherche : panneau épinglé seulement (pas pendant un aperçu au survol). Fermer le panneau l'arrête et annule un appairage
+    // en cours (l'agent ne tourne jamais sans le panneau).
+    onPinnedChanged: Bluez.scanning = pinned
     onVisibleChanged: {
-        Bluez.scanning = visible;
         if (!visible)
             Bluez.cancelPairing();
     }
