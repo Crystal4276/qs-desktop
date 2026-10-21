@@ -505,6 +505,8 @@ Singleton {
         // Colonne de gauche au plus : 180 px de Cinnamon pour un texte de 10 pt (13,3 px), ramenés au texte de 20 px (ton choix
         // du 2026-10-17) ; au-delà, les noms de favoris sont abrégés.
         readonly property int sidebarMaxWidth: 270
+        // Pointeur hors du menu → fermeture (ta demande du 2026-10-21) : même délai que le calendrier épinglé.
+        readonly property int autoCloseDelay: root.calendar.autoCloseDelay
         // Curseur de défilement du thème GTK (catppuccin) : bordure transparente de 4 px, au moins 24 px de haut, arrondi complet.
         readonly property int scrollbarInset: 4
         readonly property int scrollbarMinLength: 24

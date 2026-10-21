@@ -1274,10 +1274,17 @@ onglet A.
   l'ouverture suivante remettait tout à zéro) ; code mort retiré.
 - Passe 7 : colonnes du menu remises en haut à l'ouverture (petit écran : la colonne des catégories restait défilée) ; sélection remise
   à zéro tout de suite à chaque nouvelle liste (une flèche tapée juste après une lettre était écrasée). Question pour toi : un
-  raccourci (lanceur, menu…) pressé pendant une demande polkit l'annule, comme un clic à côté (règle « un seul popup ») — à garder ?
+  raccourci (lanceur, menu…) pressé pendant une demande polkit l'annule, comme un clic à côté (règle « un seul popup ») : gardé.
 - Passe 8 : rien de sérieux ; défilement à la molette encore animé arrêté avant de remettre une colonne en haut. **Boucle terminée.**
 - À tester à la main : première ouverture du menu après le démarrage de Quickshell (rapide) ; défilement au survol / au clavier ;
   menu et lanceur sur un petit écran (laptop).
+
+### Menu d'applications : fermeture automatique (2026-10-21, ta demande)
+
+- Pointeur sorti du cadre (barre, fenêtre, autre écran) et resté dehors 5 s (même délai que le calendrier épinglé) → fermeture.
+  Jamais pendant une recherche (un clic à côté ferme alors), ni sous le menu contextuel, ni si le pointeur n'est jamais entré
+  (ouverture au raccourci) ; une touche relance le délai. Vérifié sur banc (les trois cas).
+- Polkit : un raccourci pressé pendant une demande l'annule — gardé (ton choix).
 
 ## Prochaine étape
 
