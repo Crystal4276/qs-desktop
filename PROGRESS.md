@@ -1258,6 +1258,10 @@ onglet A.
   rien : ~200 ms par ouverture sur banc à trois écrans dans les deux cas, rendu logiciel du banc), préchargement du menu (sa création
   coûte 25 ms), icônes asynchrones (aucun gain mesuré). Négligeables : objets de ligne recréés à chaque frappe, pas de Page Haut/Bas
   approximatif quand des lignes n'ont pas de description.
+- Passe 3 (points mineurs) : colonne des catégories qui défile (petit écran) : la catégorie choisie au clavier reste visible (vérifié
+  en 1024 × 600) ; Haut / Bas ramènent en vue une sélection sortie par la molette ; saisie du lanceur effacée à la fermeture ;
+  Ctrl+G et Ctrl+[ ferment le lanceur (`kb-cancel` de Rofi) ; filtres des applications : listes recalculées seulement si le résultat
+  change. Négligeable : catégorie survolée au tout premier mouvement après l'ouverture, prise à l'arrêt du pointeur.
 
 ## Prochaine étape
 
