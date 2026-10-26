@@ -304,7 +304,13 @@ Singleton {
             required property BluetoothDevice modelData
             // Valeur fixée à la création, pas une liaison : mise à jour avant le gestionnaire, elle masquerait la transition.
             property int lastState: BluetoothDeviceState.Disconnected
-            Component.onCompleted: lastState = modelData.state
+            // Appareil qui vient d'être appairé ici : BlueZ le connecte souvent avant de le dire appairé (il n'était pas encore
+            // suivi) ; sa première connexion est annoncée quand même.
+            Component.onCompleted: {
+                lastState = modelData.state;
+                if (modelData.connected && agent.running && modelData.address === root.pairingAddress)
+                    connected();
+            }
             // Notification « Connected » en attente de la batterie (BlueZ la publie après la connexion) : remplacée par
             // « Connected 80% », comme ConnectionNotifier de blueman.
             property string notificationId: ""
@@ -338,6 +344,33 @@ Singleton {
                 Battery.notifyLow(modelData.name, percent, level);
             }
 
+            function connected(): void {
+                const device = modelData;
+                root.failed = root.withFlag(root.failed, device.address, false);
+                notificationId = "";
+                awaitingBattery = !device.batteryAvailable;
+                batteryWait.restart();
+                const sent = ++watch.sent;
+                const process = idSender.createObject(watch, { command: ["notify-send", "--print-id", "--app-name=Bluetooth",
+                    "--transient", `--icon=${device.icon || "bluetooth"}`, device.name, connectedBody()] });
+                process.done.connect(id => {
+                    if (sent !== watch.sent)
+                        return;
+                    watch.notificationId = id;
+                    watch.batteryArrived();
+                });
+                process.running = true;
+                checkBattery();
+            }
+
+            function disconnected(): void {
+                const device = modelData;
+                awaitingBattery = false;
+                Quickshell.execDetached(["notify-send", "--app-name=Bluetooth", "--transient", `--icon=${device.icon || "bluetooth"}`,
+                    device.name, "Disconnected"]);
+                root.setAudioCard(device.address, null);
+            }
+
             // Batterie attendue le temps d'affichage d'une notification normale : plus tard, la remplacer la réafficherait.
             Timer {
                 id: batteryWait
@@ -361,29 +394,10 @@ Singleton {
                 }
 
                 function onConnectedChanged(): void {
-                    const device = watch.modelData;
-                    if (device.connected) {
-                        root.failed = root.withFlag(root.failed, device.address, false);
-                        watch.notificationId = "";
-                        watch.awaitingBattery = !device.batteryAvailable;
-                        batteryWait.restart();
-                        const sent = ++watch.sent;
-                        const process = idSender.createObject(watch, { command: ["notify-send", "--print-id", "--app-name=Bluetooth",
-                            "--transient", `--icon=${device.icon || "bluetooth"}`, device.name, watch.connectedBody()] });
-                        process.done.connect(id => {
-                            if (sent !== watch.sent)
-                                return;
-                            watch.notificationId = id;
-                            watch.batteryArrived();
-                        });
-                        process.running = true;
-                        watch.checkBattery();
-                    } else {
-                        watch.awaitingBattery = false;
-                        Quickshell.execDetached(["notify-send", "--app-name=Bluetooth", "--transient", `--icon=${device.icon || "bluetooth"}`,
-                            device.name, "Disconnected"]);
-                        root.setAudioCard(device.address, null);
-                    }
+                    if (watch.modelData.connected)
+                        watch.connected();
+                    else
+                        watch.disconnected();
                 }
 
                 function onBatteryAvailableChanged(): void {
