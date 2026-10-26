@@ -158,7 +158,10 @@ OverlayPopup {
         }
     }
 
-    // Aperçu : un appui dans le cadre l'épingle, puis atteint l'élément visé.
+    // Aperçu : un appui dans le cadre l'épingle, puis atteint l'élément visé, sauf si `pinClickPasses` est faux (réglages :
+    // boutons d'alimentation sans confirmation, qu'un clic destiné à une fenêtre sous l'aperçu ne doit pas atteindre).
+    property bool pinClickPasses: true
+
     MouseArea {
         x: frame.x
         y: frame.y
@@ -168,7 +171,7 @@ OverlayPopup {
         acceptedButtons: Qt.AllButtons
         onPressed: mouse => {
             root.previewing = false;
-            mouse.accepted = false;
+            mouse.accepted = !root.pinClickPasses;
         }
     }
 }

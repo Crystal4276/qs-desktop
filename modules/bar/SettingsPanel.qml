@@ -23,6 +23,7 @@ Panel {
     property string expanded: ""   // "sink", "dnd" ou "" : liste de périphériques ou horaire du « ne pas déranger » déplié
 
     WlrLayershell.namespace: "quickshell-settings"
+    pinClickPasses: false   // aperçu : le premier clic épingle seulement (verrouiller, éteindre… sans confirmation)
 
     onVisibleChanged: if (!visible) expanded = ""   // en plus de celui de Panel.qml
 

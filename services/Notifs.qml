@@ -35,8 +35,9 @@ Singleton {
     // été par l'horaire (pas à la main). Réglé depuis le panneau de réglages, gardé dans un fichier d'état (départ :
     // `doNotDisturb` de hosts/*.json).
     readonly property bool scheduled: schedule.enabled
-    readonly property string scheduleFrom: schedule.from
-    readonly property string scheduleTo: schedule.to
+    // Toujours "HH:MM" (le fichier d'état ou hosts/*.json peuvent contenir "7:00") : format du champ d'heure.
+    readonly property string scheduleFrom: Settings.timeText(Settings.minutes(schedule.from))
+    readonly property string scheduleTo: Settings.timeText(Settings.minutes(schedule.to))
     readonly property bool quietHours: {
         const now = clock.hours * 60 + clock.minutes;
         const from = Settings.minutes(schedule.from), to = Settings.minutes(schedule.to);
@@ -65,8 +66,8 @@ Singleton {
         editing = true;
         schedule.enabled = enabled;
         if (f >= 0 && t >= 0) {
-            schedule.from = from;
-            schedule.to = to;
+            schedule.from = Settings.timeText(f);
+            schedule.to = Settings.timeText(t);
         }
         editing = false;
         scheduleFile.writeAdapter();

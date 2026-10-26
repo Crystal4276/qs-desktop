@@ -42,6 +42,12 @@ Singleton {
         return match ? Number(match[1]) * 60 + Number(match[2]) : -1;
     }
 
+    // Minutes depuis minuit → "HH:MM" ("" si négatif).
+    function timeText(minutes: int): string {
+        const pad = n => String(n).padStart(2, "0");
+        return minutes < 0 ? "" : `${pad(Math.floor(minutes / 60))}:${pad(minutes % 60)}`;
+    }
+
     // Pilules d'une barre : par description d'écran, sinon par rôle.
     // Renvoie { left: [[module, …], …], right: […] }.
     function barFor(description: string, primary: bool): var {

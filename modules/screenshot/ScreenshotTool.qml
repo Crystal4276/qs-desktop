@@ -71,11 +71,11 @@ LazyLoader {
                 id: noInput
             }
 
-            // Pas d'image figée au bout de 3 s (capture refusée, écran éteint) : outil fermé si c'est l'écran de départ, sinon cet
-            // écran ne bloque plus le pointeur (pas de zone morte invisible).
+            // Pas d'image figée 3 s après le début de la capture (capture refusée, écran éteint) : outil fermé si c'est l'écran de
+            // départ, sinon cet écran ne bloque plus le pointeur (pas de zone morte invisible).
             Timer {
                 interval: 3000
-                running: !view.hasContent
+                running: Screenshot.cursorHidden && !view.hasContent
                 onTriggered: {
                     if (win.home)
                         Screenshot.close();

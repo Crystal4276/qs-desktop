@@ -4,8 +4,8 @@ import qs.config
 
 // Bascule du panneau de réglages (tuile des réglages rapides de GNOME) : bouton de panneau (fond `surface0`, survol `surface1`,
 // coins 10 px) avec glyphe, titre et sous-titre ; activée : fond `green`, texte `mantle`.
-// `vertical` : glyphe au-dessus du titre (les trois profils d'énergie sur une ligne). Clic droit : `secondaryClicked` (réglages
-// de la bascule, comme « ne pas déranger » et son horaire).
+// `vertical` : glyphe au-dessus du titre (les trois profils d'énergie sur une ligne). Clic droit, touche Menu ou Maj+F10 :
+// `secondaryClicked` (réglages de la bascule, comme « ne pas déranger » et son horaire).
 Rectangle {
     id: root
 
@@ -33,6 +33,12 @@ Rectangle {
     Keys.onReturnPressed: root.clicked()
     Keys.onEnterPressed: root.clicked()
     Keys.onSpacePressed: root.clicked()
+    Keys.onPressed: event => {
+        if (event.key === Qt.Key_Menu || (event.key === Qt.Key_F10 && (event.modifiers & Qt.ShiftModifier))) {
+            root.secondaryClicked();
+            event.accepted = true;
+        }
+    }
 
     GridLayout {
         id: content
