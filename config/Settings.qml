@@ -37,6 +37,12 @@ Singleton {
     // ensuite réglées depuis le panneau de réglages et gardées dans un fichier d'état.
     readonly property var doNotDisturb: Object.assign({ schedule: true, from: "21:00", to: "07:00" }, config.doNotDisturb ?? {})
 
+    // Heure "HH:MM" ("9:5" accepté) → minutes depuis minuit ; -1 si elle est mal formée (veilleuse, « ne pas déranger »).
+    function minutes(time: string): int {
+        const match = /^([01]?\d|2[0-3]):([0-5]?\d)$/.exec(time ?? "");
+        return match ? Number(match[1]) * 60 + Number(match[2]) : -1;
+    }
+
     // Pilules d'une barre : par description d'écran, sinon par rôle.
     // Renvoie { left: [[module, …], …], right: […] }.
     function barFor(description: string, primary: bool): var {

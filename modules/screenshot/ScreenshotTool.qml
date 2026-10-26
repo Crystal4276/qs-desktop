@@ -35,13 +35,15 @@ LazyLoader {
                 return x2 > x1 && y2 > y1 ? { x: x1 - ox, y: y1 - oy, width: x2 - x1, height: y2 - y1 } : null;
             }
             property var hovered: null      // écran ou fenêtre sous le pointeur (coordonnées de cet écran)
+            property bool stalled: false    // pas d'image figée au bout de 3 s : surface laissée transparente au pointeur
 
             screen: modelData
             WlrLayershell.layer: WlrLayer.Overlay
             WlrLayershell.namespace: "quickshell-screenshot"
             // Clavier pris seulement une fois l'outil visible (image figée reçue). Pointeur pris dès l'ouverture : curseur vide
-            // (cursorHider) ; invisible, l'outil le bloque donc jusqu'aux images figées (3 s au plus).
+            // (cursorHider) ; invisible, l'outil le bloque donc jusqu'à l'image figée de cet écran, 3 s au plus (stalled).
             WlrLayershell.keyboardFocus: home && view.hasContent ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+            mask: stalled && !view.hasContent ? noInput : null
             exclusionMode: ExclusionMode.Ignore
             anchors {
                 top: true
@@ -56,19 +58,30 @@ LazyLoader {
             // n'apparaît donc pas sur l'image.
             // Capture commencée une fois le curseur masqué (Screenshot.pointerEntered).
             MouseArea {
+                id: cursorHider
                 anchors.fill: parent
-                visible: !view.hasContent
+                visible: !view.hasContent && !win.stalled
                 hoverEnabled: true
                 cursorShape: Qt.BlankCursor
                 onContainsMouseChanged: if (containsMouse) Screenshot.pointerEntered()
                 Component.onCompleted: Screenshot.surfaceCreated()
             }
 
-            // Pas d'image figée de l'écran de départ au bout de 3 s (capture refusée, écran éteint) : outil fermé.
+            Region {
+                id: noInput
+            }
+
+            // Pas d'image figée au bout de 3 s (capture refusée, écran éteint) : outil fermé si c'est l'écran de départ, sinon cet
+            // écran ne bloque plus le pointeur (pas de zone morte invisible).
             Timer {
                 interval: 3000
-                running: win.home && !view.hasContent
-                onTriggered: Screenshot.close()
+                running: !view.hasContent
+                onTriggered: {
+                    if (win.home)
+                        Screenshot.close();
+                    else
+                        win.stalled = true;
+                }
             }
 
             ScreencopyView {

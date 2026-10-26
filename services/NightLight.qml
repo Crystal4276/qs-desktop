@@ -5,11 +5,10 @@ import Quickshell
 import Quickshell.Io
 import qs.config
 
-// Veilleuse (Night Light de GNOME) : `gammastep` tourne tant qu'elle est activée, avec l'horaire et la température de la
-// config (`nightLight` dans hosts/*.json ; valeurs par défaut reprises de tes réglages GNOME). gammastep plutôt que wlsunset
-// (ta demande du 2026-10-26) : fondu d'environ 4 s à l'activation, à la désactivation et aux heures de l'horaire, là où
-// wlsunset change la température d'un coup. Activée ou non : gardé dans un fichier d'état local, donc retrouvé à la session
-// suivante.
+// Veilleuse (Night Light de GNOME) : `gammastep`, avec l'horaire et la température de la config (`nightLight` dans
+// hosts/*.json ; valeurs par défaut reprises de tes réglages GNOME). gammastep plutôt que wlsunset (ta demande du 2026-10-26) :
+// fondu d'environ 4 s à l'activation, à la désactivation et aux heures de l'horaire, là où wlsunset change la température d'un
+// coup. Activée ou non : gardé dans un fichier d'état local, donc retrouvé à la session suivante.
 Singleton {
     id: root
 
@@ -32,8 +31,23 @@ Singleton {
         }
     }
 
-    // Réglages de gammastep : les heures de l'horaire ne passent que par un fichier de config, écrit avant chaque lancement.
-    // dusk-time : passage à la nuit, dawn-time : retour au jour (une heure seule : bascule à cette heure, en fondu).
+    // Horaire : gammastep ne connaît qu'une nuit qui passe minuit (dusk-time : passage à la nuit, dawn-time : retour au jour).
+    // Nuit dans la même journée (00:30 – 06:00) : sa « journée » devient la nuit, températures inversées. Heures mal formées ou
+    // identiques : veilleuse sans effet (avertissement).
+    readonly property int fromMinutes: Settings.minutes(config.from)
+    readonly property int toMinutes: Settings.minutes(config.to)
+    readonly property bool validSchedule: fromMinutes >= 0 && toMinutes >= 0 && fromMinutes !== toMinutes
+
+    function configText(): string {
+        const crossesMidnight = fromMinutes > toMinutes;
+        const night = String(config.temperature), day = "6500";
+        return ["[general]", "adjustment-method=wayland", "fade=1",
+            crossesMidnight ? `dusk-time=${config.from}` : `dawn-time=${config.from}`,
+            crossesMidnight ? `dawn-time=${config.to}` : `dusk-time=${config.to}`,
+            `temp-day=${crossesMidnight ? day : night}`, `temp-night=${crossesMidnight ? night : day}`, ""].join("\n");
+    }
+
+    // Écrit avant chaque lancement (les heures ne passent que par un fichier de config).
     FileView {
         id: configFile
         path: Quickshell.statePath("gammastep.ini")
@@ -41,51 +55,83 @@ Singleton {
         printErrors: false
     }
 
-    // gammastep n'accepte qu'une nuit qui passe minuit (retour au jour avant le passage à la nuit) ; sinon il quitte aussitôt.
-    readonly property bool validSchedule: minutes(config.from) > minutes(config.to)
-
-    function minutes(time: string): int {
-        const [h, m] = time.split(":").map(Number);
-        return h * 60 + m;
-    }
-
-    // Activée ou non dans gammastep : il démarre activé, SIGUSR1 bascule (fondu dans les deux sens, réversible à tout moment).
-    // Désactivée, il reste lancé : la réactiver pendant le fondu de retour repart aussitôt vers la nuit.
+    // État dans gammastep : il démarre activé, SIGUSR1 bascule (fondu dans les deux sens, réversible à tout moment : la réactiver
+    // pendant le fondu de retour repart aussitôt vers la nuit). Désactivée, il est arrêté une fois revenu au neutre (`release`),
+    // pour libérer le réglage gamma des écrans (exclusif). SIGUSR1 seulement une fois son gestionnaire installé (`ready`) :
+    // l'action par défaut du signal le tuerait.
     property bool gammaOn: false
+    property bool ready: false
+    property real startedAt: 0
+    property int failures: 0   // arrêts juste après le lancement, à la suite
 
     function start(): void {
         if (!validSchedule) {
-            console.warn(`NightLight: horaire ${schedule} refusé par gammastep (la nuit doit passer minuit)`);
+            console.warn(`NightLight: horaire ${schedule} invalide`);
             return;
         }
-        configFile.setText(["[general]", "adjustment-method=wayland", "fade=1", "temp-day=6500",
-            `temp-night=${config.temperature}`, `dusk-time=${config.from}`, `dawn-time=${config.to}`, ""].join("\n"));
+        configFile.setText(configText());
         gammaOn = true;
+        ready = false;
+        startedAt = Date.now();
         gammastep.running = true;
+        readyDelay.restart();
     }
 
     function apply(): void {
+        release.stop();
         if (!gammastep.running) {
             if (enabled)
                 start();
-        } else if (gammaOn !== enabled) {
+            return;
+        }
+        if (!ready)
+            return;   // readyDelay rappelle apply()
+        if (gammaOn !== enabled) {
             gammastep.signal(10);   // SIGUSR1
             gammaOn = enabled;
         }
+        if (!enabled)
+            release.restart();
     }
 
-    onEnabledChanged: apply()
+    onEnabledChanged: {
+        failures = 0;
+        apply();
+    }
     Component.onCompleted: apply()
 
-    // Arrêt inattendu (au rechargement, l'ancienne instance tient encore le réglage gamma des écrans le temps de son fondu) :
-    // relancé 1 s plus tard.
     Process {
         id: gammastep
         command: ["gammastep", "-c", configFile.path]
+        // Arrêt inattendu (au rechargement, l'ancienne instance tient encore le réglage gamma des écrans le temps de son fondu) :
+        // relancé 1 s plus tard ; abandon après 5 arrêts de suite dans les 5 s (autre client gamma, config refusée).
         onExited: {
             root.gammaOn = false;
-            if (root.enabled)
+            root.ready = false;
+            root.failures = Date.now() - root.startedAt < 5000 ? root.failures + 1 : 0;
+            if (root.failures >= 5)
+                console.warn("NightLight: gammastep s'arrête aussitôt lancé, abandon (autre client gamma ?)");
+            else if (root.enabled)
                 retry.start();
+        }
+    }
+
+    Timer {
+        id: readyDelay
+        interval: 1000
+        onTriggered: {
+            root.ready = true;
+            root.apply();
+        }
+    }
+
+    // Fondu de retour terminé (environ 4 s) : arrêt, sans effet visible.
+    Timer {
+        id: release
+        interval: 6000
+        onTriggered: {
+            root.ready = false;
+            gammastep.signal(15);
         }
     }
 
