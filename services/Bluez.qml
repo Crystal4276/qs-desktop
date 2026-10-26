@@ -100,6 +100,9 @@ Singleton {
     property var requested: ({})
     property var failed: ({})
     property var autoAttempts: ({})
+    // Plus bas seuil de batterie déjà signalé par adresse : gardé même si BlueZ recrée l'appareil (bluetoothd relancé,
+    // adaptateur USB après une veille).
+    property var batteryAlerts: ({})
 
     function withFlag(map: var, address: string, value: bool): var {
         if (!!map[address] === value)
@@ -323,7 +326,6 @@ Singleton {
             property string notificationId: ""
             property int sent: 0   // notifications « Connected » envoyées : seul l'identifiant de la dernière est gardé
             property bool awaitingBattery: false
-            property int batteryAlerted: 101   // plus bas seuil déjà signalé ; gardé d'une connexion à l'autre
 
             function connectedBody(): string {
                 return modelData.batteryAvailable ? `Connected ${root.batteryPercent(modelData)}%` : "Connected";
@@ -343,14 +345,18 @@ Singleton {
             function checkBattery(): void {
                 if (!modelData.connected || !modelData.batteryAvailable)
                     return;
+                const address = modelData.address;
                 const percent = root.batteryPercent(modelData);
-                if (percent > Battery.warningLevel + Battery.rearmMargin)
-                    batteryAlerted = 101;
+                const before = root.batteryAlerts[address] ?? 101;
                 const level = Battery.levelOf(percent);
-                if (level >= batteryAlerted)
-                    return;
-                batteryAlerted = level;
-                Battery.notifyLow(modelData.name, percent, level);
+                const after = percent > Battery.warningLevel + Battery.rearmMargin ? 101 : Math.min(before, level);
+                if (after !== before) {
+                    const alerts = Object.assign({}, root.batteryAlerts);
+                    alerts[address] = after;
+                    root.batteryAlerts = alerts;
+                }
+                if (after < before)
+                    Battery.notifyLow(modelData.name, percent, level);
             }
 
             function connected(): void {
