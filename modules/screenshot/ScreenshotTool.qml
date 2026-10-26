@@ -54,6 +54,7 @@ LazyLoader {
             // Image figée, sans curseur : la vue capture en continu jusqu'à sa première image, puis s'arrête (une capture demandée
             // à la création échoue : le contexte d'enregistrement n'est pas encore prêt). L'outil reste invisible jusque-là, il
             // n'apparaît donc pas sur l'image.
+            // Capture commencée une fois le curseur masqué (Screenshot.hideCursor).
             Region {
                 id: noInput
             }
@@ -68,8 +69,9 @@ LazyLoader {
             ScreencopyView {
                 id: view
                 anchors.fill: parent
-                captureSource: win.modelData
+                captureSource: Screenshot.cursorHidden ? win.modelData : null
                 live: !hasContent
+                onHasContentChanged: if (hasContent) Screenshot.frozen(win.modelData.name)
                 paintCursor: false
             }
 
