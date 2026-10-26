@@ -42,6 +42,12 @@ Singleton {
         return node.nickname || node.description || node.name;
     }
 
+    // Niveau capté affiché (panneau audio) : pas pour une entrée Bluetooth, dont la capture ferait passer le casque du profil
+    // A2DP (musique) au profil micro (HSP/HFP, son dégradé) tant que le panneau est ouvert.
+    function hasLevel(node: PwNode): bool {
+        return node !== null && !node.name.startsWith("bluez_") && !node.properties["api.bluez5.address"];
+    }
+
     function setDefaultSink(node: PwNode): void {
         Pipewire.preferredDefaultAudioSink = node;
     }

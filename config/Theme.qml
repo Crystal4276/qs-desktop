@@ -254,7 +254,7 @@ Singleton {
     // § 3 — Niveau capté par une entrée audio (panneau audio ; ta demande du 2026-10-26) : trait de la position de la carte
     // média, creux du curseur, remplissage `green` ; échelle et lissage nouveaux, à valider.
     readonly property QtObject levelMeter: QtObject {
-        readonly property int height: root.notification.progressFrame   // 4 px
+        readonly property int height: root.mediaCard.progressHeight     // 4 px
         readonly property int gap: root.panel.buttonPaddingV            // 6 px sous le rail ou le nom
         readonly property color trough: root.slider.trough
         // Dégradé du vide au plein (ta demande du 2026-10-26) : bleu, vert, jaune, pêche, rouge.

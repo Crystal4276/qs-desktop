@@ -1430,7 +1430,8 @@ onglet A.
   « Default output / input »), curseur de volume dans la carte ; les autres périphériques en lignes dessous, un clic les choisit.
   Même carte dans la liste des sorties du panneau de réglages (`THEME.md` « Panneau audio »).
 - **Niveau capté** par chaque entrée : `PwNodePeakMonitor` natif (Quickshell 0.3.2, aucune dépendance), trait de 4 px sous le
-  curseur (carte) ou sous le nom (autres entrées), échelle -60 dB → 0 dB, lissage 100 ms ; capture seulement panneau ouvert.
+  curseur (carte) ou sous le nom (autres entrées), lissage 100 ms ; capture seulement panneau ouvert ou en aperçu ; pas de
+  niveau pour une entrée Bluetooth (la capture ferait passer le casque du profil A2DP au profil micro).
   Vérifié : niveau du C920 différent d'une capture à l'autre. Échelle et lissage **à valider**.
 - Calibrage (ta remarque : barre vers 80–90 % en silence) : la crête de Quickshell est en échelle cubique comme les volumes
   (0,24 en silence pour -37 dBFS mesurés avec `pw-record`) ; conversion corrigée (60 × log10), échelle -40 → 0 dBFS : silence vers
