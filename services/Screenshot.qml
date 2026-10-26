@@ -17,9 +17,8 @@ Singleton {
     property string startScreen: ""     // écran focalisé à l'ouverture : barre d'outils
     // Fenêtres visibles : [{ x, y, width, height, title }], coordonnées logiques globales.
     property var windows: []
-    // Curseur masqué : les images figées peuvent être prises (voir hideCursor).
+    // Curseur masqué : les images figées peuvent être prises (voir pointerEntered).
     property bool cursorHidden: false
-    property list<string> frozenScreens: []   // écrans dont l'image figée est reçue
     readonly property string pictures: Places.pictures !== "" ? Places.pictures : `${Quickshell.env("HOME")}/Pictures`
 
     function open(startMode: string): void {
@@ -35,76 +34,52 @@ Singleton {
         ensureDirectory();   // le temps de choisir la zone suffit à le créer
         windowList.command = Compositor.isHyprland ? ["hyprctl", "clients", "-j"] : ["swaymsg", "-t", "get_tree"];
         windowList.running = true;
-        frozenScreens = [];
-        hideCursor();
+        cursorHidden = false;
         active = true;
+        nudges = 0;
+        nudge.restart();
     }
 
     function close(): void {
         active = false;
         selection = null;
-        restoreCursor();
+        nudge.stop();
+        settle.stop();
     }
 
     // Curseur hors des images figées (ta demande du 2026-10-26). `paintCursor: false` (ScreenshotTool.qml) ne suffit pas quand le
-    // compositeur dessine le curseur dans l'image de l'écran : curseur logiciel, Sway sur Nvidia (vu le 2026-10-26 : même `grim`
-    // sans `-c` le capture). Une surface qui apparaît sous un pointeur immobile n'en reçoit pas l'entrée sous Sway : un curseur
-    // vide demandé par l'outil ne s'appliquerait qu'au premier mouvement. Sway : `hide_cursor 1` le cache sans attendre de
-    // mouvement, rétabli (valeur de ta config, 0 sinon) dès les images figées reçues. Hyprland : curseur matériel, déjà exclu.
-    property bool hidingCursor: false
-    property int hideCursorConfig: 0
+    // compositeur dessine le curseur dans l'image de l'écran : curseur logiciel, Sway sur Nvidia (même `grim` sans `-c` le capture).
+    // Les surfaces de l'outil, transparentes jusqu'aux images figées, demandent un curseur vide ; la capture commence une image après
+    // que le pointeur en a atteint une (pointerEntered). Sous Sway, une surface qui apparaît sous un pointeur immobile n'en reçoit
+    // pas l'entrée : un aller-retour d'un pixel la provoque (sans effet si le pointeur est déjà entré). `hide_cursor` de Sway,
+    // essayé avant, ne convient pas : délai d'au moins 100 ms, relancé par le moindre mouvement de souris.
+    property int nudges: 0
 
-    function hideCursor(): void {
-        if (Compositor.isHyprland) {
-            cursorHidden = true;
-            return;
-        }
-        cursorHidden = false;
-        hidingCursor = true;
-        swayConfig.running = true;
-        Quickshell.execDetached(["swaymsg", "seat", "*", "hide_cursor", "1"]);
-        hideDelay.restart();
+    function pointerEntered(): void {
+        nudge.stop();
+        if (active && !cursorHidden && !settle.running)
+            settle.start();
     }
 
-    function restoreCursor(): void {
-        hideDelay.stop();
-        if (!hidingCursor)
-            return;
-        hidingCursor = false;
-        Quickshell.execDetached(["swaymsg", "seat", "*", "hide_cursor", String(hideCursorConfig)]);
-    }
-
-    // Image figée reçue (ScreenshotTool.qml) : curseur rétabli une fois celles de tous les écrans reçues.
-    function frozen(screen: string): void {
-        if (!frozenScreens.includes(screen))
-            frozenScreens = [...frozenScreens, screen];
-        if (Quickshell.screens.every(s => frozenScreens.includes(s.name)))
-            restoreCursor();
-    }
-
-    Component.onDestruction: restoreCursor()   // rechargement de la config pendant une capture
-
-    // Écran redessiné sans curseur (une image à 60 Hz suffit ; marge pour la commande swaymsg).
     Timer {
-        id: hideDelay
-        interval: 150
-        onTriggered: root.cursorHidden = true
-    }
-
-    // Délai de `hide_cursor` de ta config Sway (`seat … hide_cursor N`), rétabli après la capture.
-    Process {
-        id: swayConfig
-        command: ["swaymsg", "-t", "get_config"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                try {
-                    const match = JSON.parse(text).config.match(/^\s*seat\s+\S+\s+hide_cursor\s+(\d+)/m);
-                    root.hideCursorConfig = match ? Number(match[1]) : 0;
-                } catch (e) {
-                    root.hideCursorConfig = 0;
-                }
+        id: nudge
+        interval: 30
+        repeat: true
+        onTriggered: {
+            if (++root.nudges > 10) {   // pointeur sur aucune surface de l'outil (ou Hyprland, curseur matériel) : capture
+                stop();
+                root.cursorHidden = true;
+            } else if (!Compositor.isHyprland) {
+                Quickshell.execDetached(["swaymsg", "seat - cursor move 1 0; seat - cursor move -1 0"]);
             }
         }
+    }
+
+    // Écran redessiné sans curseur : quelques images à 60 Hz.
+    Timer {
+        id: settle
+        interval: 50
+        onTriggered: root.cursorHidden = true
     }
 
     // Capture de la sélection par la fenêtre de l'écran qui en recouvre la plus grande part (un seul fichier, même pour une fenêtre
