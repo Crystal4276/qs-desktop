@@ -47,11 +47,15 @@ Singleton {
             `temp-day=${crossesMidnight ? day : night}`, `temp-night=${crossesMidnight ? night : day}`, ""].join("\n");
     }
 
-    // Config machine modifiée pendant que gammastep tourne : arrêté, puis relancé avec elle (retry).
+    // Config machine modifiée : gammastep arrêté puis relancé avec elle (retry) ; pas lancé (horaire invalide corrigé, abandon) :
+    // nouvel essai.
     onConfigTextChanged: {
+        failures = 0;
         if (gammastep.running) {
             ready = false;
             gammastep.signal(15);
+        } else {
+            apply();
         }
     }
 
@@ -111,9 +115,18 @@ Singleton {
     Process {
         id: gammastep
         command: ["gammastep", "-c", configFile.path]
-        // Arrêt inattendu (au rechargement, l'ancienne instance tient encore le réglage gamma des écrans le temps de son fondu) :
-        // relancé 1 s plus tard ; abandon après 10 arrêts de suite dans les 5 s, soit une dizaine de secondes (autre client gamma,
-        // config refusée).
+        // Réglage gamma tenu par un autre client (au rechargement, l'ancienne instance le garde le temps de son fondu) : gammastep
+        // ne quitte pas, il tourne sans effet en le signalant ; arrêté, donc relancé (onExited). Vérifié le 2026-10-26.
+        stderr: SplitParser {
+            onRead: line => {
+                if (line.includes("Zero outputs support gamma adjustment")) {
+                    root.ready = false;
+                    gammastep.signal(15);
+                }
+            }
+        }
+        // Arrêt : relancé 1 s plus tard si la veilleuse est activée ; abandon après 10 arrêts de suite dans les 5 s qui suivent le
+        // lancement (autre client gamma qui garde la main, config refusée).
         onExited: {
             readyDelay.stop();
             root.gammaOn = false;

@@ -57,13 +57,14 @@ Singleton {
         persist.dndBySchedule = on;
     }
 
-    // Heures mal formées (IPC) ou identiques (plage vide) : refusées, le champ revient à l'ancienne. Une seule écriture du fichier.
+    // Heures mal formées (IPC) : refusées, le champ revient à l'ancienne. Heures identiques acceptées (plage vide : inversion des
+    // heures en deux saisies possible). Une seule écriture du fichier.
     function setSchedule(enabled: bool, from: string, to: string): void {
         const was = schedule.enabled && quietHours;
         const f = Settings.minutes(from), t = Settings.minutes(to);
         editing = true;
         schedule.enabled = enabled;
-        if (f >= 0 && t >= 0 && f !== t) {
+        if (f >= 0 && t >= 0) {
             schedule.from = from;
             schedule.to = to;
         }
