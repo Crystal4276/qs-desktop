@@ -39,9 +39,9 @@ LazyLoader {
             screen: modelData
             WlrLayershell.layer: WlrLayer.Overlay
             WlrLayershell.namespace: "quickshell-screenshot"
-            // Clavier et pointeur pris seulement une fois l'outil visible (image figée reçue) : invisible, il ne doit rien bloquer.
+            // Clavier pris seulement une fois l'outil visible (image figée reçue). Pointeur pris dès l'ouverture : curseur vide
+            // (cursorHider) ; invisible, l'outil le bloque donc jusqu'aux images figées (3 s au plus).
             WlrLayershell.keyboardFocus: home && view.hasContent ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
-            mask: view.hasContent ? null : noInput
             exclusionMode: ExclusionMode.Ignore
             anchors {
                 top: true
@@ -54,9 +54,13 @@ LazyLoader {
             // Image figée, sans curseur : la vue capture en continu jusqu'à sa première image, puis s'arrête (une capture demandée
             // à la création échoue : le contexte d'enregistrement n'est pas encore prêt). L'outil reste invisible jusque-là, il
             // n'apparaît donc pas sur l'image.
-            // Capture commencée une fois le curseur masqué (Screenshot.hideCursor).
-            Region {
-                id: noInput
+            // Capture commencée une fois le curseur masqué (Screenshot.pointerEntered).
+            MouseArea {
+                anchors.fill: parent
+                visible: !view.hasContent
+                hoverEnabled: true
+                cursorShape: Qt.BlankCursor
+                onContainsMouseChanged: if (containsMouse) Screenshot.pointerEntered()
             }
 
             // Pas d'image figée de l'écran de départ au bout de 3 s (capture refusée, écran éteint) : outil fermé.
@@ -71,7 +75,6 @@ LazyLoader {
                 anchors.fill: parent
                 captureSource: Screenshot.cursorHidden ? win.modelData : null
                 live: !hasContent
-                onHasContentChanged: if (hasContent) Screenshot.frozen(win.modelData.name)
                 paintCursor: false
             }
 
