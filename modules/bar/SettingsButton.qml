@@ -4,8 +4,13 @@ import qs.config
 // Bouton des réglages, à la place du bouton power (INVENTORY.md § 1, `custom/powermenu` : padding 10 px sauf à gauche, 28 px) :
 // engrenage `U+F013` couleur `text` (ton choix du 2026-10-16). Un appui ouvre ou ferme le panneau de réglages (un seul pour
 // toutes les barres : BarState) ; `qs ipc call settings toggle` passe par le bouton de l'écran focalisé.
+// Survol : aperçu du panneau après un court arrêt, comme les icônes du tray (TrayButton.qml ; ta demande du 2026-10-26).
 Item {
     id: root
+
+    readonly property alias hovered: hover.hovered
+    readonly property int buttons: Qt.LeftButton | Qt.RightButton
+    readonly property var panel: BarState.loaders.settings?.item ?? null   // null avant la première ouverture
 
     implicitWidth: label.implicitWidth + Theme.bar.modulePadding
     implicitHeight: label.implicitHeight + 2 * Theme.bar.modulePadding
@@ -20,12 +25,28 @@ Item {
         color: Theme.module.settings
     }
 
+    HoverHandler {
+        id: hover
+        onHoveredChanged: BarState.setTrayHover(root, hovered)
+    }
+
+    // Relancé aussi quand un popup épinglé qui bloquait l'aperçu se ferme, pointeur resté sur l'engrenage.
+    Timer {
+        interval: Theme.panel.previewDelay
+        running: root.visible && hover.hovered && !(root.panel?.previewSuppressed ?? false) && !(root.panel?.visible ?? false)
+            && !BarState.popupPinned
+        onTriggered: BarState.preview("settings", root)
+    }
+
     MouseArea {
         anchors.fill: parent
-        acceptedButtons: Qt.LeftButton | Qt.RightButton
+        acceptedButtons: root.buttons
         onPressed: BarState.toggle("settings", root)
     }
 
     Component.onCompleted: BarState.register("settings", root)
-    Component.onDestruction: BarState.unregister("settings", root)
+    Component.onDestruction: {
+        BarState.setTrayHover(root, false);
+        BarState.unregister("settings", root);
+    }
 }

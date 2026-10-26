@@ -4,8 +4,9 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 
-// Mode avion (bascule du panneau de réglages, laptop) : `rfkill block all` / `unblock all` (droits donnés par logind à la
-// session active). Activé quand toutes les radios sont bloquées. État relu à chaque événement de `rfkill event`.
+// Mode avion (bascule du panneau de réglages, dès qu'il y a une radio) : coupe Wi-Fi et Bluetooth, `rfkill block all` /
+// `unblock all` (droits donnés par logind à la session active). Activé quand toutes les radios sont bloquées. État relu à chaque
+// événement de `rfkill event`.
 Singleton {
     id: root
 

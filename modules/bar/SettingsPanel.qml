@@ -10,233 +10,235 @@ import qs.services
 // Panneau de réglages façon GNOME (ARCHITECTURE § 10.1.4) : ouvert par l'engrenage de la barre ou `qs ipc call settings toggle`.
 // Remplace le power menu Rofi. De haut en bas, dans l'ordre des réglages rapides de GNOME 51 :
 // - batterie (laptop), capture d'écran ; à droite verrouiller, se déconnecter, redémarrer, éteindre (sans confirmation) ;
-// - curseurs : sortie son, micro, luminosité (laptop) ; flèche : choix du périphérique (toujours affichée, même avec un seul
-//   périphérique : la liste montre lequel est utilisé), puis « Advanced… » (pavucontrol) ;
-// - profils d'énergie (3 boutons) ; bascules en 2 colonnes : ne pas déranger, écran allumé, veilleuse, HDR, VRR, mode avion.
+// - curseurs : sortie son, luminosité (laptop) ; flèche : choix du périphérique (toujours affichée, même avec un seul
+//   périphérique : la liste montre lequel est utilisé), puis « Advanced… » (pavucontrol). Pas de micro (ta demande du 2026-10-26 :
+//   jamais réglé ici ; il reste dans le panneau audio) ;
+// - profils d'énergie (3 boutons) ; bascules en 2 colonnes : ne pas déranger (clic droit : son horaire), écran allumé, veilleuse,
+//   HDR, VRR, mode avion (dès qu'il y a une radio Wi-Fi ou Bluetooth).
 // Ce qui a sa place dans le tray (réseau, Bluetooth, VPN, disques, notifications) n'est pas repris.
-OverlayPopup {
+// Carte du tray (Panel.qml, ta demande du 2026-10-26) : aperçu au survol de l'engrenage, épinglée au clic, fermée comme les autres.
+Panel {
     id: root
 
-    property string expanded: ""   // "sink", "source" ou "" : liste de périphériques dépliée
-
-    // Sous le bouton, centré, sans dépasser les marges de la barre (comme les panneaux du tray).
-    function toggle(from: Item): void {
-        if (beginOpen(from))
-            openUnder(from);
-    }
+    property string expanded: ""   // "sink", "dnd" ou "" : liste de périphériques ou horaire du « ne pas déranger » déplié
 
     WlrLayershell.namespace: "quickshell-settings"
-    frameItem: frame
-    ownerButtons: Qt.LeftButton | Qt.RightButton   // l'engrenage accepte les deux
-    onVisibleChanged: if (!visible) expanded = ""
 
-    PanelFrame {
-        id: frame
+    Connections {
+        target: root
+        function onVisibleChanged() {
+            if (!root.visible)
+                root.expanded = "";
+        }
+    }
 
-        y: Theme.panel.gap
-        width: Theme.panel.width
-        maxHeight: parent.height - Theme.panel.gap - Theme.bar.marginSide
-        onCloseRequested: root.close()
+    // --- Ligne du haut ---
+    RowLayout {
+        Layout.fillWidth: true
+        spacing: Theme.panel.spacing
 
-        // --- Ligne du haut ---
-        RowLayout {
+        Row {
+            visible: Battery.available
+            spacing: Theme.panel.rowPadding
+
+            Text {
+                anchors.verticalCenter: parent.verticalCenter
+                text: Battery.charging ? Theme.icon.batteryCharging : Theme.level(Theme.icon.battery, Battery.percent)
+                font.family: Theme.font.icons
+                font.pixelSize: Theme.quickSettings.glyphSize
+                color: Battery.warning && !Battery.charging ? Theme.module.batteryWarning : Theme.module.battery
+            }
+
+            Text {
+                anchors.verticalCenter: parent.verticalCenter
+                text: `${Battery.percent} %`
+                font.family: Theme.font.text
+                font.pixelSize: Theme.panel.fontSize
+                color: Theme.panel.text
+            }
+        }
+
+        QuickButton {
+            glyph: Theme.icon.screenshot
+            onClicked: root.run(Session.screenshot)
+        }
+
+        QuickButton {
+            glyph: Theme.icon.wallpaper
+            onClicked: root.run(() => Wallpapers.pickerRequested())
+        }
+
+        Item {
             Layout.fillWidth: true
-            spacing: Theme.panel.spacing
-
-            Row {
-                visible: Battery.available
-                spacing: Theme.panel.rowPadding
-
-                Text {
-                    anchors.verticalCenter: parent.verticalCenter
-                    text: Battery.charging ? Theme.icon.batteryCharging : Theme.level(Theme.icon.battery, Battery.percent)
-                    font.family: Theme.font.icons
-                    font.pixelSize: Theme.quickSettings.glyphSize
-                    color: Battery.warning && !Battery.charging ? Theme.module.batteryWarning : Theme.module.battery
-                }
-
-                Text {
-                    anchors.verticalCenter: parent.verticalCenter
-                    text: `${Battery.percent} %`
-                    font.family: Theme.font.text
-                    font.pixelSize: Theme.panel.fontSize
-                    color: Theme.panel.text
-                }
-            }
-
-            QuickButton {
-                glyph: Theme.icon.screenshot
-                onClicked: root.run(Session.screenshot)
-            }
-
-            QuickButton {
-                glyph: Theme.icon.wallpaper
-                onClicked: root.run(() => Wallpapers.pickerRequested())
-            }
-
-            Item {
-                Layout.fillWidth: true
-            }
-
-            QuickButton {
-                image: Theme.image.lock
-                onClicked: root.run(() => Session.lock())
-            }
-
-            QuickButton {
-                image: Theme.image.logout
-                onClicked: root.run(Session.logout)
-            }
-
-            QuickButton {
-                image: Theme.image.restart
-                onClicked: root.run(Session.reboot)
-            }
-
-            QuickButton {
-                image: Theme.image.shutdown
-                onClicked: root.run(Session.poweroff)
-            }
         }
 
-        // --- Curseurs ---
-        QuickSlider {
-            visible: Audio.ready
-            icon: Audio.muted ? Theme.icon.muted : Theme.level(Theme.icon.volume, Audio.percent)
-            value: Audio.volume
-            muted: Audio.muted
-            expandable: Audio.sinks.length > 0
-            expanded: root.expanded === "sink"
-            onMoved: v => Audio.setVolume(v)
-            onIconClicked: Audio.toggleMute()
-            onExpandClicked: root.expanded = expanded ? "" : "sink"
+        QuickButton {
+            image: Theme.image.lock
+            onClicked: root.run(() => Session.lock())
         }
 
-        AudioDevices {
-            visible: root.expanded === "sink"
+        QuickButton {
+            image: Theme.image.logout
+            onClicked: root.run(Session.logout)
         }
 
-        MixerButton {
-            visible: root.expanded === "sink"
-            onOpened: root.close()
+        QuickButton {
+            image: Theme.image.restart
+            onClicked: root.run(Session.reboot)
         }
 
-        QuickSlider {
-            visible: Audio.source?.audio !== undefined && Audio.source?.audio !== null
-            icon: Audio.micMuted ? Theme.icon.microphoneMuted : Theme.icon.microphone
-            value: Audio.source?.audio?.volume ?? 0
-            muted: Audio.micMuted
-            expandable: Audio.sources.length > 0
-            expanded: root.expanded === "source"
-            onMoved: v => Audio.source.audio.volume = v
-            onIconClicked: Audio.toggleMicMute()
-            onExpandClicked: root.expanded = expanded ? "" : "source"
+        QuickButton {
+            image: Theme.image.shutdown
+            onClicked: root.run(Session.poweroff)
+        }
+    }
+
+    // --- Curseurs ---
+    QuickSlider {
+        visible: Audio.ready
+        icon: Audio.muted ? Theme.icon.muted : Theme.level(Theme.icon.volume, Audio.percent)
+        value: Audio.volume
+        muted: Audio.muted
+        expandable: Audio.sinks.length > 0
+        expanded: root.expanded === "sink"
+        onMoved: v => Audio.setVolume(v)
+        onIconClicked: Audio.toggleMute()
+        onExpandClicked: root.expanded = expanded ? "" : "sink"
+    }
+
+    AudioDevices {
+        visible: root.expanded === "sink"
+    }
+
+    MixerButton {
+        visible: root.expanded === "sink"
+        onOpened: root.close()
+    }
+
+    QuickSlider {
+        visible: Brightness.available
+        icon: Theme.level(Theme.icon.backlight, Brightness.percent)
+        iconColor: Theme.module.backlight
+        value: Brightness.percent / 100
+        onMoved: v => Brightness.setPercent(Math.round(v * 100))
+    }
+
+    // --- Profils d'énergie ---
+    RowLayout {
+        Layout.fillWidth: true
+        visible: Profiles.available
+        spacing: Theme.panel.spacing
+
+        QuickToggle {
+            vertical: true
+            icon: Theme.icon.powerSaver
+            title: "Power Saver"
+            checked: Profiles.profile === PowerProfile.PowerSaver
+            onClicked: Profiles.set(PowerProfile.PowerSaver)
         }
 
-        AudioDevices {
-            visible: root.expanded === "source"
-            input: true
+        QuickToggle {
+            vertical: true
+            icon: Theme.icon.balanced
+            title: "Balanced"
+            checked: Profiles.profile === PowerProfile.Balanced
+            onClicked: Profiles.set(PowerProfile.Balanced)
         }
 
-        MixerButton {
-            visible: root.expanded === "source"
-            onOpened: root.close()
+        QuickToggle {
+            visible: Profiles.hasPerformance
+            vertical: true
+            icon: Theme.icon.performance
+            title: "Performance"
+            checked: Profiles.profile === PowerProfile.Performance
+            onClicked: Profiles.set(PowerProfile.Performance)
+        }
+    }
+
+    // --- Bascules ---
+    GridLayout {
+        Layout.fillWidth: true
+        columns: Theme.quickSettings.columns
+        columnSpacing: Theme.panel.spacing
+        rowSpacing: Theme.panel.spacing
+
+        QuickToggle {
+            icon: Theme.icon.doNotDisturb
+            title: "Do Not Disturb"
+            subtitle: Notifs.scheduled ? `${Notifs.scheduleFrom} – ${Notifs.scheduleTo}` : ""
+            checked: Notifs.doNotDisturb
+            onClicked: Notifs.doNotDisturb = !Notifs.doNotDisturb
+            onSecondaryClicked: root.expanded = root.expanded === "dnd" ? "" : "dnd"
         }
 
-        QuickSlider {
-            visible: Brightness.available
-            icon: Theme.level(Theme.icon.backlight, Brightness.percent)
-            iconColor: Theme.module.backlight
-            value: Brightness.percent / 100
-            onMoved: v => Brightness.setPercent(Math.round(v * 100))
+        QuickToggle {
+            icon: Theme.icon.keepAwake
+            title: "Keep Screen On"
+            checked: Session.keepAwake
+            onClicked: Session.keepAwake = !Session.keepAwake
         }
 
-        // --- Profils d'énergie ---
-        RowLayout {
-            Layout.fillWidth: true
-            visible: Profiles.available
-            spacing: Theme.panel.spacing
-
-            QuickToggle {
-                vertical: true
-                icon: Theme.icon.powerSaver
-                title: "Power Saver"
-                checked: Profiles.profile === PowerProfile.PowerSaver
-                onClicked: Profiles.set(PowerProfile.PowerSaver)
-            }
-
-            QuickToggle {
-                vertical: true
-                icon: Theme.icon.balanced
-                title: "Balanced"
-                checked: Profiles.profile === PowerProfile.Balanced
-                onClicked: Profiles.set(PowerProfile.Balanced)
-            }
-
-            QuickToggle {
-                visible: Profiles.hasPerformance
-                vertical: true
-                icon: Theme.icon.performance
-                title: "Performance"
-                checked: Profiles.profile === PowerProfile.Performance
-                onClicked: Profiles.set(PowerProfile.Performance)
-            }
+        QuickToggle {
+            icon: Theme.icon.nightLight
+            title: "Night Light"
+            subtitle: NightLight.schedule
+            checked: NightLight.enabled
+            onClicked: NightLight.toggle()
         }
 
-        // --- Bascules ---
-        GridLayout {
-            Layout.fillWidth: true
-            columns: Theme.quickSettings.columns
-            columnSpacing: Theme.panel.spacing
-            rowSpacing: Theme.panel.spacing
+        QuickToggle {
+            visible: Displays.hdrOutputs.length > 0
+            icon: Theme.icon.hdr
+            title: "HDR"
+            subtitle: Displays.hdrOutputs.map(o => o.name).join(", ")
+            checked: Displays.hdr
+            onClicked: Displays.toggleHdr()
+        }
 
-            QuickToggle {
-                icon: Theme.icon.doNotDisturb
-                title: "Do Not Disturb"
-                checked: Notifs.doNotDisturb
-                onClicked: Notifs.doNotDisturb = !Notifs.doNotDisturb
-            }
+        QuickToggle {
+            visible: Displays.vrrOutputs.length > 0
+            icon: Theme.icon.vrr
+            title: "VRR"
+            subtitle: Displays.vrrOutputs.map(o => o.name).join(", ")
+            checked: Displays.vrr
+            onClicked: Displays.toggleVrr()
+        }
 
-            QuickToggle {
-                icon: Theme.icon.keepAwake
-                title: "Keep Screen On"
-                checked: Session.keepAwake
-                onClicked: Session.keepAwake = !Session.keepAwake
-            }
+        QuickToggle {
+            visible: Rfkill.available
+            icon: Theme.icon.airplane
+            title: "Airplane Mode"
+            checked: Rfkill.airplane
+            onClicked: Rfkill.toggle()
+        }
+    }
 
-            QuickToggle {
-                icon: Theme.icon.nightLight
-                title: "Night Light"
-                subtitle: NightLight.schedule
-                checked: NightLight.enabled
-                onClicked: NightLight.toggle()
-            }
+    // Horaire du « ne pas déranger » (clic droit sur sa bascule) : heures modifiables (Entrée ou sortie du champ), interrupteur.
+    PanelRow {
+        visible: root.expanded === "dnd"
+        clickable: false
+        text: "Schedule"
 
-            QuickToggle {
-                visible: Displays.hdrOutputs.length > 0
-                icon: Theme.icon.hdr
-                title: "HDR"
-                subtitle: Displays.hdrOutputs.map(o => o.name).join(", ")
-                checked: Displays.hdr
-                onClicked: Displays.toggleHdr()
-            }
+        TimeField {
+            value: Notifs.scheduleFrom
+            onEdited: time => Notifs.setSchedule(Notifs.scheduled, time, Notifs.scheduleTo)
+        }
 
-            QuickToggle {
-                visible: Displays.vrrOutputs.length > 0
-                icon: Theme.icon.vrr
-                title: "VRR"
-                subtitle: Displays.vrrOutputs.map(o => o.name).join(", ")
-                checked: Displays.vrr
-                onClicked: Displays.toggleVrr()
-            }
+        Text {
+            text: "–"
+            font.family: Theme.font.text
+            font.pixelSize: Theme.panel.fontSize
+            color: Theme.panel.text
+        }
 
-            QuickToggle {
-                visible: Battery.available && Rfkill.available
-                icon: Theme.icon.airplane
-                title: "Airplane Mode"
-                checked: Rfkill.airplane
-                onClicked: Rfkill.toggle()
-            }
+        TimeField {
+            value: Notifs.scheduleTo
+            onEdited: time => Notifs.setSchedule(Notifs.scheduled, Notifs.scheduleFrom, time)
+        }
+
+        PanelSwitch {
+            checked: Notifs.scheduled
+            onToggled: checked => Notifs.setSchedule(checked, Notifs.scheduleFrom, Notifs.scheduleTo)
         }
     }
 

@@ -19,8 +19,8 @@ Singleton {
 
     // Un popup inscrit est épinglé, sauf l'aperçu d'une carte du tray (`previewing` vrai, Panel.qml) : pas d'aperçu par-dessus.
     readonly property bool popupPinned: openList.some(p => p.previewing !== true)
-    // Bouton du tray sous le pointeur (TrayButton.qml) : un aperçu reste ouvert tant que le pointeur est sur l'un d'eux, jusqu'à
-    // ce que l'aperçu du bouton survolé le remplace.
+    // Bouton du tray (TrayButton.qml) ou engrenage (SettingsButton.qml) sous le pointeur : un aperçu reste ouvert tant que le
+    // pointeur est sur l'un d'eux, jusqu'à ce que l'aperçu du bouton survolé le remplace.
     property Item hoveredTrayButton: null
 
     function setTrayHover(button: Item, hovered: bool): void {
@@ -79,7 +79,20 @@ Singleton {
         if (!loader || !button)
             return;
         loader.active = true;
-        loader.item.toggle(button);
+        // Bouton à aperçu (engrenage : panneau Panel.qml) : ses boutons de souris en plus.
+        if (button.buttons !== undefined)
+            loader.item.toggle(button, button.buttons);
+        else
+            loader.item.toggle(button);
+    }
+
+    // Aperçu au survol d'un bouton à aperçu (SettingsButton.qml), comme les icônes du tray.
+    function preview(kind: string, button: Item): void {
+        const loader = loaders[kind];
+        if (!loader || !button)
+            return;
+        loader.active = true;
+        loader.item.preview(button, button.buttons);
     }
 
     // Raccourcis `qs ipc call settings toggle` (`$mod+Escape`, phase 10) et `qs ipc call menu toggle` : bouton de l'écran focalisé,
