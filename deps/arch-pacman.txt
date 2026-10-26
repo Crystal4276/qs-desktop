@@ -17,7 +17,7 @@ hyprland                # compositeur secondaire
 # (fond d'écran, veille, verrouillage : natifs Quickshell en phase 8b — swaybg, swayidle, hypridle, swaylock ne sont plus requis)
 
 # --- Panneau de réglages (phase 8) ---
-wlsunset                # veilleuse (Night Light) : écran plus chaud le soir, Sway et Hyprland (wlr-gamma-control)
+gammastep               # veilleuse (Night Light) : écran plus chaud le soir, en fondu, Sway et Hyprland (wlr-gamma-control)
 xdg-user-dirs           # dossier Images des captures et des fonds d'écran, dossiers du menu d'applications (`xdg-user-dir`)
 
 # --- Énergie ---
