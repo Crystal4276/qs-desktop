@@ -10,7 +10,8 @@ import qs.config
 // molette lançait `playerctld shift`, sans effet visible ; ici (ton choix du 2026-10-16) la molette passe d'un lecteur MPRIS
 // à l'autre. Lecteur suivi (ton choix du 2026-10-16) : celui choisi à la molette, jusqu'au prochain démarrage d'une lecture ;
 // sinon le lecteur préféré (`Settings.mediaPlayer`) s'il joue, sinon un lecteur qui joue (ex. Chromium seul en lecture),
-// sinon le lecteur préféré, sinon le premier présent. Aucun lecteur → module masqué.
+// sinon le dernier suivi pendant une lecture (une pause ne fait pas passer au lecteur préféré : le clic suivant reprend la
+// même lecture), sinon le lecteur préféré, sinon le premier présent. Aucun lecteur → module masqué.
 Singleton {
     id: root
 
@@ -20,9 +21,12 @@ Singleton {
     readonly property var playing: players.filter(p => p.isPlaying)
     property string selected: ""   // nom D-Bus choisi à la molette
     readonly property string preferred: `org.mpris.MediaPlayer2.${Settings.mediaPlayer}`
+    property string recent: ""     // nom D-Bus du dernier lecteur suivi pendant une lecture
     readonly property MprisPlayer player: players.find(p => p.dbusName === selected)
-        ?? playing.find(p => p.dbusName === preferred) ?? playing[0]
+        ?? playing.find(p => p.dbusName === preferred) ?? playing[0] ?? players.find(p => p.dbusName === recent)
         ?? players.find(p => p.dbusName === preferred) ?? players[0] ?? null
+    readonly property string playingName: player?.isPlaying ? player.dbusName : ""
+    onPlayingNameChanged: if (playingName !== "") recent = playingName
 
     // Une lecture qui démarre annule le choix fait à la molette : le lecteur qui joue reprend la main. Sauf si c'est le lecteur
     // choisi qui démarre (lecture lancée depuis le module ou la carte média) : il reste suivi.
@@ -34,7 +38,10 @@ Singleton {
             selected = "";
         lastPlaying = names;
     }
-    Component.onCompleted: lastPlaying = playing.map(p => p.dbusName)   // lecteurs déjà en lecture au démarrage
+    Component.onCompleted: {
+        lastPlaying = playing.map(p => p.dbusName);   // lecteurs déjà en lecture au démarrage
+        recent = playingName;
+    }
     // Nom du lecteur sans le préfixe ni l'instance (« chromium.instance1234 » → « chromium ») : clé de son icône.
     readonly property string playerName: (player?.dbusName ?? "").replace("org.mpris.MediaPlayer2.", "").split(".")[0]
     readonly property bool paused: player?.playbackState === MprisPlaybackState.Paused

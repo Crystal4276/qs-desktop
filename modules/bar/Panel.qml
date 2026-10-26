@@ -89,7 +89,6 @@ OverlayPopup {
 
     Connections {
         target: root.button
-        ignoreUnknownSignals: true   // panneau audio : bouton sans `hovered`
         function onHoveredChanged() {
             if (root.button.hovered)
                 root.pointerEntered = true;

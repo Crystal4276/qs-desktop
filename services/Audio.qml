@@ -62,9 +62,12 @@ Singleton {
             sink.audio.volume = Math.max(0, Math.min(1, v));
     }
 
-    // Pas en points de pourcentage (molette : ±5).
+    // Pas en points de pourcentage (molette : ±5). Au-dessus de 100 % (réglé ailleurs, ex. pavucontrol), comme Waybar : monter
+    // ne fait rien, baisser retire un pas (pas de saut à 100 %).
     function step(points: int): void {
-        setVolume((percent + points) / 100);
+        if (!ready || (points > 0 && percent >= 100))
+            return;
+        sink.audio.volume = Math.max(0, Math.min(Math.max(1, volume), (percent + points) / 100));
     }
 
     function toggleMute(): void {
