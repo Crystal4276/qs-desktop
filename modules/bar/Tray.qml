@@ -118,7 +118,7 @@ Item {
             property bool blink: false
 
             visible: Bluez.available
-            icon: Bluez.busy ? (blink ? "blueman-tray-active" : "blueman-tray") : Bluez.icon
+            icon: Bluez.trayIcon(blink)
             panel: bluetoothPanel
 
             Timer {

@@ -63,7 +63,7 @@ Panel {
             required property BluetoothDevice modelData
 
             device: modelData
-            expanded: root.expanded === modelData.address
+            expanded: root.expanded === (modelData?.address ?? "")
             onToggled: root.expanded = expanded ? "" : modelData.address
         }
     }
