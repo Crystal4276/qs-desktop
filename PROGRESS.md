@@ -1417,9 +1417,10 @@ onglet A.
 - Laissé tel quel (revues) : relance avec fondu de la veilleuse quand sa config machine change (rare) ; l'outil de capture prend
   le pointeur pendant son démarrage (environ 100 ms) ; une surface Overlay plus haute sous le pointeur (popup) priverait l'outil de
   l'entrée du pointeur (capture avec curseur au bout d'1 s, non observé).
-- **Vérifié par toi** : capture sans curseur ; heure tapée puis Entrée.
-- **À tester à la main** : modifier un chiffre au milieu d'une heure, puis Échap (annule), Échap (ferme) ; touche Menu sur la tuile ;
-  ressenti du fondu de la veilleuse (et 20:00 ce soir) ; mode avion ; ce soir à 21:00, la cloche barrée.
+- **Vérifié par toi** : capture sans curseur ; heure tapée puis Entrée ; chiffre modifié au milieu d'une heure, Échap (annule),
+  Échap (ferme) ; mode avion.
+- **À tester à la main** : ressenti du fondu de la veilleuse (20:00 ce soir) ; à 21:00, la cloche barrée ; facultatif : tuile
+  « Do Not Disturb » choisie au clavier (Tab), puis touche Menu (à droite d'AltGr) ou Maj+F10 → ligne « Schedule ».
 - Note de dev : un nouveau fichier QML dans un module n'est vu qu'au redémarrage de l'instance (`scripts/dev.sh`), pas au
   rechargement à chaud (« X is not a type »).
 
