@@ -30,9 +30,13 @@ OverlayPopup {
     // `buttons` : boutons de souris avec lesquels l'élément ouvre et ferme ce panneau (un appui de ces boutons sur lui ne le
     // fait pas fermer par la barre : c'est l'élément qui le ferme).
     function toggle(item: Item, buttons: int): void {
+        // Aperçu sous cet élément : épinglé. Sous un autre (raccourci des réglages, autre écran) : fermé, puis ouvert ici.
         if (visible && previewing) {
-            previewing = false;
-            return;
+            if (item === button) {
+                previewing = false;
+                return;
+            }
+            close();
         }
         if (!beginOpen(item))
             return;

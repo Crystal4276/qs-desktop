@@ -74,25 +74,18 @@ Singleton {
         return Math.max(Theme.bar.marginSide, Math.min(x, available - Theme.bar.marginSide - width));
     }
 
-    function toggle(kind: string, button: Item): void {
+    // Panneau chargé à la demande (null : pas inscrit).
+    function load(kind: string): var {
         const loader = loaders[kind];
-        if (!loader || !button)
-            return;
+        if (!loader)
+            return null;
         loader.active = true;
-        // Bouton à aperçu (engrenage : panneau Panel.qml) : ses boutons de souris en plus.
-        if (button.buttons !== undefined)
-            loader.item.toggle(button, button.buttons);
-        else
-            loader.item.toggle(button);
+        return loader.item;
     }
 
-    // Aperçu au survol d'un bouton à aperçu (SettingsButton.qml), comme les icônes du tray.
-    function preview(kind: string, button: Item): void {
-        const loader = loaders[kind];
-        if (!loader || !button)
-            return;
-        loader.active = true;
-        loader.item.preview(button, button.buttons);
+    function toggle(kind: string, button: Item): void {
+        if (button)
+            load(kind)?.toggle(button);
     }
 
     // Raccourcis `qs ipc call settings toggle` (`$mod+Escape`, phase 10) et `qs ipc call menu toggle` : bouton de l'écran focalisé,
@@ -101,7 +94,7 @@ Singleton {
     function toggleFromShortcut(kind: string): void {
         const list = buttons[kind] ?? [];
         const on = name => list.find(b => b.QsWindow.window?.screen?.name === name);
-        toggle(kind, on(Compositor.focusedOutput) ?? on(Outputs.primary?.name) ?? list[0] ?? null);
+        (on(Compositor.focusedOutput) ?? on(Outputs.primary?.name) ?? list[0])?.toggle();
     }
 
     // Tests (scripts/test-outputs.sh) : popups inscrits et écran au clavier « à la demande », en JSON.

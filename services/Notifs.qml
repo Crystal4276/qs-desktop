@@ -31,7 +31,8 @@ Singleton {
 
     // « Ne pas déranger » programmé (ta demande du 2026-10-26) : activé à l'heure de début, désactivé à l'heure de fin ; entre
     // les deux, la bascule à la main reste libre jusqu'à la prochaine heure. Appliqué aussi au démarrage de la session et quand
-    // l'horaire change. Réglé depuis le panneau de réglages, gardé dans un fichier d'état (départ : `doNotDisturb` de hosts/*.json).
+    // les heures changent. Horaire activé : « ne pas déranger » activé s'il est l'heure (pas désactivé sinon : il a pu l'être à la
+    // main) ; horaire désactivé pendant ses heures : désactivé (il l'était par l'horaire). Réglé depuis le panneau de réglages, gardé dans un fichier d'état (départ : `doNotDisturb` de hosts/*.json).
     readonly property bool scheduled: schedule.enabled
     readonly property string scheduleFrom: schedule.from
     readonly property string scheduleTo: schedule.to
@@ -41,8 +42,11 @@ Singleton {
         return from <= to ? now >= from && now < to : now >= from || now < to;
     }
 
+    // Début et fin identiques (plage vide) : heures refusées, le champ revient à l'ancienne.
     function setSchedule(enabled: bool, from: string, to: string): void {
         schedule.enabled = enabled;
+        if (minutes(from) === minutes(to))
+            return;
         schedule.from = from;
         schedule.to = to;
     }
@@ -59,7 +63,10 @@ Singleton {
     }
 
     onQuietHoursChanged: applySchedule()
-    onScheduledChanged: applySchedule()
+    onScheduledChanged: {
+        if (quietHours)
+            doNotDisturb = scheduled;
+    }
 
     SystemClock {
         id: clock

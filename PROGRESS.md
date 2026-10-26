@@ -1394,16 +1394,23 @@ onglet A.
   avant sa sortie) et aux heures de l'horaire. Même horaire et même température, écrits dans
   `~/.local/state/quickshell/by-shell/desktop/gammastep.ini`. Nouveau : `qs ipc call nightlight toggle|isEnabled`.
 - **Captures sans curseur** : le curseur était dans les images même avec `paintCursor: false`, car Sway sur Nvidia dessine un
-  curseur logiciel dans l'image de l'écran (même `grim` sans `-c` le capture). Un curseur vide demandé par l'outil ne marche pas :
-  Sway n'envoie pas l'entrée du pointeur à une surface qui apparaît sous un pointeur immobile. Solution : `swaymsg seat * hide_cursor 1`
-  à l'ouverture, images figées prises 150 ms plus tard, valeur de ta config rétablie (0 aujourd'hui) dès les images reçues ou à la
-  fermeture. Vérifié : zone et écran entier sans curseur, curseur visible pendant la sélection et après. Hyprland : curseur
-  matériel, rien de fait (à vérifier en phase 9).
+  curseur logiciel dans l'image de l'écran (même `grim` sans `-c` le capture). Premier essai (`hide_cursor 1` de Sway, capture
+  150 ms plus tard) insuffisant, vu par toi et par la revue : Sway porte ce délai à 100 ms au moins et le relance au moindre
+  mouvement. Solution retenue : les surfaces de l'outil demandent un curseur vide, la capture commence 50 ms après que le pointeur en
+  a atteint une ; un aller-retour d'un pixel (`swaymsg seat - cursor move 1 0; … -1 0`) fait envoyer par Sway l'entrée du pointeur
+  à une surface apparue sous un pointeur immobile. Plus aucun réglage de Sway modifié. Vérifié : pointeur immobile et en mouvement,
+  sur DP-1 et DP-2, aucune trace ; croix pendant la sélection, curseur normal après. Hyprland : capture au bout de 300 ms sans
+  aller-retour (curseur matériel, à vérifier en phase 9).
 - **Ne pas déranger programmé** : 21:00 – 07:00 (`doNotDisturb` dans `hosts/default.json`), activé à l'heure de début, désactivé à
   l'heure de fin, appliqué aussi au démarrage de la session ; bascule à la main libre entre les deux. Sous-titre de la tuile =
   horaire ; **clic droit sur la tuile** : ligne « Schedule » avec les deux heures (Entrée ou sortie du champ) et un interrupteur ;
-  gardé dans `do-not-disturb.json`. Vérifié : bascule au passage de minute (horaire de test via `qs ipc call notifications
-  setSchedule`), interrupteur au clic.
+  gardé dans `do-not-disturb.json`. Activer l'horaire pendant ses heures active « ne pas déranger » (sans le couper en dehors) ;
+  le désactiver pendant ses heures le coupe ; début = fin refusé. Entrée dans un champ d'heure rend le clavier au panneau (Échap,
+  flèches). Vérifié : bascule au passage de minute (horaire de test via `qs ipc call notifications setSchedule`), interrupteur au
+  clic, les trois règles ci-dessus.
+- Revue de code du 2026-10-26 (10 points) : tous corrigés. En plus des points ci-dessus : le raccourci des réglages pendant un
+  aperçu sous un autre bouton ferme l'aperçu et ouvre le panneau sous le bon bouton ; plus de cas particulier dans
+  `BarState.toggle` (chaque bouton de barre a sa fonction `toggle()`, appelée par les raccourcis).
 - **À tester à la main** : la saisie des heures au clavier ; le ressenti du fondu de la veilleuse (activation, désactivation, et
   20:00 ce soir) ; le mode avion ; une capture avec le curseur au-dessus d'une fenêtre d'un autre écran ; ce soir à 21:00, la cloche
   barrée.

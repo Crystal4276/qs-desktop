@@ -3,7 +3,8 @@ import QtQuick.Layouts
 import qs.config
 
 // Heure HH:MM (horaire du « ne pas déranger », SettingsPanel.qml) : champ de la largeur de « 00:00 » ; montre `value` tant qu'il
-// n'a pas le focus. Entrée ou sortie du champ : `edited(heure)`, « 9:5 » donnant 09:05.
+// n'a pas le focus. Entrée ou sortie du champ : `edited(heure)`, « 9:5 » donnant 09:05 (Entrée : aussi `accepted`, à qui de rendre
+// le focus au panneau).
 PanelField {
     id: root
 
@@ -18,7 +19,6 @@ PanelField {
     onEditingFinished: text => {
         const [h, m] = text.split(":");
         root.edited(`${h.padStart(2, "0")}:${m.padStart(2, "0")}`);
-        root.inputItem.focus = false;
     }
 
     Binding {

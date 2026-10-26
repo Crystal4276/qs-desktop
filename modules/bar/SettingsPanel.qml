@@ -24,13 +24,7 @@ Panel {
 
     WlrLayershell.namespace: "quickshell-settings"
 
-    Connections {
-        target: root
-        function onVisibleChanged() {
-            if (!root.visible)
-                root.expanded = "";
-        }
-    }
+    onVisibleChanged: if (!visible) expanded = ""   // en plus de celui de Panel.qml
 
     // --- Ligne du haut ---
     RowLayout {
@@ -222,6 +216,7 @@ Panel {
         TimeField {
             value: Notifs.scheduleFrom
             onEdited: time => Notifs.setSchedule(Notifs.scheduled, time, Notifs.scheduleTo)
+            onAccepted: root.frameItem.forceActiveFocus()   // Entrée : le cadre reprend le clavier (Échap, flèches)
         }
 
         Text {
@@ -234,6 +229,7 @@ Panel {
         TimeField {
             value: Notifs.scheduleTo
             onEdited: time => Notifs.setSchedule(Notifs.scheduled, Notifs.scheduleFrom, time)
+            onAccepted: root.frameItem.forceActiveFocus()
         }
 
         PanelSwitch {
