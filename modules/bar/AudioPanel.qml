@@ -6,7 +6,8 @@ import qs.config
 import qs.services
 
 // Panneau audio (ton choix du 2026-10-16 : remplace pavucontrol au clic droit sur le volume) : interrupteur du son (muet),
-// sortie et entrée par défaut avec leur volume, volume par application ; réglages avancés dans pavucontrol.
+// sortie et entrée par défaut en carte avec leur volume, niveau capté par chaque entrée (2026-10-26), volume par application ;
+// réglages avancés dans pavucontrol.
 Panel {
     id: root
 
@@ -34,10 +35,8 @@ Panel {
         text: "Output"
     }
 
-    AudioDevices {}
-
-    VolumeLine {
-        node: Audio.sink
+    AudioDevices {
+        withVolume: true
     }
 
     // --- Entrée ---
@@ -48,10 +47,8 @@ Panel {
 
     AudioDevices {
         input: true
-    }
-
-    VolumeLine {
-        node: Audio.source
+        withVolume: true
+        monitoring: root.visible
     }
 
     // --- Applications ---
@@ -82,6 +79,8 @@ Panel {
             }
 
             VolumeLine {
+                Layout.leftMargin: Theme.panel.rowPadding
+                Layout.rightMargin: Theme.panel.rowPadding
                 node: stream.modelData
             }
         }
@@ -89,37 +88,5 @@ Panel {
 
     MixerButton {
         onOpened: root.close()
-    }
-
-    // Volume d'un nœud : curseur, pourcentage, bouton muet.
-    component VolumeLine: RowLayout {
-        id: line
-
-        property PwNode node
-
-        visible: node?.audio !== undefined && node?.audio !== null
-        Layout.fillWidth: true
-        Layout.leftMargin: Theme.panel.rowPadding
-        Layout.rightMargin: Theme.panel.rowPadding
-        spacing: Theme.panel.spacing
-
-        VolumeSlider {
-            Layout.fillWidth: true
-            inset: Theme.slider.knobSize / 2
-            value: line.node?.audio?.volume ?? 0
-            onMoved: v => {
-                if (line.node?.audio)
-                    line.node.audio.volume = v;
-            }
-        }
-
-        PercentLabel {
-            value: line.node?.audio?.volume ?? 0
-        }
-
-        PanelButton {
-            text: line.node?.audio?.muted ? "Unmute" : "Mute"
-            onClicked: line.node.audio.muted = !line.node.audio.muted
-        }
     }
 }

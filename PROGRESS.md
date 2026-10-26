@@ -1424,6 +1424,17 @@ onglet A.
 - Note de dev : un nouveau fichier QML dans un module n'est vu qu'au redémarrage de l'instance (`scripts/dev.sh`), pas au
   rechargement à chaud (« X is not a type »).
 
+## Panneau audio : carte du périphérique par défaut, niveau des entrées (2026-10-26, ta demande)
+
+- Sortie et entrée par défaut en **carte** en tête de section (langage du panneau Wi-Fi : fond `base`, icône 48 px, nom `green`,
+  « Default output / input »), curseur de volume dans la carte ; les autres périphériques en lignes dessous, un clic les choisit.
+  Même carte dans la liste des sorties du panneau de réglages (`THEME.md` « Panneau audio »).
+- **Niveau capté** par chaque entrée : `PwNodePeakMonitor` natif (Quickshell 0.3.2, aucune dépendance), trait de 4 px sous le
+  curseur (carte) ou sous le nom (autres entrées), échelle -60 dB → 0 dB, lissage 100 ms ; capture seulement panneau ouvert.
+  Vérifié : niveau du C920 différent d'une capture à l'autre. Échelle et lissage **à valider**.
+- **À tester à la main** : parler dans chaque micro (la barre suit la voix) ; micro coupé (barre atténuée) ; clic sur une autre
+  entrée / sortie (elle passe dans la carte) ; liste des sorties dépliée dans le panneau de réglages.
+
 ## Prochaine étape
 
 Phase 9 — parité Hyprland (tests à faire ensemble dans une session Hyprland : voir « Compatibilité Hyprland »).
