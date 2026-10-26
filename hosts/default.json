@@ -3,7 +3,7 @@
   "workspaceLayouts": [],
   "bars": {
     "primary": {
-      "left": [["menu"], ["workspaces"], ["mpris", "cava", "volume", "slider"]],
+      "left": [["menu"], ["workspaces"], ["mpris", "volume", "slider"]],
       "right": [["updates"], ["gpu", "cpu", "memory"], ["backlight", "battery"], ["clockDate"], ["tray", "settings"]]
     },
     "secondary": {

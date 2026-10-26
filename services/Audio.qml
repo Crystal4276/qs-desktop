@@ -28,7 +28,7 @@ Singleton {
     // Changement fait au clavier (IPC ci-dessous) : affiché par l'OSD (modules/osd). "volume" ou "mic".
     signal changedByKey(string kind)
     // Lectures seulement (type `AudioOutStream` = Audio | Stream | Sink, ex. Spotify) : les enregistrements (Audio | Stream |
-    // Source, ex. cava) sont exclus. `media.class` n'est pas dans les propriétés exposées par Quickshell.
+    // Source, ex. un enregistreur) sont exclus. `media.class` n'est pas dans les propriétés exposées par Quickshell.
     readonly property var streams: Pipewire.nodes.values.filter(n => n.audio && (n.type & PwNodeType.AudioOutStream) === PwNodeType.AudioOutStream)
         .sort((a, b) => a.id - b.id)
 

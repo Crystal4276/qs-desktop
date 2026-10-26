@@ -38,7 +38,6 @@ Variants {
             menu: menuModule,
             workspaces: workspacesModule,
             mpris: mprisModule,
-            cava: cavaModule,
             volume: volumeModule,
             slider: sliderModule,
             updates: updatesModule,
@@ -67,10 +66,6 @@ Variants {
         Component {
             id: mprisModule
             Mpris {}
-        }
-        Component {
-            id: cavaModule
-            CavaModule {}
         }
         Component {
             id: volumeModule

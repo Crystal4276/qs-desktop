@@ -96,6 +96,8 @@ Locale : `en_US.UTF-8` (jours en anglais : `Thu`).
 
 #### `cava` — visualiseur (DP-2)
 
+*Non repris : retiré de la barre Quickshell à ta demande (2026-10-26 : n'apporte rien, coûte du CPU).*
+
 - **Affichage** : 12 barres en caractères `▁▂▃▄▅▆▇█` (U+2581…U+2588, chacun suivi d'une espace), couleur `green`, 20 px. La CSS demande Inter, mais **Inter ne contient pas ces caractères** : ils sont dessinés par **DejaVu Sans** (repli fontconfig, vérifié avec `fc-match`).
 - **Réglages** : 100 images/s, stéréo, sensibilité auto (`autosens 1`, `sensitivity 2`), 50–10 000 Hz, lissage `monstercat` + `waves`, `noise_reduction 0.77`, source PulseAudio automatique.
 - **Silence** : module **masqué** (`hide_on_silence`).

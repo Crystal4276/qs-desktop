@@ -5,7 +5,7 @@
   "primaryOutput": "Dell Inc. Dell AW3418DW #ASPFPBQwWjbd",
   "bars": {
     "primary": {
-      "left": [["menu"], ["workspaces"], ["mpris", "cava", "volume", "slider"]],
+      "left": [["menu"], ["workspaces"], ["mpris", "volume", "slider"]],
       "right": [["updates"], ["gpu", "cpu", "memory"], ["clockDate"], ["tray", "settings"]]
     },
     "secondary": {
