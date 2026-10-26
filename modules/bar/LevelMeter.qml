@@ -4,7 +4,7 @@ import Quickshell.Services.Pipewire
 import qs.config
 
 // Niveau capté par une entrée audio (ta demande du 2026-10-26) : trait fin de la position de la carte média (4 px, creux
-// `crust`), remplissage en dégradé (bleu → rouge). Crête de PipeWire (0–1, avant le volume du nœud) en échelle dB sur `Theme.levelMeter.range`,
+// `crust`), remplissage en dégradé (bleu → rouge). Crête de PipeWire (avant le volume du nœud) en échelle dB sur `Theme.levelMeter.range`,
 // comme les vu-mètres ; entrée coupée : remplissage atténué. Capture seulement si `active` (panneau ouvert).
 Rectangle {
     id: root
@@ -12,9 +12,11 @@ Rectangle {
     property PwNode node
     property bool active: false
 
+    // `peak` est en échelle cubique, comme les volumes (relevé le 2026-10-26 : 0,24 en silence pour -37 dBFS mesurés avec
+    // pw-record ; 0,24³ ≈ 0,014) : amplitude = peak³, soit 60 × log10(peak) dB.
     readonly property real level: {
         const peak = monitor.peak;
-        return peak > 0 ? Math.max(0, Math.min(1, 1 + 20 * Math.log10(peak) / Theme.levelMeter.range)) : 0;
+        return peak > 0 ? Math.max(0, Math.min(1, 1 + 60 * Math.log10(peak) / Theme.levelMeter.range)) : 0;
     }
 
     Layout.fillWidth: true
