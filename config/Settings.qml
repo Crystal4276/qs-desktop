@@ -30,8 +30,7 @@ Singleton {
     // l'écran principal après les autres (contournement d'un écran lent à se réveiller, repris de hypridle) ; `lockBeforeSleep` :
     // verrouiller avant la mise en veille du système (null : seulement sur une machine avec batterie).
     readonly property var idle: Object.assign({ timeout: 300, primaryWakeDelay: 0, lockBeforeSleep: null }, config.idle ?? {})
-    // Veilleuse : de `from` à `to` (HH:MM, nuit qui passe minuit : limite de gammastep), `temperature` en kelvins la nuit
-    // (hosts/default.json : tes réglages GNOME).
+    // Veilleuse : de `from` à `to` (HH:MM, différentes), `temperature` en kelvins la nuit (hosts/default.json : tes réglages GNOME).
     readonly property var nightLight: Object.assign({ from: "20:00", to: "06:00", temperature: 3239 }, config.nightLight ?? {})
     // « Ne pas déranger » programmé (services/Notifs.qml) : actif de `from` à `to` (HH:MM) si `schedule`. Valeurs de départ :
     // ensuite réglées depuis le panneau de réglages et gardées dans un fichier d'état.
