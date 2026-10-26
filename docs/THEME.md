@@ -315,8 +315,18 @@ barre en haut), affiché 1,5 s (durée de l'OSD de GNOME).
 ### Panneau audio (nouveau composant, ton choix du 2026-10-16)
 
 Clic droit sur le volume ou le curseur (pavucontrol dans Waybar). Style des panneaux (§ 3) ; interrupteur du titre : son (muet) ;
-sections Output / Input / Applications ; périphérique par défaut en `green` ; sous chacun, curseur de volume (style du curseur de la
-barre), pourcentage, bouton Mute ; bouton « Advanced… » (pavucontrol).
+sections Output / Input / Applications ; bouton « Advanced… » (pavucontrol).
+
+Refait le 2026-10-26 (ta demande : périphérique choisi peu visible) :
+
+| Élément | Valeur | Origine |
+|---|---|---|
+| Périphérique par défaut | carte en tête de section (`PanelCard` : fond `base`, coins 10 px, padding 15 px), icône Papirus 48 px, nom Inter 20 px `green`, « Default output / input » Inter 16 px `subtext0` ; dans la carte : curseur de volume, pourcentage, bouton Mute | carte du réseau Wi-Fi courant |
+| Autres périphériques | lignes des panneaux dessous ; un clic en fait le périphérique par défaut (il passe dans la carte) | panneau Wi-Fi |
+| Niveau d'entrée | sous le rail du curseur (carte) ou sous le nom (lignes) : trait de **4 px** (position de la carte média), creux `crust`, remplissage `green`, 6 px d'écart ; crête PipeWire (`PwNodePeakMonitor`, avant le volume) sur **-60 dB → 0 dB**, lissée **100 ms** ; entrée coupée : remplissage à 50 % ; capté seulement panneau ouvert | **échelle et lissage nouveaux, à valider** |
+| Applications | inchangé : ligne, puis curseur, pourcentage, Mute | — |
+
+Panneau de réglages : même carte pour la sortie par défaut dans la liste dépliée (sans curseur, il est au-dessus).
 
 ### Carte média (nouveau composant, ton choix du 2026-10-16 ; refaite compacte le 2026-10-20)
 

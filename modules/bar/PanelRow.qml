@@ -21,6 +21,8 @@ Rectangle {
     default property alias trailing: trailingRow.data
     // Icône dessinée à la place de `icon` (glyphe Wi-Fi des listes).
     property alias leading: leadingRow.data
+    // Sous le texte (niveau d'une entrée audio).
+    property alias below: belowColumn.data
     signal clicked
 
     Layout.fillWidth: true
@@ -98,6 +100,14 @@ Rectangle {
                 font.pixelSize: Theme.panel.smallFontSize
                 color: Theme.panel.secondaryText
                 elide: Text.ElideRight
+            }
+
+            ColumnLayout {
+                id: belowColumn
+                Layout.fillWidth: true
+                Layout.topMargin: Theme.levelMeter.gap
+                visible: visibleChildren.length > 0
+                spacing: 0
             }
         }
 
