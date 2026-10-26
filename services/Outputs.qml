@@ -127,8 +127,9 @@ Singleton {
     }
 
     // Espace créé hors de son écran : traité 100 ms plus tard, quand le focus est à jour.
-    // Focalisé (`$mod+N`) : déplacé, il reste focalisé ; son écran de départ reprend l'espace qu'il affichait. Créé en arrière-plan (fenêtre envoyée vers
-    // un espace inexistant) : déplacé, son écran d'arrivée garde l'espace qu'il affichait, et le focus revient où il était.
+    // Focalisé (`$mod+N`) : déplacé, il reste focalisé ; son écran de départ reprend l'espace qu'il affichait. Créé en
+    // arrière-plan (fenêtre envoyée vers un espace inexistant) : déplacé, son écran d'arrivée garde l'espace qu'il affichait,
+    // et le focus revient où il était.
     // Bouche-trou (vide, affiché, non focalisé : Sway en crée un, au premier numéro libre, sur un écran qu'on vient de vider) :
     // pas déplacé, Sway en recréerait un sans fin ; l'écran affiche à la place un espace de son bloc, qui y est chez lui.
     property var pendingCreated: []
@@ -158,9 +159,10 @@ Singleton {
                 if (!w || w.output === root.homes[n])
                     continue;
                 if (w.focused) {
-                    // L'écran de départ reprend l'espace qu'il affichait : Sway l'a détruit s'il était vide.
+                    // L'écran de départ reprend l'espace qu'il affichait (Sway l'a détruit s'il était vide), s'il n'est pas ailleurs.
                     const before = root.visibleByLayout[root.currentLayout]?.visible?.[w.output];
-                    if (before !== undefined && before !== n && root.homes[before] === w.output)
+                    if (before !== undefined && before !== n && root.homes[before] === w.output
+                            && !workspaces.some(x => x.number === before && x.output !== w.output))
                         Compositor.placeWorkspaces([{ number: n, output: root.homes[n] }], [{ number: before, output: w.output }], n);
                     else
                         Compositor.moveFocusedWorkspace(root.homes[n]);
