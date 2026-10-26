@@ -4,8 +4,9 @@ import Quickshell.Services.Pipewire
 import qs.config
 
 // Niveau capté par une entrée audio (ta demande du 2026-10-26) : trait fin de la position de la carte média (4 px, creux
-// `crust`), remplissage en dégradé (bleu → rouge). Crête de PipeWire (avant le volume du nœud) en échelle dB sur `Theme.levelMeter.range`,
-// comme les vu-mètres ; entrée coupée : remplissage atténué. Capture seulement si `active` (panneau ouvert).
+// `crust`), remplissage en dégradé (`Theme.levelMeter.gradient`, bleu → rouge). Crête de PipeWire (avant le volume du nœud)
+// en échelle dB sur `Theme.levelMeter.range`, comme les vu-mètres ; entrée coupée : remplissage atténué. Capture seulement si
+// `active` (panneau ouvert ou en aperçu).
 Rectangle {
     id: root
 
@@ -30,7 +31,8 @@ Rectangle {
         enabled: root.active && root.node !== null
     }
 
-    // Remplissage : fenêtre sur un dégradé de toute la largeur (la couleur dépend de la position, comme un vu-mètre).
+    // Remplissage : fenêtre sur un dégradé de toute la largeur (la couleur dépend de la position, comme un vu-mètre), fait
+    // d'un segment par paire de couleurs voisines.
     Item {
         width: root.active ? root.level * root.width : 0
         height: parent.height
@@ -43,17 +45,29 @@ Rectangle {
             }
         }
 
-        Rectangle {
-            width: root.width
-            height: parent.height
-            radius: height / 2
-            gradient: Gradient {
-                orientation: Gradient.Horizontal
-                GradientStop { position: 0; color: Theme.levelMeter.gradient[0] }
-                GradientStop { position: 0.25; color: Theme.levelMeter.gradient[1] }
-                GradientStop { position: 0.5; color: Theme.levelMeter.gradient[2] }
-                GradientStop { position: 0.75; color: Theme.levelMeter.gradient[3] }
-                GradientStop { position: 1; color: Theme.levelMeter.gradient[4] }
+        Row {
+            Repeater {
+                model: Theme.levelMeter.gradient.length - 1
+
+                Rectangle {
+                    id: segment
+
+                    required property int index
+
+                    width: root.width / (Theme.levelMeter.gradient.length - 1)
+                    height: root.height
+                    gradient: Gradient {
+                        orientation: Gradient.Horizontal
+                        GradientStop {
+                            position: 0
+                            color: Theme.levelMeter.gradient[segment.index]
+                        }
+                        GradientStop {
+                            position: 1
+                            color: Theme.levelMeter.gradient[segment.index + 1]
+                        }
+                    }
+                }
             }
         }
     }

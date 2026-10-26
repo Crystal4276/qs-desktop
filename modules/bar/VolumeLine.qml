@@ -2,9 +2,10 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell.Services.Pipewire
 import qs.config
+import qs.services
 
 // Volume d'un nœud (panneau audio) : curseur, pourcentage, bouton muet ; `meter` : niveau capté sous le rail (entrées).
-RowLayout {
+ColumnLayout {
     id: line
 
     property PwNode node
@@ -13,11 +14,12 @@ RowLayout {
 
     visible: node?.audio !== undefined && node?.audio !== null
     Layout.fillWidth: true
-    spacing: Theme.panel.spacing
+    spacing: Theme.levelMeter.gap
 
-    ColumnLayout {
+    // Pourcentage et bouton centrés sur le curseur (le niveau est sous la ligne).
+    RowLayout {
         Layout.fillWidth: true
-        spacing: Theme.levelMeter.gap
+        spacing: Theme.panel.spacing
 
         VolumeSlider {
             id: slider
@@ -30,22 +32,23 @@ RowLayout {
             }
         }
 
-        // Aligné sur le rail du curseur.
-        LevelMeter {
-            visible: line.meter
-            Layout.leftMargin: slider.inset
-            Layout.rightMargin: slider.inset
-            node: line.node
-            active: line.meter && line.monitoring
+        PercentLabel {
+            value: line.node?.audio?.volume ?? 0
+        }
+
+        PanelButton {
+            text: line.node?.audio?.muted ? "Unmute" : "Mute"
+            onClicked: line.node.audio.muted = !line.node.audio.muted
         }
     }
 
-    PercentLabel {
-        value: line.node?.audio?.volume ?? 0
-    }
-
-    PanelButton {
-        text: line.node?.audio?.muted ? "Unmute" : "Mute"
-        onClicked: line.node.audio.muted = !line.node.audio.muted
+    // Aligné sur le rail du curseur.
+    LevelMeter {
+        visible: line.meter && Audio.hasLevel(line.node)
+        Layout.leftMargin: slider.inset
+        Layout.preferredWidth: slider.width - 2 * slider.inset
+        Layout.fillWidth: false
+        node: line.node
+        active: visible && line.monitoring
     }
 }
