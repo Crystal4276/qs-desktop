@@ -39,7 +39,9 @@ Singleton {
     readonly property string scheduleTo: schedule.to
     readonly property bool quietHours: {
         const now = clock.hours * 60 + clock.minutes;
-        const from = minutes(schedule.from), to = minutes(schedule.to);
+        const from = Settings.minutes(schedule.from), to = Settings.minutes(schedule.to);
+        if (from < 0 || to < 0)
+            return false;
         return from <= to ? now >= from && now < to : now >= from || now < to;
     }
     property bool editing: false   // setSchedule en cours : la plage change par réglage, pas par l'heure
@@ -55,27 +57,23 @@ Singleton {
         persist.dndBySchedule = on;
     }
 
-    // Début et fin identiques (plage vide) : heures refusées, le champ revient à l'ancienne.
+    // Heures mal formées (IPC) ou identiques (plage vide) : refusées, le champ revient à l'ancienne. Une seule écriture du fichier.
     function setSchedule(enabled: bool, from: string, to: string): void {
         const was = schedule.enabled && quietHours;
+        const f = Settings.minutes(from), t = Settings.minutes(to);
         editing = true;
         schedule.enabled = enabled;
-        if (minutes(from) !== minutes(to)) {
+        if (f >= 0 && t >= 0 && f !== t) {
             schedule.from = from;
             schedule.to = to;
         }
         editing = false;
+        scheduleFile.writeAdapter();
         const now = schedule.enabled && quietHours;
         if (now && !was)
             setBySchedule(true);
         else if (!now && was && persist.dndBySchedule)
             setBySchedule(false);
-    }
-
-    // "9:5" → 545 (minutes depuis minuit).
-    function minutes(time: string): int {
-        const [h, m] = time.split(":").map(Number);
-        return h * 60 + m;
     }
 
     // Heure de début ou de fin atteinte, ou démarrage de la session.
@@ -93,10 +91,11 @@ Singleton {
 
     // Lu avant la suite (blockLoading) : l'horaire est connu quand l'état de la session est repris (persist.onLoaded).
     FileView {
+        id: scheduleFile
         path: Quickshell.statePath("do-not-disturb.json")
         blockLoading: true
         printErrors: false
-        onAdapterUpdated: writeAdapter()
+        onAdapterUpdated: if (!root.editing) writeAdapter()
 
         JsonAdapter {
             id: schedule

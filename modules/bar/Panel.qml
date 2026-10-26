@@ -57,7 +57,9 @@ OverlayPopup {
     property bool wasPinned: false
     // Pointeur entré dans le cadre ou sur l'icône depuis l'ouverture : la fermeture automatique peut compter.
     property bool pointerEntered: false
-    readonly property bool typing: frame.focusedItem?.cursorPosition !== undefined && (frame.focusedItem?.text ?? "") !== ""
+    // Champ focalisé en cours de saisie : `pending` de PanelField.qml (heure modifiée pour TimeField.qml), sinon texte non vide.
+    readonly property bool typing: frame.focusedItem?.cursorPosition !== undefined
+        && (frame.focusedItem.parent?.pending ?? (frame.focusedItem.text ?? "") !== "")
 
     // Survol de `item` (bouton à PreviewArea.qml, qui le déclare en `hovered`) ; `buttons` : comme pour toggle().
     function preview(item: Item, buttons: int): void {

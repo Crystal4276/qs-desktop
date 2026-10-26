@@ -16,6 +16,8 @@ Rectangle {
     property string placeholder: ""
     property bool search: false
     property alias validator: input.validator
+    // Saisie en cours (focus compris) : le panneau ne se ferme pas tout seul (Panel.qml). Par défaut : champ non vide.
+    property bool pending: input.text !== ""
     signal accepted(string text)
     signal editingFinished(string text)
 

@@ -73,7 +73,9 @@ Singleton {
         repeat: true
         triggeredOnStart: true
         onTriggered: {
-            if (++root.nudges > 10) {   // pointeur sur aucune surface de l'outil : capture
+            // Pointeur sur aucune surface de l'outil au bout d'1 s (surfaces très lentes à s'afficher, trou entre les écrans) :
+            // capture quand même, plutôt que pas de capture.
+            if (++root.nudges > 20) {
                 stop();
                 root.cursorHidden = true;
             } else {
