@@ -127,6 +127,8 @@ Singleton {
     function forget(device: BluetoothDevice): void {
         setAutoConnect(device, false);
         failed = withFlag(failed, device.address, false);
+        requested = withFlag(requested, device.address, false);
+        autoAttempts = withFlag(autoAttempts, device.address, false);
         device.forget();
     }
 
@@ -179,19 +181,21 @@ Singleton {
         }
     }
 
-    // Comme blueman : toutes les 60 s, adaptateur allumé, appareils de la liste appairés et déconnectés.
+    // Comme blueman : à l'allumage de l'adaptateur, puis toutes les 60 s ; aussi dès qu'un appareil de la liste est connu
+    // (démarrage, BlueZ relancé : suivi créé, plus bas). Appareils appairés et déconnectés seulement.
+    function autoConnectDevice(device: BluetoothDevice): void {
+        if (!enabled || !isAutoConnect(device) || !device.paired || device.state !== BluetoothDeviceState.Disconnected)
+            return;
+        autoAttempts = withFlag(autoAttempts, device.address, true);
+        device.connect();
+    }
+
     Timer {
         interval: 60000
         repeat: true
+        triggeredOnStart: true
         running: root.enabled && root.autoConnect.length > 0
-        onTriggered: {
-            for (const device of root.devices) {
-                if (root.isAutoConnect(device) && device.paired && device.state === BluetoothDeviceState.Disconnected) {
-                    root.autoAttempts = root.withFlag(root.autoAttempts, device.address, true);
-                    device.connect();
-                }
-            }
-        }
+        onTriggered: root.paired.forEach(d => root.autoConnectDevice(d))
     }
 
     // --- Profil audio d'un casque (module PulseAudioProfile de blueman) ---
@@ -310,6 +314,9 @@ Singleton {
                 lastState = modelData.state;
                 if (modelData.connected && agent.running && modelData.address === root.pairingAddress)
                     connected();
+                else
+                    checkBattery();   // déjà connecté au démarrage, batterie déjà faible
+                root.autoConnectDevice(modelData);
             }
             // Notification « Connected » en attente de la batterie (BlueZ la publie après la connexion) : remplacée par
             // « Connected 80% », comme ConnectionNotifier de blueman.
