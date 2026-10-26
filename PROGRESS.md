@@ -1472,6 +1472,11 @@ Lecteur, visualiseur, icône et curseur de volume (`Mpris`, `CavaModule`, `Volum
   taille, paddings, couleur, glyphes) ; `cava` et `ttf-dejavu` sortis de `deps/` (`pipewire-pulse` reste pour pavucontrol) ;
   `THEME.md`, `ARCHITECTURE.md` et `INVENTORY.md` mis à jour. Recherche de code mort : aucun jeton, propriété ni composant
   orphelin. Instance relancée sans erreur, plus aucun processus cava.
+- **Réglages du thème inutilisés retirés** (ta demande) : groupe `powerMenu` (power menu Rofi non repris, remplacé par le
+  panneau de réglages), `font.powerMenuLabel`, `module.menuLogo`, `module.menuBackground`, `icon.power`,
+  `notification.progressMinWidth` (largeur de notification fixe à 600 px : jamais atteint). Gardés : toutes les couleurs du § 1
+  (palette, couleurs Rofi, `hoverWhite`), même inutilisées, pour de futurs éléments ; `embeddedFonts` (charge les polices) ;
+  `icon.spotify` (lu par la table des lecteurs). `Settings.qml` et les configs machine : rien d'inutilisé.
 
 ## Prochaine étape
 

@@ -372,6 +372,9 @@ au survol) ; dessous le corps Inter **16 px** `text` (ton choix, 20 px essayé),
 
 ## 6. Power menu (Rofi)
 
+*Non repris : remplacé par le panneau de réglages (`ARCHITECTURE.md` § 10.1.4) ; ses réglages sont retirés de
+`Theme.qml` (2026-10-26), ses couleurs restent dans la palette (§ 1).*
+
 | Élément | Valeur |
 |---|---|
 | Fenêtre | 126 x 352 px, ancrée en haut à droite de l'écran focalisé, décalage -5 px / +5 px (sous la barre), fond `#1E1D2F`, bordure 1 px `#6c7086`, rayon 20 px |
