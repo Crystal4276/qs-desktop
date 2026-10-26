@@ -83,11 +83,6 @@ Singleton {
         return loader.item;
     }
 
-    function toggle(kind: string, button: Item): void {
-        if (button)
-            load(kind)?.toggle(button);
-    }
-
     // Raccourcis `qs ipc call settings toggle` (`$mod+Escape`, phase 10) et `qs ipc call menu toggle` : bouton de l'écran focalisé,
     // sinon celui de l'écran principal (sa barre en a un, hosts/*.json), sinon le premier. Un panneau ouvert se ferme, quel que soit
     // son écran.

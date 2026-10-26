@@ -125,17 +125,20 @@ Singleton {
                 }
             }
         }
-        // Arrêt : relancé 1 s plus tard si la veilleuse est activée ; abandon après 10 arrêts de suite dans les 5 s qui suivent le
-        // lancement (autre client gamma qui garde la main, config refusée).
+        // Arrêt : relancé 1 s plus tard si la veilleuse est activée ; après 10 arrêts de suite dans les 5 s qui suivent le lancement
+        // (autre client gamma qui garde la main, aucun écran, config refusée), une fois par minute seulement, et aussitôt qu'un
+        // écran apparaît ou que la config change.
         onExited: {
             readyDelay.stop();
             root.gammaOn = false;
             root.ready = false;
             root.failures = Date.now() - root.startedAt < 5000 ? root.failures + 1 : 0;
-            if (root.failures >= 10)
-                console.warn("NightLight: gammastep s'arrête aussitôt lancé, abandon (autre client gamma ?)");
-            else if (root.enabled)
+            if (root.failures === 10)
+                console.warn("NightLight: gammastep s'arrête aussitôt lancé, nouvel essai chaque minute (autre client gamma ?)");
+            if (root.enabled) {
+                retry.interval = root.failures >= 10 ? 60000 : 1000;
                 retry.start();
+            }
         }
     }
 
@@ -162,6 +165,17 @@ Singleton {
         id: retry
         interval: 1000
         onTriggered: root.apply()
+    }
+
+    Connections {
+        target: Quickshell
+        function onScreensChanged() {
+            root.failures = 0;
+            if (retry.running) {
+                retry.stop();
+                root.apply();
+            }
+        }
     }
 
     // `qs ipc call nightlight toggle` (raccourci éventuel, tests).

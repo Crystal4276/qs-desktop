@@ -11,7 +11,7 @@ Item {
     readonly property bool active: hover.hovered || BarState.openedUnder("menu") === root
 
     function toggle(): void {
-        BarState.toggle("menu", root);
+        BarState.load("menu")?.toggle(root);
     }
 
     implicitWidth: Theme.bar.menuButtonMin + 2 * Theme.bar.menuButtonPadding
