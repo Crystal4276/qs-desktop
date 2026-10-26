@@ -226,7 +226,13 @@ Singleton {
     }
 
     I3IpcListener {
-        subscriptions: root.isSway ? ["window", "mode", "workspace"] : []
+        id: i3Listener
+
+        // Abonnements posés après le chargement : I3IpcListener se connecte dès qu'ils sont posés, puis recrée sa connexion après le
+        // chargement (« I3 event socket disconnected »). Vide à ce moment-là, il ne se connecte qu'une fois (Quickshell 0.3.2).
+        property bool loaded: false
+        subscriptions: root.isSway && loaded ? ["window", "mode", "workspace"] : []
+        Component.onCompleted: Qt.callLater(() => i3Listener.loaded = true)
 
         onIpcEvent: event => {
             const data = JSON.parse(event.data);
