@@ -19,7 +19,7 @@ Singleton {
 
     // Un popup inscrit est épinglé, sauf l'aperçu d'une carte du tray (`previewing` vrai, Panel.qml) : pas d'aperçu par-dessus.
     readonly property bool popupPinned: openList.some(p => p.previewing !== true)
-    // Bouton du tray (TrayButton.qml) ou engrenage (SettingsButton.qml) sous le pointeur : un aperçu reste ouvert tant que le
+    // Bouton à aperçu sous le pointeur (PreviewArea.qml : tray, engrenage) : un aperçu reste ouvert tant que le
     // pointeur est sur l'un d'eux, jusqu'à ce que l'aperçu du bouton survolé le remplace.
     property Item hoveredTrayButton: null
 
