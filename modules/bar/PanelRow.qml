@@ -106,7 +106,6 @@ Rectangle {
             ColumnLayout {
                 id: belowColumn
                 Layout.fillWidth: true
-                Layout.topMargin: Theme.levelMeter.gap
                 visible: root.belowShown
                 spacing: 0
             }

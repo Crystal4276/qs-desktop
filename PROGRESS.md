@@ -1438,6 +1438,7 @@ onglet A.
   (0,24 en silence pour -37 dBFS mesurés avec `pw-record`) ; conversion corrigée (60 × log10), échelle -40 → 0 dBFS : silence vers
   10 %. Dégradé `blue` → `green` → `yellow` → `peach` → `red` sur la largeur (ta demande). Vérifié par toi : micro coupé, changement
   d'entrée, échelle (« ça fonctionne bien »). Revue de code en boucle ensuite (Bluetooth exclu, descente lissée image par image…).
+- Micro coupé : crête nulle (mesuré), donc creux atténué comme en aperçu, plus de remplissage atténué.
 - **À tester à la main** : descente de la barre après un mot (100 ms, à valider) ; aperçu au survol (creux atténué, rien n'est
   capté) ; liste des sorties dépliée dans le panneau de réglages.
 

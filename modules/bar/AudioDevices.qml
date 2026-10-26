@@ -56,6 +56,7 @@ ColumnLayout {
             belowShown: root.input && Audio.hasLevel(modelData)
             below: Loader {
                 Layout.fillWidth: true
+                Layout.topMargin: Theme.levelMeter.gap
                 active: row.belowShown
 
                 sourceComponent: LevelMeter {

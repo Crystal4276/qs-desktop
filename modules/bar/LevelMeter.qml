@@ -5,9 +5,9 @@ import Quickshell.Widgets
 import qs.config
 
 // Niveau capté par une entrée audio (ta demande du 2026-10-26) : trait fin de la position de la carte média (4 px, creux
-// `crust`), remplissage arrondi en dégradé (`Theme.levelMeter.gradient`, bleu → rouge). Crête de PipeWire (avant le volume du
-// nœud) en échelle dB sur `Theme.levelMeter.range`, comme les vu-mètres : montée immédiate, descente lissée ; entrée coupée :
-// remplissage atténué. Capture seulement si `active` (panneau épinglé) et affiché ; sinon, creux atténué (rien n'est mesuré).
+// `crust`), remplissage arrondi en dégradé (`Theme.levelMeter.gradient`, bleu → rouge). Crête de PipeWire en échelle dB sur
+// `Theme.levelMeter.range`, comme les vu-mètres : montée immédiate, descente lissée. Capture seulement si `active` (panneau
+// épinglé) et affiché ; sinon, ou entrée coupée (crête nulle, vérifié le 2026-10-26), creux atténué : rien n'est mesuré.
 Rectangle {
     id: root
 
@@ -36,7 +36,7 @@ Rectangle {
     implicitHeight: Theme.levelMeter.height
     radius: height / 2
     color: Theme.levelMeter.trough
-    opacity: monitor.enabled ? 1 : Theme.panel.disabledOpacity
+    opacity: monitor.enabled && !(node?.audio?.muted ?? false) ? 1 : Theme.panel.disabledOpacity
 
     PwNodePeakMonitor {
         id: monitor
@@ -65,9 +65,8 @@ Rectangle {
         visible: monitor.enabled
         width: root.level * root.width
         height: root.height
-        radius: root.radius
+        radius: Math.min(root.radius, width / 2)
         color: "transparent"
-        opacity: root.node?.audio?.muted ? Theme.panel.disabledOpacity : 1
 
         Row {
             Repeater {
@@ -78,7 +77,8 @@ Rectangle {
 
                     required property int index
 
-                    width: root.width / (Theme.levelMeter.gradient.length - 1)
+                    // Arrondi au pixel supérieur : pas de jointure entre segments (le dernier déborde, coupé).
+                    width: Math.ceil(root.width / (Theme.levelMeter.gradient.length - 1))
                     height: root.height
                     gradient: Gradient {
                         orientation: Gradient.Horizontal
