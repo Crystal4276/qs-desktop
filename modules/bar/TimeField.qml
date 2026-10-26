@@ -3,31 +3,32 @@ import QtQuick.Layouts
 import qs.config
 
 // Heure HH:MM (horaire du « ne pas déranger », SettingsPanel.qml) : champ de la largeur de « 00:00 » ; montre `value` tant qu'il
-// n'a pas le focus. Entrée ou sortie du champ : `edited(heure)` si l'heure change, « 9:5 » donnant 09:05 (Entrée : aussi
-// `accepted`, à qui de rendre le focus au panneau ; la sortie du champ qui suit ne la renvoie pas). Échap annule la saisie (puis
-// ferme le panneau, comme ailleurs).
+// n'a pas le focus. Masque HH:MM (ta demande du 2026-10-26) : deux points fixes, chiffres remplacés en place. Entrée ou sortie du
+// champ : `edited(heure)` si l'heure change (Entrée : aussi `accepted`, à qui de rendre le focus au panneau ; la sortie du champ
+// qui suit ne la renvoie pas). Échap annule la saisie et émet `cancelled` (rendre le focus au panneau : un second Échap le
+// ferme, comme l'effacement d'un champ de recherche).
 PanelField {
     id: root
 
     property string value
     signal edited(string time)
+    signal cancelled
 
     pending: text !== value
     Layout.fillWidth: false
     implicitWidth: metrics.advanceWidth + 2 * Theme.panel.rowPadding
+    inputMask: "99:99"
     validator: RegularExpressionValidator {
-        regularExpression: /^([01]?\d|2[0-3]):[0-5]?\d$/
+        regularExpression: /^([01]\d|2[0-3]):[0-5]\d$/
     }
     onEditingFinished: text => {
-        const [h, m] = text.split(":");
-        const time = `${h.padStart(2, "0")}:${m.padStart(2, "0")}`;
-        if (time !== root.value)
-            root.edited(time);
+        if (text !== root.value)
+            root.edited(text);
     }
 
-    Keys.onEscapePressed: event => {
+    Keys.onEscapePressed: {
         root.text = root.value;
-        event.accepted = false;
+        root.cancelled();
     }
 
     Binding {

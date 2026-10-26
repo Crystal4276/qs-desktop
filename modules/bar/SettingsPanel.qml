@@ -217,6 +217,7 @@ Panel {
             value: Notifs.scheduleFrom
             onEdited: time => Notifs.setSchedule(Notifs.scheduled, time, Notifs.scheduleTo)
             onAccepted: root.frameItem.forceActiveFocus()   // Entrée : le cadre reprend le clavier (Échap, flèches)
+            onCancelled: root.frameItem.forceActiveFocus()
         }
 
         Text {
@@ -230,6 +231,7 @@ Panel {
             value: Notifs.scheduleTo
             onEdited: time => Notifs.setSchedule(Notifs.scheduled, Notifs.scheduleFrom, time)
             onAccepted: root.frameItem.forceActiveFocus()
+            onCancelled: root.frameItem.forceActiveFocus()
         }
 
         PanelSwitch {
