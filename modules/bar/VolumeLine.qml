@@ -47,7 +47,7 @@ ColumnLayout {
 
     // Aligné sur le rail du curseur ; créé seulement pour une entrée qui le permet.
     Loader {
-        active: line.shown && line.meter && Audio.hasLevel(line.node)
+        active: line.visible && line.meter && Audio.hasLevel(line.node)
         visible: active
         Layout.fillWidth: true
         Layout.leftMargin: slider.inset
