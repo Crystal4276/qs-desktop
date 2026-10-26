@@ -34,10 +34,8 @@ Singleton {
         ensureDirectory();   // le temps de choisir la zone suffit à le créer
         windowList.command = Compositor.isHyprland ? ["hyprctl", "clients", "-j"] : ["swaymsg", "-t", "get_tree"];
         windowList.running = true;
-        cursorHidden = false;
+        cursorHidden = Compositor.isHyprland;   // curseur matériel, exclu par `paintCursor: false`
         active = true;
-        nudges = 0;
-        nudge.restart();
     }
 
     function close(): void {
@@ -51,9 +49,17 @@ Singleton {
     // compositeur dessine le curseur dans l'image de l'écran : curseur logiciel, Sway sur Nvidia (même `grim` sans `-c` le capture).
     // Les surfaces de l'outil, transparentes jusqu'aux images figées, demandent un curseur vide ; la capture commence une image après
     // que le pointeur en a atteint une (pointerEntered). Sous Sway, une surface qui apparaît sous un pointeur immobile n'en reçoit
-    // pas l'entrée : un aller-retour d'un pixel la provoque (sans effet si le pointeur est déjà entré). `hide_cursor` de Sway,
-    // essayé avant, ne convient pas : délai d'au moins 100 ms, relancé par le moindre mouvement de souris.
+    // pas l'entrée : un déplacement nul du pointeur (`cursor move 0 0`) la provoque, répété tant que les surfaces ne sont pas
+    // affichées (à partir de leur création, surfaceCreated). `hide_cursor` de Sway, essayé avant, ne convient pas : délai d'au
+    // moins 100 ms, relancé par le moindre mouvement de souris.
     property int nudges: 0
+
+    function surfaceCreated(): void {
+        if (cursorHidden || nudge.running || settle.running)
+            return;
+        nudges = 0;
+        nudge.start();
+    }
 
     function pointerEntered(): void {
         nudge.stop();
@@ -63,14 +69,15 @@ Singleton {
 
     Timer {
         id: nudge
-        interval: 30
+        interval: 50
         repeat: true
+        triggeredOnStart: true
         onTriggered: {
-            if (++root.nudges > 10) {   // pointeur sur aucune surface de l'outil (ou Hyprland, curseur matériel) : capture
+            if (++root.nudges > 10) {   // pointeur sur aucune surface de l'outil : capture
                 stop();
                 root.cursorHidden = true;
-            } else if (!Compositor.isHyprland) {
-                Quickshell.execDetached(["swaymsg", "seat - cursor move 1 0; seat - cursor move -1 0"]);
+            } else {
+                Quickshell.execDetached(["swaymsg", "seat - cursor move 0 0"]);
             }
         }
     }

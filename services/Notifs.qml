@@ -30,9 +30,10 @@ Singleton {
     property alias doNotDisturb: persist.doNotDisturb
 
     // « Ne pas déranger » programmé (ta demande du 2026-10-26) : activé à l'heure de début, désactivé à l'heure de fin ; entre
-    // les deux, la bascule à la main reste libre jusqu'à la prochaine heure. Appliqué aussi au démarrage de la session et quand
-    // les heures changent. Horaire activé : « ne pas déranger » activé s'il est l'heure (pas désactivé sinon : il a pu l'être à la
-    // main) ; horaire désactivé pendant ses heures : désactivé (il l'était par l'horaire). Réglé depuis le panneau de réglages, gardé dans un fichier d'état (départ : `doNotDisturb` de hosts/*.json).
+    // les deux, la bascule à la main reste libre jusqu'à la prochaine heure. Appliqué aussi au démarrage de la session. Horaire
+    // activé, ou heures changées, de sorte qu'on entre dans la plage : activé ; qu'on en sorte : désactivé, seulement s'il l'avait
+    // été par l'horaire (pas à la main). Réglé depuis le panneau de réglages, gardé dans un fichier d'état (départ :
+    // `doNotDisturb` de hosts/*.json).
     readonly property bool scheduled: schedule.enabled
     readonly property string scheduleFrom: schedule.from
     readonly property string scheduleTo: schedule.to
@@ -41,14 +42,34 @@ Singleton {
         const from = minutes(schedule.from), to = minutes(schedule.to);
         return from <= to ? now >= from && now < to : now >= from || now < to;
     }
+    property bool editing: false   // setSchedule en cours : la plage change par réglage, pas par l'heure
+
+    // Bascule à la main (panneau de réglages, centre de notifications).
+    function setDoNotDisturb(on: bool): void {
+        doNotDisturb = on;
+        persist.dndBySchedule = false;
+    }
+
+    function setBySchedule(on: bool): void {
+        doNotDisturb = on;
+        persist.dndBySchedule = on;
+    }
 
     // Début et fin identiques (plage vide) : heures refusées, le champ revient à l'ancienne.
     function setSchedule(enabled: bool, from: string, to: string): void {
+        const was = schedule.enabled && quietHours;
+        editing = true;
         schedule.enabled = enabled;
-        if (minutes(from) === minutes(to))
-            return;
-        schedule.from = from;
-        schedule.to = to;
+        if (minutes(from) !== minutes(to)) {
+            schedule.from = from;
+            schedule.to = to;
+        }
+        editing = false;
+        const now = schedule.enabled && quietHours;
+        if (now && !was)
+            setBySchedule(true);
+        else if (!now && was && persist.dndBySchedule)
+            setBySchedule(false);
     }
 
     // "9:5" → 545 (minutes depuis minuit).
@@ -57,16 +78,13 @@ Singleton {
         return h * 60 + m;
     }
 
+    // Heure de début ou de fin atteinte, ou démarrage de la session.
     function applySchedule(): void {
         if (schedule.enabled)
-            doNotDisturb = quietHours;
+            setBySchedule(quietHours);
     }
 
-    onQuietHoursChanged: applySchedule()
-    onScheduledChanged: {
-        if (quietHours)
-            doNotDisturb = scheduled;
-    }
+    onQuietHoursChanged: if (!editing) applySchedule()
 
     SystemClock {
         id: clock
@@ -96,6 +114,7 @@ Singleton {
 
         property string history: "[]"
         property bool doNotDisturb: false
+        property bool dndBySchedule: false   // activé par l'horaire (pas à la main)
         property int nextKey: 0
         property bool ready: false
         property string iconFiles: "{}"   // copies d'icônes faites par cette instance (keepIcon)
@@ -876,6 +895,11 @@ Singleton {
 
         function setSchedule(enabled: bool, from: string, to: string): void {
             root.setSchedule(enabled, from, to);
+        }
+
+        // dunstctl set-paused true|false : comme la bascule à la main.
+        function setDoNotDisturb(on: bool): void {
+            root.setDoNotDisturb(on);
         }
     }
 }

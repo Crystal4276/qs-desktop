@@ -41,20 +41,41 @@ Singleton {
         printErrors: false
     }
 
+    // gammastep n'accepte qu'une nuit qui passe minuit (retour au jour avant le passage à la nuit) ; sinon il quitte aussitôt.
+    readonly property bool validSchedule: minutes(config.from) > minutes(config.to)
+
+    function minutes(time: string): int {
+        const [h, m] = time.split(":").map(Number);
+        return h * 60 + m;
+    }
+
+    // Activée ou non dans gammastep : il démarre activé, SIGUSR1 bascule (fondu dans les deux sens, réversible à tout moment).
+    // Désactivée, il reste lancé : la réactiver pendant le fondu de retour repart aussitôt vers la nuit.
+    property bool gammaOn: false
+
     function start(): void {
+        if (!validSchedule) {
+            console.warn(`NightLight: horaire ${schedule} refusé par gammastep (la nuit doit passer minuit)`);
+            return;
+        }
         configFile.setText(["[general]", "adjustment-method=wayland", "fade=1", "temp-day=6500",
             `temp-night=${config.temperature}`, `dusk-time=${config.from}`, `dawn-time=${config.to}`, ""].join("\n"));
+        gammaOn = true;
         gammastep.running = true;
     }
 
-    // SIGTERM : gammastep revient en fondu à la température neutre, puis quitte.
-    function stop(): void {
-        if (gammastep.running)
-            gammastep.signal(15);
+    function apply(): void {
+        if (!gammastep.running) {
+            if (enabled)
+                start();
+        } else if (gammaOn !== enabled) {
+            gammastep.signal(10);   // SIGUSR1
+            gammaOn = enabled;
+        }
     }
 
-    onEnabledChanged: enabled ? start() : stop()
-    Component.onCompleted: if (enabled) start()
+    onEnabledChanged: apply()
+    Component.onCompleted: apply()
 
     // Arrêt inattendu (au rechargement, l'ancienne instance tient encore le réglage gamma des écrans le temps de son fondu) :
     // relancé 1 s plus tard.
@@ -62,6 +83,7 @@ Singleton {
         id: gammastep
         command: ["gammastep", "-c", configFile.path]
         onExited: {
+            root.gammaOn = false;
             if (root.enabled)
                 retry.start();
         }
@@ -70,7 +92,7 @@ Singleton {
     Timer {
         id: retry
         interval: 1000
-        onTriggered: if (root.enabled) root.start()
+        onTriggered: root.apply()
     }
 
     // `qs ipc call nightlight toggle` (raccourci éventuel, tests).
