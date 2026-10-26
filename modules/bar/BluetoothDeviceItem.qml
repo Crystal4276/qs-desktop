@@ -40,18 +40,21 @@ ColumnLayout {
         }
     }
 
-    // Détails dépliés : nom remis à celui de l'appareil (une saisie abandonnée n'y reste pas) ; profils audio lus si l'appareil
-    // a des nœuds PipeWire, et relus quand ils changent (carte créée après la connexion, profil changé).
+    // Détails dépliés (ou ligne recréée dépliée) : nom remis à celui de l'appareil (une saisie abandonnée n'y reste pas) ;
+    // profils audio lus (appareil connecté), puis relus quand ses nœuds PipeWire apparaissent ou changent (carte créée après la
+    // connexion, profil changé). Nœuds absents un instant pendant un changement de profil : la carte reste affichée.
     readonly property string audioNodes: expanded && device ? Bluez.audioNodes(device) : ""
-    onExpandedChanged: {
-        if (expanded && device)
-            nameField.text = device.name;
+    function refresh(): void {
+        if (!expanded || !device)
+            return;
+        nameField.text = device.name;
+        Bluez.readAudioCard(device);
     }
+    onExpandedChanged: refresh()
+    Component.onCompleted: refresh()
     onAudioNodesChanged: {
         if (audioNodes !== "")
             Bluez.readAudioCard(device);
-        else if (device)
-            Bluez.setAudioCard(device.address, null);
     }
 
     // Appareil supprimé (oublié, adaptateur retiré) avant le retrait de sa ligne : `device` nul, liaisons protégées par `?.`.
