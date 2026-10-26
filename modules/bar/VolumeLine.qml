@@ -10,9 +10,10 @@ ColumnLayout {
 
     property PwNode node
     property bool meter: false
-    property bool monitoring: false   // panneau ouvert : le niveau est capté
+    property bool monitoring: false   // panneau épinglé : le niveau est capté
+    property bool shown: true
 
-    visible: node?.audio !== undefined && node?.audio !== null
+    visible: shown && node?.audio !== undefined && node?.audio !== null
     Layout.fillWidth: true
     spacing: Theme.levelMeter.gap
 
@@ -49,6 +50,6 @@ ColumnLayout {
         Layout.preferredWidth: slider.width - 2 * slider.inset
         Layout.fillWidth: false
         node: line.node
-        active: visible && line.monitoring
+        active: line.meter && line.monitoring
     }
 }
