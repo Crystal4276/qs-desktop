@@ -323,7 +323,7 @@ Singleton {
             property string notificationId: ""
             property int sent: 0   // notifications « Connected » envoyées : seul l'identifiant de la dernière est gardé
             property bool awaitingBattery: false
-            property int batteryAlerted: 101   // plus bas seuil déjà signalé ; réarmé quand la batterie remonte
+            property int batteryAlerted: 101   // plus bas seuil déjà signalé ; réarmé à la déconnexion
 
             function connectedBody(): string {
                 return modelData.batteryAvailable ? `Connected ${root.batteryPercent(modelData)}%` : "Connected";
@@ -337,14 +337,13 @@ Singleton {
                     modelData.name, connectedBody()]);
             }
 
-            // Seuils de la batterie du laptop : une notification par seuil franchi (GNOME), réarmée quand la batterie remonte.
+            // Seuils de la batterie du laptop : une notification par seuil franchi (GNOME). Réarmée à la déconnexion (appareil
+            // rechargé), pas quand la mesure remonte : une batterie lue par paliers qui oscille autour d'un seuil le répéterait.
             function checkBattery(): void {
                 if (!modelData.connected || !modelData.batteryAvailable)
                     return;
                 const percent = root.batteryPercent(modelData);
                 const level = Battery.levelOf(percent);
-                if (level === 101)
-                    batteryAlerted = 101;
                 if (level >= batteryAlerted)
                     return;
                 batteryAlerted = level;
@@ -373,6 +372,7 @@ Singleton {
             function disconnected(): void {
                 const device = modelData;
                 awaitingBattery = false;
+                batteryAlerted = 101;
                 Quickshell.execDetached(["notify-send", "--app-name=Bluetooth", "--transient", `--icon=${device.icon || "bluetooth"}`,
                     device.name, "Disconnected"]);
                 root.setAudioCard(device.address, null);
