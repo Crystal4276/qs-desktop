@@ -111,10 +111,23 @@ Item {
             panel: disksPanel
         }
 
+        // Action en cours (allumage, connexion…) : alterne entre allumé et connecté à chaque demi-cycle (GNOME, KDE).
         TrayButton {
+            id: bluetoothButton
+
+            property bool blink: false
+
             visible: Bluez.available
-            icon: Bluez.icon
+            icon: Bluez.busy ? (blink ? "blueman-tray-active" : "blueman-tray") : Bluez.icon
             panel: bluetoothPanel
+
+            Timer {
+                running: Bluez.busy
+                repeat: true
+                interval: Theme.bluetooth.busyDuration / 2
+                onTriggered: bluetoothButton.blink = !bluetoothButton.blink
+                onRunningChanged: bluetoothButton.blink = false
+            }
         }
 
         // Centre de notifications (Papirus : cloche, point bleu si non vues, barrée en « ne pas déranger »).
@@ -143,6 +156,7 @@ Item {
     BluetoothPanel {
         id: bluetoothPanel
     }
+
 
     NotificationsPanel {
         id: notificationsPanel

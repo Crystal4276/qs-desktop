@@ -9,7 +9,7 @@ import qs.config
 // Veille des écrans (remplace swayidle et hypridle, ARCHITECTURE § 10.1 R3) : après `Settings.idle.timeout` secondes sans activité,
 // écrans éteints par le compositeur ; à la reprise, rallumés — l'écran principal `primaryWakeDelay` secondes après les autres
 // (contournement repris de hypridle). Les inhibitions sont respectées : règles `inhibit_idle` du compositeur, « Keep Screen On »
-// (IdleInhibitor des barres), vidéos des applications Wayland.
+// (IdleInhibitor des barres), manette Bluetooth connectée (même inhibiteur), vidéos des applications Wayland.
 // Verrouillage avant la mise en veille du système (laptop par défaut) : verrou « delay » de logind, relâché une fois l'écran verrouillé.
 // Au réveil sous Hyprland : `hyprctl reload` (after_sleep_cmd de ton hypridle : la disposition des écrans ne survit pas à la veille).
 // Non repris : les inhibitions D-Bus (org.freedesktop.ScreenSaver, `ignore_dbus_inhibit = false` de hypridle), faute de pouvoir

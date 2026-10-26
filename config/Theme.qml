@@ -222,6 +222,13 @@ Singleton {
         readonly property list<color> quality: [root.color.red, root.color.peach, root.color.yellow, root.color.green, root.color.green]
     }
 
+    // § 3 — Panneau Bluetooth (ta demande du 2026-10-26 ; THEME.md § 3 « Panneau Bluetooth »)
+    readonly property QtObject bluetooth: QtObject {
+        // Connexion, déconnexion, appairage, allumage : icône de la ligne qui pulse (opacité 1 → disabledOpacity → 1), icône du
+        // tray qui alterne allumé / connecté à chaque demi-cycle. Même rythme que le balayage du glyphe Wi-Fi.
+        readonly property int busyDuration: root.wifi.connectingDuration
+    }
+
     // § 3 — Panneau réseau (refonte du 2026-10-19 ; THEME.md § 3 « Panneau réseau »)
     readonly property QtObject network: QtObject {
         readonly property int graphHeight: 64                 // nouveau, à valider

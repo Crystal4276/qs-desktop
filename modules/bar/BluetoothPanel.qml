@@ -5,8 +5,9 @@ import Quickshell.Bluetooth
 import qs.config
 import qs.services
 
-// Panneau Bluetooth (remplace blueman, ARCHITECTURE R6) : interrupteur, appareils appairés (connecter, déconnecter, oublier,
-// batterie), appareils à proximité (recherche tant que le panneau est ouvert) et appairage avec confirmation (Bluez.qml).
+// Panneau Bluetooth (remplace blueman, ARCHITECTURE R6) : interrupteur, appareils appairés (BluetoothDeviceItem.qml : connecter,
+// déconnecter, oublier, batterie, détails dépliables), appareils à proximité (recherche tant que le panneau est ouvert) et
+// appairage avec confirmation (Bluez.qml).
 Panel {
     id: root
 
@@ -15,12 +16,24 @@ Panel {
     switchChecked: Bluez.enabled
     onSwitchToggled: checked => Bluez.setEnabled(checked)
 
+    // Adresse de l'appareil dont les détails sont dépliés (un seul à la fois, comme KDE).
+    property string expanded: ""
+    // Ordre des appareils appairés figé à l'ouverture (GNOME) : une ligne ne bouge pas sous le pointeur quand son appareil se
+    // connecte ; les nouveaux (appairés panneau ouvert) vont à la fin. Retrié à la prochaine ouverture.
+    property var order: []
+    readonly property var pairedShown: Bluez.paired.map((d, i) => ({ d: d, rank: order.indexOf(d.address), i: i }))
+        .sort((a, b) => ((a.rank < 0 ? Infinity : a.rank) - (b.rank < 0 ? Infinity : b.rank)) || a.i - b.i).map(e => e.d)
+
     // Recherche : panneau épinglé seulement (pas pendant un aperçu au survol). Fermer le panneau l'arrête et annule un appairage
     // en cours (l'agent ne tourne jamais sans le panneau).
     onPinnedChanged: Bluez.scanning = pinned
     onVisibleChanged: {
-        if (!visible)
-            Bluez.cancelPairing();
+        if (visible) {
+            order = Bluez.paired.map(d => d.address);
+            return;
+        }
+        expanded = "";
+        Bluez.cancelPairing();
     }
     // Barre détruite panneau épinglé (écran retiré) : ni recherche ni appairage sans panneau.
     Component.onDestruction: {
@@ -28,21 +41,6 @@ Panel {
             return;
         Bluez.scanning = false;
         Bluez.cancelPairing();
-    }
-
-    function stateText(device: BluetoothDevice): string {
-        if (device.pairing)
-            return "Pairing…";
-        switch (device.state) {
-        case BluetoothDeviceState.Connecting:
-            return "Connecting…";
-        case BluetoothDeviceState.Disconnecting:
-            return "Disconnecting…";
-        case BluetoothDeviceState.Connected:
-            return device.batteryAvailable ? `Connected · battery ${Math.round(device.battery * 100)} %` : "Connected";
-        default:
-            return "";
-        }
     }
 
     PanelSection {
@@ -58,28 +56,15 @@ Panel {
 
     Repeater {
         model: ScriptModel {
-            values: Bluez.enabled ? Bluez.paired : []
+            values: Bluez.enabled ? root.pairedShown : []
         }
 
-        PanelRow {
+        BluetoothDeviceItem {
             required property BluetoothDevice modelData
 
-            icon: modelData.icon || "bluetooth"
-            text: modelData.name
-            subtext: root.stateText(modelData)
-            active: modelData.connected
-            onClicked: modelData.connected ? modelData.disconnect() : modelData.connect()
-
-            PanelButton {
-                text: modelData.connected ? "Disconnect" : "Connect"
-                onClicked: modelData.connected ? modelData.disconnect() : modelData.connect()
-            }
-
-            PanelButton {
-                visible: !modelData.connected
-                text: "Forget"
-                onClicked: modelData.forget()
-            }
+            device: modelData
+            expanded: root.expanded === modelData.address
+            onToggled: root.expanded = expanded ? "" : modelData.address
         }
     }
 
@@ -112,7 +97,7 @@ Panel {
 
                     icon: modelData.icon || "bluetooth"
                     text: modelData.name
-                    subtext: root.stateText(modelData)
+                    subtext: modelData.pairing ? "Pairing…" : Bluez.typeName(modelData)
                     onClicked: Bluez.pair(modelData)
 
                     PanelButton {
