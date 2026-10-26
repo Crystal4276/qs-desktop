@@ -1476,7 +1476,9 @@ Lecteur, visualiseur, icône et curseur de volume (`Mpris`, `CavaModule`, `Volum
   panneau de réglages), `font.powerMenuLabel`, `module.menuLogo`, `module.menuBackground`, `icon.power`,
   `notification.progressMinWidth` (largeur de notification fixe à 600 px : jamais atteint). Gardés : toutes les couleurs du § 1
   (palette, `hoverWhite`), même inutilisées, pour de futurs éléments ; couleurs Rofi inutilisées (`ugt`, `bga`, `bdr`)
-  retirées ensuite (ta demande), celles du lanceur gardées ; `embeddedFonts` (charge les polices) ;
+  retirées ensuite (ta demande), celles du lanceur gardées ;
+  **toutes les couleurs centralisées** dans `Theme.color` (palette, Rofi du lanceur, texte GTK, Papirus, blancs translucides) ;
+  les autres groupes n'y font que référence ; vérifié : 154 couleurs identiques à l'ancien thème (8 bits) ; `embeddedFonts` (charge les polices) ;
   `icon.spotify` (lu par la table des lecteurs). `Settings.qml` et les configs machine : rien d'inutilisé.
 
 ## Prochaine étape

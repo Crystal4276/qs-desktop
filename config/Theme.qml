@@ -9,8 +9,9 @@ import Quickshell
 Singleton {
     id: root
 
-    // § 1 — Palette Catppuccin Mocha (statique, aucun générateur)
+    // § 1 — Toutes les couleurs, ici seulement : les autres groupes y font référence (avec une opacité au besoin).
     readonly property QtObject color: QtObject {
+        // Palette Catppuccin Mocha (statique, aucun générateur)
         readonly property color base: "#1e1e2e"
         readonly property color mantle: "#181825"
         readonly property color crust: "#11111b"
@@ -37,22 +38,24 @@ Singleton {
         readonly property color pink: "#f5c2e7"
         readonly property color flamingo: "#f2cdcd"
         readonly property color rosewater: "#f5e0dc"
-    }
 
-    // § 1 — Couleurs propres à Rofi (anciennes valeurs Catppuccin), sous leurs noms Rofi : celles du lanceur
-    readonly property QtObject rofi: QtObject {
-        readonly property color bg: "#1E1D2F"
-        readonly property color fg: "#D9E0EE"
-        readonly property color sel: "#1E1E2E"
-        readonly property color img: "#FAE3B0"
-    }
+        // Rofi (anciennes valeurs Catppuccin, noms Rofi BG / FG / SEL / IMG) : lanceur
+        readonly property color rofiBg: "#1E1D2F"
+        readonly property color rofiFg: "#D9E0EE"
+        readonly property color rofiSel: "#1E1E2E"
+        readonly property color rofiImg: "#FAE3B0"
 
-    // § 1 — Autres couleurs littérales
-    readonly property color hoverWhite: Qt.rgba(1, 1, 1, 0.1)   // survol du power menu Rofi et de nwg-menu (gardée, inutilisée)
-    // Sélection de zone des captures (`slurp -b ffffff20 -c f5c2e7 -w 4`, touche Impr.) ; slurp lit #RRGGBBAA, QML #AARRGGBB.
-    readonly property color slurpBackground: Qt.rgba(1, 1, 1, 0x20 / 255)
-    readonly property color slurpSelection: root.color.pink
-    readonly property int slurpBorder: 4
+        // Thème GTK catppuccin-mocha-green (gtk-3.0/gtk-dark.css) : texte des menus du tray
+        readonly property color gtkText: "#eff1f5"
+
+        // Icônes Papirus (classes ColorScheme-Text / NeutralText) : glyphe Wi-Fi du tray
+        readonly property color papirusText: "#dfdfdf"
+        readonly property color papirusWarning: "#ff9800"
+
+        // Blancs translucides
+        readonly property color hoverWhite: Qt.rgba(1, 1, 1, 0.1)       // survol du power menu Rofi et de nwg-menu (gardée, inutilisée)
+        readonly property color slurpVeil: Qt.rgba(1, 1, 1, 0x20 / 255)  // `slurp -b ffffff20` (slurp lit #RRGGBBAA, QML #AARRGGBB)
+    }
 
     // § 2 — Polices : chaque texte nomme la sienne, aucun repli implicite
     readonly property QtObject font: QtObject {
@@ -133,27 +136,27 @@ Singleton {
     // § 3 — Menus du tray : copie des menus GTK du thème catppuccin-mocha-green (gtk-3.0/gtk-dark.css), mesurée sur capture ;
     // texte en Inter (ta demande : police homogène) au lieu du repli monospace de Waybar.
     readonly property QtObject trayMenu: QtObject {
-        readonly property color gtkForeground: "#eff1f5"           // couleur de texte du thème GTK
+        readonly property color gtkForeground: root.color.gtkText
         readonly property color background: root.color.surface0     // #313244
-        readonly property color frame: Qt.rgba(0.937, 0.945, 0.961, 0.1)    // bordure intérieure 1 px, #eff1f5 à 10 %
-        readonly property color outline: Qt.rgba(0.067, 0.067, 0.106, 0.8)  // liseré extérieur 1 px (crust), mesuré
+        readonly property color frame: Qt.alpha(root.color.gtkText, 0.1)    // bordure intérieure 1 px
+        readonly property color outline: Qt.alpha(root.color.crust, 0.8)    // liseré extérieur 1 px, mesuré
         readonly property int radius: 12
         readonly property int padding: 6
         readonly property int itemPaddingV: 4
         readonly property int itemPaddingH: 8
         readonly property int itemRadius: 6
-        readonly property color itemHover: Qt.rgba(0.937, 0.945, 0.961, 0.08)
+        readonly property color itemHover: Qt.alpha(root.color.gtkText, 0.08)
         readonly property real disabledOpacity: 0.5
-        readonly property color separator: Qt.rgba(0.937, 0.945, 0.961, 0.12)
+        readonly property color separator: Qt.alpha(root.color.gtkText, 0.12)
         readonly property int outlineWidth: 1         // liseré extérieur
         readonly property int frameWidth: 1           // bordure intérieure
         readonly property int separatorHeight: 1
         readonly property int separatorMargin: 4
         readonly property int toggleSize: 16          // place réservée avant le texte (case, radio ou icône)
         readonly property int toggleSpacing: 2        // texte à 18 px du bord intérieur de l'élément (mesuré)
-        readonly property color toggleBackground: Qt.rgba(0.937, 0.945, 0.961, 0.12)
+        readonly property color toggleBackground: Qt.alpha(root.color.gtkText, 0.12)
         readonly property color toggleChecked: root.color.green
-        readonly property color toggleMark: Qt.rgba(0.067, 0.067, 0.106, 0.87)
+        readonly property color toggleMark: Qt.alpha(root.color.crust, 0.87)
         readonly property int arrowMargin: 8          // flèche de sous-menu : 16 px, 8 px après le texte
         readonly property int fontSize: 20            // texte GTK : 12 pt × 1,25
     }
@@ -209,10 +212,10 @@ Singleton {
 
     // § 3 — Module Wi-Fi (nouveau composant, ta demande du 2026-10-19 ; THEME.md § 3 « Module Wi-Fi »)
     readonly property QtObject wifi: QtObject {
-        // Glyphe du tray : couleurs des icônes Papirus voisines (classes ColorScheme-Text / NeutralText, opacité du fond).
-        readonly property color glyph: "#dfdfdf"
+        // Glyphe du tray : couleurs des icônes Papirus voisines, opacité du fond.
+        readonly property color glyph: root.color.papirusText
         readonly property real glyphDim: 0.35
-        readonly property color glyphWarning: "#ff9800"   // accès limité, comme `network-wireless-*-limited`
+        readonly property color glyphWarning: root.color.papirusWarning   // accès limité, comme `network-wireless-*-limited`
         readonly property int connectingDuration: 1200    // balayage du glyphe pendant la connexion (nouveau, à valider)
         readonly property int levelDuration: 250          // passage d'un niveau de signal à l'autre (nouveau, à valider)
         // Qualité du signal, de « aucun » à « excellent » (seuils de GNOME, Network.qml).
@@ -428,19 +431,19 @@ Singleton {
     readonly property QtObject launcher: QtObject {
         readonly property int width: 500
         readonly property int height: 1000
-        readonly property color background: root.rofi.bg
+        readonly property color background: root.color.rofiBg
         readonly property int border: 1
         readonly property color borderColor: root.color.overlay0
         readonly property int radius: 20
         readonly property int padding: 15
         readonly property int spacing: 15
-        readonly property color searchButton: root.rofi.sel
+        readonly property color searchButton: root.color.rofiSel
         readonly property int searchButtonPaddingV: 8
         readonly property int searchButtonPaddingH: 12
-        readonly property color prompt: root.rofi.img
+        readonly property color prompt: root.color.rofiImg
         readonly property int promptPadding: 8
         readonly property string placeholder: "Search..."
-        readonly property color placeholderColor: root.rofi.fg
+        readonly property color placeholderColor: root.color.rofiFg
         readonly property int entryUnderline: 2
         readonly property color entryUnderlineColor: root.color.overlay0
         readonly property int entryRadius: 10
@@ -451,7 +454,7 @@ Singleton {
         readonly property int itemIconSize: 24
         readonly property int itemTextMargin: 2
         readonly property int itemSpacing: 2      // icône → texte, et entre bouton loupe, prompt et champ : espacement par défaut des boîtes Rofi
-        readonly property color text: root.rofi.fg
+        readonly property color text: root.color.rofiFg
         // Sélection : survol des cartes des panneaux (`surface0`), texte inchangé (ton choix du 2026-10-21 ; Rofi : fond `green`, texte `SEL`).
         readonly property color selected: root.panel.rowHover
         readonly property int selectedRadius: 10
@@ -537,10 +540,10 @@ Singleton {
 
     // Outil de capture (nouveau, phase 8b) : voile et cadre de ta sélection actuelle (slurp), barre d'outils au style des panneaux.
     readonly property QtObject screenshot: QtObject {
-        readonly property color veil: root.slurpBackground          // hors de la sélection
-        readonly property color selection: root.slurpSelection
-        readonly property int border: root.slurpBorder
-        readonly property color hover: Qt.alpha(root.slurpSelection, 0.25)   // écran ou fenêtre sous le pointeur
+        readonly property color veil: root.color.slurpVeil          // hors de la sélection (`slurp -b ffffff20 -c f5c2e7 -w 4`)
+        readonly property color selection: root.color.pink
+        readonly property int border: 4
+        readonly property color hover: Qt.alpha(root.color.pink, 0.25)   // écran ou fenêtre sous le pointeur
         readonly property int gap: root.panel.gap                   // barre d'outils : distance au bas de l'écran
     }
 

@@ -12,6 +12,9 @@ Source unique de fait : **Catppuccin Mocha**, recopiée à l'identique dans
 `~/.config/waybar/mocha.css`, `~/.config/nwg-panel/mocha.css`, `~/.config/hypr/lua/palette.lua`, `~/.config/hypr/mocha.conf`.
 Aucun outil de génération (pywal, wallust, matugen…) n'est utilisé : la palette est statique.
 Décision : `Theme.qml` porte la palette en dur (voir `ARCHITECTURE.md`).
+Toutes les couleurs de ce paragraphe sont réunies dans un seul groupe, `Theme.color` (2026-10-26, ta demande) ; les autres
+groupes n'y font que référence, avec une opacité au besoin. Noms : palette sous ses noms Mocha, Rofi en `rofiBg`… , puis
+`gtkText`, `papirusText`, `papirusWarning`, `hoverWhite`, `slurpVeil`.
 
 | Nom | Valeur | Utilisation actuelle |
 |---|---|---|
@@ -50,9 +53,9 @@ Couleurs hors Mocha encore utilisées par Rofi (`~/.config/rofi/config/colors.ra
 | `FG` | `#D9E0EE` | texte du lanceur et du power menu |
 | `SEL` | `#1E1E2E` | texte de l'élément sélectionné, fond du bouton loupe, fond des éléments du power menu |
 | `IMG` | `#FAE3B0` | couleur du prompt (le petit `●` jaune avant « Search… ») |
-| `UGT` | `#F28FAD` | éléments urgents (inutilisé en pratique) |
-| `BGA` | `#a6e3a1` | = `green` |
-| `BDR` | `#6c7086` | = `overlay0` |
+| `UGT` | `#F28FAD` | éléments urgents (inutilisé en pratique) — non repris |
+| `BGA` | `#a6e3a1` | = `green` — non repris |
+| `BDR` | `#6c7086` | = `overlay0` — non repris |
 
 Autres couleurs littérales :
 
@@ -61,6 +64,8 @@ Autres couleurs littérales :
 | `rgba(255,255,255,0.1)` | fond de l'élément sélectionné du power menu, survol des boutons nwg-menu |
 | `transparent` | fond de la barre Waybar (seules les pilules sont opaques) |
 | `#ffffff20` | fond de `slurp` (région) |
+| `#eff1f5` | texte du thème GTK catppuccin-mocha-green : menus du tray (§ 3), pur ou translucide |
+| `#dfdfdf` / `#ff9800` | icônes Papirus (ColorScheme-Text / NeutralText) : glyphe Wi-Fi du tray (§ 3) |
 | `rgba(1a1a1aee)` | ombre des fenêtres Hyprland |
 
 ## 2. Polices
