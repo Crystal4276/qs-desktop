@@ -110,8 +110,11 @@ Algorithme (implémenté et testé en phase 3, Sway) :
    est refocalisé (le compositeur déplace le focus dès qu'un écran focalisé disparaît, avant Quickshell).
    Mémoire : vue par configuration (`layoutKey`), relevée 300 ms après chaque changement d'espaces et à chaque placement.
 6. **Espace créé hors de son écran** (ex. `$mod+3` depuis l'écran de gauche, ou fenêtre envoyée vers un espace inexistant) :
-   100 ms plus tard (focus à jour), il est déplacé sur son écran ; focalisé, il le reste ; créé en arrière-plan, le focus revient où il était.
-   Aucune correction ne crée d'espace (pas de boucle possible).
+   100 ms plus tard (focus à jour), il est déplacé sur son écran ; focalisé, il le reste, et son écran de départ reprend l'espace
+   qu'il affichait (recréé si Sway l'a détruit parce qu'il était vide) ; créé en arrière-plan, le focus revient où il était.
+   **Bouche-trou** : un écran vidé de son seul espace en reçoit un de Sway, au premier numéro libre. Il n'est pas déplacé (Sway en
+   recréerait un, sans fin : boucle constatée le 2026-10-26) ; l'écran affiche à la place le premier espace de son bloc qui n'est
+   pas ailleurs, et le bouche-trou, masqué et vide, disparaît. Une correction ne crée donc que des espaces chez eux : pas de boucle.
 7. Un espace déplacé à la main reste où il est jusqu'au prochain changement d'écrans.
 
 **Aucune attribution `workspace N output X`** (contrairement à ce que prévoyait `CLAUDE.md`) — vérifié sur Sway 1.12 : la **première**
@@ -156,7 +159,9 @@ Avantage : la machine actuelle tombe juste sans répartition imposée ; la confi
 avec sa propre instance Quickshell : la session de travail n'est jamais touchée (ni écrans, ni fenêtres, ni focus).
 La session de test reproduit les trois écrans du bureau (4K × 1.5 / 3440x1440 / 4K × 1.5) et ouvre des fenêtres `zenity`
 sur les espaces 1, 2, 4–9. Scénarios : ajout de 1 puis 2 écrans, création d'un espace depuis un autre écran, désactivation /
-réactivation, débranchement, écran de droite puis de gauche éteints (2 écrans, puis 1), retour à la référence.
+réactivation, débranchement, écran de droite puis de gauche éteints (2 écrans, puis 1), retour à la référence, fenêtre seule
+envoyée vers un espace inexistant, espace créé depuis un écran qui affichait un espace vide, seul espace d'un écran déplacé à la
+main (bouche-trou), écran principal et focalisé éteint puis rallumé.
 Contrôles après chacun : répartition calculée = règle recalculée indépendamment (jq), espaces sur le bon écran, focus inchangé,
 espace visible conservé ; à la fin, aucune fenêtre perdue, et nombre de commandes de placement borné (pas de boucle).
 
@@ -165,7 +170,12 @@ Pièges relevés :
 - un test lancé dans la vraie session déplace les espaces de l'utilisateur et se fait fausser par son activité : à proscrire ;
 - les écrans virtuels portent tous la description « Unknown Unknown Unknown » : la répartition **imposée** par description se teste
   avec les écrans réels (fait une fois en phase 3, réussi) ;
-- un écran virtuel créé pendant que swayidle a éteint les écrans hérite de `power off`.
+- un écran virtuel créé pendant que swayidle a éteint les écrans hérite de `power off` ;
+- l'état de Quickshell 0.3.2 (`Quickshell.I3`) se périme : l'espace affiché par un écran (`active`) n'est mis à jour que par un
+  événement « focus » ou une relecture des sorties, jamais par un déplacement d'espace ; le focus ne suit que les événements
+  « focus », dont Sway envoie parfois un faux (seul espace d'un écran déplacé : focus annoncé sur le bouche-trou) et dont le
+  champ `focused` est souvent faux. `Compositor` relit donc `get_workspaces` après chaque événement d'espace (focus lu dans
+  l'objet IPC) et `get_outputs` après chaque déplacement (code de Quickshell lu, comportement de Sway vérifié dans le banc).
 
 ## 4. Config par machine
 
