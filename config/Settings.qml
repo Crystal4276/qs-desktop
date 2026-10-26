@@ -22,7 +22,6 @@ Singleton {
     readonly property string updateCommand: config.updateCommand ?? ""
     // Lecteur suivi par le module `mpris` : nom D-Bus après `org.mpris.MediaPlayer2.` (option `player` de Waybar).
     readonly property string mediaPlayer: config.mediaPlayer ?? ""
-    // Veilleuse : de `from` à `to` (HH:MM), `temperature` en kelvins la nuit (hosts/default.json : tes réglages GNOME).
     // Fonds d'écran (docs/WALLPAPERS.md) : dossier (vide : « Wallpapers » dans le dossier Images XDG) et choix de départ, tant que
     // rien n'a été choisi dans l'utilitaire : { kind: "simple" | "panorama" | "triptych", path: chemin relatif au dossier }.
     readonly property string wallpapersDir: config.wallpapersDir ?? ""
@@ -31,7 +30,11 @@ Singleton {
     // l'écran principal après les autres (contournement d'un écran lent à se réveiller, repris de hypridle) ; `lockBeforeSleep` :
     // verrouiller avant la mise en veille du système (null : seulement sur une machine avec batterie).
     readonly property var idle: Object.assign({ timeout: 300, primaryWakeDelay: 0, lockBeforeSleep: null }, config.idle ?? {})
+    // Veilleuse : de `from` à `to` (HH:MM), `temperature` en kelvins la nuit (hosts/default.json : tes réglages GNOME).
     readonly property var nightLight: Object.assign({ from: "20:00", to: "06:00", temperature: 3239 }, config.nightLight ?? {})
+    // « Ne pas déranger » programmé (services/Notifs.qml) : actif de `from` à `to` (HH:MM) si `schedule`. Valeurs de départ :
+    // ensuite réglées depuis le panneau de réglages et gardées dans un fichier d'état.
+    readonly property var doNotDisturb: Object.assign({ schedule: true, from: "21:00", to: "07:00" }, config.doNotDisturb ?? {})
 
     // Pilules d'une barre : par description d'écran, sinon par rôle.
     // Renvoie { left: [[module, …], …], right: […] }.

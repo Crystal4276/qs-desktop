@@ -4,6 +4,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import Quickshell.Services.Notifications
+import qs.config
 
 // Serveur de notifications (remplace Dunst, phase 6). Comportement repris de dunstrc et du code de Dunst 1.13 (queues.c,
 // notification.c, markup.c) :
@@ -28,6 +29,58 @@ Singleton {
     readonly property bool unseen: history.some(h => !h.seen)
     property alias doNotDisturb: persist.doNotDisturb
 
+    // « Ne pas déranger » programmé (ta demande du 2026-10-26) : activé à l'heure de début, désactivé à l'heure de fin ; entre
+    // les deux, la bascule à la main reste libre jusqu'à la prochaine heure. Appliqué aussi au démarrage de la session et quand
+    // l'horaire change. Réglé depuis le panneau de réglages, gardé dans un fichier d'état (départ : `doNotDisturb` de hosts/*.json).
+    readonly property bool scheduled: schedule.enabled
+    readonly property string scheduleFrom: schedule.from
+    readonly property string scheduleTo: schedule.to
+    readonly property bool quietHours: {
+        const now = clock.hours * 60 + clock.minutes;
+        const from = minutes(schedule.from), to = minutes(schedule.to);
+        return from <= to ? now >= from && now < to : now >= from || now < to;
+    }
+
+    function setSchedule(enabled: bool, from: string, to: string): void {
+        schedule.enabled = enabled;
+        schedule.from = from;
+        schedule.to = to;
+    }
+
+    // "9:5" → 545 (minutes depuis minuit).
+    function minutes(time: string): int {
+        const [h, m] = time.split(":").map(Number);
+        return h * 60 + m;
+    }
+
+    function applySchedule(): void {
+        if (schedule.enabled)
+            doNotDisturb = quietHours;
+    }
+
+    onQuietHoursChanged: applySchedule()
+    onScheduledChanged: applySchedule()
+
+    SystemClock {
+        id: clock
+        precision: SystemClock.Minutes
+    }
+
+    // Lu avant la suite (blockLoading) : l'horaire est connu quand l'état de la session est repris (persist.onLoaded).
+    FileView {
+        path: Quickshell.statePath("do-not-disturb.json")
+        blockLoading: true
+        printErrors: false
+        onAdapterUpdated: writeAdapter()
+
+        JsonAdapter {
+            id: schedule
+            property bool enabled: Settings.doNotDisturb.schedule
+            property string from: Settings.doNotDisturb.from
+            property string to: Settings.doNotDisturb.to
+        }
+    }
+
     // Historique et « ne pas déranger » gardés quand la config se recharge (les notifications affichées le sont par le serveur).
     // L'historique y est en texte JSON : un tableau JavaScript ne passe pas d'un moteur QML au suivant.
     PersistentProperties {
@@ -45,8 +98,10 @@ Singleton {
 
         // Images envoyées en données (avatars…) : perdues au rechargement (voir imageLocks), icône de l'application à la place.
         onLoaded: {
-            if (!ready)
-                staleIconDirs.running = true;   // premier chargement de cette instance
+            if (!ready) {   // premier chargement de cette instance
+                staleIconDirs.running = true;
+                root.applySchedule();
+            }
             root.iconFiles = Object.assign(JSON.parse(iconFiles), root.iconFiles);   // + copies faites avant ce point
             root.restoreLive(JSON.parse(live));
             // + lignes archivées avant ce point (rare : notification fermée au démarrage).
@@ -805,6 +860,15 @@ Singleton {
         // dunstctl count
         function count(): string {
             return `displayed ${root.popups.length}, history ${root.history.length}`;
+        }
+
+        // Tests : « ne pas déranger » et son horaire, en JSON ; réglage de l'horaire comme depuis le panneau.
+        function doNotDisturbState(): string {
+            return JSON.stringify({ doNotDisturb: root.doNotDisturb, scheduled: root.scheduled, from: root.scheduleFrom, to: root.scheduleTo, quietHours: root.quietHours });
+        }
+
+        function setSchedule(enabled: bool, from: string, to: string): void {
+            root.setSchedule(enabled, from, to);
         }
     }
 }
