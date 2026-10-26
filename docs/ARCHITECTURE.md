@@ -210,6 +210,8 @@ Format (implémenté en phase 1, `hosts/default.json`, `hosts/terrier.json`) :
 - `updateCommand` *(phase 4)* : commande de mise à jour du module mises à jour ; absente (`default.json`) : `paru`, sinon `yay`, sinon
   `sudo pacman -Syu` (revue de code : `paru` n'est pas forcément installé sur une nouvelle machine).
 - `nightLight` *(phase 8)* : veilleuse, `{ "from": "20:00", "to": "06:00", "temperature": 3239 }` (`default.json` : tes réglages GNOME).
+- `doNotDisturb` *(2026-10-26)* : horaire de départ du « ne pas déranger », `{ "schedule": true, "from": "21:00", "to": "07:00" }` ;
+  ensuite réglé depuis le panneau de réglages (fichier d'état `do-not-disturb.json`).
 
 - Fusion **au premier niveau** : une clé du fichier machine remplace entièrement celle de `default.json` (pas de fusion profonde : plus prévisible).
 - `bars` : par description d'écran, sinon par rôle (`primary` / `secondary`) — un écran inconnu reçoit donc toujours une barre.
@@ -529,18 +531,22 @@ Remplace le power menu Rofi. Base : les réglages rapides de GNOME 51 (code de g
 - **Ligne du haut** : à gauche la batterie en % (laptop), le bouton **capture d'écran** (outil natif de la phase 8b) ; à droite tes
   **4 icônes SVG** du power menu, redimensionnées : verrouiller, se déconnecter, redémarrer, éteindre. **Pas de veille, pas de
   confirmation** (comme Rofi). Pas de bouton Réglages GNOME.
-- **Curseurs** : sortie son (flèche → choix de la sortie, contenu du panneau audio), micro, luminosité (laptop).
+- **Curseurs** : sortie son (flèche → choix de la sortie, contenu du panneau audio), luminosité (laptop). Micro retiré le 2026-10-26
+  (ta demande : jamais réglé là ; il reste dans le panneau audio).
 - **Bascules** (grille de 2 colonnes, comme GNOME) : profil d'énergie (Performance / Équilibré / Économie, ta demande de trois boutons),
-  ne pas déranger, garder l'écran allumé (`IdleInhibitor`), VRR et HDR (écrans compatibles seulement), **veilleuse** (`wlsunset`),
-  **mode avion** (laptop seulement, `rfkill`).
+  ne pas déranger, garder l'écran allumé (`IdleInhibitor`), VRR et HDR (écrans compatibles seulement), **veilleuse** (`gammastep`),
+  **mode avion** (`rfkill`, dès qu'il y a une radio Wi-Fi ou Bluetooth ; laptop seulement jusqu'au 2026-10-26). Ne pas déranger :
+  horaire (`doNotDisturb` de `hosts/*.json` au départ, puis clic droit sur la bascule : heures et interrupteur, fichier d'état).
+- **Survol de l'engrenage** (2026-10-26) : aperçu comme les cartes du tray (le panneau dérive de `Panel.qml`).
 - **Tray inchangé** : réseau, Bluetooth, NordVPN, disques et cloche gardent leur icône et leur panneau ; ils ne sont pas dupliqués dans
   le panneau de réglages.
 - Repris de GNOME mais écarté : style sombre (thème toujours sombre), Réglages GNOME, veille, confirmation.
 - **Mise en œuvre** : surface de la couche Overlay plutôt que popup (un popup Wayland ne peut pas prendre le clavier sans clic, donc pas
   d'ouverture par `$mod+Escape`) ; surfaces transparentes sur les autres écrans pendant qu'il est ouvert (`OutsideClick.qml`), sinon un
   clic ailleurs laisserait le clavier bloqué sur lui. Flèche du choix de périphérique toujours affichée (avec un seul périphérique, GNOME
-  la cache : tu ne la voyais pas). Veilleuse : `wlsunset` lancé par le shell, réglages de `hosts/*.json` (`nightLight`), état dans un
-  fichier d'état local. HDR / VRR : commandes `output` de Sway ; Hyprland en phase 9 (sa config Lua n'a pas d'équivalent sûr connu).
+  la cache : tu ne la voyais pas). Veilleuse : `gammastep` lancé par le shell (fondu d'environ 4 s à l'activation, à l'arrêt par SIGTERM et aux
+  heures de l'horaire ; wlsunset, utilisé jusqu'au 2026-10-26, changeait d'un coup), réglages de `hosts/*.json` (`nightLight`) écrits
+  dans son fichier de config, état dans un fichier d'état local. HDR / VRR : commandes `output` de Sway ; Hyprland en phase 9 (sa config Lua n'a pas d'équivalent sûr connu).
 
 ### 10.1.6 Phase 8b : fond d'écran natif (2026-10-17)
 

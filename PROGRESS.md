@@ -1381,6 +1381,35 @@ onglet A.
   requête sur un objet Wayland mort → SIGSEGV. Sans conséquence (le processus s'arrêtait, `dev.sh` relance). N'arrive pas en
   production (pas de rechargement à chaud). Contournement : attendre une seconde après une sauvegarde avant `$mod+Ctrl+w`.
 
+## Panneau de réglages, veilleuse, captures, ne pas déranger programmé (2026-10-26, ta demande)
+
+- **Survol de l'engrenage** : le panneau de réglages dérive maintenant de `Panel.qml`, comme les cartes du tray : aperçu après
+  150 ms d'arrêt, passage direct vers une icône du tray, épinglé au clic, fermé 2 s après la sortie du pointeur. Vérifié (pointeur
+  déplacé par `swaymsg seat seat0 cursor`).
+- **Micro** retiré du panneau (reste dans le panneau audio).
+- **Mode avion** : visible dès qu'il y a une radio (`rfkill` : Wi-Fi `phy0` et Bluetooth `hci0` sur ce desktop), plus seulement sur
+  laptop. Pas essayé (couperait ton Bluetooth et ton Wi-Fi).
+- **Veilleuse** : `gammastep` remplace `wlsunset` (installé par toi ; `deps/` à jour). wlsunset n'a pas de fondu (et sans `-d`,
+  bascule d'un coup à 20:00 et 06:00) ; gammastep fait un fondu d'environ 4 s à l'activation, à l'arrêt (SIGTERM : mesuré 4,1 s
+  avant sa sortie) et aux heures de l'horaire. Même horaire et même température, écrits dans
+  `~/.local/state/quickshell/by-shell/desktop/gammastep.ini`. Nouveau : `qs ipc call nightlight toggle|isEnabled`.
+- **Captures sans curseur** : le curseur était dans les images même avec `paintCursor: false`, car Sway sur Nvidia dessine un
+  curseur logiciel dans l'image de l'écran (même `grim` sans `-c` le capture). Un curseur vide demandé par l'outil ne marche pas :
+  Sway n'envoie pas l'entrée du pointeur à une surface qui apparaît sous un pointeur immobile. Solution : `swaymsg seat * hide_cursor 1`
+  à l'ouverture, images figées prises 150 ms plus tard, valeur de ta config rétablie (0 aujourd'hui) dès les images reçues ou à la
+  fermeture. Vérifié : zone et écran entier sans curseur, curseur visible pendant la sélection et après. Hyprland : curseur
+  matériel, rien de fait (à vérifier en phase 9).
+- **Ne pas déranger programmé** : 21:00 – 07:00 (`doNotDisturb` dans `hosts/default.json`), activé à l'heure de début, désactivé à
+  l'heure de fin, appliqué aussi au démarrage de la session ; bascule à la main libre entre les deux. Sous-titre de la tuile =
+  horaire ; **clic droit sur la tuile** : ligne « Schedule » avec les deux heures (Entrée ou sortie du champ) et un interrupteur ;
+  gardé dans `do-not-disturb.json`. Vérifié : bascule au passage de minute (horaire de test via `qs ipc call notifications
+  setSchedule`), interrupteur au clic.
+- **À tester à la main** : la saisie des heures au clavier ; le ressenti du fondu de la veilleuse (activation, désactivation, et
+  20:00 ce soir) ; le mode avion ; une capture avec le curseur au-dessus d'une fenêtre d'un autre écran ; ce soir à 21:00, la cloche
+  barrée.
+- Note de dev : un nouveau fichier QML dans un module n'est vu qu'au redémarrage de l'instance (`scripts/dev.sh`), pas au
+  rechargement à chaud (« X is not a type »).
+
 ## Prochaine étape
 
 Phase 9 — parité Hyprland (tests à faire ensemble dans une session Hyprland : voir « Compatibilité Hyprland »).
