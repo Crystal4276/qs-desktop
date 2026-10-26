@@ -1481,6 +1481,31 @@ Lecteur, visualiseur, icône et curseur de volume (`Mpris`, `CavaModule`, `Volum
   les autres groupes n'y font que référence ; vérifié : 154 couleurs identiques à l'ancien thème (8 bits) ; `embeddedFonts` (charge les polices) ;
   `icon.spotify` (lu par la table des lecteurs). `Settings.qml` et les configs machine : rien d'inutilisé.
 
+## Espaces de travail : revue de code (2026-10-26, ta demande)
+
+`Compositor`, `Outputs`, `Workspaces` et `test-outputs.sh`. 3 tours (`e419399..HEAD`), le dernier sans constat notable. Tout
+reproduit dans une session Sway isolée (banc headless) avant correction, puis vérifié.
+
+- **Boucle sans fin** : un écran vidé de son seul espace reçoit de Sway un espace « bouche-trou » au premier numéro libre ; s'il
+  n'était pas chez lui, la correction le déplaçait, Sway en recréait un, etc. (~8 commandes/s, mesuré ; elle tournait aussi au
+  démarrage du banc). Désormais l'écran affiche à la place un espace de son bloc. Sans les `workspace N output` de ta config Sway
+  (retirés en phase 10), elle se serait produite pour de vrai.
+- **Halo et mémoire de vue faux** : Quickshell 0.3.2 ne met jamais à jour l'espace affiché par un écran quand un espace change
+  d'écran (code lu) ; après certains déplacements, aucun espace n'était « affiché » sur un écran (barre sans halo) et un écran
+  rallumé retrouvait une mauvaise vue. Relecture des sorties après chaque déplacement (Sway ; Hyprland : même ajout, à vérifier
+  en phase 9).
+- **Focus faux** : Sway annonce parfois le focus sur le bouche-trou alors qu'il reste ailleurs, et le champ `focused` de ses
+  événements est souvent faux (vérifié) ; un déplacement à la main finissait avec le focus sur un espace vide au centre. Le focus
+  est maintenant relu (`get_workspaces`) après chaque événement d'espace.
+- **`$mod+N` vers un espace inexistant depuis un autre écran** : si l'écran de départ affichait un espace vide, il affichait
+  ensuite un autre de ses espaces ; il retrouve maintenant le sien, comme avec tes attributions actuelles.
+- `test-outputs.sh` : deux scénarios ajoutés (espace créé depuis un écran qui affichait un espace vide ; seul espace d'un écran
+  déplacé à la main). 0 échec, trois passages ; 16 commandes de placement au lieu de 24 à 30.
+- Laissés (négligeables) : `workspace_auto_back_and_forth` (absent de ta config) fausserait les commandes `workspace number N`
+  du placement ; `$mod+N` moins de 300 ms après avoir changé d'espace sur l'écran de départ lui rend l'espace d'avant ; espaces
+  nommés sans numéro (inutilisés) confondus dans la barre ; quelques ms sans espace focalisé après chaque changement (relecture).
+- **Phase 9** : rejouer bouche-trou et focus sous Hyprland (même logique, non testée).
+
 ## Prochaine étape
 
 Phase 9 — parité Hyprland (tests à faire ensemble dans une session Hyprland : voir « Compatibilité Hyprland »).

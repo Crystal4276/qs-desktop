@@ -347,6 +347,10 @@ Singleton {
                 if (id > 0)
                     root.workspaceCreated(id, Hyprland.workspaces.values.find(w => w.id === id)?.monitor?.name ?? "");
             }
+            // Comme sous Sway : un espace déplacé ne met pas à jour l'espace affiché par chaque écran (Quickshell 0.3.2, code lu ;
+            // à vérifier en phase 9).
+            else if (event.name === "moveworkspacev2")
+                Hyprland.refreshMonitors();
             else if (event.name === "activewindowv2" && event.data !== "")
                 root.windowFocused();
             else if (event.name === "urgent" && root.takeActivation())   // « ADRESSE » (hexadécimal, sans 0x) ; à vérifier en phase 9
