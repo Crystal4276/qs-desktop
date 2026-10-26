@@ -19,6 +19,8 @@ Singleton {
     property var windows: []
     // Curseur masqué : les images figées peuvent être prises (voir pointerEntered).
     property bool cursorHidden: false
+    // Curseur à masquer par l'outil (curseur logiciel possible) : Sway. Hyprland : curseur matériel, exclu par `paintCursor: false`.
+    readonly property bool hidesCursor: !Compositor.isHyprland
     readonly property string pictures: Places.pictures !== "" ? Places.pictures : `${Quickshell.env("HOME")}/Pictures`
 
     function open(startMode: string): void {
@@ -34,7 +36,7 @@ Singleton {
         ensureDirectory();   // le temps de choisir la zone suffit à le créer
         windowList.command = Compositor.isHyprland ? ["hyprctl", "clients", "-j"] : ["swaymsg", "-t", "get_tree"];
         windowList.running = true;
-        cursorHidden = Compositor.isHyprland;   // curseur matériel, exclu par `paintCursor: false`
+        cursorHidden = !hidesCursor;
         active = true;
     }
 
@@ -79,7 +81,7 @@ Singleton {
                 stop();
                 root.cursorHidden = true;
             } else {
-                Quickshell.execDetached(["swaymsg", "seat - cursor move 0 0"]);
+                Compositor.nudgeCursor();
             }
         }
     }

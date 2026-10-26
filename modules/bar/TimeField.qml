@@ -18,11 +18,11 @@ PanelField {
     Layout.fillWidth: false
     implicitWidth: metrics.advanceWidth + 2 * Theme.panel.rowPadding
     inputMask: "99:99"
-    validator: RegularExpressionValidator {
-        regularExpression: /^([01]\d|2[0-3]):[0-5]\d$/
-    }
+    // Heure impossible (29:99) : refusée, le champ revient à l'heure en vigueur (même lecture que les services : Settings.minutes).
     onEditingFinished: text => {
-        if (text !== root.value)
+        if (Settings.minutes(text) < 0)
+            root.text = root.value;
+        else if (text !== root.value)
             root.edited(text);
     }
 
