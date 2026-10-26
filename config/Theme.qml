@@ -259,7 +259,7 @@ Singleton {
         readonly property color trough: root.slider.trough
         // Dégradé du vide au plein (ta demande du 2026-10-26) : bleu, vert, jaune, pêche, rouge.
         readonly property list<color> gradient: [root.color.blue, root.color.green, root.color.yellow, root.color.peach, root.color.red]
-        readonly property real range: 45                                // dB : -45 dB → vide (bruit de la pièce relevé : -40 dB), 0 dB → plein
+        readonly property real range: 40                                // dB : -40 dBFS → vide (bruit de la pièce relevé : -37 à -40), 0 dBFS → plein
         readonly property int smoothing: 100                            // ms
     }
 
