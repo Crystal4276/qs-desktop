@@ -58,17 +58,17 @@ Singleton {
         persist.dndBySchedule = on;
     }
 
-    // Heures mal formées (IPC) : refusées, le champ revient à l'ancienne. Heures identiques acceptées (plage vide : inversion des
+    // Heure mal formée (IPC) : refusée seule, le champ revient à l'ancienne. Heures identiques acceptées (plage vide : inversion des
     // heures en deux saisies possible). Une seule écriture du fichier.
     function setSchedule(enabled: bool, from: string, to: string): void {
         const was = schedule.enabled && quietHours;
         const f = Settings.minutes(from), t = Settings.minutes(to);
         editing = true;
         schedule.enabled = enabled;
-        if (f >= 0 && t >= 0) {
+        if (f >= 0)
             schedule.from = Settings.timeText(f);
+        if (t >= 0)
             schedule.to = Settings.timeText(t);
-        }
         editing = false;
         scheduleFile.writeAdapter();
         const now = schedule.enabled && quietHours;
@@ -86,7 +86,11 @@ Singleton {
             setBySchedule(quietHours);
     }
 
-    onQuietHoursChanged: if (!editing) applySchedule()
+    // Pas pendant la construction (au rechargement, le fichier d'état remplace les heures par défaut) : premier passage par
+    // persist.onLoaded.
+    property bool constructed: false
+    Component.onCompleted: constructed = true
+    onQuietHoursChanged: if (constructed && !editing) applySchedule()
 
     SystemClock {
         id: clock

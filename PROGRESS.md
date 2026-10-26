@@ -1383,37 +1383,43 @@ onglet A.
 
 ## Panneau de réglages, veilleuse, captures, ne pas déranger programmé (2026-10-26, ta demande)
 
-- **Survol de l'engrenage** : le panneau de réglages dérive maintenant de `Panel.qml`, comme les cartes du tray : aperçu après
-  150 ms d'arrêt, passage direct vers une icône du tray, épinglé au clic, fermé 2 s après la sortie du pointeur. Vérifié (pointeur
-  déplacé par `swaymsg seat seat0 cursor`).
+État final, après 6 tours de revue de code (`f28ae4c..HEAD`, jusqu'à des constats négligeables).
+
+- **Survol de l'engrenage** : le panneau de réglages dérive de `Panel.qml` ; survol et appui communs aux icônes du tray et à
+  l'engrenage (`modules/bar/PreviewArea.qml`, ta demande). Aperçu après 150 ms, passage direct vers une icône du tray, épinglé au
+  clic, fermé 2 s après la sortie du pointeur (pas pendant un glissé commencé dans le cadre, ni pendant une saisie). Dans l'aperçu
+  des réglages, **le premier clic épingle seulement** (verrouiller, éteindre… sans confirmation : pas de clic perdu dessus) ; les
+  cartes du tray gardent le clic qui épingle et atteint l'élément. Raccourci des réglages : aperçu → épinglé (sous le bouton de
+  l'écran focalisé), panneau épinglé → fermé. Chaque bouton de barre a sa fonction `toggle()` (`BarState.load`).
 - **Micro** retiré du panneau (reste dans le panneau audio).
-- **Mode avion** : visible dès qu'il y a une radio (`rfkill` : Wi-Fi `phy0` et Bluetooth `hci0` sur ce desktop), plus seulement sur
-  laptop. Pas essayé (couperait ton Bluetooth et ton Wi-Fi).
-- **Veilleuse** : `gammastep` remplace `wlsunset` (installé par toi ; `deps/` à jour). wlsunset n'a pas de fondu (et sans `-d`,
-  bascule d'un coup à 20:00 et 06:00) ; gammastep fait un fondu d'environ 4 s à l'activation, à l'arrêt (SIGTERM : mesuré 4,1 s
-  avant sa sortie) et aux heures de l'horaire. Même horaire et même température, écrits dans
-  `~/.local/state/quickshell/by-shell/desktop/gammastep.ini`. Nouveau : `qs ipc call nightlight toggle|isEnabled`.
-- **Captures sans curseur** : le curseur était dans les images même avec `paintCursor: false`, car Sway sur Nvidia dessine un
-  curseur logiciel dans l'image de l'écran (même `grim` sans `-c` le capture). Premier essai (`hide_cursor 1` de Sway, capture
-  150 ms plus tard) insuffisant, vu par toi et par la revue : Sway porte ce délai à 100 ms au moins et le relance au moindre
-  mouvement. Solution retenue : les surfaces de l'outil demandent un curseur vide, la capture commence 50 ms après que le pointeur en
-  a atteint une ; un aller-retour d'un pixel (`swaymsg seat - cursor move 1 0; … -1 0`) fait envoyer par Sway l'entrée du pointeur
-  à une surface apparue sous un pointeur immobile. Plus aucun réglage de Sway modifié. Vérifié : pointeur immobile et en mouvement,
-  sur DP-1 et DP-2, aucune trace ; croix pendant la sélection, curseur normal après. Hyprland : capture au bout de 300 ms sans
-  aller-retour (curseur matériel, à vérifier en phase 9).
-- **Ne pas déranger programmé** : 21:00 – 07:00 (`doNotDisturb` dans `hosts/default.json`), activé à l'heure de début, désactivé à
-  l'heure de fin, appliqué aussi au démarrage de la session ; bascule à la main libre entre les deux. Sous-titre de la tuile =
-  horaire ; **clic droit sur la tuile** : ligne « Schedule » avec les deux heures (Entrée ou sortie du champ) et un interrupteur ;
-  gardé dans `do-not-disturb.json`. Activer l'horaire pendant ses heures active « ne pas déranger » (sans le couper en dehors) ;
-  le désactiver pendant ses heures le coupe ; début = fin refusé. Entrée dans un champ d'heure rend le clavier au panneau (Échap,
-  flèches). Vérifié : bascule au passage de minute (horaire de test via `qs ipc call notifications setSchedule`), interrupteur au
-  clic, les trois règles ci-dessus.
-- Revue de code du 2026-10-26 (10 points) : tous corrigés. En plus des points ci-dessus : le raccourci des réglages pendant un
-  aperçu sous un autre bouton ferme l'aperçu et ouvre le panneau sous le bon bouton ; plus de cas particulier dans
-  `BarState.toggle` (chaque bouton de barre a sa fonction `toggle()`, appelée par les raccourcis).
-- **À tester à la main** : la saisie des heures au clavier ; le ressenti du fondu de la veilleuse (activation, désactivation, et
-  20:00 ce soir) ; le mode avion ; une capture avec le curseur au-dessus d'une fenêtre d'un autre écran ; ce soir à 21:00, la cloche
-  barrée.
+- **Mode avion** : visible dès qu'il y a une radio (`rfkill` : Wi-Fi `phy0` et Bluetooth `hci0` sur ce desktop). Pas essayé.
+- **Veilleuse** : `gammastep` remplace `wlsunset` (`deps/` à jour). Fondu d'environ 4 s à l'activation, à la désactivation et aux
+  heures de l'horaire. Désactivation par SIGUSR1 (réversible pendant le fondu), arrêt 6 s plus tard pour libérer le réglage gamma ;
+  SIGUSR1 seulement 1 s après le lancement. Réglage gamma tenu par un autre client (ancienne instance au rechargement) :
+  gammastep l'écrit sur stderr (« Zero outputs support gamma adjustment ») sans quitter ; il est arrêté et relancé (vérifié après
+  deux rechargements). Après 10 échecs de suite : un essai par minute, et aussitôt qu'un écran apparaît ou que la config change.
+  Nuit dans la même journée (00:30 – 06:00) : températures inversées dans `gammastep.ini` (vérifié avec `gammastep -p`).
+  `qs ipc call nightlight toggle|isEnabled`.
+- **Captures sans curseur** (vérifié par toi) : Sway sur Nvidia dessine un curseur logiciel dans l'image de l'écran (même `grim`
+  sans `-c` le capture). `hide_cursor` de Sway écarté (au moins 100 ms, relancé par le moindre mouvement). Les surfaces de l'outil
+  demandent un curseur vide, la capture commence 50 ms après l'entrée du pointeur ; sous un pointeur immobile, Sway n'envoie cette
+  entrée qu'après un déplacement : `seat - cursor move 0 0` par le socket IPC (`Compositor.nudgeCursor`), toutes les 50 ms à partir
+  de la création des surfaces, 1 s au plus (puis capture quand même). Écran sans image figée 3 s après le début de la capture :
+  fermeture (écran de départ) ou surface rendue transparente au pointeur (autres écrans). Hyprland : rien de tout cela (curseur
+  matériel), capture immédiate, à vérifier en phase 9.
+- **Ne pas déranger programmé** : 21:00 – 07:00 (`doNotDisturb` dans `hosts/default.json`, puis `do-not-disturb.json`). Aux heures
+  de début et de fin (et au démarrage de la session), l'horaire s'impose ; entre les deux, la bascule à la main reste libre.
+  Activer l'horaire ou changer ses heures de sorte qu'on entre dans la plage : activé (sauf s'il l'est déjà à la main) ; qu'on en
+  sorte : désactivé seulement s'il l'avait été par l'horaire. Heures identiques acceptées (plage vide). Tuile : horaire en
+  sous-titre ; **clic droit**, touche Menu ou Maj+F10 : ligne « Schedule » (deux heures, masque `HH:MM`, deux points fixes ;
+  Entrée ou sortie du champ enregistre, Échap annule et rend le clavier au panneau, un second Échap le ferme) et interrupteur.
+  `qs ipc call notifications setSchedule|setDoNotDisturb|doNotDisturbState`.
+- Laissé tel quel (revues) : relance avec fondu de la veilleuse quand sa config machine change (rare) ; l'outil de capture prend
+  le pointeur pendant son démarrage (environ 100 ms) ; une surface Overlay plus haute sous le pointeur (popup) priverait l'outil de
+  l'entrée du pointeur (capture avec curseur au bout d'1 s, non observé).
+- **Vérifié par toi** : capture sans curseur ; heure tapée puis Entrée.
+- **À tester à la main** : modifier un chiffre au milieu d'une heure, puis Échap (annule), Échap (ferme) ; touche Menu sur la tuile ;
+  ressenti du fondu de la veilleuse (et 20:00 ce soir) ; mode avion ; ce soir à 21:00, la cloche barrée.
 - Note de dev : un nouveau fichier QML dans un module n'est vu qu'au redémarrage de l'instance (`scripts/dev.sh`), pas au
   rechargement à chaud (« X is not a type »).
 

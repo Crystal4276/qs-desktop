@@ -84,15 +84,15 @@ Singleton {
     }
 
     // Raccourcis `qs ipc call settings toggle` (`$mod+Escape`, phase 10) et `qs ipc call menu toggle` : bouton de l'écran focalisé,
-    // sinon celui de l'écran principal (sa barre en a un, hosts/*.json), sinon le premier. Un panneau ouvert se ferme, quel que soit
+    // sinon celui de l'écran principal (sa barre en a un, hosts/*.json), sinon le premier. Un panneau épinglé se ferme, quel que soit
     // son écran.
     function toggleFromShortcut(kind: string): void {
         const list = buttons[kind] ?? [];
         const on = name => list.find(b => b.QsWindow.window?.screen?.name === name);
         const panel = loaders[kind]?.item;
-        if (panel?.visible)
-            panel.close();   // aperçu compris
-        else
+        if (panel?.visible && !panel.previewing)
+            panel.close();
+        else   // aperçu : épinglé (même bouton) ou rouvert sous le bouton de l'écran focalisé (Panel.toggle)
             (on(Compositor.focusedOutput) ?? on(Outputs.primary?.name) ?? list[0])?.toggle();
     }
 

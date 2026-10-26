@@ -47,13 +47,8 @@ Singleton {
         settle.stop();
     }
 
-    // Curseur hors des images figées (ta demande du 2026-10-26). `paintCursor: false` (ScreenshotTool.qml) ne suffit pas quand le
-    // compositeur dessine le curseur dans l'image de l'écran : curseur logiciel, Sway sur Nvidia (même `grim` sans `-c` le capture).
-    // Les surfaces de l'outil, transparentes jusqu'aux images figées, demandent un curseur vide ; la capture commence une image après
-    // que le pointeur en a atteint une (pointerEntered). Sous Sway, une surface qui apparaît sous un pointeur immobile n'en reçoit
-    // pas l'entrée : un déplacement nul du pointeur (`cursor move 0 0`) la provoque, répété tant que les surfaces ne sont pas
-    // affichées (à partir de leur création, surfaceCreated). `hide_cursor` de Sway, essayé avant, ne convient pas : délai d'au
-    // moins 100 ms, relancé par le moindre mouvement de souris.
+    // Curseur logiciel (Sway sur Nvidia) hors des images figées : les surfaces de l'outil demandent un curseur vide, la capture
+    // commence peu après l'entrée du pointeur ; un déplacement nul la provoque sous un pointeur immobile (PROGRESS.md, 2026-10-26).
     property int nudges: 0
 
     function surfaceCreated(): void {
