@@ -257,8 +257,9 @@ Singleton {
         readonly property int height: root.notification.progressFrame   // 4 px
         readonly property int gap: root.panel.buttonPaddingV            // 6 px sous le rail ou le nom
         readonly property color trough: root.slider.trough
-        readonly property color fill: root.panel.accent
-        readonly property real range: 60                                // dB : -60 dB → vide, 0 dB → plein
+        // Dégradé du vide au plein (ta demande du 2026-10-26) : bleu, vert, jaune, pêche, rouge.
+        readonly property list<color> gradient: [root.color.blue, root.color.green, root.color.yellow, root.color.peach, root.color.red]
+        readonly property real range: 45                                // dB : -45 dB → vide (bruit de la pièce relevé : -40 dB), 0 dB → plein
         readonly property int smoothing: 100                            // ms
     }
 
