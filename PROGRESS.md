@@ -1363,6 +1363,24 @@ onglet A.
   - phase 10 : `qs` lancé par `exec` de Sway / `exec-once` de Hyprland hérite de l'environnement de session ; garder l'import de
     `XDG_CURRENT_DESKTOP` (`systemctl --user import-environment`) dans les configs rapatriées.
 
+## Avertissements au démarrage et plantage à l'arrêt (2026-10-26)
+
+- Sway redémarré le 2026-10-24 : son autostart avait relancé Dunst, polkit-gnome, swayidle, nm-applet, blueman et udiskie, et le
+  fichier d'état de `takeover.sh` datait de la session précédente (un `restore` les aurait relancés en double). Désormais propre à
+  la session Sway (`qs-takeover.<socket>.cmds`) ; `dev.sh` signale quand Dunst ou polkit-gnome tournent encore. Prise en main refaite.
+- « I3 event socket disconnected » au démarrage : `I3IpcListener` se connectait dès ses abonnements posés, puis recréait sa connexion
+  après le chargement (`onPostReload`, Quickshell 0.3.2). Abonnements posés après le chargement (`services/Compositor.qml`) : plus
+  d'avertissement au démarrage, deux connexions au socket Sway (contrôleur + écouteur). Reste au rechargement à chaud (écouteur de
+  l'ancienne génération détruit), sans effet.
+- Avertissements `desktopentry` : tabulation finale sans retour à la ligne dans les trois `valve-*.desktop` de SteamVR. Correction
+  hors dépôt, à faire par toi (commande dans le rapport de session) ; SteamVR peut les réécrire.
+- **Plantages** (`~/.cache/quickshell/crashes/`, 2026-10-19 et 2026-10-26) : bogue de Quickshell 0.3.2, pas de la config. `qs kill`
+  moins d'une seconde après un rechargement à chaud, pendant que l'ancienne génération est encore détruite :
+  `EngineGeneration::currentGeneration()` renvoie nul (deux générations), Quickshell quitte sans détruire la nouvelle, puis la
+  détruit après la fermeture de la connexion Wayland ; `IdleNotification` (`IdleMonitor` de `services/Idle.qml`) envoie alors une
+  requête sur un objet Wayland mort → SIGSEGV. Sans conséquence (le processus s'arrêtait, `dev.sh` relance). N'arrive pas en
+  production (pas de rechargement à chaud). Contournement : attendre une seconde après une sauvegarde avant `$mod+Ctrl+w`.
+
 ## Prochaine étape
 
 Phase 9 — parité Hyprland (tests à faire ensemble dans une session Hyprland : voir « Compatibilité Hyprland »).
