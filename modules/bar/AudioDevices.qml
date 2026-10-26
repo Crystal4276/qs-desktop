@@ -34,7 +34,7 @@ ColumnLayout {
         }
 
         VolumeLine {
-            visible: root.withVolume && node?.audio !== undefined && node?.audio !== null
+            shown: root.withVolume
             node: root.current
             meter: root.input
             monitoring: root.monitoring
@@ -53,10 +53,10 @@ ColumnLayout {
 
             icon: root.icon
             text: Audio.nodeName(modelData)
+            belowShown: root.input && Audio.hasLevel(modelData)
             below: LevelMeter {
-                visible: root.input && Audio.hasLevel(row.modelData)
                 node: row.modelData
-                active: visible && root.monitoring
+                active: row.belowShown && root.monitoring
             }
             onClicked: root.input ? Audio.setDefaultSource(modelData) : Audio.setDefaultSink(modelData)
         }

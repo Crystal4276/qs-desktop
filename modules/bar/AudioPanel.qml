@@ -48,7 +48,7 @@ Panel {
     AudioDevices {
         input: true
         withVolume: true
-        monitoring: root.visible
+        monitoring: root.pinned   // pas en aperçu : survoler l'icône ne doit pas ouvrir les micros
     }
 
     // --- Applications ---

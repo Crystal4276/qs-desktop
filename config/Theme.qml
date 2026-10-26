@@ -252,7 +252,7 @@ Singleton {
     }
 
     // § 3 — Niveau capté par une entrée audio (panneau audio ; ta demande du 2026-10-26) : trait de la position de la carte
-    // média, creux du curseur, remplissage `green` ; échelle et lissage nouveaux, à valider.
+    // média, creux du curseur, remplissage en dégradé ; échelle, lissage et dégradé validés par toi le 2026-10-26.
     readonly property QtObject levelMeter: QtObject {
         readonly property int height: root.mediaCard.progressHeight     // 4 px
         readonly property int gap: root.panel.buttonPaddingV            // 6 px sous le rail ou le nom
@@ -260,7 +260,7 @@ Singleton {
         // Dégradé du vide au plein (ta demande du 2026-10-26) : bleu, vert, jaune, pêche, rouge.
         readonly property list<color> gradient: [root.color.blue, root.color.green, root.color.yellow, root.color.peach, root.color.red]
         readonly property real range: 40                                // dB : -40 dBFS → vide (bruit de la pièce relevé : -37 à -40), 0 dBFS → plein
-        readonly property int smoothing: 100                            // ms
+        readonly property int smoothing: 100                            // ms : constante de temps de la descente (montée immédiate)
     }
 
     // § 3 — Couleurs des modules
