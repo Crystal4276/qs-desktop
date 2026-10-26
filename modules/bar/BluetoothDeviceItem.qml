@@ -17,13 +17,15 @@ ColumnLayout {
     signal toggled
 
     readonly property bool busy: Bluez.isBusy(device)
-    readonly property var audioCard: Bluez.audioCards[device.address] ?? null
+    readonly property var audioCard: Bluez.audioCards[device?.address ?? ""] ?? null
     property bool copied: false
 
     Layout.fillWidth: true
     spacing: 0
 
     function stateText(): string {
+        if (!device)
+            return "";
         if (device.pairing)
             return "Pairing…";
         if (Bluez.isConnecting(device))
@@ -38,17 +40,21 @@ ColumnLayout {
         }
     }
 
-    // Profils audio relus à chaque dépliage, et quand les nœuds PipeWire de l'appareil changent pendant qu'il est déplié
-    // (carte créée après la connexion, profil changé).
-    readonly property string audioNodes: Bluez.audioNodes(device)
+    // Détails dépliés : nom remis à celui de l'appareil (une saisie abandonnée n'y reste pas) ; profils audio lus si l'appareil
+    // a des nœuds PipeWire, et relus quand ils changent (carte créée après la connexion, profil changé).
+    readonly property string audioNodes: expanded && device ? Bluez.audioNodes(device) : ""
     onExpandedChanged: {
-        if (expanded)
-            Bluez.readAudioCard(device);
+        if (expanded && device)
+            nameField.text = device.name;
     }
     onAudioNodesChanged: {
-        if (expanded)
+        if (audioNodes !== "")
             Bluez.readAudioCard(device);
+        else if (device)
+            Bluez.setAudioCard(device.address, null);
     }
+
+    // Appareil supprimé (oublié, adaptateur retiré) avant le retrait de sa ligne : `device` nul, liaisons protégées par `?.`.
 
     Timer {
         id: copiedTimer
@@ -57,17 +63,17 @@ ColumnLayout {
     }
 
     PanelRow {
-        text: root.device.name
+        text: (root.device?.name ?? "")
         subtext: [root.stateText(), Bluez.typeName(root.device),
-            root.device.connected && root.device.batteryAvailable ? `battery ${Bluez.batteryPercent(root.device)} %` : ""]
+            root.device?.connected && root.device.batteryAvailable ? `battery ${Bluez.batteryPercent(root.device)} %` : ""]
             .filter(s => s).join(" · ")
-        active: root.device.connected
+        active: root.device?.connected ?? false
         onClicked: root.toggled()
 
         leading: IconImage {
             id: deviceIcon
             implicitSize: Theme.panel.iconSize
-            source: `image://icon/${root.device.icon || "bluetooth"}`
+            source: `image://icon/${root.device?.icon || "bluetooth"}`
 
             SequentialAnimation {
                 running: root.busy
@@ -93,8 +99,8 @@ ColumnLayout {
         }
 
         PanelButton {
-            text: root.device.connected ? "Disconnect" : "Connect"
-            enabled: !root.busy   // atténué pendant une action (sinon un clic sans effet)
+            text: root.device?.connected ? "Disconnect" : "Connect"
+            enabled: root.device !== null && !root.busy   // atténué pendant une action (sinon un clic sans effet)
             onClicked: {
                 if (root.device.connected)
                     Bluez.disconnectDevice(root.device);
@@ -104,17 +110,17 @@ ColumnLayout {
         }
 
         PanelButton {
-            visible: !root.device.connected
+            visible: !(root.device?.connected ?? true)
             text: "Forget"
             onClicked: Bluez.forget(root.device)
         }
     }
 
     PanelCard {
-        visible: root.expanded
+        visible: root.expanded && root.device !== null
 
         DetailsGrid {
-            rows: [
+            rows: !root.device ? [] : [
                 ["Original name", root.device.deviceName !== root.device.name ? root.device.deviceName : ""],
                 ["Type", Bluez.typeName(root.device)],
                 ["Address", root.copied ? "Copied" : root.device.address],
@@ -162,10 +168,9 @@ ColumnLayout {
 
         PanelField {
             id: nameField
-            placeholder: root.device.deviceName
+            placeholder: root.device?.deviceName ?? ""
             // Saisie en cours : nom modifié, pas encore validé (le panneau ne se ferme pas tout seul).
-            pending: inputItem.activeFocus && text !== root.device.name
-            Component.onCompleted: text = root.device.name
+            pending: inputItem.activeFocus && text !== (root.device?.name ?? "")
             // Champ remis au nom attendu : sinon (vide ou espaces) il ne correspondrait jamais au nom et resterait « en saisie ».
             onAccepted: name => {
                 Bluez.rename(root.device, name);
@@ -176,7 +181,7 @@ ColumnLayout {
                 target: root.device
 
                 function onNameChanged(): void {
-                    if (!nameField.inputItem.activeFocus)
+                    if (root.device && !nameField.inputItem.activeFocus)
                         nameField.text = root.device.name;
                 }
             }

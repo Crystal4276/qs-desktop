@@ -33,15 +33,21 @@ Singleton {
 
     // Icône du tray, noms du thème Papirus-Dark utilisés par blueman : éteint, appareil connecté, allumé.
     readonly property string icon: !enabled ? "blueman-tray-disabled" : anyConnected ? "blueman-tray-active" : "blueman-tray"
+    // Pendant une action (`busy`) : alterne entre allumé et connecté (`blink`, Tray.qml).
+    function trayIcon(blink: bool): string {
+        return !busy ? icon : blink ? "blueman-tray-active" : "blueman-tray";
+    }
 
     function isBusy(device: BluetoothDevice): bool {
+        if (!device)
+            return false;
         return device.pairing || device.state === BluetoothDeviceState.Disconnecting || isConnecting(device);
     }
 
     // Connexion visible : pas une tentative de la reconnexion automatique (silencieuse, comme blueman : jusqu'à 25 s chaque minute
     // pour une manette éteinte), sauf si elle est aussi demandée depuis le panneau.
     function isConnecting(device: BluetoothDevice): bool {
-        return device.state === BluetoothDeviceState.Connecting && (!autoAttempts[device.address] || !!requested[device.address]);
+        return !!device && device.state === BluetoothDeviceState.Connecting && (!autoAttempts[device.address] || !!requested[device.address]);
     }
 
     // Type d'appareil, lu dans l'icône que BlueZ déduit de sa classe (sous-titre des lignes, comme KDE).
@@ -70,7 +76,7 @@ Singleton {
     }
 
     function batteryPercent(device: BluetoothDevice): int {
-        return Math.round(device.battery * 100);   // battery : fraction 0–1
+        return Math.round((device?.battery ?? 0) * 100);   // battery : fraction 0–1
     }
 
     function setEnabled(value: bool): void {
@@ -135,7 +141,7 @@ Singleton {
     readonly property var autoConnect: autoConnectFile.addresses
 
     function isAutoConnect(device: BluetoothDevice): bool {
-        return autoConnect.includes(device.address);
+        return autoConnect.includes(device?.address ?? "");
     }
 
     function setAutoConnect(device: BluetoothDevice, on: bool): void {
@@ -143,11 +149,16 @@ Singleton {
         autoConnectFile.addresses = on ? [...others, device.address] : others;
     }
 
+    // Reprise de blueman seulement si le fichier n'existe pas (pas s'il est illisible : tes choix ne sont pas écrasés).
     FileView {
+        id: autoConnectView
         path: Quickshell.statePath("bluetooth.json")
         printErrors: false
         onAdapterUpdated: writeAdapter()
-        onLoadFailed: bluemanImport.running = true
+        onLoadFailed: error => {
+            if (error === FileViewError.FileNotFound)
+                bluemanImport.running = true;
+        }
 
         JsonAdapter {
             id: autoConnectFile
@@ -159,9 +170,12 @@ Singleton {
     Process {
         id: bluemanImport
         command: ["gsettings", "get", "org.blueman.plugins.autoconnect", "services"]
+        // Fichier écrit même vide (sans blueman) : la reprise n'est pas relancée à chaque démarrage.
         stdout: StdioCollector {
-            onStreamFinished: autoConnectFile.addresses = [...new Set((text.match(/([0-9A-F]{2}:){5}[0-9A-F]{2}/gi) ?? [])
-                .map(a => a.toUpperCase()))]
+            onStreamFinished: {
+                autoConnectFile.addresses = [...new Set((text.match(/([0-9A-F]{2}:){5}[0-9A-F]{2}/gi) ?? []).map(a => a.toUpperCase()))];
+                autoConnectView.writeAdapter();
+            }
         }
     }
 
@@ -192,6 +206,8 @@ Singleton {
     }
 
     property var audioCards: ({})
+    // Dernière lecture lancée par adresse : une lecture plus ancienne qui finit après elle est ignorée.
+    property var cardReads: ({})
 
     function setAudioCard(address: string, card: var): void {
         const cards = Object.assign({}, audioCards);
@@ -203,8 +219,12 @@ Singleton {
     }
 
     function readAudioCard(device: BluetoothDevice): void {
-        if (device?.connected)
-            cardReader.createObject(root, { address: device.address }).running = true;
+        if (!device?.connected)
+            return;
+        const reads = Object.assign({}, cardReads);
+        reads[device.address] = (reads[device.address] ?? 0) + 1;
+        cardReads = reads;
+        cardReader.createObject(root, { address: device.address, read: reads[device.address] }).running = true;
     }
 
     function setAudioProfile(device: BluetoothDevice, index: int): void {
@@ -220,6 +240,7 @@ Singleton {
             id: reader
 
             property string address
+            property int read
 
             command: ["pw-dump", `bluez_card.${address.replace(/:/g, "_")}`]
             stdout: StdioCollector {
@@ -233,7 +254,10 @@ Singleton {
                         if (object && profiles.length > 0)
                             card = { id: object.id, active: params.Profile?.[0]?.index ?? -1, profiles: profiles };
                     } catch (e) {}
-                    root.setAudioCard(reader.address, card);
+                    // Lecture périmée, ou appareil déconnecté entre-temps (carte retirée par onConnectedChanged).
+                    const device = root.paired.find(d => d.address === reader.address);
+                    if (reader.read === root.cardReads[reader.address])
+                        root.setAudioCard(reader.address, device?.connected ? card : null);
                     reader.destroy();
                 }
             }
@@ -278,7 +302,9 @@ Singleton {
             id: watch
 
             required property BluetoothDevice modelData
-            property int lastState: modelData?.state ?? BluetoothDeviceState.Disconnected
+            // Valeur fixée à la création, pas une liaison : mise à jour avant le gestionnaire, elle masquerait la transition.
+            property int lastState: BluetoothDeviceState.Disconnected
+            Component.onCompleted: lastState = modelData.state
             // Notification « Connected » en attente de la batterie (BlueZ la publie après la connexion) : remplacée par
             // « Connected 80% », comme ConnectionNotifier de blueman.
             property string notificationId: ""
@@ -312,6 +338,13 @@ Singleton {
                 Battery.notifyLow(modelData.name, percent, level);
             }
 
+            // Batterie attendue le temps d'affichage d'une notification normale : plus tard, la remplacer la réafficherait.
+            Timer {
+                id: batteryWait
+                interval: Notifs.defaultTimeouts[1]
+                onTriggered: watch.awaitingBattery = false
+            }
+
             Connections {
                 target: watch.modelData
 
@@ -333,6 +366,7 @@ Singleton {
                         root.failed = root.withFlag(root.failed, device.address, false);
                         watch.notificationId = "";
                         watch.awaitingBattery = !device.batteryAvailable;
+                        batteryWait.restart();
                         const sent = ++watch.sent;
                         const process = idSender.createObject(watch, { command: ["notify-send", "--print-id", "--app-name=Bluetooth",
                             "--transient", `--icon=${device.icon || "bluetooth"}`, device.name, watch.connectedBody()] });
