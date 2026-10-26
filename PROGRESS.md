@@ -1446,6 +1446,28 @@ onglet A.
 - **À tester à la main** : descente de la barre après un mot (100 ms, à valider) ; aperçu au survol (creux atténué, rien n'est
   capté) ; liste des sorties dépliée dans le panneau de réglages.
 
+## Pilule média de la barre : revue de code (2026-10-26, ta demande)
+
+Lecteur, visualiseur, icône et curseur de volume (`Mpris`, `CavaModule`, `Volume`, `Slider`, services `Media`, `Cava`, `Audio`).
+2 tours (`e6fae14..HEAD`), le second sans constat notable.
+
+- **Lecteur suivi après une pause** : un lecteur suivi parce qu'il jouait (ex. Chromium) le reste en pause, au lieu de laisser
+  la place au lecteur préféré ; le clic suivant (ou `qs ipc call media playPause`) reprend donc la même lecture. Avant : le clic
+  lançait Spotify. Vérifié avec deux faux lecteurs MPRIS sur un bus D-Bus privé (ancienne et nouvelle version).
+- **Volume au-dessus de 100 %** (réglé dans pavucontrol) : la molette de l'icône et les touches ne le ramènent plus d'un coup à
+  100 % ; monter ne fait rien, baisser retire 5 points (comme Waybar).
+- **Visualiseur** : masqué tant que cava n'a rien envoyé (démarrage, relance après un arrêt, cava absent sur une autre machine) ;
+  avant, une case vide de 20 px dans la pilule.
+- **Panneau audio** : l'icône et le curseur de volume annoncent leur survol, comme les boutons du tray ; le panneau épinglé ne se
+  ferme plus tout seul pendant que le pointeur y reste (molette, glissé), et se ferme 2 s après qu'il a quitté l'icône.
+- Vérifié sans suite : cava suit déjà la sortie par défaut (WirePlumber, `target.node = -1`) ; un volume écrit est relu aussitôt
+  (crans de molette rapides cumulés) ; coût du visualiseur à 100 images/s : 0,5 à 2,6 % d'un cœur pour tout Quickshell ; cava
+  stable pendant la lecture.
+- Laissés (négligeables) : reste de défilement du pavé tactile jamais remis à zéro (`WheelSteps`) ; panneau ouvert depuis
+  l'icône fermé 2 s après un passage sur le curseur voisin ; un panneau audio par module (icône et curseur).
+- **À tester à la main** : pause d'une vidéo Chromium depuis la barre, puis clic → même vidéo ; clic droit sur l'icône de volume,
+  pointeur gardé dessus → reste ouvert, pointeur ailleurs → fermé 2 s plus tard.
+
 ## Prochaine étape
 
 Phase 9 — parité Hyprland (tests à faire ensemble dans une session Hyprland : voir « Compatibilité Hyprland »).
