@@ -54,9 +54,14 @@ ColumnLayout {
             icon: root.icon
             text: Audio.nodeName(modelData)
             belowShown: root.input && Audio.hasLevel(modelData)
-            below: LevelMeter {
-                node: row.modelData
-                active: row.belowShown && root.monitoring
+            below: Loader {
+                Layout.fillWidth: true
+                active: row.belowShown
+
+                sourceComponent: LevelMeter {
+                    node: row.modelData
+                    active: root.monitoring
+                }
             }
             onClicked: root.input ? Audio.setDefaultSource(modelData) : Audio.setDefaultSink(modelData)
         }
