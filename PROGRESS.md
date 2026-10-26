@@ -1467,6 +1467,11 @@ Lecteur, visualiseur, icône et curseur de volume (`Mpris`, `CavaModule`, `Volum
   l'icône fermé 2 s après un passage sur le curseur voisin ; un panneau audio par module (icône et curseur).
 - **À tester à la main** : pause d'une vidéo Chromium depuis la barre, puis clic → même vidéo ; clic droit sur l'icône de volume,
   pointeur gardé dessus → reste ouvert, pointeur ailleurs → fermé 2 s plus tard.
+- **cava retiré** (ta demande, même jour : n'apporte rien, coûte du CPU) : `services/Cava.qml`, `modules/bar/CavaModule.qml`,
+  `config/cava.conf`, le module `cava` des configs machine et de `Bar.qml`, ses jetons de `Theme.qml` (police DejaVu Sans,
+  taille, paddings, couleur, glyphes) ; `cava` et `ttf-dejavu` sortis de `deps/` (`pipewire-pulse` reste pour pavucontrol) ;
+  `THEME.md`, `ARCHITECTURE.md` et `INVENTORY.md` mis à jour. Recherche de code mort : aucun jeton, propriété ni composant
+  orphelin. Instance relancée sans erreur, plus aucun processus cava.
 
 ## Prochaine étape
 

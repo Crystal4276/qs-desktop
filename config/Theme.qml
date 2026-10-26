@@ -66,7 +66,6 @@ Singleton {
         readonly property string awesomeBrands: "Font Awesome 7 Brands"
         readonly property string awesome4: "FontAwesome"               // Font Awesome 4.7
         readonly property string text: "Inter"
-        readonly property string bars: "DejaVu Sans"          // ▁…█ de cava
         readonly property string notification: "Inter"   // Dunst : Noto Sans Mono ; Inter à ta demande (police homogène)
 
         readonly property int barText: 26          // texte des modules
@@ -74,7 +73,6 @@ Singleton {
         readonly property int volumeIcon: 26
         readonly property int powerIcon: 28
         readonly property int defaultIcon: 20     // modules sans taille dans style.css (batterie, rétroéclairage) : texte GTK, 12 pt × 1,25
-        readonly property int cava: 20
         readonly property int notificationPt: 16   // points (Pango), titre en gras
         readonly property int launcherPt: 20             // points (Pango) = 26,67 px : pas de ligne de 53 px, majuscules de 20 px (mesuré)
         readonly property int launcherSearchIconPt: 20   // points
@@ -106,8 +104,6 @@ Singleton {
         readonly property int networkPadding: 10
         readonly property int networkMinWidth: 80
         readonly property int volumeIconMinWidth: 35
-        readonly property int cavaPaddingLeft: 10
-        readonly property int cavaPaddingTop: 12
         readonly property int workspaceHoverRadius: 20
         readonly property real workspaceHoverAlpha: 0.1
         // halo de l'espace affiché, `text-shadow 0 0 6px currentColor` : ombre floue d'un Canvas (Workspaces.qml), shadowBlur mesuré
@@ -276,7 +272,6 @@ Singleton {
         readonly property color network: root.color.sky
         readonly property color volume: root.color.text
         readonly property color media: root.color.text
-        readonly property color cava: root.color.green
         readonly property color settings: root.color.text    // engrenage (ton choix du 2026-10-16 ; power : `red`)
         readonly property color battery: root.color.green
         readonly property color batteryWarning: root.color.red
@@ -356,9 +351,6 @@ Singleton {
         readonly property string mediaPlay: "\uf04b"
         readonly property string mediaPause: "\uf04c"
         readonly property string mediaNext: "\uf051"
-
-        // font.bars (DejaVu Sans)
-        readonly property list<string> cavaBars: ["▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"]
     }
 
     // § 12 — Images embarquées

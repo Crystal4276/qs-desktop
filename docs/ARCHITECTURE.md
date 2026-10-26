@@ -190,7 +190,7 @@ Format (implémenté en phase 1, `hosts/default.json`, `hosts/terrier.json`) :
   ],
   "bars": {
     "primary": {
-      "left":  [["menu"], ["workspaces"], ["mpris", "cava", "volume", "slider"]],
+      "left":  [["menu"], ["workspaces"], ["mpris", "volume", "slider"]],
       "right": [["updates"], ["gpu", "cpu", "memory"], ["clockDate"], ["tray", "settings"]]
     },
     "secondary": { "left": [["workspaces"], ["volume", "slider"]], "right": [["gpu", "cpu", "memory"], ["clock"]] },
@@ -217,7 +217,7 @@ Format (implémenté en phase 1, `hosts/default.json`, `hosts/terrier.json`) :
 - `bars` : par description d'écran, sinon par rôle (`primary` / `secondary`) — un écran inconnu reçoit donc toujours une barre.
   Chaque côté est une liste de **pilules**, chaque pilule une liste de modules (`THEME.md` § 3, « Groupes de pilules ») :
   la config décrit directement les groupes Waybar, sans noms de groupes intermédiaires.
-- Modules : `menu`, `workspaces`, `mpris`, `cava`, `volume`, `slider`, `updates`, `gpu`, `cpu`, `memory`, `clock` (heure seule),
+- Modules : `menu`, `workspaces`, `mpris`, `volume`, `slider`, `updates`, `gpu`, `cpu`, `memory`, `clock` (heure seule),
   `clockDate` (heure + date, barre principale), `network`, `tray`, `settings` (engrenage, ex-`power`), `battery`, `backlight` (laptop).
   Un module dont la donnée ou le matériel manque se masque ; une pilule dont tous les modules sont masqués disparaît.
 - `default.json` : pas d'écran principal imposé, aucune répartition imposée, barre `primary` complète, `secondary` minimale.
@@ -243,7 +243,6 @@ Format (implémenté en phase 1, `hosts/default.json`, `hosts/terrier.json`) :
 | `Outputs` | `Compositor` + `Settings` | non |
 | `Audio` | `Quickshell.Services.Pipewire` | non (`pavucontrol` lancé au clic) |
 | `Media` | `Quickshell.Services.Mpris` | non |
-| `Cava` | `cava` en sortie brute (`Process`) | **oui** — pas d'équivalent natif |
 | `SystemStats` | `/proc/stat`, `/proc/meminfo` via `FileView` | non |
 | `Gpu` | `nvidia-smi` (`Process`) | **oui** — masqué si absent |
 | `Network` | `/proc/net/dev` + `/proc/net/route` via `FileView` (débit) | non |
@@ -292,7 +291,7 @@ ajouter `adaptive_sync on` (Sway) ou `vrr = 1` (Hyprland) à la règle de l'écr
 
 Décision : `Symbols Nerd Font Mono` (2,5 Mo, licence MIT, non empaquetée sur Fedora/Debian) est **versionnée dans le dépôt**
 (`assets/fonts/SymbolsNerdFontMono-Regular.ttf` + sa licence), et `install.sh` la copie dans `~/.local/share/fonts` sur toutes les distributions.
-Inter, DejaVu Sans et Noto Sans Mono restent des paquets (`deps/`). `install.sh` vérifie avec `fc-list` que chaque police de `THEME.md`
+Inter et Noto Sans Mono restent des paquets (`deps/`). `install.sh` vérifie avec `fc-list` que chaque police de `THEME.md`
 est présente et s'arrête sinon. L'ajout du fichier se fait en phase 1, avec `Theme.qml`.
 
 **Complété en phase 2** (parité exacte, choisie le 2026-10-15) : les icônes des modules texte viennent en réalité de polices de repli
@@ -793,7 +792,7 @@ Légende : **utilisé** (déjà dans le code), **prévu** (phase indiquée), **a
 | `Quickshell.Services.Mpris` | tous | **utilisé** |
 | `Quickshell.Services.Notifications` | tous | **utilisé** (phase 6) |
 | `Quickshell.Services.Pipewire` | `Pipewire`, `PwNode`, `PwNodeAudio`, `PwObjectTracker` | **utilisé** |
-| | `PwNodePeakMonitor` | **écarté** pour cava : il donne un niveau, pas un spectre ; utilisable plus tard pour un indicateur de micro actif |
+| | `PwNodePeakMonitor` | **utilisé** : niveau capté par chaque entrée (panneau audio) |
 | | `PwLink`, `PwLinkGroup`, `PwNodeLinkTracker` | **écarté** : pas de routage audio dans le bureau |
 | `Quickshell.Services.SystemTray` | tous | **utilisé** |
 | `Quickshell.Services.UPower` | `UPower`, `UPowerDevice` | **utilisé** (batterie, laptop) |
@@ -802,7 +801,7 @@ Légende : **utilisé** (déjà dans le code), **prévu** (phase indiquée), **a
 | `Quickshell.Services.Pam` | `PamContext` | **prévu** : verrouillage (8b), greeter (12) |
 | `Quickshell.Services.Greetd` | `Greetd` | **prévu** : écran de connexion (phase 12, § 10.4) |
 
-Restent hors Quickshell, faute d'équivalent : `nvidia-smi` (GPU), `checkupdates`, `cava` (spectre), `nordvpn`, `busctl` / `gdbus` /
+Restent hors Quickshell, faute d'équivalent : `nvidia-smi` (GPU), `checkupdates`, `nordvpn`, `busctl` / `gdbus` /
 `udisksctl` (UDisks2 : pas d'accès D-Bus générique en QML), `bluetoothctl` (agent d'appairage), `notify-send` (envoi, indépendant du serveur).
 `grim` reste un outil de développement (`scripts/shot.sh`) ; `slurp` reste pour le portail de partage d'écran (`xdg-desktop-portal-wlr`).
 

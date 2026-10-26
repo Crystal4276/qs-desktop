@@ -17,7 +17,7 @@ Singleton {
 
     // `playerctld` (paquet playerctl) n'est qu'un relais qui recopie le lecteur actif : exclu, sinon il compterait en double.
     readonly property var players: Mpris.players.values.filter(p => p.dbusName !== "org.mpris.MediaPlayer2.playerctld")
-    // Lecteurs en lecture ; non vide → le visualiseur cava est affiché (Cava.qml).
+    // Lecteurs en lecture.
     readonly property var playing: players.filter(p => p.isPlaying)
     property string selected: ""   // nom D-Bus choisi à la molette
     readonly property string preferred: `org.mpris.MediaPlayer2.${Settings.mediaPlayer}`

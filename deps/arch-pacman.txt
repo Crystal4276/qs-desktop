@@ -34,7 +34,6 @@ greetd-agreety          # greeter console : fournit `greetd-greeter` (requis par
 # versionnées dans assets/fonts/, installées par install.sh (ARCHITECTURE § 8.2, THEME § 2) — aucun paquet
 inter-font              # « Inter » : texte de la barre et du lanceur
 noto-fonts              # police de repli (caractères absents d'Inter) ; Dunst l'utilisait pour les notifications (Monospace)
-ttf-dejavu              # « DejaVu Sans » : caractères ▁…█ des barres cava (absents d'Inter)
 noto-fonts-cjk          # japonais / chinois / coréen (titres MPRIS, notifications) — remplace les polices MS copiées à la main
 noto-fonts-emoji        # emojis en couleur (notifications)
 papirus-icon-theme      # thème d'icônes Papirus-Dark (notifications, lanceur, menu d'applications, tray)
@@ -42,9 +41,8 @@ papirus-icon-theme      # thème d'icônes Papirus-Dark (notifications, lanceur,
 # --- Audio / média ---
 pipewire                # serveur audio (Quickshell.Services.Pipewire)
 wireplumber             # gestionnaire de session PipeWire, wpctl
-pipewire-pulse          # compatibilité PulseAudio (cava, pavucontrol)
+pipewire-pulse          # compatibilité PulseAudio (pavucontrol)
 pavucontrol             # clic droit sur le volume
-cava                    # visualiseur audio de la barre
 
 # --- Système ---
 upower                  # batterie (Quickshell.Services.UPower), utile sur laptop

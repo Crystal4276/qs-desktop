@@ -32,7 +32,7 @@ Décision : `Theme.qml` porte la palette en dur (voir `ARCHITECTURE.md`).
 | `sapphire` | `#74c7ec` | 2e espace de travail, `custom/updates` |
 | `sky` | `#89dceb` | `custom/nvidia`, `network` |
 | `teal` | `#94e2d5` | 1er espace de travail, `cpu` |
-| `green` | `#a6e3a1` | `memory`, cava, logo Arch, bouton menu actif/survolé, sélection Rofi (`BGA`), survol nwg-menu, bordure urgente (Sway) |
+| `green` | `#a6e3a1` | `memory`, logo Arch, bouton menu actif/survolé, sélection Rofi (`BGA`), survol nwg-menu, bordure urgente (Sway) |
 | `yellow` | `#f9e2af` | `clock` |
 | `peach` | `#fab387` | cadre des notifications critiques (`#FAB387`) |
 | `maroon` | `#eba0ac` | — |
@@ -70,7 +70,6 @@ Autres couleurs littérales :
 | Défaut Waybar (icônes, espaces, volume) | `Symbols Nerd Font Mono` | selon module | fournie par le dépôt (`assets/fonts/`) |
 | Icônes des modules texte | Hack Nerd Font, Font Awesome 7 Free / Brands, FontAwesome 4.7 (voir ci-dessous) | 26 px | fournies par le dépôt (`assets/fonts/`) |
 | Texte des modules Waybar (updates, nvidia, cpu, memory, clock, mpris, network) | `Inter` (Regular) | 26 px | `inter-font` |
-| cava | `Inter` demandé, mais les caractères `▁…█` viennent de **`DejaVu Sans`** (repli) | 20 px | `ttf-dejavu` |
 | Glyphes d'espaces de travail | `Symbols Nerd Font Mono` | 34 px | |
 | Icône volume (`pulseaudio`) | `Symbols Nerd Font Mono` | 26 px | |
 | Bouton power (`custom/powermenu`) | `Symbols Nerd Font Mono` | 28 px | |
@@ -97,7 +96,6 @@ Relevé avec l'ordre de repli de `fc-match -s Inter`, puis confirmé en dessinan
 | `U+F274` calendrier | Inter → repli | **Font Awesome 7 Free** (Regular 400, contour fin) | `assets/fonts/FontAwesome7Free-Regular-400.otf` |
 | `U+F1BC` Spotify | Inter → repli | **Font Awesome 7 Brands** | `assets/fonts/FontAwesome7Brands-Regular-400.otf` |
 | `U+F04C` pause | Inter → repli | **FontAwesome** (Font Awesome 4.7) | `assets/fonts/FontAwesome4-Regular.ttf` |
-| `U+2581…U+2588` barres cava | Inter → repli | **DejaVu Sans** | paquet `ttf-dejavu` |
 
 Pourquoi ces polices exactes (parité exacte, choisie le 2026-10-15) :
 - Symbols Nerd Font Mono dessine les icônes de Hack environ 25 % plus grandes ;
@@ -139,7 +137,6 @@ Règles pour Qt :
 | Network | padding horizontal 10 px, largeur min 80 px |
 | Volume (icône) | largeur min 35 px |
 | Curseur de volume | largeur min 50 px, padding horizontal `1rem` = 20 px ; rail : hauteur 15, largeur min 50, rayon 15, `crust` ; remplissage : rayon 15, `text` ; bouton : 20x20, `surface2` (CSS `opacity: 0` mais **visible** sur capture) |
-| cava | padding gauche 10 px, padding haut 12 px |
 
 ### Groupes de pilules (une seule bordure arrondie autour du groupe)
 
@@ -147,7 +144,7 @@ Règles pour Qt :
 |---|---|---|
 | DP-2 | menu | `custom/menu` seul |
 | toutes | espaces | `workspaces` seul |
-| DP-2 | média | `mpris` + `cava` + `pulseaudio` + `slider` (quand mpris est masqué, la pilule commence à `pulseaudio`) |
+| DP-2 | média | `mpris` + `pulseaudio` + `slider` (quand mpris est masqué, la pilule commence à `pulseaudio`) ; cava de Waybar retiré (ta demande du 2026-10-26) |
 | DP-1, DP-3 | audio | `pulseaudio` + `slider` |
 | DP-2 | updates | `custom/updates` seul (masqué si 0) |
 | DP-2, DP-1 | système | `custom/nvidia` + `cpu` + `memory` |
@@ -172,7 +169,6 @@ Règles pour Qt :
 | `network` | `sky` |
 | `pulseaudio` | `text` |
 | `mpris` | `text` (défaut) |
-| `cava` | `green` |
 | `custom/powermenu` | `red` |
 | `battery` (laptop) | `green` ; `warning` hors charge : `red`. Waybar ne passe à `critical` (≤ 15 %) qu'en quittant `warning`, sans style : la batterie redevenait verte sous 15 %. Ici, rouge dès 30 % et en dessous (écart assumé, phase 4) |
 | `backlight` (laptop) | `yellow` |

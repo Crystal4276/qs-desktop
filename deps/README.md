@@ -25,8 +25,7 @@ Chaque commande a été rattachée à son paquet sur cette machine avec `pacman 
 | Bouton Arch | natif (ouvre le menu d'applications maison, phase 8) | — | — | — | `assets/arch_linux_icon_green.svg`, `arch_linux_icon_mantle.svg` |
 | Espaces de travail | natif (`Quickshell.I3` / `Quickshell.Hyprland`) | — | — | Symbols Nerd Font Mono | — |
 | Média (mpris) | natif (`Services.Mpris`, D-Bus) | — | un lecteur MPRIS (Spotify, AUR, n'est pas une dépendance du bureau) ; choix du lecteur à la molette natif (plus de `playerctl`) | Inter, Font Awesome 7 Brands, FontAwesome 4.7 | — |
-| cava | programme `cava` (sortie brute) | `cava` ; `pipewire-pulse` (source audio) | — | **DejaVu Sans** (barres `▁…█`) | `config/cava.conf` |
-| Volume (icône + curseur) | natif (`Services.Pipewire`) | `pipewire`, `wireplumber` (services utilisateur actifs) | `pavucontrol` (clic droit) | Symbols Nerd Font Mono | — |
+| Volume (icône + curseur) | natif (`Services.Pipewire`) | `pipewire`, `wireplumber` (services utilisateur actifs) | `pavucontrol` (réglages avancés du panneau audio ; `pipewire-pulse`) | Symbols Nerd Font Mono | — |
 | Sortie audio suivante (ex-`audio-toggle.sh`) | natif (`Services.Pipewire`) + `notify-send` (phase 6 : notification interne) | `libnotify` | — | — | — |
 | Mises à jour | `checkupdates` | `pacman-contrib`, **`fakeroot`** (`checkupdates` échoue sans lui ; non déclaré par `pacman-contrib`) | `paru` ou `yay` (clic) ; terminal | Inter, Hack Nerd Font | — |
 | GPU | NVIDIA : `nvidia-smi` ; AMD / Intel : sysfs (natif) | — | `nvidia-utils` (NVIDIA uniquement : température, charge, mémoire vidéo, processus) ; module masqué sans température lisible | Inter, Hack Nerd Font | — |
@@ -90,7 +89,7 @@ Ce que `install.sh` (phase 11) devra installer, activer ou vérifier — relevé
 | Service `bluetooth` | module Bluetooth | activé | `systemctl enable --now bluetooth` (`sudo`) ; module masqué si absent |
 | `upower`, `udisks2` | batterie, disques | activés à la demande par D-Bus | rien |
 | `polkit` | agent polkit natif, montage des disques sans mot de passe | actif (statique) | rien |
-| Services utilisateur `pipewire.socket`, `pipewire-pulse.socket`, `wireplumber` | audio, cava | activés | `systemctl --user enable --now …` |
+| Services utilisateur `pipewire.socket`, `pipewire-pulse.socket`, `wireplumber` | audio | activés | `systemctl --user enable --now …` |
 | Fichier PAM du verrouillage | `WlSessionLock` + `PamContext` vérifient le mot de passe ; aujourd'hui c'est `/etc/pam.d/swaylock` (installé par `swaylock`, qui sera retiré) | `swaylock`, `login`, `system-auth` présents | **vérifié en phase 8b** : configuration `login` de `/etc/pam.d` (présente partout, celle qu'incluait swaylock) ; un fichier propre au dépôt ne marche pas (`include` se résout dans son propre dossier). Rien n'est écrit dans `/etc` |
 | Polices d'icônes (Symbols Nerd Font Mono, Hack Nerd Font, Font Awesome 7 Free / Brands, FontAwesome 4.7) | icônes de la barre (`THEME.md` § 2) | paquets (`ttf-nerd-fonts-symbols-mono`, `ttf-hack-nerd`, `otf-font-awesome`, `awesome-terminal-fonts`) | copiées depuis `assets/fonts/` dans `~/.local/share/fonts` + `fc-cache` ; aucun paquet nécessaire |
 | Images `assets/*.svg` | bouton Arch, power menu | dans `~/.config/sway/assets/` | versionnées dans le dépôt depuis la phase 1 (`THEME.md` § 12) |
@@ -107,7 +106,7 @@ Ce que `install.sh` (phase 11) devra installer, activer ou vérifier — relevé
 | Utilisateur dans le groupe `video` ou règles udev | `brightnessctl` sans `sudo` (laptop) | sans objet (pas de rétroéclairage) | fourni par le paquet `brightnessctl` (règles udev) ; à vérifier sur le laptop |
 
 Commandes dont `install.sh` vérifiera la présence après installation :
-`qs`, `cava`, `checkupdates`, `fakeroot`, `bluetoothctl`, `udisksctl`, `gdbus`, `busctl`, `grim`, `slurp`, `wl-copy`, `pavucontrol`
+`qs`, `checkupdates`, `fakeroot`, `bluetoothctl`, `udisksctl`, `gdbus`, `busctl`, `grim`, `slurp`, `wl-copy`, `pavucontrol`
 (+ optionnels : `nvidia-smi`, `brightnessctl`, `paru`/`yay`, `nm-connection-editor`).
 
 ## Correspondance avec d'autres distributions
@@ -125,12 +124,11 @@ Correspondances attendues, **non encore vérifiées** (phase 11).
 | *(polices d'icônes : Symbols Nerd Font Mono, Hack Nerd Font, Font Awesome 7, FontAwesome 4.7)* | — | — | fournies par le dépôt (`assets/fonts/`), aucun paquet nécessaire |
 | inter-font | rsms-inter-fonts | fonts-inter | |
 | noto-fonts | google-noto-sans-mono-fonts | fonts-noto-mono | |
-| ttf-dejavu | dejavu-sans-fonts | fonts-dejavu-core | |
 | noto-fonts-cjk | google-noto-sans-cjk-fonts | fonts-noto-cjk | |
 | noto-fonts-emoji | google-noto-color-emoji-fonts | fonts-noto-color-emoji | |
 | papirus-icon-theme | papirus-icon-theme | papirus-icon-theme | |
 | pipewire / wireplumber / pipewire-pulse | idem (`pipewire-pulseaudio`) | idem | |
-| pavucontrol / cava | idem | idem | |
+| pavucontrol | idem | idem | |
 | upower | upower | upower | |
 | networkmanager | NetworkManager | network-manager | |
 | bluez / bluez-utils | bluez | bluez (contient `bluetoothctl`) | |
