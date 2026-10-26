@@ -650,7 +650,7 @@ utilise blueman). Tes choix :
 - **Ordre figé** tant que le panneau est ouvert (GNOME) ; retrié à l'ouverture suivante.
 - **Notifications** de connexion et de déconnexion (ConnectionNotifier de blueman) : « Connected » remplacé par « Connected 80% »
   quand BlueZ publie la batterie (`notify-send --print-id` puis `--replace-id`).
-- **Reconnexion automatique** (AutoConnect de blueman) : toutes les 60 s, adaptateur allumé, appareils choisis déconnectés ; liste
+- **Reconnexion automatique** (AutoConnect de blueman) : au démarrage, à l'allumage, dès qu'un appareil choisi apparaît, puis toutes les 60 s ; appareils choisis déconnectés ; liste
   dans `~/.local/state/quickshell/by-shell/desktop/bluetooth.json`, reprise du réglage de blueman (`gsettings`) s'il n'existe pas.
   Tentatives silencieuses (ni animation, ni « Connection failed ») ; pas de notification « Automatically connected » en plus de
   « Connected » (blueman envoie les deux).
@@ -660,7 +660,7 @@ utilise blueman). Tes choix :
   module de blueman passe par `xdg-screensaver`, sans effet sous Sway.
 - **Icône du tray animée** pendant l'allumage, une connexion, une déconnexion ou un appairage (GNOME, KDE).
 - **Batterie faible** d'un appareil connecté (GNOME) : notification à 30 % puis 15 % (seuils de la batterie du laptop, config
-  Waybar), réarmée quand la batterie remonte.
+  Waybar), réarmée à la déconnexion (une mesure par paliers qui oscille autour du seuil ne la répète pas).
 
 Écartés : envoi et parcours de fichiers (OBEX), commandes média AVRCP (carte média MPRIS), force du signal (absente de l'API),
 base de codes PIN, partage de connexion (PAN/DUN), confirmation de « Forget », clic milieu, pastille, visibilité temporaire,
