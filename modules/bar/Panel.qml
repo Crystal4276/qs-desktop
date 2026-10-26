@@ -58,7 +58,7 @@ OverlayPopup {
     property bool pointerEntered: false
     readonly property bool typing: frame.focusedItem?.cursorPosition !== undefined && (frame.focusedItem?.text ?? "") !== ""
 
-    // Survol de `item` (TrayButton.qml, qui le déclare en `hovered`) ; `buttons` : comme pour toggle().
+    // Survol de `item` (bouton à PreviewArea.qml, qui le déclare en `hovered`) ; `buttons` : comme pour toggle().
     function preview(item: Item, buttons: int): void {
         if (visible || BarState.popupPinned)
             return;
