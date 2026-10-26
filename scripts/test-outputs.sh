@@ -66,9 +66,10 @@ swaymsg output "${outputs[1]}" mode 3440x1440 scale 1 pos 2560 0 >/dev/null
 swaymsg output "${outputs[2]}" mode 3840x2160 scale 1.5 pos 6000 0 >/dev/null
 
 # Quickshell sur cette session, avec son propre bus de session (notifications, tray, lecteurs : rien n'atteint les tiens)
-# et sans montage automatique (le bus système, lui, est le vrai).
+# et sans montage automatique (le bus système, lui, est le vrai). Sans gvfs : un second gvfsd lancé sur ce bus casserait
+# le montage /run/user/$UID/gvfs de ta session (vu le 2026-10-26).
 (cd "$repo" && exec env -u HYPRLAND_INSTANCE_SIGNATURE WAYLAND_DISPLAY="$wayland" SWAYSOCK="$SWAYSOCK" I3SOCK="$SWAYSOCK" \
-    QS_NO_AUTOMOUNT=1 dbus-run-session -- qs -p "$repo" >"$work/qs.log" 2>&1) &
+    QS_NO_AUTOMOUNT=1 GIO_USE_VFS=local GVFS_DISABLE_FUSE=1 dbus-run-session -- qs -p "$repo" >"$work/qs.log" 2>&1) &
 bus_pid=$!
 # Quickshell est l'enfant de dbus-run-session : c'est son PID que `qs ipc --pid` attend.
 for _ in $(seq 1 50); do qs_pid="$(pgrep -P "$bus_pid" -x qs || true)"; [[ -n "$qs_pid" ]] && break; sleep 0.1; done

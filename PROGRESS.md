@@ -1521,7 +1521,8 @@ Revue de KDE, GNOME et blueman (Cinnamon utilise blueman) ; tes choix et ce qui 
   `notify-send`) ; lecture des profils sur une vraie carte PipeWire (casque Razer filaire, même format).
 - **Incident** : un banc précédent sur bus privé avait lancé un second `gvfsd` (activé par `gsettings`) ; le montage
   `/run/user/1000/gvfs` de ta session était cassé (« Transport endpoint is not connected »). Banc corrigé (`GIO_USE_VFS=local`) ;
-  voir le rapport de session pour la réparation.
+  réparé (montage mort démonté, `gvfsd-fuse` relancé : unité utilisateur `gvfsd-fuse-restore` jusqu’à ta prochaine session) ;
+  `test-outputs.sh` protégé de la même façon.
 - **À tester à la main** : connexion réelle du casque et de la manette (notification, batterie, profil audio A2DP ↔ HFP, veille
   suspendue manette connectée), animation au clic sur Connect, saisie d'un nouveau nom au clavier, « Copy address ».
 - Valeurs à valider : rythmes d'animation (`THEME.md` § 3 « Panneau Bluetooth »).
