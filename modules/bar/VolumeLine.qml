@@ -34,10 +34,12 @@ ColumnLayout {
         }
 
         PercentLabel {
+            id: percent
             value: line.node?.audio?.volume ?? 0
         }
 
         PanelButton {
+            id: button
             text: line.node?.audio?.muted ? "Unmute" : "Mute"
             onClicked: line.node.audio.muted = !line.node.audio.muted
         }
@@ -47,8 +49,9 @@ ColumnLayout {
     Loader {
         active: line.shown && line.meter && Audio.hasLevel(line.node)
         visible: active
+        Layout.fillWidth: true
         Layout.leftMargin: slider.inset
-        Layout.preferredWidth: slider.width - 2 * slider.inset
+        Layout.rightMargin: percent.width + button.width + 2 * Theme.panel.spacing + slider.inset
 
         sourceComponent: LevelMeter {
             node: line.node
