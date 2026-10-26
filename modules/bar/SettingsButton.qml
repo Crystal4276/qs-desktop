@@ -12,6 +12,11 @@ Item {
     readonly property int buttons: Qt.LeftButton | Qt.RightButton
     readonly property var panel: BarState.loaders.settings?.item ?? null   // null avant la première ouverture
 
+    // Comme TrayButton.qml, sur le panneau chargé à la demande (Panel.qml).
+    function toggle(): void {
+        BarState.load("settings")?.toggle(root, root.buttons);
+    }
+
     implicitWidth: label.implicitWidth + Theme.bar.modulePadding
     implicitHeight: label.implicitHeight + 2 * Theme.bar.modulePadding
 
@@ -35,13 +40,13 @@ Item {
         interval: Theme.panel.previewDelay
         running: root.visible && hover.hovered && !(root.panel?.previewSuppressed ?? false) && !(root.panel?.visible ?? false)
             && !BarState.popupPinned
-        onTriggered: BarState.preview("settings", root)
+        onTriggered: BarState.load("settings")?.preview(root, root.buttons)
     }
 
     MouseArea {
         anchors.fill: parent
         acceptedButtons: root.buttons
-        onPressed: BarState.toggle("settings", root)
+        onPressed: root.toggle()
     }
 
     Component.onCompleted: BarState.register("settings", root)

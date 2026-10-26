@@ -10,6 +10,10 @@ Item {
 
     readonly property bool active: hover.hovered || BarState.openedUnder("menu") === root
 
+    function toggle(): void {
+        BarState.toggle("menu", root);
+    }
+
     implicitWidth: Theme.bar.menuButtonMin + 2 * Theme.bar.menuButtonPadding
     implicitHeight: Theme.bar.menuButtonMin
 
@@ -35,7 +39,7 @@ Item {
 
     MouseArea {
         anchors.fill: parent
-        onPressed: BarState.toggle("menu", root)
+        onPressed: root.toggle()
     }
 
     Component.onCompleted: BarState.register("menu", root)
