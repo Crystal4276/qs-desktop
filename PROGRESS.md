@@ -1433,13 +1433,13 @@ onglet A.
   curseur (carte) ou sous le nom (autres entrées), montée immédiate, descente lissée 100 ms ; capture seulement panneau épinglé
   (pas en aperçu : survoler l'icône n'ouvre pas les micros) ; pas de
   niveau pour une entrée Bluetooth (la capture ferait passer le casque du profil A2DP au profil micro).
-  Vérifié : niveau du C920 différent d'une capture à l'autre. Échelle et lissage **à valider**.
+  Vérifié : niveau du C920 différent d'une capture à l'autre.
 - Calibrage (ta remarque : barre vers 80–90 % en silence) : la crête de Quickshell est en échelle cubique comme les volumes
   (0,24 en silence pour -37 dBFS mesurés avec `pw-record`) ; conversion corrigée (60 × log10), échelle -40 → 0 dBFS : silence vers
   10 %. Dégradé `blue` → `green` → `yellow` → `peach` → `red` sur la largeur (ta demande). Vérifié par toi : micro coupé, changement
-  d'entrée. **À tester à la main** : voix normale et forte (où tombe la barre).
-- **À tester à la main** : parler dans chaque micro (la barre suit la voix) ; micro coupé (barre atténuée) ; clic sur une autre
-  entrée / sortie (elle passe dans la carte) ; liste des sorties dépliée dans le panneau de réglages.
+  d'entrée, échelle (« ça fonctionne bien »). Revue de code en boucle ensuite (Bluetooth exclu, descente lissée image par image…).
+- **À tester à la main** : descente de la barre après un mot (100 ms, à valider) ; aperçu au survol (creux atténué, rien n'est
+  capté) ; liste des sorties dépliée dans le panneau de réglages.
 
 ## Prochaine étape
 

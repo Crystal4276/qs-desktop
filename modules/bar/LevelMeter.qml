@@ -7,7 +7,7 @@ import qs.config
 // Niveau capté par une entrée audio (ta demande du 2026-10-26) : trait fin de la position de la carte média (4 px, creux
 // `crust`), remplissage arrondi en dégradé (`Theme.levelMeter.gradient`, bleu → rouge). Crête de PipeWire (avant le volume du
 // nœud) en échelle dB sur `Theme.levelMeter.range`, comme les vu-mètres : montée immédiate, descente lissée ; entrée coupée :
-// remplissage atténué. Capture seulement si `active` (panneau épinglé) et affiché.
+// remplissage atténué. Capture seulement si `active` (panneau épinglé) et affiché ; sinon, creux atténué (rien n'est mesuré).
 Rectangle {
     id: root
 
@@ -20,30 +20,42 @@ Rectangle {
         return peak > 0 ? Math.max(0, Math.min(1, 1 + 60 * Math.log10(peak) / Theme.levelMeter.range)) : 0;
     }
 
-    // Niveau affiché (0–1), recalculé à chaque relevé (environ 45 par seconde) ; descente exponentielle de constante
-    // `smoothing`, selon le temps écoulé depuis le relevé précédent.
+    // Dernier relevé, et niveau affiché (0–1) : il le rejoint aussitôt en montée, en descente exponentielle de constante
+    // `smoothing` à chaque image (le relevé peut ne plus changer, en silence numérique).
+    property real target: 0
     property real level: 0
-    property real lastUpdate: 0
+
+    function reset(): void {
+        target = 0;
+        level = 0;
+    }
+
+    onNodeChanged: reset()
 
     Layout.fillWidth: true
     implicitHeight: Theme.levelMeter.height
     radius: height / 2
     color: Theme.levelMeter.trough
+    opacity: monitor.enabled ? 1 : Theme.panel.disabledOpacity
 
     PwNodePeakMonitor {
         id: monitor
         node: root.node
         enabled: root.active && root.visible && root.node !== null
-        onEnabledChanged: {
-            root.level = 0;
-            root.lastUpdate = 0;
-        }
+        onEnabledChanged: root.reset()
         onPeakChanged: {
-            const now = Date.now();
-            const target = root.levelOf(peak);
-            const decay = root.lastUpdate > 0 ? 1 - Math.exp(-(now - root.lastUpdate) / Theme.levelMeter.smoothing) : 1;
-            root.level = target >= root.level ? target : root.level + (target - root.level) * decay;
-            root.lastUpdate = now;
+            root.target = root.levelOf(peak);
+            if (root.target > root.level)
+                root.level = root.target;
+        }
+    }
+
+    FrameAnimation {
+        running: monitor.enabled && root.level > root.target
+        onTriggered: {
+            root.level += (root.target - root.level) * (1 - Math.exp(-frameTime * 1000 / Theme.levelMeter.smoothing));
+            if (root.level - root.target < 0.001)
+                root.level = root.target;
         }
     }
 
