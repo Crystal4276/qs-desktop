@@ -50,7 +50,7 @@ Singleton {
         const critical = level === criticalLevel;
         const state = critical ? "critically low" : "low";
         Quickshell.execDetached(["notify-send", `--app-name=${device === "" ? "Battery" : "Bluetooth"}`, `--urgency=${critical ? "critical" : "normal"}`,
-            `--icon=${critical ? "battery-caution" : "battery-low"}`, device === "" ? `Battery ${state}` : `${device}: battery ${state}`,
+            `--icon=${critical ? "battery-caution" : "battery-low"}`, "--", device === "" ? `Battery ${state}` : `${device}: battery ${state}`,
             `${percent} % remaining`]);
     }
 }
