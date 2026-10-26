@@ -4,7 +4,7 @@ import qs.config
 
 // Champ de saisie d'un panneau (mot de passe Wi-Fi, phrase de passe d'un disque…) : fond `base`, bordure `overlay0`,
 // `green` quand il a le focus, `red` en erreur (mot de passe refusé). Entrée : `accepted(text)`. `search` (champ de recherche) :
-// croix d'effacement à droite, et Échap efface le texte, puis ferme le panneau s'il est déjà vide. `validator` : saisie
+// croix d'effacement à droite, et Échap efface le texte, puis ferme le panneau s'il est déjà vide. `validator`, `inputMask` : saisie
 // acceptée seulement si valide ; `editingFinished(text)` : Entrée ou perte du focus, texte valide (heures du « ne pas déranger »).
 Rectangle {
     id: root
@@ -16,6 +16,7 @@ Rectangle {
     property string placeholder: ""
     property bool search: false
     property alias validator: input.validator
+    property alias inputMask: input.inputMask
     // Saisie en cours (focus compris) : le panneau ne se ferme pas tout seul (Panel.qml). Par défaut : champ non vide.
     property bool pending: input.text !== ""
     signal accepted(string text)
