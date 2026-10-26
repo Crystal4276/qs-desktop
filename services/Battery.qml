@@ -30,13 +30,24 @@ Singleton {
             alerted = 101;
             return;
         }
-        const level = percent <= criticalLevel ? criticalLevel : percent <= warningLevel ? warningLevel : 101;
+        const level = levelOf(percent);
         if (level >= alerted || level === 101)
             return;
         alerted = level;
+        notifyLow("", percent, level);
+    }
+
+    // Seuil atteint par `percent` : `criticalLevel`, `warningLevel`, ou 101 (aucun). Aussi pour les appareils Bluetooth (Bluez.qml).
+    function levelOf(percent: int): int {
+        return percent <= criticalLevel ? criticalLevel : percent <= warningLevel ? warningLevel : 101;
+    }
+
+    // Alerte de batterie faible : celle du laptop (`device` vide) ou d'un appareil Bluetooth (son nom).
+    function notifyLow(device: string, percent: int, level: int): void {
         const critical = level === criticalLevel;
-        Quickshell.execDetached(["notify-send", "--app-name=Battery", `--urgency=${critical ? "critical" : "normal"}`,
-            `--icon=${critical ? "battery-caution" : "battery-low"}`, critical ? "Battery critically low" : "Battery low",
+        const state = critical ? "critically low" : "low";
+        Quickshell.execDetached(["notify-send", `--app-name=${device === "" ? "Battery" : "Bluetooth"}`, `--urgency=${critical ? "critical" : "normal"}`,
+            `--icon=${critical ? "battery-caution" : "battery-low"}`, device === "" ? `Battery ${state}` : `${device}: battery ${state}`,
             `${percent} % remaining`]);
     }
 }

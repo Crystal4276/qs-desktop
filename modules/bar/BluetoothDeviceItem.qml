@@ -38,19 +38,16 @@ ColumnLayout {
         }
     }
 
-    // Profils audio relus à chaque dépliage et à chaque connexion pendant qu'il est déplié.
+    // Profils audio relus à chaque dépliage, et quand les nœuds PipeWire de l'appareil changent pendant qu'il est déplié
+    // (carte créée après la connexion, profil changé).
+    readonly property string audioNodes: Bluez.audioNodes(device)
     onExpandedChanged: {
         if (expanded)
             Bluez.readAudioCard(device);
     }
-
-    Connections {
-        target: root.device
-
-        function onConnectedChanged(): void {
-            if (root.expanded)
-                Bluez.readAudioCard(root.device);
-        }
+    onAudioNodesChanged: {
+        if (expanded)
+            Bluez.readAudioCard(device);
     }
 
     Timer {
@@ -97,9 +94,8 @@ ColumnLayout {
 
         PanelButton {
             text: root.device.connected ? "Disconnect" : "Connect"
+            enabled: !root.busy   // atténué pendant une action (sinon un clic sans effet)
             onClicked: {
-                if (root.busy)
-                    return;
                 if (root.device.connected)
                     Bluez.disconnectDevice(root.device);
                 else
@@ -110,7 +106,7 @@ ColumnLayout {
         PanelButton {
             visible: !root.device.connected
             text: "Forget"
-            onClicked: root.device.forget()
+            onClicked: Bluez.forget(root.device)
         }
     }
 
@@ -170,7 +166,11 @@ ColumnLayout {
             // Saisie en cours : nom modifié, pas encore validé (le panneau ne se ferme pas tout seul).
             pending: inputItem.activeFocus && text !== root.device.name
             Component.onCompleted: text = root.device.name
-            onAccepted: name => Bluez.rename(root.device, name)
+            // Champ remis au nom attendu : sinon (vide ou espaces) il ne correspondrait jamais au nom et resterait « en saisie ».
+            onAccepted: name => {
+                Bluez.rename(root.device, name);
+                text = name.trim() || root.device.deviceName;
+            }
 
             Connections {
                 target: root.device

@@ -4,6 +4,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import Quickshell.Bluetooth
+import Quickshell.Services.Pipewire
 
 // Bluetooth (module natif du tray, remplace blueman ; ARCHITECTURE R6, § 10.2).
 // État, connexion, oubli, nom : Quickshell.Bluetooth (BlueZ). Appairage : Quickshell n'a pas d'agent BlueZ ; `bluetoothctl` est
@@ -116,6 +117,13 @@ Singleton {
         device.disconnect();
     }
 
+    // Oublié : retiré aussi de la reconnexion automatique (sinon reconnecté sans le demander s'il est de nouveau appairé).
+    function forget(device: BluetoothDevice): void {
+        setAutoConnect(device, false);
+        failed = withFlag(failed, device.address, false);
+        device.forget();
+    }
+
     // Nouveau nom (alias BlueZ) ; vide : nom donné par l'appareil.
     function rename(device: BluetoothDevice, name: string): void {
         device.name = name.trim();
@@ -175,7 +183,14 @@ Singleton {
     // --- Profil audio d'un casque (module PulseAudioProfile de blueman) ---
 
     // Carte PipeWire de chaque appareil audio connecté (adresse → { id, active, profiles: [{ index, description }] }), lue à la
-    // demande (détails dépliés) : Quickshell.Services.Pipewire n'expose pas les profils.
+    // demande (détails dépliés) : Quickshell.Services.Pipewire n'expose pas les profils. Relue quand les nœuds PipeWire de
+    // l'appareil changent (`audioNodes`) : WirePlumber crée la carte après la connexion, et recrée les nœuds après un changement
+    // de profil, une fois le profil actif.
+    function audioNodes(device: BluetoothDevice): string {
+        const key = `.${device.address.replace(/:/g, "_")}`;
+        return Pipewire.nodes.values.filter(n => n.name.startsWith("bluez_") && n.name.includes(key)).map(n => n.id).join(",");
+    }
+
     property var audioCards: ({})
 
     function setAudioCard(address: string, card: var): void {
@@ -188,7 +203,7 @@ Singleton {
     }
 
     function readAudioCard(device: BluetoothDevice): void {
-        if (device.connected)
+        if (device?.connected)
             cardReader.createObject(root, { address: device.address }).running = true;
     }
 
@@ -202,6 +217,8 @@ Singleton {
         id: cardReader
 
         Process {
+            id: reader
+
             property string address
 
             command: ["pw-dump", `bluez_card.${address.replace(/:/g, "_")}`]
@@ -216,10 +233,10 @@ Singleton {
                         if (object && profiles.length > 0)
                             card = { id: object.id, active: params.Profile?.[0]?.index ?? -1, profiles: profiles };
                     } catch (e) {}
-                    root.setAudioCard(address, card);
+                    root.setAudioCard(reader.address, card);
+                    reader.destroy();
                 }
             }
-            onExited: destroy()
         }
     }
 
@@ -235,10 +252,27 @@ Singleton {
         }
     }
 
-    // --- Suivi de chaque appareil : échecs, notifications, batterie ---
+    // Notification envoyée par `notify-send --print-id` ; `done(id)` reçoit son identifiant.
+    Component {
+        id: idSender
+
+        Process {
+            id: idProcess
+
+            signal done(string id)
+            stdout: StdioCollector {
+                onStreamFinished: {
+                    idProcess.done(text.trim());
+                    idProcess.destroy();
+                }
+            }
+        }
+    }
+
+    // --- Suivi de chaque appareil appairé : échecs, notifications, batterie ---
 
     Variants {
-        model: root.devices
+        model: root.paired
 
         Scope {
             id: watch
@@ -248,6 +282,7 @@ Singleton {
             // Notification « Connected » en attente de la batterie (BlueZ la publie après la connexion) : remplacée par
             // « Connected 80% », comme ConnectionNotifier de blueman.
             property string notificationId: ""
+            property int sent: 0   // notifications « Connected » envoyées : seul l'identifiant de la dernière est gardé
             property bool awaitingBattery: false
             property int batteryAlerted: 101   // plus bas seuil déjà signalé ; réarmé quand la batterie remonte
 
@@ -263,21 +298,18 @@ Singleton {
                     modelData.name, connectedBody()]);
             }
 
-            // Seuils de la batterie du laptop (30 % puis 15 %) : une notification par seuil franchi (GNOME).
+            // Seuils de la batterie du laptop : une notification par seuil franchi (GNOME), réarmée quand la batterie remonte.
             function checkBattery(): void {
                 if (!modelData.connected || !modelData.batteryAvailable)
                     return;
                 const percent = root.batteryPercent(modelData);
-                const level = percent <= Battery.criticalLevel ? Battery.criticalLevel : percent <= Battery.warningLevel ? Battery.warningLevel : 101;
+                const level = Battery.levelOf(percent);
                 if (level === 101)
                     batteryAlerted = 101;
                 if (level >= batteryAlerted)
                     return;
                 batteryAlerted = level;
-                const critical = level === Battery.criticalLevel;
-                Quickshell.execDetached(["notify-send", "--app-name=Bluetooth", `--urgency=${critical ? "critical" : "normal"}`,
-                    `--icon=${critical ? "battery-caution" : "battery-low"}`,
-                    `${modelData.name}: ${critical ? "battery critically low" : "battery low"}`, `${percent} % remaining`]);
+                Battery.notifyLow(modelData.name, percent, level);
             }
 
             Connections {
@@ -301,9 +333,16 @@ Singleton {
                         root.failed = root.withFlag(root.failed, device.address, false);
                         watch.notificationId = "";
                         watch.awaitingBattery = !device.batteryAvailable;
-                        sender.command = ["notify-send", "--print-id", "--app-name=Bluetooth", "--transient",
-                            `--icon=${device.icon || "bluetooth"}`, device.name, watch.connectedBody()];
-                        sender.running = true;
+                        const sent = ++watch.sent;
+                        const process = idSender.createObject(watch, { command: ["notify-send", "--print-id", "--app-name=Bluetooth",
+                            "--transient", `--icon=${device.icon || "bluetooth"}`, device.name, watch.connectedBody()] });
+                        process.done.connect(id => {
+                            if (sent !== watch.sent)
+                                return;
+                            watch.notificationId = id;
+                            watch.batteryArrived();
+                        });
+                        process.running = true;
                         watch.checkBattery();
                     } else {
                         watch.awaitingBattery = false;
@@ -321,16 +360,6 @@ Singleton {
                 function onBatteryChanged(): void {
                     watch.batteryArrived();
                     watch.checkBattery();
-                }
-            }
-
-            Process {
-                id: sender
-                stdout: StdioCollector {
-                    onStreamFinished: {
-                        watch.notificationId = text.trim();
-                        watch.batteryArrived();
-                    }
                 }
             }
         }
