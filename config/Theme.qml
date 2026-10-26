@@ -51,7 +51,7 @@ Singleton {
     }
 
     // § 1 — Autres couleurs littérales
-    readonly property color hoverWhite: Qt.rgba(1, 1, 1, 0.1)   // power menu, nwg-menu
+    readonly property color hoverWhite: Qt.rgba(1, 1, 1, 0.1)   // survol du power menu Rofi et de nwg-menu (gardée, inutilisée)
     // Sélection de zone des captures (`slurp -b ffffff20 -c f5c2e7 -w 4`, touche Impr.) ; slurp lit #RRGGBBAA, QML #AARRGGBB.
     readonly property color slurpBackground: Qt.rgba(1, 1, 1, 0x20 / 255)
     readonly property color slurpSelection: root.color.pink
@@ -76,7 +76,6 @@ Singleton {
         readonly property int notificationPt: 16   // points (Pango), titre en gras
         readonly property int launcherPt: 20             // points (Pango) = 26,67 px : pas de ligne de 53 px, majuscules de 20 px (mesuré)
         readonly property int launcherSearchIconPt: 20   // points
-        readonly property int powerMenuLabel: 12   // gras
         readonly property int appMenu: 20
         readonly property int appMenuSearch: 24
     }
@@ -276,8 +275,6 @@ Singleton {
         readonly property color battery: root.color.green
         readonly property color batteryWarning: root.color.red
         readonly property color backlight: root.color.yellow
-        readonly property color menuLogo: root.color.green
-        readonly property color menuBackground: root.color.mantle
         readonly property color menuActiveBackground: root.color.green
         readonly property color highlightText: root.color.mantle   // survol en contrastes inversés (bouton Arch, mises à jour, horloge)
         readonly property color statsHighlight: root.module.memory // survol de la pilule GPU / CPU / mémoire, en bloc (ta demande du 2026-10-21)
@@ -291,7 +288,6 @@ Singleton {
         readonly property string muted: "\uf466"
         readonly property string microphone: "\uf130"        // OSD (nouveau, 2026-10-16) : nf-fa-microphone
         readonly property string microphoneMuted: "\uf131"   // nf-fa-microphone_slash
-        readonly property string power: "\uf011"
         readonly property string search: "\uf002"
         readonly property list<string> backlight: ["\ue38d", "\ue3d3", "\ue3d1", "\ue3cf", "\ue3ce", "\ue3cd", "\ue3ca", "\ue3c8", "\ue39b"]
         // batterie : codes v2 de la config Waybar (U+F578…U+F583) transposés en Nerd Fonts v3 (+0xEFA89), même dessin
@@ -393,7 +389,6 @@ Singleton {
         readonly property int iconSize: 100
         readonly property int progressHeight: 20
         readonly property int progressFrame: 4
-        readonly property int progressMinWidth: 150
         readonly property int progressMaxWidth: 300
         readonly property color progressFill: root.color.blue   // non fixé dans dunstrc (défauts Dunst hors palette) : `blue`, ton choix du 2026-10-16
     }
@@ -463,25 +458,6 @@ Singleton {
         // Sélection : survol des cartes des panneaux (`surface0`), texte inchangé (ton choix du 2026-10-21 ; Rofi : fond `green`, texte `SEL`).
         readonly property color selected: root.panel.rowHover
         readonly property int selectedRadius: 10
-    }
-
-    // § 6 — Power menu
-    readonly property QtObject powerMenu: QtObject {
-        readonly property int width: 126
-        readonly property int height: 352
-        readonly property int offsetX: -5
-        readonly property int offsetY: 5
-        readonly property color background: root.rofi.bg
-        readonly property int border: 1
-        readonly property color borderColor: root.rofi.bdr
-        readonly property int radius: 20
-        readonly property int padding: 15
-        readonly property real itemPadding: 7.5
-        readonly property real itemRadius: 7.5
-        readonly property color item: root.rofi.sel
-        readonly property color itemHover: root.hoverWhite
-        readonly property int iconSize: 48
-        readonly property color text: root.rofi.fg
     }
 
     // § 7 — Menu d'applications (style actuel de nwg-menu)
