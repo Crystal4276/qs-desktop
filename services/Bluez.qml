@@ -336,7 +336,7 @@ Singleton {
                     return;
                 awaitingBattery = false;
                 Quickshell.execDetached(["notify-send", "--app-name=Bluetooth", "--transient", `--replace-id=${notificationId}`, "--icon=battery",
-                    modelData.name, connectedBody()]);
+                    "--", modelData.name, connectedBody()]);
             }
 
             // Seuils de la batterie du laptop : une notification par seuil franchi (GNOME). Réarmée seulement quand la batterie
@@ -367,7 +367,7 @@ Singleton {
                 batteryWait.restart();
                 const sent = ++watch.sent;
                 const process = idSender.createObject(watch, { command: ["notify-send", "--print-id", "--app-name=Bluetooth",
-                    "--transient", `--icon=${device.icon || "bluetooth"}`, device.name, connectedBody()] });
+                    "--transient", `--icon=${device.icon || "bluetooth"}`, "--", device.name, connectedBody()] });
                 process.done.connect(id => {
                     if (sent !== watch.sent)
                         return;
@@ -382,7 +382,7 @@ Singleton {
                 const device = modelData;
                 awaitingBattery = false;
                 Quickshell.execDetached(["notify-send", "--app-name=Bluetooth", "--transient", `--icon=${device.icon || "bluetooth"}`,
-                    device.name, "Disconnected"]);
+                    "--", device.name, "Disconnected"]);
                 root.setAudioCard(device.address, null);
             }
 
