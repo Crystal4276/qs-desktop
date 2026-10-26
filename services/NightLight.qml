@@ -38,13 +38,21 @@ Singleton {
     readonly property int toMinutes: Settings.minutes(config.to)
     readonly property bool validSchedule: fromMinutes >= 0 && toMinutes >= 0 && fromMinutes !== toMinutes
 
-    function configText(): string {
+    readonly property string configText: {
         const crossesMidnight = fromMinutes > toMinutes;
         const night = String(config.temperature), day = "6500";
         return ["[general]", "adjustment-method=wayland", "fade=1",
             crossesMidnight ? `dusk-time=${config.from}` : `dawn-time=${config.from}`,
             crossesMidnight ? `dawn-time=${config.to}` : `dusk-time=${config.to}`,
             `temp-day=${crossesMidnight ? day : night}`, `temp-night=${crossesMidnight ? night : day}`, ""].join("\n");
+    }
+
+    // Config machine modifiée pendant que gammastep tourne : arrêté, puis relancé avec elle (retry).
+    onConfigTextChanged: {
+        if (gammastep.running) {
+            ready = false;
+            gammastep.signal(15);
+        }
     }
 
     // Écrit avant chaque lancement (les heures ne passent que par un fichier de config).
@@ -69,7 +77,7 @@ Singleton {
             console.warn(`NightLight: horaire ${schedule} invalide`);
             return;
         }
-        configFile.setText(configText());
+        configFile.setText(configText);
         gammaOn = true;
         ready = false;
         startedAt = Date.now();
@@ -104,12 +112,14 @@ Singleton {
         id: gammastep
         command: ["gammastep", "-c", configFile.path]
         // Arrêt inattendu (au rechargement, l'ancienne instance tient encore le réglage gamma des écrans le temps de son fondu) :
-        // relancé 1 s plus tard ; abandon après 5 arrêts de suite dans les 5 s (autre client gamma, config refusée).
+        // relancé 1 s plus tard ; abandon après 10 arrêts de suite dans les 5 s, soit une dizaine de secondes (autre client gamma,
+        // config refusée).
         onExited: {
+            readyDelay.stop();
             root.gammaOn = false;
             root.ready = false;
             root.failures = Date.now() - root.startedAt < 5000 ? root.failures + 1 : 0;
-            if (root.failures >= 5)
+            if (root.failures >= 10)
                 console.warn("NightLight: gammastep s'arrête aussitôt lancé, abandon (autre client gamma ?)");
             else if (root.enabled)
                 retry.start();

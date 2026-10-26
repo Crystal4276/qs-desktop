@@ -43,7 +43,7 @@ LazyLoader {
             // Clavier pris seulement une fois l'outil visible (image figée reçue). Pointeur pris dès l'ouverture : curseur vide
             // (cursorHider) ; invisible, l'outil le bloque donc jusqu'à l'image figée de cet écran, 3 s au plus (stalled).
             WlrLayershell.keyboardFocus: home && view.hasContent ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
-            mask: stalled && !view.hasContent ? noInput : null
+            mask: view.hasContent || (Screenshot.hidesCursor && !stalled) ? null : noInput
             exclusionMode: ExclusionMode.Ignore
             anchors {
                 top: true
@@ -60,7 +60,7 @@ LazyLoader {
             MouseArea {
                 id: cursorHider
                 anchors.fill: parent
-                visible: !view.hasContent && !win.stalled
+                visible: Screenshot.hidesCursor && !view.hasContent && !win.stalled
                 hoverEnabled: true
                 cursorShape: Qt.BlankCursor
                 onContainsMouseChanged: if (containsMouse) Screenshot.pointerEntered()

@@ -70,8 +70,10 @@ Singleton {
         editing = false;
         scheduleFile.writeAdapter();
         const now = schedule.enabled && quietHours;
-        if (now && !was)
-            setBySchedule(true);
+        if (now && !was) {
+            if (!doNotDisturb)   // déjà activé à la main : il le reste (pas repris par l'horaire)
+                setBySchedule(true);
+        }
         else if (!now && was && persist.dndBySchedule)
             setBySchedule(false);
     }

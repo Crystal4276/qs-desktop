@@ -169,6 +169,12 @@ Singleton {
             I3.dispatch(names.map(n => `output "${n}" adaptive_sync ${on ? "on" : "off"}`).join("; "));
     }
 
+    // Déplacement nul du pointeur : Sway envoie l'entrée du pointeur à une surface apparue sous lui (outil de capture). Hyprland : inutile.
+    function nudgeCursor(): void {
+        if (isSway)
+            I3.dispatch("seat - cursor move 0 0");
+    }
+
     // Alimentation des écrans (veille, services/Idle.qml) : `names` vide = tous. Sway : `output X power on|off` ;
     // Hyprland : `hl.dsp.dpms` (config Lua) ou `dpms` (config classique), comme hypridle.
     function setPower(names: var, on: bool): void {
