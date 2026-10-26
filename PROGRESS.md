@@ -1439,6 +1439,10 @@ onglet A.
   10 %. Dégradé `blue` → `green` → `yellow` → `peach` → `red` sur la largeur (ta demande). Vérifié par toi : micro coupé, changement
   d'entrée, échelle (« ça fonctionne bien »). Revue de code en boucle ensuite (Bluetooth exclu, descente lissée image par image…).
 - Micro coupé : il ne transmet que des zéros (mesuré) ; plus de capture, creux atténué comme en aperçu.
+- Revue de code : 6 tours (`8468a22..HEAD`), jusqu'à des constats négligeables ou déjà tranchés. Laissés : une capture par entrée
+  (ta demande) ; moniteur de crête dans le widget (type natif, pas un `Process`) ; source virtuelle bâtie sur un micro Bluetooth
+  non reconnue (cas absent ici). Vérifié avec `pw-dump` : épinglé → une capture par entrée, entrée coupée → sa capture fermée,
+  fermé → aucune.
 - **À tester à la main** : descente de la barre après un mot (100 ms, à valider) ; aperçu au survol (creux atténué, rien n'est
   capté) ; liste des sorties dépliée dans le panneau de réglages.
 
