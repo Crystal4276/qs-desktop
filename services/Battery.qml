@@ -16,6 +16,9 @@ Singleton {
     // Seuils de la config Waybar : warning 30 %, critical 15 %.
     readonly property int warningLevel: 30
     readonly property int criticalLevel: 15
+    // Appareils Bluetooth (sans état de charge) : alerte réarmée quand la batterie remonte au-dessus de warningLevel + 10, soit
+    // 40 % (ton choix du 2026-10-27 : absorbe les paliers de 10 % des casques).
+    readonly property int rearmMargin: 10
     readonly property bool warning: percent <= warningLevel
 
     // Alerte (ajout du 2026-10-16) : une notification par seuil franchi pendant la décharge, réarmée dès que le laptop charge.

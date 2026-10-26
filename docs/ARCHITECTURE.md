@@ -660,7 +660,7 @@ utilise blueman). Tes choix :
   module de blueman passe par `xdg-screensaver`, sans effet sous Sway.
 - **Icône du tray animée** pendant l'allumage, une connexion, une déconnexion ou un appairage (GNOME, KDE).
 - **Batterie faible** d'un appareil connecté (GNOME) : notification à 30 % puis 15 % (seuils de la batterie du laptop, config
-  Waybar), réarmée à la déconnexion (une mesure par paliers qui oscille autour du seuil ne la répète pas).
+  Waybar), réarmée quand la batterie remonte au-dessus de 40 % (ton choix du 2026-10-27), pas à la reconnexion.
 
 Écartés : envoi et parcours de fichiers (OBEX), commandes média AVRCP (carte média MPRIS), force du signal (absente de l'API),
 base de codes PIN, partage de connexion (PAN/DUN), confirmation de « Forget », clic milieu, pastille, visibilité temporaire,
