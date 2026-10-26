@@ -157,7 +157,6 @@ Item {
         id: bluetoothPanel
     }
 
-
     NotificationsPanel {
         id: notificationsPanel
     }

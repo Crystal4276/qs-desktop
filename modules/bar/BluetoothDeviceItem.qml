@@ -17,7 +17,8 @@ ColumnLayout {
     signal toggled
 
     readonly property bool busy: Bluez.isBusy(device)
-    readonly property var audioCard: Bluez.audioCards[device?.address ?? ""] ?? null
+    // Appareil connecté seulement : une carte gardée d'un appareil supprimé connecté (BlueZ relancé) n'est pas montrée.
+    readonly property var audioCard: device?.connected ? Bluez.audioCards[device.address] ?? null : null
     property bool copied: false
 
     Layout.fillWidth: true
