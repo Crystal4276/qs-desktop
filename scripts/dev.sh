@@ -45,3 +45,6 @@ if ! running; then
 fi
 qs log -p "$repo" | grep -E "WARN|ERROR" || echo "Démarré sans erreur."
 # Avertissement attendu à chaque démarrage sous Sway, sans effet : « I3 event socket disconnected. »
+if pgrep -u "$UID" -x dunst >/dev/null || pgrep -u "$UID" -x polkit-gnome-au >/dev/null; then
+    echo "Dunst ou polkit-gnome tourne : notifications et polkit restent à l'ancien bureau (prise en main : scripts/takeover.sh)."
+fi

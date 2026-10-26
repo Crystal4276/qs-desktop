@@ -10,9 +10,13 @@
 set -euo pipefail
 
 repo="$(cd "$(dirname "$0")/.." && pwd)"
-state="${XDG_RUNTIME_DIR:-/tmp}/qs-takeover.cmds"   # commandes des outils arrêtés, pour `restore`
 
 [[ -n "${SWAYSOCK:-}" ]] || { echo "Sway seulement (Hyprland : phase 9)." >&2; exit 1; }
+
+# Commandes des outils arrêtés, pour `restore`. Propre à cette session Sway (le socket contient son PID) : après un redémarrage de
+# Sway, son autostart a déjà relancé les outils, et l'état de l'ancienne session les relancerait en double.
+state="${XDG_RUNTIME_DIR:-/tmp}/qs-takeover.$(basename "$SWAYSOCK" .sock).cmds"
+rm -f "${XDG_RUNTIME_DIR:-/tmp}"/qs-takeover.cmds   # ancien nom, non lié à une session
 
 # Nom de processus (comm, 15 caractères au plus) → outil remplacé. swaybg est relancé par Sway lui-même (`output … bg`).
 tools=(waybar dunst swaybg swayidle polkit-gnome-au nm-applet blueman-applet blueman-tray udiskie)
