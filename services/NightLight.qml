@@ -14,7 +14,7 @@ Singleton {
 
     readonly property var config: Settings.nightLight
     readonly property bool enabled: state.enabled
-    readonly property string schedule: `${config.from} – ${config.to}`
+    readonly property string schedule: `${Settings.timeText(fromMinutes)} – ${Settings.timeText(toMinutes)}`
 
     function toggle(): void {
         state.enabled = !state.enabled;
@@ -42,8 +42,8 @@ Singleton {
         const crossesMidnight = fromMinutes > toMinutes;
         const night = String(config.temperature), day = "6500";
         return ["[general]", "adjustment-method=wayland", "fade=1",
-            crossesMidnight ? `dusk-time=${config.from}` : `dawn-time=${config.from}`,
-            crossesMidnight ? `dawn-time=${config.to}` : `dusk-time=${config.to}`,
+            `${crossesMidnight ? "dusk" : "dawn"}-time=${Settings.timeText(fromMinutes)}`,
+            `${crossesMidnight ? "dawn" : "dusk"}-time=${Settings.timeText(toMinutes)}`,
             `temp-day=${crossesMidnight ? day : night}`, `temp-night=${crossesMidnight ? night : day}`, ""].join("\n");
     }
 
