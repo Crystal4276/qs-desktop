@@ -161,7 +161,7 @@ Panel {
             title: "Do Not Disturb"
             subtitle: Notifs.scheduled ? `${Notifs.scheduleFrom} – ${Notifs.scheduleTo}` : ""
             checked: Notifs.doNotDisturb
-            onClicked: Notifs.doNotDisturb = !Notifs.doNotDisturb
+            onClicked: Notifs.setDoNotDisturb(!Notifs.doNotDisturb)
             onSecondaryClicked: root.expanded = root.expanded === "dnd" ? "" : "dnd"
         }
 

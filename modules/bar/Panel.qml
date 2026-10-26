@@ -14,7 +14,8 @@ import qs.config
 // comporte comme ouvert au clic. Pas d'aperçu par-dessus un autre popup épinglé, ni après une fermeture (Échap, clic sur
 // l'icône…) tant que le pointeur reste sur l'icône.
 // Épinglé : fermé aussi quand le pointeur est resté `autoCloseDelay` hors du cadre et de l'icône (ta demande du 2026-10-21, comme
-// le calendrier et le menu), une fois entré dans l'un d'eux ; jamais pendant une saisie (champ non vide qui a le focus).
+// le calendrier et le menu), une fois entré dans l'un d'eux ; jamais pendant une saisie (champ non vide qui a le focus) ni bouton
+// appuyé dans le cadre.
 OverlayPopup {
     id: root
 
@@ -115,7 +116,8 @@ OverlayPopup {
 
     Timer {
         interval: Theme.panel.autoCloseDelay
-        running: root.pinned && root.pointerEntered && !root.typing && !frameHover.hovered && !(root.button?.hovered ?? false)
+        running: root.pinned && root.pointerEntered && !root.typing && !framePress.active && !frameHover.hovered
+            && !(root.button?.hovered ?? false)
         onTriggered: root.close()
     }
 
@@ -145,6 +147,12 @@ OverlayPopup {
         HoverHandler {
             id: frameHover
             onHoveredChanged: if (hovered) root.pointerEntered = true
+        }
+
+        // Bouton appuyé dans le cadre (curseur de volume tiré hors du cadre…) : pas de fermeture automatique avant le relâchement.
+        PointHandler {
+            id: framePress
+            acceptedButtons: Qt.AllButtons
         }
     }
 

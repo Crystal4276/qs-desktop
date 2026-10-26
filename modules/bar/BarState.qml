@@ -94,7 +94,11 @@ Singleton {
     function toggleFromShortcut(kind: string): void {
         const list = buttons[kind] ?? [];
         const on = name => list.find(b => b.QsWindow.window?.screen?.name === name);
-        (on(Compositor.focusedOutput) ?? on(Outputs.primary?.name) ?? list[0])?.toggle();
+        const panel = loaders[kind]?.item;
+        if (panel?.visible)
+            panel.close();   // aperçu compris
+        else
+            (on(Compositor.focusedOutput) ?? on(Outputs.primary?.name) ?? list[0])?.toggle();
     }
 
     // Tests (scripts/test-outputs.sh) : popups inscrits et écran au clavier « à la demande », en JSON.

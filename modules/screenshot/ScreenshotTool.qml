@@ -61,6 +61,7 @@ LazyLoader {
                 hoverEnabled: true
                 cursorShape: Qt.BlankCursor
                 onContainsMouseChanged: if (containsMouse) Screenshot.pointerEntered()
+                Component.onCompleted: Screenshot.surfaceCreated()
             }
 
             // Pas d'image figée de l'écran de départ au bout de 3 s (capture refusée, écran éteint) : outil fermé.
