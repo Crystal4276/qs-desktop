@@ -1475,7 +1475,8 @@ Lecteur, visualiseur, icône et curseur de volume (`Mpris`, `CavaModule`, `Volum
 - **Réglages du thème inutilisés retirés** (ta demande) : groupe `powerMenu` (power menu Rofi non repris, remplacé par le
   panneau de réglages), `font.powerMenuLabel`, `module.menuLogo`, `module.menuBackground`, `icon.power`,
   `notification.progressMinWidth` (largeur de notification fixe à 600 px : jamais atteint). Gardés : toutes les couleurs du § 1
-  (palette, couleurs Rofi, `hoverWhite`), même inutilisées, pour de futurs éléments ; `embeddedFonts` (charge les polices) ;
+  (palette, `hoverWhite`), même inutilisées, pour de futurs éléments ; couleurs Rofi inutilisées (`ugt`, `bga`, `bdr`)
+  retirées ensuite (ta demande), celles du lanceur gardées ; `embeddedFonts` (charge les polices) ;
   `icon.spotify` (lu par la table des lecteurs). `Settings.qml` et les configs machine : rien d'inutilisé.
 
 ## Prochaine étape

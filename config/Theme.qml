@@ -39,15 +39,12 @@ Singleton {
         readonly property color rosewater: "#f5e0dc"
     }
 
-    // § 1 — Couleurs propres à Rofi (anciennes valeurs Catppuccin), sous leurs noms Rofi
+    // § 1 — Couleurs propres à Rofi (anciennes valeurs Catppuccin), sous leurs noms Rofi : celles du lanceur
     readonly property QtObject rofi: QtObject {
         readonly property color bg: "#1E1D2F"
         readonly property color fg: "#D9E0EE"
         readonly property color sel: "#1E1E2E"
         readonly property color img: "#FAE3B0"
-        readonly property color ugt: "#F28FAD"
-        readonly property color bga: "#a6e3a1"
-        readonly property color bdr: "#6c7086"
     }
 
     // § 1 — Autres couleurs littérales
