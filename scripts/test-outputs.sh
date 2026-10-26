@@ -273,6 +273,49 @@ swaymsg workspace number "$initial_focus" >/dev/null
 sleep 0.5
 prev_visible="$(visible_map)"
 
+# Espace créé depuis un écran qui affichait un espace vide (Sway le détruit en le quittant) : l'écran de départ doit le
+# retrouver (revue de code du 2026-10-26 : il affichait un autre de ses espaces).
+left_block=($(jq -r --arg o "$left" 'to_entries | map(select(.value == $o) | .key | tonumber) | sort | .[]' <<<"$initial_expected"))
+empty_ws="${left_block[2]}"
+swaymsg "[title=\"^qs-test-$empty_ws\$\"] move container to workspace number ${left_block[0]}" >/dev/null
+swaymsg "focus output $left; workspace number $empty_ws" >/dev/null
+sleep 0.5
+swaymsg workspace number 3 >/dev/null
+check "espace 3 créé depuis $left, qui affichait $empty_ws (vide)" "$initial_expected" 3 skip
+if [[ "$(visible_map | jq -r --arg o "$left" '.[$o]')" == "$empty_ws" ]]; then
+    echo "OK    $left affiche toujours $empty_ws"
+else
+    echo "ÉCHEC $left affiche $(visible_map | jq -r --arg o "$left" '.[$o]') au lieu de $empty_ws"
+    failures=$((failures + 1))
+fi
+
+# Espace seul d'un écran déplacé à la main : Sway crée sur l'écran vidé un espace bouche-trou au premier numéro libre (ici 3,
+# chez lui au centre). Avant correction, le déplacer en faisait naître un autre, sans fin (revue de code du 2026-10-26).
+left_titles="^qs-test-($(IFS='|'; echo "${left_block[*]}"))\$"
+swaymsg "[title=\"$left_titles\"] move container to workspace number $empty_ws" >/dev/null
+swaymsg "focus output $left; workspace number $empty_ws" >/dev/null
+swaymsg workspace number "$initial_focus" >/dev/null
+sleep 1
+placed_before="$(qs log --pid "$qs_pid" | grep -c "placement des espaces" || true)"
+swaymsg "focus output $left; move workspace to output $right" >/dev/null
+sleep 2
+placed_after="$(qs log --pid "$qs_pid" | grep -c "placement des espaces" || true)"
+shown_left="$(visible_map | jq -r --arg o "$left" '.[$o]')"
+if [[ "$((placed_after - placed_before))" -le 2 && " ${left_block[*]} " == *" $shown_left "* ]]; then
+    echo "OK    écran vidé : $left affiche $shown_left (son bloc), $((placed_after - placed_before)) correction(s)"
+else
+    echo "ÉCHEC écran vidé : $left affiche $shown_left, $((placed_after - placed_before)) corrections (boucle ?)"
+    failures=$((failures + 1))
+fi
+# Remise en état : l'espace déplacé à la main revient, chaque fenêtre dans son espace.
+swaymsg "[workspace=\"^$empty_ws\$\"] move workspace to output $left; focus output $left" >/dev/null
+for n in "${left_block[@]}"; do swaymsg "[title=\"^qs-test-$n\$\"] move container to workspace number $n" >/dev/null; done
+swaymsg "focus output $left; workspace number $empty_ws; workspace number $initial_focus" >/dev/null
+sleep 1
+prev_visible="$(visible_map)"
+seen_views[$(layout_key)]="$prev_visible"   # même configuration : la vue choisie ici remplace celle relevée plus haut
+check "remise en état" "$initial_expected"
+
 # L'écran focalisé (et principal) s'éteint : le compositeur déplace le focus avant Quickshell ;
 # l'espace focalisé doit le rester, et la vue de chaque écran revenir au rallumage.
 reference_visible="$(visible_map)"

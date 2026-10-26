@@ -58,13 +58,16 @@ Singleton {
 
     // Espaces de travail existants : { number, name, output, focused, visible, urgent, empty }
     // empty = aucune fenêtre, flottantes comprises (classe `empty` de Waybar).
+    // Sway : focus lu dans l'objet IPC de l'espace (relu après chaque événement d'espace), pas dans `focused` de Quickshell, qui
+    // ne suit que les événements « focus » : déplacer le seul espace d'un écran en envoie un faux vers l'espace que Sway y crée
+    // (vérifié, Sway 1.12).
     readonly property var workspaces: {
         if (isSway)
             return I3.workspaces.values.map(w => ({
                 number: w.number,
                 name: w.name,
                 output: w.monitor?.name ?? "",
-                focused: w.focused,
+                focused: w.lastIpcObject.focused === true,
                 visible: w.active,
                 urgent: w.urgent,
                 empty: (w.lastIpcObject.focus ?? []).length === 0
@@ -82,7 +85,7 @@ Singleton {
         return [];
     }
 
-    readonly property string focusedOutput: isSway ? (I3.focusedMonitor?.name ?? "")
+    readonly property string focusedOutput: isSway ? (workspaces.find(w => w.focused)?.output ?? I3.focusedMonitor?.name ?? "")
         : isHyprland ? (Hyprland.focusedMonitor?.name ?? "") : ""
 
     // Titre de la fenêtre focalisée ("" sans fenêtre) et mode / submap actif ("" pour le mode par défaut).
@@ -250,6 +253,12 @@ Singleton {
             if (event.type === "workspace") {
                 if (data.change === "init" && data.current)
                     root.workspaceCreated(data.current.num, data.current.output ?? "");
+                // Focus relu après chaque événement d'espace : celui que portent les événements est souvent faux (Sway 1.12, vérifié).
+                I3.refreshWorkspaces();
+                // Espace déplacé d'écran : Quickshell ne met à jour l'espace affiché par chaque écran (`active`) que sur un
+                // changement de focus ; get_outputs (current_workspace) le relit (Quickshell 0.3.2, code lu).
+                if (data.change === "move")
+                    I3.refreshMonitors();
                 return;
             }
             if (event.type === "mode") {

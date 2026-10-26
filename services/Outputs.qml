@@ -127,9 +127,10 @@ Singleton {
     }
 
     // Espace créé hors de son écran : traité 100 ms plus tard, quand le focus est à jour.
-    // Focalisé (`$mod+N`) : simplement déplacé, il reste focalisé. Créé en arrière-plan (fenêtre envoyée vers
+    // Focalisé (`$mod+N`) : déplacé, il reste focalisé ; son écran de départ reprend l'espace qu'il affichait. Créé en arrière-plan (fenêtre envoyée vers
     // un espace inexistant) : déplacé, son écran d'arrivée garde l'espace qu'il affichait, et le focus revient où il était.
-    // Aucune correction ne crée d'espace.
+    // Bouche-trou (vide, affiché, non focalisé : Sway en crée un, au premier numéro libre, sur un écran qu'on vient de vider) :
+    // pas déplacé, Sway en recréerait un sans fin ; l'écran affiche à la place un espace de son bloc, qui y est chez lui.
     property var pendingCreated: []
 
     Connections {
@@ -152,18 +153,32 @@ Singleton {
                 return;   // la répartition complète va passer
             const workspaces = Compositor.workspaces;
             const focused = workspaces.find(w => w.focused);
-            for (const n of numbers) {
+            for (const n of new Set(numbers)) {
                 const w = workspaces.find(w => w.number === n);
                 if (!w || w.output === root.homes[n])
                     continue;
                 if (w.focused) {
-                    Compositor.moveFocusedWorkspace(root.homes[n]);
-                } else {
-                    // Sway affiche l'espace qu'il vient de déplacer : l'écran d'arrivée reprend celui qu'il montrait.
-                    const shown = workspaces.find(x => x.visible && x.output === root.homes[n]);
-                    Compositor.placeWorkspaces([{ number: n, output: root.homes[n] }],
-                        shown ? [{ number: shown.number, output: root.homes[n] }] : [], focused ? focused.number : 0);
+                    // L'écran de départ reprend l'espace qu'il affichait : Sway l'a détruit s'il était vide.
+                    const before = root.visibleByLayout[root.currentLayout]?.visible?.[w.output];
+                    if (before !== undefined && before !== n && root.homes[before] === w.output)
+                        Compositor.placeWorkspaces([{ number: n, output: root.homes[n] }], [{ number: before, output: w.output }], n);
+                    else
+                        Compositor.moveFocusedWorkspace(root.homes[n]);
+                    continue;
                 }
+                // Seul espace de son écran (`visible` n'est pas encore à jour pour un espace qui vient de naître) : l'écran affiche
+                // ensuite le premier espace de son bloc qui n'est pas ailleurs (sans bloc : rien n'est fait). Vide, c'est un
+                // bouche-trou : il n'est pas déplacé et disparaît dès qu'il est masqué.
+                const alone = !workspaces.some(x => x.number !== n && x.output === w.output);
+                const own = alone ? root.blockFor(w.output).find(k => !workspaces.some(x => x.number === k && x.output !== w.output)) : undefined;
+                const moves = alone && w.empty ? [] : [{ number: n, output: root.homes[n] }];
+                const show = own !== undefined ? [{ number: own, output: w.output }] : [];
+                // Sway affiche l'espace qu'il vient de déplacer : l'écran d'arrivée reprend celui qu'il montrait.
+                const shown = workspaces.find(x => x.visible && x.output === root.homes[n]);
+                if (moves.length > 0 && shown)
+                    show.push({ number: shown.number, output: root.homes[n] });
+                if (moves.length > 0 || show.length > 0)
+                    Compositor.placeWorkspaces(moves, show, focused ? focused.number : 0);
             }
         }
     }
