@@ -12,6 +12,8 @@ Item {
     // Premier module affiché de sa pilule (renseigné par Bar.qml).
     property bool leading: true
     readonly property bool shown: Audio.ready
+    // Survol : le panneau audio épinglé ne se ferme pas tout seul tant que le pointeur reste ici (Panel.qml).
+    readonly property bool hovered: hover.hovered
 
     readonly property int paddingLeft: leading ? Theme.bar.modulePadding : 0
 
@@ -27,6 +29,10 @@ Item {
         font.family: Theme.font.icons
         font.pixelSize: Theme.font.volumeIcon
         color: Theme.module.volume
+    }
+
+    HoverHandler {
+        id: hover
     }
 
     MouseArea {

@@ -9,10 +9,16 @@ VolumeSlider {
     id: root
 
     readonly property bool shown: Audio.ready
+    // Survol : le panneau audio épinglé ne se ferme pas tout seul tant que le pointeur reste ici (Panel.qml).
+    readonly property bool hovered: hover.hovered
 
     implicitWidth: 2 * Theme.slider.padding + Theme.slider.minWidth
     value: Audio.volume
     onMoved: v => Audio.setVolume(v)
+
+    HoverHandler {
+        id: hover
+    }
 
     // Au-dessus du curseur : ne prend que le clic droit, le gauche passe au curseur.
     MouseArea {
