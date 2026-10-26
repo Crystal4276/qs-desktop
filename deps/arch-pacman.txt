@@ -9,7 +9,7 @@ qt6-svg                 # rendu des icônes et images SVG dans Quickshell
 # (listes d'icônes, filtres des applications du lanceur ; `ps` du panneau de statistiques), util-linux (`rfkill` : mode avion du
 # panneau de réglages ; `kill` du panneau de statistiques), systemd (`systemctl reboot|poweroff` du panneau de réglages,
 # `systemd-inhibit` de la veille, `busctl` des disques).
-glib2                   # gdbus : disques amovibles, mise en veille du système (services/Idle.qml)
+glib2                   # gdbus : disques amovibles, mise en veille du système (services/Idle.qml) ; gsettings : reconnexion Bluetooth reprise de blueman
 
 # --- Compositeurs et sorties ---
 sway                    # compositeur principal
@@ -39,8 +39,8 @@ noto-fonts-emoji        # emojis en couleur (notifications)
 papirus-icon-theme      # thème d'icônes Papirus-Dark (notifications, lanceur, menu d'applications, tray)
 
 # --- Audio / média ---
-pipewire                # serveur audio (Quickshell.Services.Pipewire)
-wireplumber             # gestionnaire de session PipeWire, wpctl
+pipewire                # serveur audio (Quickshell.Services.Pipewire) ; pw-dump : profils audio des casques Bluetooth
+wireplumber             # gestionnaire de session PipeWire, wpctl (dont le choix du profil audio Bluetooth)
 pipewire-pulse          # compatibilité PulseAudio (pavucontrol)
 pavucontrol             # clic droit sur le volume
 
@@ -55,7 +55,7 @@ xdg-utils               # xdg-open : « Open » d'un disque monté, dossiers et 
 pacman-contrib          # checkupdates (module mises à jour)
 fakeroot                # requis par checkupdates (non déclaré par pacman-contrib)
 gnome-terminal          # terminal lancé par les modules (configurable par machine)
-libnotify               # notify-send (sortie audio suivante, tests)
+libnotify               # notify-send (sortie audio suivante, connexions et batterie Bluetooth, tests)
 
 # --- Captures et outils de dev ---
 grim                    # captures des outils de dev (scripts/shot.sh) ; touche Impr. actuelle jusqu'à la phase 10

@@ -1506,6 +1506,26 @@ reproduit dans une session Sway isolée (banc headless) avant correction, puis v
   nommés sans numéro (inutilisés) confondus dans la barre ; quelques ms sans espace focalisé après chaque changement (relecture).
 - **Phase 9** : rejouer bouche-trou et focus sous Hyprland (même logique, non testée).
 
+## Panneau Bluetooth enrichi (2026-10-26, ta demande)
+
+Revue de KDE, GNOME et blueman (Cinnamon utilise blueman) ; tes choix et ce qui est écarté : `ARCHITECTURE.md` § 10.2.1.
+
+- Lignes : état · type · batterie, « Connection failed », icône qui pulse ; détails dépliables (adresse copiable, appairé,
+  approuvé, adaptateur, nom d'origine), renommage, reconnexion automatique, profil audio ; ordre figé panneau ouvert.
+- Repris de blueman : notifications Connected / Disconnected (+ batterie), reconnexion auto toutes les 60 s (ton réglage pour la
+  manette Xbox repris), profil audio, veille suspendue avec une manette connectée. Icône du tray animée, alerte batterie faible.
+- Vérifié (Sway isolé, BlueZ et PipeWire réels, bus de session privé) : panneau et détails ; connexion de la manette éteinte →
+  « Connecting… » + icône animée, puis « Connection failed » ; reconnexion auto à 60 s sans animation ni échec affiché ; liste
+  reprise de blueman (`bluetooth.json`) ; renommage du casque puis nom d'origine rétabli (alias = nom, vérifié par
+  `bluetoothctl`) ; remplacement de la notification « Connected » → « Connected 80% » et alerte batterie (mêmes commandes
+  `notify-send`) ; lecture des profils sur une vraie carte PipeWire (casque Razer filaire, même format).
+- **Incident** : un banc précédent sur bus privé avait lancé un second `gvfsd` (activé par `gsettings`) ; le montage
+  `/run/user/1000/gvfs` de ta session était cassé (« Transport endpoint is not connected »). Banc corrigé (`GIO_USE_VFS=local`) ;
+  voir le rapport de session pour la réparation.
+- **À tester à la main** : connexion réelle du casque et de la manette (notification, batterie, profil audio A2DP ↔ HFP, veille
+  suspendue manette connectée), animation au clic sur Connect, saisie d'un nouveau nom au clavier, « Copy address ».
+- Valeurs à valider : rythmes d'animation (`THEME.md` § 3 « Panneau Bluetooth »).
+
 ## Prochaine étape
 
 Phase 9 — parité Hyprland (tests à faire ensemble dans une session Hyprland : voir « Compatibilité Hyprland »).

@@ -639,6 +639,33 @@ Dangers et parades :
 - **Format de sortie de `bluetoothctl`** susceptible de changer entre versions → messages attendus centralisés dans le service, testés en phase 5
   avec un vrai appareil (code à confirmer et appareil sans code).
 
+### 10.2.1 Panneau Bluetooth enrichi (2026-10-26, ta demande)
+
+Revue des modules de KDE (bluedevil), GNOME (gnome-shell, gnome-bluetooth) et blueman (Cinnamon 6 n'a pas d'applet propre : il
+utilise blueman). Tes choix :
+- **Ligne** (`BluetoothDeviceItem.qml`) : « état · type · batterie » (type déduit de l'icône BlueZ), « Connection failed » après un
+  échec demandé depuis le panneau, icône qui pulse pendant une action ; un clic déplie les détails (nom d'origine, type, adresse
+  copiable, batterie, appairé, approuvé, adaptateur), le renommage (alias BlueZ ; vide = nom de l'appareil) et la reconnexion
+  automatique. Connect / Disconnect et Forget restent sur la ligne.
+- **Ordre figé** tant que le panneau est ouvert (GNOME) ; retrié à l'ouverture suivante.
+- **Notifications** de connexion et de déconnexion (ConnectionNotifier de blueman) : « Connected » remplacé par « Connected 80% »
+  quand BlueZ publie la batterie (`notify-send --print-id` puis `--replace-id`).
+- **Reconnexion automatique** (AutoConnect de blueman) : toutes les 60 s, adaptateur allumé, appareils choisis déconnectés ; liste
+  dans `~/.local/state/quickshell/by-shell/desktop/bluetooth.json`, reprise du réglage de blueman (`gsettings`) s'il n'existe pas.
+  Tentatives silencieuses (ni animation, ni « Connection failed ») ; pas de notification « Automatically connected » en plus de
+  « Connected » (blueman envoie les deux).
+- **Profil audio** d'un casque connecté (PulseAudioProfile de blueman) : `pw-dump bluez_card.<adresse>` (profils disponibles sauf
+  `off`), `wpctl set-profile` ; `Quickshell.Services.Pipewire` n'expose pas les profils. Lus quand les détails sont dépliés.
+- **Veille suspendue** tant qu'une manette (icône `input-gaming`) est connectée : même `IdleInhibitor` que « Keep Screen On ». Le
+  module de blueman passe par `xdg-screensaver`, sans effet sous Sway.
+- **Icône du tray animée** pendant l'allumage, une connexion, une déconnexion ou un appairage (GNOME, KDE).
+- **Batterie faible** d'un appareil connecté (GNOME) : notification à 30 % puis 15 % (seuils de la batterie du laptop, config
+  Waybar), réarmée quand la batterie remonte.
+
+Écartés : envoi et parcours de fichiers (OBEX), commandes média AVRCP (carte média MPRIS), force du signal (absente de l'API),
+base de codes PIN, partage de connexion (PAN/DUN), confirmation de « Forget », clic milieu, pastille, visibilité temporaire,
+blocage d'un appareil.
+
 ### 10.3 Disques amovibles sans udiskie
 
 Je m'étais trompé : Quickshell n'a pas d'accès D-Bus générique en QML, mais trois outils système suffisent (vérifié en lecture sur cette machine) :

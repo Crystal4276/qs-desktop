@@ -203,11 +203,12 @@ Variants {
             pills: bar.layout.right
         }
 
-        // « Garder l'écran allumé » (panneau de réglages) : les barres sont toujours affichées, le compositeur respecte donc
-        // l'inhibiteur tant qu'au moins un écran est allumé.
+        // « Garder l'écran allumé » (panneau de réglages) ou manette Bluetooth connectée (Sway ne voit pas son activité ; module
+        // GameControllerWakelock de blueman) : les barres sont toujours affichées, le compositeur respecte donc l'inhibiteur tant
+        // qu'au moins un écran est allumé.
         IdleInhibitor {
             window: bar
-            enabled: Session.keepAwake
+            enabled: Session.keepAwake || Bluez.gamepadConnected
         }
 
         // Popup ouvert : un appui sur une barre le ferme, sauf sur son propre bouton (qui le ferme lui-même) ; l'appui n'est

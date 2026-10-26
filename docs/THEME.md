@@ -232,6 +232,17 @@ Cinnamon (liste). Style des panneaux ci-dessus ; valeurs nouvelles marquées.
 | Détails | libellés Inter 16 px `subtext0`, valeurs `text` : bande · canal · largeur, débit du lien, sécurité, adresse IPv4, trafic (si le Wi-Fi porte la route ; glyphes du module réseau) | KDE |
 | Liste des réseaux | ligne des panneaux ; glyphe 24 px `text` au niveau du réseau, cadenas Papirus (réduit à 85 %, dans le coin) si protégé ; « Saved / Open · bande · % » | GNOME, Papirus `-secure` |
 
+### Panneau Bluetooth (ta demande du 2026-10-26)
+
+Idées reprises de KDE (bluedevil), GNOME (réglages rapides, gnome-bluetooth) et blueman (Cinnamon). Aucune couleur nouvelle.
+
+| Élément | Valeur | Origine |
+|---|---|---|
+| Ligne d'un appareil appairé | ligne des panneaux ; sous-titre « état · type · battery N % » (Connected, Connecting…, Connection failed…) | KDE |
+| Action en cours | icône de la ligne qui pulse (opacité 1 → 0,5 → 1) en **1,2 s** ; icône du tray qui alterne `blueman-tray` / `blueman-tray-active` toutes les **0,6 s** | GNOME, KDE ; rythme du glyphe Wi-Fi (**à valider**) |
+| Détails dépliés | carte des panneaux sous la ligne (un appareil à la fois) : grille de détails, bascule « Connect automatically », profils audio (ligne `green` = profil actif), champ du nom, bouton « Copy address » | KDE, blueman |
+| Ordre des appareils | figé tant que le panneau est ouvert | GNOME |
+
 ### Panneau réseau (refonte du 2026-10-19, ta demande)
 
 Même langage que le module Wi-Fi. Inspiration : GNOME (filaire : vitesse, IPv4, passerelle, DNS, adresse matérielle), KDE
