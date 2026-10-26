@@ -4,7 +4,8 @@ import qs.config
 
 // Champ de saisie d'un panneau (mot de passe Wi-Fi, phrase de passe d'un disque…) : fond `base`, bordure `overlay0`,
 // `green` quand il a le focus, `red` en erreur (mot de passe refusé). Entrée : `accepted(text)`. `search` (champ de recherche) :
-// croix d'effacement à droite, et Échap efface le texte, puis ferme le panneau s'il est déjà vide.
+// croix d'effacement à droite, et Échap efface le texte, puis ferme le panneau s'il est déjà vide. `validator` : saisie
+// acceptée seulement si valide ; `editingFinished(text)` : Entrée ou perte du focus, texte valide (heures du « ne pas déranger »).
 Rectangle {
     id: root
 
@@ -14,7 +15,9 @@ Rectangle {
     property bool error: false
     property string placeholder: ""
     property bool search: false
+    property alias validator: input.validator
     signal accepted(string text)
+    signal editingFinished(string text)
 
     function focusInput(): void {
         input.forceActiveFocus();
@@ -41,6 +44,7 @@ Rectangle {
         echoMode: root.password ? TextInput.Password : TextInput.Normal
         clip: true
         onAccepted: root.accepted(text)
+        onEditingFinished: root.editingFinished(text)
         Keys.onEscapePressed: event => {
             if (root.search && text !== "")
                 text = "";

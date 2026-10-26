@@ -4,7 +4,8 @@ import qs.config
 
 // Bascule du panneau de réglages (tuile des réglages rapides de GNOME) : bouton de panneau (fond `surface0`, survol `surface1`,
 // coins 10 px) avec glyphe, titre et sous-titre ; activée : fond `green`, texte `mantle`.
-// `vertical` : glyphe au-dessus du titre (les trois profils d'énergie sur une ligne).
+// `vertical` : glyphe au-dessus du titre (les trois profils d'énergie sur une ligne). Clic droit : `secondaryClicked` (réglages
+// de la bascule, comme « ne pas déranger » et son horaire).
 Rectangle {
     id: root
 
@@ -14,6 +15,7 @@ Rectangle {
     property bool checked: false
     property bool vertical: false
     signal clicked
+    signal secondaryClicked
 
     readonly property color foreground: checked ? Theme.quickSettings.checkedText : Theme.panel.text
 
@@ -103,6 +105,7 @@ Rectangle {
 
     MouseArea {
         anchors.fill: parent
-        onClicked: root.clicked()
+        acceptedButtons: Qt.LeftButton | Qt.RightButton
+        onClicked: mouse => mouse.button === Qt.RightButton ? root.secondaryClicked() : root.clicked()
     }
 }
