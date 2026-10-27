@@ -1669,6 +1669,11 @@ banc isolé (Sway headless à 2 sorties, Quickshell sur une copie de `modules/lo
   processus relus chaque nuit ; `Notifs.loaded` posé à la fin de `persist.onLoaded` (ne dépend plus de l'ordre de reprise des
   propriétés). Écartés : applications hors Chromium/Discord dans `muteApps` (il faudrait étendre la règle WirePlumber : noté
   dans `Settings.qml`), valeurs par défaut répétées dans `Settings.qml` (même motif que `nightLight`, `idle`).
+- **Passe 5** : flux en cours au début suivis par objet (`playingNodes`, élagué) : un nouveau son qui reprenait l'id d'un flux
+  terminé échappait à la coupure ; coupure d'office limitée aux flux « Chromium » (seuls visés par `--class=`, protégés par la
+  règle WirePlumber) : un son court d'une autre application (Firefox…) coupé d'office puis fini avant la lecture de `/proc`
+  restait retenu coupé par WirePlumber, même le jour ; passes groupées par `Qt.callLater` (plus de garde de réentrance) ;
+  recherches par `Set` ; commentaire de la règle WirePlumber corrigé (« 100 % » faux).
 - Banc : 30/30 + son en cours sans trou (4 s, 0 ms de trou), son Discord en cours à 21:00 gardé, rétabli à la main gardé (y compris après rechargement), rechargement
   à chaud pendant « ne pas déranger » (coupure gardée, rétablie à la fin), coupure manuelle de jour respectée.
 
