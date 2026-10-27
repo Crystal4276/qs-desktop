@@ -29,6 +29,8 @@ OverlayPopup {
             return lib.triptych.map(t => ({ path: t.path, sources: ["left", "center", "right"].map(p => Wallpapers.url(t.parts[p])) }));
         return (tab === "panorama" ? lib.panorama : lib.simple).map(p => ({ path: p, sources: [Wallpapers.url(p)] }));
     }
+    // Après une lecture du dossier seulement : pas de message pendant la première.
+    readonly property bool empty: Wallpapers.libraryRead && items.length === 0
 
     // Sur l'écran `from` (bouton du panneau de réglages), sinon l'écran focalisé (raccourci).
     function open(from: var): void {
@@ -119,11 +121,18 @@ OverlayPopup {
             }
         }
 
+        // Onglet vide (dossier absent sur une nouvelle machine…) : où mettre les images, à la place de la grille.
+        PanelSection {
+            visible: root.empty
+            readonly property string dir: Wallpapers.dir.startsWith(`${Places.home}/`) ? `~${Wallpapers.dir.slice(Places.home.length)}` : Wallpapers.dir
+            text: `No wallpapers in ${dir}/${root.tab}`
+        }
+
         GridView {
             id: grid
 
             Layout.fillWidth: true
-            Layout.preferredHeight: Theme.wallpaperPicker.rows * cellHeight
+            Layout.preferredHeight: root.empty ? 0 : Theme.wallpaperPicker.rows * cellHeight
             cellWidth: (Theme.wallpaperPicker.thumbWidth + 2 * Theme.wallpaperPicker.selectionPadding) * (root.wide ? 2 : 1)
             cellHeight: Theme.wallpaperPicker.thumbHeight + 2 * Theme.wallpaperPicker.selectionPadding
             clip: true
