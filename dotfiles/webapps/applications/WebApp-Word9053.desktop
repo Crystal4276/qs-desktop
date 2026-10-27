@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Name=Word
+Comment=Word
+Exec=chromium --app="https://www.office.com/launch/word" --class=WebApp-Word9053 --name=WebApp-Word9053 --user-data-dir=@PROFILES@/Word9053 --load-extension=@WEBAPPS@/open-links
+Terminal=false
+X-MultipleArgs=false
+Type=Application
+Icon=solstice-microsoft-365-word
+Categories=GTK;Office;
+MimeType=text/html;text/xml;application/xhtml_xml;
+StartupWMClass=WebApp-Word9053
+StartupNotify=true

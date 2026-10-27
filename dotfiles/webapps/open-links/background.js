@@ -1,24 +1,47 @@
 // Lien ouvert par la web app dans un nouvel onglet ou une nouvelle fenêtre ordinaire : envoyé au profil Chromium principal
-// (hôte natif qs_desktop.open_link, dotfiles/webapps/open-link), puis l'onglet est fermé. Les fenêtres popup (connexion OAuth,
-// window.open avec dimensions) restent dans la web app.
+// (hôte natif qs_desktop.open_link, dotfiles/webapps/open-link), puis l'onglet est fermé. Restent dans la web app : les
+// fenêtres popup (connexion OAuth, window.open avec dimensions) et les liens qui ne quittent pas les domaines de l'app
+// (document Word ouvert depuis Word, page Notion en nouvel onglet).
 
 const HOST = "qs_desktop.open_link";
-const targets = new Map();   // nouvel onglet → promesse « fenêtre ordinaire ? » (window.open puis location : about:blank d'abord)
+
+// Domaines d'une même application : un lien de l'un vers l'autre reste dans la web app.
+const SITES = [
+    ["cloud.microsoft", "office.com", "microsoft365.com", "sharepoint.com", "onedrive.com", "live.com", "office.net",
+     "microsoftonline.com"],
+    ["notion.so", "notion.com", "notion.site"],
+];
+
+const targets = new Map();   // nouvel onglet → promesse de son origine (window.open puis location : about:blank d'abord)
 
 function web(url) {
     return /^https?:/.test(url);
 }
 
-async function normal(tabId) {
+// Groupe de domaines d'une adresse, ou null.
+function sites(url) {
+    let host;
+    try {
+        host = new URL(url).hostname;
+    } catch {
+        return null;
+    }
+    return SITES.find(group => group.some(d => host === d || host.endsWith("." + d))) ?? null;
+}
+
+// Fenêtre de l'onglet ordinaire (pas une popup), et groupe de domaines de la page qui a ouvert le lien.
+async function origin(tabId, sourceTabId) {
     const tab = await chrome.tabs.get(tabId).catch(() => null);
     const win = tab && await chrome.windows.get(tab.windowId).catch(() => null);
-    return win?.type === "normal";
+    const source = await chrome.webNavigation.getFrame({ tabId: sourceTabId, frameId: 0 }).catch(() => null);
+    return { normal: win?.type === "normal", sites: source ? sites(source.url) : null };
 }
 
 async function send(tabId, url) {
-    const isNormal = targets.get(tabId);
+    const from = targets.get(tabId);
     targets.delete(tabId);   // avant toute attente : un seul envoi par onglet
-    if (!await isNormal)
+    const { normal, sites: group } = await from;
+    if (!normal || (group && group === sites(url)))
         return;
     try {
         await chrome.runtime.sendNativeMessage(HOST, { url });
@@ -30,8 +53,8 @@ async function send(tabId, url) {
 }
 
 // Inscrit avant toute attente : la navigation de l'onglet peut suivre aussitôt.
-chrome.webNavigation.onCreatedNavigationTarget.addListener(({ tabId, url }) => {
-    targets.set(tabId, normal(tabId));
+chrome.webNavigation.onCreatedNavigationTarget.addListener(({ tabId, sourceTabId, url }) => {
+    targets.set(tabId, origin(tabId, sourceTabId));
     if (web(url))
         send(tabId, url);
 });

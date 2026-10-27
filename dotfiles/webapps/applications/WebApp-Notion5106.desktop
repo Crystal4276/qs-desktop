@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Name=Notion
+Comment=Notion client - Web App
+Exec=chromium --app="https://www.notion.so/" --class=WebApp-Notion5106 --name=WebApp-Notion5106 --user-data-dir=@PROFILES@/Notion5106 --load-extension=@WEBAPPS@/open-links
+Terminal=false
+X-MultipleArgs=false
+Type=Application
+Icon=notion
+Categories=GTK;WebApps;
+MimeType=text/html;text/xml;application/xhtml_xml;
+StartupWMClass=WebApp-Notion5106
+StartupNotify=true

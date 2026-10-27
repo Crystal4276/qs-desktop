@@ -70,13 +70,16 @@ Les applications personnelles lancées au démarrage (Steam, Spotify, Thunderbir
 
 ### Web apps et « ne pas déranger » (2026-10-27)
 
+Web apps du dépôt : WhatsApp, Discord, Word, Excel, PowerPoint, Notion (`dotfiles/webapps/applications/`).
+
 | Composant | Comment | Paquets requis | Fichiers du dépôt |
 |---|---|---|---|
 | Sons coupés pendant « ne pas déranger » | natif (`Services.Pipewire`, `services/Audio.qml`) ; flux repérés par `application.id` (web apps) ou binaire (application Discord) | `wireplumber` | règle `dotfiles/wireplumber/wireplumber.conf.d/50-dnd-no-restore.conf` ; liste `doNotDisturb.muteApps` de `hosts/<machine>.json` |
 | Web apps WhatsApp et Discord | `chromium --app` dans un profil isolé ; `PULSE_PROP_OVERRIDE=application.id=…` dans le lanceur (coupure de nuit) | `chromium` | modèles de lanceurs `dotfiles/webapps/applications/*.desktop` |
-| Liens des web apps ouverts dans le profil Chromium principal | extension chargée par le lanceur (`--load-extension`) + hôte natif | `chromium`, `python` | `dotfiles/webapps/open-links/`, `dotfiles/webapps/open-link`, manifeste `dotfiles/webapps/qs_desktop.open_link.json` |
+| Web apps Word, Excel, PowerPoint, Notion | `chromium --app` dans un profil isolé (pas de coupure de nuit : pas de sons de notification) | `chromium` | modèles de lanceurs `dotfiles/webapps/applications/*.desktop` |
+| Liens des web apps ouverts dans le profil Chromium principal (sauf liens vers les domaines de l'app : Microsoft 365, Notion) | extension chargée par le lanceur (`--load-extension`) + hôte natif | `chromium`, `python` | `dotfiles/webapps/open-links/`, `dotfiles/webapps/open-link`, manifeste `dotfiles/webapps/qs_desktop.open_link.json` |
 
-`webapp-manager` n'est **pas** une dépendance : les lanceurs de ces deux web apps viennent du dépôt. Ne pas les modifier avec
+`webapp-manager` n'est **pas** une dépendance : les lanceurs de ces web apps viennent du dépôt. Ne pas les modifier avec
 lui (il réécrit la ligne `Exec` et ferait sauter `PULSE_PROP_OVERRIDE` et `--load-extension`) ; modifier le modèle du dépôt.
 
 ### Outils de développement (phases 1–9)
@@ -115,7 +118,7 @@ Ce que `install.sh` (phase 11) devra installer, activer ou vérifier — relevé
 | Polices CJK | titres et notifications en japonais/chinois/coréen | polices MS copiées à la main | `noto-fonts-cjk` (repli du bureau) |
 | Polices Microsoft (optionnel) | documents Word, repli CJK | `/usr/share/fonts/MS_Fonts` (363 Mo) | dépôt privé `Crystal4276/fonts-ms`, cloné à la demande dans `~/.local/share/fonts/fonts-ms` + `fc-cache -f` (clé SSH GitHub nécessaire) |
 | Règle WirePlumber « ne pas déranger » | les flux coupés la nuit ne sont pas retenus par WirePlumber (sinon coupés le lendemain) | copiée dans `~/.config/wireplumber/wireplumber.conf.d/` | lien vers `dotfiles/wireplumber/wireplumber.conf.d/50-dnd-no-restore.conf`, puis `systemctl --user restart wireplumber` ; voir « Web apps » ci-dessous |
-| Web apps WhatsApp et Discord | lanceurs, coupure de nuit, liens vers le navigateur | créées avec `webapp-manager`, puis lanceurs modifiés à la main | générées par `install.sh` depuis `dotfiles/webapps/` : voir « Web apps » ci-dessous |
+| Web apps (WhatsApp, Discord, Word, Excel, PowerPoint, Notion) | lanceurs, coupure de nuit (WhatsApp, Discord), liens vers le navigateur | créées avec `webapp-manager`, puis lanceurs modifiés à la main | générées par `install.sh` depuis `dotfiles/webapps/` : voir « Web apps » ci-dessous |
 | Utilisateur dans le groupe `video` ou règles udev | `brightnessctl` sans `sudo` (laptop) | sans objet (pas de rétroéclairage) | fourni par le paquet `brightnessctl` (règles udev) ; à vérifier sur le laptop |
 
 Commandes dont `install.sh` vérifiera la présence après installation :
@@ -128,25 +131,29 @@ Tout en une fois, idempotent, sauvegarde `<fichier>.bak-<date>` avant de remplac
 `dotfiles/webapps` du dépôt (chemin absolu), `PROFILES` = `~/.local/share/ice/profiles` (dossier de `webapp-manager`, gardé :
 les profils et sessions déjà connectées de cette machine sont repris tels quels).
 
-1. Paquets : `chromium`, `python` (`deps/optional.txt`), `wireplumber`, `papirus-icon-theme` (icônes `whatsapp`, `discord`).
+1. Paquets : `chromium`, `python` (`deps/optional.txt`), `wireplumber`, `papirus-icon-theme` (icônes `whatsapp`, `discord`,
+   `notion`, `solstice-microsoft-365-{word,excel,powerpoint}`).
 2. Règle WirePlumber : lien `~/.config/wireplumber/wireplumber.conf.d/50-dnd-no-restore.conf` →
    `dotfiles/wireplumber/wireplumber.conf.d/50-dnd-no-restore.conf`, puis `systemctl --user restart wireplumber`.
 3. Pour chaque modèle `dotfiles/webapps/applications/<lanceur>.desktop` : remplacer `@PROFILES@` et `@WEBAPPS@`, écrire le
    résultat dans `~/.local/share/applications/<lanceur>.desktop` (copie, pas lien : les chemins y sont développés), puis
    `update-desktop-database ~/.local/share/applications` s'il existe.
-4. Pour chaque profil (`Whatsapp8699`, `DiscordWeb2996`, lus dans `--user-data-dir` des modèles) : créer
+4. Pour chaque profil (`Whatsapp8699`, `DiscordWeb2996`, `Word9053`, `Excel7169`, `Powerpoint0904`, `Notion5106`, lus dans
+   `--user-data-dir` des modèles) : créer
    `PROFILES/<profil>/NativeMessagingHosts/` et y écrire `qs_desktop.open_link.json` depuis `dotfiles/webapps/qs_desktop.open_link.json`
    (`@WEBAPPS@` remplacé : Chromium exige un chemin absolu). Vérifier que `dotfiles/webapps/open-link` est exécutable.
 5. `hosts/<machine>.json` : `doNotDisturb.muteApps` contient `whatsapp` et `discord` (ex. `hosts/terrier.json`) ; la config
    par défaut d'une nouvelle machine laisse la liste vide.
-6. Message de fin : relancer les web apps si elles tournent ; nouvelle machine : se connecter une fois à WhatsApp (QR code) et
-   à Discord.
+6. Message de fin : relancer les web apps si elles tournent ; nouvelle machine : se connecter une fois dans chacune (WhatsApp
+   par QR code, Discord, compte Microsoft 365, Notion).
 
 Contrôle après installation : `pw-dump` montre `application.id` `whatsapp` / `discord` sur les clients des web apps lancées ; un
 lien cliqué dans une web app s'ouvre dans le navigateur principal.
 
-Sur cette machine, `install.sh` remplacera les lanceurs actuels par les modèles : mêmes options, mais Discord s'ouvrira sur
-`https://discord.com/channels/@me` (le lanceur actuel ouvre une conversation précise, laissée hors du dépôt).
+Sur cette machine, `install.sh` remplacera les lanceurs actuels par les modèles : mêmes options, mais chaque app s'ouvrira sur
+son accueil (Discord : `https://discord.com/channels/@me` ; Word, Excel, PowerPoint : `https://www.office.com/launch/<app>` ;
+Notion : `https://www.notion.so/`). Les lanceurs actuels ouvrent une conversation, des documents SharePoint ou une page
+précis, laissés hors du dépôt (adresses personnelles).
 
 ## Correspondance avec d'autres distributions
 

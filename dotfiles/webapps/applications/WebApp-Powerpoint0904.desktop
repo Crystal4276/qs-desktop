@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Name=Powerpoint
+Comment=Powerpoint
+Exec=chromium --app="https://www.office.com/launch/powerpoint" --class=WebApp-Powerpoint0904 --name=WebApp-Powerpoint0904 --user-data-dir=@PROFILES@/Powerpoint0904 --load-extension=@WEBAPPS@/open-links
+Terminal=false
+X-MultipleArgs=false
+Type=Application
+Icon=solstice-microsoft-365-powerpoint
+Categories=GTK;Office;
+MimeType=text/html;text/xml;application/xhtml_xml;
+StartupWMClass=WebApp-Powerpoint0904
+StartupNotify=true
