@@ -41,22 +41,32 @@ Singleton {
     // « Ne pas déranger » : coupe les sons de notification joués par les applications de `doNotDisturb.muteApps` (binaire, ou
     // `--class=` d'une web app Chromium), sauf les appels Discord ; rétablis à la fin (PROGRESS.md, 2026-10-27).
     readonly property bool hushed: Notifs.doNotDisturb
-    readonly property var hushApps: (Settings.doNotDisturb.muteApps ?? []).map(a => String(a).toLowerCase())
-    // Attend l'état repris de « ne pas déranger » et la liste des nœuds : sinon, au rechargement, tout serait rétabli.
-    readonly property bool hushReady: Notifs.loaded && Pipewire.ready
-    // pid → `--class=` du processus et de son parent (minuscules) ; pid en cours de lecture.
+    readonly property var hushApps: (Array.isArray(Settings.doNotDisturb.muteApps) ? Settings.doNotDisturb.muteApps : [])
+        .map(a => String(a).toLowerCase())
+    // Attend l'état repris de « ne pas déranger » et la liste des nœuds : sinon, au rechargement, tout serait rétabli. Pas
+    // dans l'instance de scripts/test-outputs.sh (QS_TEST) : elle partage PipeWire et le fichier d'état.
+    readonly property bool hushReady: Notifs.loaded && Pipewire.ready && !Quickshell.env("QS_TEST")
+    // pid → { classes: `--class=` du processus et de son parent (minuscules), seen: dernier flux vu (ms) } ; pid en lecture.
     property var processClasses: ({})
     property var pendingPids: []
-    onHushedChanged: syncHush()
+    // Flux présents quand « ne pas déranger » commence (ou au chargement) : en cours de lecture, jamais coupés d'office.
+    property var playingIds: []
+    onHushedChanged: {
+        playingIds = streams.map(n => n.id);
+        syncHush();
+    }
     onHushAppsChanged: syncHush()
-    onHushReadyChanged: syncHush()
+    onHushReadyChanged: {
+        playingIds = streams.map(n => n.id);
+        syncHush();
+    }
     onStreamsChanged: syncHush()
 
     function processId(node: PwNode): string {
         return String(node.properties["application.process.id"] ?? "");
     }
 
-    // Flux coupé par le shell : "id:pid" (un id PipeWire peut resservir après un redémarrage de PipeWire).
+    // Flux "id:pid" (un id PipeWire resert vite).
     function hushKey(node: PwNode): string {
         return `${node.id}:${processId(node)}`;
     }
@@ -70,55 +80,80 @@ Singleton {
         const pid = processId(node);
         if (pid === "")
             return false;
-        return processClasses[pid]?.some(c => hushApps.includes(c));
+        return processClasses[pid]?.classes.some(c => hushApps.includes(c));
     }
 
-    // Processus pas encore lu : coupé d'office pendant « ne pas déranger », le temps de la lecture (inaudible, mesuré).
+    // Flux qui naît pendant « ne pas déranger », processus pas encore lu : coupé d'office le temps de la lecture (inaudible,
+    // mesuré). Rétabli à la main pendant « ne pas déranger » (ex. un appel WhatsApp) : laissé tel quel.
     function syncHush(): void {
         if (!hushReady)
             return;
         const nodes = Pipewire.nodes.values;
-        // Gardés tant que leur nœud existe, même pas encore suivi (`ready`).
-        const owned = Array.from(hushState.owned).filter(key => {
+        // Gardés tant que leur flux existe (pid pas encore connu : nœud pas encore lu).
+        const exists = key => {
             const [id, pid] = key.split(":");
-            return nodes.some(n => String(n.id) === id && [pid, ""].includes(processId(n)));
-        });
+            return nodes.some(n => String(n.id) === id && n.isStream && [pid, ""].includes(processId(n)));
+        };
+        const owned = Array.from(hushState.owned).filter(exists);
+        const released = Array.from(hushState.released).filter(exists);
         const lookups = [];
         for (const n of streams.filter(n => n.ready && n.audio)) {
             const key = hushKey(n);
             const target = hushTarget(n);
             if (hushed && target === undefined && !lookups.includes(processId(n)))
                 lookups.push(processId(n));
-            if (hushed && target !== false) {
+            const hush = hushed && !released.includes(key) && (target === true || (target === undefined && !playingIds.includes(n.id)));
+            if (hush) {
                 if (!n.audio.muted) {
                     n.audio.muted = true;
                     if (!owned.includes(key))
                         owned.push(key);
                 }
             } else if (owned.includes(key)) {
-                if (n.audio.muted)
+                if (n.audio.muted && !(hushed && target === undefined))   // en cours de lecture : décidé après
                     n.audio.muted = false;
-                owned.splice(owned.indexOf(key), 1);
+                if (!n.audio.muted)
+                    owned.splice(owned.indexOf(key), 1);
             }
         }
         if (owned.join() !== Array.from(hushState.owned).join())
             hushState.owned = owned;
+        const stillReleased = hushed ? released : [];
+        if (stillReleased.join() !== Array.from(hushState.released).join())
+            hushState.released = stillReleased;
         const added = lookups.filter(pid => !pendingPids.includes(pid));
         if (added.length > 0)
             pendingPids = [...pendingPids, ...added];
-        // Processus sans flux oubliés : un pid peut resservir à un autre programme.
+        // Processus lus : oubliés 10 min après leur dernier flux (un pid finit par resservir à un autre programme).
+        const now = Date.now();
         const pids = streams.map(n => processId(n));
-        if (Object.keys(processClasses).some(pid => !pids.includes(pid))) {
-            const kept = {};
-            for (const pid of Object.keys(processClasses).filter(pid => pids.includes(pid)))
-                kept[pid] = processClasses[pid];
-            processClasses = kept;
+        const kept = {};
+        for (const pid of Object.keys(processClasses)) {
+            const entry = processClasses[pid];
+            if (pids.includes(pid))
+                entry.seen = now;
+            if (now - entry.seen < 600000)
+                kept[pid] = entry;
         }
+        if (Object.keys(kept).length !== Object.keys(processClasses).length)
+            processClasses = kept;
+    }
+
+    // Rétabli à la main alors que le shell l'avait coupé : laissé tel quel jusqu'à la fin de « ne pas déranger ».
+    function release(node: PwNode): void {
+        const key = hushKey(node);
+        if (!hushed || node.audio.muted || !hushState.owned.includes(key) || hushState.released.includes(key))
+            return;
+        hushState.released = [...hushState.released, key];
+        hushState.owned = Array.from(hushState.owned).filter(k => k !== key);
     }
 
     function learnProcess(pid: string, cmdlines: string): void {
         processClasses = Object.assign({}, processClasses, {
-            [pid]: cmdlines.split(/[\s\0]+/).filter(a => a.startsWith("--class=")).map(a => a.slice(8).toLowerCase())
+            [pid]: {
+                classes: cmdlines.split(/[\s\0]+/).filter(a => a.startsWith("--class=")).map(a => a.slice(8).toLowerCase()),
+                seen: Date.now()
+            }
         });
         Qt.callLater(() => pendingPids = pendingPids.filter(p => p !== pid));
         syncHush();
@@ -168,31 +203,34 @@ Singleton {
         }
     }
 
-    // Un flux n'est réglable qu'une fois suivi.
+    // Flux suivi (réglable) ; coupure changée ailleurs (rétablie à la main, ou par WirePlumber).
     Instantiator {
-        model: root.streams
-        delegate: Connections {
+        model: ScriptModel {
+            values: root.streams
+        }
+        delegate: Scope {
+            id: watch
+
             required property PwNode modelData
-            target: modelData
-            function onReadyChanged(): void {
-                root.syncHush();
+
+            Connections {
+                target: watch.modelData
+                function onReadyChanged(): void {
+                    root.syncHush();
+                }
+            }
+
+            Connections {
+                target: watch.modelData.audio
+                function onMutedChanged(): void {
+                    root.release(watch.modelData);
+                    root.syncHush();
+                }
             }
         }
     }
 
-    // Rétabli à la main pendant « ne pas déranger » : recoupé.
-    Instantiator {
-        model: root.hushed ? root.streams.filter(n => n.ready && n.audio && root.hushTarget(n) !== false) : []
-        delegate: Connections {
-            required property PwNode modelData
-            target: modelData.audio
-            function onMutedChanged(): void {
-                root.syncHush();
-            }
-        }
-    }
-
-    // Flux coupés par le shell : gardés au redémarrage de Quickshell, pour être rétablis.
+    // Flux coupés par le shell, et ceux rétablis à la main depuis : gardés au redémarrage de Quickshell.
     FileView {
         path: Quickshell.statePath("audio-hush.json")
         blockLoading: true
@@ -202,6 +240,7 @@ Singleton {
         JsonAdapter {
             id: hushState
             property list<string> owned: []
+            property list<string> released: []
         }
     }
 

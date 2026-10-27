@@ -1645,7 +1645,22 @@ banc isolé (Sway headless à 2 sorties, Quickshell sur une copie de `modules/lo
 - **À tester à la main** : après 21:00, un message WhatsApp et un message Discord sans son, une vidéo YouTube avec ; le matin,
   les sons reviennent.
 - Limite : une application de la liste coupée à la main avant « ne pas déranger » n'est pas touchée (ni coupée ni rétablie par
-  le shell). Un autre programme qui démarre un son pendant « ne pas déranger » est coupé quelques ms la première fois.
+  le shell). Un autre programme qui démarre un son pendant « ne pas déranger » est coupé quelques ms la première fois (pas un
+  son déjà en cours à 21:00 : jamais touché).
+
+### Revue en boucle (2026-10-27, ta demande)
+
+- **Passe 1** : flux coupés gardés dans un fichier d'état (`audio-hush.json`, `id:pid`), donc au redémarrage de Quickshell ;
+  rien n'est touché avant que « ne pas déranger » et PipeWire soient chargés (au rechargement, tout était rétabli) ; doublon dans
+  la liste ; `/proc` lu par `FileView` (plus de `sh`/`awk`/`tr`), lectures non relancées (`ScriptModel`) ; `muteApps` changé :
+  appliqué aussitôt.
+- **Passe 2** : un son déjà en cours quand « ne pas déranger » commence (ou au rechargement) n'est plus coupé d'office (trou
+  audible dans Spotify à 21:00) ; processus lus gardés 10 min après leur dernier flux (le navigateur n'était plus relu à chaque
+  son) ; **rétabli à la main pendant « ne pas déranger » : laissé** (pour entendre un appel WhatsApp, rétablir sa ligne dans le
+  panneau audio) ; Discord seulement dans `hosts/terrier.json` (la règle WirePlumber n'existe pas encore ailleurs) ; `muteApps`
+  validé ; `Audio` créé au démarrage (`shell.qml`), absent de l'instance de `test-outputs.sh`.
+- Banc : 30/30 + son en cours sans trou (4 s, 0 ms de trou), rétabli à la main gardé (y compris après rechargement), rechargement
+  à chaud pendant « ne pas déranger » (coupure gardée, rétablie à la fin), coupure manuelle de jour respectée.
 
 ## Prochaine étape
 
