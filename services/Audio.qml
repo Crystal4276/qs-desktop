@@ -59,10 +59,9 @@ Singleton {
     onStreamsChanged: syncHush()
 
     function startHush(): void {
-        if (hushed) {
-            playingNodes = streams.slice();
+        playingNodes = hushed ? streams.slice() : [];
+        if (hushed)
             processClasses = {};   // relus chaque nuit : un pid finit par resservir
-        }
         syncHush();
     }
 
@@ -74,9 +73,10 @@ Singleton {
         return String(node.properties["application.process.id"] ?? "");
     }
 
-    // Flux "id:serial", gardé dans le fichier d'état : un id PipeWire resert vite, `object.serial` jamais.
+    // Flux "id:serial:pid", gardé dans le fichier d'état : un id PipeWire resert vite, `object.serial` jamais tant que PipeWire
+    // tourne ; le pid distingue une autre session (fichier gardé, PipeWire relancé).
     function hushKey(node: PwNode): string {
-        return `${node.id}:${node.properties["object.serial"] ?? ""}`;
+        return `${node.id}:${node.properties["object.serial"] ?? ""}:${processId(node)}`;
     }
 
     // true : à couper ; false : non ; undefined : flux Chromium dont le processus n'est pas encore lu (seul cas où `--class=`
@@ -103,7 +103,7 @@ Singleton {
     function hushPass(): void {
         // Gardés tant que leur flux existe (serial vide : nœud pas encore lu).
         const keys = new Set(streams.map(n => hushKey(n)));
-        const exists = key => keys.has(key) || keys.has(`${key.split(":")[0]}:`);
+        const exists = key => keys.has(key) || keys.has(`${key.split(":")[0]}::`);
         const owned = Array.from(hushState.owned).filter(exists);
         const released = new Set(Array.from(hushState.released).filter(exists));
         const live = new Set(streams);
@@ -159,7 +159,8 @@ Singleton {
     // Rétabli à la main alors que le shell l'avait coupé : laissé tel quel jusqu'à la fin de « ne pas déranger ».
     function release(node: PwNode): void {
         const key = hushKey(node);
-        if (!hushed || node.audio.muted || hushTarget(node) === false || !hushState.owned.includes(key)
+        // Processus pas encore lu : ignoré (un événement PipeWire en retard sur la coupure d'office passerait pour un geste).
+        if (!hushed || node.audio.muted || hushTarget(node) !== true || !hushState.owned.includes(key)
                 || hushState.released.includes(key))
             return;
         hushState.released = [...hushState.released, key];

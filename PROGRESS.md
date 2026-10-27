@@ -1646,8 +1646,9 @@ banc isolé (Sway headless à 2 sorties, Quickshell sur une copie de `modules/lo
 - **À tester à la main** : après 21:00, un message WhatsApp et un message Discord sans son, une vidéo YouTube avec ; le matin,
   les sons reviennent.
 - Limite : une application de la liste coupée à la main avant « ne pas déranger » n'est pas touchée (ni coupée ni rétablie par
-  le shell). Un autre programme qui démarre un son pendant « ne pas déranger » est coupé quelques ms la première fois (pas un
-  son déjà en cours à 21:00 : jamais touché).
+  le shell). Pendant « ne pas déranger », un nouveau son du navigateur (flux « Chromium ») dont le processus n'a pas été lu
+  depuis 10 min est coupé quelques ms, le temps de lire `/proc` (inaudible, mesuré) ; les autres programmes et un son déjà en
+  cours à 21:00 ne sont jamais touchés.
 
 ### Revue en boucle (2026-10-27, ta demande)
 
@@ -1688,6 +1689,11 @@ banc isolé (Sway headless à 2 sorties, Quickshell sur une copie de `modules/lo
   `Notifs.loaded` posé en tête de `persist.onLoaded` ; copie installée de la règle WirePlumber resynchronisée (commentaire).
   Limite documentée : web app en Flatpak (pid du bac à sable, `/proc` de l'hôte : non reconnue). Proposé à part, pas fait :
   nommer les flux de la web app au lancement (voir le rapport).
+- **Passe 9** : clé `id:serial:pid` (un serial resert après un redémarrage de PipeWire, le fichier d'état reste) ; un flux
+  encore en lecture de `/proc` n'est plus pris pour « rétabli à la main » (événement PipeWire en retard) ; règle WirePlumber
+  limitée aux flux de lecture (les micros Discord/Chromium gardent leur volume retenu ; WirePlumber relancé) ; `playingNodes`
+  vidé à la fin ; § 1 de `ARCHITECTURE.md`. Écarté : rechargement à chaud au moment exact d'une coupure (les deux générations
+  écrivent le fichier ; fenêtre de quelques ms, flux long seulement).
 - Banc : 30/30 + son en cours sans trou (4 s, 0 ms de trou), son Discord en cours à 21:00 gardé, rétabli à la main gardé (y compris après rechargement), rechargement
   à chaud pendant « ne pas déranger » (coupure gardée, rétablie à la fin), coupure manuelle de jour respectée.
 
