@@ -32,7 +32,11 @@ ShellRoot {
     Panels {}
     WallpaperPicker {}
     LockScreen {}
-    PolkitDialog {}
+    // Pas d'agent polkit dans l'instance de scripts/test-outputs.sh (QS_TEST) : il s'enregistrerait sur le vrai polkit.
+    LazyLoader {
+        active: !Quickshell.env("QS_TEST")
+        PolkitDialog {}
+    }
     ScreenshotTool {}
     SystemMonitor {}
 }

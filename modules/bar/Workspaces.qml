@@ -127,10 +127,7 @@ Item {
                 TapHandler {
                     onTapped: {
                         const n = button.modelData.number;
-                        if (Compositor.workspaces.some(w => w.number === n))
-                            Compositor.focusWorkspace(n);
-                        else
-                            Compositor.placeWorkspaces([], [{ number: n, output: root.output }], 0);
+                        Compositor.focusWorkspace(n, Compositor.workspaces.some(w => w.number === n) ? "" : root.output);
                     }
                 }
             }
@@ -144,7 +141,7 @@ Item {
             const list = root.shown;
             const i = list.findIndex(w => w.focused);
             if (i >= 0)
-                Compositor.focusWorkspace(list[(i - direction + list.length) % list.length].number);
+                Compositor.focusWorkspace(list[(i - direction + list.length) % list.length].number, "");
         }
     }
 }
