@@ -30,14 +30,15 @@ Singleton {
             hoveredTrayButton = null;
     }
 
-    // Fermeture des popups (ouverture d'un autre, appui sur une barre), sauf ceux de `keep`.
-    signal closePopups(var keep)
+    // Fermeture des popups (ouverture d'un autre, appui sur une barre), sauf ceux de `keep`. `lost` : sans que tu l'aies voulu
+    // (verrouillage) ; ce qui était en cours est gardé (OverlayPopup.closingLost).
+    signal closePopups(var keep, bool lost)
 
     // Appui sur une barre, popup ouvert (Bar.qml) : les popups se ferment, sauf celui dont le bouton (`owner`) est sous l'appui et
     // gère ce bouton de souris (`ownerButtons`) : ce bouton le ferme lui-même. L'appui continue vers le module visé.
     function closeFromBarPress(area: Item, x: real, y: real, button: int): void {
         closePopups(openList.filter(p => p.owner && (p.ownerButtons & button) && p.owner.QsWindow.window === area.QsWindow.window
-            && p.owner.contains(p.owner.mapFromItem(area, x, y))));
+            && p.owner.contains(p.owner.mapFromItem(area, x, y))), false);
     }
 
     function setPopupOpen(popup: QtObject, open: bool): void {

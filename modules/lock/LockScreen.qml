@@ -23,6 +23,11 @@ Scope {
     // demandé à la main) : en cas d'échec, la session reste verrouillée plutôt que de s'ouvrir.
     property alias locked: persist.locked
     onLockedChanged: Quickshell.watchFiles = !locked
+    Binding {
+        target: Session
+        property: "lockActive"
+        value: root.locked
+    }
     // Saisie en cours ; à l'appui sur Entrée, elle passe dans `pending` (envoyée à PAM) et le champ se vide : la frappe
     // continue pendant la vérification, pour l'essai suivant (comme swaylock).
     property string password: ""
@@ -43,7 +48,7 @@ Scope {
     function lock(): void {
         if (locked)
             return;
-        BarState.closePopups([]);
+        BarState.closePopups([], true);   // demandes en cours gardées (polkit, phrase de passe d'un disque)
         password = "";
         error = false;
         message = "";

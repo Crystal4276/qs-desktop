@@ -626,10 +626,23 @@ Voir `WALLPAPERS.md` § « Mise en œuvre ». Remplace `swaybg` (Sway) et le fon
 
 - `modules/polkit/PolkitDialog.qml` : `PolkitAgent` + fenêtre au style des panneaux (`OverlayPopup`, centrée sur l'écran focalisé,
   clavier exclusif) : icône et message de l'application, champ (masqué si polkit le demande), message d'erreur, Cancel /
-  Authenticate. Entrée valide, Échap, un clic à côté, sur une barre ou sur un autre écran annulent.
+  Authenticate. Entrée valide ; Échap, un clic à côté, sur une barre ou sur un autre écran annulent.
 - Un seul agent par session : tant que `polkit-gnome` tourne (lancé par Sway jusqu'à la bascule), l'enregistrement de Quickshell
   échoue (avertissement dans le journal, sans effet). À la phase 10, `polkit-gnome` sort de l'autostart.
-- Identité (utilisateur) non affichée : le type `Identity` est opaque dans l'API installée (pas de propriété documentée).
+- Identité : affichée (« Password for … ») seulement si ce n'est pas toi (plusieurs administrateurs : polkit propose le premier ;
+  `Identity.string` / `displayName` sont lisibles). Pas de choix : changer `selectedIdentity` relance la session PAM de façon
+  risquée dans Quickshell 0.3.2 (annulation comptée comme un échec).
+- Enregistrement raté (polkit-gnome, ou instance d'avant un plantage pas encore partie) : jamais retenté par Quickshell ; l'agent
+  est recréé (5 s, puis de plus en plus rarement, 5 min au plus).
+- Fermée par toi (Échap, Cancel, clic à côté, autre popup) : demande annulée. Fermée sans toi (écran retiré, verrouillage,
+  surface fermée par le compositeur : `OverlayPopup.closingLost`, `BarState.closePopups(keep, lost)`) : demande gardée,
+  rouverte sur l'écran focalisé. Jamais affichée pendant le verrouillage (`Session.lockActive`, dès la demande) : elle prendrait
+  le clavier de l'écran de verrouillage, et le mot de passe tapé pour déverrouiller. Rechargement de la config : la demande en
+  cours est réaffichée.
+- Quickshell 0.3.2 (aussi sur `master`) : une demande arrivée pendant une autre la remplace (file d'attente inopérante) ; la
+  première est annulée une fois l'agent libre (sinon son application attendrait indéfiniment).
+- Message en texte brut (la commande de `pkexec` y figure). Champ vide jamais envoyé. Chaque demande annulée compte comme un
+  échec pour faillock (`polkit-agent-helper-1`, comme avec polkit-gnome) : `deny = 10` sur 15 min ici.
 
 ### 10.1.10 Phase 8b : outil de capture (2026-10-17)
 
