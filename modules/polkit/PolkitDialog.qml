@@ -54,14 +54,14 @@ Scope {
     // affichée.
     onAgentChanged: {
         if (agent?.isActive && !window.visible)
-            window.show();
+            window.show(true);
     }
 
     // Demande en cours affichée ; terminée (réussie, refusée, annulée) : fenêtre fermée.
     Connections {
         target: root.agent
         function onAuthenticationRequestStarted() {
-            window.show();
+            window.show(true);
         }
         // Demande retirée par polkit sans fin signalée sur le flux : fenêtre fermée quand même.
         function onIsActiveChanged() {
@@ -136,16 +136,21 @@ Scope {
         WlrLayershell.namespace: "quickshell-polkit"
         frameItem: frame
 
-        // Écran verrouillé : affichée seulement au déverrouillage (Session.lockActive).
-        function show(): void {
+        // Nouvelle demande (`fresh`) : champ vide, pas d'erreur ; demande rouverte : son refus reste affiché. Clavier au champ, ou au
+        // cadre pendant une vérification (Échap annule). Écran verrouillé : affichée seulement au déverrouillage (Session.lockActive).
+        function show(fresh: bool): void {
             if (Session.lockActive)
                 return;
             screen = Outputs.focusedScreen();
             field.text = "";
-            root.wrong = false;
+            if (fresh)
+                root.wrong = false;
             prepareOpen(null);
             visible = true;
-            field.focusInput();
+            if (root.flow?.isResponseRequired)
+                field.focusInput();
+            else
+                frame.forceActiveFocus();
         }
 
         // Fermée par toi (clic à côté, une barre, un autre popup) : demande annulée, une fois la fenêtre fermée (l'annulation
@@ -166,13 +171,14 @@ Scope {
 
         function reopen(): void {
             if (root.agent?.isActive && !visible)
-                show();
+                show(false);
         }
 
         function cancelAbandoned(): void {
             const flow = abandoned;
             abandoned = null;
-            if (flow && !flow.isCompleted && !(visible && root.flow === flow))
+            // Remplacée entre-temps par une autre (Quickshell 0.3.2) : annulée plus tard (cancelDisplaced), pas pendant l'autre.
+            if (flow && !flow.isCompleted && root.flow === flow && !visible)
                 flow.cancelAuthenticationRequest();
         }
 
@@ -236,8 +242,7 @@ Scope {
                     if (text !== "")
                         root.wrong = false;
                 }
-                onAccepted: window.submit()
-                Keys.onEscapePressed: root.flow?.cancelAuthenticationRequest()
+                onAccepted: window.submit()   // Échap : remonte au cadre (annulation)
             }
 
             // Message de polkit (une information, ex. « posez le doigt », ou une erreur, ex. compte bloqué) ; refusé : l'erreur de

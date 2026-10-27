@@ -637,8 +637,8 @@ Voir `WALLPAPERS.md` § « Mise en œuvre ». Remplace `swaybg` (Sway) et le fon
 - Fermée par toi (Échap, Cancel, clic à côté, autre popup) : demande annulée. Fermée sans toi (écran retiré, verrouillage,
   surface fermée par le compositeur : `OverlayPopup.closingLost`, `BarState.closePopups(keep, lost)`) : demande gardée,
   rouverte sur l'écran focalisé. Jamais affichée pendant le verrouillage (`Session.lockActive`, dès la demande) : elle prendrait
-  le clavier de l'écran de verrouillage, et le mot de passe tapé pour déverrouiller. Rechargement de la config : la demande en
-  cours est réaffichée.
+  le clavier de l'écran de verrouillage, et le mot de passe tapé pour déverrouiller (même raison : l'outil de capture est
+  fermé au verrouillage et ne s'ouvre pas pendant). Rechargement de la config : la demande en cours est réaffichée.
 - Quickshell 0.3.2 (aussi sur `master`) : une demande arrivée pendant une autre la remplace (file d'attente inopérante) ; la
   première est annulée une fois l'agent libre (sinon son application attendrait indéfiniment).
 - Message en texte brut (la commande de `pkexec` y figure). Champ vide jamais envoyé. Chaque demande annulée compte comme un
