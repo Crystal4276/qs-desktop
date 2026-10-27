@@ -7,8 +7,8 @@ import Quickshell.Wayland
 import qs.config
 
 // Veille des écrans (remplace swayidle et hypridle, ARCHITECTURE § 10.1 R3) : après `Settings.idle.timeout` secondes sans activité,
-// écrans éteints par le compositeur ; à la reprise, rallumés — l'écran principal `primaryWakeDelay` secondes après les autres
-// (contournement repris de hypridle). Les inhibitions sont respectées : règles `inhibit_idle` du compositeur, « Keep Screen On »
+// écrans éteints par le compositeur ; à la reprise, rallumés — sous Hyprland, l'écran principal `primaryWakeDelay` secondes après
+// les autres (contournement repris de hypridle). Les inhibitions sont respectées : règles `inhibit_idle` du compositeur, « Keep Screen On »
 // (IdleInhibitor des barres), manette Bluetooth connectée (même inhibiteur), vidéos des applications Wayland.
 // Verrouillage avant la mise en veille du système (laptop par défaut) : verrou « delay » de logind, relâché une fois l'écran verrouillé.
 // Au réveil sous Hyprland : `hyprctl reload` (after_sleep_cmd de ton hypridle : la disposition des écrans ne survit pas à la veille).
@@ -50,10 +50,16 @@ Singleton {
         Compositor.setPower([], false);
     }
 
+    // Rallumage en deux temps : Hyprland seulement, comme ton hypridle. Sous Sway, chaque commande `output` réapplique la
+    // configuration de tous les écrans en un seul commit : rallumer le principal à part refaisait un modeset qui éteignait
+    // de nouveau les autres (latéraux allumés, éteints, puis central, puis latéraux). Tout est rallumé d'un coup, comme swayidle :
+    // `output * power on`, qui efface aussi le `power off` de la config `*` (sinon, un écran branché ensuite resterait éteint).
+    readonly property int primaryWakeDelay: Compositor.isHyprland ? settings.primaryWakeDelay : 0
+
     function screensOn(): void {
         const primary = Outputs.primary?.name ?? "";
         const others = Compositor.outputs.map(o => o.name).filter(n => n !== primary);
-        if (root.settings.primaryWakeDelay > 0 && primary !== "" && others.length > 0) {
+        if (root.primaryWakeDelay > 0 && primary !== "" && others.length > 0) {
             Compositor.setPower(others, true);
             wake.restart();
         } else {
@@ -63,8 +69,20 @@ Singleton {
 
     Timer {
         id: wake
-        interval: root.settings.primaryWakeDelay * 1000
+        interval: root.primaryWakeDelay * 1000
         onTriggered: Compositor.setPower([Outputs.primary?.name ?? ""].filter(n => n !== ""), true)
+    }
+
+    // Quickshell relancé écrans éteints (rechargement, plantage) : le nouveau suivi n'est pas en veille, rien ne les rallumerait
+    // avant une veille complète (`timeout` s sans activité). Vérifié 2 s après le démarrage : écrans connus, et au rechargement
+    // à chaud ancienne génération détruite (rallumer pendant sa destruction faisait planter Quickshell 0.3.2, vu).
+    Timer {
+        running: true
+        interval: 2000
+        onTriggered: {
+            if (!monitor.isIdle && Compositor.outputs.some(o => !o.powered))
+                root.screensOn();
+        }
     }
 
     // --- Verrouillage avant la mise en veille du système ---
@@ -76,8 +94,8 @@ Singleton {
     Process {
         id: inhibitor
         running: root.lockBeforeSleep && root.holding
-        command: ["systemd-inhibit", "--what=sleep", "--mode=delay", "--who=Quickshell", "--why=Lock the screen before sleep",
-            "sleep", "infinity"]
+        command: ["setpriv", "--pdeathsig", "TERM", "systemd-inhibit", "--what=sleep", "--mode=delay", "--who=Quickshell",
+            "--why=Lock the screen before sleep", "sleep", "infinity"]   // pdeathsig : verrou relâché si Quickshell plante
     }
 
     // Annonces de logind : PrepareForSleep(true) avant la veille, (false) au réveil.

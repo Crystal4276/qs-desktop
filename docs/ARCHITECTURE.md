@@ -583,9 +583,17 @@ Voir `WALLPAPERS.md` § « Mise en œuvre ». Remplace `swaybg` (Sway) et le fon
 
 - `services/Idle.qml` : `IdleMonitor` (inhibitions respectées : règles `inhibit_idle` du compositeur, « Keep Screen On », vidéos
   des applications Wayland). Après `idle.timeout` s (300 par défaut, comme swayidle et hypridle) : `Compositor.setPower` éteint les
-  écrans (Sway `output * power off`, Hyprland `hl.dsp.dpms`). Reprise : rallumés, l'écran principal `idle.primaryWakeDelay` s après
-  les autres (3 s sur cette machine, repris de hypridle ; 0 par défaut). Le suivi est relancé quand le délai change (la config
-  machine est lue après sa création ; sinon le délai par défaut restait en place — vérifié).
+  écrans (Sway `output * power off`, Hyprland `hl.dsp.dpms`). Reprise : sous Sway, tous rallumés d'un coup (`output * power on`,
+  comme swayidle) ; sous Hyprland, l'écran principal `idle.primaryWakeDelay` s après les autres (3 s sur cette machine, repris de
+  hypridle ; 0 par défaut). Le suivi est relancé quand le délai change (la config machine est lue après sa création ; sinon le
+  délai par défaut restait en place — vérifié).
+- Pourquoi pas de rallumage en deux temps sous Sway (revue du 2026-10-27) : chaque commande `output` y réapplique la configuration
+  de tous les écrans en un seul commit (Sway 1.12, `apply_output_configs`). Rallumer le principal à part refaisait un modeset qui
+  éteignait de nouveau les écrans déjà rallumés (vu : latéraux allumés puis éteints, central, latéraux). De plus, rallumer par nom
+  laissait `power off` sur la config `*` : un écran branché ensuite restait éteint. Sur banc (3 sorties headless) : 1 commit au
+  lieu de 2, écran branché après une veille allumé.
+- Quickshell relancé écrans éteints (rechargement, plantage) : le nouveau suivi n'est pas en veille ; 2 s après le démarrage, les
+  écrans éteints sont rallumés (sans cela, noirs jusqu'à 5 min sans activité — vérifié sur banc).
 - Verrouillage avant la mise en veille du système (`idle.lockBeforeSleep`, par défaut sur une machine avec batterie) : verrou
   « delay » de logind (`systemd-inhibit`), `PrepareForSleep` suivi par `gdbus monitor` ; écran verrouillé puis verrou relâché (au plus
   2 s). Ton desktop ne verrouille pas aujourd'hui avant la veille : désactivé ici (pas de batterie).
