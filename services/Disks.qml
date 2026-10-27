@@ -26,16 +26,17 @@ Singleton {
 
     // --- Lecture de l'état ---
 
+    // Octets terminés par 0 (chemins, fichier d'une image disque) en UTF-8, comme udiskie (decode_ay) ; Latin-1 si invalide.
     function decode(bytes): string {
         if (!bytes)
             return "";
-        let s = "";
-        for (const b of bytes) {
-            if (b === 0)
-                break;
-            s += String.fromCharCode(b);
+        const end = bytes.indexOf(0);
+        const raw = end < 0 ? bytes : bytes.slice(0, end);
+        try {
+            return decodeURIComponent(raw.map(b => "%" + (b < 16 ? "0" : "") + b.toString(16)).join(""));
+        } catch (e) {
+            return raw.map(b => String.fromCharCode(b)).join("");
         }
-        return s;
     }
 
     function value(iface, key) {
@@ -57,8 +58,7 @@ Singleton {
                 drivesByPath[path] = {
                     path,
                     label: [value(d, "Vendor"), value(d, "Model")].filter(s => s).join(" "),
-                    canPowerOff: value(d, "CanPowerOff") ?? false,
-                    removable: value(d, "Removable") ?? false
+                    canPowerOff: value(d, "CanPowerOff") ?? false
                 };
         }
         // Disque entier de chaque Drive (bloc sans interface Partition) et images en boucle.
@@ -72,7 +72,7 @@ Singleton {
                 drivesByPath[value(b, "Drive")].device = device;
             const loop = ifs["org.freedesktop.UDisks2.Loop"];
             if (loop)
-                loops[path] = { path, label: decode(value(loop, "BackingFile")), device, canPowerOff: false, removable: true, isLoop: true };
+                loops[path] = { path, label: decode(value(loop, "BackingFile")), device, canPowerOff: false, isLoop: true };
         }
         // Disque d'un volume. Un volume déchiffré n'a pas de Drive (« / » pour un périphérique dm) : il hérite de celui de son
         // volume chiffré, donc il est géré comme lui et l'éjection du disque le démonte et le verrouille.
@@ -122,10 +122,15 @@ Singleton {
             });
         }
         list.sort((a, b) => a.device.localeCompare(b.device));
-        notifyChanges(volumes, list, !loaded);
+        // Rechargement de la config : comparé au dernier état lu (rien n'est remonté) ; démarrage : tout est monté, comme udiskie.
+        const restored = !loaded && persist.volumes !== "";
+        notifyChanges(loaded ? volumes : restored ? JSON.parse(persist.volumes) : [], list, !loaded && !restored);
         volumes = list;
+        persist.volumes = JSON.stringify(list);
+        // Ordre fixe (GetManagedObjects n'en a pas).
         drives = [...Object.values(drivesByPath), ...Object.values(loops)].filter(d => list.some(v => v.driveKey === d.path))
-            .map(d => ({ key: d.path, label: d.label, device: d.device, canPowerOff: d.canPowerOff, isLoop: d.isLoop ?? false }));
+            .map(d => ({ key: d.path, label: d.label, device: d.device ?? "", canPowerOff: d.canPowerOff, isLoop: d.isLoop ?? false }))
+            .sort((a, b) => a.device.localeCompare(b.device));
         loaded = true;
     }
 
@@ -231,6 +236,21 @@ Singleton {
             required property string device
             property string input: ""
             property var next: null
+            property bool done: false
+
+            // Fin de l'action : notification d'échec, étape suivante, relecture.
+            function finish(code: int, error: string): void {
+                done = true;
+                if (code !== 0) {
+                    // « Error unlocking …: GDBus.Error:org.freedesktop.UDisks2.Error.Failed: Error unlocking …: <cause> » → dernière partie.
+                    const message = error.trim().replace(/^[\s\S]*GDBus\.Error:\S+\s*/, "");
+                    root.notify("Job failed", message ? `failed to ${action} ${device}:\n${message}` : `failed to ${action} device ${device}.`);
+                } else if (next) {
+                    next();
+                }
+                root.scheduleRefresh();
+                destroy();
+            }
 
             stdinEnabled: input !== ""
             stdout: StdioCollector {}
@@ -243,17 +263,12 @@ Singleton {
                     stdinEnabled = false;   // fin de la phrase de passe : stdin fermé
                 }
             }
-            onExited: code => {
-                if (code !== 0) {
-                    // « Error unlocking …: GDBus.Error:org.freedesktop.UDisks2.Error.Failed: Error unlocking …: <cause> » → dernière partie.
-                    const message = errors.text.trim().replace(/^[\s\S]*GDBus\.Error:\S+\s*/, "");
-                    root.notify("Job failed", message ? `failed to ${action} ${device}:\n${message}` : `failed to ${action} device ${device}.`);
-                } else if (next) {
-                    next();
-                }
-                refresh.restart();
-                destroy();
-            }
+            onExited: code => finish(code, errors.text)
+            // udisksctl qui ne démarre pas : Quickshell n'émet pas `exited`, seulement `running` faux.
+            onRunningChanged: if (!running) Qt.callLater(() => {
+                if (!done)
+                    finish(-1, "udisksctl could not start");
+            })
         }
     }
 
@@ -262,11 +277,26 @@ Singleton {
     // Changement signalé pendant une lecture : relu à la fin de celle-ci (sinon il serait perdu).
     property bool queryAgain: false
 
+    // Relecture 300 ms après le premier signal d'une rafale (pas repoussée par les suivants : un flot continu la bloquerait).
+    function scheduleRefresh(): void {
+        if (!refresh.running)
+            refresh.start();
+    }
+
+    // Dernier état lu, gardé au rechargement de la config : sans lui, tout volume démonté par toi serait remonté.
+    PersistentProperties {
+        id: persist
+        reloadableId: "disks"
+
+        property string volumes: ""
+
+        onLoaded: query.running = true
+    }
+
     Process {
         id: query
         command: ["busctl", "--system", "--json=short", "call", "org.freedesktop.UDisks2", "/org/freedesktop/UDisks2",
             "org.freedesktop.DBus.ObjectManager", "GetManagedObjects"]
-        running: true
         stdout: StdioCollector {
             onStreamFinished: root.parse(text)
         }
@@ -296,9 +326,10 @@ Singleton {
         command: ["setpriv", "--pdeathsig", "TERM", "gdbus", "monitor", "--system", "--dest", "org.freedesktop.UDisks2"]
         running: true
         stdout: SplitParser {
-            onRead: refresh.restart()
+            onRead: root.scheduleRefresh()
         }
-        onExited: restartMonitor.start()
+        // `running` faux aussi quand gdbus ne démarre pas (pas d'`exited`).
+        onRunningChanged: if (!running) restartMonitor.start()
     }
 
     Timer {
