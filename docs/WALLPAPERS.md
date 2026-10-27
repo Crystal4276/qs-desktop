@@ -72,7 +72,9 @@ Reste à faire (suppression, bloquée par le garde-fou : à faire par toi ou à 
   Background, **sans zone d'entrée** (point 5 tranché : comme `swaybg`, un clic sur le fond va au compositeur, qui focalise l'écran
   et l'espace — vérifié dans un Sway isolé). Image simple : couvre l'écran, décodée à sa taille. Panorama : couvre le rectangle
   englobant tous les écrans, chaque écran en montre sa part (positions réelles, logiques). Triptyque : gauche / centre / droite
-  selon la position, à 3 écrans ; sinon le centre partout. Panorama sur un seul écran : image simple.
+  selon la position, à 3 écrans ; sinon le centre partout. Panorama sur un seul écran : image simple. Taille d'un panorama lue
+  une seule fois par le service pour tous les écrans et l'écran de verrouillage ; au changement de fond, l'ancien reste affiché
+  pendant le décodage du nouveau (revue du 2026-10-27).
 - **Choix** : état local (`wallpaper.json`, hors dépôt) : un fond pour tous les écrans, plus une image simple par écran (clé :
   description de l'écran, comme la config machine). Rien de choisi : `wallpaper` de la config machine (ici le triptyque
   green-storm, comme Sway aujourd'hui) ; sinon aucune image. Dossier : `wallpapersDir` de la config machine, sinon « Wallpapers »
