@@ -222,9 +222,12 @@ Format (implémenté en phase 1, `hosts/default.json`, `hosts/terrier.json`) :
   `sudo pacman -Syu` (revue de code : `paru` n'est pas forcément installé sur une nouvelle machine).
 - `nightLight` *(phase 8)* : veilleuse, `{ "from": "20:00", "to": "06:00", "temperature": 3239 }` (`default.json` : tes réglages GNOME).
 - `doNotDisturb` *(2026-10-26)* : horaire de départ du « ne pas déranger », `{ "schedule": true, "from": "21:00", "to": "07:00" }` ;
-  ensuite réglé depuis le panneau de réglages (fichier d'état `do-not-disturb.json`). `muteApps` *(2026-10-27)* : binaires (ou noms
-  d'application PipeWire) dont les flux audio sont coupés pendant « ne pas déranger », appels compris (`services/Audio.qml`) ; ici
-  `["Discord", "chromium", "firefox"]`, qui jouent eux-mêmes le son de leurs notifications.
+  ensuite réglé depuis le panneau de réglages (fichier d'état `do-not-disturb.json`). `muteApps` *(2026-10-27)* : applications
+  qui jouent elles-mêmes le son de leurs notifications, coupées pendant « ne pas déranger » (`services/Audio.qml`) : nom du binaire
+  (`Discord`) ou `--class=` d'une web app Chromium (`WebApp-Whatsapp8699`, dans `hosts/terrier.json`). Le navigateur et les appels
+  Discord gardent le son. Va avec `dotfiles/wireplumber/wireplumber.conf.d/50-chromium-no-restore.conf` (WirePlumber ne retient
+  plus volume et coupure des flux « Chromium », nom partagé par le navigateur, les web apps et Discord), copié dans
+  `~/.config/wireplumber/` le 2026-10-27 ; lien posé par `install.sh` (phase 11).
 
 - Fusion **au premier niveau** : une clé du fichier machine remplace entièrement celle de `default.json` (pas de fusion profonde : plus prévisible).
 - `bars` : l'écran principal reçoit `primary` ; les autres, par description d'écran, sinon `secondary` — un écran inconnu reçoit

@@ -38,51 +38,84 @@ Singleton {
         objects: [...root.sinks, ...root.sources, ...root.streams]
     }
 
-    // « Ne pas déranger » (ta demande du 2026-10-27) : Discord et le navigateur jouent eux-mêmes le son de leurs notifications,
-    // sur leur propre flux. Pendant « ne pas déranger », les flux des applications de `doNotDisturb.muteApps` (hosts/*.json,
-    // nom du binaire) sont coupés, appels compris ; à la fin, ceux coupés ainsi sont rétablis.
-    // WirePlumber retient la coupure par nom d'application (restore-stream) et l'appliquerait au flux suivant de ce nom, même
-    // après « ne pas déranger » : ces noms sont gardés dans un fichier d'état, et le premier flux de chacun, rétabli, efface
-    // ce souvenir.
+    // « Ne pas déranger » (ta demande du 2026-10-27) : Discord et la web app WhatsApp jouent eux-mêmes le son de leurs
+    // notifications, sur leur propre flux. Pendant « ne pas déranger », les flux des applications de `doNotDisturb.muteApps`
+    // (hosts/*.json : nom du binaire, ou `--class=` d'une web app Chromium) sont coupés, puis rétablis à la fin. Restent
+    // audibles : le navigateur (même binaire qu'une web app, sans `--class=`) et les appels de Discord (moteur vocal WebRTC,
+    // flux à part). Un flux coupé dès son apparition ne laisse rien passer (mesuré).
+    // Le `--class=` se lit dans /proc, une fois par processus : en attendant, pendant « ne pas déranger », le flux d'un
+    // processus pas encore examiné est coupé (quelques ms, inaudible au début d'une vidéo ; mesuré).
+    // WirePlumber retiendrait la coupure par nom d'application, « Chromium » pour tous ces flux comme pour le navigateur :
+    // dotfiles/wireplumber/ le lui interdit.
     readonly property bool hushed: Notifs.doNotDisturb
     readonly property var hushApps: (Settings.doNotDisturb.muteApps ?? []).map(a => String(a).toLowerCase())
+    // Processus examinés : pid → valeurs de `--class=` du processus et de son parent (minuscules) ; pid à examiner.
+    property var processClasses: ({})
+    property var pendingPids: []
+    property bool hushLoaded: false   // hushPersist repris (avant : rien n'est touché)
     onHushedChanged: syncHush()
     onStreamsChanged: syncHush()
 
-    function hushKey(node: PwNode): string {
-        return node.properties["application.name"] ?? node.name;
+    // true : à couper ; false : non ; undefined : processus pas encore examiné.
+    function hushTarget(node: PwNode): var {
+        if (node.properties["application.name"] === "WEBRTC VoiceEngine")
+            return false;
+        if (hushApps.includes((node.properties["application.process.binary"] ?? "").toLowerCase()))
+            return true;
+        const pid = String(node.properties["application.process.id"] ?? "");
+        if (pid === "")
+            return false;
+        return processClasses[pid]?.some(c => hushApps.includes(c));
     }
 
-    // Binaire, sinon nom de l'application (un flux PipeWire natif peut ne pas donner son binaire).
-    function hushTarget(node: PwNode): bool {
-        const binary = (node.properties["application.process.binary"] ?? "").toLowerCase();
-        const name = (node.properties["application.name"] ?? "").toLowerCase();
-        return (binary !== "" && hushApps.includes(binary)) || (name !== "" && hushApps.includes(name));
-    }
-
+    // Coupe les flux visés pendant « ne pas déranger » ; rétablit ceux coupés ainsi, à la fin ou si le flux n'est pas visé.
     function syncHush(): void {
-        const ready = streams.filter(n => n.ready && n.audio);
-        const keys = Array.from(hushState.keys);
-        if (hushed) {
-            for (const n of ready) {
-                if (hushTarget(n) && !n.audio.muted) {
+        if (!hushLoaded)
+            return;
+        const live = streams.filter(n => n.ready && n.audio);
+        const owned = JSON.parse(hushPersist.owned).filter(id => live.some(n => n.id === id));
+        const lookups = [];
+        for (const n of live) {
+            const target = hushTarget(n);
+            if (hushed && target === undefined)
+                lookups.push(String(n.properties["application.process.id"]));
+            if (hushed && target !== false) {
+                if (!n.audio.muted) {
                     n.audio.muted = true;
-                    if (!keys.includes(hushKey(n)))
-                        keys.push(hushKey(n));
+                    owned.push(n.id);
                 }
-            }
-            if (keys.length !== hushState.keys.length)
-                hushState.keys = keys;
-        } else if (keys.length > 0) {
-            const restored = [];
-            for (const n of ready) {
-                if (keys.includes(hushKey(n)) && n.audio.muted) {
+            } else if (owned.includes(n.id)) {
+                if (n.audio.muted)
                     n.audio.muted = false;
-                    restored.push(hushKey(n));
-                }
+                owned.splice(owned.indexOf(n.id), 1);
             }
-            if (restored.length > 0)
-                hushState.keys = keys.filter(k => !restored.includes(k));
+        }
+        hushPersist.owned = JSON.stringify(owned);
+        const added = lookups.filter((pid, i) => lookups.indexOf(pid) === i && !pendingPids.includes(pid));
+        if (added.length > 0)
+            pendingPids = [...pendingPids, ...added];
+    }
+
+    function learnProcess(pid: string, cmdlines: string): void {
+        processClasses = Object.assign({}, processClasses, {
+            [pid]: cmdlines.split(/\s+/).filter(a => a.startsWith("--class=")).map(a => a.slice(8).toLowerCase())
+        });
+        Qt.callLater(() => pendingPids = pendingPids.filter(p => p !== pid));
+        syncHush();
+    }
+
+    // Ligne de commande du processus et de son parent (le processus audio d'une web app n'a pas `--class=`, le navigateur
+    // qui l'a lancé si). Chromium remplace les séparateurs par des espaces.
+    Instantiator {
+        model: root.pendingPids
+        delegate: Process {
+            required property string modelData
+            running: true
+            command: ["sh", "-c", "for p in $1 $(awk '/^PPid:/ { print $2 }' /proc/$1/status); do tr '\\0' ' ' < /proc/$p/cmdline; echo; done",
+                "sh", modelData]
+            stdout: StdioCollector {
+                onStreamFinished: root.learnProcess(modelData, text)
+            }
         }
     }
 
@@ -98,11 +131,9 @@ Singleton {
         }
     }
 
-    // Rétabli à la main pendant « ne pas déranger » : recoupé. WirePlumber applique la coupure retenue un peu après l'arrivée
-    // du flux : rétabli aussi.
+    // Rétabli à la main pendant « ne pas déranger » : recoupé.
     Instantiator {
-        model: root.streams.filter(n => n.ready && n.audio
-            && (root.hushed ? root.hushTarget(n) : hushState.keys.includes(root.hushKey(n))))
+        model: root.hushed ? root.streams.filter(n => n.ready && n.audio && root.hushTarget(n) !== false) : []
         delegate: Connections {
             required property PwNode modelData
             target: modelData.audio
@@ -112,16 +143,16 @@ Singleton {
         }
     }
 
-    FileView {
-        path: Quickshell.statePath("dnd-muted.json")
-        blockLoading: true
-        printErrors: false
-        onAdapterUpdated: writeAdapter()
-        onLoaded: root.syncHush()
+    // Flux coupés par « ne pas déranger » (identifiants PipeWire), gardés au rechargement de la config. En texte JSON : un
+    // tableau JavaScript ne passe pas d'un moteur QML au suivant.
+    PersistentProperties {
+        id: hushPersist
+        reloadableId: "audioHush"
+        property string owned: "[]"
 
-        JsonAdapter {
-            id: hushState
-            property list<string> keys: []
+        onLoaded: {
+            root.hushLoaded = true;
+            root.syncHush();
         }
     }
 
