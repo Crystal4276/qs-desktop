@@ -583,7 +583,7 @@ Singleton {
         readonly property int avatarSize: 72
         readonly property color avatar: root.color.green
         readonly property color avatarText: root.color.mantle
-        readonly property int avatarTextSize: 36                  // initiale : moitié de l'avatar
+        readonly property int avatarTextSize: avatarSize / 2
         readonly property int avatarWeight: Font.DemiBold
         readonly property int userSize: 20
         readonly property color user: root.color.text
@@ -597,7 +597,7 @@ Singleton {
         readonly property color dot: root.color.text
         readonly property int dotSize: 10
         readonly property int messageSize: 16
-        readonly property int messageHeight: 24                   // ligne réservée : le champ ne bouge pas avec le message
+        readonly property int messageHeight: messageSize * 1.5   // ligne réservée : le champ ne bouge pas avec le message
         readonly property color message: root.color.subtext0
         readonly property color error: root.color.red
         readonly property color warning: root.color.yellow   // verrouillage majuscules

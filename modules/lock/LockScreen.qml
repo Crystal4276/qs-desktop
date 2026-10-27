@@ -23,7 +23,10 @@ Scope {
     // demandé à la main) : en cas d'échec, la session reste verrouillée plutôt que de s'ouvrir.
     property alias locked: persist.locked
     onLockedChanged: Quickshell.watchFiles = !locked
+    // Saisie en cours ; à l'appui sur Entrée, elle passe dans `pending` (envoyée à PAM) et le champ se vide : la frappe
+    // continue pendant la vérification, pour l'essai suivant (comme swaylock).
     property string password: ""
+    property string pending: ""
     property bool checking: false
     property bool error: false
     property string message: ""
@@ -52,6 +55,8 @@ Scope {
     function submit(): void {
         if (checking || password === "")
             return;
+        pending = password;
+        password = "";
         checking = true;
         error = false;
         message = "Checking…";
@@ -62,9 +67,9 @@ Scope {
 
     function fail(text: string): void {
         checking = false;
+        pending = "";
         error = true;
         message = text;
-        password = "";
     }
 
     function key(event: var): void {
@@ -74,18 +79,18 @@ Scope {
             const shift = (event.modifiers & Qt.ShiftModifier) !== 0;
             capsLock = (event.text === event.text.toUpperCase()) !== shift;
         }
-        if (checking)
-            return;
         if (k === Qt.Key_Return || k === Qt.Key_Enter)
-            submit();
+            submit();   // ignoré pendant une vérification
         else if (k === Qt.Key_Escape)
             password = "";
         else if (k === Qt.Key_Backspace)
             password = (event.modifiers & Qt.ControlModifier) ? "" : password.slice(0, -1);
         else if (event.text !== "" && event.text.charCodeAt(0) >= 32 && event.text.charCodeAt(0) !== 127) {   // Suppr. : U+007F
             password += event.text;
-            error = false;
-            message = "";
+            if (!checking) {   // « Checking… » reste affiché
+                error = false;
+                message = "";
+            }
         }
     }
 
@@ -125,12 +130,12 @@ Scope {
                 configDirectory = root.pamDirectory;
         }
 
-        // PAM demande le mot de passe : réponse avec la saisie, effacée aussitôt.
+        // PAM demande le mot de passe : réponse avec le mot de passe envoyé, effacé aussitôt.
         onResponseRequiredChanged: {
             if (!responseRequired)
                 return;
-            respond(root.password);
-            root.password = "";
+            respond(root.pending);
+            root.pending = "";
         }
 
         onPamMessage: {
@@ -143,6 +148,7 @@ Scope {
             if (result === PamResult.Success) {
                 root.checking = false;
                 root.message = "";
+                root.password = "";
                 root.locked = false;
             } else {
                 root.fail(root.pamText !== "" ? root.pamText
@@ -154,7 +160,7 @@ Scope {
 
     // Verrou refusé par le compositeur (un autre client le tient, ex. swaylock) ou perdu : la session n'est pas verrouillée.
     // Sans cela, `locked` resterait vrai et tout verrouillage suivant serait ignoré. Au déverrouillage normal, `locked` est
-    // déjà faux quand `secure` passe à faux.
+    // déjà faux quand `secure` passe à faux : rien n'est prévu (un verrouillage demandé juste après n'est pas annulé).
     function lockLost(): void {
         if (!locked || sessionLock.secure)
             return;
@@ -162,6 +168,7 @@ Scope {
         if (pam.active)
             pam.abort();
         checking = false;
+        pending = "";
         password = "";
         locked = false;
     }
@@ -173,7 +180,7 @@ Scope {
         // Verrouillage confirmé par le compositeur : connu de Session (verrouillage avant la mise en veille, services/Idle.qml).
         onSecureChanged: {
             Session.locked = secure;
-            if (!secure)
+            if (!secure && root.locked)
                 Qt.callLater(root.lockLost);   // pas pendant l'émission du signal : le déverrouillage détruit les surfaces
         }
 
