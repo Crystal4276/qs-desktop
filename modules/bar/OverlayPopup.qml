@@ -1,10 +1,12 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
+import qs.services
 
 // Base des panneaux ouverts par un bouton ou un raccourci (réglages, menu d'applications, lanceur) : surface Overlay sur la zone
 // utile de l'écran (sous les barres : `exclusiveZone` 0), clavier exclusif. Fermée par un appui à côté du cadre, sur une barre
-// ou sur un autre écran ; un seul popup ouvert à la fois.
+// ou sur un autre écran ; un seul popup ouvert à la fois. Jamais pendant le verrouillage (Session.lockActive) : il prendrait le
+// clavier de l'écran de verrouillage.
 PanelWindow {
     id: root
 
@@ -14,7 +16,8 @@ PanelWindow {
     property int ownerButtons: Qt.LeftButton                 // boutons de souris que gère ce bouton
     property bool catchOutside: true                         // appui sur un autre écran : fermeture (OutsideClick)
 
-    signal closing   // juste avant la fermeture (lanceur : enregistre la saisie)
+    // Juste avant la fermeture (lanceur : enregistre la saisie) ; juste après si le compositeur a fermé la surface (écran retiré).
+    signal closing
 
     // Ouvert : se ferme (false). Sinon prépare l'ouverture sous `from` (true).
     function beginOpen(from: Item): bool {
@@ -52,7 +55,7 @@ PanelWindow {
 
     function close(): void {
         if (visible)
-            closing();
+            emitClosing(closingLost);
         hiding = true;
         visible = false;
         hiding = false;
@@ -66,6 +69,13 @@ PanelWindow {
         closingLost = true;
         close();
         closingLost = false;
+    }
+
+    function emitClosing(lost: bool): void {
+        const was = closingLost;
+        closingLost = lost;
+        closing();
+        closingLost = was;
     }
 
     function run(action: var): void {
@@ -88,13 +98,15 @@ PanelWindow {
     Connections {
         target: root
         function onVisibleChanged() {
+            // Ouvert pendant le verrouillage (raccourci, script, demande arrivée juste avant) : refermé aussitôt, comme perdu.
+            if (root.visible && Session.lockActive) {
+                root.closeLost();
+                return;
+            }
             BarState.setPopupOpen(root, root.visible);
             // Surface fermée par le compositeur (écran retiré) : Quickshell la masque sans passer par close().
-            if (!root.visible && !root.hiding) {
-                root.closingLost = true;
-                root.closing();
-                root.closingLost = false;
-            }
+            if (!root.visible && !root.hiding)
+                root.emitClosing(true);
         }
     }
     Component.onDestruction: BarState.setPopupOpen(root, false)

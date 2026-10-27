@@ -8,88 +8,28 @@ import qs.config
 import qs.services
 import qs.modules.bar
 
-// Agent polkit natif (remplace polkit-gnome, ARCHITECTURE § 10.1 R4) : fenêtre au style des panneaux, centrée sur l'écran focalisé,
+// Fenêtre de l'agent polkit (services/Polkit.qml ; ARCHITECTURE § 10.1 R4) : style des panneaux, centrée sur l'écran focalisé,
 // au clavier exclusif — icône et message de l'application, invite et champ (masqué si polkit le demande), message
-// d'erreur, Cancel / Authenticate. Entrée valide, Échap annule. Un seul agent par session : tant que polkit-gnome tourne (avant
-// la bascule), c'est lui qui reste enregistré.
+// d'erreur, Cancel / Authenticate. Entrée valide, Échap annule.
 Scope {
     id: root
 
-    // Agent enregistré auprès de polkit. Échec (place prise par polkit-gnome, ou par l'instance d'avant un plantage, pas encore
-    // partie) : Quickshell ne réessaie pas ; l'agent est recréé, de plus en plus rarement.
-    LazyLoader {
-        id: agentLoader
-        active: true
+    readonly property AuthFlow flow: Polkit.flow
 
-        PolkitAgent {}
-    }
-
-    readonly property PolkitAgent agent: agentLoader.item
-    readonly property AuthFlow flow: agent?.flow ?? null
-    property int failedRegistrations: 0
-
-    Timer {
-        running: !agentLoader.active || (root.agent !== null && !root.agent.isRegistered)
-        repeat: true
-        // Agent retiré : recréé au tick suivant, une fois l'ancien détruit (sinon le nouveau ne reprend pas sa place).
-        interval: agentLoader.active ? Math.min(5000 * 2 ** root.failedRegistrations, 300000) : 1000
-        onTriggered: {
-            if (agentLoader.active) {
-                root.failedRegistrations++;
-                agentLoader.active = false;
-            } else {
-                agentLoader.active = true;
-            }
-        }
+    // Demande en cours affichée (aussi celle reprise au rechargement) ; terminée (réussie, refusée, annulée) : fenêtre fermée.
+    Component.onCompleted: {
+        if (Polkit.isActive)
+            window.show();
     }
     Connections {
-        target: root.agent
-        function onIsRegisteredChanged() {
-            if (root.agent.isRegistered)
-                root.failedRegistrations = 0;
-        }
-    }
-
-    // Demande déjà en cours à la création de l'agent (rechargement de la config : il reprend celui d'avant et sa demande) :
-    // affichée.
-    onAgentChanged: {
-        if (agent?.isActive && !window.visible)
-            window.show(true);
-    }
-
-    // Demande en cours affichée ; terminée (réussie, refusée, annulée) : fenêtre fermée.
-    Connections {
-        target: root.agent
-        function onAuthenticationRequestStarted() {
-            window.show(true);
+        target: Polkit
+        function onRequestStarted() {
+            window.show();
         }
         // Demande retirée par polkit sans fin signalée sur le flux : fenêtre fermée quand même.
         function onIsActiveChanged() {
-            if (!root.agent.isActive && window.visible)
+            if (!Polkit.isActive && window.visible)
                 window.close();
-            Qt.callLater(root.cancelDisplaced);
-        }
-    }
-
-    // Quickshell 0.3.2 : une demande arrivée pendant une autre la remplace (sa file d'attente ne sert pas) ; la première, sans
-    // fenêtre, ferait attendre son application indéfiniment. Annulée une fois l'agent libre (pas avant : sa fin terminerait aussi
-    // la demande en cours) ; l'application peut redemander.
-    property var displaced: []
-    property AuthFlow lastFlow: null
-    onFlowChanged: {
-        if (lastFlow && flow && !lastFlow.isCompleted)
-            displaced = [...displaced, lastFlow];
-        lastFlow = flow;
-    }
-
-    function cancelDisplaced(): void {
-        if (agent?.isActive)
-            return;
-        const flows = displaced;
-        displaced = [];
-        for (const f of flows) {
-            if (f && !f.isCompleted)
-                f.cancelAuthenticationRequest();
         }
     }
 
@@ -101,8 +41,10 @@ Scope {
         }
     }
 
-    // Mot de passe refusé (comme l'écran de verrouillage) : champ rouge et « Wrong password », jusqu'à la saisie suivante.
+    // Mot de passe refusé (comme l'écran de verrouillage) : champ rouge et « Wrong password », jusqu'à la saisie suivante ou la
+    // demande suivante (même arrivée pendant le verrouillage, fenêtre fermée).
     property bool wrong: false
+    onFlowChanged: wrong = false
 
     Connections {
         target: root.flow
@@ -136,15 +78,13 @@ Scope {
         WlrLayershell.namespace: "quickshell-polkit"
         frameItem: frame
 
-        // Nouvelle demande (`fresh`) : champ vide, pas d'erreur ; demande rouverte : son refus reste affiché. Clavier au champ, ou au
-        // cadre pendant une vérification (Échap annule). Écran verrouillé : affichée seulement au déverrouillage (Session.lockActive).
-        function show(fresh: bool): void {
+        // Champ vide ; clavier au champ, ou au cadre pendant une vérification (Échap annule). Écran verrouillé : affichée
+        // seulement au déverrouillage (Session.lockActive).
+        function show(): void {
             if (Session.lockActive)
                 return;
             screen = Outputs.focusedScreen();
             field.text = "";
-            if (fresh)
-                root.wrong = false;
             prepareOpen(null);
             visible = true;
             if (root.flow?.isResponseRequired)
@@ -170,16 +110,15 @@ Scope {
         }
 
         function reopen(): void {
-            if (root.agent?.isActive && !visible)
-                show(false);
+            if (Polkit.isActive && !visible)
+                show();
         }
 
         function cancelAbandoned(): void {
             const flow = abandoned;
             abandoned = null;
-            // Remplacée entre-temps par une autre (Quickshell 0.3.2) : annulée plus tard (cancelDisplaced), pas pendant l'autre.
-            if (flow && !flow.isCompleted && root.flow === flow && !visible)
-                flow.cancelAuthenticationRequest();
+            if (!visible)
+                Polkit.cancel(flow);
         }
 
         // Champ vide : rien envoyé (un essai vide compterait comme un échec pour faillock).
