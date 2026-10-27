@@ -38,11 +38,11 @@ Singleton {
         objects: [...root.sinks, ...root.sources, ...root.streams]
     }
 
-    // « Ne pas déranger » : coupe les sons de notification joués par les applications de `doNotDisturb.muteApps` (binaire, ou
-    // `--class=` d'une web app Chromium), sauf les appels Discord ; rétablis à la fin (PROGRESS.md, 2026-10-27).
+    // « Ne pas déranger » : coupe les sons de notification joués par les applications de `doNotDisturb.muteApps` (binaires) et
+    // `muteWebApps` (`--class=` d'une web app Chromium), sauf les appels Discord ; rétablis à la fin (PROGRESS.md, 2026-10-27).
     readonly property bool hushed: Notifs.doNotDisturb
-    readonly property var hushApps: (Array.isArray(Settings.doNotDisturb.muteApps) ? Settings.doNotDisturb.muteApps : [])
-        .map(a => String(a).toLowerCase())
+    readonly property var hushApps: lowerList(Settings.doNotDisturb.muteApps)
+    readonly property var hushWebApps: lowerList(Settings.doNotDisturb.muteWebApps)
     // Attend l'état repris de « ne pas déranger » et la liste des nœuds : sinon, au rechargement, tout serait rétabli. Pas
     // dans l'instance de scripts/test-outputs.sh (QS_TEST) : elle partage PipeWire.
     readonly property bool hushReady: Notifs.loaded && Pipewire.ready && !Quickshell.env("QS_TEST")
@@ -54,6 +54,7 @@ Singleton {
     property var playingNodes: []
     onHushedChanged: startHush()
     onHushAppsChanged: syncHush()
+    onHushWebAppsChanged: syncHush()
     onHushReadyChanged: startHush()
     onStreamsChanged: syncHush()
 
@@ -65,26 +66,30 @@ Singleton {
         syncHush();
     }
 
+    function lowerList(list: var): var {
+        return (Array.isArray(list) ? list : []).map(a => String(a).toLowerCase());
+    }
+
     function processId(node: PwNode): string {
         return String(node.properties["application.process.id"] ?? "");
     }
 
-    // Flux "id:pid", gardé dans le fichier d'état (un id PipeWire resert vite).
+    // Flux "id:serial", gardé dans le fichier d'état : un id PipeWire resert vite, `object.serial` jamais.
     function hushKey(node: PwNode): string {
-        return `${node.id}:${processId(node)}`;
+        return `${node.id}:${node.properties["object.serial"] ?? ""}`;
     }
 
     // true : à couper ; false : non ; undefined : flux Chromium dont le processus n'est pas encore lu (seul cas où `--class=`
     // compte ; la règle WirePlumber l'empêche de retenir la coupure d'office).
     function hushTarget(node: PwNode): var {
-        if (hushApps.length === 0 || node.properties["application.name"] === "WEBRTC VoiceEngine")   // appels Discord
+        if (node.properties["application.name"] === "WEBRTC VoiceEngine")   // appels Discord
             return false;
         if (hushApps.includes((node.properties["application.process.binary"] ?? "").toLowerCase()))
             return true;
         const pid = processId(node);
-        if (pid === "" || node.properties["application.name"] !== "Chromium")
+        if (hushWebApps.length === 0 || pid === "" || node.properties["application.name"] !== "Chromium")
             return false;
-        return processClasses[pid]?.classes.some(c => hushApps.includes(c));
+        return processClasses[pid]?.classes.some(c => hushWebApps.includes(c));
     }
 
     // Une passe par tour de boucle d'événements, quel que soit le nombre de signaux.
@@ -96,7 +101,7 @@ Singleton {
     // Flux qui naît pendant « ne pas déranger », processus pas encore lu : coupé d'office le temps de la lecture (inaudible,
     // mesuré). Rétabli à la main pendant « ne pas déranger » (ex. un appel WhatsApp) : laissé tel quel.
     function hushPass(): void {
-        // Gardés tant que leur flux existe (pid vide : nœud pas encore lu).
+        // Gardés tant que leur flux existe (serial vide : nœud pas encore lu).
         const keys = new Set(streams.map(n => hushKey(n)));
         const exists = key => keys.has(key) || keys.has(`${key.split(":")[0]}:`);
         const owned = Array.from(hushState.owned).filter(exists);
@@ -105,7 +110,7 @@ Singleton {
         if (playingNodes.some(n => !live.has(n)))
             playingNodes = playingNodes.filter(n => live.has(n));
         const lookups = new Set();
-        for (const n of streams.filter(n => n.ready && n.audio)) {
+        for (const n of streams.filter(n => n.ready && n.audio && n.properties["object.serial"] !== undefined)) {
             const key = hushKey(n);
             const target = hushTarget(n);
             if (hushed && target === undefined)
@@ -222,7 +227,7 @@ Singleton {
     // Flux suivi (réglable) ; coupure changée ailleurs (rétablie à la main, ou par WirePlumber).
     Instantiator {
         model: ScriptModel {
-            values: root.hushApps.length > 0 || hushState.owned.length > 0 ? root.streams : []
+            values: root.hushApps.length > 0 || root.hushWebApps.length > 0 || hushState.owned.length > 0 ? root.streams : []
         }
         delegate: Scope {
             id: watch

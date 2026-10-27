@@ -1630,8 +1630,9 @@ banc isolé (Sway headless à 2 sorties, Quickshell sur une copie de `modules/lo
 ## Ne pas déranger : sons des applications coupés (2026-10-27, ta demande)
 
 - Le shell ne joue aucun son : Discord et la web app WhatsApp jouent le leur, sur leur propre flux. Pendant « ne pas déranger »
-  (horaire ou à la main), `services/Audio.qml` coupe les flux de `doNotDisturb.muteApps` (`hosts/terrier.json` ; vide par
-  défaut) : binaire `Discord` et web app `--class=WebApp-Whatsapp8699` (lu dans `/proc` sur le processus audio et son parent).
+  (horaire ou à la main), `services/Audio.qml` coupe les flux de `doNotDisturb.muteApps` (binaire `Discord`) et `muteWebApps`
+  (web app `--class=WebApp-Whatsapp8699`, lu dans `/proc` sur le processus audio et son parent) ; `hosts/terrier.json`, vides
+  par défaut.
   Rétablis à la fin ; rétabli à la main pendant « ne pas déranger » : laissé (passe 2 ci-dessous).
 - **Gardent le son** (ta demande : première version refusée, elle coupait tout Chromium, donc YouTube) : le navigateur (même
   binaire, sans `--class=`) et les appels Discord (flux `WEBRTC VoiceEngine`).
@@ -1678,6 +1679,11 @@ banc isolé (Sway headless à 2 sorties, Quickshell sur une copie de `modules/lo
   seulement si `muteApps` n'est pas vide ; une écriture du fichier d'état par changement. Écarté : un flux Chromium ouvert à
   21:00 mais silencieux est épargné toute la nuit ; Chromium ferme ses flux au repos (aucun flux Discord ni WhatsApp ouvert en
   temps normal, vérifié), donc seulement un son joué quelques secondes avant 21:00.
+- **Passe 7** : `muteWebApps` séparé de `muteApps` (sans web app, aucun flux Chromium n'est coupé d'office) ; flux repérés par
+  `id:object.serial` (un serial ne resert jamais ; le pid ne distinguait pas deux flux du même processus audio) ;
+  `Notifs.loaded` posé avant la reprise de l'historique (une erreur de lecture ne bloque plus le rétablissement). Écartés :
+  règle WirePlumber à ne poser que sur une machine qui coupe des applications (noté pour `install.sh`, phase 11) ; web apps de
+  Chrome/Brave (documenté) ; deux optimisations sans effet mesurable (passes groupées par `Qt.callLater`).
 - Banc : 30/30 + son en cours sans trou (4 s, 0 ms de trou), son Discord en cours à 21:00 gardé, rétabli à la main gardé (y compris après rechargement), rechargement
   à chaud pendant « ne pas déranger » (coupure gardée, rétablie à la fin), coupure manuelle de jour respectée.
 
