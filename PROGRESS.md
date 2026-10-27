@@ -1527,6 +1527,25 @@ Revue de KDE, GNOME et blueman (Cinnamon utilise blueman) ; tes choix et ce qui 
   suspendue manette connectée), animation au clic sur Connect, saisie d'un nouveau nom au clavier, « Copy address ».
 - Valeurs à valider : rythmes d'animation (`THEME.md` § 3 « Panneau Bluetooth »).
 
+### Revue en boucle du module Bluetooth (2026-10-26 → 27, ta demande)
+
+9 passes de `/code-review high` (`d444bc0..HEAD`), chaque point vérifié (code, banc isolé, simulation) avant correction, un commit
+par passe (`967cb92` … `c5df0c8`). Arrêt : la passe 9 ne trouve plus rien de réel.
+- Principaux défauts corrigés : profils audio lus avant que PipeWire crée la carte, ou relus trop tôt après un changement
+  (relus quand les nœuds de l'appareil changent ; lectures périmées ignorées) ; « Forget » qui laissait l'appareil en
+  reconnexion automatique ; état précédent d'un appareil lié au lieu d'être fixé (« Connection failed » pouvait manquer) ;
+  reconnexion automatique qui attendait 60 s au démarrage (blueman la lance tout de suite) ; première connexion après un
+  appairage non annoncée ; carte audio périmée après un redémarrage de BlueZ ; reprise de blueman relancée à chaque démarrage
+  sans blueman ; nom d'appareil commençant par « - » lu comme une option de `notify-send`.
+- Alerte de batterie d'un appareil : gardée d'une connexion à l'autre et même si BlueZ recrée l'appareil, réarmée seulement
+  au-dessus de **40 %** (ton choix du 2026-10-27).
+- Écarté (vérifié faux) : faux « Connected » au démarrage — Quickshell livre les appareils avec leurs propriétés déjà lues.
+- Laissés (négligeables) : double lecture `pw-dump` après un changement de profil ; objets orphelins seulement si `pw-dump` ou
+  `notify-send` manquent ; échec de profil après une connexion établie (montré par « Connected » puis « Disconnected ») ;
+  notification de batterie qui peut réapparaître moins de 10 s après avoir été fermée (comme blueman) ; reconnexion auto
+  immédiate seulement pour le premier appareil choisi ; appairage bloqué si l'appareil disparaît en plein appairage (rare,
+  code antérieur).
+
 ## Prochaine étape
 
 Phase 9 — parité Hyprland (tests à faire ensemble dans une session Hyprland : voir « Compatibilité Hyprland »).
