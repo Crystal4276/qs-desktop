@@ -49,20 +49,26 @@ Singleton {
     // pid → { classes: `--class=` du processus et de son parent (minuscules), seen: dernier flux vu (ms) } ; pid en lecture.
     property var processClasses: ({})
     property var pendingPids: []
-    // Flux présents quand « ne pas déranger » commence (ou au chargement), "id:pid" : en cours de lecture, jamais coupés d'office.
+    // Flux présents quand « ne pas déranger » commence (ou au chargement), "id:pid" : en cours (un appel…), jamais coupés.
     property var playingKeys: []
     property bool syncing: false
     property bool resync: false
-    onHushedChanged: {
-        playingKeys = streams.map(n => hushKey(n));
-        syncHush();
-    }
+    onHushedChanged: startHush()
     onHushAppsChanged: syncHush()
-    onHushReadyChanged: {
-        playingKeys = streams.map(n => hushKey(n));
+    onHushReadyChanged: startHush()
+    onStreamsChanged: syncHush()
+
+    function startHush(): void {
+        if (hushed) {
+            playingKeys = streams.map(n => hushKey(n));
+            processClasses = {};   // relus chaque nuit : un pid finit par resservir
+        }
         syncHush();
     }
-    onStreamsChanged: syncHush()
+
+    function playing(node: PwNode): bool {
+        return playingKeys.includes(hushKey(node)) || playingKeys.includes(`${node.id}:`);   // pid lu après le relevé
+    }
 
     function processId(node: PwNode): string {
         return String(node.properties["application.process.id"] ?? "");
@@ -96,11 +102,14 @@ Singleton {
             return;
         }
         syncing = true;
-        do {
-            resync = false;
-            hushPass();
-        } while (resync);
-        syncing = false;
+        try {
+            do {
+                resync = false;
+                hushPass();
+            } while (resync);
+        } finally {
+            syncing = false;
+        }
     }
 
     function hushPass(): void {
@@ -118,18 +127,21 @@ Singleton {
             const target = hushTarget(n);
             if (hushed && target === undefined && !lookups.includes(processId(n)))
                 lookups.push(processId(n));
-            const hush = hushed && !released.includes(key) && (target === true || (target === undefined && !playingKeys.includes(key)));
-            if (hush) {
-                if (!n.audio.muted) {
-                    n.audio.muted = true;
-                    if (!owned.includes(key))
-                        owned.push(key);
+            if (released.includes(key))
+                continue;
+            if (owned.includes(key)) {
+                if (hushed && target !== false) {   // processus pas encore lu (rechargement) : décidé après
+                    if (!n.audio.muted)
+                        n.audio.muted = true;
+                } else {
+                    if (n.audio.muted)
+                        n.audio.muted = false;
+                    if (!n.audio.muted)
+                        owned.splice(owned.indexOf(key), 1);
                 }
-            } else if (owned.includes(key)) {
-                if (n.audio.muted && !(hushed && target === undefined))   // en cours de lecture : décidé après
-                    n.audio.muted = false;
-                if (!n.audio.muted)
-                    owned.splice(owned.indexOf(key), 1);
+            } else if (hushed && target !== false && !playing(n) && !n.audio.muted) {
+                n.audio.muted = true;
+                owned.push(key);
             }
         }
         if (owned.join() !== Array.from(hushState.owned).join())

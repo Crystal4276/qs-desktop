@@ -1664,7 +1664,12 @@ banc isolé (Sway headless à 2 sorties, Quickshell sur une copie de `modules/lo
   `id:pid` (un id resservi échappait à la coupure d'office) ; rien n'est parcouru hors « ne pas déranger » quand aucune coupure
   n'est à rétablir ; `hosts/terrier.json` ne donne que `muteApps` (horaire par défaut de `Settings.qml`). Gardé : l'exception
   des appels Discord (`WEBRTC VoiceEngine`) reste dans le code, un seul usage.
-- Banc : 30/30 + son en cours sans trou (4 s, 0 ms de trou), rétabli à la main gardé (y compris après rechargement), rechargement
+- **Passe 4** : un son déjà en cours quand « ne pas déranger » commence n'est jamais coupé, même d'une application de la liste
+  (un appel WhatsApp à 21:00 ; les sons de notification ouvrent chacun un flux neuf) ; garde de réentrance en `try/finally` ;
+  processus relus chaque nuit ; `Notifs.loaded` posé à la fin de `persist.onLoaded` (ne dépend plus de l'ordre de reprise des
+  propriétés). Écartés : applications hors Chromium/Discord dans `muteApps` (il faudrait étendre la règle WirePlumber : noté
+  dans `Settings.qml`), valeurs par défaut répétées dans `Settings.qml` (même motif que `nightLight`, `idle`).
+- Banc : 30/30 + son en cours sans trou (4 s, 0 ms de trou), son Discord en cours à 21:00 gardé, rétabli à la main gardé (y compris après rechargement), rechargement
   à chaud pendant « ne pas déranger » (coupure gardée, rétablie à la fin), coupure manuelle de jour respectée.
 
 ## Prochaine étape
