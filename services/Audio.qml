@@ -4,6 +4,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import Quickshell.Services.Pipewire
+import qs.config
 
 // Sortie audio par défaut (INVENTORY.md § 1, modules `pulseaudio` et `pulseaudio/slider`).
 // Volume en échelle « cubique », comme pavucontrol, wpctl et Waybar.
@@ -35,6 +36,93 @@ Singleton {
     // Le volume d'un nœud n'est lisible et modifiable que s'il est suivi.
     PwObjectTracker {
         objects: [...root.sinks, ...root.sources, ...root.streams]
+    }
+
+    // « Ne pas déranger » (ta demande du 2026-10-27) : Discord et le navigateur jouent eux-mêmes le son de leurs notifications,
+    // sur leur propre flux. Pendant « ne pas déranger », les flux des applications de `doNotDisturb.muteApps` (hosts/*.json,
+    // nom du binaire) sont coupés, appels compris ; à la fin, ceux coupés ainsi sont rétablis.
+    // WirePlumber retient la coupure par nom d'application (restore-stream) et l'appliquerait au flux suivant de ce nom, même
+    // après « ne pas déranger » : ces noms sont gardés dans un fichier d'état, et le premier flux de chacun, rétabli, efface
+    // ce souvenir.
+    readonly property bool hushed: Notifs.doNotDisturb
+    readonly property var hushApps: (Settings.doNotDisturb.muteApps ?? []).map(a => String(a).toLowerCase())
+    onHushedChanged: syncHush()
+    onStreamsChanged: syncHush()
+
+    function hushKey(node: PwNode): string {
+        return node.properties["application.name"] ?? node.name;
+    }
+
+    // Binaire, sinon nom de l'application (un flux PipeWire natif peut ne pas donner son binaire).
+    function hushTarget(node: PwNode): bool {
+        const binary = (node.properties["application.process.binary"] ?? "").toLowerCase();
+        const name = (node.properties["application.name"] ?? "").toLowerCase();
+        return (binary !== "" && hushApps.includes(binary)) || (name !== "" && hushApps.includes(name));
+    }
+
+    function syncHush(): void {
+        const ready = streams.filter(n => n.ready && n.audio);
+        const keys = Array.from(hushState.keys);
+        if (hushed) {
+            for (const n of ready) {
+                if (hushTarget(n) && !n.audio.muted) {
+                    n.audio.muted = true;
+                    if (!keys.includes(hushKey(n)))
+                        keys.push(hushKey(n));
+                }
+            }
+            if (keys.length !== hushState.keys.length)
+                hushState.keys = keys;
+        } else if (keys.length > 0) {
+            const restored = [];
+            for (const n of ready) {
+                if (keys.includes(hushKey(n)) && n.audio.muted) {
+                    n.audio.muted = false;
+                    restored.push(hushKey(n));
+                }
+            }
+            if (restored.length > 0)
+                hushState.keys = keys.filter(k => !restored.includes(k));
+        }
+    }
+
+    // Un flux n'est réglable qu'une fois suivi (`ready`).
+    Instantiator {
+        model: root.streams
+        delegate: Connections {
+            required property PwNode modelData
+            target: modelData
+            function onReadyChanged(): void {
+                root.syncHush();
+            }
+        }
+    }
+
+    // Rétabli à la main pendant « ne pas déranger » : recoupé. WirePlumber applique la coupure retenue un peu après l'arrivée
+    // du flux : rétabli aussi.
+    Instantiator {
+        model: root.streams.filter(n => n.ready && n.audio
+            && (root.hushed ? root.hushTarget(n) : hushState.keys.includes(root.hushKey(n))))
+        delegate: Connections {
+            required property PwNode modelData
+            target: modelData.audio
+            function onMutedChanged(): void {
+                root.syncHush();
+            }
+        }
+    }
+
+    FileView {
+        path: Quickshell.statePath("dnd-muted.json")
+        blockLoading: true
+        printErrors: false
+        onAdapterUpdated: writeAdapter()
+        onLoaded: root.syncHush()
+
+        JsonAdapter {
+            id: hushState
+            property list<string> keys: []
+        }
     }
 
     // Nom affiché d'un périphérique : surnom, sinon description, sinon nom technique.
