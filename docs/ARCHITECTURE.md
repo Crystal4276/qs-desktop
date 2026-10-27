@@ -624,11 +624,12 @@ Voir `WALLPAPERS.md` § « Mise en œuvre ». Remplace `swaybg` (Sway) et le fon
 
 ### 10.1.9 Phase 8b : agent polkit (2026-10-17)
 
-- `services/Polkit.qml` (`PolkitAgent`, enregistrement, demandes) + `modules/polkit/PolkitDialog.qml` : fenêtre au style des panneaux (`OverlayPopup`, centrée sur l'écran focalisé,
-  clavier exclusif) : icône et message de l'application, champ (masqué si polkit le demande), message d'erreur, Cancel /
-  Authenticate. Entrée valide ; Échap, un clic à côté, sur une barre ou sur un autre écran annulent.
+- `services/Polkit.qml` (`PolkitAgent`, enregistrement, demandes) + `modules/polkit/PolkitDialog.qml` : fenêtre au style des
+  panneaux (`OverlayPopup`, centrée sur l'écran focalisé, clavier exclusif) : icône et message de l'application, champ (masqué
+  si polkit le demande), message d'erreur, Cancel / Authenticate. Entrée valide ; Échap, un clic à côté, sur une barre ou sur un
+  autre écran annulent.
 - Un seul agent par session : tant que `polkit-gnome` tourne (lancé par Sway jusqu'à la bascule), l'enregistrement de Quickshell
-  échoue (avertissement dans le journal, sans effet). À la phase 10, `polkit-gnome` sort de l'autostart.
+  échoue (avertissement dans le journal, nouvel essai toutes les 5 min). À la phase 10, `polkit-gnome` sort de l'autostart.
 - Identité : affichée (« Password for … ») seulement si ce n'est pas toi (plusieurs administrateurs : polkit propose le premier ;
   `Identity.string` / `displayName` sont lisibles). Pas de choix : changer `selectedIdentity` relance la session PAM de façon
   risquée dans Quickshell 0.3.2 (annulation comptée comme un échec).
