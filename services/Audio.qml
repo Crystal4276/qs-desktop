@@ -101,7 +101,9 @@ Singleton {
         const exists = key => keys.has(key) || keys.has(`${key.split(":")[0]}:`);
         const owned = Array.from(hushState.owned).filter(exists);
         const released = new Set(Array.from(hushState.released).filter(exists));
-        playingNodes = playingNodes.filter(n => streams.includes(n));
+        const live = new Set(streams);
+        if (playingNodes.some(n => !live.has(n)))
+            playingNodes = playingNodes.filter(n => live.has(n));
         const lookups = new Set();
         for (const n of streams.filter(n => n.ready && n.audio)) {
             const key = hushKey(n);
@@ -148,14 +150,18 @@ Singleton {
             processClasses = kept;
     }
 
+    function saveHush(): void {
+        hushFile.writeAdapter();
+    }
+
     // Rétabli à la main alors que le shell l'avait coupé : laissé tel quel jusqu'à la fin de « ne pas déranger ».
     function release(node: PwNode): void {
         const key = hushKey(node);
-        if (!hushed || node.audio.muted || hushTarget(node) !== true || !hushState.owned.includes(key)
+        if (!hushed || node.audio.muted || hushTarget(node) === false || !hushState.owned.includes(key)
                 || hushState.released.includes(key))
             return;
         hushState.released = [...hushState.released, key];
-        hushState.owned = Array.from(hushState.owned).filter(k => k !== key);
+        hushState.owned = Array.from(hushState.owned).filter(k => k !== key);   // une écriture (writeAdapter différé)
     }
 
     function learnProcess(pid: string, cmdlines: string): void {
@@ -216,7 +222,7 @@ Singleton {
     // Flux suivi (réglable) ; coupure changée ailleurs (rétablie à la main, ou par WirePlumber).
     Instantiator {
         model: ScriptModel {
-            values: root.streams
+            values: root.hushApps.length > 0 || hushState.owned.length > 0 ? root.streams : []
         }
         delegate: Scope {
             id: watch
@@ -242,10 +248,11 @@ Singleton {
 
     // Flux coupés par le shell, et ceux rétablis à la main depuis : gardés au redémarrage de Quickshell.
     FileView {
+        id: hushFile
         path: Quickshell.statePath("audio-hush.json")
         blockLoading: true
         printErrors: false
-        onAdapterUpdated: writeAdapter()
+        onAdapterUpdated: Qt.callLater(root.saveHush)   // une écriture pour plusieurs listes changées
 
         JsonAdapter {
             id: hushState

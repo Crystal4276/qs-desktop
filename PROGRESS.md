@@ -1674,6 +1674,10 @@ banc isolé (Sway headless à 2 sorties, Quickshell sur une copie de `modules/lo
   règle WirePlumber) : un son court d'une autre application (Firefox…) coupé d'office puis fini avant la lecture de `/proc`
   restait retenu coupé par WirePlumber, même le jour ; passes groupées par `Qt.callLater` (plus de garde de réentrance) ;
   recherches par `Set` ; commentaire de la règle WirePlumber corrigé (« 100 % » faux).
+- **Passe 6** : rétabli à la main pendant la lecture de `/proc` (après un rechargement) : gardé, plus recoupé ; flux suivis
+  seulement si `muteApps` n'est pas vide ; une écriture du fichier d'état par changement. Écarté : un flux Chromium ouvert à
+  21:00 mais silencieux est épargné toute la nuit ; Chromium ferme ses flux au repos (aucun flux Discord ni WhatsApp ouvert en
+  temps normal, vérifié), donc seulement un son joué quelques secondes avant 21:00.
 - Banc : 30/30 + son en cours sans trou (4 s, 0 ms de trou), son Discord en cours à 21:00 gardé, rétabli à la main gardé (y compris après rechargement), rechargement
   à chaud pendant « ne pas déranger » (coupure gardée, rétablie à la fin), coupure manuelle de jour respectée.
 
