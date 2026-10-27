@@ -184,6 +184,9 @@ OverlayPopup {
                                 fillMode: Image.PreserveAspectCrop
                                 sourceSize: Qt.size(Math.ceil(width * Screen.devicePixelRatio), Math.ceil(height * Screen.devicePixelRatio))
                                 asynchronous: true
+                                // Pas le cache mémoire de Qt (par adresse) : une image remplacée sous le même nom y resterait
+                                // l'ancienne, et serait enregistrée comme vignette de la nouvelle.
+                                cache: false
                                 // Décodée depuis l'original : enregistrée, telle qu'affichée, pour les ouvertures suivantes.
                                 onStatusChanged: {
                                     if (status !== Image.Ready)
