@@ -1655,8 +1655,8 @@ banc isolé (Sway headless à 2 sorties, Quickshell sur une copie de `modules/lo
   **À tester** : après 21:00, un message WhatsApp et un message Discord sans son, une vidéo YouTube avec ; le matin, les sons
   reviennent.
 - Limites : une application de la liste coupée à la main avant « ne pas déranger » n'est pas touchée (ni coupée ni rétablie par
-  le shell). Un lien ouvert depuis une web app s'ouvre dans une fenêtre Chromium de son profil : la nuit, une vidéo ouverte
-  ainsi est coupée (rétablir sa ligne dans le panneau audio). Seuls les flux « Chromium » sont visés : un programme lancé
+  le shell). Un lien ouvert depuis une web app s'ouvrait dans une fenêtre Chromium de son profil, coupée la nuit : il part
+  maintenant dans le profil principal (section « Web apps : liens ouverts dans le navigateur »). Seuls les flux « Chromium » sont visés : un programme lancé
   depuis une web app (Spotify par un lien) hérite de son `application.id` mais garde son nom, donc son son.
 - **Phase 11** : les lanceurs des web apps sont hors du dépôt ; `install.sh` devra leur ajouter `PULSE_PROP_OVERRIDE` (ou
   signaler leur absence), sinon `muteApps` ne fait rien pour elles.
@@ -1726,6 +1726,27 @@ banc isolé (Sway headless à 2 sorties, Quickshell sur une copie de `modules/lo
   `otherPressed` ; les autres boutons de la barre sont inchangés.
 - **À tester à la main** : clic droit sur la cloche (icône barrée, sons de Discord/WhatsApp coupés), puis de nouveau (rétablis) ;
   carte ouverte au survol ou épinglée : elle reste ouverte et son interrupteur suit.
+
+## Web apps : liens ouverts dans le navigateur (2026-10-27, ta demande)
+
+- WhatsApp et Discord (web apps Chromium, profil isolé `~/.local/share/ice/profiles/<app>`) : un lien ouvert dans un nouvel
+  onglet ou une nouvelle fenêtre part dans le profil Chromium principal. Navigateur ouvert : un onglet de plus ; fermé : il démarre
+  sur la page. Les sessions des web apps restent dans leur profil (pas de nouvelle connexion).
+- `dotfiles/webapps/open-links/` : extension (MV3, identifiant fixe par sa clé publique) ; sur `onCreatedNavigationTarget` d'une
+  fenêtre ordinaire (lien `target=_blank`, `window.open` puis adresse), envoie l'URL à l'hôte natif puis ferme l'onglet. Popups
+  (`window.open` avec dimensions : connexion OAuth) et navigation dans la fenêtre de l'app : inchangées. Hôte absent : le lien
+  reste dans la web app.
+- `dotfiles/webapps/open-link` : hôte natif (Python), lance `chromium -- <url>` détaché, sans `PULSE_PROP_OVERRIDE` ni
+  variables `CHROME_*` (sinon un navigateur démarré ainsi serait coupé pendant « ne pas déranger »).
+- Posés hors du dépôt : `--load-extension=…/dotfiles/webapps/open-links` dans les deux lanceurs
+  (`~/.local/share/applications/WebApp-{Whatsapp8699,DiscordWeb2996}.desktop`, sauvegardes `.bak-2026-10-27` d'origine) et le
+  manifeste de l'hôte dans `NativeMessagingHosts/` de chaque profil. Sway lance Discord par `gtk-launch` : couvert.
+- Banc (profil jetable, page de test pilotée par le protocole DevTools, `chromium` factice) : lien `_blank` et `window.open`
+  puis adresse envoyés une fois chacun, environnement nettoyé ; popup et lien dans la fenêtre gardés ; navigateur lancé encore
+  vivant après la fermeture de la web app.
+- **À faire à la main** : relancer WhatsApp et Discord. **À tester** : un lien dans chacune, navigateur ouvert puis fermé.
+- **Phase 11** : `install.sh` devra écrire le manifeste de l'hôte (chemin absolu) dans le profil de chaque web app et ajouter
+  `--load-extension` à leurs lanceurs.
 
 ## Prochaine étape
 
