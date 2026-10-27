@@ -1601,6 +1601,32 @@ correction ; banc dans le scratchpad de la session (`idle-bench.sh`), `test-outp
 - **À tester à la main** : une vraie reprise sur tes trois écrans (attendre 5 min) — les trois doivent s'allumer ensemble, sans
   extinction intermédiaire. Le central (AW3418DW) peut rester un peu plus lent à sortir de veille : c'est l'écran lui-même.
 
+## Écran de verrouillage : revue en boucle (2026-10-27, ta demande)
+
+3 passes de `/code-review high` (`LockScreen`, `LockContent`, `Session`, `Idle`), chaque point vérifié avant correction sur un
+banc isolé (Sway headless à 2 sorties, Quickshell sur une copie de `modules/lock`, PAM factice `pam_exec` : `test` accepté,
+`bad…`/`slow…` avec 2 s de délai, faux faillock par `pam_echo`, frappe simulée par IPC ; arrêté ensuite), un commit par passe
+(`6ce414e`, `72a71cf`, `2c559de`). Arrêt : la passe 3 ne trouve plus que du négligeable ou du réfuté.
+- **Verrou refusé** (reproduit : swaylock tenant déjà le verrou) : `locked` restait vrai sans verrou réel ; tout verrouillage
+  suivant (menu, IPC, avant la veille du laptop) était ignoré jusqu'au redémarrage de Quickshell. Il repasse à faux (avertissement
+  dans le journal) ; vérifié : reverrouillage possible une fois swaylock parti ; déverrouillage + reverrouillage dans le même tour
+  non annulé.
+- **Frappe pendant la vérification** : les caractères tapés pendant le délai d'échec de PAM (~2 s) étaient perdus, et l'essai
+  suivant partait tronqué (une erreur de plus dans faillock). Gardés pour l'essai suivant, comme swaylock ; Entrée reste ignoré
+  pendant la vérification, comme swaylock.
+- **Messages de PAM** : compte bloqué par faillock (`deny = 10` chez toi) affiché tel que PAM l'envoie, au lieu de « Wrong
+  password » avec le bon mot de passe ; une erreur interne de PAM n'est plus présentée comme un mauvais mot de passe.
+- **Mot de passe long** (plus de 15 caractères) : les points ne bougeaient plus ; les derniers restent visibles, points entiers.
+- Graisses et tailles de l'écran passées dans `Theme.lock` (`THEME.md` § 11.1 complété).
+- Laissés (négligeables ou réfutés) : modules PAM qui bloquent ou demandent deux fois (empreinte, OTP, homed : absents de ta
+  pile) ; refus synchrone (protocole absent : hors Sway/Hyprland) ; rechargement manuel pendant le verrouillage (`Session.locked`
+  pas resynchronisé) ; `LockScreen` écrit `Session.locked` (convention : lecture seule) ; `Idle` : processus `gdbus`/`systemd-inhibit`
+  non relancés s'ils meurent, délai modifié écrans éteints, contrôle unique à 2 s après un redémarrage (rallume aussi un écran
+  éteint à la main lors d'un rechargement à chaud), `hyprctl reload` au réveil (ta décision).
+- **À tester à la main** : verrouiller (panneau de réglages) et déverrouiller avec ton vrai mot de passe ; se tromper puis
+  retaper aussitôt pendant le délai (les caractères doivent apparaître) ; un caractère à touche morte (ex. `ê`) dans le champ, si
+  ton mot de passe en contient (frappe simulée par IPC sur le banc, pas par un vrai clavier).
+
 ## Prochaine étape
 
 Phase 9 — parité Hyprland (tests à faire ensemble dans une session Hyprland : voir « Compatibilité Hyprland »).
