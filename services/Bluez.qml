@@ -532,7 +532,7 @@ Singleton {
 
     Process {
         id: agent
-        command: ["bluetoothctl"]
+        command: ["setpriv", "--pdeathsig", "TERM", "bluetoothctl"]   // arrêté avec Quickshell
         stdinEnabled: true
         stdout: SplitParser {
             splitMarker: ""

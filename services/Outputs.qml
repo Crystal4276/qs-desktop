@@ -45,12 +45,12 @@ Singleton {
         const result = {};
         const descriptions = outs.map(o => o.description).sort().join("\n");
         const imposed = Settings.workspaceLayouts.find(l => Object.keys(l).sort().join("\n") === descriptions);
-        // Imposée : listes de numéros 1–9, chacun sur un seul écran ; sinon ignorée (règle générale).
+        // Imposée : les numéros 1–9, chacun sur un seul écran ; sinon ignorée (règle générale).
         const numbers = imposed ? Object.values(imposed).flat() : [];
-        const valid = imposed && Object.values(imposed).every(Array.isArray)
+        const valid = imposed && Object.values(imposed).every(Array.isArray) && numbers.length === workspaceCount
             && numbers.every(n => Number.isInteger(n) && n >= 1 && n <= workspaceCount) && new Set(numbers).size === numbers.length;
         if (imposed && !valid)
-            console.warn("Outputs: répartition imposée invalide (listes de numéros 1–9 sans doublon), règle générale :", JSON.stringify(imposed));
+            console.warn("Outputs: répartition imposée invalide (chaque numéro 1–9 une fois), règle générale :", JSON.stringify(imposed));
         if (valid) {
             for (const o of outs)
                 result[o.name] = [...imposed[o.description]].sort((a, b) => a - b);
@@ -231,7 +231,7 @@ Singleton {
             const existing = block.filter(n => workspaces.some(w => w.number === n));
             let wanted;
             // Écran d'arrivée de l'espace focalisé : il l'affiche. Un autre espace masquerait celui-ci, que Sway détruirait
-            // s'il est vide, et le focus final le recréerait sur un autre écran (revue de code du 2026-10-27).
+            // s'il est vide, et le focus final le recréerait sur un autre écran.
             if (focused && finalOutput(focused) === o.name)
                 wanted = focused.number;
             else if (remembered !== undefined)

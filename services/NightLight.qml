@@ -114,7 +114,8 @@ Singleton {
 
     Process {
         id: gammastep
-        command: ["gammastep", "-c", configFile.path]
+        // Arrêté avec Quickshell (`qs kill`) : un gammastep orphelin garderait le gamma, la veilleuse ne répondrait plus (vu le 2026-10-27).
+        command: ["setpriv", "--pdeathsig", "TERM", "gammastep", "-c", configFile.path]
         // Réglage gamma tenu par un autre client (au rechargement, l'ancienne instance le garde le temps de son fondu) : gammastep
         // ne quitte pas, il tourne sans effet en le signalant ; arrêté, donc relancé (onExited). Vérifié le 2026-10-26.
         stderr: SplitParser {

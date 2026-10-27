@@ -26,8 +26,9 @@ bus_pid=""
 
 cleanup() {
     set +e
-    [[ -n "$qs_pid" ]] && kill "$qs_pid" 2>/dev/null
-    [[ -n "$bus_pid" ]] && kill "$bus_pid" 2>/dev/null
+    # Tout le groupe de l'instance : Quickshell, son bus privé et leurs enfants (sinon orphelins : vu, un bus et un
+    # `gdbus monitor` sur le vrai bus système par passage).
+    [[ -n "$bus_pid" ]] && kill -- -"$bus_pid" 2>/dev/null
     [[ -n "$sway_pid" ]] && kill "$sway_pid" 2>/dev/null
     wait 2>/dev/null
     if [[ "$verbose" == "-v" ]]; then
@@ -69,7 +70,8 @@ swaymsg output "${outputs[2]}" mode 3840x2160 scale 1.5 pos 6000 0 >/dev/null
 # et ni montage automatique ni reconnexion Bluetooth automatique (QS_TEST : le bus système, lui, est le vrai). État à part
 # (XDG_STATE_HOME) : les fichiers d'état de ton instance (historique du lanceur, fond, veilleuse…) ne sont ni lus ni écrits.
 # Sans gvfs : un second gvfsd lancé sur ce bus casserait le montage /run/user/$UID/gvfs de ta session (vu le 2026-10-26).
-(cd "$repo" && exec env -u HYPRLAND_INSTANCE_SIGNATURE WAYLAND_DISPLAY="$wayland" SWAYSOCK="$SWAYSOCK" I3SOCK="$SWAYSOCK" \
+# Groupe de processus à lui (setsid, sans fork : son PID est $bus_pid), arrêté en entier à la fin.
+(cd "$repo" && exec setsid env -u HYPRLAND_INSTANCE_SIGNATURE WAYLAND_DISPLAY="$wayland" SWAYSOCK="$SWAYSOCK" I3SOCK="$SWAYSOCK" \
     QS_TEST=1 XDG_STATE_HOME="$work/state" GIO_USE_VFS=local GVFS_DISABLE_FUSE=1 \
     dbus-run-session -- qs -p "$repo" >"$work/qs.log" 2>&1) &
 bus_pid=$!

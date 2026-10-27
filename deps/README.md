@@ -153,4 +153,4 @@ Correspondances attendues, **non encore vérifiées** (phase 11).
 | gammastep | gammastep | gammastep | |
 | power-profiles-daemon | power-profiles-daemon (ou `tuned-ppd` sur Fedora ≥ 41, même interface D-Bus) | power-profiles-daemon | |
 | xdg-user-dirs | xdg-user-dirs | xdg-user-dirs | |
-| util-linux (`rfkill`) | util-linux-core | rfkill | |
+| util-linux (`rfkill`, `setpriv`) | util-linux (tire util-linux-core) | rfkill, util-linux | |
