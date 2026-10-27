@@ -1807,7 +1807,7 @@ Audit de couverture (boucles de `PROGRESS.md` croisées avec git, fichier par fi
 sur des plages de commits, un fichier inchangé dans la plage n'y était que du contexte ; la revue globale du 2026-10-16
 (3 passes, 10 constats chacune) n'a pas convergé. Code jamais passé dans une boucle, par ordre de risque :
 
-1. **Disques** : `services/Disks.qml`, `modules/bar/DisksPanel.qml` (montage, LUKS, éjection).
+1. **Disques** : `services/Disks.qml`, `modules/bar/DisksPanel.qml` (montage, LUKS, éjection). **Fait** (ci-dessous).
 2. **Agent polkit** : `modules/polkit/PolkitDialog.qml` (seulement la boucle commune de la phase 8b).
 3. **Web apps** : `dotfiles/webapps/open-link`, `open-links/background.js`, règle WirePlumber.
 4. **Tray StatusNotifier** : `TrayMenu.qml`, `TrayIcon.qml`, partie applications de `Tray.qml`.
@@ -1824,6 +1824,39 @@ sur des plages de commits, un fichier inchangé dans la plage n'y était que du 
 Hors périmètre : chemins propres à Hyprland (phase 9), `Theme.qml` (valeurs). Méthode : `/code-review high` sur les fichiers
 entiers, chaque point vérifié sur banc isolé avant correction, un commit par passe, arrêt quand une passe ne trouve plus que
 du négligeable. Bancs et agents en lecture seule pour tes vrais disques et ta VPN.
+
+### Disques : revue en boucle (2026-10-27, ta demande)
+
+9 passes de `/code-review high` sur les fichiers entiers (`2a1b753` … `7f70372`), chaque point vérifié avant correction sur un
+banc : images de test (ext4 « Clé », LUKS « Coffre »), instance Quickshell à part avec faux `busctl` / `udisksctl` / `notify-send`,
+puis Sway isolé avec clavier et pointeur virtuels (`luks-bench.sh`, scratchpad). Arrêt : la passe 9 ne trouve plus rien de sérieux.
+- **Chemins accentués** : les octets d'UDisks2 étaient lus en Latin-1 (`/run/media/…/ClÃ©`) : affichage et « Open » faux. UTF-8.
+- **Clé USB LUKS réelle** : une fois déverrouillé, le volume disparaissait du panneau (UDisks2 dit « système » tout volume dm sans
+  disque ; invisible sur les images de test). Jugé sur son volume chiffré, comme udiskie. Reproduit en faisant passer l'image pour
+  une clé USB.
+- **Démontage annulé au rechargement** : `Disks` n'était créé qu'au premier affichage du tray, son état n'était donc pas repris,
+  et tout était remonté. Créé au démarrage (`shell.qml`), état gardé (`PersistentProperties`). Le montage au démarrage de
+  Quickshell reste, comme udiskie.
+- Robustesse : commande qui ne démarre pas (notification au lieu du silence) ; première lecture ratée réessayée, de plus en plus
+  rarement ; relecture qui échoue réessayée ; signaux des tâches d'UDisks2 ignorés et relectures sans changement sans effet ;
+  ordre fixe et numérique (`sdb2` avant `sdb10`) ; boutons atténués pendant une action (double clic, montage automatique en
+  cours) ; image « autoclear » détachée sans faux « Job failed » ; lecteur qui ne s'éteint pas (DVD) éjecté (`Drive.Eject`) ;
+  clé remplacée par une autre sous le même nom reconnue comme nouvelle (chemin + étiquette + taille) ; parent chiffré ignoré
+  (`HintIgnore`) : volume déchiffré ignoré aussi ; déverrouillage réservé à LUKS (`--key-file`).
+- **Phrase de passe au branchement** (ton choix du 2026-10-27, comme la fenêtre d'udiskie) : file unique `Disks.pending`,
+  affichée par le panneau des disques ouvert, sinon ouvert sous le tray de l'écran focalisé (ou principal), champ prêt. Mauvaise
+  phrase : champ rouge et vidé ; autre échec (polkit, appareil occupé) : demande abandonnée, la notification dit pourquoi ;
+  réussite : disque suivant, puis panneau refermé s'il s'était ouvert tout seul. Attend la fermeture d'un autre popup épinglé ou
+  de l'outil de capture (saisie en cours qui serait perdue) ; reprise sur un autre écran si le sien disparaît ; pas de fermeture
+  automatique pendant la demande ; Échap ou clic à côté abandonnent les demandes (les boutons Unlock restent).
+- Dépendances : `libnotify` et `util-linux` (`setpriv`) ajoutés à la ligne des disques de `deps/README.md`.
+- BACKLOG : VeraCrypt / BitLocker (udisksctl ne lit une phrase qu'au terminal) ; images en boucle de root (`SetupByUID`).
+- Laissés (choix ou négligeables) : montage automatique au démarrage de Quickshell (udiskie aussi) ; pas de demande au
+  démarrage ; changement d'étiquette d'un volume = retiré puis ajouté ; séquence coupée par un rechargement à chaud (dev).
+- **À tester à la main** : vraie clé USB (avec un nom accentué si possible) : montage, « Open », Eject ; vraie clé LUKS :
+  demande au branchement, mauvaise puis bonne phrase, Lock, Eject.
+- Vu en passant, hors périmètre : avertissement `services/Bluez.qml[31:5]: Unable to assign [undefined] to bool` à chaque
+  rechargement à chaud (propriété `busy`) — à regarder avec le module Bluetooth.
 
 ## Prochaine étape
 
