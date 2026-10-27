@@ -30,8 +30,9 @@ OverlayPopup {
         return (tab === "panorama" ? lib.panorama : lib.simple).map(p => ({ path: p, sources: [Wallpapers.url(p)] }));
     }
 
-    function open(): void {
-        screen = Outputs.focusedScreen();
+    // Sur l'écran `from` (bouton du panneau de réglages), sinon l'écran focalisé (raccourci).
+    function open(from: var): void {
+        screen = from ?? Outputs.focusedScreen();
         Wallpapers.refresh();
         if (!tabs.some(t => t.key === tab))
             tab = "simple";
@@ -41,14 +42,15 @@ OverlayPopup {
     }
 
     function toggle(): void {
-        visible ? close() : open();
+        visible ? close() : open(null);
     }
 
+    // Choix « tous les écrans » : seulement si aucun écran présent n'a sa propre image (celles d'écrans débranchés ne comptent pas).
     function isCurrent(path: string): bool {
         if (tab === "simple" && target !== "")
             return Wallpapers.overrides[target] === path;
         const s = Wallpapers.selection;
-        return s !== null && s.kind === tab && s.path === path && Object.keys(Wallpapers.overrides).length === 0;
+        return s !== null && s.kind === tab && s.path === path && !outputs.some(o => Wallpapers.overrides[o.description]);
     }
 
     function apply(index: int): void {

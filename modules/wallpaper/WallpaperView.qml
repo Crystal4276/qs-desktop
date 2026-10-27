@@ -3,7 +3,8 @@ import qs.services
 
 // Rendu du fond d'une sortie (`shown` : Wallpapers.forOutput) : fond d'écran (Background.qml) et fond de l'écran de verrouillage.
 // Image d'un seul écran : couvre l'écran, décodée à sa taille. Panorama : l'image couvre le rectangle englobant tous les écrans
-// (centrée), chaque écran n'en décode et n'en montre que sa part.
+// (centrée), chaque écran n'en décode et n'en montre que sa part. Changement de fond : l'ancien reste affiché pendant le décodage
+// du nouveau (`retainWhileLoading`), sauf en passant d'une image à un panorama ou l'inverse.
 Item {
     id: root
 
@@ -18,6 +19,7 @@ Item {
         fillMode: Image.PreserveAspectCrop
         sourceSize: Qt.size(Math.ceil(width * Screen.devicePixelRatio), Math.ceil(height * Screen.devicePixelRatio))
         asynchronous: true
+        retainWhileLoading: true
         cache: false
     }
 
@@ -39,11 +41,10 @@ Item {
             };
         }
         readonly property var b: bounds
-        readonly property string source: visible && b.height > 0 ? root.shown.source : ""
+        // Panorama mesuré par le service (le précédent tant que le nouveau n'est pas mesuré) et taille de son fichier.
+        readonly property string source: visible && b.height > 0 ? Wallpapers.panorama.source : ""
+        readonly property size natural: Wallpapers.panorama.size
         readonly property real dpr: Screen.devicePixelRatio
-        // Taille du fichier, lue une fois par la sonde ci-dessous (libérée ensuite).
-        property size natural: Qt.size(0, 0)
-        onSourceChanged: natural = Qt.size(0, 0)
         readonly property real ratio: natural.height > 0 ? natural.width / natural.height : 0
         readonly property bool wide: ratio > 0 && b.width / b.height > ratio
         // Image entière telle qu'affichée (logique) : elle couvre l'ensemble des écrans, centrée ; position relative à cet écran.
@@ -61,17 +62,6 @@ Item {
         readonly property int decodedHeight: Math.min(natural.height, Math.round(fullHeight * dpr))
         readonly property real k: fullHeight > 0 ? decodedHeight / fullHeight : 0
 
-        Image {
-            source: panorama.natural.height === 0 ? panorama.source : ""
-            visible: false
-            asynchronous: true
-            cache: false
-            onStatusChanged: {
-                if (status === Image.Ready && implicitHeight > 0)
-                    panorama.natural = Qt.size(implicitWidth, implicitHeight);
-            }
-        }
-
         // Seule la part de cet écran est décodée (sourceClipRect, en pixels de l'image réduite à sourceSize).
         Image {
             readonly property real cx: Math.floor(panorama.lx * panorama.k)
@@ -83,6 +73,7 @@ Item {
             sourceClipRect: Qt.rect(cx, cy, Math.min(Math.ceil(panorama.lw * panorama.k), Math.floor(panorama.decodedHeight * panorama.ratio) - cx),
                 Math.min(Math.ceil(panorama.lh * panorama.k), panorama.decodedHeight - cy))
             asynchronous: true
+            retainWhileLoading: true
             cache: false
             x: panorama.fx + panorama.lx
             y: panorama.fy + panorama.ly

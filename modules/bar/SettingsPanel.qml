@@ -60,7 +60,7 @@ Panel {
 
         QuickButton {
             glyph: Theme.icon.wallpaper
-            onClicked: root.run(() => Wallpapers.pickerRequested())
+            onClicked: root.run(() => Wallpapers.pickerRequested(root.screen))
         }
 
         Item {
