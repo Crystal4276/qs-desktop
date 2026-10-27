@@ -224,7 +224,8 @@ Format (implémenté en phase 1, `hosts/default.json`, `hosts/terrier.json`) :
   ensuite réglé depuis le panneau de réglages (fichier d'état `do-not-disturb.json`).
 
 - Fusion **au premier niveau** : une clé du fichier machine remplace entièrement celle de `default.json` (pas de fusion profonde : plus prévisible).
-- `bars` : par description d'écran, sinon par rôle (`primary` / `secondary`) — un écran inconnu reçoit donc toujours une barre.
+- `bars` : l'écran principal reçoit `primary` ; les autres, par description d'écran, sinon `secondary` — un écran inconnu reçoit
+  donc toujours une barre, et un écran qui a sa propre entrée mais devient principal (les autres éteints) garde tray et réglages.
   Chaque côté est une liste de **pilules**, chaque pilule une liste de modules (`THEME.md` § 3, « Groupes de pilules ») :
   la config décrit directement les groupes Waybar, sans noms de groupes intermédiaires.
 - Modules : `menu`, `workspaces`, `mpris`, `volume`, `slider`, `updates`, `gpu`, `cpu`, `memory`, `clock` (heure seule),

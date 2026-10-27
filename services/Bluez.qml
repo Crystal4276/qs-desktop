@@ -186,8 +186,11 @@ Singleton {
 
     // Comme blueman : à l'allumage de l'adaptateur, puis toutes les 60 s ; aussi dès qu'un appareil de la liste est connu
     // (démarrage, BlueZ relancé : suivi créé, plus bas). Appareils appairés et déconnectés seulement.
+    // Jamais depuis l'instance de scripts/test-outputs.sh (QS_TEST) : elle parle au vrai BlueZ.
+    readonly property bool autoConnectAllowed: !Quickshell.env("QS_TEST")
+
     function autoConnectDevice(device: BluetoothDevice): void {
-        if (!enabled || !isAutoConnect(device) || !device.paired || device.state !== BluetoothDeviceState.Disconnected)
+        if (!autoConnectAllowed || !enabled || !isAutoConnect(device) || !device.paired || device.state !== BluetoothDeviceState.Disconnected)
             return;
         autoAttempts = withFlag(autoAttempts, device.address, true);
         device.connect();

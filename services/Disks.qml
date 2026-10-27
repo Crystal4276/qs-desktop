@@ -20,9 +20,9 @@ Singleton {
     // (clé : chemin du Drive UDisks2, ou du périphérique entier pour une image disque montée en boucle).
     property var drives: []
     property bool loaded: false
-    // QS_NO_AUTOMOUNT (tests seulement, scripts/test-outputs.sh) : pas de montage automatique, l'instance de test parle au vrai
-    // bus système et monterait tes disques laissés démontés.
-    readonly property bool automount: !Quickshell.env("QS_NO_AUTOMOUNT")
+    // QS_TEST (instance de scripts/test-outputs.sh) : pas de montage automatique, l'instance de test parle au vrai bus système
+    // et monterait tes disques laissés démontés.
+    readonly property bool automount: !Quickshell.env("QS_TEST")
 
     // --- Lecture de l'état ---
 

@@ -33,8 +33,10 @@ Singleton {
                 vrrCapable: m.lastIpcObject.features?.adaptive_sync === true,
                 vrr: m.lastIpcObject.adaptive_sync_status === "enabled"
             }));
+        // Écran en miroir d'un autre (`mirrorOf`, projecteur du laptop) : pas de bloc d'espaces à lui.
         if (isHyprland)
-            return Hyprland.monitors.values.filter(m => !m.lastIpcObject.disabled).map(m => {
+            return Hyprland.monitors.values.filter(m => !m.lastIpcObject.disabled
+                    && (m.lastIpcObject.mirrorOf ?? "none") === "none").map(m => {
                 const o = m.lastIpcObject;
                 // Taille du mode en px physiques → logiques ; transformations impaires (90°, 270°…) : largeur et hauteur échangées.
                 const w = Math.round(m.width / m.scale), h = Math.round(m.height / m.scale);
@@ -271,9 +273,10 @@ Singleton {
             // Sway envoie aussi « focus » pour une fenêtre qui ne le reçoit pas (clic sur un popup de barre) : on vérifie.
             if (data.change === "focus" && data.container?.focused)
                 root.windowFocused();
+            // Titre d'une fenêtre non focalisée (onglet en arrière-plan, compteur…) : rien à relire.
             if ((data.change === "focus" || data.change === "title") && data.container?.focused)
                 sway.title = data.container.name ?? "";
-            else
+            else if (data.change !== "title")
                 treeQuery.restart();
         }
     }

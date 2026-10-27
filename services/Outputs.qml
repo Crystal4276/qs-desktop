@@ -219,9 +219,13 @@ Singleton {
             const shownNow = workspaces.find(w => w.visible && w.output === o.name);
             const remembered = candidates(o.name).find(n => homes[n] === o.name
                 || (!isOurs(n) && workspaces.some(w => w.number === n && w.output === o.name)));
-            const existing = block.filter(n => workspaces.some(w => w.number === n)).sort((a, b) => a - b);
+            const existing = block.filter(n => workspaces.some(w => w.number === n));
             let wanted;
-            if (remembered !== undefined)
+            // Écran d'arrivée de l'espace focalisé : il l'affiche. Un autre espace masquerait celui-ci, que Sway détruirait
+            // s'il est vide, et le focus final le recréerait sur un autre écran (revue de code du 2026-10-27).
+            if (focused && finalOutput(focused) === o.name)
+                wanted = focused.number;
+            else if (remembered !== undefined)
                 wanted = remembered;
             else if (candidates(o.name).length === 0 && shownNow && homes[shownNow.number] === o.name)
                 wanted = shownNow.number;   // aucun souvenir de cet écran (démarrage, nouvel écran) : rien à changer
@@ -237,8 +241,6 @@ Singleton {
             if (wanted !== undefined)
                 intended[o.name] = wanted;
         }
-        if (focused)
-            intended[finalOutput(focused)] = focused.number;
         // Mémorisé tout de suite : un nouveau changement d'écrans peut arriver avant la prochaine lecture.
         remember(intended, focused ? focused.number : 0);
         lastPlaced = intended;
