@@ -1629,26 +1629,33 @@ banc isolé (Sway headless à 2 sorties, Quickshell sur une copie de `modules/lo
 
 ## Ne pas déranger : sons des applications coupés (2026-10-27, ta demande)
 
-- Le shell ne joue aucun son : Discord et la web app WhatsApp jouent le leur, sur leur propre flux. Pendant « ne pas déranger »
-  (horaire ou à la main), `services/Audio.qml` coupe les flux de `doNotDisturb.muteApps` (binaire `Discord`) et `muteWebApps`
-  (web app `--class=WebApp-Whatsapp8699`, lu dans `/proc` sur le processus audio et son parent) ; `hosts/terrier.json`, vides
-  par défaut.
-  Rétablis à la fin ; rétabli à la main pendant « ne pas déranger » : laissé (passe 2 ci-dessous).
-- **Gardent le son** (ta demande : première version refusée, elle coupait tout Chromium, donc YouTube) : le navigateur (même
-  binaire, sans `--class=`) et les appels Discord (flux `WEBRTC VoiceEngine`).
-- Règle WirePlumber `dotfiles/wireplumber/wireplumber.conf.d/50-chromium-no-restore.conf` (ton accord) : plus de volume ni de
-  coupure retenus pour les flux « Chromium », sans quoi une coupure de WhatsApp se reportait sur YouTube. Copiée (pas liée : seul
-  lien avant la phase 10, `~/.config/quickshell/desktop`) dans `~/.config/wireplumber/wireplumber.conf.d/`, WirePlumber redémarré.
-  `install.sh` la liera (phase 11).
-- Banc (sortie virtuelle `module-null-sink` enregistrée, un bip par cas, 3 tours, 30/30) : navigateur, web app, Discord, appel
-  Discord, avant / pendant / après « ne pas déranger ». Web app et Discord : 0 ms audible pendant, y compris le premier bip d'un
-  processus inconnu (coupé d'office le temps de la lecture de `/proc`) ; les autres : bip entier.
-- **À tester à la main** : après 21:00, un message WhatsApp et un message Discord sans son, une vidéo YouTube avec ; le matin,
-  les sons reviennent.
+- Le shell ne joue aucun son : Discord et WhatsApp jouent le leur, sur leur propre flux. Pendant « ne pas déranger » (horaire
+  ou à la main), `services/Audio.qml` coupe les flux de `doNotDisturb.muteApps` (`hosts/terrier.json` : `discord`, `whatsapp` ;
+  vide par défaut), comparé à l'`application.id` du flux ou à son binaire. Rétablis à la fin.
+- **Refonte (passe 10, ta décision)** : les web apps reçoivent un `application.id` à leur lancement, dans leur lanceur (hors du
+  dépôt, sauvegardés en `.bak-2026-10-27`) : `~/.local/share/applications/WebApp-Whatsapp8699.desktop` et
+  `WebApp-DiscordWeb2996.desktop`, `Exec=env PULSE_PROP_OVERRIDE=application.id=whatsapp chromium …` (`discord`). L'application
+  Discord (Electron, ta demande : les deux versions) est reconnue par son binaire, quel que soit son lancement. Supprimés :
+  lecture de `/proc`, mémoire des processus, coupure d'office, `muteWebApps`.
+  **Si webapp-manager régénère un lanceur, remettre la variable.** Le lanceur WhatsApp `whatsdesk` (autostart Sway) : non
+  traité (s'ajoute de la même façon : `whatsdesk` dans `muteApps` et dans la règle).
+- **Gardent le son** (ta demande : première version refusée, elle coupait tout Chromium, donc YouTube) : le navigateur et les
+  appels de l'application Discord (flux `WEBRTC VoiceEngine`). Les appels des web apps (Discord, WhatsApp) sont des flux comme
+  les autres : coupés s'ils commencent pendant « ne pas déranger » ; rétablir leur ligne dans le panneau audio (laissée ensuite).
+  Un son en cours à 21:00 n'est jamais touché.
+- Règle WirePlumber `dotfiles/wireplumber/wireplumber.conf.d/50-dnd-no-restore.conf` (ton accord) : volume et coupure non
+  retenus pour les flux de lecture `application.id` = `discord` / `whatsapp`, et les flux « Chromium » du binaire `Discord`
+  (pas ses appels) ; sans elle, la coupure de la nuit resterait le lendemain. Le navigateur retrouve son volume retenu.
+  Copiée (pas liée : seul lien avant la phase 10, `~/.config/quickshell/desktop`) dans `~/.config/wireplumber/wireplumber.conf.d/`
+  (ancienne règle retirée), WirePlumber redémarré. `install.sh` la liera (phase 11).
+- Banc (sortie virtuelle `module-null-sink` enregistrée, un bip par cas, 3 tours, 39/39) : navigateur, web apps WhatsApp et
+  Discord, application Discord et son appel, avant / pendant / après « ne pas déranger ». Cibles : 0 ms audible pendant, dès le
+  premier bip ; les autres : bip entier.
+- **À faire à la main** : relancer les web apps WhatsApp et Discord (elles tournaient avant la modification des lanceurs).
+  **À tester** : après 21:00, un message WhatsApp et un message Discord sans son, une vidéo YouTube avec ; le matin, les sons
+  reviennent.
 - Limite : une application de la liste coupée à la main avant « ne pas déranger » n'est pas touchée (ni coupée ni rétablie par
-  le shell). Pendant « ne pas déranger », un nouveau son du navigateur (flux « Chromium ») dont le processus n'a pas été lu
-  depuis 10 min est coupé quelques ms, le temps de lire `/proc` (inaudible, mesuré) ; les autres programmes et un son déjà en
-  cours à 21:00 ne sont jamais touchés.
+  le shell).
 
 ### Revue en boucle (2026-10-27, ta demande)
 
@@ -1694,7 +1701,13 @@ banc isolé (Sway headless à 2 sorties, Quickshell sur une copie de `modules/lo
   limitée aux flux de lecture (les micros Discord/Chromium gardent leur volume retenu ; WirePlumber relancé) ; `playingNodes`
   vidé à la fin ; § 1 de `ARCHITECTURE.md`. Écarté : rechargement à chaud au moment exact d'une coupure (les deux générations
   écrivent le fichier ; fenêtre de quelques ms, flux long seulement).
-- Banc : 30/30 + son en cours sans trou (4 s, 0 ms de trou), son Discord en cours à 21:00 gardé, rétabli à la main gardé (y compris après rechargement), rechargement
+- **Passe 10 → refonte** (proposée par les passes 7 et 8, décidée par toi) : flux nommés au lancement (ci-dessus). Repris des
+  ajustements de la passe 10 : règle WirePlumber ciblée (la ligne « binaire Discord » touchait ses appels : restreinte aux flux
+  « Chromium ») ; aucune passe la nuit si `muteApps` est vide ; seuls les flux visés ou touchés sont suivis. Sans objet après
+  la refonte : vieillissement des processus lus. Écartés : événement PipeWire en retard pris pour un geste sur un flux Discord
+  (au pire, flux non rétabli jusqu'à sa fermeture, quelques secondes) ; configuration lue vide pendant l'écriture de
+  `hosts/terrier.json` en pleine nuit.
+- Banc : 39/39 + son en cours sans trou (4 s, 0 ms de trou), rétabli à la main gardé (y compris après rechargement), rechargement
   à chaud pendant « ne pas déranger » (coupure gardée, rétablie à la fin), coupure manuelle de jour respectée.
 
 ## Prochaine étape
