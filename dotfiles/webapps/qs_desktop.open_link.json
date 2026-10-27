@@ -1,0 +1,7 @@
+{
+  "name": "qs_desktop.open_link",
+  "description": "Liens de la web app ouverts dans le profil Chromium principal",
+  "path": "@WEBAPPS@/open-link",
+  "type": "stdio",
+  "allowed_origins": ["chrome-extension://mopkhfonaekokcaeedagokokajbmahjb/"]
+}

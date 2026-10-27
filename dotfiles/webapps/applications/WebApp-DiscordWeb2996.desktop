@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Name=Discord_Web
+Comment=Discord in Chromium
+Exec=env PULSE_PROP_OVERRIDE=application.id=discord chromium --app="https://discord.com/channels/@me" --class=WebApp-DiscordWeb2996 --name=WebApp-DiscordWeb2996 --user-data-dir=@PROFILES@/DiscordWeb2996 --load-extension=@WEBAPPS@/open-links
+Terminal=false
+X-MultipleArgs=false
+Type=Application
+Icon=discord
+Categories=GTK;WebApps;
+MimeType=text/html;text/xml;application/xhtml_xml;
+StartupWMClass=WebApp-DiscordWeb2996
+StartupNotify=true

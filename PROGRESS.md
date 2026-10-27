@@ -1745,8 +1745,10 @@ banc isolé (Sway headless à 2 sorties, Quickshell sur une copie de `modules/lo
   puis adresse envoyés une fois chacun, environnement nettoyé ; popup et lien dans la fenêtre gardés ; navigateur lancé encore
   vivant après la fermeture de la web app.
 - **À faire à la main** : relancer WhatsApp et Discord. **À tester** : un lien dans chacune, navigateur ouvert puis fermé.
-- **Phase 11** : `install.sh` devra écrire le manifeste de l'hôte (chemin absolu) dans le profil de chaque web app et ajouter
-  `--load-extension` à leurs lanceurs.
+- Testé par toi sur WhatsApp et Discord : liens ouverts dans le navigateur principal.
+- **Phase 11** : lanceurs et manifeste de l'hôte versionnés comme modèles (`dotfiles/webapps/applications/`,
+  `qs_desktop.open_link.json`) ; procédure complète d'installation (paquets, règle WirePlumber, lanceurs, hôte, `muteApps`) dans
+  `deps/README.md`, « Web apps : ce que fait `install.sh` ». Elle remplace les notes phase 11 des deux sections précédentes.
 
 ## Prochaine étape
 
