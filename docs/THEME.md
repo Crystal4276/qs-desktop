@@ -482,10 +482,10 @@ Les animations Hyprland concernent les fenêtres et les *layers* (fondu à l'ouv
 | Fond | fond d'écran affiché sur cette sortie, flouté (rayon max 64, `MultiEffect`) sur `crust`, voile `crust` à 45 % |
 | Horloge | Inter Light 120 px, `text` |
 | Date | Inter 26 px, `subtext1` |
-| Initiale | disque de 72 px `green`, lettre `mantle` |
+| Initiale | disque de 72 px `green`, lettre Inter DemiBold 36 px `mantle` |
 | Nom | Inter 20 px, `text` |
-| Champ | 360 × 56 px, fond `mantle` à 85 %, bordure `overlay0` (`green` pendant la saisie, `red` après un refus) ; points de 10 px `text` ; texte indicatif Inter 20 px |
-| Message | Inter 16 px : `subtext0` (vérification), `red` (erreur), `yellow` (verr. maj.) |
+| Champ | 360 × 56 px, fond `mantle` à 85 %, bordure `overlay0` (`green` pendant la saisie, `red` après un refus) ; points de 10 px `text` (trop nombreux : les derniers restent visibles) ; texte indicatif Inter 20 px |
+| Message | Inter 16 px, ligne de 24 px : `subtext0` (vérification), `red` (erreur ou message de PAM, ex. compte bloqué), `yellow` (verr. maj.) |
 | Espacements | 24 px entre éléments ; 64 px entre la date et l'utilisateur |
 
 ### 11.2 swaylock (configuration actuelle, remplacée)

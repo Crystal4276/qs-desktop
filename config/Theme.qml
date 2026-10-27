@@ -575,13 +575,16 @@ Singleton {
     readonly property QtObject lock: QtObject {
         readonly property int blur: 64                            // rayon max du flou (MultiEffect)
         readonly property color dim: Qt.alpha(root.color.crust, 0.45)
-        readonly property int clockSize: 120                      // Inter Light
+        readonly property int clockSize: 120
+        readonly property int clockWeight: Font.Light
         readonly property color clock: root.color.text
         readonly property int dateSize: 26
         readonly property color date: root.color.subtext1
         readonly property int avatarSize: 72
         readonly property color avatar: root.color.green
         readonly property color avatarText: root.color.mantle
+        readonly property int avatarTextSize: 36                  // initiale : moitié de l'avatar
+        readonly property int avatarWeight: Font.DemiBold
         readonly property int userSize: 20
         readonly property color user: root.color.text
         readonly property int fieldWidth: 360
@@ -594,6 +597,7 @@ Singleton {
         readonly property color dot: root.color.text
         readonly property int dotSize: 10
         readonly property int messageSize: 16
+        readonly property int messageHeight: 24                   // ligne réservée : le champ ne bouge pas avec le message
         readonly property color message: root.color.subtext0
         readonly property color error: root.color.red
         readonly property color warning: root.color.yellow   // verrouillage majuscules
