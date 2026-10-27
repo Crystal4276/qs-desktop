@@ -636,13 +636,15 @@ Voir `WALLPAPERS.md` § « Mise en œuvre ». Remplace `swaybg` (Sway) et le fon
 - Enregistrement raté (polkit-gnome, ou instance d'avant un plantage pas encore partie) : jamais retenté par Quickshell ; l'agent
   est recréé (5 s, puis de plus en plus rarement, 5 min au plus).
 - Fermée par toi (Échap, Cancel, clic à côté, autre popup) : demande annulée. Fermée sans toi (écran retiré, verrouillage,
-  surface fermée par le compositeur : `OverlayPopup.closingLost`, `BarState.closePopups(keep, lost)`) : demande gardée,
+  surface fermée par le compositeur : `OverlayPopup.closingLost`) : demande gardée,
   rouverte sur l'écran focalisé. Jamais affichée pendant le verrouillage (`Session.lockActive`, dès la demande ; règle de tous
   les `OverlayPopup`, refermés aussitôt s'ils s'ouvrent pendant) : elle prendrait
   le clavier de l'écran de verrouillage, et le mot de passe tapé pour déverrouiller (même raison : l'outil de capture est
   fermé au verrouillage et ne s'ouvre pas pendant). Rechargement de la config : la demande en cours est réaffichée.
 - Quickshell 0.3.2 (aussi sur `master`) : une demande arrivée pendant une autre la remplace (file d'attente inopérante) ; la
-  première est annulée une fois l'agent libre (sinon son application attendrait indéfiniment).
+  première est annulée une fois l'agent libre (sinon son application attendrait indéfiniment). Limites restantes, à signaler
+  en amont : remplacée pendant la vérification de son mot de passe, sa réussite termine la demande en cours (sans réponse à son
+  application) ; les demandes remplacées ne sont jamais libérées (petite fuite).
 - Message en texte brut (la commande de `pkexec` y figure). Champ vide jamais envoyé. Chaque demande annulée compte comme un
   échec pour faillock (`polkit-agent-helper-1`, comme avec polkit-gnome) : `deny = 10` sur 15 min ici.
 
@@ -881,8 +883,8 @@ Légende : **utilisé** (déjà dans le code), **prévu** (phase indiquée), **a
 | `Quickshell.Services.SystemTray` | tous | **utilisé** |
 | `Quickshell.Services.UPower` | `UPower`, `UPowerDevice` | **utilisé** (batterie, laptop) |
 | | `PowerProfiles` | **utilisé** (phase 8, ta demande) : **trois boutons** de profil d'énergie (économie / équilibré / performance) dans la fenêtre de réglages (phase 8), sur toutes les machines ; nécessite `power-profiles-daemon` (dépendance principale, service à activer) |
-| `Quickshell.Services.Polkit` | `PolkitAgent`, `AuthFlow` | **prévu** : agent polkit (phase 8b) |
-| `Quickshell.Services.Pam` | `PamContext` | **prévu** : verrouillage (8b), greeter (12) |
+| `Quickshell.Services.Polkit` | `PolkitAgent`, `AuthFlow`, `Identity` | **utilisé** : agent polkit (`services/Polkit.qml`) |
+| `Quickshell.Services.Pam` | `PamContext` | **utilisé** : verrouillage (`LockScreen.qml`) ; **prévu** : greeter (12) |
 | `Quickshell.Services.Greetd` | `Greetd` | **prévu** : écran de connexion (phase 12, § 10.4) |
 
 Restent hors Quickshell, faute d'équivalent : `nvidia-smi` (GPU), `checkupdates`, `nordvpn`, `busctl` / `gdbus` /

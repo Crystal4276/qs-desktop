@@ -12,11 +12,7 @@ Singleton {
 
     readonly property PolkitAgent agent: agentLoader.item
     readonly property AuthFlow flow: agent?.flow ?? null
-    readonly property bool isActive: agent?.isActive ?? false
-
-    // Demande à afficher : nouvelle, ou déjà en cours quand l'agent apparaît (rechargement de la config : il reprend celui d'avant
-    // et sa demande).
-    signal requestStarted
+    readonly property bool isActive: flow !== null
 
     // Pas d'agent dans l'instance de scripts/test-outputs.sh (QS_TEST) : il s'enregistrerait sur le vrai polkit.
     // Échec de l'enregistrement (place prise par polkit-gnome, ou par l'instance d'avant un plantage, pas encore partie) :
@@ -45,28 +41,19 @@ Singleton {
         }
     }
 
-    onAgentChanged: {
-        if (agent?.isActive)
-            requestStarted();
-    }
-
     Connections {
         target: root.agent
         function onIsRegisteredChanged() {
             if (root.agent.isRegistered)
                 root.failedRegistrations = 0;
         }
-        function onAuthenticationRequestStarted() {
-            root.requestStarted();
-        }
-        function onIsActiveChanged() {
-            Qt.callLater(root.cancelDisplaced);
-        }
     }
+    onIsActiveChanged: Qt.callLater(root.cancelDisplaced)
 
     // Quickshell 0.3.2 : une demande arrivée pendant une autre la remplace (sa file d'attente ne sert pas) ; la première, sans
     // fenêtre, ferait attendre son application indéfiniment. Annulée une fois l'agent libre (pas avant : sa fin terminerait aussi
-    // la demande en cours) ; l'application peut redemander.
+    // la demande en cours) ; l'application peut redemander. Limites (défaut de Quickshell) : remplacée pendant la vérification de
+    // son mot de passe, sa réussite termine la demande en cours ; les demandes remplacées ne sont jamais libérées.
     property var displaced: []
     property AuthFlow lastFlow: null
 
@@ -87,8 +74,8 @@ Singleton {
         }
     }
 
-    // Demande fermée par toi : annulée, si elle est toujours la demande en cours (remplacée entre-temps : annulée plus tard, par
-    // cancelDisplaced, pas pendant l'autre).
+    // Annulation (Échap, Cancel, fenêtre fermée par toi) : seulement la demande en cours (remplacée entre-temps : annulée plus
+    // tard, par cancelDisplaced, pas pendant l'autre).
     function cancel(target: AuthFlow): void {
         if (target && !target.isCompleted && target === flow)
             target.cancelAuthenticationRequest();

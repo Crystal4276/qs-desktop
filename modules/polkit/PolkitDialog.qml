@@ -14,23 +14,21 @@ import qs.modules.bar
 Scope {
     id: root
 
+    // Demande en cours affichée : nouvelle, remplaçant une autre, ou reprise au rechargement (déjà là au chargement, ou arrivée
+    // juste après avec l'agent) ; plus de demande (terminée, annulée, retirée par polkit) : fenêtre fermée. Refus de la demande
+    // précédente effacé (même arrivée pendant le verrouillage, fenêtre fermée).
     readonly property AuthFlow flow: Polkit.flow
 
-    // Demande en cours affichée (aussi celle reprise au rechargement) ; terminée (réussie, refusée, annulée) : fenêtre fermée.
-    Component.onCompleted: {
-        if (Polkit.isActive)
+    onFlowChanged: {
+        wrong = false;
+        if (flow)
             window.show();
+        else if (window.visible)
+            window.close();
     }
-    Connections {
-        target: Polkit
-        function onRequestStarted() {
+    Component.onCompleted: {
+        if (flow)
             window.show();
-        }
-        // Demande retirée par polkit sans fin signalée sur le flux : fenêtre fermée quand même.
-        function onIsActiveChanged() {
-            if (!Polkit.isActive && window.visible)
-                window.close();
-        }
     }
 
     Connections {
@@ -42,16 +40,11 @@ Scope {
     }
 
     // Mot de passe refusé (comme l'écran de verrouillage) : champ rouge et « Wrong password », jusqu'à la saisie suivante ou la
-    // demande suivante (même arrivée pendant le verrouillage, fenêtre fermée).
+    // demande suivante.
     property bool wrong: false
-    onFlowChanged: wrong = false
 
     Connections {
         target: root.flow
-        function onIsCompletedChanged() {
-            if (root.flow.isCompleted)
-                window.close();
-        }
         function onAuthenticationFailed() {
             root.wrong = true;
         }
@@ -110,7 +103,7 @@ Scope {
         }
 
         function reopen(): void {
-            if (Polkit.isActive && !visible)
+            if (root.flow && !visible)
                 show();
         }
 
@@ -136,7 +129,7 @@ Scope {
             y: Math.round((parent.height - height) / 2)
             width: Theme.panel.width
             title: "Authentication Required"
-            onCloseRequested: root.flow?.cancelAuthenticationRequest()
+            onCloseRequested: Polkit.cancel(root.flow)
 
             RowLayout {
                 Layout.fillWidth: true
@@ -144,7 +137,7 @@ Scope {
 
                 IconImage {
                     visible: (root.flow?.iconName ?? "") !== ""
-                    implicitSize: Theme.notification.iconSize / 2
+                    implicitSize: Theme.polkit.iconSize
                     source: Icons.iconSource(root.flow?.iconName ?? "")
                 }
 
@@ -211,7 +204,7 @@ Scope {
 
                 PanelButton {
                     text: "Cancel"
-                    onClicked: root.flow?.cancelAuthenticationRequest()
+                    onClicked: Polkit.cancel(root.flow)
                 }
 
                 PanelButton {

@@ -48,14 +48,15 @@ Scope {
     function lock(): void {
         if (locked)
             return;
-        BarState.closePopups([], true);   // demandes en cours gardées (polkit, phrase de passe d'un disque)
-        Screenshot.close();   // clavier exclusif : il prendrait celui de l'écran de verrouillage
         password = "";
         error = false;
         message = "";
         capsLock = false;   // deviné à la frappe : l'état du dernier déverrouillage ne vaut plus
         lockedScreen = Compositor.focusedOutput;
+        // Session.lockActive : les popups à clavier et l'outil de capture se ferment d'eux-mêmes (ils prendraient le clavier de
+        // l'écran de verrouillage), en gardant ce qui était en cours ; puis les menus du tray.
         locked = true;
+        BarState.closePopups([]);
     }
 
     function submit(): void {

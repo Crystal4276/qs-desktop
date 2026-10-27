@@ -442,6 +442,11 @@ Style des panneaux ; cartes fond `base` (champs des panneaux), titres `yellow` ;
 des modules de la barre (processeur `teal`, mémoire `green`, GPU `sky`), disques `green` ; ligne de processus choisie `surface0`.
 **Validé pour une première version** (2026-10-19) : largeur 1100 px, jauges de 8 px, 4 colonnes de cœurs, 14 lignes de processus visibles.
 
+## 7 quinquies. Agent polkit (nouveau composant, phase 8b)
+
+Style des panneaux (cadre centré sur l'écran), titre « Authentication Required », champ et boutons des panneaux ; refus : champ
+`red` et « Wrong password » en `red`. Icône de l'application : 50 px, moitié de celle des notifications (validé avec la phase 8b).
+
 ## 8. Fenêtres (compositeur, pour mémoire)
 
 | | Sway | Hyprland |
