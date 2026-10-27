@@ -49,10 +49,9 @@ Singleton {
     // pid → { classes: `--class=` du processus et de son parent (minuscules), seen: dernier flux vu (ms) } ; pid en lecture.
     property var processClasses: ({})
     property var pendingPids: []
-    // Flux présents quand « ne pas déranger » commence (ou au chargement), "id:pid" : en cours (un appel…), jamais coupés.
-    property var playingKeys: []
-    property bool syncing: false
-    property bool resync: false
+    // Flux présents quand « ne pas déranger » commence (ou au chargement) : en cours (un appel…), jamais coupés. Les objets,
+    // pas les id : un id PipeWire resert vite.
+    property var playingNodes: []
     onHushedChanged: startHush()
     onHushAppsChanged: syncHush()
     onHushReadyChanged: startHush()
@@ -60,74 +59,56 @@ Singleton {
 
     function startHush(): void {
         if (hushed) {
-            playingKeys = streams.map(n => hushKey(n));
+            playingNodes = streams.slice();
             processClasses = {};   // relus chaque nuit : un pid finit par resservir
         }
         syncHush();
-    }
-
-    function playing(node: PwNode): bool {
-        return playingKeys.includes(hushKey(node)) || playingKeys.includes(`${node.id}:`);   // pid lu après le relevé
     }
 
     function processId(node: PwNode): string {
         return String(node.properties["application.process.id"] ?? "");
     }
 
-    // Flux "id:pid" (un id PipeWire resert vite).
+    // Flux "id:pid", gardé dans le fichier d'état (un id PipeWire resert vite).
     function hushKey(node: PwNode): string {
         return `${node.id}:${processId(node)}`;
     }
 
-    // true : à couper ; false : non ; undefined : processus pas encore lu.
+    // true : à couper ; false : non ; undefined : flux Chromium dont le processus n'est pas encore lu (seul cas où `--class=`
+    // compte ; la règle WirePlumber l'empêche de retenir la coupure d'office).
     function hushTarget(node: PwNode): var {
         if (hushApps.length === 0 || node.properties["application.name"] === "WEBRTC VoiceEngine")   // appels Discord
             return false;
         if (hushApps.includes((node.properties["application.process.binary"] ?? "").toLowerCase()))
             return true;
         const pid = processId(node);
-        if (pid === "")
+        if (pid === "" || node.properties["application.name"] !== "Chromium")
             return false;
         return processClasses[pid]?.classes.some(c => hushApps.includes(c));
     }
 
-    // Flux qui naît pendant « ne pas déranger », processus pas encore lu : coupé d'office le temps de la lecture (inaudible,
-    // mesuré). Rétabli à la main pendant « ne pas déranger » (ex. un appel WhatsApp) : laissé tel quel.
+    // Une passe par tour de boucle d'événements, quel que soit le nombre de signaux.
     function syncHush(): void {
-        if (!hushReady || (!hushed && hushState.owned.length === 0 && hushState.released.length === 0))
-            return;
-        // Une coupure changée ici peut rappeler syncHush (mutedChanged) : passe refaite après, pas imbriquée.
-        if (syncing) {
-            resync = true;
-            return;
-        }
-        syncing = true;
-        try {
-            do {
-                resync = false;
-                hushPass();
-            } while (resync);
-        } finally {
-            syncing = false;
-        }
+        if (hushReady && (hushed || hushState.owned.length > 0 || hushState.released.length > 0))
+            Qt.callLater(hushPass);
     }
 
+    // Flux qui naît pendant « ne pas déranger », processus pas encore lu : coupé d'office le temps de la lecture (inaudible,
+    // mesuré). Rétabli à la main pendant « ne pas déranger » (ex. un appel WhatsApp) : laissé tel quel.
     function hushPass(): void {
-        const nodes = Pipewire.nodes.values;
-        // Gardés tant que leur flux existe (pid pas encore connu : nœud pas encore lu).
-        const exists = key => {
-            const [id, pid] = key.split(":");
-            return nodes.some(n => String(n.id) === id && n.isStream && [pid, ""].includes(processId(n)));
-        };
+        // Gardés tant que leur flux existe (pid vide : nœud pas encore lu).
+        const keys = new Set(streams.map(n => hushKey(n)));
+        const exists = key => keys.has(key) || keys.has(`${key.split(":")[0]}:`);
         const owned = Array.from(hushState.owned).filter(exists);
-        const released = Array.from(hushState.released).filter(exists);
-        const lookups = [];
+        const released = new Set(Array.from(hushState.released).filter(exists));
+        playingNodes = playingNodes.filter(n => streams.includes(n));
+        const lookups = new Set();
         for (const n of streams.filter(n => n.ready && n.audio)) {
             const key = hushKey(n);
             const target = hushTarget(n);
-            if (hushed && target === undefined && !lookups.includes(processId(n)))
-                lookups.push(processId(n));
-            if (released.includes(key))
+            if (hushed && target === undefined)
+                lookups.add(processId(n));
+            if (released.has(key))
                 continue;
             if (owned.includes(key)) {
                 if (hushed && target !== false) {   // processus pas encore lu (rechargement) : décidé après
@@ -139,26 +120,26 @@ Singleton {
                     if (!n.audio.muted)
                         owned.splice(owned.indexOf(key), 1);
                 }
-            } else if (hushed && target !== false && !playing(n) && !n.audio.muted) {
+            } else if (hushed && target !== false && !playingNodes.includes(n) && !n.audio.muted) {
                 n.audio.muted = true;
                 owned.push(key);
             }
         }
         if (owned.join() !== Array.from(hushState.owned).join())
             hushState.owned = owned;
-        const stillReleased = hushed ? released : [];
+        const stillReleased = hushed ? [...released] : [];
         if (stillReleased.join() !== Array.from(hushState.released).join())
             hushState.released = stillReleased;
-        const added = lookups.filter(pid => !pendingPids.includes(pid));
+        const added = [...lookups].filter(pid => !pendingPids.includes(pid));
         if (added.length > 0)
             pendingPids = [...pendingPids, ...added];
         // Processus lus : oubliés 10 min après leur dernier flux (un pid finit par resservir à un autre programme).
         const now = Date.now();
-        const pids = streams.map(n => processId(n));
+        const pids = new Set(streams.map(n => processId(n)));
         const kept = {};
         for (const pid of Object.keys(processClasses)) {
             const entry = processClasses[pid];
-            if (pids.includes(pid))
+            if (pids.has(pid))
                 entry.seen = now;
             if (now - entry.seen < 600000)
                 kept[pid] = entry;
@@ -170,7 +151,8 @@ Singleton {
     // Rétabli à la main alors que le shell l'avait coupé : laissé tel quel jusqu'à la fin de « ne pas déranger ».
     function release(node: PwNode): void {
         const key = hushKey(node);
-        if (syncing || !hushed || node.audio.muted || !hushState.owned.includes(key) || hushState.released.includes(key))
+        if (!hushed || node.audio.muted || hushTarget(node) !== true || !hushState.owned.includes(key)
+                || hushState.released.includes(key))
             return;
         hushState.released = [...hushState.released, key];
         hushState.owned = Array.from(hushState.owned).filter(k => k !== key);
