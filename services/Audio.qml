@@ -55,6 +55,9 @@ Singleton {
     onHushAppsChanged: syncHush()
     onHushReadyChanged: startHush()
     onStreamsChanged: syncHush()
+    // Flux suivis : un flux devenu visé (propriétés lues après coup) peut être déjà prêt, sans signal à suivre.
+    readonly property var hushWatched: streams.filter(n => hushCandidate(n))
+    onHushWatchedChanged: syncHush()
 
     function startHush(): void {
         playingNodes = hushed ? streams.slice() : [];
@@ -68,11 +71,11 @@ Singleton {
         return `${node.id}:${props["object.serial"] ?? ""}:${props["application.process.id"] ?? ""}`;
     }
 
+    // Flux « Chromium » seulement, comme la règle WirePlumber : ni les appels de l'application Discord (« WEBRTC VoiceEngine »),
+    // ni un programme lancé depuis une web app (Spotify par un lien : il hérite de son application.id).
     function hushTarget(node: PwNode): bool {
         const props = node.properties;
-        if (props["application.name"] === "WEBRTC VoiceEngine")   // appels de l'application Discord
-            return false;
-        return [props["application.id"], props["application.process.binary"]]
+        return props["application.name"] === "Chromium" && [props["application.id"], props["application.process.binary"]]
             .some(v => v !== undefined && hushApps.includes(String(v).toLowerCase()));
     }
 
@@ -138,7 +141,7 @@ Singleton {
     // Flux suivi (réglable) ; coupure changée ailleurs (rétablie à la main).
     Instantiator {
         model: ScriptModel {
-            values: root.streams.filter(n => root.hushCandidate(n))
+            values: root.hushWatched
         }
         delegate: Scope {
             id: watch

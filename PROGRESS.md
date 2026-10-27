@@ -1654,8 +1654,12 @@ banc isolé (Sway headless à 2 sorties, Quickshell sur une copie de `modules/lo
 - **À faire à la main** : relancer les web apps WhatsApp et Discord (elles tournaient avant la modification des lanceurs).
   **À tester** : après 21:00, un message WhatsApp et un message Discord sans son, une vidéo YouTube avec ; le matin, les sons
   reviennent.
-- Limite : une application de la liste coupée à la main avant « ne pas déranger » n'est pas touchée (ni coupée ni rétablie par
-  le shell).
+- Limites : une application de la liste coupée à la main avant « ne pas déranger » n'est pas touchée (ni coupée ni rétablie par
+  le shell). Un lien ouvert depuis une web app s'ouvre dans une fenêtre Chromium de son profil : la nuit, une vidéo ouverte
+  ainsi est coupée (rétablir sa ligne dans le panneau audio). Seuls les flux « Chromium » sont visés : un programme lancé
+  depuis une web app (Spotify par un lien) hérite de son `application.id` mais garde son nom, donc son son.
+- **Phase 11** : les lanceurs des web apps sont hors du dépôt ; `install.sh` devra leur ajouter `PULSE_PROP_OVERRIDE` (ou
+  signaler leur absence), sinon `muteApps` ne fait rien pour elles.
 
 ### Revue en boucle (2026-10-27, ta demande)
 
@@ -1707,6 +1711,10 @@ banc isolé (Sway headless à 2 sorties, Quickshell sur une copie de `modules/lo
   la refonte : vieillissement des processus lus. Écartés : événement PipeWire en retard pris pour un geste sur un flux Discord
   (au pire, flux non rétabli jusqu'à sa fermeture, quelques secondes) ; configuration lue vide pendant l'écriture de
   `hosts/terrier.json` en pleine nuit.
+- **Dernière revue** : seuls les flux « Chromium » sont visés, comme la règle WirePlumber (un programme lancé depuis une web app
+  héritait de son `application.id` : Spotify ouvert par un lien aurait été coupé ; un flux Discord d'un autre nom aurait été
+  coupé sans être protégé par la règle) ; passe relancée quand la liste des flux suivis change (flux devenu visé déjà prêt).
+  Documentés : liens ouverts dans le profil de la web app ; lanceurs hors du dépôt (phase 11).
 - Banc : 39/39 + son en cours sans trou (4 s, 0 ms de trou), rétabli à la main gardé (y compris après rechargement), rechargement
   à chaud pendant « ne pas déranger » (coupure gardée, rétablie à la fin), coupure manuelle de jour respectée.
 
