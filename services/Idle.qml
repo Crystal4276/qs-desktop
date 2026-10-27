@@ -83,7 +83,7 @@ Singleton {
     // Annonces de logind : PrepareForSleep(true) avant la veille, (false) au réveil.
     Process {
         running: root.lockBeforeSleep || Compositor.isHyprland
-        command: ["gdbus", "monitor", "--system", "--dest", "org.freedesktop.login1", "--object-path", "/org/freedesktop/login1"]
+        command: ["setpriv", "--pdeathsig", "TERM", "gdbus", "monitor", "--system", "--dest", "org.freedesktop.login1", "--object-path", "/org/freedesktop/login1"]
         stdout: SplitParser {
             onRead: line => {
                 if (!line.includes("PrepareForSleep"))

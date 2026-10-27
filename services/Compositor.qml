@@ -22,7 +22,7 @@ Singleton {
     // HDR et VRR (bascules du panneau de réglages) : Sway seulement pour l'instant, Hyprland en phase 9.
     readonly property var outputs: {
         if (isSway)
-            return I3.monitors.values.filter(m => m.lastIpcObject.active !== false).map(m => ({
+            return I3.monitors.values.filter(m => m.lastIpcObject.active === true).map(m => ({
                 name: m.name,
                 description: [m.lastIpcObject.make, m.lastIpcObject.model, m.lastIpcObject.serial].filter(s => s).join(" "),
                 x: m.x, y: m.y, width: m.width, height: m.height,
@@ -58,9 +58,9 @@ Singleton {
 
     // Espaces de travail existants : { number, name, output, focused, visible, urgent, empty }
     // empty = aucune fenêtre, flottantes comprises (classe `empty` de Waybar).
-    // Sway : focus lu dans l'objet IPC de l'espace (relu après chaque événement d'espace), pas dans `focused` de Quickshell, qui
-    // ne suit que les événements « focus » : déplacer le seul espace d'un écran en envoie un faux vers l'espace que Sway y crée
-    // (vérifié, Sway 1.12).
+    // Sway : focus et visibilité lus dans l'objet IPC de l'espace (relu après chaque événement d'espace), pas dans `focused` et
+    // `active` de Quickshell, qui ne suivent que les événements « focus » : déplacer le seul espace d'un écran en envoie un faux
+    // vers l'espace que Sway y crée, et un espace déplacé d'écran ne change pas `active` (vérifié, Sway 1.12, Quickshell 0.3.2).
     readonly property var workspaces: {
         if (isSway)
             return I3.workspaces.values.map(w => ({
@@ -68,7 +68,7 @@ Singleton {
                 name: w.name,
                 output: w.monitor?.name ?? "",
                 focused: w.lastIpcObject.focused === true,
-                visible: w.active,
+                visible: w.lastIpcObject.visible === true,
                 urgent: w.urgent,
                 empty: (w.lastIpcObject.focus ?? []).length === 0
             }));
@@ -261,12 +261,9 @@ Singleton {
             if (event.type === "workspace") {
                 if (data.change === "init" && data.current)
                     root.workspaceCreated(data.current.num, data.current.output ?? "");
-                // Focus relu après chaque événement d'espace : celui que portent les événements est souvent faux (Sway 1.12, vérifié).
+                // Focus et visibilité relus après chaque événement d'espace : ceux que portent les événements sont souvent faux
+                // (Sway 1.12, vérifié).
                 I3.refreshWorkspaces();
-                // Espace déplacé d'écran : Quickshell ne met à jour l'espace affiché par chaque écran (`active`) que sur un
-                // changement de focus ; get_outputs (current_workspace) le relit (Quickshell 0.3.2, code lu).
-                if (data.change === "move")
-                    I3.refreshMonitors();
                 return;
             }
             if (event.type === "mode") {
@@ -287,15 +284,13 @@ Singleton {
         }
     }
 
-    // Relecture complète (démarrage, fermeture, changement d'espace) : get_tree pour le titre, get_binding_state pour le mode.
+    // Relecture du titre (démarrage, fermeture, changement d'espace) : get_tree. Le mode est lu une fois au démarrage
+    // (get_binding_state), puis suivi par les événements « mode ».
     Timer {
         id: treeQuery
         interval: 50
         running: root.isSway
-        onTriggered: {
-            swayTree.running = true;
-            swayMode.running = true;
-        }
+        onTriggered: swayTree.running = true
     }
 
     Connections {
@@ -328,6 +323,7 @@ Singleton {
 
     Process {
         id: swayMode
+        running: root.isSway
         command: ["swaymsg", "-t", "get_binding_state"]
         stdout: StdioCollector {
             onStreamFinished: {

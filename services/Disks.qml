@@ -292,7 +292,8 @@ Singleton {
     // Tout signal d'UDisks2 (ajout, retrait, montage…) déclenche une relecture. Relancé s'il s'arrête.
     Process {
         id: monitor
-        command: ["gdbus", "monitor", "--system", "--dest", "org.freedesktop.UDisks2"]
+        // Arrêté avec Quickshell (`qs kill`, fin de session) : sinon il lui survit (vu : un par relance de dev).
+        command: ["setpriv", "--pdeathsig", "TERM", "gdbus", "monitor", "--system", "--dest", "org.freedesktop.UDisks2"]
         running: true
         stdout: SplitParser {
             onRead: refresh.restart()
