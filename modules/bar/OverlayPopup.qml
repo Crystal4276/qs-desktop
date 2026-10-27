@@ -32,7 +32,7 @@ PanelWindow {
     // Les autres popups se ferment ; `from` : bouton d'ancrage, ou null (lanceur).
     function prepareOpen(from: Item): void {
         if (!visible)
-            BarState.closePopups([], false);
+            BarState.closePopups([]);
         if (from)
             button = from;
     }
@@ -51,31 +51,24 @@ PanelWindow {
         initialFocus?.forceActiveFocus();
     }
 
+    // Vrai pendant `closing` quand la fermeture ne vient pas de toi (rien n'a été abandonné) : écran ou bouton disparu,
+    // verrouillage, surface fermée par le compositeur.
+    property bool closingLost: false
     property bool hiding: false   // masquée par close() (sinon : par le compositeur)
 
-    function close(): void {
+    // `lost` : voir closingLost.
+    function close(lost): void {
         if (visible)
-            emitClosing(closingLost);
+            emitClosing(!!lost);
         hiding = true;
         visible = false;
         hiding = false;
     }
 
-    // Vrai pendant la fermeture due à la perte de l'écran ou du bouton, ou au verrouillage (lu dans `closing` : rien n'a été
-    // abandonné par toi).
-    property bool closingLost: false
-
-    function closeLost(): void {
-        closingLost = true;
-        close();
-        closingLost = false;
-    }
-
     function emitClosing(lost: bool): void {
-        const was = closingLost;
         closingLost = lost;
         closing();
-        closingLost = was;
+        closingLost = false;
     }
 
     function run(action: var): void {
@@ -98,9 +91,9 @@ PanelWindow {
     Connections {
         target: root
         function onVisibleChanged() {
-            // Ouvert pendant le verrouillage (raccourci, script, demande arrivée juste avant) : refermé aussitôt, comme perdu.
+            // Ouvert pendant le verrouillage (raccourci, script…) : refermé aussitôt, comme perdu.
             if (root.visible && Session.lockActive) {
-                root.closeLost();
+                root.close(true);
                 return;
             }
             BarState.setPopupOpen(root, root.visible);
@@ -113,24 +106,29 @@ PanelWindow {
 
     Connections {
         target: BarState
-        function onClosePopups(keep, lost) {
-            if (keep.includes(root))
-                return;
-            if (lost)
-                root.closeLost();
-            else
+        function onClosePopups(keep) {
+            if (!keep.includes(root))
                 root.close();
         }
     }
 
+    // Verrouillage : fermé, comme perdu (ce qui était en cours est gardé : demande polkit, phrase de passe d'un disque).
+    Connections {
+        target: Session
+        function onLockActiveChanged() {
+            if (Session.lockActive && root.visible)
+                root.close(true);
+        }
+    }
+
     // Écran retiré ou bouton détruit pendant l'ouverture : fermé (l'écran ne change sinon qu'avant l'affichage).
-    onButtonChanged: if (!button && visible) closeLost()
-    onScreenChanged: if (visible) closeLost()
+    onButtonChanged: if (!button && visible) close(true)
+    onScreenChanged: if (visible) close(true)
     Connections {
         target: Quickshell
         function onScreensChanged() {
             if (root.visible && !Quickshell.screens.includes(root.screen))
-                root.closeLost();
+                root.close(true);
         }
     }
 

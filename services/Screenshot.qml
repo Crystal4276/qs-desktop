@@ -23,7 +23,15 @@ Singleton {
     readonly property bool hidesCursor: !Compositor.isHyprland
     readonly property string pictures: Places.pictures !== "" ? Places.pictures : `${Quickshell.env("HOME")}/Pictures`
 
-    // Pas pendant le verrouillage : l'outil prendrait le clavier de l'écran de verrouillage (LockScreen le ferme).
+    // Pas pendant le verrouillage : l'outil prendrait le clavier de l'écran de verrouillage (fermé au verrouillage).
+    Connections {
+        target: Session
+        function onLockActiveChanged() {
+            if (Session.lockActive)
+                root.close();
+        }
+    }
+
     function open(startMode: string): void {
         if (active || Session.lockActive)
             return;
