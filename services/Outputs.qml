@@ -45,9 +45,15 @@ Singleton {
         const result = {};
         const descriptions = outs.map(o => o.description).sort().join("\n");
         const imposed = Settings.workspaceLayouts.find(l => Object.keys(l).sort().join("\n") === descriptions);
-        if (imposed) {
+        // Imposée : listes de numéros 1–9, chacun sur un seul écran ; sinon ignorée (règle générale).
+        const numbers = imposed ? Object.values(imposed).flat() : [];
+        const valid = imposed && Object.values(imposed).every(Array.isArray)
+            && numbers.every(n => Number.isInteger(n) && n >= 1 && n <= workspaceCount) && new Set(numbers).size === numbers.length;
+        if (imposed && !valid)
+            console.warn("Outputs: répartition imposée invalide (listes de numéros 1–9 sans doublon), règle générale :", JSON.stringify(imposed));
+        if (valid) {
             for (const o of outs)
-                result[o.name] = imposed[o.description];
+                result[o.name] = [...imposed[o.description]].sort((a, b) => a - b);
             return result;
         }
         const n = outs.length;
@@ -102,6 +108,9 @@ Singleton {
         id: snapshot
         interval: 300
         onTriggered: {
+            // Aucun écran actif (capot fermé sans écran externe) : apply() n'a rien fait, la vue mémorisée est celle d'avant.
+            if (Compositor.outputs.length === 0)
+                return;
             const map = {};
             for (const w of Compositor.workspaces)
                 if (w.visible)

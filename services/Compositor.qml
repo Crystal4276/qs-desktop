@@ -17,7 +17,7 @@ Singleton {
     readonly property bool isSway: type === "sway"
     readonly property bool isHyprland: type === "hyprland"
 
-    // Sorties actives : { name, description, x, y, width, height, scale, focused, hdrCapable, hdr, vrrCapable, vrr }
+    // Sorties actives : { name, description, x, y, width, height, scale, hdrCapable, hdr, vrrCapable, vrr }
     // x, y, width, height en px logiques. description = « marque modèle numéro de série ».
     // HDR et VRR (bascules du panneau de réglages) : Sway seulement pour l'instant, Hyprland en phase 9.
     readonly property var outputs: {
@@ -27,7 +27,6 @@ Singleton {
                 description: [m.lastIpcObject.make, m.lastIpcObject.model, m.lastIpcObject.serial].filter(s => s).join(" "),
                 x: m.x, y: m.y, width: m.width, height: m.height,
                 scale: m.scale,
-                focused: m.focused,
                 hdrCapable: m.lastIpcObject.features?.hdr === true,
                 hdr: m.lastIpcObject.hdr === true,
                 vrrCapable: m.lastIpcObject.features?.adaptive_sync === true,
@@ -48,7 +47,6 @@ Singleton {
                     x: m.x, y: m.y,
                     width: rotated ? h : w, height: rotated ? w : h,
                     scale: m.scale,
-                    focused: m.focused,
                     hdrCapable: false,
                     hdr: false,
                     vrrCapable: false,
@@ -220,11 +218,19 @@ Singleton {
         return true;
     }
 
-    function focusWorkspace(n: int): void {
-        if (isSway)
-            I3.dispatch(`workspace number ${n}`);
-        else if (isHyprland)
-            Hyprland.dispatch(Hyprland.usingLua ? `hl.dsp.focus({ workspace = ${n} })` : `workspace ${n}`);
+    // `output` : sortie focalisée d'abord, où l'espace est créé s'il n'existe pas (clic sur un espace persistant d'une barre).
+    function focusWorkspace(n: int, output: string): void {
+        if (isSway) {
+            I3.dispatch(`${output ? `focus output "${output}"; ` : ""}workspace number ${n}`);
+        } else if (isHyprland) {
+            if (Hyprland.usingLua) {
+                hyprlandBatch([...(output ? [`hl.dsp.focus({ monitor = "${output}" })`] : []), `hl.dsp.focus({ workspace = ${n} })`]);
+            } else {
+                if (output)
+                    Hyprland.dispatch(`focusmonitor ${output}`);
+                Hyprland.dispatch(`workspace ${n}`);
+            }
+        }
     }
 
     // --- Backend Sway : titre et mode ne sont pas exposés par Quickshell.I3 ---
@@ -273,10 +279,10 @@ Singleton {
             // Sway envoie aussi « focus » pour une fenêtre qui ne le reçoit pas (clic sur un popup de barre) : on vérifie.
             if (data.change === "focus" && data.container?.focused)
                 root.windowFocused();
-            // Titre d'une fenêtre non focalisée (onglet en arrière-plan, compteur…) : rien à relire.
+            // Seuls ces changements peuvent changer le titre focalisé ; titre, marque, urgence… d'une fenêtre non focalisée : rien à relire.
             if ((data.change === "focus" || data.change === "title") && data.container?.focused)
                 sway.title = data.container.name ?? "";
-            else if (data.change !== "title")
+            else if (["new", "close", "move", "floating", "focus"].includes(data.change))
                 treeQuery.restart();
         }
     }
