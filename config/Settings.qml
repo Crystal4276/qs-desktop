@@ -14,7 +14,9 @@ Singleton {
     readonly property var config: Object.assign({}, parse(defaultFile), parse(hostFile))
 
     readonly property string primaryOutput: config.primaryOutput ?? ""
-    readonly property var workspaceLayouts: config.workspaceLayouts ?? []
+    // Seuls les objets sont gardés : une entrée mal formée (null, liste…) ne doit pas casser la répartition.
+    readonly property var workspaceLayouts: (Array.isArray(config.workspaceLayouts) ? config.workspaceLayouts : [])
+        .filter(l => l !== null && typeof l === "object" && !Array.isArray(l))
     readonly property var bars: config.bars ?? ({})
     readonly property string notificationsOutput: config.notificationsOutput ?? "primary"
     // Préfixe qui lance une commande dans un terminal et attend sa fin, ex. ["gnome-terminal", "--wait", "--"].

@@ -20,7 +20,8 @@ Item {
             focused: false,
             visible: false,
             urgent: false,
-            empty: true
+            empty: true,
+            persistent: true
         }));
         return [...here, ...persistent].sort((a, b) => a.number - b.number);
     }
@@ -125,10 +126,7 @@ Item {
                 // Espace persistant (n'existe nulle part) : créé directement sur l'écran de cette barre, pas sur l'écran focalisé
                 // d'où il faudrait ensuite le déplacer.
                 TapHandler {
-                    onTapped: {
-                        const n = button.modelData.number;
-                        Compositor.focusWorkspace(n, Compositor.workspaces.some(w => w.number === n) ? "" : root.output);
-                    }
+                    onTapped: Compositor.focusWorkspace(button.modelData.number, button.modelData.persistent ? root.output : "")
                 }
             }
         }

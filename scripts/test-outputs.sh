@@ -13,7 +13,7 @@
 # Tout est arrêté à la fin, même en cas d'échec.
 #
 # Usage : scripts/test-outputs.sh [-v]     (-v : garde les journaux de la session de test)
-# Dépendances : sway, jq, zenity, quickshell, dbus (`dbus-run-session`).
+# Dépendances : sway, jq, zenity, quickshell, dbus (`dbus-run-session`), procps-ng (`pgrep`), util-linux (`setsid`).
 set -euo pipefail
 
 repo="$(cd "$(dirname "$0")/.." && pwd)"
