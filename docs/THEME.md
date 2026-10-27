@@ -352,7 +352,7 @@ seulement. Bouton indisponible à 50 % d'opacité. **Proposé, à valider** : co
 
 ### Panneau de réglages façon GNOME (nouveau composant, phase 8, ton choix du 2026-10-16)
 
-Remplace le power menu (§ 6). Cadre des panneaux (§ 3), sans titre. Ligne du haut : boutons de panneau carrés (fond `surface0`, survol
+Remplace le power menu (§ 6). Cadre des panneaux (§ 3), titre « Settings » comme les autres cartes du tray. Ligne du haut : boutons de panneau carrés (fond `surface0`, survol
 `surface1`, coins 10 px, padding 6 px) avec tes 4 SVG en **32 px** (taille des icônes du tray ; 48 dans Rofi) ou un glyphe 24 px.
 Curseurs : glyphe 24 px (`text` ; luminosité `yellow`), curseur de volume, pourcentage Inter 16 px `subtext0`, flèche (bouton de panneau,
 `U+F054` / `U+F078`). Bascules en 2 colonnes : bouton de panneau, glyphe 24 px, titre Inter 20 px, sous-titre Inter 16 px `subtext0` ;
