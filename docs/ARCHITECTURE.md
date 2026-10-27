@@ -700,7 +700,10 @@ blocage d'un appareil.
 Je m'étais trompé : Quickshell n'a pas d'accès D-Bus générique en QML, mais trois outils système suffisent (vérifié en lecture sur cette machine) :
 - **état** : `busctl --system --json=short call org.freedesktop.UDisks2 … GetManagedObjects` → JSON directement lisible en QML (14 systèmes de fichiers vus) ;
 - **branchement / débranchement** : `gdbus monitor --system --dest org.freedesktop.UDisks2` (fonctionne sans droits ; `busctl monitor`, lui, exige root) ;
-- **actions** : `udisksctl mount | unmount | power-off | unlock` (déverrouillage LUKS : phrase de passe saisie dans une fenêtre de la charte).
+- **actions** : `udisksctl mount | unmount | power-off | unlock` (déverrouillage LUKS : phrase de passe saisie dans le panneau des disques,
+  passée en fichier de clé sur l'entrée standard ; `busctl` pour sortir le support d'un lecteur qui ne s'éteint pas).
+- **disque LUKS branché** (comme la fenêtre d'udiskie, ton choix du 2026-10-27) : le panneau s'ouvre de lui-même sous l'icône du tray de
+  l'écran focalisé, champ de la phrase de passe prêt ; refermé une fois le disque déverrouillé. Pas au démarrage de Quickshell.
 
 Dépendances : `udisks2` (déjà requis par udiskie), `glib2` (`gdbus`), `systemd` (`busctl`). Montage automatique à l'insertion et notifications reproduits
 dans le service `Disks`. Les volumes système (`HintSystem`, `HintIgnore`) sont ignorés, comme le fait udiskie.

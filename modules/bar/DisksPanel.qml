@@ -13,13 +13,23 @@ Panel {
 
     // Volume chiffré en attente de phrase de passe.
     property var unlocking: null
+    property bool checking: false   // phrase envoyée, résultat attendu
+    // Ouvert par le branchement d'un disque chiffré : refermé une fois le disque déverrouillé (rend le clavier, comme la
+    // fenêtre d'udiskie).
+    property bool autoOpened: false
 
     onVisibleChanged: {
-        if (!visible)
+        if (!visible) {
             unlocking = null;
+            autoOpened = false;
+        }
     }
     // Autre volume : rien de ce qui a été tapé pour le précédent ne lui est envoyé.
-    onUnlockingChanged: passphrase.text = ""
+    onUnlockingChanged: {
+        passphrase.text = "";
+        passphrase.error = false;
+        checking = false;
+    }
 
     // Volume retiré, déverrouillé ailleurs, ou remplacé par un autre sous le même nom (/dev/sdb1) : plus rien à demander.
     Connections {
@@ -30,6 +40,16 @@ Panel {
             if (u && !Disks.volumes.some(v => v.path === u.path && v.label === u.label && v.size === u.size && v.cleartext === "/"))
                 root.unlocking = null;
         }
+    }
+
+    // Ouvert et épinglé sous `button` (ou gardé s'il l'est déjà), champ de la phrase de passe affiché avec le focus : ouvrir
+    // d'abord, la surface donnant le focus à son cadre à l'ouverture.
+    function askPassphrase(button: Item, volume): void {
+        if (!visible || previewing) {
+            toggle(button, button.buttons);
+            autoOpened = true;
+        }
+        unlocking = volume;
     }
 
     function sizeText(bytes: real): string {
@@ -143,10 +163,27 @@ Panel {
             if (visible)
                 focusInput();
         }
+        // Champ gardé jusqu'au résultat : refusée, en rouge et vidée (un autre essai) ; acceptée, retirée (le panneau se ferme
+        // s'il s'était ouvert tout seul).
         onAccepted: text => {
-            if (text !== "")
-                Disks.unlock(root.unlocking, text);
-            root.unlocking = null;
+            if (text === "" || root.checking)
+                return;
+            const target = root.unlocking;
+            root.checking = true;
+            error = false;
+            Disks.unlock(target, text, ok => {
+                if (ok && root.autoOpened) {
+                    root.close();
+                } else if (root.unlocking === target) {
+                    if (ok) {
+                        root.unlocking = null;
+                    } else {
+                        root.checking = false;
+                        passphrase.text = "";
+                        passphrase.error = true;
+                    }
+                }
+            });
         }
     }
 }
