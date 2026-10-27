@@ -224,14 +224,13 @@ Format (implémenté en phase 1, `hosts/default.json`, `hosts/terrier.json`) :
   `sudo pacman -Syu` (revue de code : `paru` n'est pas forcément installé sur une nouvelle machine).
 - `nightLight` *(phase 8)* : veilleuse, `{ "from": "20:00", "to": "06:00", "temperature": 3239 }` (`default.json` : tes réglages GNOME).
 - `doNotDisturb` *(2026-10-26)* : horaire de départ du « ne pas déranger », `{ "schedule": true, "from": "21:00", "to": "07:00" }` ;
-  ensuite réglé depuis le panneau de réglages (fichier d'état `do-not-disturb.json`). `muteApps` et `muteWebApps` *(2026-10-27)* :
-  applications qui jouent elles-mêmes le son de leurs notifications, coupées pendant « ne pas déranger » (`services/Audio.qml`) :
-  binaires (`Discord`) et `--class=` de web apps Chromium (`WebApp-Whatsapp8699`) ; vides par défaut, remplies dans
-  `hosts/terrier.json`. Web apps de Chrome, Brave… : nom d'application différent, non gérées (il faudrait étendre la règle). Le
-  navigateur et les appels Discord gardent le son ; un flux rétabli à la main reste audible. Va avec `dotfiles/wireplumber/wireplumber.conf.d/50-chromium-no-restore.conf` (WirePlumber ne retient
-  plus volume et coupure des flux « Chromium », nom partagé par le navigateur, les web apps et Discord), copié dans
-  `~/.config/wireplumber/` le 2026-10-27 ; lien posé par `install.sh` (phase 11), seulement pour une machine dont `muteApps` ou
-  `muteWebApps` n'est pas vide (ailleurs, Chromium et les applications Electron garderaient leur volume retenu).
+  ensuite réglé depuis le panneau de réglages (fichier d'état `do-not-disturb.json`). `muteApps` *(2026-10-27)* : applications qui
+  jouent elles-mêmes le son de leurs notifications, coupées pendant « ne pas déranger » (`services/Audio.qml`), par
+  `application.id` du flux (web apps : donné dans leur lanceur, `env PULSE_PROP_OVERRIDE=application.id=whatsapp chromium …`) ou
+  par binaire (application Discord) ; vide par défaut, `["discord", "whatsapp"]` dans `hosts/terrier.json`. Le navigateur et les
+  appels de l'application Discord gardent le son ; un flux rétabli à la main reste audible. Va avec
+  `dotfiles/wireplumber/wireplumber.conf.d/50-dnd-no-restore.conf` (WirePlumber ne retient ni volume ni coupure de ces flux, qui
+  resteraient coupés le lendemain), copié dans `~/.config/wireplumber/` le 2026-10-27 ; lien posé par `install.sh` (phase 11).
 
 - Fusion **au premier niveau** : une clé du fichier machine remplace entièrement celle de `default.json` (pas de fusion profonde : plus prévisible).
 - `bars` : l'écran principal reçoit `primary` ; les autres, par description d'écran, sinon `secondary` — un écran inconnu reçoit
