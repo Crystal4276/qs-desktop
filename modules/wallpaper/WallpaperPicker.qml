@@ -11,12 +11,12 @@ Scope {
         PickerWindow {}
     }
 
-    // Bouton du panneau de réglages.
+    // Bouton du panneau de réglages : sur l'écran du panneau.
     Connections {
         target: Wallpapers
-        function onPickerRequested() {
+        function onPickerRequested(screen) {
             loader.active = true;
-            loader.item.open();
+            loader.item.open(screen);
         }
     }
 
@@ -30,7 +30,7 @@ Scope {
 
         function open(): void {
             loader.active = true;
-            loader.item.open();
+            loader.item.open(null);
         }
 
         function close(): void {

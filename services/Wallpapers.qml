@@ -38,6 +38,32 @@ Singleton {
             ?? (libraryRead && selection !== Settings.wallpaper ? pick(Settings.wallpaper, output, outputs) : null);
     }
 
+    // Panorama affiché (le même sur tous les écrans qui en montrent un) et sa taille, lue une seule fois pour tous les écrans et
+    // l'écran de verrouillage (la sonde décode l'image entière). `panorama` garde le précédent jusqu'à la mesure du suivant : les
+    // écrans le montrent pendant ce temps au lieu d'un fond vide. Vidé quand plus aucun écran n'affiche de panorama.
+    readonly property string panoramaSource: Compositor.outputs.map(o => forOutput(o, Compositor.outputs))
+        .find(s => s?.kind === "panorama")?.source ?? ""
+    property var panorama: ({ source: "", size: Qt.size(0, 0) })
+
+    onPanoramaSourceChanged: {
+        if (panoramaSource === "")
+            panorama = { source: "", size: Qt.size(0, 0) };
+    }
+
+    Image {
+        // Chaîne demandée (pas `source`, une URL qui pourrait être réécrite) : comparée à `panorama.source`.
+        readonly property string wanted: root.panoramaSource !== root.panorama.source ? root.panoramaSource : ""
+
+        source: wanted
+        asynchronous: true
+        cache: false
+        // Fichier illisible : taille nulle, rien d'affiché (plutôt que le panorama précédent).
+        onStatusChanged: {
+            if (wanted !== "" && (status === Image.Ready || status === Image.Error))
+                root.panorama = { source: wanted, size: Qt.size(implicitWidth, implicitHeight) };
+        }
+    }
+
     function pick(s: var, output: var, outputs: var): var {
         if (!s)
             return null;
@@ -67,8 +93,9 @@ Singleton {
         state.overrides = Object.assign({}, overrides, { [description]: path });
     }
 
-    // Ouverture de l'utilitaire depuis l'interface (bouton du panneau de réglages) : modules/wallpaper/WallpaperPicker.qml écoute.
-    signal pickerRequested
+    // Ouverture de l'utilitaire depuis l'interface (bouton du panneau de réglages), sur l'écran `screen` (celui du bouton) :
+    // modules/wallpaper/WallpaperPicker.qml écoute.
+    signal pickerRequested(var screen)
 
     // Bibliothèque relue (ouverture de l'utilitaire, dossier changé) ; demande pendant une lecture : relue juste après (le dossier
     // a pu changer). `libraryRead` : une lecture complète faite, les choix absents du dossier peuvent être écartés.
