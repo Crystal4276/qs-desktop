@@ -16,12 +16,13 @@ Singleton {
     // Volumes gérés : { path, device, label, uiLabel, size, fsType, isFilesystem, isCrypto, backing (volume chiffré d'origine),
     //                   cleartext (volume déchiffré, "/" si verrouillé), mounted, mountPoint, driveKey }
     property var volumes: []
-    // Disques portant au moins un volume géré : { key, label, device (disque entier), canPowerOff, isLoop }
+    // Disques portant au moins un volume géré : { key, label, device (disque entier), canPowerOff, ejectable, isLoop, autoclear }
     // (clé : chemin du Drive UDisks2, ou du périphérique entier pour une image disque montée en boucle).
     property var drives: []
     property bool loaded: false
-    property string lastRead: ""   // volumes et disques de la dernière lecture (JSON) : relecture sans changement ignorée
     property int failedReads: 0
+    // Périphériques dont une action est en cours (un par action) : leurs boutons sont atténués, un second clic ne relance rien.
+    property var busy: []
     // Disque LUKS branché, encore verrouillé : phrase de passe demandée (udiskie ouvrait sa fenêtre ; ta demande du
     // 2026-10-27). Pas au démarrage ni au rechargement : seulement à l'arrivée du volume.
     signal unlockRequested(var volume)
@@ -54,7 +55,7 @@ Singleton {
             objects = JSON.parse(text).data[0];
         } catch (e) {
             // Une seule fois (UDisks2 absent : relu de plus en plus rarement, voir `retry`).
-            if (failedReads++ === 0)
+            if (failedReads === 0)
                 console.warn(`Disks: lecture d'UDisks2 impossible : ${e}`);
             return;
         }
@@ -81,28 +82,28 @@ Singleton {
                 drivesByPath[value(b, "Drive")].device = device;
             const loop = ifs["org.freedesktop.UDisks2.Loop"];
             if (loop)
-                loops[path] = { path, label: decode(value(loop, "BackingFile")), device, canPowerOff: false, ejectable: false, isLoop: true };
-        }
-        // Disque d'un volume. Un volume déchiffré n'a pas de Drive (« / » pour un périphérique dm) : il hérite de celui de son
-        // volume chiffré, donc il est géré comme lui et l'éjection du disque le démonte et le verrouille.
-        function parentOf(path: string): var {
-            const ifs = objects[path] ?? {};
-            const b = ifs["org.freedesktop.UDisks2.Block"];
-            const backing = value(b, "CryptoBackingDevice");
-            if (backing && backing !== "/")
-                return parentOf(backing);
-            const partition = ifs["org.freedesktop.UDisks2.Partition"];
-            return drivesByPath[value(b, "Drive")] ?? loops[partition ? value(partition, "Table") : path];
+                loops[path] = { path, label: decode(value(loop, "BackingFile")), device, canPowerOff: false, ejectable: false, isLoop: true,
+                    autoclear: value(loop, "Autoclear") ?? false };
         }
         // Volume chiffré d'origine d'un volume déchiffré (lui-même sinon).
         function encryptedOf(path: string): string {
             const backing = value(objects[path]?.["org.freedesktop.UDisks2.Block"], "CryptoBackingDevice");
             return backing && backing !== "/" ? encryptedOf(backing) : path;
         }
+        // Disque d'un volume. Un volume déchiffré n'a pas de Drive (« / » pour un périphérique dm) : il hérite de celui de son
+        // volume chiffré, donc il est géré comme lui et l'éjection du disque le démonte et le verrouille.
+        function parentOf(path: string): var {
+            const top = encryptedOf(path);
+            const ifs = objects[top] ?? {};
+            const partition = ifs["org.freedesktop.UDisks2.Partition"];
+            return drivesByPath[value(ifs["org.freedesktop.UDisks2.Block"], "Drive")] ?? loops[partition ? value(partition, "Table") : top];
+        }
         const list = [];
         for (const [path, ifs] of Object.entries(objects)) {
             const b = ifs["org.freedesktop.UDisks2.Block"];
-            if (!b || value(b, "HintIgnore"))
+            // Volume chiffré ignoré : son volume déchiffré aussi (aucune ligne du panneau ne le montrerait).
+            const top = objects[encryptedOf(path)]?.["org.freedesktop.UDisks2.Block"];
+            if (!b || value(b, "HintIgnore") || value(top, "HintIgnore"))
                 continue;
             // Comme udiskie (mount.py) : une image disque en boucle est gérée même si UDisks2 la dit « système »,
             // sauf images du système (snaps, extensions).
@@ -112,7 +113,7 @@ Singleton {
             if (!parent)
                 continue;   // ni disque ni image (md, nbd…) : aucune ligne du panneau pour le démonter
             const userLoop = parent.isLoop && parent.label !== "" && !/^\/var\/lib\/(extensions|confexts|snapd)\//.test(parent.label);
-            if (value(objects[encryptedOf(path)]?.["org.freedesktop.UDisks2.Block"], "HintSystem") && !userLoop)
+            if (value(top, "HintSystem") && !userLoop)
                 continue;
             const fs = ifs["org.freedesktop.UDisks2.Filesystem"];
             const crypto = ifs["org.freedesktop.UDisks2.Encrypted"];
@@ -148,27 +149,22 @@ Singleton {
         // Ordre fixe (GetManagedObjects n'en a pas).
         const driveList = [...Object.values(drivesByPath), ...Object.values(loops)].filter(d => list.some(v => v.driveKey === d.path))
             .map(d => ({ key: d.path, label: d.label, device: d.device ?? "", canPowerOff: d.canPowerOff, ejectable: d.ejectable,
-                isLoop: d.isLoop ?? false }))
+                isLoop: d.isLoop ?? false, autoclear: d.autoclear ?? false }))
             .sort(byDevice);
         // Signaux sans effet ici (SMART des disques internes…) : rien n'est réassigné.
         const read = JSON.stringify([list, driveList]);
-        if (loaded && read === lastRead)
+        if (loaded && read === persist.read)
             return;
-        lastRead = read;
         // Rechargement de la config : comparé au dernier état lu (rien n'est remonté) ; démarrage : tout est monté, comme udiskie.
-        const restored = !loaded && persist.volumes !== "";
-        const before = loaded ? volumes : restored ? JSON.parse(persist.volumes) : [];
-        notifyChanges(before, list, !loaded && !restored);
+        const restored = !loaded && persist.read !== "";
+        const arrived = notifyChanges(restored ? JSON.parse(persist.read)[0] : volumes, list, !loaded && !restored);
+        persist.read = read;
         volumes = list;
-        persist.volumes = JSON.stringify(list);
         drives = driveList;
-        if (loaded && automount) {
-            const known = new Set(before.map(v => v.path));
-            for (const v of list)
-                if (!known.has(v.path) && v.canUnlock && v.cleartext === "/")
-                    unlockRequested(v);
-        }
         loaded = true;
+        // Après la mise à jour de `volumes` : le panneau y vérifie le volume demandé.
+        for (const v of arrived)
+            unlockRequested(v);
     }
 
     // --- Notifications et montage automatique (udiskie : notify.py, automount) ---
@@ -177,7 +173,9 @@ Singleton {
         Quickshell.execDetached(["notify-send", "--app-name=udiskie", "--icon=drive-removable-media", title, body]);
     }
 
-    function notifyChanges(before, after, initial: bool): void {
+    // Renvoie les disques LUKS arrivés verrouillés (phrase de passe à demander).
+    function notifyChanges(before, after, initial: bool): var {
+        const arrived = [];
         const old = {};
         for (const v of before)
             old[v.path] = v;
@@ -196,20 +194,29 @@ Singleton {
             // Montage automatique : système de fichiers apparu (ou présent au démarrage), non monté.
             if (automount && (!o || initial) && v.isFilesystem && !v.mounted)
                 mount(v);
+            if (automount && !o && !initial && v.canUnlock && v.cleartext === "/")
+                arrived.push(v);
         }
         const now = new Set(after.map(v => v.path));
         for (const v of before)
             if (!now.has(v.path) && !v.backing)
                 notify("Device removed", `device disappeared on ${v.device}`);
+        return arrived;
     }
 
     // --- Actions (udisksctl) ---
 
-    // `next` : appelé seulement si l'action réussit (enchaînements : démonter puis verrouiller, puis éteindre) ; `failed` : si
-    // elle échoue.
+    // `next` : appelé seulement si l'action réussit (enchaînements : démonter puis verrouiller, puis éteindre) ; `failed(code)` :
+    // si elle échoue (-1 : commande pas démarrée).
     function run(action: string, device: string, command: var, input: string, next: var, failed: var): void {
+        busy = [...busy, device];
         const p = actionProcess.createObject(root, { action, device, command, input, next: next ?? null, failed: failed ?? null });
         p.running = true;
+    }
+
+    // Action en cours sur le disque ou l'un de ses volumes.
+    function driveBusy(drive): bool {
+        return busy.some(d => d === drive.device || volumes.some(v => v.driveKey === drive.key && v.device === d));
     }
 
     // Étapes { action, device, command } l'une après l'autre ; la première qui échoue arrête la suite (notification « Job failed »).
@@ -240,11 +247,14 @@ Singleton {
         sequence([unmountStep(v)]);
     }
 
-    // `done(réussi)` : résultat, pour le champ de la phrase de passe.
+    // `done(réussi, code)` : résultat, pour le champ de la phrase de passe (code -1 : rien n'a pu être essayé).
     function unlock(v, passphrase: string, done: var): void {
-        if (v.canUnlock)
-            run("unlock", v.device, [...udisksctl("unlock", v.device), "--key-file", "/dev/stdin"], passphrase,
-                () => done?.(true), () => done?.(false));
+        if (!v.canUnlock) {
+            done?.(false, -1);
+            return;
+        }
+        run("unlock", v.device, [...udisksctl("unlock", v.device), "--key-file", "/dev/stdin"], passphrase,
+            () => done?.(true, 0), code => done?.(false, code));
     }
 
     // Verrouiller : démonter d'abord le volume déchiffré s'il est monté, puis verrouiller une fois le démontage fini.
@@ -262,13 +272,17 @@ Singleton {
             ...own.filter(v => v.mounted).map(unmountStep),
             ...own.filter(v => v.isCrypto && v.cleartext !== "/").map(lockStep)
         ];
-        if (drive.isLoop)
-            steps.push({ action: "detach", device: drive.device, command: udisksctl("loop-delete", drive.device) });
-        else if (drive.canPowerOff)
+        // Image « autoclear » (montée par GNOME Disks…) : libérée par le noyau à la dernière fermeture ; la détacher ensuite
+        // échouerait (« Job failed » alors qu'elle est partie).
+        if (drive.isLoop) {
+            if (!drive.autoclear || steps.length === 0)
+                steps.push({ action: "detach", device: drive.device, command: udisksctl("loop-delete", drive.device) });
+        } else if (drive.canPowerOff) {
             steps.push({ action: "power off", device: drive.device, command: udisksctl("power-off", drive.device) });
-        else if (drive.ejectable)
+        } else if (drive.ejectable) {
             steps.push({ action: "eject", device: drive.device, command: ["busctl", "--system", "call", "org.freedesktop.UDisks2", drive.key,
                     "org.freedesktop.UDisks2.Drive", "Eject", "a{sv}", "1", "auth.no_user_interaction", "b", "true"] });
+        }
         sequence(steps);
     }
 
@@ -295,20 +309,27 @@ Singleton {
                     finish(-1, `${command[0]} could not start`);
             }
 
-            // Fin de l'action : notification d'échec, étape suivante, relecture.
+            // Fin de l'action : notification d'échec, étape suivante, relecture. Nettoyage garanti même si un rappel échoue
+            // (panneau détruit entre-temps) ; `destroy()` est différé, l'objet reste lisible jusqu'à la fin.
             function finish(code: int, error: string): void {
                 done = true;
-                if (code !== 0) {
-                    // « Error unlocking …: GDBus.Error:org.freedesktop.UDisks2.Error.Failed: Error unlocking …: <cause> » → dernière partie.
-                    const message = error.trim().replace(/^[\s\S]*GDBus\.Error:\S+\s*/, "");
-                    root.notify("Job failed", message ? `failed to ${action} ${device}:\n${message}` : `failed to ${action} device ${device}.`);
-                    if (failed)
-                        failed();
-                } else if (next) {
-                    next();
+                input = "";
+                try {
+                    if (code !== 0) {
+                        // « Error unlocking …: GDBus.Error:org.freedesktop.UDisks2.Error.Failed: Error unlocking …: <cause> » → dernière partie.
+                        const message = error.trim().replace(/^[\s\S]*GDBus\.Error:\S+\s*/, "");
+                        root.notify("Job failed", message ? `failed to ${action} ${device}:\n${message}` : `failed to ${action} device ${device}.`);
+                        failed?.(code);
+                    } else {
+                        next?.();
+                    }
+                } finally {
+                    // Après `next` : l'étape suivante est déjà inscrite, le disque reste occupé sans trou.
+                    const i = root.busy.indexOf(device);
+                    root.busy = root.busy.filter((_, j) => j !== i);
+                    root.scheduleRefresh();
+                    destroy();
                 }
-                root.scheduleRefresh();
-                destroy();
             }
 
             stdinEnabled: input !== ""
@@ -320,6 +341,7 @@ Singleton {
                 if (input !== "") {
                     write(input);
                     stdinEnabled = false;   // fin de la phrase de passe : stdin fermé
+                    input = "";
                 }
             }
             onExited: code => finish(code, errors.text)
@@ -343,7 +365,7 @@ Singleton {
         id: persist
         reloadableId: "disks"
 
-        property string volumes: ""
+        property string read: ""   // [volumes, disques] en JSON : relecture sans changement ignorée
 
         onLoaded: query.running = true
     }
@@ -361,8 +383,14 @@ Singleton {
                 Qt.callLater(() => query.running = true);
             }
         }
-        // Première lecture ratée (UDisks2 pas encore prêt à l'ouverture de session) : réessayée, sans attendre un signal.
-        onRunningChanged: if (!running && !root.loaded) retry.start()
+        // Première lecture ratée (UDisks2 pas encore prêt à l'ouverture de session, busctl absent) : réessayée, sans attendre
+        // un signal.
+        onRunningChanged: {
+            if (!running && !root.loaded) {
+                root.failedReads++;
+                retry.start();
+            }
+        }
     }
 
     // 5 s, puis de plus en plus rarement (UDisks2 absent de la machine : 5 min au plus).
