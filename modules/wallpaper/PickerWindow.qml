@@ -23,11 +23,12 @@ OverlayPopup {
         ...(outputs.length === 3 ? [{ key: "triptych", name: "Triptychs" }] : [])
     ]
     readonly property bool wide: tab !== "simple"   // panoramas et triptyques : vignettes de deux colonnes
+    // `images` : chemins des images de la vignette (trois pour un triptyque).
     readonly property var items: {
         const lib = Wallpapers.library;
         if (tab === "triptych")
-            return lib.triptych.map(t => ({ path: t.path, sources: ["left", "center", "right"].map(p => Wallpapers.url(t.parts[p])) }));
-        return (tab === "panorama" ? lib.panorama : lib.simple).map(p => ({ path: p, sources: [Wallpapers.url(p)] }));
+            return lib.triptych.map(t => ({ path: t.path, images: ["left", "center", "right"].map(p => t.parts[p]) }));
+        return (tab === "panorama" ? lib.panorama : lib.simple).map(p => ({ path: p, images: [p] }));
     }
     // Après une lecture du dossier seulement : pas de message pendant la première.
     readonly property bool empty: Wallpapers.libraryRead && items.length === 0
@@ -172,16 +173,23 @@ OverlayPopup {
                         anchors.fill: parent
 
                         Repeater {
-                            model: cell.modelData.sources
+                            model: cell.modelData.images
 
                             Image {
-                                required property string modelData
-                                width: parent.width / cell.modelData.sources.length
+                                required property string modelData   // chemin dans le dossier des fonds
+                                width: parent.width / cell.modelData.images.length
                                 height: parent.height
-                                source: modelData
+                                // Pas de source avant la taille finale : elle fait partie du nom de la vignette en cache.
+                                source: width > 0 && height > 0 ? Wallpapers.thumbSource(modelData, sourceSize) : ""
                                 fillMode: Image.PreserveAspectCrop
                                 sourceSize: Qt.size(Math.ceil(width * Screen.devicePixelRatio), Math.ceil(height * Screen.devicePixelRatio))
                                 asynchronous: true
+                                // Décodée depuis l'original : enregistrée, telle qu'affichée, pour les ouvertures suivantes.
+                                onStatusChanged: {
+                                    const file = Wallpapers.thumbFile(modelData, sourceSize);
+                                    if (status === Image.Ready && file !== "")
+                                        grabToImage(result => result.saveToFile(file), sourceSize);
+                                }
                             }
                         }
                     }

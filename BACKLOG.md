@@ -27,9 +27,6 @@ Idées notées pendant le travail. Rien ici n'est implémenté sans accord.
 - **Vue des fenêtres** (accepté le 2026-10-16, après la première version) : aperçus en direct de toutes les fenêtres (`Toplevel` +
   `ScreencopyView`), clic pour y aller, ouverte par un raccourci.
 
-- **Vignettes du fond d'écran en cache** (revue du 2026-10-27) : à la première ouverture après un démarrage, les vignettes mettent
-  2 à 2,7 s à apparaître (Qt décode les originaux, jusqu'à 13 Mo, un par un). Piste : enregistrer chaque vignette décodée
-  (`grabToImage` → `saveToFile`) dans le cache de Quickshell, clé `Qt.md5` du chemin + taille, puis la relire à la place de l'original.
 - Panneau NordVPN : recherche par ville (« amsterdam ») ; demanderait les villes des ~150 pays (`nordvpn cities` pour chacun).
 - **Effet verre façon iOS** (ta idée du 2026-10-21) : panneaux, menu et lanceur semi-transparents sur le fond d'écran flouté. Sur un
   panneau opaque, un surlignage translucide ne se distingue pas d'un gris uni : il faut un fond flouté derrière. Sway ne floute pas

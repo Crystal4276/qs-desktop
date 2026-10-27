@@ -1783,10 +1783,15 @@ ne trouve plus que du négligeable.
   écran de verrouillage avec un panorama.
 - Négligeable, laissé tel quel : deux écrans de même description (sans numéro de série) partagent leur image propre (limite commune
   à toute la config par machine) ; `qs ipc call wallpaper set` ne vérifie pas le type (outil de test).
-- **À décider** : vignettes lentes à la première ouverture après un démarrage (2 à 2,7 s mesurées : originaux de 1 à 13 Mo décodés
-  un par un) → cache de vignettes proposé dans `BACKLOG.md`.
+- **Cache de vignettes** (ton accord, même jour) : les vignettes mettaient 2 à 2,7 s à apparaître à la première ouverture après un
+  démarrage (originaux de 1 à 13 Mo décodés un par un). Chaque vignette décodée depuis l'original est enregistrée telle qu'affichée
+  (`grabToImage`, PNG) dans `~/.cache/quickshell/by-shell/desktop/wallpaper-thumbs/`, nommée d'après le chemin, la date de l'image et
+  la taille ; ensuite lue à la place de l'original. Vignettes d'images supprimées ou modifiées effacées à la lecture du dossier (pas
+  si le dossier est illisible). Banc (cache à part) : première ouverture après redémarrage complète dès la première capture
+  (~0,5 s, limite de mesure ; avant : 2 à 2,7 s) ; vignettes en cache relues sans être réécrites ; images, panoramas, triptyques
+  (une vignette par partie), écrans à l'échelle 1 et 1,5 ; vignette périmée effacée, fichier étranger au cache gardé.
 - **À tester** : engrenage puis bouton fond d'écran avec le focus sur un autre écran (utilitaire sur l'écran central) ; cliquer
-  plusieurs fonds à la suite (plus d'écran noir).
+  plusieurs fonds à la suite (plus d'écran noir) ; ouvrir l'utilitaire deux fois après un redémarrage (la 2ᵉ, vignettes immédiates).
 
 ## Prochaine étape
 
