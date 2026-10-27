@@ -193,7 +193,10 @@ OverlayPopup {
                                         return;
                                     const file = Wallpapers.thumbFile(modelData, sourceSize);
                                     if (file !== "")
-                                        grabToImage(result => result.saveToFile(file), sourceSize);
+                                        grabToImage(result => {
+                                            if (result.saveToFile(file))
+                                                Wallpapers.thumbWritten(file);
+                                        }, sourceSize);
                                 }
                             }
                         }
