@@ -58,7 +58,8 @@ Singleton {
                 drivesByPath[path] = {
                     path,
                     label: [value(d, "Vendor"), value(d, "Model")].filter(s => s).join(" "),
-                    canPowerOff: value(d, "CanPowerOff") ?? false
+                    canPowerOff: value(d, "CanPowerOff") ?? false,
+                    ejectable: value(d, "Ejectable") ?? false
                 };
         }
         // Disque entier de chaque Drive (bloc sans interface Partition) et images en boucle.
@@ -72,7 +73,7 @@ Singleton {
                 drivesByPath[value(b, "Drive")].device = device;
             const loop = ifs["org.freedesktop.UDisks2.Loop"];
             if (loop)
-                loops[path] = { path, label: decode(value(loop, "BackingFile")), device, canPowerOff: false, isLoop: true };
+                loops[path] = { path, label: decode(value(loop, "BackingFile")), device, canPowerOff: false, ejectable: false, isLoop: true };
         }
         // Disque d'un volume. Un volume déchiffré n'a pas de Drive (« / » pour un périphérique dm) : il hérite de celui de son
         // volume chiffré, donc il est géré comme lui et l'éjection du disque le démonte et le verrouille.
@@ -121,7 +122,9 @@ Singleton {
                 driveKey: parent?.path ?? ""
             });
         }
-        list.sort((a, b) => a.device.localeCompare(b.device));
+        // sdb2 avant sdb10.
+        const byDevice = (a, b) => a.device.localeCompare(b.device, undefined, { numeric: true });
+        list.sort(byDevice);
         // Rechargement de la config : comparé au dernier état lu (rien n'est remonté) ; démarrage : tout est monté, comme udiskie.
         const restored = !loaded && persist.volumes !== "";
         notifyChanges(loaded ? volumes : restored ? JSON.parse(persist.volumes) : [], list, !loaded && !restored);
@@ -129,8 +132,9 @@ Singleton {
         persist.volumes = JSON.stringify(list);
         // Ordre fixe (GetManagedObjects n'en a pas).
         drives = [...Object.values(drivesByPath), ...Object.values(loops)].filter(d => list.some(v => v.driveKey === d.path))
-            .map(d => ({ key: d.path, label: d.label, device: d.device ?? "", canPowerOff: d.canPowerOff, isLoop: d.isLoop ?? false }))
-            .sort((a, b) => a.device.localeCompare(b.device));
+            .map(d => ({ key: d.path, label: d.label, device: d.device ?? "", canPowerOff: d.canPowerOff, ejectable: d.ejectable,
+                isLoop: d.isLoop ?? false }))
+            .sort(byDevice);
         loaded = true;
     }
 
@@ -169,29 +173,33 @@ Singleton {
     // --- Actions (udisksctl) ---
 
     // `next` : appelé seulement si l'action réussit (enchaînements : démonter puis verrouiller, puis éteindre).
-    function run(action: string, device: string, args: var, input: string, next: var): void {
-        const p = actionProcess.createObject(root, { action, device, command: ["udisksctl", ...args], input, next: next ?? null });
+    function run(action: string, device: string, command: var, input: string, next: var): void {
+        const p = actionProcess.createObject(root, { action, device, command, input, next: next ?? null });
         p.running = true;
     }
 
-    // Étapes { action, device, args } l'une après l'autre ; la première qui échoue arrête la suite (notification « Job failed »).
+    // Étapes { action, device, command } l'une après l'autre ; la première qui échoue arrête la suite (notification « Job failed »).
     function sequence(steps: var): void {
         if (steps.length === 0)
             return;
         const [step, ...rest] = steps;
-        run(step.action, step.device, step.args, "", () => sequence(rest));
+        run(step.action, step.device, step.command, "", () => sequence(rest));
+    }
+
+    function udisksctl(verb: string, device: string): var {
+        return ["udisksctl", verb, "--no-user-interaction", "-b", device];
     }
 
     function unmountStep(v): var {
-        return { action: "unmount", device: v.device, args: ["unmount", "--no-user-interaction", "-b", v.device] };
+        return { action: "unmount", device: v.device, command: udisksctl("unmount", v.device) };
     }
 
     function lockStep(v): var {
-        return { action: "lock", device: v.device, args: ["lock", "--no-user-interaction", "-b", v.device] };
+        return { action: "lock", device: v.device, command: udisksctl("lock", v.device) };
     }
 
     function mount(v): void {
-        run("mount", v.device, ["mount", "--no-user-interaction", "-b", v.device], "", null);
+        run("mount", v.device, udisksctl("mount", v.device), "", null);
     }
 
     function unmount(v): void {
@@ -199,7 +207,7 @@ Singleton {
     }
 
     function unlock(v, passphrase: string): void {
-        run("unlock", v.device, ["unlock", "--no-user-interaction", "-b", v.device, "--key-file", "/dev/stdin"], passphrase, null);
+        run("unlock", v.device, [...udisksctl("unlock", v.device), "--key-file", "/dev/stdin"], passphrase, null);
     }
 
     // Verrouiller : démonter d'abord le volume déchiffré s'il est monté, puis verrouiller une fois le démontage fini.
@@ -209,7 +217,8 @@ Singleton {
     }
 
     // Éjecter, comme udiskie : démonter les volumes du disque, verrouiller ses volumes chiffrés, puis l'éteindre (ou détacher
-    // l'image disque). Une étape qui échoue (volume occupé) arrête tout : rien ne reste en attente.
+    // l'image disque, ou sortir le support d'un lecteur qui ne s'éteint pas : DVD ; udisksctl n'a pas de commande pour cela).
+    // Une étape qui échoue (volume occupé) arrête tout : rien ne reste en attente.
     function eject(drive): void {
         const own = volumes.filter(v => v.driveKey === drive.key);
         const steps = [
@@ -217,9 +226,12 @@ Singleton {
             ...own.filter(v => v.isCrypto && v.cleartext !== "/").map(lockStep)
         ];
         if (drive.isLoop)
-            steps.push({ action: "detach", device: drive.device, args: ["loop-delete", "--no-user-interaction", "-b", drive.device] });
+            steps.push({ action: "detach", device: drive.device, command: udisksctl("loop-delete", drive.device) });
         else if (drive.canPowerOff)
-            steps.push({ action: "power off", device: drive.device, args: ["power-off", "--no-user-interaction", "-b", drive.device] });
+            steps.push({ action: "power off", device: drive.device, command: udisksctl("power-off", drive.device) });
+        else if (drive.ejectable)
+            steps.push({ action: "eject", device: drive.device, command: ["busctl", "--system", "call", "org.freedesktop.UDisks2", drive.key,
+                    "org.freedesktop.UDisks2.Drive", "Eject", "a{sv}", "1", "auth.no_user_interaction", "b", "true"] });
         sequence(steps);
     }
 
@@ -237,6 +249,13 @@ Singleton {
             property string input: ""
             property var next: null
             property bool done: false
+
+            // Commande qui ne démarre pas : Quickshell n'émet pas `exited`, seulement `running` faux. Méthode (pas une fonction
+            // fléchée) pour Qt.callLater : l'appel est abandonné si l'objet a été détruit entre-temps (fin normale).
+            function settleIfFailed(): void {
+                if (!done)
+                    finish(-1, `${command[0]} could not start`);
+            }
 
             // Fin de l'action : notification d'échec, étape suivante, relecture.
             function finish(code: int, error: string): void {
@@ -264,11 +283,7 @@ Singleton {
                 }
             }
             onExited: code => finish(code, errors.text)
-            // udisksctl qui ne démarre pas : Quickshell n'émet pas `exited`, seulement `running` faux.
-            onRunningChanged: if (!running) Qt.callLater(() => {
-                if (!done)
-                    finish(-1, "udisksctl could not start");
-            })
+            onRunningChanged: if (!running) Qt.callLater(settleIfFailed)
         }
     }
 
@@ -306,6 +321,14 @@ Singleton {
                 Qt.callLater(() => query.running = true);
             }
         }
+        // Première lecture ratée (UDisks2 pas encore prêt à l'ouverture de session) : réessayée, sans attendre un signal.
+        onRunningChanged: if (!running && !root.loaded) retry.start()
+    }
+
+    Timer {
+        id: retry
+        interval: 5000
+        onTriggered: if (!root.loaded && !query.running) query.running = true
     }
 
     Timer {
@@ -319,14 +342,18 @@ Singleton {
         }
     }
 
-    // Tout signal d'UDisks2 (ajout, retrait, montage…) déclenche une relecture. Relancé s'il s'arrête.
+    // Tout signal d'UDisks2 (ajout, retrait, montage…) déclenche une relecture, sauf ceux des tâches (« jobs », relus par leurs
+    // effets). Relancé s'il s'arrête ; ses lignes d'en-tête (« Monitoring signals… ») relisent tout à chaque démarrage.
     Process {
         id: monitor
         // Arrêté avec Quickshell (`qs kill`, fin de session) : sinon il lui survit (vu : un par relance de dev).
         command: ["setpriv", "--pdeathsig", "TERM", "gdbus", "monitor", "--system", "--dest", "org.freedesktop.UDisks2"]
         running: true
         stdout: SplitParser {
-            onRead: root.scheduleRefresh()
+            onRead: line => {
+                if (!line.includes("/UDisks2/jobs/"))
+                    root.scheduleRefresh();
+            }
         }
         // `running` faux aussi quand gdbus ne démarre pas (pas d'`exited`).
         onRunningChanged: if (!running) restartMonitor.start()

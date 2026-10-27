@@ -74,7 +74,7 @@ Panel {
                 }
 
                 PanelButton {
-                    visible: drive.modelData.isLoop || drive.modelData.canPowerOff
+                    visible: drive.modelData.isLoop || drive.modelData.canPowerOff || drive.modelData.ejectable
                     text: drive.modelData.isLoop ? "Detach" : "Eject"
                     onClicked: Disks.eject(drive.modelData)
                 }
@@ -145,7 +145,6 @@ Panel {
         password: true
         placeholder: "Passphrase"
         onVisibleChanged: {
-            text = "";
             if (visible)
                 focusInput();
         }
