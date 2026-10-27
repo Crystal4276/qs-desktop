@@ -624,7 +624,7 @@ Voir `WALLPAPERS.md` § « Mise en œuvre ». Remplace `swaybg` (Sway) et le fon
 
 ### 10.1.9 Phase 8b : agent polkit (2026-10-17)
 
-- `modules/polkit/PolkitDialog.qml` : `PolkitAgent` + fenêtre au style des panneaux (`OverlayPopup`, centrée sur l'écran focalisé,
+- `services/Polkit.qml` (`PolkitAgent`, enregistrement, demandes) + `modules/polkit/PolkitDialog.qml` : fenêtre au style des panneaux (`OverlayPopup`, centrée sur l'écran focalisé,
   clavier exclusif) : icône et message de l'application, champ (masqué si polkit le demande), message d'erreur, Cancel /
   Authenticate. Entrée valide ; Échap, un clic à côté, sur une barre ou sur un autre écran annulent.
 - Un seul agent par session : tant que `polkit-gnome` tourne (lancé par Sway jusqu'à la bascule), l'enregistrement de Quickshell
@@ -636,7 +636,8 @@ Voir `WALLPAPERS.md` § « Mise en œuvre ». Remplace `swaybg` (Sway) et le fon
   est recréé (5 s, puis de plus en plus rarement, 5 min au plus).
 - Fermée par toi (Échap, Cancel, clic à côté, autre popup) : demande annulée. Fermée sans toi (écran retiré, verrouillage,
   surface fermée par le compositeur : `OverlayPopup.closingLost`, `BarState.closePopups(keep, lost)`) : demande gardée,
-  rouverte sur l'écran focalisé. Jamais affichée pendant le verrouillage (`Session.lockActive`, dès la demande) : elle prendrait
+  rouverte sur l'écran focalisé. Jamais affichée pendant le verrouillage (`Session.lockActive`, dès la demande ; règle de tous
+  les `OverlayPopup`, refermés aussitôt s'ils s'ouvrent pendant) : elle prendrait
   le clavier de l'écran de verrouillage, et le mot de passe tapé pour déverrouiller (même raison : l'outil de capture est
   fermé au verrouillage et ne s'ouvre pas pendant). Rechargement de la config : la demande en cours est réaffichée.
 - Quickshell 0.3.2 (aussi sur `master`) : une demande arrivée pendant une autre la remplace (file d'attente inopérante) ; la
