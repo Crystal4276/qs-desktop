@@ -1629,16 +1629,23 @@ banc isolé (Sway headless à 2 sorties, Quickshell sur une copie de `modules/lo
 
 ## Ne pas déranger : sons des applications coupés (2026-10-27, ta demande)
 
-- Le shell ne joue aucun son : Discord et le navigateur jouent le leur, sur leur propre flux. Pendant « ne pas déranger » (horaire
-  ou à la main), `services/Audio.qml` coupe les flux des applications de `doNotDisturb.muteApps` (`hosts/default.json` : Discord,
-  chromium, firefox), y compris un appel Discord ; rétablis à la fin. Rétabli à la main pendant « ne pas déranger » : recoupé.
-- WirePlumber (restore-stream) retient la coupure par nom d'application (`Chromium` est partagé par Discord et Chromium) : les
-  noms coupés sont gardés dans `dnd-muted.json` ; le premier flux de ce nom après « ne pas déranger » est rétabli, ce qui efface
-  le souvenir.
-- Testé avec un flux `paplay` (binaire `pacat`, ajouté le temps du test) : coupure à l'activation, recoupe après un rétablissement
-  manuel, nouveau flux coupé pendant, rétablissement à la fin, flux suivant non coupé.
-- **À tester à la main** : un message Discord et une notification du navigateur après 21:00 (aucun son), puis le son le matin.
-- Limite : une application coupée à la main avant « ne pas déranger » sous un nom partagé est rétablie à la fin.
+- Le shell ne joue aucun son : Discord et la web app WhatsApp jouent le leur, sur leur propre flux. Pendant « ne pas déranger »
+  (horaire ou à la main), `services/Audio.qml` coupe les flux de `doNotDisturb.muteApps` : binaire `Discord` (`hosts/default.json`)
+  et web app `--class=WebApp-Whatsapp8699` (`hosts/terrier.json`, lu dans `/proc` sur le processus audio et son parent, une fois
+  par processus). Rétablis à la fin ; rétabli à la main pendant « ne pas déranger » : recoupé.
+- **Gardent le son** (ta demande : première version refusée, elle coupait tout Chromium, donc YouTube) : le navigateur (même
+  binaire, sans `--class=`) et les appels Discord (flux `WEBRTC VoiceEngine`).
+- Règle WirePlumber `dotfiles/wireplumber/wireplumber.conf.d/50-chromium-no-restore.conf` (ton accord) : plus de volume ni de
+  coupure retenus pour les flux « Chromium », sans quoi une coupure de WhatsApp se reportait sur YouTube. Copiée (pas liée : seul
+  lien avant la phase 10, `~/.config/quickshell/desktop`) dans `~/.config/wireplumber/wireplumber.conf.d/`, WirePlumber redémarré.
+  `install.sh` la liera (phase 11).
+- Banc (sortie virtuelle `module-null-sink` enregistrée, un bip par cas, 3 tours, 30/30) : navigateur, web app, Discord, appel
+  Discord, avant / pendant / après « ne pas déranger ». Web app et Discord : 0 ms audible pendant, y compris le premier bip d'un
+  processus inconnu (coupé d'office le temps de la lecture de `/proc`) ; les autres : bip entier.
+- **À tester à la main** : après 21:00, un message WhatsApp et un message Discord sans son, une vidéo YouTube avec ; le matin,
+  les sons reviennent.
+- Limite : une application de la liste coupée à la main avant « ne pas déranger » n'est pas touchée (ni coupée ni rétablie par
+  le shell). Un autre programme qui démarre un son pendant « ne pas déranger » est coupé quelques ms la première fois.
 
 ## Prochaine étape
 
