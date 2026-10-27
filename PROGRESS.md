@@ -1766,6 +1766,28 @@ banc isolé (Sway headless à 2 sorties, Quickshell sur une copie de `modules/lo
 - **À tester** : dans chaque app, un lien externe (navigateur principal) ; dans Word/Excel/PowerPoint, ouvrir un autre document
   depuis l'app (reste dans la web app) ; dans Notion, ctrl+clic sur une page (reste dans la web app).
 
+## Fond d'écran : boucle de revue (2026-10-27, ta demande)
+
+3 passes sur le fond d'écran et son utilitaire (`services/Wallpapers.qml`, `modules/wallpaper/`, bouton du panneau de réglages),
+chaque point vérifié sur un Sway isolé à 3 écrans (même disposition, état à part, pointeur virtuel pour les clics). Arrêt : la passe 3
+ne trouve plus que du négligeable.
+- **Écran noir au changement de fond** (~0,5–1 s, le temps du décodage) : l'ancien fond reste affiché jusqu'au nouveau
+  (`retainWhileLoading` ; panoramas : le précédent gardé jusqu'à la mesure du suivant). Mesuré : 0 image noire entre deux images ou
+  deux panoramas (avant : 1 à 2). Reste un court vide en passant d'une image à un panorama ou l'inverse.
+- **Panorama** : taille du fichier lue une seule fois dans le service (avant : l'image entière décodée par chaque écran, et encore
+  3 fois au verrouillage). Pic mémoire d'un changement de panorama : +95–114 Mo au lieu de +170–233 Mo.
+- **Utilitaire ouvert depuis le panneau de réglages** : sur l'écran du panneau (avant : sur l'écran focalisé, souvent un autre —
+  reproduit : focus à gauche, clic sur l'engrenage central → utilitaire à gauche). Raccourci IPC : écran focalisé, inchangé.
+- Fond actuel entouré de vert même si un écran débranché a sa propre image ; onglet vide : « No wallpapers in ~/…/simple ».
+- Vérifié aussi : panorama et triptyque recalculés à l'extinction puis au retour d'un écran ; onglet Triptychs disparu → Images ;
+  écran de verrouillage avec un panorama.
+- Négligeable, laissé tel quel : deux écrans de même description (sans numéro de série) partagent leur image propre (limite commune
+  à toute la config par machine) ; `qs ipc call wallpaper set` ne vérifie pas le type (outil de test).
+- **À décider** : vignettes lentes à la première ouverture après un démarrage (2 à 2,7 s mesurées : originaux de 1 à 13 Mo décodés
+  un par un) → cache de vignettes proposé dans `BACKLOG.md`.
+- **À tester** : engrenage puis bouton fond d'écran avec le focus sur un autre écran (utilitaire sur l'écran central) ; cliquer
+  plusieurs fonds à la suite (plus d'écran noir).
+
 ## Prochaine étape
 
 Phase 9 — parité Hyprland (tests à faire ensemble dans une session Hyprland : voir « Compatibilité Hyprland »).
