@@ -28,6 +28,8 @@ Scope {
     property bool error: false
     property string message: ""
     property bool capsLock: false
+    // Messages de PAM pendant la vérification (ex. faillock : compte bloqué après trop d'échecs), montrés si elle échoue.
+    property string pamText: ""
     // Écran du champ : l'écran principal ; à défaut (aucun écran détecté), celui qui était focalisé au verrouillage.
     property alias lockedScreen: persist.lockedScreen
     readonly property string fieldScreen: Outputs.primary?.name ?? lockedScreen
@@ -53,6 +55,7 @@ Scope {
         checking = true;
         error = false;
         message = "Checking…";
+        pamText = "";
         if (!pam.start())
             fail("Authentication unavailable");
     }
@@ -130,17 +133,37 @@ Scope {
             root.password = "";
         }
 
+        onPamMessage: {
+            if (!responseRequired && message.trim() !== "")
+                root.pamText = (root.pamText === "" ? "" : root.pamText + " ") + message.trim();
+        }
+
+        // Une erreur de PAM (`error`) est suivie de completed(PamResult.Error).
         onCompleted: result => {
             if (result === PamResult.Success) {
                 root.checking = false;
                 root.message = "";
                 root.locked = false;
             } else {
-                root.fail(result === PamResult.MaxTries ? "Too many attempts" : "Wrong password");
+                root.fail(root.pamText !== "" ? root.pamText
+                    : result === PamResult.Failed ? "Wrong password"
+                    : result === PamResult.MaxTries ? "Too many attempts" : "Authentication error");
             }
         }
+    }
 
-        onError: error => root.fail("Authentication error")
+    // Verrou refusé par le compositeur (un autre client le tient, ex. swaylock) ou perdu : la session n'est pas verrouillée.
+    // Sans cela, `locked` resterait vrai et tout verrouillage suivant serait ignoré. Au déverrouillage normal, `locked` est
+    // déjà faux quand `secure` passe à faux.
+    function lockLost(): void {
+        if (!locked || sessionLock.secure)
+            return;
+        console.warn("lock: session lock refused or lost by the compositor");
+        if (pam.active)
+            pam.abort();
+        checking = false;
+        password = "";
+        locked = false;
     }
 
     WlSessionLock {
@@ -148,7 +171,11 @@ Scope {
 
         locked: root.locked
         // Verrouillage confirmé par le compositeur : connu de Session (verrouillage avant la mise en veille, services/Idle.qml).
-        onSecureChanged: Session.locked = secure
+        onSecureChanged: {
+            Session.locked = secure;
+            if (!secure)
+                Qt.callLater(root.lockLost);   // pas pendant l'émission du signal : le déverrouillage détruit les surfaces
+        }
 
         WlSessionLockSurface {
             id: surface

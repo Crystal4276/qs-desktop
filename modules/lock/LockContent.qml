@@ -57,7 +57,7 @@ Item {
             Layout.alignment: Qt.AlignHCenter
             text: Qt.formatTime(clock.date, "HH:mm")
             font.family: Theme.font.text
-            font.weight: Font.Light
+            font.weight: Theme.lock.clockWeight
             font.pixelSize: Theme.lock.clockSize
             color: Theme.lock.clock
         }
@@ -87,8 +87,8 @@ Item {
                 anchors.centerIn: parent
                 text: root.user.charAt(0).toUpperCase()
                 font.family: Theme.font.text
-                font.weight: Font.DemiBold
-                font.pixelSize: Theme.lock.avatarSize / 2
+                font.weight: Theme.lock.avatarWeight
+                font.pixelSize: Theme.lock.avatarTextSize
                 color: Theme.lock.avatarText
             }
         }
@@ -122,20 +122,29 @@ Item {
                 color: Theme.lock.message
             }
 
-            Row {
+            // Plus de points que de place : les derniers restent visibles (la frappe se voit toujours), sans point coupé.
+            Item {
+                readonly property int fit: Math.floor((parent.width - parent.height + dots.spacing) / (Theme.lock.dotSize + dots.spacing))
+
                 anchors.centerIn: parent
-                spacing: Theme.lock.dotSize
-                width: Math.min(implicitWidth, parent.width - parent.height)
+                width: Math.min(dots.implicitWidth, fit * (Theme.lock.dotSize + dots.spacing) - dots.spacing)
+                height: Theme.lock.dotSize
                 clip: true
 
-                Repeater {
-                    model: root.length
+                Row {
+                    id: dots
+                    anchors.right: parent.right
+                    spacing: Theme.lock.dotSize
 
-                    Rectangle {
-                        width: Theme.lock.dotSize
-                        height: width
-                        radius: width / 2
-                        color: Theme.lock.dot
+                    Repeater {
+                        model: root.length
+
+                        Rectangle {
+                            width: Theme.lock.dotSize
+                            height: width
+                            radius: width / 2
+                            color: Theme.lock.dot
+                        }
                     }
                 }
             }
@@ -144,7 +153,7 @@ Item {
         Text {
             visible: root.primary
             Layout.alignment: Qt.AlignHCenter
-            Layout.preferredHeight: Theme.lock.messageSize * 1.5
+            Layout.preferredHeight: Theme.lock.messageHeight
             text: root.capsLock && !root.error ? "Caps Lock is on" : root.message
             font.family: Theme.font.text
             font.pixelSize: Theme.lock.messageSize
