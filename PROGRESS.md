@@ -1584,7 +1584,9 @@ correction ; banc dans le scratchpad de la session (`idle-bench.sh`), `test-outp
   sous Sway, où chaque commande `output` réapplique la config de **tous** les écrans en un seul commit (code de Sway 1.12 lu).
   Rallumer le central 3 s après refaisait un modeset qui coupait de nouveau les latéraux. Sous Sway, tout est rallumé d'un coup
   (`output * power on`, comme ton swayidle) : banc, 1 commit au lieu de 2, les 3 sorties à +32 ms (avant : central à +3 s).
-  Le délai reste appliqué sous Hyprland (parité hypridle, à revoir en phase 9 si le même effet apparaît).
+  Ta décision : le délai de hypridle contournait un bogue de Hyprland, pas un modèle à suivre ; un seul comportement pour les
+  deux compositeurs, tous rallumés ensemble. `primaryWakeDelay` retiré (`Settings`, `hosts/terrier.json`) ; Hyprland testé en
+  phase 9.
 - **Écran branché après une veille resté éteint** (Sway) : rallumer par nom laissait `power off` sur la config `*`.
   Corrigé par le même `output * power on` (banc : sortie créée après une veille allumée ; avant : éteinte).
 - **Quickshell relancé écrans éteints** (rechargement à chaud, plantage) : le nouveau suivi n'est pas en veille ; écrans noirs
@@ -1593,8 +1595,9 @@ correction ; banc dans le scratchpad de la session (`idle-bench.sh`), `test-outp
   Quickshell 0.3.2, ancienne génération en destruction) ; le délai de 2 s l'évite. Instance relancée par `dev.sh` (la copie
   relancée après plantage ne suivait plus les fichiers).
 - `systemd-inhibit` (verrou avant la veille du système, laptop) sous `setpriv --pdeathsig` : verrou relâché si Quickshell plante.
-- Laissé (négligeable) : sous Hyprland avec délai, un écran en miroir n'est pas rallumé (aucun miroir
-  sur cette machine, délai 0 par défaut sur un laptop).
+- **À surveiller** : second plantage de ton instance à 08 h 25, 6 s après un rechargement à chaud, sans rapport avec la veille
+  (aucune commande d'alimentation) : même pile que celui de 04 h 43 (événement I3 → liaison QML → `lookupSingletonProperty`).
+  Les deux après un rechargement ; à étudier à part s'il se produit hors rechargement.
 - **À tester à la main** : une vraie reprise sur tes trois écrans (attendre 5 min) — les trois doivent s'allumer ensemble, sans
   extinction intermédiaire. Le central (AW3418DW) peut rester un peu plus lent à sortir de veille : c'est l'écran lui-même.
 

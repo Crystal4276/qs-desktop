@@ -7,8 +7,8 @@ import Quickshell.Wayland
 import qs.config
 
 // Veille des écrans (remplace swayidle et hypridle, ARCHITECTURE § 10.1 R3) : après `Settings.idle.timeout` secondes sans activité,
-// écrans éteints par le compositeur ; à la reprise, rallumés — sous Hyprland, l'écran principal `primaryWakeDelay` secondes après
-// les autres (contournement repris de hypridle). Les inhibitions sont respectées : règles `inhibit_idle` du compositeur, « Keep Screen On »
+// écrans éteints par le compositeur ; à la reprise, tous rallumés ensemble. Les inhibitions sont respectées : règles `inhibit_idle`
+// du compositeur, « Keep Screen On »
 // (IdleInhibitor des barres), manette Bluetooth connectée (même inhibiteur), vidéos des applications Wayland.
 // Verrouillage avant la mise en veille du système (laptop par défaut) : verrou « delay » de logind, relâché une fois l'écran verrouillé.
 // Au réveil sous Hyprland : `hyprctl reload` (after_sleep_cmd de ton hypridle : la disposition des écrans ne survit pas à la veille).
@@ -46,31 +46,14 @@ Singleton {
     }
 
     function screensOff(): void {
-        wake.stop();
         Compositor.setPower([], false);
     }
 
-    // Rallumage en deux temps : Hyprland seulement, comme ton hypridle. Sous Sway, chaque commande `output` réapplique la
-    // configuration de tous les écrans en un seul commit : rallumer le principal à part refaisait un modeset qui éteignait
-    // de nouveau les autres (latéraux allumés, éteints, puis central, puis latéraux). Tout est rallumé d'un coup, comme swayidle :
-    // `output * power on`, qui efface aussi le `power off` de la config `*` (sinon, un écran branché ensuite resterait éteint).
-    readonly property int primaryWakeDelay: Compositor.isHyprland ? settings.primaryWakeDelay : 0
-
+    // Tous rallumés d'un coup, Sway et Hyprland (pas de rallumage en deux temps). Sous Sway, chaque commande `output` réapplique la
+    // configuration de tous les écrans en un seul commit : rallumer un écran à part refaisait un modeset qui éteignait de nouveau
+    // les autres. `output * power on` efface aussi le `power off` de la config `*` (sinon, un écran branché ensuite resterait éteint).
     function screensOn(): void {
-        const primary = Outputs.primary?.name ?? "";
-        const others = Compositor.outputs.map(o => o.name).filter(n => n !== primary);
-        if (root.primaryWakeDelay > 0 && primary !== "" && others.length > 0) {
-            Compositor.setPower(others, true);
-            wake.restart();
-        } else {
-            Compositor.setPower([], true);
-        }
-    }
-
-    Timer {
-        id: wake
-        interval: root.primaryWakeDelay * 1000
-        onTriggered: Compositor.setPower([Outputs.primary?.name ?? ""].filter(n => n !== ""), true)
+        Compositor.setPower([], true);
     }
 
     // Quickshell relancé écrans éteints (rechargement, plantage) : le nouveau suivi n'est pas en veille, rien ne les rallumerait

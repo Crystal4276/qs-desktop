@@ -1,7 +1,6 @@
 {
   "updateCommand": "paru -Syu",
   "wallpaper": { "kind": "triptych", "path": "triptych/green-storm" },
-  "idle": { "primaryWakeDelay": 3 },
   "primaryOutput": "Dell Inc. Dell AW3418DW #ASPFPBQwWjbd",
   "bars": {
     "primary": {
