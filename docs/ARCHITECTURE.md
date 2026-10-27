@@ -5,11 +5,13 @@ Version cible : **Quickshell 0.3.2** (Arch). Les API citées ont été vérifié
 
 ## 1. Structure
 
-Celle de `CLAUDE.md`, avec un seul ajout :
+Celle de `CLAUDE.md`, avec deux ajouts :
 
 - `assets/` : images reprises de la config actuelle (logo Arch vert/mantle, 4 icônes du power menu). Aujourd'hui elles sont
   référencées par chemin absolu `/home/crystal/.config/sway/assets/…` depuis le CSS Waybar et le script Rofi ;
   le dépôt doit les embarquer pour être autonome.
+- `dotfiles/wireplumber/` *(2026-10-27)* : règle WirePlumber dont dépend la coupure des sons pendant « ne pas déranger »
+  (§ 4, `doNotDisturb`) ; liée dans `~/.config/wireplumber/` par `install.sh`.
 
 ## 2. Compositeur
 
