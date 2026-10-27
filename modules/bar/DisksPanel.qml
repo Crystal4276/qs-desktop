@@ -32,11 +32,6 @@ Panel {
         }
     }
 
-    function open(volume): void {
-        root.close();
-        Disks.browse(volume);
-    }
-
     function sizeText(bytes: real): string {
         const units = ["B", "kB", "MB", "GB", "TB"];
         let value = bytes, i = 0;
@@ -103,10 +98,10 @@ Panel {
                         modelData.isCrypto && !unlocked ? "locked" : volume.mounted ? `mounted on ${volume.mountPoint}` : "not mounted"
                     ].filter(s => s).join(" · ")
                     active: volume.mounted
-                    onClicked: volume.mounted ? root.open(volume) : null
+                    onClicked: volume.mounted ? root.run(() => Disks.browse(volume)) : null
 
                     PanelButton {
-                        visible: modelData.isCrypto && !unlocked
+                        visible: modelData.canUnlock && !unlocked
                         text: "Unlock"
                         onClicked: root.unlocking = modelData
                     }
@@ -120,7 +115,7 @@ Panel {
                     PanelButton {
                         visible: volume.mounted
                         text: "Open"
-                        onClicked: root.open(volume)
+                        onClicked: root.run(() => Disks.browse(volume))
                     }
 
                     PanelButton {

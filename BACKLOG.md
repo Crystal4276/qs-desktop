@@ -32,3 +32,8 @@ Idées notées pendant le travail. Rien ici n'est implémenté sans accord.
   panneau opaque, un surlignage translucide ne se distingue pas d'un gris uni : il faut un fond flouté derrière. Sway ne floute pas
   (SwayFX ou Hyprland oui, seulement pour l'ensemble de la fenêtre) ; Quickshell peut l'imiter en floutant le fond d'écran qu'il dessine
   lui-même (`MultiEffect`) sous chaque panneau — les fenêtres derrière n'apparaîtraient pas. Valeurs de transparence à choisir ensemble.
+- Disques : déverrouiller VeraCrypt (TCRYPT) et BitLocker (revue du 2026-10-27). `udisksctl` ne lit une phrase de passe qu'au
+  terminal ; passée en fichier de clé (`--key-file`), elle ne vaut que pour LUKS. Il faudrait appeler `Encrypted.Unlock` sans
+  mettre la phrase dans la ligne de commande (petit programme qui la lit sur l'entrée standard).
+- Disques : images disque en boucle créées par un autre utilisateur (root : Waydroid, VM) gérées et montées comme les tiennes,
+  comme le fait udiskie ; les limiter à `Loop.SetupByUID` = ton uid serait plus sûr (revue du 2026-10-27).
