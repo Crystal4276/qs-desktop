@@ -76,7 +76,7 @@ Rectangle {
 
             RowLayout {
                 Layout.fillWidth: true
-                visible: root.title !== "" || root.hasSwitch   // panneau de réglages : pas de titre
+                visible: root.title !== "" || root.hasSwitch
 
                 Text {
                     Layout.fillWidth: true
