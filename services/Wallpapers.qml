@@ -126,22 +126,29 @@ Singleton {
         return `${Qt.md5(`${path}\t${stamps[path] ?? ""}`)}-${size.width}x${size.height}.png`;
     }
 
-    // Source d'une vignette : le cache s'il y est, sinon l'original.
+    // Source d'une vignette : le cache s'il y est (ou vient d'y être écrite), sinon l'original.
     function thumbSource(path: string, size: size): string {
         const name = thumbName(path, size);
-        return thumbs[name] ? Icons.fileUrl(`${thumbDir}/${name}`) : url(path);
+        return thumbs[name] || saved.get(name) ? Icons.fileUrl(`${thumbDir}/${name}`) : url(path);
     }
 
-    // Fichier où enregistrer la vignette décodée depuis l'original, une seule fois ("" : déjà en cache ou enregistrée depuis la
-    // dernière lecture du dossier, ou date de l'image pas encore lue). Sans `saved`, chaque changement d'onglet réenregistrait tout.
-    readonly property var saved: new Set()   // modifié sur place : ne déclenche pas de liaison
+    // Vignettes enregistrées depuis la dernière lecture du dossier : nom → fichier écrit (false pendant l'écriture). Modifié sur
+    // place, sans déclencher de liaison : les vignettes affichées gardent leur image, celles recréées ensuite (défilement,
+    // onglet) partent du fichier écrit. Sans lui, chaque changement d'onglet réenregistrait tout, et le défilement redécodait.
+    readonly property var saved: new Map()
 
+    // Fichier où enregistrer la vignette décodée depuis l'original, une seule fois ("" : déjà en cache ou en cours, ou date de
+    // l'image pas encore lue) ; `thumbWritten` une fois le fichier écrit.
     function thumbFile(path: string, size: size): string {
         const name = thumbName(path, size);
         if (thumbs[name] || saved.has(name) || stamps[path] === undefined)
             return "";
-        saved.add(name);
+        saved.set(name, false);
         return `${thumbDir}/${name}`;
+    }
+
+    function thumbWritten(file: string): void {
+        saved.set(file.slice(thumbDir.length + 1), true);
     }
 
     onDirChanged: refresh()
