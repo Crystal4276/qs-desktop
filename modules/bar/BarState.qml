@@ -103,10 +103,6 @@ Singleton {
         return on(Compositor.focusedOutput) ?? on(Outputs.primary?.name) ?? list[0] ?? null;
     }
 
-    // Panneau des disques qui demande déjà une phrase de passe (ou attend de le faire) : les disques suivants lui sont confiés,
-    // même si le focus est passé sur un autre écran (ouvrir un autre panneau fermerait celui-ci et perdrait sa file).
-    property var disksPrompt: null
-
     // Tests (scripts/test-outputs.sh) : popups inscrits et écran au clavier « à la demande », en JSON.
     IpcHandler {
         target: "bar"
