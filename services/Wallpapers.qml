@@ -132,10 +132,16 @@ Singleton {
         return thumbs[name] ? Icons.fileUrl(`${thumbDir}/${name}`) : url(path);
     }
 
-    // Fichier où enregistrer la vignette décodée depuis l'original ("" : déjà en cache, ou date de l'image pas encore lue).
+    // Fichier où enregistrer la vignette décodée depuis l'original, une seule fois ("" : déjà en cache ou enregistrée depuis la
+    // dernière lecture du dossier, ou date de l'image pas encore lue). Sans `saved`, chaque changement d'onglet réenregistrait tout.
+    readonly property var saved: new Set()   // modifié sur place : ne déclenche pas de liaison
+
     function thumbFile(path: string, size: size): string {
         const name = thumbName(path, size);
-        return thumbs[name] || stamps[path] === undefined ? "" : `${thumbDir}/${name}`;
+        if (thumbs[name] || saved.has(name) || stamps[path] === undefined)
+            return "";
+        saved.add(name);
+        return `${thumbDir}/${name}`;
     }
 
     onDirChanged: refresh()
@@ -197,9 +203,6 @@ Singleton {
                     }
                 }
                 lib.triptych = Object.values(triptychs).filter(t => t.parts.left && t.parts.center && t.parts.right);
-                root.stamps = stamps;
-                root.library = lib;
-                root.libraryRead = true;
                 // Vignettes d'images disparues ou modifiées : effacées (pas si le dossier n'a pas pu être lu : rien n'est perdu).
                 const used = new Set(Object.keys(stamps).map(p => Qt.md5(`${p}\t${stamps[p]}`)));
                 const stale = Object.keys(thumbs).filter(f => !used.has(f.split("-")[0]));
@@ -208,7 +211,12 @@ Singleton {
                     prune.running = true;
                     stale.forEach(f => delete thumbs[f]);
                 }
+                // Dates et vignettes avant la bibliothèque : les vignettes recréées partent directement du cache.
+                root.stamps = stamps;
                 root.thumbs = thumbs;
+                root.saved.clear();
+                root.library = lib;
+                root.libraryRead = true;
             }
         }
         onExited: {

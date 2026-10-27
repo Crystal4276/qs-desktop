@@ -186,8 +186,10 @@ OverlayPopup {
                                 asynchronous: true
                                 // Décodée depuis l'original : enregistrée, telle qu'affichée, pour les ouvertures suivantes.
                                 onStatusChanged: {
+                                    if (status !== Image.Ready)
+                                        return;
                                     const file = Wallpapers.thumbFile(modelData, sourceSize);
-                                    if (status === Image.Ready && file !== "")
+                                    if (file !== "")
                                         grabToImage(result => result.saveToFile(file), sourceSize);
                                 }
                             }
