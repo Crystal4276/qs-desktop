@@ -1790,8 +1790,16 @@ ne trouve plus que du négligeable.
   si le dossier est illisible). Banc (cache à part) : première ouverture après redémarrage complète dès la première capture
   (~0,5 s, limite de mesure ; avant : 2 à 2,7 s) ; vignettes en cache relues sans être réécrites ; images, panoramas, triptyques
   (une vignette par partie), écrans à l'échelle 1 et 1,5 ; vignette périmée effacée, fichier étranger au cache gardé.
+- Tu as constaté l'accélération. Seconde boucle de revue sur le code du jour (4 passes, arrêt : la passe D ne trouve rien) :
+  - A : les vignettes étaient réencodées et réécrites à chaque changement d'onglet (25/25 mesurées) → une seule fois ;
+  - B : image remplacée sous le même nom pendant que Quickshell tourne : le cache mémoire de Qt (par adresse) resservait
+    l'ancienne, enregistrée comme vignette de la nouvelle (reproduit sur un dossier de test) → vignettes hors de ce cache ;
+  - C : conséquence de B, première session : une vignette recréée au défilement redécodait l'original alors que son fichier venait
+    d'être écrit (6,5 s de processeur contre 4,7 s au retour de défilement) → relue depuis ce fichier (4,6 s).
+  - Vérifié : aucune vignette vide (celles hors de la zone visible aussi) ; passage panorama → image sans réapparition d'un ancien
+    fond ; image supprimée → vignette effacée.
 - **À tester** : engrenage puis bouton fond d'écran avec le focus sur un autre écran (utilitaire sur l'écran central) ; cliquer
-  plusieurs fonds à la suite (plus d'écran noir) ; ouvrir l'utilitaire deux fois après un redémarrage (la 2ᵉ, vignettes immédiates).
+  plusieurs fonds à la suite (plus d'écran noir).
 
 ## Prochaine étape
 
