@@ -168,7 +168,7 @@ Singleton {
         loaded = true;
         const still = pending.filter(p => list.some(v => sameVolume(v, p) && v.cleartext === "/"));
         if (still.length !== pending.length || arrived.length > 0)
-            pending = [...still, ...arrived.filter(a => !still.some(p => sameVolume(p, a)))];
+            pending = [...still, ...arrived];
     }
 
     // Même volume : même objet UDisks2, même étiquette (ou UUID), même taille. Une autre clé branchée sous le même nom (sdb1)
