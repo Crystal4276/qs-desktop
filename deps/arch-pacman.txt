@@ -55,7 +55,7 @@ xdg-utils               # xdg-open : « Open » d'un disque monté, dossiers et 
 pacman-contrib          # checkupdates (module mises à jour)
 fakeroot                # requis par checkupdates (non déclaré par pacman-contrib)
 gnome-terminal          # terminal lancé par les modules (configurable par machine)
-libnotify               # notify-send (sortie audio suivante, connexions et batterie Bluetooth, tests)
+libnotify               # notify-send (sortie audio suivante, connexions et batterie Bluetooth, disques amovibles, tests)
 
 # --- Captures et outils de dev ---
 grim                    # captures des outils de dev (scripts/shot.sh) ; touche Impr. actuelle jusqu'à la phase 10

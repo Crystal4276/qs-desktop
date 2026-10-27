@@ -20,6 +20,8 @@ Singleton {
     // (clé : chemin du Drive UDisks2, ou du périphérique entier pour une image disque montée en boucle).
     property var drives: []
     property bool loaded: false
+    property string lastRead: ""   // volumes et disques de la dernière lecture (JSON) : relecture sans changement ignorée
+    property int failedReads: 0
     // QS_TEST (instance de scripts/test-outputs.sh) : pas de montage automatique, l'instance de test parle au vrai bus système
     // et monterait tes disques laissés démontés.
     readonly property bool automount: !Quickshell.env("QS_TEST")
@@ -48,9 +50,12 @@ Singleton {
         try {
             objects = JSON.parse(text).data[0];
         } catch (e) {
-            console.warn(`Disks: lecture d'UDisks2 impossible : ${e}`);
+            // Une seule fois (UDisks2 absent : relu de plus en plus rarement, voir `retry`).
+            if (failedReads++ === 0)
+                console.warn(`Disks: lecture d'UDisks2 impossible : ${e}`);
             return;
         }
+        failedReads = 0;
         const drivesByPath = {};
         for (const [path, ifs] of Object.entries(objects)) {
             const d = ifs["org.freedesktop.UDisks2.Drive"];
@@ -86,6 +91,11 @@ Singleton {
             const partition = ifs["org.freedesktop.UDisks2.Partition"];
             return drivesByPath[value(b, "Drive")] ?? loops[partition ? value(partition, "Table") : path];
         }
+        // Volume chiffré d'origine d'un volume déchiffré (lui-même sinon).
+        function encryptedOf(path: string): string {
+            const backing = value(objects[path]?.["org.freedesktop.UDisks2.Block"], "CryptoBackingDevice");
+            return backing && backing !== "/" ? encryptedOf(backing) : path;
+        }
         const list = [];
         for (const [path, ifs] of Object.entries(objects)) {
             const b = ifs["org.freedesktop.UDisks2.Block"];
@@ -93,9 +103,13 @@ Singleton {
                 continue;
             // Comme udiskie (mount.py) : une image disque en boucle est gérée même si UDisks2 la dit « système »,
             // sauf images du système (snaps, extensions).
+            // Volume déchiffré : jugé sur son volume chiffré (UDisks2 dit « système » tout volume dm sans Drive ; udiskie ne
+            // l'écarte pas non plus, ce n'est pas un périphérique de premier niveau).
             const parent = parentOf(path);
-            const userLoop = parent?.isLoop && parent.label !== "" && !/^\/var\/lib\/(extensions|confexts|snapd)\//.test(parent.label);
-            if (value(b, "HintSystem") && !userLoop)
+            if (!parent)
+                continue;   // ni disque ni image (md, nbd…) : aucune ligne du panneau pour le démonter
+            const userLoop = parent.isLoop && parent.label !== "" && !/^\/var\/lib\/(extensions|confexts|snapd)\//.test(parent.label);
+            if (value(objects[encryptedOf(path)]?.["org.freedesktop.UDisks2.Block"], "HintSystem") && !userLoop)
                 continue;
             const fs = ifs["org.freedesktop.UDisks2.Filesystem"];
             const crypto = ifs["org.freedesktop.UDisks2.Encrypted"];
@@ -105,7 +119,7 @@ Singleton {
             const backing = value(b, "CryptoBackingDevice");
             const mountPoints = (value(fs, "MountPoints") ?? []).map(decode);
             const device = decode(value(b, "PreferredDevice")) || decode(value(b, "Device"));
-            const label = value(b, "IdLabel") || value(b, "IdUUID") || parent?.label || "";
+            const label = value(b, "IdLabel") || value(b, "IdUUID") || parent.label || "";
             list.push({
                 path,
                 device,
@@ -115,26 +129,35 @@ Singleton {
                 fsType: value(b, "IdType") ?? "",
                 isFilesystem: !!fs,
                 isCrypto: !!crypto,
+                // Phrase de passe passée en fichier de clé (udisksctl n'en lit une qu'au terminal) : équivalent pour LUKS
+                // seulement (VeraCrypt, BitLocker : BACKLOG).
+                canUnlock: !!crypto && value(b, "IdType") === "crypto_LUKS",
                 backing: backing && backing !== "/" ? backing : "",
                 cleartext: crypto ? (value(crypto, "CleartextDevice") ?? "/") : "/",
                 mounted: mountPoints.length > 0,
                 mountPoint: mountPoints[0] ?? "",
-                driveKey: parent?.path ?? ""
+                driveKey: parent.path
             });
         }
         // sdb2 avant sdb10.
         const byDevice = (a, b) => a.device.localeCompare(b.device, undefined, { numeric: true });
         list.sort(byDevice);
+        // Ordre fixe (GetManagedObjects n'en a pas).
+        const driveList = [...Object.values(drivesByPath), ...Object.values(loops)].filter(d => list.some(v => v.driveKey === d.path))
+            .map(d => ({ key: d.path, label: d.label, device: d.device ?? "", canPowerOff: d.canPowerOff, ejectable: d.ejectable,
+                isLoop: d.isLoop ?? false }))
+            .sort(byDevice);
+        // Signaux sans effet ici (SMART des disques internes…) : rien n'est réassigné.
+        const read = JSON.stringify([list, driveList]);
+        if (loaded && read === lastRead)
+            return;
+        lastRead = read;
         // Rechargement de la config : comparé au dernier état lu (rien n'est remonté) ; démarrage : tout est monté, comme udiskie.
         const restored = !loaded && persist.volumes !== "";
         notifyChanges(loaded ? volumes : restored ? JSON.parse(persist.volumes) : [], list, !loaded && !restored);
         volumes = list;
         persist.volumes = JSON.stringify(list);
-        // Ordre fixe (GetManagedObjects n'en a pas).
-        drives = [...Object.values(drivesByPath), ...Object.values(loops)].filter(d => list.some(v => v.driveKey === d.path))
-            .map(d => ({ key: d.path, label: d.label, device: d.device ?? "", canPowerOff: d.canPowerOff, ejectable: d.ejectable,
-                isLoop: d.isLoop ?? false }))
-            .sort(byDevice);
+        drives = driveList;
         loaded = true;
     }
 
@@ -207,7 +230,8 @@ Singleton {
     }
 
     function unlock(v, passphrase: string): void {
-        run("unlock", v.device, [...udisksctl("unlock", v.device), "--key-file", "/dev/stdin"], passphrase, null);
+        if (v.canUnlock)
+            run("unlock", v.device, [...udisksctl("unlock", v.device), "--key-file", "/dev/stdin"], passphrase, null);
     }
 
     // Verrouiller : démonter d'abord le volume déchiffré s'il est monté, puis verrouiller une fois le démontage fini.
@@ -325,9 +349,10 @@ Singleton {
         onRunningChanged: if (!running && !root.loaded) retry.start()
     }
 
+    // 5 s, puis de plus en plus rarement (UDisks2 absent de la machine : 5 min au plus).
     Timer {
         id: retry
-        interval: 5000
+        interval: Math.min(5000 * 2 ** Math.max(root.failedReads - 1, 0), 300000)
         onTriggered: if (!root.loaded && !query.running) query.running = true
     }
 
