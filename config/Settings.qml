@@ -35,9 +35,10 @@ Singleton {
     readonly property var nightLight: Object.assign({ from: "20:00", to: "06:00", temperature: 3239 }, config.nightLight ?? {})
     // « Ne pas déranger » programmé (services/Notifs.qml) : actif de `from` à `to` (HH:MM) si `schedule`. Valeurs de départ :
     // ensuite réglées depuis le panneau de réglages et gardées dans un fichier d'état.
-    // `muteApps` : applications coupées pendant « ne pas déranger », binaire ou `--class=` (services/Audio.qml ; demande la
-    // règle dotfiles/wireplumber/).
-    readonly property var doNotDisturb: Object.assign({ schedule: true, from: "21:00", to: "07:00", muteApps: [] }, config.doNotDisturb ?? {})
+    // Coupés pendant « ne pas déranger » (services/Audio.qml ; demande la règle dotfiles/wireplumber/) : `muteApps`, binaires ;
+    // `muteWebApps`, `--class=` de web apps Chromium.
+    readonly property var doNotDisturb: Object.assign({ schedule: true, from: "21:00", to: "07:00", muteApps: [], muteWebApps: [] },
+        config.doNotDisturb ?? {})
 
     // Heure "HH:MM" ("9:5" accepté) → minutes depuis minuit ; -1 si elle est mal formée (veilleuse, « ne pas déranger »).
     function minutes(time: string): int {

@@ -1,7 +1,7 @@
 {
   "updateCommand": "paru -Syu",
   "wallpaper": { "kind": "triptych", "path": "triptych/green-storm" },
-  "doNotDisturb": { "muteApps": ["Discord", "WebApp-Whatsapp8699"] },
+  "doNotDisturb": { "muteApps": ["Discord"], "muteWebApps": ["WebApp-Whatsapp8699"] },
   "primaryOutput": "Dell Inc. Dell AW3418DW #ASPFPBQwWjbd",
   "bars": {
     "primary": {

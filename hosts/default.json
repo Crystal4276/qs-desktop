@@ -15,5 +15,5 @@
   "terminal": ["gnome-terminal", "--wait", "--"],
   "mediaPlayer": "spotify",
   "nightLight": { "from": "20:00", "to": "06:00", "temperature": 3239 },
-  "doNotDisturb": { "schedule": true, "from": "21:00", "to": "07:00", "muteApps": [] }
+  "doNotDisturb": { "schedule": true, "from": "21:00", "to": "07:00", "muteApps": [], "muteWebApps": [] }
 }

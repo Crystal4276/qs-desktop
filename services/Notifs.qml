@@ -136,12 +136,12 @@ Singleton {
                 staleIconDirs.running = true;
                 root.applySchedule();
             }
+            root.loaded = true;   // avant l'historique : une erreur de lecture ne doit pas bloquer services/Audio.qml
             root.iconFiles = Object.assign(JSON.parse(iconFiles), root.iconFiles);   // + copies faites avant ce point
             root.restoreLive(JSON.parse(live));
             // + lignes archivées avant ce point (rare : notification fermée au démarrage).
             root.history = [...JSON.parse(history).map(h => h.imageKey ? Object.assign(h, root.isDataImage(h.icon) ? { icon: h.fallbackIcon ?? "" } : {}, { imageKey: 0 }) : h), ...root.history].slice(-root.historyLength);
             ready = true;
-            root.loaded = true;
         }
     }
 
