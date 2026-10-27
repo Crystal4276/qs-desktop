@@ -12,7 +12,6 @@ Singleton {
 
     readonly property PolkitAgent agent: agentLoader.item
     readonly property AuthFlow flow: agent?.flow ?? null
-    readonly property bool isActive: flow !== null
 
     // Pas d'agent dans l'instance de scripts/test-outputs.sh (QS_TEST) : il s'enregistrerait sur le vrai polkit.
     // Échec de l'enregistrement (place prise par polkit-gnome, ou par l'instance d'avant un plantage, pas encore partie) :
@@ -48,12 +47,9 @@ Singleton {
                 root.failedRegistrations = 0;
         }
     }
-    onIsActiveChanged: Qt.callLater(root.cancelDisplaced)
 
-    // Quickshell 0.3.2 : une demande arrivée pendant une autre la remplace (sa file d'attente ne sert pas) ; la première, sans
-    // fenêtre, ferait attendre son application indéfiniment. Annulée une fois l'agent libre (pas avant : sa fin terminerait aussi
-    // la demande en cours) ; l'application peut redemander. Limites (défaut de Quickshell) : remplacée pendant la vérification de
-    // son mot de passe, sa réussite termine la demande en cours ; les demandes remplacées ne sont jamais libérées.
+    // Quickshell 0.3.2 : une demande arrivée pendant une autre la remplace ; la première est annulée une fois l'agent libre (pas
+    // avant : sa fin terminerait aussi l'autre). Limites : ARCHITECTURE § 10.1.9.
     property var displaced: []
     property AuthFlow lastFlow: null
 
@@ -61,10 +57,12 @@ Singleton {
         if (lastFlow && flow && !lastFlow.isCompleted)
             displaced = [...displaced, lastFlow];
         lastFlow = flow;
+        if (!flow)
+            Qt.callLater(root.cancelDisplaced);
     }
 
     function cancelDisplaced(): void {
-        if (isActive)
+        if (flow)
             return;
         const flows = displaced;
         displaced = [];

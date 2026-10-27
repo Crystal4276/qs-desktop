@@ -62,7 +62,8 @@ Scope {
     // Identité dont le mot de passe est demandé, si ce n'est pas toi (plusieurs administrateurs : polkit propose le premier).
     readonly property string otherIdentity: {
         const identity = flow?.selectedIdentity ?? null;
-        return identity && identity.string !== Quickshell.env("USER") ? identity.displayName || identity.string : "";
+        // Nom complet : premier champ du GECOS (« Alice,,, » à la Debian).
+        return identity && identity.string !== Quickshell.env("USER") ? identity.displayName.split(",")[0] || identity.string : "";
     }
 
     OverlayPopup {
