@@ -87,13 +87,19 @@ Singleton {
     // sinon celui de l'écran principal (sa barre en a un, hosts/*.json), sinon le premier. Un panneau épinglé se ferme, quel que soit
     // son écran.
     function toggleFromShortcut(kind: string): void {
-        const list = buttons[kind] ?? [];
-        const on = name => list.find(b => b.QsWindow.window?.screen?.name === name);
         const panel = loaders[kind]?.item;
         if (panel?.visible && !panel.previewing)
             panel.close();
         else   // aperçu : épinglé (même bouton) ou rouvert sous le bouton de l'écran focalisé (Panel.toggle)
-            (on(Compositor.focusedOutput) ?? on(Outputs.primary?.name) ?? list[0])?.toggle();
+            preferredButton(kind)?.toggle();
+    }
+
+    // Bouton d'un panneau ouvert sans clic (raccourci, disque chiffré branché) : celui de l'écran focalisé, sinon de l'écran
+    // principal, sinon le premier.
+    function preferredButton(kind: string): Item {
+        const list = buttons[kind] ?? [];
+        const on = name => list.find(b => b.QsWindow.window?.screen?.name === name);
+        return on(Compositor.focusedOutput) ?? on(Outputs.primary?.name) ?? list[0] ?? null;
     }
 
     // Tests (scripts/test-outputs.sh) : popups inscrits et écran au clavier « à la demande », en JSON.

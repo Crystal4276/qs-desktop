@@ -106,9 +106,14 @@ Item {
         }
 
         TrayButton {
+            id: disksButton
+
             visible: Disks.loaded
             icon: "drive-removable-media-usb-panel"   // icône d'udiskie, toujours affichée comme lui
             panel: disksPanel
+
+            Component.onCompleted: BarState.register("disks", disksButton)
+            Component.onDestruction: BarState.unregister("disks", disksButton)
         }
 
         // Action en cours (allumage, connexion…) : alterne entre allumé et connecté à chaque demi-cycle (GNOME, KDE).
@@ -154,6 +159,16 @@ Item {
 
     DisksPanel {
         id: disksPanel
+    }
+
+    // Disque chiffré branché : phrase de passe demandée par le tray d'un seul écran (focalisé, sinon principal).
+    Connections {
+        target: Disks
+
+        function onUnlockRequested(volume) {
+            if (BarState.preferredButton("disks") === disksButton)
+                disksPanel.askPassphrase(disksButton, volume);
+        }
     }
 
     BluetoothPanel {

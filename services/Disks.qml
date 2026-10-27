@@ -22,6 +22,9 @@ Singleton {
     property bool loaded: false
     property string lastRead: ""   // volumes et disques de la dernière lecture (JSON) : relecture sans changement ignorée
     property int failedReads: 0
+    // Disque LUKS branché, encore verrouillé : phrase de passe demandée (udiskie ouvrait sa fenêtre ; ta demande du
+    // 2026-10-27). Pas au démarrage ni au rechargement : seulement à l'arrivée du volume.
+    signal unlockRequested(var volume)
     // QS_TEST (instance de scripts/test-outputs.sh) : pas de montage automatique, l'instance de test parle au vrai bus système
     // et monterait tes disques laissés démontés.
     readonly property bool automount: !Quickshell.env("QS_TEST")
@@ -154,10 +157,17 @@ Singleton {
         lastRead = read;
         // Rechargement de la config : comparé au dernier état lu (rien n'est remonté) ; démarrage : tout est monté, comme udiskie.
         const restored = !loaded && persist.volumes !== "";
-        notifyChanges(loaded ? volumes : restored ? JSON.parse(persist.volumes) : [], list, !loaded && !restored);
+        const before = loaded ? volumes : restored ? JSON.parse(persist.volumes) : [];
+        notifyChanges(before, list, !loaded && !restored);
         volumes = list;
         persist.volumes = JSON.stringify(list);
         drives = driveList;
+        if (loaded && automount) {
+            const known = new Set(before.map(v => v.path));
+            for (const v of list)
+                if (!known.has(v.path) && v.canUnlock && v.cleartext === "/")
+                    unlockRequested(v);
+        }
         loaded = true;
     }
 
@@ -195,9 +205,10 @@ Singleton {
 
     // --- Actions (udisksctl) ---
 
-    // `next` : appelé seulement si l'action réussit (enchaînements : démonter puis verrouiller, puis éteindre).
-    function run(action: string, device: string, command: var, input: string, next: var): void {
-        const p = actionProcess.createObject(root, { action, device, command, input, next: next ?? null });
+    // `next` : appelé seulement si l'action réussit (enchaînements : démonter puis verrouiller, puis éteindre) ; `failed` : si
+    // elle échoue.
+    function run(action: string, device: string, command: var, input: string, next: var, failed: var): void {
+        const p = actionProcess.createObject(root, { action, device, command, input, next: next ?? null, failed: failed ?? null });
         p.running = true;
     }
 
@@ -229,9 +240,11 @@ Singleton {
         sequence([unmountStep(v)]);
     }
 
-    function unlock(v, passphrase: string): void {
+    // `done(réussi)` : résultat, pour le champ de la phrase de passe.
+    function unlock(v, passphrase: string, done: var): void {
         if (v.canUnlock)
-            run("unlock", v.device, [...udisksctl("unlock", v.device), "--key-file", "/dev/stdin"], passphrase, null);
+            run("unlock", v.device, [...udisksctl("unlock", v.device), "--key-file", "/dev/stdin"], passphrase,
+                () => done?.(true), () => done?.(false));
     }
 
     // Verrouiller : démonter d'abord le volume déchiffré s'il est monté, puis verrouiller une fois le démontage fini.
@@ -272,6 +285,7 @@ Singleton {
             required property string device
             property string input: ""
             property var next: null
+            property var failed: null
             property bool done: false
 
             // Commande qui ne démarre pas : Quickshell n'émet pas `exited`, seulement `running` faux. Méthode (pas une fonction
@@ -288,6 +302,8 @@ Singleton {
                     // « Error unlocking …: GDBus.Error:org.freedesktop.UDisks2.Error.Failed: Error unlocking …: <cause> » → dernière partie.
                     const message = error.trim().replace(/^[\s\S]*GDBus\.Error:\S+\s*/, "");
                     root.notify("Job failed", message ? `failed to ${action} ${device}:\n${message}` : `failed to ${action} device ${device}.`);
+                    if (failed)
+                        failed();
                 } else if (next) {
                     next();
                 }
