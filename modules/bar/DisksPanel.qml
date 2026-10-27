@@ -14,7 +14,8 @@ Panel {
     // Phrase de passe demandée : premier disque de `Disks.pending` (branché, ou choisi par le bouton Unlock). Un seul popup est
     // ouvert à la fois : le panneau des disques ouvert l'affiche ; Tray.qml l'ouvre au besoin.
     readonly property var unlocking: visible ? Disks.pending[0] ?? null : null
-    property bool checking: false   // phrase envoyée, résultat attendu
+    // Phrase envoyée, résultat attendu (déverrouillage en cours, même lancé depuis le panneau d'un écran disparu depuis).
+    readonly property bool checking: unlocking !== null && Disks.busy.includes(unlocking.device)
     // Ouvert par le branchement d'un disque chiffré : refermé une fois les demandes satisfaites (rend le clavier, comme la
     // fenêtre d'udiskie) ; d'ici là, pas de fermeture automatique.
     property bool autoOpened: false
@@ -23,11 +24,11 @@ Panel {
     initialFocus: unlocking !== null ? passphrase.inputItem : frameItem
 
     // Fermé par toi (Échap, clic à côté, autre popup) : demandes abandonnées, les boutons Unlock restent. Pas quand son écran
-    // disparaît (OverlayPopup ferme alors le panneau : bouton détruit, surface passée sur un autre écran que sa barre, écran
-    // retiré) : le tray d'un autre écran reprend la demande.
+    // disparaît (`closingLost`) : le tray d'un autre écran reprend la demande ; ni un aperçu qui se referme (épinglé ensuite
+    // par le tray, une fois la capture finie…).
     onClosing: {
-        const lost = !button || button.QsWindow.window?.screen !== screen || !Quickshell.screens.includes(screen);
-        if (!lost)
+        autoOpened = false;   // pas de second close() quand la file se vide (onUnlockingChanged)
+        if (!closingLost && !previewing)
             Disks.dismissPrompts();
     }
     onVisibleChanged: {
@@ -40,7 +41,6 @@ Panel {
     onUnlockingChanged: {
         passphrase.text = "";
         passphrase.error = false;
-        checking = false;
         if (unlocking !== null)
             passphrase.focusInput();
         else if (autoOpened)
@@ -178,10 +178,6 @@ Panel {
         visible: root.unlocking !== null
         password: true
         placeholder: "Passphrase"
-        onVisibleChanged: {
-            if (visible)
-                focusInput();
-        }
         // Champ gardé jusqu'au résultat (ignoré si la demande a changé entre-temps) : refusée, en rouge et vidée (un autre
         // essai) ; échec d'une autre cause (polkit, udisksctl absent… : la notification le dit), demande abandonnée ; acceptée,
         // retirée de `Disks.pending` à la relecture qui suit.
@@ -189,7 +185,6 @@ Panel {
             if (text === "" || root.checking || root.unlocking === null)
                 return;
             const target = root.unlocking;
-            root.checking = true;
             error = false;
             Disks.unlock(target, text, result => {
                 if (root.unlocking !== target)
@@ -197,7 +192,6 @@ Panel {
                 if (result === "failed") {
                     Disks.dismissPrompt(target);
                 } else if (result === "wrong") {
-                    root.checking = false;
                     passphrase.text = "";
                     passphrase.error = true;
                 }

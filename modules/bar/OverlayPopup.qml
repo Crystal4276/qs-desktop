@@ -54,6 +54,15 @@ PanelWindow {
         visible = false;
     }
 
+    // Vrai pendant la fermeture due à la perte de l'écran ou du bouton (lu dans `closing` : rien n'a été abandonné par toi).
+    property bool closingLost: false
+
+    function closeLost(): void {
+        closingLost = true;
+        close();
+        closingLost = false;
+    }
+
     function run(action: var): void {
         close();
         action();
@@ -88,13 +97,13 @@ PanelWindow {
     }
 
     // Écran retiré ou bouton détruit pendant l'ouverture : fermé (l'écran ne change sinon qu'avant l'affichage).
-    onButtonChanged: if (!button && visible) close()
-    onScreenChanged: if (visible) close()
+    onButtonChanged: if (!button && visible) closeLost()
+    onScreenChanged: if (visible) closeLost()
     Connections {
         target: Quickshell
         function onScreensChanged() {
             if (root.visible && !Quickshell.screens.includes(root.screen))
-                root.close();
+                root.closeLost();
         }
     }
 
