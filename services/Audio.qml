@@ -44,20 +44,22 @@ Singleton {
     readonly property var hushApps: (Array.isArray(Settings.doNotDisturb.muteApps) ? Settings.doNotDisturb.muteApps : [])
         .map(a => String(a).toLowerCase())
     // Attend l'état repris de « ne pas déranger » et la liste des nœuds : sinon, au rechargement, tout serait rétabli. Pas
-    // dans l'instance de scripts/test-outputs.sh (QS_TEST) : elle partage PipeWire et le fichier d'état.
+    // dans l'instance de scripts/test-outputs.sh (QS_TEST) : elle partage PipeWire.
     readonly property bool hushReady: Notifs.loaded && Pipewire.ready && !Quickshell.env("QS_TEST")
     // pid → { classes: `--class=` du processus et de son parent (minuscules), seen: dernier flux vu (ms) } ; pid en lecture.
     property var processClasses: ({})
     property var pendingPids: []
-    // Flux présents quand « ne pas déranger » commence (ou au chargement) : en cours de lecture, jamais coupés d'office.
-    property var playingIds: []
+    // Flux présents quand « ne pas déranger » commence (ou au chargement), "id:pid" : en cours de lecture, jamais coupés d'office.
+    property var playingKeys: []
+    property bool syncing: false
+    property bool resync: false
     onHushedChanged: {
-        playingIds = streams.map(n => n.id);
+        playingKeys = streams.map(n => hushKey(n));
         syncHush();
     }
     onHushAppsChanged: syncHush()
     onHushReadyChanged: {
-        playingIds = streams.map(n => n.id);
+        playingKeys = streams.map(n => hushKey(n));
         syncHush();
     }
     onStreamsChanged: syncHush()
@@ -73,7 +75,7 @@ Singleton {
 
     // true : à couper ; false : non ; undefined : processus pas encore lu.
     function hushTarget(node: PwNode): var {
-        if (node.properties["application.name"] === "WEBRTC VoiceEngine")   // appels Discord
+        if (hushApps.length === 0 || node.properties["application.name"] === "WEBRTC VoiceEngine")   // appels Discord
             return false;
         if (hushApps.includes((node.properties["application.process.binary"] ?? "").toLowerCase()))
             return true;
@@ -86,8 +88,22 @@ Singleton {
     // Flux qui naît pendant « ne pas déranger », processus pas encore lu : coupé d'office le temps de la lecture (inaudible,
     // mesuré). Rétabli à la main pendant « ne pas déranger » (ex. un appel WhatsApp) : laissé tel quel.
     function syncHush(): void {
-        if (!hushReady)
+        if (!hushReady || (!hushed && hushState.owned.length === 0 && hushState.released.length === 0))
             return;
+        // Une coupure changée ici peut rappeler syncHush (mutedChanged) : passe refaite après, pas imbriquée.
+        if (syncing) {
+            resync = true;
+            return;
+        }
+        syncing = true;
+        do {
+            resync = false;
+            hushPass();
+        } while (resync);
+        syncing = false;
+    }
+
+    function hushPass(): void {
         const nodes = Pipewire.nodes.values;
         // Gardés tant que leur flux existe (pid pas encore connu : nœud pas encore lu).
         const exists = key => {
@@ -102,7 +118,7 @@ Singleton {
             const target = hushTarget(n);
             if (hushed && target === undefined && !lookups.includes(processId(n)))
                 lookups.push(processId(n));
-            const hush = hushed && !released.includes(key) && (target === true || (target === undefined && !playingIds.includes(n.id)));
+            const hush = hushed && !released.includes(key) && (target === true || (target === undefined && !playingKeys.includes(key)));
             if (hush) {
                 if (!n.audio.muted) {
                     n.audio.muted = true;
@@ -142,7 +158,7 @@ Singleton {
     // Rétabli à la main alors que le shell l'avait coupé : laissé tel quel jusqu'à la fin de « ne pas déranger ».
     function release(node: PwNode): void {
         const key = hushKey(node);
-        if (!hushed || node.audio.muted || !hushState.owned.includes(key) || hushState.released.includes(key))
+        if (syncing || !hushed || node.audio.muted || !hushState.owned.includes(key) || hushState.released.includes(key))
             return;
         hushState.released = [...hushState.released, key];
         hushState.owned = Array.from(hushState.owned).filter(k => k !== key);

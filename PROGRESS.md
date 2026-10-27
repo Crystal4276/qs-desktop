@@ -1630,9 +1630,9 @@ banc isolé (Sway headless à 2 sorties, Quickshell sur une copie de `modules/lo
 ## Ne pas déranger : sons des applications coupés (2026-10-27, ta demande)
 
 - Le shell ne joue aucun son : Discord et la web app WhatsApp jouent le leur, sur leur propre flux. Pendant « ne pas déranger »
-  (horaire ou à la main), `services/Audio.qml` coupe les flux de `doNotDisturb.muteApps` : binaire `Discord` (`hosts/default.json`)
-  et web app `--class=WebApp-Whatsapp8699` (`hosts/terrier.json`, lu dans `/proc` sur le processus audio et son parent, une fois
-  par processus). Rétablis à la fin ; rétabli à la main pendant « ne pas déranger » : recoupé.
+  (horaire ou à la main), `services/Audio.qml` coupe les flux de `doNotDisturb.muteApps` (`hosts/terrier.json` ; vide par
+  défaut) : binaire `Discord` et web app `--class=WebApp-Whatsapp8699` (lu dans `/proc` sur le processus audio et son parent).
+  Rétablis à la fin ; rétabli à la main pendant « ne pas déranger » : laissé (passe 2 ci-dessous).
 - **Gardent le son** (ta demande : première version refusée, elle coupait tout Chromium, donc YouTube) : le navigateur (même
   binaire, sans `--class=`) et les appels Discord (flux `WEBRTC VoiceEngine`).
 - Règle WirePlumber `dotfiles/wireplumber/wireplumber.conf.d/50-chromium-no-restore.conf` (ton accord) : plus de volume ni de
@@ -1659,6 +1659,11 @@ banc isolé (Sway headless à 2 sorties, Quickshell sur une copie de `modules/lo
   son) ; **rétabli à la main pendant « ne pas déranger » : laissé** (pour entendre un appel WhatsApp, rétablir sa ligne dans le
   panneau audio) ; Discord seulement dans `hosts/terrier.json` (la règle WirePlumber n'existe pas encore ailleurs) ; `muteApps`
   validé ; `Audio` créé au démarrage (`shell.qml`), absent de l'instance de `test-outputs.sh`.
+- **Passe 3** : `syncHush` non réentrante (une coupure changée pendant la passe la rappelait : un flux pouvait sortir de la
+  liste et rester coupé après 07:00) ; rien n'est coupé d'office si `muteApps` est vide ; flux en cours au début repérés par
+  `id:pid` (un id resservi échappait à la coupure d'office) ; rien n'est parcouru hors « ne pas déranger » quand aucune coupure
+  n'est à rétablir ; `hosts/terrier.json` ne donne que `muteApps` (horaire par défaut de `Settings.qml`). Gardé : l'exception
+  des appels Discord (`WEBRTC VoiceEngine`) reste dans le code, un seul usage.
 - Banc : 30/30 + son en cours sans trou (4 s, 0 ms de trou), rétabli à la main gardé (y compris après rechargement), rechargement
   à chaud pendant « ne pas déranger » (coupure gardée, rétablie à la fin), coupure manuelle de jour respectée.
 
