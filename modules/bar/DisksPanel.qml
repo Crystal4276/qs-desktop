@@ -18,6 +18,24 @@ Panel {
         if (!visible)
             unlocking = null;
     }
+    // Autre volume : rien de ce qui a été tapé pour le précédent ne lui est envoyé.
+    onUnlockingChanged: passphrase.text = ""
+
+    // Volume retiré, déverrouillé ailleurs, ou remplacé par un autre sous le même nom (/dev/sdb1) : plus rien à demander.
+    Connections {
+        target: Disks
+
+        function onVolumesChanged(): void {
+            const u = root.unlocking;
+            if (u && !Disks.volumes.some(v => v.path === u.path && v.label === u.label && v.size === u.size && v.cleartext === "/"))
+                root.unlocking = null;
+        }
+    }
+
+    function open(volume): void {
+        root.close();
+        Disks.browse(volume);
+    }
 
     function sizeText(bytes: real): string {
         const units = ["B", "kB", "MB", "GB", "TB"];
@@ -72,21 +90,23 @@ Panel {
                 PanelRow {
                     required property var modelData
 
-                    readonly property var clear: modelData.isCrypto ? Disks.volumes.find(c => c.path === modelData.cleartext) ?? null : null
+                    // Déverrouillé : volume déchiffré présent, même sans système de fichiers reconnu (LVM…), alors absent de la liste.
+                    readonly property bool unlocked: modelData.isCrypto && modelData.cleartext !== "/"
+                    readonly property var clear: unlocked ? Disks.volumes.find(c => c.path === modelData.cleartext) ?? null : null
                     readonly property var volume: clear ?? modelData
 
-                    icon: modelData.isCrypto ? (clear ? "changes-allow" : "changes-prevent") : "drive-removable-media"
+                    icon: modelData.isCrypto ? (unlocked ? "changes-allow" : "changes-prevent") : "drive-removable-media"
                     text: modelData.uiLabel
                     subtext: [
                         root.sizeText(modelData.size),
                         volume.fsType,
-                        modelData.isCrypto && !clear ? "locked" : volume.mounted ? `mounted on ${volume.mountPoint}` : "not mounted"
+                        modelData.isCrypto && !unlocked ? "locked" : volume.mounted ? `mounted on ${volume.mountPoint}` : "not mounted"
                     ].filter(s => s).join(" · ")
                     active: volume.mounted
-                    onClicked: volume.mounted ? Disks.browse(volume) : null
+                    onClicked: volume.mounted ? root.open(volume) : null
 
                     PanelButton {
-                        visible: modelData.isCrypto && !clear
+                        visible: modelData.isCrypto && !unlocked
                         text: "Unlock"
                         onClicked: root.unlocking = modelData
                     }
@@ -100,14 +120,11 @@ Panel {
                     PanelButton {
                         visible: volume.mounted
                         text: "Open"
-                        onClicked: {
-                            root.close();
-                            Disks.browse(volume);
-                        }
+                        onClicked: root.open(volume)
                     }
 
                     PanelButton {
-                        visible: modelData.isCrypto && clear !== null
+                        visible: unlocked
                         text: "Lock"
                         onClicked: Disks.lock(modelData)
                     }
@@ -122,6 +139,8 @@ Panel {
     }
 
     PanelField {
+        id: passphrase
+
         visible: root.unlocking !== null
         password: true
         placeholder: "Passphrase"
