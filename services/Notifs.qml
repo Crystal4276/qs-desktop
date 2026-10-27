@@ -28,6 +28,7 @@ Singleton {
     property var history: []
     readonly property bool unseen: history.some(h => !h.seen)
     property alias doNotDisturb: persist.doNotDisturb
+    readonly property bool loaded: persist.ready   // état repris (doNotDisturb exact)
 
     // « Ne pas déranger » programmé (ta demande du 2026-10-26) : activé à l'heure de début, désactivé à l'heure de fin ; entre
     // les deux, la bascule à la main reste libre jusqu'à la prochaine heure. Appliqué aussi au démarrage de la session. Horaire
