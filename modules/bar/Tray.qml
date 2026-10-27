@@ -165,7 +165,7 @@ Item {
     // sinon celui du tray de l'écran préféré (focalisé, sinon principal) s'ouvre. Jamais par-dessus un autre popup épinglé ni
     // l'outil de capture (saisie en cours qui serait perdue, clavier pris) : ouvert à leur fermeture. Décidé après coup
     // (callLater) : pas pendant la diffusion qui ferme un popup, ni avant qu'un clic en ait ouvert un autre.
-    readonly property var openDisksPanel: BarState.openList.find(p => p.disks === true) ?? null
+    readonly property var openDisksPanel: BarState.openList.find(p => p instanceof DisksPanel) ?? null
     readonly property bool promptHere: Disks.pending.length > 0 && !Screenshot.active
         && (openDisksPanel ? openDisksPanel === disksPanel && disksPanel.previewing
             : !BarState.popupPinned && BarState.preferredButton("disks") === disksButton)
@@ -173,7 +173,7 @@ Item {
 
     function openPrompt(): void {
         if (promptHere)
-            disksPanel.openPrompt(disksPanel.previewing ? disksPanel.button : disksButton);
+            disksPanel.openPrompt(disksButton);
     }
 
     BluetoothPanel {

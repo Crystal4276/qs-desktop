@@ -18,14 +18,18 @@ Panel {
     // Ouvert par le branchement d'un disque chiffré : refermé une fois les demandes satisfaites (rend le clavier, comme la
     // fenêtre d'udiskie) ; d'ici là, pas de fermeture automatique.
     property bool autoOpened: false
-    readonly property bool disks: true   // repéré parmi les popups ouverts (Tray.qml)
     holdOpen: unlocking !== null
     // Le champ a le focus à l'ouverture (la surface le donne à cet élément).
     initialFocus: unlocking !== null ? passphrase.inputItem : frameItem
 
-    // Fermé (Échap, clic à côté, autre popup) : demandes abandonnées, les boutons Unlock restent. Pas quand la barre est
-    // détruite (écran retiré) : le tray d'un autre écran reprend la demande.
-    onClosing: Disks.dismissPrompts()
+    // Fermé par toi (Échap, clic à côté, autre popup) : demandes abandonnées, les boutons Unlock restent. Pas quand son écran
+    // disparaît (OverlayPopup ferme alors le panneau : bouton détruit, surface passée sur un autre écran que sa barre, écran
+    // retiré) : le tray d'un autre écran reprend la demande.
+    onClosing: {
+        const lost = !button || button.QsWindow.window?.screen !== screen || !Quickshell.screens.includes(screen);
+        if (!lost)
+            Disks.dismissPrompts();
+    }
     onVisibleChanged: {
         if (!visible)
             autoOpened = false;
@@ -41,14 +45,22 @@ Panel {
             passphrase.focusInput();
         else if (autoOpened)
             close();
+        else
+            frameItem.forceActiveFocus();   // champ masqué : il ne garde pas les touches suivantes
     }
 
-    // Ouvert et épinglé sous `button` (ou aperçu épinglé).
+    // Fermé (Tray.qml) : ouvert et épinglé sous `button` ; aperçu : épinglé.
     function openPrompt(button: Item): void {
-        if (!visible || previewing) {
-            toggle(button, button.buttons);
-            autoOpened = true;
-        }
+        toggle(button, button.buttons);
+        autoOpened = true;
+    }
+
+    // Ouvrir un volume monté : le panneau se ferme, sauf pendant une demande de phrase de passe (elle serait abandonnée).
+    function browse(volume): void {
+        if (unlocking !== null)
+            Disks.browse(volume);
+        else
+            run(() => Disks.browse(volume));
     }
 
     function sizeText(bytes: real): string {
@@ -122,7 +134,7 @@ Panel {
                     active: volume.mounted
                     // Ligne inactive aussi : un clic sur un bouton atténué ne l'atteint pas (il ouvrirait le dossier).
                     locked: drive.busy
-                    onClicked: volume.mounted ? root.run(() => Disks.browse(volume)) : null
+                    onClicked: volume.mounted ? root.browse(volume) : null
 
                     PanelButton {
                         visible: modelData.canUnlock && !unlocked
@@ -141,7 +153,7 @@ Panel {
                     PanelButton {
                         visible: volume.mounted
                         text: "Open"
-                        onClicked: root.run(() => Disks.browse(volume))
+                        onClicked: root.browse(volume)
                     }
 
                     PanelButton {
@@ -174,7 +186,7 @@ Panel {
         // essai) ; échec d'une autre cause (polkit, udisksctl absent… : la notification le dit), demande abandonnée ; acceptée,
         // retirée de `Disks.pending` à la relecture qui suit.
         onAccepted: text => {
-            if (text === "" || root.checking)
+            if (text === "" || root.checking || root.unlocking === null)
                 return;
             const target = root.unlocking;
             root.checking = true;
