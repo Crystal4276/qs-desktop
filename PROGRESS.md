@@ -1718,6 +1718,15 @@ banc isolé (Sway headless à 2 sorties, Quickshell sur une copie de `modules/lo
 - Banc : 39/39 + son en cours sans trou (4 s, 0 ms de trou), rétabli à la main gardé (y compris après rechargement), rechargement
   à chaud pendant « ne pas déranger » (coupure gardée, rétablie à la fin), coupure manuelle de jour respectée.
 
+## Cloche des notifications : clic droit = « ne pas déranger » (2026-10-27, ta demande)
+
+- `modules/bar/Tray.qml` : clic gauche sur la cloche, carte des notifications (inchangé) ; clic droit, bascule « ne pas
+  déranger » (comme l'interrupteur de la carte : à la main, l'horaire reprend à sa prochaine heure). Carte ouverte : elle le
+  reste. `PreviewArea.qml` / `TrayButton.qml` : `panelButtons` (boutons qui ouvrent la carte, gauche et droit par défaut) et
+  `otherPressed` ; les autres boutons de la barre sont inchangés.
+- **À tester à la main** : clic droit sur la cloche (icône barrée, sons de Discord/WhatsApp coupés), puis de nouveau (rétablis) ;
+  carte ouverte au survol ou épinglée : elle reste ouverte et son interrupteur suit.
+
 ## Prochaine étape
 
 Phase 9 — parité Hyprland (tests à faire ensemble dans une session Hyprland : voir « Compatibilité Hyprland »).

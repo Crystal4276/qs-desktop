@@ -4,7 +4,8 @@ import qs.config
 // Survol et appui d'un bouton de barre qui ouvre une carte (Panel.qml) : icônes du tray (TrayButton.qml) et engrenage
 // (SettingsButton.qml). Couvre le bouton, au-dessus de son contenu. Survol : `previewRequested` après un court arrêt (pas en
 // passant : l'ouverture lance des recherches Bluetooth, Wi-Fi…), sauf si la carte est déjà ouverte, si un autre popup est épinglé,
-// ou après une fermeture tant que le pointeur reste sur le bouton (Panel.qml). Appui (gauche ou droit) : `toggleRequested`.
+// ou après une fermeture tant que le pointeur reste sur le bouton (Panel.qml). Appui d'un bouton de `panelButtons` (gauche ou
+// droit par défaut) : `toggleRequested` ; d'un autre : `otherPressed` (la carte ouverte le reste).
 // Bouton survolé signalé à BarState (un aperçu reste ouvert tant que le pointeur est sur l'un d'eux).
 Item {
     id: root
@@ -13,8 +14,10 @@ Item {
     property var panel: null   // Panel.qml ; null tant qu'elle n'est pas chargée (réglages)
     readonly property alias hovered: hover.hovered
     readonly property int buttons: Qt.LeftButton | Qt.RightButton
+    property int panelButtons: buttons
     signal previewRequested
     signal toggleRequested
+    signal otherPressed(int button)
 
     anchors.fill: parent
 
@@ -46,7 +49,7 @@ Item {
     MouseArea {
         anchors.fill: parent
         acceptedButtons: root.buttons
-        onPressed: root.toggleRequested()
+        onPressed: mouse => mouse.button & root.panelButtons ? root.toggleRequested() : root.otherPressed(mouse.button)
     }
 
     Component.onDestruction: BarState.setTrayHover(root.button, false)
