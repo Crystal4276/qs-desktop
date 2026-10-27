@@ -1801,9 +1801,33 @@ ne trouve plus que du négligeable.
 - **À tester** : engrenage puis bouton fond d'écran avec le focus sur un autre écran (utilitaire sur l'écran central) ; cliquer
   plusieurs fonds à la suite (plus d'écran noir).
 
+## Revues restantes avant la phase 9 (2026-10-27, ta demande)
+
+Audit de couverture (boucles de `PROGRESS.md` croisées avec git, fichier par fichier) : les boucles `/code-review` portaient
+sur des plages de commits, un fichier inchangé dans la plage n'y était que du contexte ; la revue globale du 2026-10-16
+(3 passes, 10 constats chacune) n'a pas convergé. Code jamais passé dans une boucle, par ordre de risque :
+
+1. **Disques** : `services/Disks.qml`, `modules/bar/DisksPanel.qml` (montage, LUKS, éjection).
+2. **Agent polkit** : `modules/polkit/PolkitDialog.qml` (seulement la boucle commune de la phase 8b).
+3. **Web apps** : `dotfiles/webapps/open-link`, `open-links/background.js`, règle WirePlumber.
+4. **Tray StatusNotifier** : `TrayMenu.qml`, `TrayIcon.qml`, partie applications de `Tray.qml`.
+5. **Statistiques système** : `services/Monitor.qml`, `modules/monitor/`.
+6. **Modules système de la barre** (phase 4) : `Gpu`, `SystemStats`, `Updates`, `Battery`, `Brightness`, `Displays`,
+   `Profiles` et leurs widgets (`Cpu`, `Memory`, `GpuModule`, `InfoModule`, `NetworkModule`, `UpdatesModule`,
+   `BatteryModule`, `Backlight`, `WheelSteps`, `RichLabel`), contenu de `CalendarPopup`.
+7. **OSD et widgets partagés** : `Osd.qml`, `VolumeSlider`, `PercentLabel`, `MixerButton`, `OutsideClick`, `PanelButton`,
+   `PanelSection`.
+8. **Scripts** : `takeover.sh`, `dev.sh`, `shot.sh`, `crop.sh`.
+9. **Ajouts postérieurs à leur boucle** : clic droit sur la cloche (`Tray`, `PreviewArea`, `TrayButton`), fermeture auto du
+   menu et `EmptyState`, titre de la carte des réglages, largeurs fixes de `NetworkModule`, `shell.qml`.
+
+Hors périmètre : chemins propres à Hyprland (phase 9), `Theme.qml` (valeurs). Méthode : `/code-review high` sur les fichiers
+entiers, chaque point vérifié sur banc isolé avant correction, un commit par passe, arrêt quand une passe ne trouve plus que
+du négligeable. Bancs et agents en lecture seule pour tes vrais disques et ta VPN.
+
 ## Prochaine étape
 
-Phase 9 — parité Hyprland (tests à faire ensemble dans une session Hyprland : voir « Compatibilité Hyprland »).
+Revues restantes ci-dessus, puis phase 9 — parité Hyprland (tests à faire ensemble dans une session Hyprland : voir « Compatibilité Hyprland »).
 
 Rappel pour la phase 10 : l'historique du lanceur (`~/.local/state/quickshell/by-shell/desktop/launcher.json`) est repris de Rofi
 quand il n'existe pas, et toute instance de test le recrée. Le supprimer juste avant la bascule, pour reprendre l'historique Rofi le
