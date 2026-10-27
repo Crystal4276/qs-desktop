@@ -1684,6 +1684,10 @@ banc isolé (Sway headless à 2 sorties, Quickshell sur une copie de `modules/lo
   `Notifs.loaded` posé avant la reprise de l'historique (une erreur de lecture ne bloque plus le rétablissement). Écartés :
   règle WirePlumber à ne poser que sur une machine qui coupe des applications (noté pour `install.sh`, phase 11) ; web apps de
   Chrome/Brave (documenté) ; deux optimisations sans effet mesurable (passes groupées par `Qt.callLater`).
+- **Passe 8** : fichier d'état écrit aussitôt (plus d'écriture différée : un plantage pouvait perdre une coupure) ;
+  `Notifs.loaded` posé en tête de `persist.onLoaded` ; copie installée de la règle WirePlumber resynchronisée (commentaire).
+  Limite documentée : web app en Flatpak (pid du bac à sable, `/proc` de l'hôte : non reconnue). Proposé à part, pas fait :
+  nommer les flux de la web app au lancement (voir le rapport).
 - Banc : 30/30 + son en cours sans trou (4 s, 0 ms de trou), son Discord en cours à 21:00 gardé, rétabli à la main gardé (y compris après rechargement), rechargement
   à chaud pendant « ne pas déranger » (coupure gardée, rétablie à la fin), coupure manuelle de jour respectée.
 
