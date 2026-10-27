@@ -48,10 +48,11 @@ Singleton {
         return minutes < 0 ? "" : `${pad(Math.floor(minutes / 60))}:${pad(minutes % 60)}`;
     }
 
-    // Pilules d'une barre : par description d'écran, sinon par rôle.
+    // Pilules d'une barre : l'écran principal a la barre `primary` (tray, réglages, menu), même s'il a sa propre entrée : un
+    // écran secondaire devenu seul ou principal les garde ; les autres, par description d'écran, sinon `secondary`.
     // Renvoie { left: [[module, …], …], right: […] }.
     function barFor(description: string, primary: bool): var {
-        return bars[description] ?? bars[primary ? "primary" : "secondary"] ?? ({ left: [], right: [] });
+        return (primary ? bars.primary : null) ?? bars[description] ?? bars.secondary ?? ({ left: [], right: [] });
     }
 
     function parse(file: FileView): var {

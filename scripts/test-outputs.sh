@@ -66,10 +66,12 @@ swaymsg output "${outputs[1]}" mode 3440x1440 scale 1 pos 2560 0 >/dev/null
 swaymsg output "${outputs[2]}" mode 3840x2160 scale 1.5 pos 6000 0 >/dev/null
 
 # Quickshell sur cette session, avec son propre bus de session (notifications, tray, lecteurs : rien n'atteint les tiens)
-# et sans montage automatique (le bus système, lui, est le vrai). Sans gvfs : un second gvfsd lancé sur ce bus casserait
-# le montage /run/user/$UID/gvfs de ta session (vu le 2026-10-26).
+# et ni montage automatique ni reconnexion Bluetooth automatique (QS_TEST : le bus système, lui, est le vrai). État à part
+# (XDG_STATE_HOME) : les fichiers d'état de ton instance (historique du lanceur, fond, veilleuse…) ne sont ni lus ni écrits.
+# Sans gvfs : un second gvfsd lancé sur ce bus casserait le montage /run/user/$UID/gvfs de ta session (vu le 2026-10-26).
 (cd "$repo" && exec env -u HYPRLAND_INSTANCE_SIGNATURE WAYLAND_DISPLAY="$wayland" SWAYSOCK="$SWAYSOCK" I3SOCK="$SWAYSOCK" \
-    QS_NO_AUTOMOUNT=1 GIO_USE_VFS=local GVFS_DISABLE_FUSE=1 dbus-run-session -- qs -p "$repo" >"$work/qs.log" 2>&1) &
+    QS_TEST=1 XDG_STATE_HOME="$work/state" GIO_USE_VFS=local GVFS_DISABLE_FUSE=1 \
+    dbus-run-session -- qs -p "$repo" >"$work/qs.log" 2>&1) &
 bus_pid=$!
 # Quickshell est l'enfant de dbus-run-session : c'est son PID que `qs ipc --pid` attend.
 for _ in $(seq 1 50); do qs_pid="$(pgrep -P "$bus_pid" -x qs || true)"; [[ -n "$qs_pid" ]] && break; sleep 0.1; done
@@ -330,6 +332,34 @@ else
     echo "ÉCHEC vue après rallumage : $(visible_map) au lieu de $reference_visible"
     failures=$((failures + 1))
 fi
+
+# Espace focalisé vide qui change d'écran (droite éteinte : le premier espace du bloc de gauche passe au centre) : il doit
+# arriver au centre, focalisé, en une seule correction. Avant correction, le centre affichait d'abord son espace mémorisé :
+# Sway détruisait l'espace vide, le focus final le recréait à gauche, puis une seconde correction (revue du 2026-10-27).
+moving_ws="${left_block[0]}"
+swaymsg "[title=\"^qs-test-$moving_ws\$\"] move container to workspace number ${left_block[1]}" >/dev/null
+swaymsg "focus output $left; workspace number $moving_ws" >/dev/null
+sleep 1
+placed_before="$(qs log --pid "$qs_pid" | grep -c "placement des espaces" || true)"
+swaymsg output "$right" disable >/dev/null
+check "droite éteinte, espace $moving_ws focalisé et vide" "$(expected_rule)" "$moving_ws" skip
+sleep 0.5
+placed_after="$(qs log --pid "$qs_pid" | grep -c "placement des espaces" || true)"
+moving_output="$(swaymsg -t get_workspaces | jq -r --argjson n "$moving_ws" '.[] | select(.num == $n) | .output')"
+if [[ "$moving_output" == "$center" && "$((placed_after - placed_before))" == "1" ]]; then
+    echo "OK    espace $moving_ws au centre, une seule correction"
+else
+    echo "ÉCHEC espace $moving_ws sur $moving_output, $((placed_after - placed_before)) correction(s)"
+    failures=$((failures + 1))
+fi
+swaymsg output "$right" enable >/dev/null
+check "droite rallumée (l'espace $moving_ws focalisé retourne à gauche)" "$initial_expected" "$moving_ws" skip
+swaymsg "[title=\"^qs-test-$moving_ws\$\"] move container to workspace number $moving_ws" >/dev/null
+swaymsg "workspace number $initial_focus" >/dev/null
+sleep 1
+prev_visible="$(visible_map)"
+seen_views[$(layout_key)]="$prev_visible"
+check "remise en état" "$initial_expected"
 
 if [[ "$(windows)" == "$initial_windows" ]]; then
     echo "OK    fenêtres : $(jq length <<<"$initial_windows"), toutes dans leur espace d'origine"

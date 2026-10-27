@@ -122,8 +122,16 @@ Item {
                     id: hover
                 }
 
+                // Espace persistant (n'existe nulle part) : créé directement sur l'écran de cette barre, pas sur l'écran focalisé
+                // d'où il faudrait ensuite le déplacer.
                 TapHandler {
-                    onTapped: Compositor.focusWorkspace(button.modelData.number)
+                    onTapped: {
+                        const n = button.modelData.number;
+                        if (Compositor.workspaces.some(w => w.number === n))
+                            Compositor.focusWorkspace(n);
+                        else
+                            Compositor.placeWorkspaces([], [{ number: n, output: root.output }], 0);
+                    }
                 }
             }
         }
