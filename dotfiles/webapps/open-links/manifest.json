@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "Liens vers le navigateur",
+  "description": "Web app : les liens ouverts dans un nouvel onglet ou une nouvelle fenêtre vont au profil Chromium principal.",
+  "version": "1.0",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAnEiaOq65kwHdAD+Yd3GrXFwOGhBU2TcCDPD6IWLV1ZKoaHhL4d7v21n6MnGIcL8YivbTXKf5kFedf6lu4bN9ThcdTH9Z8vXDBsaSDLTYJ5Dq+8MUtwPl3vsRfFSUgUiHWhBtmz/1c3VieOPWUT2bj8EkvsaIKGcUobUCqAKsQi7JC/dlo6GCUwO0H/5+g5VWahidVv7CuAgl63HLHVDnD4GpPnFSt6uncP5+RH1/mc+yjtDkJKJZsDnmva3GCRDKFlCk4+ZIj1ifwmUdigcH96bW2I5o5TP4AV3jA7pH4lz/cM23TUVnen2BgHxUa90VjfG97fWgQBxWBWxARuj6HQIDAQAB",
+  "permissions": ["webNavigation", "nativeMessaging"],
+  "background": {
+    "service_worker": "background.js"
+  }
+}

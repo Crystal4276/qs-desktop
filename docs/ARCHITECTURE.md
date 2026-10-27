@@ -5,13 +5,18 @@ Version cible : **Quickshell 0.3.2** (Arch). Les API citées ont été vérifié
 
 ## 1. Structure
 
-Celle de `CLAUDE.md`, avec deux ajouts :
+Celle de `CLAUDE.md`, avec trois ajouts :
 
 - `assets/` : images reprises de la config actuelle (logo Arch vert/mantle, 4 icônes du power menu). Aujourd'hui elles sont
   référencées par chemin absolu `/home/crystal/.config/sway/assets/…` depuis le CSS Waybar et le script Rofi ;
   le dépôt doit les embarquer pour être autonome.
 - `dotfiles/wireplumber/` *(2026-10-27)* : règle WirePlumber dont dépend la coupure des sons pendant « ne pas déranger »
   (§ 4, `doNotDisturb`) ; liée dans `~/.config/wireplumber/` par `install.sh`.
+- `dotfiles/webapps/` *(2026-10-27)* : extension Chromium `open-links/` et son hôte natif `open-link`, chargés par les web apps
+  (WhatsApp, Discord : `chromium --app … --user-data-dir=<profil isolé> --load-extension=…/open-links`). Un lien ouvert dans un
+  nouvel onglet ou une nouvelle fenêtre part dans le profil Chromium principal (onglet ajouté, navigateur démarré s'il ne tourne
+  pas) ; les popups (connexion OAuth) restent dans la web app. Le manifeste de l'hôte (`<profil>/NativeMessagingHosts/
+  qs_desktop.open_link.json`, chemin absolu du script) et l'option des lanceurs seront posés par `install.sh` (phase 11).
 
 ## 2. Compositeur
 
