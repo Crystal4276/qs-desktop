@@ -23,13 +23,21 @@ Singleton {
     readonly property bool hidesCursor: !Compositor.isHyprland
     readonly property string pictures: Places.pictures !== "" ? Places.pictures : `${Quickshell.env("HOME")}/Pictures`
 
-    // Pas pendant le verrouillage : l'outil prendrait le clavier de l'écran de verrouillage (fermé au verrouillage).
+    // Pas pendant le verrouillage : l'outil prendrait le clavier de l'écran de verrouillage (fermé au verrouillage ; capture déjà
+    // demandée : laissée finir, l'outil se ferme de lui-même une fois l'image enregistrée, au plus 500 ms).
+    property bool capturing: false
+
     Connections {
         target: Session
         function onLockActiveChanged() {
-            if (Session.lockActive)
+            if (Session.lockActive && !root.capturing)
                 root.close();
         }
+    }
+    Timer {
+        running: Session.lockActive && root.capturing
+        interval: 500
+        onTriggered: root.close()
     }
 
     function open(startMode: string): void {
@@ -51,6 +59,7 @@ Singleton {
 
     function close(): void {
         active = false;
+        capturing = false;
         selection = null;
         nudge.stop();
         settle.stop();
@@ -118,8 +127,10 @@ Singleton {
         }
         if (best === "")
             close();
-        else
+        else {
+            capturing = true;
             captureRequested(s, best);
+        }
     }
 
     // Fichier de la capture : dossier Images XDG (comme le script de la touche Impr.).
