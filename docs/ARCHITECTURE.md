@@ -578,6 +578,11 @@ Voir `WALLPAPERS.md` § « Mise en œuvre ». Remplace `swaybg` (Sway) et le fon
   `qs ipc call lock lock`) ; la nouvelle instance reprend le verrou et se déverrouille avec le mot de passe. Vérifié dans un Sway isolé.
 - Tests : PAM factice (`pam_permit` / `pam_deny`) dans un dossier temporaire, branché seulement dans une configuration de test
   (`LockScreen.pamDirectory`) ; le verrouillage réel avec ton mot de passe est dans la liste « À faire par toi ».
+- Revue du 2026-10-27 : verrou refusé ou perdu (un autre client ext-session-lock le tient, ex. swaylock) → `locked` repasse à
+  faux (détecté par `secure` qui retombe alors que `locked` est vrai) ; sans cela, plus aucun verrouillage jusqu'au redémarrage.
+  Frappe gardée pendant la vérification PAM, pour l'essai suivant (comme swaylock ; Entrée y est ignoré, comme swaylock) : le
+  mot de passe vérifié est figé à l'appui sur Entrée (`pending`). Messages de PAM montrés si l'essai échoue (faillock : compte
+  bloqué). Mot de passe long : les derniers points restent visibles.
 
 ### 10.1.8 Phase 8b : veille des écrans (2026-10-17)
 
