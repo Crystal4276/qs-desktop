@@ -1808,7 +1808,7 @@ sur des plages de commits, un fichier inchangé dans la plage n'y était que du 
 (3 passes, 10 constats chacune) n'a pas convergé. Code jamais passé dans une boucle, par ordre de risque :
 
 1. **Disques** : `services/Disks.qml`, `modules/bar/DisksPanel.qml` (montage, LUKS, éjection). **Fait** (ci-dessous).
-2. **Agent polkit** : `modules/polkit/PolkitDialog.qml` (seulement la boucle commune de la phase 8b).
+2. **Agent polkit** : `modules/polkit/PolkitDialog.qml` (seulement la boucle commune de la phase 8b). **Fait** (ci-dessous).
 3. **Web apps** : `dotfiles/webapps/open-link`, `open-links/background.js`, règle WirePlumber.
 4. **Tray StatusNotifier** : `TrayMenu.qml`, `TrayIcon.qml`, partie applications de `Tray.qml`.
 5. **Statistiques système** : `services/Monitor.qml`, `modules/monitor/`.
@@ -1857,6 +1857,39 @@ puis Sway isolé avec clavier et pointeur virtuels (`luks-bench.sh`, scratchpad)
   demande au branchement, mauvaise puis bonne phrase, Lock, Eject.
 - Vu en passant, hors périmètre : avertissement `services/Bluez.qml[31:5]: Unable to assign [undefined] to bool` à chaque
   rechargement à chaud (propriété `busy`) — à regarder avec le module Bluetooth.
+
+### Agent polkit : revue en boucle (2026-10-27 / 28, ta demande)
+
+6 passes de `/code-review high` sur les fichiers entiers (`055007b` … `5955b39`), chaque point vérifié sur un banc : copie du dépôt
+dans un Sway isolé, **vrai polkitd** (`pkexec true`), clavier et pointeur virtuels, ton instance arrêtée le temps de chaque scénario
+(un seul agent par session) puis relancée ; 16 scénarios rejoués après chaque passe. Arrêt : la passe 6 ne trouve qu'un défaut
+d'une image (capture en cours au verrouillage).
+- **Plus d'agent après un plantage** : vu dans ton journal (plantage connu de Quickshell à 18 h 23, relancé seul) : l'instance
+  relancée trouvait l'ancienne encore enregistrée (coredump en cours) et Quickshell ne réessaie jamais : plus aucun agent dans ta
+  session (vérifié par une sonde D-Bus). Agent recréé de lui-même (5 s, puis de plus en plus rarement).
+- **Clavier volé à l'écran de verrouillage** : une fenêtre à clavier exclusif ouverte pendant le verrouillage (dialogue polkit,
+  lanceur par IPC, demande de phrase d'un disque, outil de capture) prenait la frappe : le mot de passe tapé pour déverrouiller
+  partait ailleurs (vérifié sur l'ancien code avec le lanceur). `Session.lockActive` (dès la demande) : aucun popup ne s'ouvre, ceux
+  qui sont ouverts se ferment en gardant ce qui était en cours (demande polkit, phrase de passe), rouverts au déverrouillage.
+- **Demande gardée quand ce n'est pas toi qui fermes** : écran retiré (la surface fermée par le compositeur n'émettait aucun
+  `closing` : demande invisible, Échap sans effet), verrouillage, rechargement de la config (demande en cours plus affichée).
+- **Deux demandes à la fois** : défaut de Quickshell 0.3.2 (aussi sur `master`) : la seconde remplace la première, qui restait
+  sans réponse (son application attendait indéfiniment). Annulée une fois l'agent libre ; limites restantes et signalement amont :
+  BACKLOG.
+- Sécurité et détails : message en texte brut (du HTML glissé dans la commande de `pkexec` s'affichait) ; champ vide jamais
+  envoyé ; mot de passe effacé à la fermeture ; Échap pendant la vérification ; refus gardé à la réouverture, effacé pour une
+  nouvelle demande ; identité affichée si ce n'est pas toi (plusieurs administrateurs) ; agent dans un service (`services/Polkit.qml`).
+- **faillock** : chaque demande annulée compte comme un échec (programme d'aide de polkit, comme avec polkit-gnome ; `deny = 10`
+  sur 15 min ici). Les bancs ont ainsi bloqué ton compte vers 20 h 29 (10 annulations en 2 min) : compteur remis à zéro à 20 h 37
+  (`faillock --reset`, ton fichier) puis après chaque scénario ; aucun échec restant.
+- **Incident pendant les bancs** : de 20 h 27 à 20 h 37 environ, ton instance relancée par le banc était branchée sur le socket du
+  Sway isolé (espaces de travail figés) ; relancée sur le tien, banc corrigé, vérifié à chaque relance depuis.
+- BACKLOG : polkitd redémarré (agent perdu, comme polkit-gnome) ; signalement à Quickshell (file d'attente, nouvel essai).
+- Laissés (choix ou négligeables) : pas de choix d'identité ; dialogue polkit prioritaire sur les autres popups et la capture ;
+  nouvel essai toutes les 5 min tant que polkit-gnome tourne (jusqu'à la phase 10) ; réponse vide jamais envoyée.
+- **À tester à la main** : une vraie demande (Nemo, `pkexec true`) : mot de passe faux puis bon ; verrouiller (`Super+…`) avec
+  une demande ouverte puis déverrouiller : la demande revient ; disque LUKS branché puis verrouillage : la demande de phrase
+  revient au déverrouillage.
 
 ## Prochaine étape
 
