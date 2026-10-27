@@ -81,7 +81,9 @@ Reste à faire (suppression, bloquée par le garde-fou : à faire par toi ou à 
   dans le dossier Images XDG.
 - **Utilitaire** (`modules/wallpaper/PickerWindow.qml`, `qs ipc call wallpaper-picker toggle`) : onglets Images, Panoramas (plusieurs
   écrans), Triptychs (trois écrans) ; vignettes ; fond actuel entouré de vert ; clic ou Entrée : appliqué tout de suite, fenêtre
-  gardée ouverte ; rangée « All screens » / un écran pour les images simples ; flèches, Échap, clic à côté.
+  gardée ouverte ; rangée « All screens » / un écran pour les images simples ; flèches, Échap, clic à côté. Vignettes en cache
+  (`~/.cache/quickshell/by-shell/desktop/wallpaper-thumbs/`, PNG à la taille affichée, nom tiré du chemin, de la date de l'image et
+  de la taille ; périmées effacées à la lecture du dossier) : supprimer ce dossier est sans risque, il se reconstruit.
 - IPC de test : `qs ipc call wallpaper state` (JSON) et `qs ipc call wallpaper set <kind> <chemin>`.
 
 ## Décisions à prendre

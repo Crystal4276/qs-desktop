@@ -110,8 +110,32 @@ Singleton {
             return;
         }
         // Commande fixée ici : liée par une liaison, elle pourrait ne pas encore suivre un dossier qui vient de changer.
-        scan.command = ["sh", "-c", `cd "$0" 2>/dev/null && find -L simple panorama triptych -type f \\( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \\) 2>/dev/null | sort; exit 0`, dir];
+        // Lignes `w<tab>date<tab>chemin` (images, triées par chemin) puis `t<tab>fichier` (vignettes en cache).
+        scan.command = ["sh", "-c", `mkdir -p "$1"; (cd "$0" 2>/dev/null && find -L simple panorama triptych -type f \\( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \\) -printf 'w\\t%T@\\t%p\\n' 2>/dev/null | sort -t "$(printf '\\t')" -k3); find "$1" -maxdepth 1 -name '*.png' -printf 't\\t%f\\n' 2>/dev/null; exit 0`, dir, thumbDir];
         scan.running = true;
+    }
+
+    // Vignettes de l'utilitaire en cache (PNG à la taille affichée, en pixels réels) : décoder les originaux (jusqu'à 13 Mo) prenait
+    // 2 à 3 s à la première ouverture. Nom : empreinte du chemin et de la date de l'image (une image remplacée n'a plus de vignette),
+    // puis la taille. Celles d'images disparues ou modifiées sont effacées à la lecture du dossier.
+    readonly property string thumbDir: Quickshell.cachePath("wallpaper-thumbs")
+    property var stamps: ({})   // chemin → date de modification
+    property var thumbs: ({})   // fichiers de vignette présents
+
+    function thumbName(path: string, size: size): string {
+        return `${Qt.md5(`${path}\t${stamps[path] ?? ""}`)}-${size.width}x${size.height}.png`;
+    }
+
+    // Source d'une vignette : le cache s'il y est, sinon l'original.
+    function thumbSource(path: string, size: size): string {
+        const name = thumbName(path, size);
+        return thumbs[name] ? Icons.fileUrl(`${thumbDir}/${name}`) : url(path);
+    }
+
+    // Fichier où enregistrer la vignette décodée depuis l'original ("" : déjà en cache, ou date de l'image pas encore lue).
+    function thumbFile(path: string, size: size): string {
+        const name = thumbName(path, size);
+        return thumbs[name] || stamps[path] === undefined ? "" : `${thumbDir}/${name}`;
     }
 
     onDirChanged: refresh()
@@ -154,7 +178,15 @@ Singleton {
             onStreamFinished: {
                 const lib = { simple: [], panorama: [], triptych: [] };
                 const triptychs = {};
-                for (const path of text.split("\n").filter(l => l !== "")) {
+                const stamps = {}, thumbs = {};
+                for (const line of text.split("\n")) {
+                    const fields = line.split("\t");
+                    if (fields[0] === "t" && fields.length === 2)
+                        thumbs[fields[1]] = true;
+                    if (fields[0] !== "w" || fields.length !== 3)
+                        continue;
+                    const path = fields[2];
+                    stamps[path] = fields[1];
                     const parts = path.split("/");
                     if (parts[0] === "triptych" && parts.length === 3) {
                         const key = `triptych/${parts[1]}`;
@@ -165,8 +197,18 @@ Singleton {
                     }
                 }
                 lib.triptych = Object.values(triptychs).filter(t => t.parts.left && t.parts.center && t.parts.right);
+                root.stamps = stamps;
                 root.library = lib;
                 root.libraryRead = true;
+                // Vignettes d'images disparues ou modifiées : effacées (pas si le dossier n'a pas pu être lu : rien n'est perdu).
+                const used = new Set(Object.keys(stamps).map(p => Qt.md5(`${p}\t${stamps[p]}`)));
+                const stale = Object.keys(thumbs).filter(f => !used.has(f.split("-")[0]));
+                if (used.size > 0 && stale.length > 0) {
+                    prune.command = ["rm", "-f", "--", ...stale.map(f => `${root.thumbDir}/${f}`)];
+                    prune.running = true;
+                    stale.forEach(f => delete thumbs[f]);
+                }
+                root.thumbs = thumbs;
             }
         }
         onExited: {
@@ -175,5 +217,9 @@ Singleton {
                 Qt.callLater(root.refresh);
             }
         }
+    }
+
+    Process {
+        id: prune
     }
 }
