@@ -132,11 +132,12 @@ Singleton {
                 owned.push(key);
             }
         }
-        if (owned.join() !== Array.from(hushState.owned).join())
-            hushState.owned = owned;
         const stillReleased = hushed ? [...released] : [];
-        if (stillReleased.join() !== Array.from(hushState.released).join())
+        if (owned.join() !== Array.from(hushState.owned).join() || stillReleased.join() !== Array.from(hushState.released).join()) {
+            hushState.owned = owned;
             hushState.released = stillReleased;
+            hushFile.writeAdapter();   // aussitôt : une coupure non écrite ne serait jamais rétablie après un plantage
+        }
         const added = [...lookups].filter(pid => !pendingPids.includes(pid));
         if (added.length > 0)
             pendingPids = [...pendingPids, ...added];
@@ -155,10 +156,6 @@ Singleton {
             processClasses = kept;
     }
 
-    function saveHush(): void {
-        hushFile.writeAdapter();
-    }
-
     // Rétabli à la main alors que le shell l'avait coupé : laissé tel quel jusqu'à la fin de « ne pas déranger ».
     function release(node: PwNode): void {
         const key = hushKey(node);
@@ -166,7 +163,8 @@ Singleton {
                 || hushState.released.includes(key))
             return;
         hushState.released = [...hushState.released, key];
-        hushState.owned = Array.from(hushState.owned).filter(k => k !== key);   // une écriture (writeAdapter différé)
+        hushState.owned = Array.from(hushState.owned).filter(k => k !== key);
+        hushFile.writeAdapter();
     }
 
     function learnProcess(pid: string, cmdlines: string): void {
@@ -257,7 +255,6 @@ Singleton {
         path: Quickshell.statePath("audio-hush.json")
         blockLoading: true
         printErrors: false
-        onAdapterUpdated: Qt.callLater(root.saveHush)   // une écriture pour plusieurs listes changées
 
         JsonAdapter {
             id: hushState

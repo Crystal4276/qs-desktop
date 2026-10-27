@@ -132,11 +132,12 @@ Singleton {
 
         // Images envoyées en données (avatars…) : perdues au rechargement (voir imageLocks), icône de l'application à la place.
         onLoaded: {
+            // D'abord : une erreur plus bas ne doit pas bloquer services/Audio.qml (ses passes attendent la fin de ce bloc).
+            root.loaded = true;
             if (!ready) {   // premier chargement de cette instance
                 staleIconDirs.running = true;
                 root.applySchedule();
             }
-            root.loaded = true;   // avant l'historique : une erreur de lecture ne doit pas bloquer services/Audio.qml
             root.iconFiles = Object.assign(JSON.parse(iconFiles), root.iconFiles);   // + copies faites avant ce point
             root.restoreLive(JSON.parse(live));
             // + lignes archivées avant ce point (rare : notification fermée au démarrage).
