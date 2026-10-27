@@ -114,7 +114,8 @@ Singleton {
             // du focus le recréerait sur le mauvais écran (vérifié dans un Sway isolé). Espace vide : il faut s'y rendre.
             for (const m of moves) {
                 if (workspaces.find(w => w.number === m.number)?.empty === false)
-                    commands.push(`[workspace="^${m.number}(:|$)"] move workspace to output "${m.output}"`);
+                    // Nom qui commence par le numéro (« 3 », « 3:web », « 3 web ») : Sway lui donne ce numéro.
+                    commands.push(`[workspace="^${m.number}([^0-9]|$)"] move workspace to output "${m.output}"`);
                 else
                     commands.push(`workspace number ${m.number}`, `move workspace to output "${m.output}"`);
             }

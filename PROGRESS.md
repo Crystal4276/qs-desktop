@@ -1546,6 +1546,35 @@ par passe (`967cb92` … `c5df0c8`). Arrêt : la passe 9 ne trouve plus rien de 
   immédiate seulement pour le premier appareil choisi ; appairage bloqué si l'appareil disparaît en plein appairage (rare,
   code antérieur).
 
+## Écrans dynamiques : revue en boucle (2026-10-27, ta demande)
+
+5 passes de `/code-review high` (`Outputs`, `Compositor`, `Settings`, barres, `test-outputs.sh`, configs machine), chaque point
+vérifié (code, banc Sway isolé, ancien code rejoué) avant correction, un commit par passe (`a660c6e` … passe 5). Arrêt : la
+passe 5 ne trouve plus que du négligeable (le banc de l'agent : 26 contrôles, 0 échec).
+- **Espace focalisé vide qui change d'écran** (ex. écran de droite éteint, espace 4 vide focalisé à gauche) : l'écran
+  d'arrivée affichait d'abord sa vue mémorisée, Sway détruisait l'espace, le focus final le recréait à gauche, puis une seconde
+  correction. Reproduit sur l'ancien code (2 corrections), scénario ajouté à `test-outputs.sh` (1 correction).
+- **Barre** : un écran qui a sa propre entrée (`LG …841`) et devient principal (les deux autres éteints) n'avait ni tray ni
+  réglages ni menu ; l'écran principal reçoit maintenant toujours la barre `primary` (`ARCHITECTURE.md` § 4). Clic sur un espace
+  persistant : créé directement sur l'écran de la barre (avant : sur l'écran focalisé, puis déplacé).
+- **Banc de test** : l'instance de test agissait sur ton vrai système (reconnexion Bluetooth automatique, agent polkit, fichiers
+  d'état partagés) ; isolée (`QS_TEST`, `XDG_STATE_HOME` à part) et arrêtée avec tout son groupe de processus. **52 processus
+  orphelins** des passages précédents (bus privés, `gdbus monitor` sur le bus système) arrêtés.
+- **Veilleuse** : un `gammastep` orphelin (laissé par un `qs kill` le 26 à 18 h 43) tenait le gamma ; ton instance échouait à
+  lancer le sien depuis (38 essais) et le bouton veilleuse n'agissait plus. Arrêté ; ton instance a repris la main. Cause :
+  `qs kill` laisse vivre les processus enfants. Les processus longs (moniteurs UDisks2 / logind, `gammastep`, agent
+  `bluetoothctl`) passent par `setpriv --pdeathsig TERM` et meurent avec Quickshell (11 autres moniteurs orphelins arrêtés).
+- Robustesse : vue mémorisée gardée capot fermé sans écran (aucun instantané sans écran actif) ; répartition imposée triée,
+  ignorée avec un avertissement si chaque numéro 1–9 n'y est pas une fois, entrées mal formées ignorées ; Sway : visibilité
+  des espaces lue dans l'IPC, seules les sorties `active: true` ; espace nommé « 3 web » reconnu par le déplacement ;
+  Hyprland : écran en miroir sans bloc d'espaces ; moins de relectures (`get_tree` sur titre d'une fenêtre non focalisée).
+- Laissés (négligeables ou par choix) : en config Hyprland classique, pas de placement (Lua seulement, § 3) et
+  `focusmonitor` + `workspace` non atomiques ; barre invisible sur un écran miroir ; focus choisi dans les 500 ms suivant un
+  changement d'écrans remplacé par le focus d'avant ; relance de Quickshell = nouvelle répartition (un espace déplacé à la main
+  revient chez lui) ; hosts/*.json invalide pendant l'édition = config par défaut le temps de la corriger ; deux écrans
+  identiques sans numéro de série indiscernables ; instance de test joignable par `qs ipc` sans `--pid` pendant le test.
+- **Phase 9** : moniteur Hyprland listé avant d'être lu (description vide) — à vérifier.
+
 ## Prochaine étape
 
 Phase 9 — parité Hyprland (tests à faire ensemble dans une session Hyprland : voir « Compatibilité Hyprland »).

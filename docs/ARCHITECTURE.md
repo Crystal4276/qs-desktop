@@ -174,8 +174,9 @@ Pièges relevés :
 - l'état de Quickshell 0.3.2 (`Quickshell.I3`) se périme : l'espace affiché par un écran (`active`) n'est mis à jour que par un
   événement « focus » ou une relecture des sorties, jamais par un déplacement d'espace ; le focus ne suit que les événements
   « focus », dont Sway envoie parfois un faux (seul espace d'un écran déplacé : focus annoncé sur le bouche-trou) et dont le
-  champ `focused` est souvent faux. `Compositor` relit donc `get_workspaces` après chaque événement d'espace (focus lu dans
-  l'objet IPC) et `get_outputs` après chaque déplacement (code de Quickshell lu, comportement de Sway vérifié dans le banc).
+  champ `focused` est souvent faux. `Compositor` relit donc `get_workspaces` après chaque événement d'espace et lit focus et
+  visibilité dans l'objet IPC de chaque espace (`focused`, `visible`), pas dans l'état de Quickshell (code de Quickshell lu,
+  comportement de Sway vérifié dans le banc). Sorties : seules celles que `get_outputs` dit `active: true`.
 
 ## 4. Config par machine
 
