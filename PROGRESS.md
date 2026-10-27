@@ -1627,6 +1627,19 @@ banc isolé (Sway headless à 2 sorties, Quickshell sur une copie de `modules/lo
   retaper aussitôt pendant le délai (les caractères doivent apparaître) ; un caractère à touche morte (ex. `ê`) dans le champ, si
   ton mot de passe en contient (frappe simulée par IPC sur le banc, pas par un vrai clavier).
 
+## Ne pas déranger : sons des applications coupés (2026-10-27, ta demande)
+
+- Le shell ne joue aucun son : Discord et le navigateur jouent le leur, sur leur propre flux. Pendant « ne pas déranger » (horaire
+  ou à la main), `services/Audio.qml` coupe les flux des applications de `doNotDisturb.muteApps` (`hosts/default.json` : Discord,
+  chromium, firefox), y compris un appel Discord ; rétablis à la fin. Rétabli à la main pendant « ne pas déranger » : recoupé.
+- WirePlumber (restore-stream) retient la coupure par nom d'application (`Chromium` est partagé par Discord et Chromium) : les
+  noms coupés sont gardés dans `dnd-muted.json` ; le premier flux de ce nom après « ne pas déranger » est rétabli, ce qui efface
+  le souvenir.
+- Testé avec un flux `paplay` (binaire `pacat`, ajouté le temps du test) : coupure à l'activation, recoupe après un rétablissement
+  manuel, nouveau flux coupé pendant, rétablissement à la fin, flux suivant non coupé.
+- **À tester à la main** : un message Discord et une notification du navigateur après 21:00 (aucun son), puis le son le matin.
+- Limite : une application coupée à la main avant « ne pas déranger » sous un nom partagé est rétablie à la fin.
+
 ## Prochaine étape
 
 Phase 9 — parité Hyprland (tests à faire ensemble dans une session Hyprland : voir « Compatibilité Hyprland »).
