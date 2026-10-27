@@ -23,8 +23,9 @@ Singleton {
     readonly property bool hidesCursor: !Compositor.isHyprland
     readonly property string pictures: Places.pictures !== "" ? Places.pictures : `${Quickshell.env("HOME")}/Pictures`
 
+    // Pas pendant le verrouillage : l'outil prendrait le clavier de l'écran de verrouillage (LockScreen le ferme).
     function open(startMode: string): void {
-        if (active)
+        if (active || Session.lockActive)
             return;
         mode = startMode;
         // Écran focalisé, sinon le premier : barre d'outils et clavier (Échap) ont toujours un écran.

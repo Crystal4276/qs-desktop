@@ -49,6 +49,7 @@ Scope {
         if (locked)
             return;
         BarState.closePopups([], true);   // demandes en cours gardées (polkit, phrase de passe d'un disque)
+        Screenshot.close();   // clavier exclusif : il prendrait celui de l'écran de verrouillage
         password = "";
         error = false;
         message = "";
