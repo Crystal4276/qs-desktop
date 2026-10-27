@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Name=Whatsapp
+Comment=Whatsapp via webapp/chromium
+Exec=env PULSE_PROP_OVERRIDE=application.id=whatsapp chromium --app="https://web.whatsapp.com/" --class=WebApp-Whatsapp8699 --name=WebApp-Whatsapp8699 --user-data-dir=@PROFILES@/Whatsapp8699 --load-extension=@WEBAPPS@/open-links
+Terminal=false
+X-MultipleArgs=false
+Type=Application
+Icon=whatsapp
+Categories=GTK;Network;
+MimeType=text/html;text/xml;application/xhtml_xml;
+StartupWMClass=WebApp-Whatsapp8699
+StartupNotify=true

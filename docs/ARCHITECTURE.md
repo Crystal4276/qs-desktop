@@ -15,8 +15,8 @@ Celle de `CLAUDE.md`, avec trois ajouts :
 - `dotfiles/webapps/` *(2026-10-27)* : extension Chromium `open-links/` et son hôte natif `open-link`, chargés par les web apps
   (WhatsApp, Discord : `chromium --app … --user-data-dir=<profil isolé> --load-extension=…/open-links`). Un lien ouvert dans un
   nouvel onglet ou une nouvelle fenêtre part dans le profil Chromium principal (onglet ajouté, navigateur démarré s'il ne tourne
-  pas) ; les popups (connexion OAuth) restent dans la web app. Le manifeste de l'hôte (`<profil>/NativeMessagingHosts/
-  qs_desktop.open_link.json`, chemin absolu du script) et l'option des lanceurs seront posés par `install.sh` (phase 11).
+  pas) ; les popups (connexion OAuth) restent dans la web app. Modèles des lanceurs (`applications/`) et du manifeste de l'hôte
+  (`qs_desktop.open_link.json`), développés par `install.sh` (phase 11 ; procédure : `deps/README.md`, « Web apps »).
 
 ## 2. Compositeur
 
