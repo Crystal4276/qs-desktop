@@ -169,6 +169,12 @@ Singleton {
             unlockRequested(v);
     }
 
+    // Même volume : même objet UDisks2, même étiquette (ou UUID), même taille. Une autre clé branchée sous le même nom (sdb1)
+    // entre deux lectures (rafale, lectures en échec) est un nouveau volume : annoncée, montée, phrase de passe demandée.
+    function sameVolume(a, b): bool {
+        return a.path === b.path && a.label === b.label && a.size === b.size;
+    }
+
     // --- Notifications et montage automatique (udiskie : notify.py, automount) ---
 
     function notify(title: string, body: string): void {
@@ -182,7 +188,7 @@ Singleton {
         for (const v of before)
             old[v.path] = v;
         for (const v of after) {
-            const o = old[v.path];
+            const o = old[v.path] && sameVolume(old[v.path], v) ? old[v.path] : undefined;
             if (!o && !initial && !v.backing)
                 notify("Device added", `device appeared on ${v.device}`);
             if (o && !o.mounted && v.mounted)
@@ -199,9 +205,8 @@ Singleton {
             if (automount && !o && !initial && v.canUnlock && v.cleartext === "/")
                 arrived.push(v);
         }
-        const now = new Set(after.map(v => v.path));
         for (const v of before)
-            if (!now.has(v.path) && !v.backing)
+            if (!after.some(a => sameVolume(a, v)) && !v.backing)
                 notify("Device removed", `device disappeared on ${v.device}`);
         return arrived;
     }

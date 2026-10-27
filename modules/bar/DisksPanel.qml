@@ -19,9 +19,14 @@ Panel {
     // Ouvert par le branchement d'un disque chiffré : refermé une fois les disques déverrouillés (rend le clavier, comme la
     // fenêtre d'udiskie) ; d'ici là, pas de fermeture automatique (Échap ou clic à côté abandonnent).
     property bool autoOpened: false
-    holdOpen: autoOpened && unlocking !== null
-    // Demande différée : un autre popup est épinglé (saisie en cours ailleurs, qui serait perdue) ; ouverte à sa fermeture.
+    holdOpen: unlocking !== null
+    // Demande différée : un autre popup est épinglé ou l'outil de capture est ouvert (saisie en cours ailleurs, qui serait
+    // perdue, ou clavier pris) ; ouverte à leur fermeture.
     property Item waitingUnder: null
+
+    function blocked(): bool {
+        return (BarState.popupPinned && !pinned) || Screenshot.active;
+    }
 
     onVisibleChanged: {
         if (!visible) {
@@ -43,22 +48,25 @@ Panel {
         if (BarState.disksPrompt === root)
             BarState.disksPrompt = null;
     }
-    // Autre volume : rien de ce qui a été tapé pour le précédent ne lui est envoyé.
+    // Autre volume : rien de ce qui a été tapé pour le précédent ne lui est envoyé ; le champ reprend le focus (bouton Unlock
+    // choisi au clavier, disque suivant).
     onUnlockingChanged: {
         passphrase.text = "";
         passphrase.error = false;
         checking = false;
+        if (unlocking !== null)
+            passphrase.focusInput();
     }
 
-    // Encore à demander : présent, verrouillé, et pas remplacé par un autre sous le même nom (/dev/sdb1).
+    // Même volume (pas un autre arrivé sous le même nom, /dev/sdb1) : `Disks.sameVolume`. Encore à demander : présent et verrouillé.
     function stillLocked(u): bool {
-        return Disks.volumes.some(v => v.path === u.path && v.label === u.label && v.size === u.size && v.cleartext === "/");
+        return Disks.volumes.some(v => Disks.sameVolume(v, u) && v.cleartext === "/");
     }
 
     // Volume choisi (bouton Unlock) : la demande en cours reprend ensuite.
     function prompt(volume): void {
-        if (unlocking && unlocking.path !== volume.path)
-            queue = [unlocking, ...queue.filter(q => q.path !== volume.path)];
+        if (unlocking && !Disks.sameVolume(unlocking, volume))
+            queue = [unlocking, ...queue.filter(q => !Disks.sameVolume(q, volume))];
         unlocking = volume;
     }
 
@@ -71,11 +79,12 @@ Panel {
             close();
     }
 
-    // Volume retiré, déverrouillé (ici ou ailleurs) : au suivant.
+    // Volume retiré, déverrouillé (ici ou ailleurs) : au suivant ; la file aussi est élaguée.
     Connections {
         target: Disks
 
         function onVolumesChanged(): void {
+            root.queue = root.queue.filter(root.stillLocked);
             if (root.unlocking && !root.stillLocked(root.unlocking))
                 root.nextPrompt();
         }
@@ -84,12 +93,12 @@ Panel {
     // Ouvert et épinglé sous `button` (ou gardé s'il l'est déjà), champ de la phrase de passe affiché avec le focus : ouvrir
     // d'abord, la surface donnant le focus à son cadre à l'ouverture. Une demande déjà affichée : celle-ci attend son tour.
     function askPassphrase(button: Item, volume): void {
-        if (unlocking?.path === volume.path || queue.some(q => q.path === volume.path))
+        if ((unlocking && Disks.sameVolume(unlocking, volume)) || queue.some(q => Disks.sameVolume(q, volume)))
             return;
         queue = [...queue, volume];
         if (unlocking !== null)
             return;
-        if (BarState.popupPinned && !pinned) {
+        if (blocked()) {
             waitingUnder = button;
             return;
         }
@@ -104,18 +113,32 @@ Panel {
         nextPrompt();
     }
 
+    // Après le signal qui a fermé le popup : ouvrir pendant sa diffusion (closePopups) ferait refermer aussitôt la demande, et
+    // un clic qui ouvre un autre popup le rend de nouveau bloquant.
+    function resumePrompt(): void {
+        if (waitingUnder === null || blocked())
+            return;
+        const button = waitingUnder;
+        waitingUnder = null;
+        if (queue.some(stillLocked))
+            openPrompt(button);
+        else
+            queue = [];
+    }
+
     Connections {
         target: BarState
 
         function onPopupPinnedChanged(): void {
-            if (root.waitingUnder === null || BarState.popupPinned)
-                return;
-            const button = root.waitingUnder;
-            root.waitingUnder = null;
-            if (root.queue.some(root.stillLocked))
-                root.openPrompt(button);
-            else
-                root.queue = [];
+            Qt.callLater(root.resumePrompt);
+        }
+    }
+
+    Connections {
+        target: Screenshot
+
+        function onActiveChanged(): void {
+            Qt.callLater(root.resumePrompt);
         }
     }
 
