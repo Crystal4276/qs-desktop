@@ -11,134 +11,43 @@ Panel {
 
     title: "Removable devices"
 
-    // Volume chiffré en attente de phrase de passe.
-    property var unlocking: null
+    // Phrase de passe demandée : premier disque de `Disks.pending` (branché, ou choisi par le bouton Unlock). Un seul popup est
+    // ouvert à la fois : le panneau des disques ouvert l'affiche ; Tray.qml l'ouvre au besoin.
+    readonly property var unlocking: visible ? Disks.pending[0] ?? null : null
     property bool checking: false   // phrase envoyée, résultat attendu
-    // Autres disques chiffrés branchés, demandés ensuite (deux partitions LUKS d'une même clé…).
-    property var queue: []
-    // Ouvert par le branchement d'un disque chiffré : refermé une fois les disques déverrouillés (rend le clavier, comme la
-    // fenêtre d'udiskie) ; d'ici là, pas de fermeture automatique (Échap ou clic à côté abandonnent).
+    // Ouvert par le branchement d'un disque chiffré : refermé une fois les demandes satisfaites (rend le clavier, comme la
+    // fenêtre d'udiskie) ; d'ici là, pas de fermeture automatique.
     property bool autoOpened: false
+    readonly property bool disks: true   // repéré parmi les popups ouverts (Tray.qml)
     holdOpen: unlocking !== null
-    // Demande différée : un autre popup est épinglé ou l'outil de capture est ouvert (saisie en cours ailleurs, qui serait
-    // perdue, ou clavier pris) ; ouverte à leur fermeture.
-    property Item waitingUnder: null
+    // Le champ a le focus à l'ouverture (la surface le donne à cet élément).
+    initialFocus: unlocking !== null ? passphrase.inputItem : frameItem
 
-    function blocked(): bool {
-        return (BarState.popupPinned && !pinned) || Screenshot.active;
-    }
-
+    // Fermé (Échap, clic à côté, autre popup) : demandes abandonnées, les boutons Unlock restent. Pas quand la barre est
+    // détruite (écran retiré) : le tray d'un autre écran reprend la demande.
+    onClosing: Disks.dismissPrompts()
     onVisibleChanged: {
-        if (!visible) {
-            unlocking = null;
-            queue = [];
+        if (!visible)
             autoOpened = false;
-        }
     }
 
-    // Ce panneau demande (ou attendra) une phrase de passe : les disques suivants lui sont confiés (Tray.qml).
-    readonly property bool prompting: unlocking !== null || waitingUnder !== null
-    onPromptingChanged: {
-        if (prompting)
-            BarState.disksPrompt = root;
-        else if (BarState.disksPrompt === root)
-            BarState.disksPrompt = null;
-    }
-    Component.onDestruction: {
-        if (BarState.disksPrompt === root)
-            BarState.disksPrompt = null;
-    }
     // Autre volume : rien de ce qui a été tapé pour le précédent ne lui est envoyé ; le champ reprend le focus (bouton Unlock
-    // choisi au clavier, disque suivant).
+    // choisi au clavier, disque suivant). Plus rien à demander : fermé s'il s'était ouvert tout seul.
     onUnlockingChanged: {
         passphrase.text = "";
         passphrase.error = false;
         checking = false;
         if (unlocking !== null)
             passphrase.focusInput();
-    }
-
-    // Même volume (pas un autre arrivé sous le même nom, /dev/sdb1) : `Disks.sameVolume`. Encore à demander : présent et verrouillé.
-    function stillLocked(u): bool {
-        return Disks.volumes.some(v => Disks.sameVolume(v, u) && v.cleartext === "/");
-    }
-
-    // Volume choisi (bouton Unlock) : la demande en cours reprend ensuite.
-    function prompt(volume): void {
-        if (unlocking && !Disks.sameVolume(unlocking, volume))
-            queue = [unlocking, ...queue.filter(q => !Disks.sameVolume(q, volume))];
-        unlocking = volume;
-    }
-
-    // Disque suivant de la file ; sinon champ retiré, et panneau fermé s'il s'était ouvert tout seul.
-    function nextPrompt(): void {
-        const rest = queue.filter(stillLocked);
-        queue = rest.slice(1);
-        unlocking = rest[0] ?? null;
-        if (unlocking === null && autoOpened)
+        else if (autoOpened)
             close();
     }
 
-    // Volume retiré, déverrouillé (ici ou ailleurs) : au suivant ; la file aussi est élaguée.
-    Connections {
-        target: Disks
-
-        function onVolumesChanged(): void {
-            root.queue = root.queue.filter(root.stillLocked);
-            if (root.unlocking && !root.stillLocked(root.unlocking))
-                root.nextPrompt();
-        }
-    }
-
-    // Ouvert et épinglé sous `button` (ou gardé s'il l'est déjà), champ de la phrase de passe affiché avec le focus : ouvrir
-    // d'abord, la surface donnant le focus à son cadre à l'ouverture. Une demande déjà affichée : celle-ci attend son tour.
-    function askPassphrase(button: Item, volume): void {
-        if ((unlocking && Disks.sameVolume(unlocking, volume)) || queue.some(q => Disks.sameVolume(q, volume)))
-            return;
-        queue = [...queue, volume];
-        if (unlocking !== null)
-            return;
-        if (blocked()) {
-            waitingUnder = button;
-            return;
-        }
-        openPrompt(button);
-    }
-
+    // Ouvert et épinglé sous `button` (ou aperçu épinglé).
     function openPrompt(button: Item): void {
         if (!visible || previewing) {
             toggle(button, button.buttons);
             autoOpened = true;
-        }
-        nextPrompt();
-    }
-
-    // Après le signal qui a fermé le popup : ouvrir pendant sa diffusion (closePopups) ferait refermer aussitôt la demande, et
-    // un clic qui ouvre un autre popup le rend de nouveau bloquant.
-    function resumePrompt(): void {
-        if (waitingUnder === null || blocked())
-            return;
-        const button = waitingUnder;
-        waitingUnder = null;
-        if (queue.some(stillLocked))
-            openPrompt(button);
-        else
-            queue = [];
-    }
-
-    Connections {
-        target: BarState
-
-        function onPopupPinnedChanged(): void {
-            Qt.callLater(root.resumePrompt);
-        }
-    }
-
-    Connections {
-        target: Screenshot
-
-        function onActiveChanged(): void {
-            Qt.callLater(root.resumePrompt);
         }
     }
 
@@ -219,7 +128,7 @@ Panel {
                         visible: modelData.canUnlock && !unlocked
                         enabled: !drive.busy
                         text: "Unlock"
-                        onClicked: root.prompt(modelData)
+                        onClicked: Disks.choose(modelData)
                     }
 
                     PanelButton {
@@ -262,7 +171,8 @@ Panel {
                 focusInput();
         }
         // Champ gardé jusqu'au résultat (ignoré si la demande a changé entre-temps) : refusée, en rouge et vidée (un autre
-        // essai) ; acceptée, ou échec d'une autre cause (polkit, udisksctl absent… : la notification le dit), disque suivant.
+        // essai) ; échec d'une autre cause (polkit, udisksctl absent… : la notification le dit), demande abandonnée ; acceptée,
+        // retirée de `Disks.pending` à la relecture qui suit.
         onAccepted: text => {
             if (text === "" || root.checking)
                 return;
@@ -272,9 +182,9 @@ Panel {
             Disks.unlock(target, text, result => {
                 if (root.unlocking !== target)
                     return;
-                if (result !== "wrong") {
-                    root.nextPrompt();
-                } else {
+                if (result === "failed") {
+                    Disks.dismissPrompt(target);
+                } else if (result === "wrong") {
                     root.checking = false;
                     passphrase.text = "";
                     passphrase.error = true;

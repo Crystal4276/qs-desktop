@@ -161,16 +161,19 @@ Item {
         id: disksPanel
     }
 
-    // Disque chiffré branché : phrase de passe demandée par le tray d'un seul écran (celui qui demande déjà, sinon le focalisé,
-    // sinon le principal).
-    Connections {
-        target: Disks
+    // Disque chiffré branché (Disks.pending) : le panneau des disques déjà ouvert l'affiche (épinglé s'il n'était qu'un aperçu) ;
+    // sinon celui du tray de l'écran préféré (focalisé, sinon principal) s'ouvre. Jamais par-dessus un autre popup épinglé ni
+    // l'outil de capture (saisie en cours qui serait perdue, clavier pris) : ouvert à leur fermeture. Décidé après coup
+    // (callLater) : pas pendant la diffusion qui ferme un popup, ni avant qu'un clic en ait ouvert un autre.
+    readonly property var openDisksPanel: BarState.openList.find(p => p.disks === true) ?? null
+    readonly property bool promptHere: Disks.pending.length > 0 && !Screenshot.active
+        && (openDisksPanel ? openDisksPanel === disksPanel && disksPanel.previewing
+            : !BarState.popupPinned && BarState.preferredButton("disks") === disksButton)
+    onPromptHereChanged: if (promptHere) Qt.callLater(root.openPrompt)
 
-        function onUnlockRequested(volume) {
-            const owner = BarState.disksPrompt;
-            if (owner ? owner === disksPanel : BarState.preferredButton("disks") === disksButton)
-                disksPanel.askPassphrase(disksButton, volume);
-        }
+    function openPrompt(): void {
+        if (promptHere)
+            disksPanel.openPrompt(disksPanel.previewing ? disksPanel.button : disksButton);
     }
 
     BluetoothPanel {

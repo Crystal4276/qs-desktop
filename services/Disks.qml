@@ -24,9 +24,11 @@ Singleton {
     property bool readFailed: false   // dernière lecture ratée (ou pas démarrée) : réessayée
     // Périphériques dont une action est en cours (un par action) : leurs boutons sont atténués, un second clic ne relance rien.
     property var busy: []
-    // Disque LUKS branché, encore verrouillé : phrase de passe demandée (udiskie ouvrait sa fenêtre ; ta demande du
-    // 2026-10-27). Pas au démarrage ni au rechargement : seulement à l'arrivée du volume.
-    signal unlockRequested(var volume)
+    // Disques LUKS branchés, encore verrouillés : phrase de passe à demander, le premier d'abord (udiskie ouvrait sa fenêtre ;
+    // ta demande du 2026-10-27). Pas au démarrage ni au rechargement : seulement à l'arrivée du volume. Affichée par le panneau
+    // des disques ouvert (un seul popup à la fois), ouvert par le tray s'il ne l'est pas (Tray.qml) ; retirés une fois
+    // déverrouillés ou débranchés.
+    property var pending: []
     // QS_TEST (instance de scripts/test-outputs.sh) : pas de montage automatique, l'instance de test parle au vrai bus système
     // et monterait tes disques laissés démontés.
     readonly property bool automount: !Quickshell.env("QS_TEST")
@@ -164,9 +166,9 @@ Singleton {
         volumes = list;
         drives = driveList;
         loaded = true;
-        // Après la mise à jour de `volumes` : le panneau y vérifie le volume demandé.
-        for (const v of arrived)
-            unlockRequested(v);
+        const still = pending.filter(p => list.some(v => sameVolume(v, p) && v.cleartext === "/"));
+        if (still.length !== pending.length || arrived.length > 0)
+            pending = [...still, ...arrived.filter(a => !still.some(p => sameVolume(p, a)))];
     }
 
     // Même volume : même objet UDisks2, même étiquette (ou UUID), même taille. Une autre clé branchée sous le même nom (sdb1)
@@ -181,7 +183,7 @@ Singleton {
         Quickshell.execDetached(["notify-send", "--app-name=udiskie", "--icon=drive-removable-media", title, body]);
     }
 
-    // Renvoie les disques LUKS arrivés verrouillés (phrase de passe à demander).
+    // Renvoie les disques LUKS arrivés verrouillés (phrase de passe à demander, `pending`).
     function notifyChanges(before, after, initial: bool): var {
         const arrived = [];
         const old = {};
@@ -209,6 +211,21 @@ Singleton {
             if (!after.some(a => sameVolume(a, v)) && !v.backing)
                 notify("Device removed", `device disappeared on ${v.device}`);
         return arrived;
+    }
+
+    // Bouton Unlock : ce volume d'abord, les demandes en cours reprennent ensuite.
+    function choose(v): void {
+        pending = [v, ...pending.filter(p => !sameVolume(p, v))];
+    }
+
+    // Abandon : d'un volume (échec qui n'est pas la phrase de passe), ou de toutes (panneau fermé : Échap, clic à côté).
+    function dismissPrompt(v): void {
+        pending = pending.filter(p => !sameVolume(p, v));
+    }
+
+    function dismissPrompts(): void {
+        if (pending.length > 0)
+            pending = [];
     }
 
     // --- Actions (udisksctl) ---
