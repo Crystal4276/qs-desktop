@@ -97,10 +97,15 @@ Singleton {
     // Bouton d'un panneau ouvert sans clic (raccourci, disque chiffré branché) : celui de l'écran focalisé, sinon de l'écran
     // principal, sinon le premier.
     function preferredButton(kind: string): Item {
-        const list = buttons[kind] ?? [];
-        const on = name => list.find(b => b.QsWindow.window?.screen?.name === name);
+        // Boutons dont la barre a encore un écran (barre en cours de destruction au retrait d'un écran : écartée).
+        const list = (buttons[kind] ?? []).filter(b => b.QsWindow.window?.screen);
+        const on = name => name ? list.find(b => b.QsWindow.window.screen.name === name) : undefined;
         return on(Compositor.focusedOutput) ?? on(Outputs.primary?.name) ?? list[0] ?? null;
     }
+
+    // Panneau des disques qui demande déjà une phrase de passe (ou attend de le faire) : les disques suivants lui sont confiés,
+    // même si le focus est passé sur un autre écran (ouvrir un autre panneau fermerait celui-ci et perdrait sa file).
+    property var disksPrompt: null
 
     // Tests (scripts/test-outputs.sh) : popups inscrits et écran au clavier « à la demande », en JSON.
     IpcHandler {

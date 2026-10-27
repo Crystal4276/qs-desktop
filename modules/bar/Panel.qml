@@ -57,6 +57,8 @@ OverlayPopup {
     property bool wasPinned: false
     // Pointeur entré dans le cadre ou sur l'icône depuis l'ouverture : la fermeture automatique peut compter.
     property bool pointerEntered: false
+    // Pas de fermeture automatique (phrase de passe demandée d'office au branchement d'un disque : attend sa réponse).
+    property bool holdOpen: false
     // Champ focalisé en cours de saisie : `pending` de PanelField.qml (heure modifiée pour TimeField.qml), sinon texte non vide.
     readonly property bool typing: frame.focusedItem?.cursorPosition !== undefined
         && (frame.focusedItem.parent instanceof PanelField ? frame.focusedItem.parent.pending : (frame.focusedItem.text ?? "") !== "")
@@ -117,7 +119,7 @@ OverlayPopup {
 
     Timer {
         interval: Theme.panel.autoCloseDelay
-        running: root.pinned && root.pointerEntered && !root.typing && !framePress.active && !frameHover.hovered
+        running: root.pinned && root.pointerEntered && !root.typing && !root.holdOpen && !framePress.active && !frameHover.hovered
             && !(root.button?.hovered ?? false)
         onTriggered: root.close()
     }

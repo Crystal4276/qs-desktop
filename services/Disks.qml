@@ -21,6 +21,7 @@ Singleton {
     property var drives: []
     property bool loaded: false
     property int failedReads: 0
+    property bool readFailed: false   // dernière lecture ratée (ou pas démarrée) : réessayée
     // Périphériques dont une action est en cours (un par action) : leurs boutons sont atténués, un second clic ne relance rien.
     property var busy: []
     // Disque LUKS branché, encore verrouillé : phrase de passe demandée (udiskie ouvrait sa fenêtre ; ta demande du
@@ -59,6 +60,7 @@ Singleton {
                 console.warn(`Disks: lecture d'UDisks2 impossible : ${e}`);
             return;
         }
+        readFailed = false;
         failedReads = 0;
         const drivesByPath = {};
         for (const [path, ifs] of Object.entries(objects)) {
@@ -206,15 +208,15 @@ Singleton {
 
     // --- Actions (udisksctl) ---
 
-    // `next` : appelé seulement si l'action réussit (enchaînements : démonter puis verrouiller, puis éteindre) ; `failed(code)` :
-    // si elle échoue (-1 : commande pas démarrée).
+    // `next` : appelé seulement si l'action réussit (enchaînements : démonter puis verrouiller, puis éteindre) ;
+    // `failed(code, message)` : si elle échoue (-1 : commande pas démarrée).
     function run(action: string, device: string, command: var, input: string, next: var, failed: var): void {
         busy = [...busy, device];
         const p = actionProcess.createObject(root, { action, device, command, input, next: next ?? null, failed: failed ?? null });
         p.running = true;
     }
 
-    // Action en cours sur le disque ou l'un de ses volumes.
+    // Action en cours sur le disque ou l'un de ses volumes (bouton d'éjection et lignes du disque : une seule règle).
     function driveBusy(drive): bool {
         return busy.some(d => d === drive.device || volumes.some(v => v.driveKey === drive.key && v.device === d));
     }
@@ -247,14 +249,16 @@ Singleton {
         sequence([unmountStep(v)]);
     }
 
-    // `done(réussi, code)` : résultat, pour le champ de la phrase de passe (code -1 : rien n'a pu être essayé).
+    // `done(résultat)` : "ok", "wrong" (phrase refusée : à redemander) ou "failed" (autre cause : polkit, appareil occupé,
+    // udisksctl absent ; la notification la donne), pour le champ de la phrase de passe.
     function unlock(v, passphrase: string, done: var): void {
         if (!v.canUnlock) {
-            done?.(false, -1);
+            done?.("failed");
             return;
         }
+        // cryptsetup : « Failed to activate device: Incorrect passphrase. » (« No key available with this passphrase. » avant 2.4).
         run("unlock", v.device, [...udisksctl("unlock", v.device), "--key-file", "/dev/stdin"], passphrase,
-            () => done?.(true, 0), code => done?.(false, code));
+            () => done?.("ok"), (code, message) => done?.(/passphrase/i.test(message) ? "wrong" : "failed"));
     }
 
     // Verrouiller : démonter d'abord le volume déchiffré s'il est monté, puis verrouiller une fois le démontage fini.
@@ -319,7 +323,7 @@ Singleton {
                         // « Error unlocking …: GDBus.Error:org.freedesktop.UDisks2.Error.Failed: Error unlocking …: <cause> » → dernière partie.
                         const message = error.trim().replace(/^[\s\S]*GDBus\.Error:\S+\s*/, "");
                         root.notify("Job failed", message ? `failed to ${action} ${device}:\n${message}` : `failed to ${action} device ${device}.`);
-                        failed?.(code);
+                        failed?.(code, message);
                     } else {
                         next?.();
                     }
@@ -367,7 +371,12 @@ Singleton {
 
         property string read: ""   // [volumes, disques] en JSON : relecture sans changement ignorée
 
-        onLoaded: query.running = true
+        onLoaded: root.read()
+    }
+
+    function read(): void {
+        readFailed = true;   // remis à faux par une lecture réussie (parse)
+        query.running = true;
     }
 
     Process {
@@ -380,16 +389,18 @@ Singleton {
         onExited: {
             if (root.queryAgain) {
                 root.queryAgain = false;
-                Qt.callLater(() => query.running = true);
+                Qt.callLater(root.read);
             }
         }
-        // Première lecture ratée (UDisks2 pas encore prêt à l'ouverture de session, busctl absent) : réessayée, sans attendre
-        // un signal.
-        onRunningChanged: {
-            if (!running && !root.loaded) {
-                root.failedReads++;
-                retry.start();
-            }
+        // Lecture ratée (UDisks2 pas encore prêt à l'ouverture de session, redémarré, busctl absent) : réessayée sans attendre
+        // un signal ; sinon un disque retiré pendant l'échec resterait affiché. Après la lecture de la sortie (callLater).
+        onRunningChanged: if (!running) Qt.callLater(root.checkRead)
+    }
+
+    function checkRead(): void {
+        if (readFailed && !query.running) {
+            failedReads++;
+            retry.start();
         }
     }
 
@@ -397,7 +408,7 @@ Singleton {
     Timer {
         id: retry
         interval: Math.min(5000 * 2 ** Math.max(root.failedReads - 1, 0), 300000)
-        onTriggered: if (!root.loaded && !query.running) query.running = true
+        onTriggered: if (root.readFailed && !query.running) root.read()
     }
 
     Timer {
@@ -407,7 +418,7 @@ Singleton {
             if (query.running)
                 root.queryAgain = true;
             else
-                query.running = true;
+                root.read();
         }
     }
 
