@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Name=Excel
+Comment=Web App
+Exec=chromium --app="https://www.office.com/launch/excel" --class=WebApp-Excel7169 --name=WebApp-Excel7169 --user-data-dir=@PROFILES@/Excel7169 --load-extension=@WEBAPPS@/open-links
+Terminal=false
+X-MultipleArgs=false
+Type=Application
+Icon=solstice-microsoft-365-excel
+Categories=GTK;Office;
+MimeType=text/html;text/xml;application/xhtml_xml;
+StartupWMClass=WebApp-Excel7169
+StartupNotify=true

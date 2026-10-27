@@ -1750,6 +1750,22 @@ banc isolé (Sway headless à 2 sorties, Quickshell sur une copie de `modules/lo
   `qs_desktop.open_link.json`) ; procédure complète d'installation (paquets, règle WirePlumber, lanceurs, hôte, `muteApps`) dans
   `deps/README.md`, « Web apps : ce que fait `install.sh` ». Elle remplace les notes phase 11 des deux sections précédentes.
 
+## Web apps Word, Excel, PowerPoint, Notion : liens vers le navigateur (2026-10-27, ta demande)
+
+- Même extension, chargée par les quatre lanceurs (sauvegardes `.bak-2026-10-27`) ; manifeste de l'hôte dans leurs profils.
+  Pas de coupure de nuit pour elles (pas de sons de notification).
+- Règle ajoutée : un lien qui reste dans les domaines de l'app d'origine (liste `SITES` : Microsoft 365 — `sharepoint.com`,
+  `cloud.microsoft`, `office.com`… ; Notion) s'ouvre comme avant dans la web app (document Word ouvert depuis Word, page Notion
+  en nouvel onglet) ; les autres partent au navigateur. Domaine d'origine lu sur le cadre principal de l'onglet source
+  (`webNavigation.getFrame`, sans permission `tabs`). WhatsApp et Discord : inchangés (aucun groupe, tout part).
+- Modèles des quatre lanceurs dans `dotfiles/webapps/applications/`, ouverts sur l'accueil de l'app (les adresses actuelles
+  sont des documents SharePoint personnels) ; procédure d'installation complétée (`deps/README.md`, « Web apps »).
+- Banc (profil jetable, sites simulés par un serveur HTTPS local et `--host-resolver-rules`) : 12/12 — gardés dans l'app :
+  Notion → Notion (`target=_blank` et `window.open` puis adresse), SharePoint → Excel, SharePoint → SharePoint, popup ;
+  envoyés une fois : Notion → site externe ou SharePoint, SharePoint → site externe ou Notion, Discord → Discord ou Notion.
+- **À tester** : dans chaque app, un lien externe (navigateur principal) ; dans Word/Excel/PowerPoint, ouvrir un autre document
+  depuis l'app (reste dans la web app) ; dans Notion, ctrl+clic sur une page (reste dans la web app).
+
 ## Prochaine étape
 
 Phase 9 — parité Hyprland (tests à faire ensemble dans une session Hyprland : voir « Compatibilité Hyprland »).
