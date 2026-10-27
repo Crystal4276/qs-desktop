@@ -147,6 +147,7 @@ Scope {
         onCompleted: result => {
             if (result === PamResult.Success) {
                 root.checking = false;
+                root.pending = "";   // PAM a pu réussir sans le demander
                 root.message = "";
                 root.password = "";
                 root.locked = false;
