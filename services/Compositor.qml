@@ -17,8 +17,8 @@ Singleton {
     readonly property bool isSway: type === "sway"
     readonly property bool isHyprland: type === "hyprland"
 
-    // Sorties actives : { name, description, x, y, width, height, scale, hdrCapable, hdr, vrrCapable, vrr }
-    // x, y, width, height en px logiques. description = « marque modèle numéro de série ».
+    // Sorties actives : { name, description, x, y, width, height, scale, powered, hdrCapable, hdr, vrrCapable, vrr }
+    // x, y, width, height en px logiques. description = « marque modèle numéro de série ». powered : faux si éteinte par la veille.
     // HDR et VRR (bascules du panneau de réglages) : Sway seulement pour l'instant, Hyprland en phase 9.
     readonly property var outputs: {
         if (isSway)
@@ -27,6 +27,7 @@ Singleton {
                 description: [m.lastIpcObject.make, m.lastIpcObject.model, m.lastIpcObject.serial].filter(s => s).join(" "),
                 x: m.x, y: m.y, width: m.width, height: m.height,
                 scale: m.scale,
+                powered: m.lastIpcObject.power !== false,
                 hdrCapable: m.lastIpcObject.features?.hdr === true,
                 hdr: m.lastIpcObject.hdr === true,
                 vrrCapable: m.lastIpcObject.features?.adaptive_sync === true,
@@ -47,6 +48,7 @@ Singleton {
                     x: m.x, y: m.y,
                     width: rotated ? h : w, height: rotated ? w : h,
                     scale: m.scale,
+                    powered: o.dpmsStatus !== false,
                     hdrCapable: false,
                     hdr: false,
                     vrrCapable: false,

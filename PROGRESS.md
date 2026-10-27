@@ -1575,6 +1575,29 @@ passe 5 ne trouve plus que du négligeable (le banc de l'agent : 26 contrôles, 
   identiques sans numéro de série indiscernables ; instance de test joignable par `qs ipc` sans `--pid` pendant le test.
 - **Phase 9** : moniteur Hyprland listé avant d'être lu (description vide) — à vérifier.
 
+## Veille des écrans : revue en boucle (2026-10-27, ta demande)
+
+Symptôme signalé : à la reprise, latéraux allumés puis éteints, puis central, puis latéraux ; central lent. 3 passes, chaque
+point reproduit sur l'ancien code dans un Sway isolé (3 sorties headless, `sway -d`, veille à 5 s, pointeur virtuel) avant
+correction ; banc dans le scratchpad de la session (`idle-bench.sh`), `test-outputs.sh` : 0 échec.
+- **Rallumage en deux temps sous Sway** (cause du symptôme) : `primaryWakeDelay` (3 s, repris de hypridle) s'appliquait aussi
+  sous Sway, où chaque commande `output` réapplique la config de **tous** les écrans en un seul commit (code de Sway 1.12 lu).
+  Rallumer le central 3 s après refaisait un modeset qui coupait de nouveau les latéraux. Sous Sway, tout est rallumé d'un coup
+  (`output * power on`, comme ton swayidle) : banc, 1 commit au lieu de 2, les 3 sorties à +32 ms (avant : central à +3 s).
+  Le délai reste appliqué sous Hyprland (parité hypridle, à revoir en phase 9 si le même effet apparaît).
+- **Écran branché après une veille resté éteint** (Sway) : rallumer par nom laissait `power off` sur la config `*`.
+  Corrigé par le même `output * power on` (banc : sortie créée après une veille allumée ; avant : éteinte).
+- **Quickshell relancé écrans éteints** (rechargement à chaud, plantage) : le nouveau suivi n'est pas en veille ; écrans noirs
+  jusqu'à 5 min sans activité. Rallumés 2 s après le démarrage (`Compositor.outputs[].powered`). Vu en direct cette nuit : un
+  premier essai (rallumage dès le chargement) a fait planter ton instance pendant un rechargement à chaud (bug connu de
+  Quickshell 0.3.2, ancienne génération en destruction) ; le délai de 2 s l'évite. Instance relancée par `dev.sh` (la copie
+  relancée après plantage ne suivait plus les fichiers).
+- `systemd-inhibit` (verrou avant la veille du système, laptop) sous `setpriv --pdeathsig` : verrou relâché si Quickshell plante.
+- Laissé (négligeable) : sous Hyprland avec délai, un écran en miroir n'est pas rallumé (aucun miroir
+  sur cette machine, délai 0 par défaut sur un laptop).
+- **À tester à la main** : une vraie reprise sur tes trois écrans (attendre 5 min) — les trois doivent s'allumer ensemble, sans
+  extinction intermédiaire. Le central (AW3418DW) peut rester un peu plus lent à sortir de veille : c'est l'écran lui-même.
+
 ## Prochaine étape
 
 Phase 9 — parité Hyprland (tests à faire ensemble dans une session Hyprland : voir « Compatibilité Hyprland »).
