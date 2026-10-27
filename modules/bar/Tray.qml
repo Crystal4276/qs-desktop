@@ -130,10 +130,13 @@ Item {
             }
         }
 
-        // Centre de notifications (Papirus : cloche, point bleu si non vues, barrée en « ne pas déranger »).
+        // Centre de notifications (Papirus : cloche, point bleu si non vues, barrée en « ne pas déranger »). Clic droit : bascule
+        // « ne pas déranger » (ta demande du 2026-10-27).
         TrayButton {
             icon: Notifs.doNotDisturb ? "notification-disabled" : Notifs.unseen ? "notification-active" : "notification-inactive"
             panel: notificationsPanel
+            panelButtons: Qt.LeftButton
+            onOtherPressed: Notifs.setDoNotDisturb(!Notifs.doNotDisturb)
         }
     }
 

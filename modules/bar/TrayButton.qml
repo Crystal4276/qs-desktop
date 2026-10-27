@@ -3,7 +3,8 @@ import qs.config
 
 // Bouton d'un module natif du tray (réseau, Wi-Fi, disques, Bluetooth, NordVPN) : même taille que les icônes d'applications ;
 // icône du thème (`icon`) ou glyphe dessiné en contenu (Wi-Fi). Survol : aperçu du panneau après un court arrêt sur l'icône ; un
-// appui (gauche ou droit) l'épingle, l'ouvre ou le ferme (PreviewArea.qml, Panel.qml).
+// appui (gauche ou droit, sauf `panelButtons` réduit : l'autre émet `otherPressed`) l'épingle, l'ouvre ou le ferme
+// (PreviewArea.qml, Panel.qml).
 Item {
     id: root
 
@@ -12,6 +13,8 @@ Item {
     default property alias content: glyph.data
     readonly property alias hovered: area.hovered
     readonly property alias buttons: area.buttons
+    property alias panelButtons: area.panelButtons
+    signal otherPressed(int button)
 
     implicitWidth: Theme.bar.trayIconSize
     implicitHeight: Theme.bar.trayIconSize
@@ -33,5 +36,6 @@ Item {
         panel: root.panel
         onPreviewRequested: root.panel.preview(root, root.buttons)
         onToggleRequested: root.panel.toggle(root, root.buttons)
+        onOtherPressed: button => root.otherPressed(button)
     }
 }
