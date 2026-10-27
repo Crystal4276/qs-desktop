@@ -14,13 +14,16 @@ Panel {
     // Volume chiffré en attente de phrase de passe.
     property var unlocking: null
     property bool checking: false   // phrase envoyée, résultat attendu
-    // Ouvert par le branchement d'un disque chiffré : refermé une fois le disque déverrouillé (rend le clavier, comme la
+    // Autres disques chiffrés branchés, demandés ensuite (deux partitions LUKS d'une même clé…).
+    property var queue: []
+    // Ouvert par le branchement d'un disque chiffré : refermé une fois les disques déverrouillés (rend le clavier, comme la
     // fenêtre d'udiskie).
     property bool autoOpened: false
 
     onVisibleChanged: {
         if (!visible) {
             unlocking = null;
+            queue = [];
             autoOpened = false;
         }
     }
@@ -31,25 +34,41 @@ Panel {
         checking = false;
     }
 
-    // Volume retiré, déverrouillé ailleurs, ou remplacé par un autre sous le même nom (/dev/sdb1) : plus rien à demander.
+    // Encore à demander : présent, verrouillé, et pas remplacé par un autre sous le même nom (/dev/sdb1).
+    function stillLocked(u): bool {
+        return Disks.volumes.some(v => v.path === u.path && v.label === u.label && v.size === u.size && v.cleartext === "/");
+    }
+
+    // Disque suivant de la file ; sinon champ retiré, et panneau fermé s'il s'était ouvert tout seul.
+    function nextPrompt(): void {
+        const rest = queue.filter(stillLocked);
+        queue = rest.slice(1);
+        unlocking = rest[0] ?? null;
+        if (unlocking === null && autoOpened)
+            close();
+    }
+
+    // Volume retiré, déverrouillé (ici ou ailleurs) : au suivant.
     Connections {
         target: Disks
 
         function onVolumesChanged(): void {
-            const u = root.unlocking;
-            if (u && !Disks.volumes.some(v => v.path === u.path && v.label === u.label && v.size === u.size && v.cleartext === "/"))
-                root.unlocking = null;
+            if (root.unlocking && !root.stillLocked(root.unlocking))
+                root.nextPrompt();
         }
     }
 
     // Ouvert et épinglé sous `button` (ou gardé s'il l'est déjà), champ de la phrase de passe affiché avec le focus : ouvrir
-    // d'abord, la surface donnant le focus à son cadre à l'ouverture.
+    // d'abord, la surface donnant le focus à son cadre à l'ouverture. Une demande déjà affichée : celle-ci attend son tour.
     function askPassphrase(button: Item, volume): void {
         if (!visible || previewing) {
             toggle(button, button.buttons);
             autoOpened = true;
         }
-        unlocking = volume;
+        if (unlocking === null)
+            unlocking = volume;
+        else if (unlocking.path !== volume.path && !queue.some(q => q.path === volume.path))
+            queue = [...queue, volume];
     }
 
     function sizeText(bytes: real): string {
@@ -90,6 +109,7 @@ Panel {
 
                 PanelButton {
                     visible: drive.modelData.isLoop || drive.modelData.canPowerOff || drive.modelData.ejectable
+                    enabled: !Disks.driveBusy(drive.modelData)
                     text: drive.modelData.isLoop ? "Detach" : "Eject"
                     onClicked: Disks.eject(drive.modelData)
                 }
@@ -109,6 +129,8 @@ Panel {
                     readonly property bool unlocked: modelData.isCrypto && modelData.cleartext !== "/"
                     readonly property var clear: unlocked ? Disks.volumes.find(c => c.path === modelData.cleartext) ?? null : null
                     readonly property var volume: clear ?? modelData
+                    // Action en cours (montage automatique, clic précédent) : boutons atténués.
+                    readonly property bool busy: Disks.busy.includes(modelData.device) || Disks.busy.includes(volume.device)
 
                     icon: modelData.isCrypto ? (unlocked ? "changes-allow" : "changes-prevent") : "drive-removable-media"
                     text: modelData.uiLabel
@@ -122,12 +144,14 @@ Panel {
 
                     PanelButton {
                         visible: modelData.canUnlock && !unlocked
+                        enabled: !busy
                         text: "Unlock"
                         onClicked: root.unlocking = modelData
                     }
 
                     PanelButton {
                         visible: volume.isFilesystem
+                        enabled: !busy
                         text: volume.mounted ? "Unmount" : "Mount"
                         onClicked: volume.mounted ? Disks.unmount(volume) : Disks.mount(volume)
                     }
@@ -140,6 +164,7 @@ Panel {
 
                     PanelButton {
                         visible: unlocked
+                        enabled: !busy
                         text: "Lock"
                         onClicked: Disks.lock(modelData)
                     }
@@ -163,25 +188,23 @@ Panel {
             if (visible)
                 focusInput();
         }
-        // Champ gardé jusqu'au résultat : refusée, en rouge et vidée (un autre essai) ; acceptée, retirée (le panneau se ferme
-        // s'il s'était ouvert tout seul).
+        // Champ gardé jusqu'au résultat (ignoré si la demande a changé entre-temps) : refusée, en rouge et vidée (un autre
+        // essai) ; acceptée ou impossible à essayer (udisksctl absent : la notification le dit), disque suivant.
         onAccepted: text => {
             if (text === "" || root.checking)
                 return;
             const target = root.unlocking;
             root.checking = true;
             error = false;
-            Disks.unlock(target, text, ok => {
-                if (ok && root.autoOpened) {
-                    root.close();
-                } else if (root.unlocking === target) {
-                    if (ok) {
-                        root.unlocking = null;
-                    } else {
-                        root.checking = false;
-                        passphrase.text = "";
-                        passphrase.error = true;
-                    }
+            Disks.unlock(target, text, (ok, code) => {
+                if (root.unlocking !== target)
+                    return;
+                if (ok || code === -1) {
+                    root.nextPrompt();
+                } else {
+                    root.checking = false;
+                    passphrase.text = "";
+                    passphrase.error = true;
                 }
             });
         }
