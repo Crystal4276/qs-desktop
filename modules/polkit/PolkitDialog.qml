@@ -15,22 +15,89 @@ import qs.modules.bar
 Scope {
     id: root
 
-    readonly property AuthFlow flow: agent.flow
+    // Agent enregistré auprès de polkit. Échec (place prise par polkit-gnome, ou par l'instance d'avant un plantage, pas encore
+    // partie) : Quickshell ne réessaie pas ; l'agent est recréé, de plus en plus rarement.
+    LazyLoader {
+        id: agentLoader
+        active: true
 
-    PolkitAgent {
-        id: agent
+        PolkitAgent {}
+    }
+
+    readonly property PolkitAgent agent: agentLoader.item
+    readonly property AuthFlow flow: agent?.flow ?? null
+    property int failedRegistrations: 0
+
+    Timer {
+        running: !agentLoader.active || (root.agent !== null && !root.agent.isRegistered)
+        repeat: true
+        // Agent retiré : recréé au tick suivant, une fois l'ancien détruit (sinon le nouveau ne reprend pas sa place).
+        interval: agentLoader.active ? Math.min(5000 * 2 ** root.failedRegistrations, 300000) : 1000
+        onTriggered: {
+            if (agentLoader.active) {
+                root.failedRegistrations++;
+                agentLoader.active = false;
+            } else {
+                agentLoader.active = true;
+            }
+        }
+    }
+    Connections {
+        target: root.agent
+        function onIsRegisteredChanged() {
+            if (root.agent.isRegistered)
+                root.failedRegistrations = 0;
+        }
+    }
+
+    // Demande déjà en cours à la création de l'agent (rechargement de la config : il reprend celui d'avant et sa demande) :
+    // affichée.
+    onAgentChanged: {
+        if (agent?.isActive && !window.visible)
+            window.show();
     }
 
     // Demande en cours affichée ; terminée (réussie, refusée, annulée) : fenêtre fermée.
     Connections {
-        target: agent
+        target: root.agent
         function onAuthenticationRequestStarted() {
             window.show();
         }
         // Demande retirée par polkit sans fin signalée sur le flux : fenêtre fermée quand même.
         function onIsActiveChanged() {
-            if (!agent.isActive && window.visible)
+            if (!root.agent.isActive && window.visible)
                 window.close();
+            Qt.callLater(root.cancelDisplaced);
+        }
+    }
+
+    // Quickshell 0.3.2 : une demande arrivée pendant une autre la remplace (sa file d'attente ne sert pas) ; la première, sans
+    // fenêtre, ferait attendre son application indéfiniment. Annulée une fois l'agent libre (pas avant : sa fin terminerait aussi
+    // la demande en cours) ; l'application peut redemander.
+    property var displaced: []
+    property AuthFlow lastFlow: null
+    onFlowChanged: {
+        if (lastFlow && flow && !lastFlow.isCompleted)
+            displaced = [...displaced, lastFlow];
+        lastFlow = flow;
+    }
+
+    function cancelDisplaced(): void {
+        if (agent?.isActive)
+            return;
+        const flows = displaced;
+        displaced = [];
+        for (const f of flows) {
+            if (f && !f.isCompleted)
+                f.cancelAuthenticationRequest();
+        }
+    }
+
+    Connections {
+        target: Session
+        function onLockActiveChanged() {
+            if (!Session.lockActive)
+                window.reopen();
         }
     }
 
@@ -46,11 +113,21 @@ Scope {
         function onAuthenticationFailed() {
             root.wrong = true;
         }
-        // Nouvel essai demandé après un refus : le champ, désactivé pendant la vérification, reprend le clavier.
+        // Vérification en cours, champ désactivé : le cadre garde le clavier (Échap annule) ; nouvel essai : le champ le reprend.
         function onIsResponseRequiredChanged() {
-            if (root.flow.isResponseRequired && window.visible)
+            if (!window.visible)
+                return;
+            if (root.flow.isResponseRequired)
                 field.focusInput();
+            else
+                frame.forceActiveFocus();
         }
+    }
+
+    // Identité dont le mot de passe est demandé, si ce n'est pas toi (plusieurs administrateurs : polkit propose le premier).
+    readonly property string otherIdentity: {
+        const identity = flow?.selectedIdentity ?? null;
+        return identity && identity.string !== Quickshell.env("USER") ? identity.displayName || identity.string : "";
     }
 
     OverlayPopup {
@@ -59,7 +136,10 @@ Scope {
         WlrLayershell.namespace: "quickshell-polkit"
         frameItem: frame
 
+        // Écran verrouillé : affichée seulement au déverrouillage (Session.lockActive).
         function show(): void {
+            if (Session.lockActive)
+                return;
             screen = Outputs.focusedScreen();
             field.text = "";
             root.wrong = false;
@@ -68,14 +148,37 @@ Scope {
             field.focusInput();
         }
 
-        // Fermeture par un clic à côté, une barre ou un autre écran : la demande est annulée.
+        // Fermée par toi (clic à côté, une barre, un autre popup) : demande annulée, une fois la fenêtre fermée (l'annulation
+        // termine aussitôt la demande, et la suivante en attente s'ouvre : pas dans la fenêtre qui se ferme). Fermée sans toi
+        // (écran disparu, verrouillage) : demande gardée, rouverte sur l'écran focalisé (au déverrouillage, s'il y a lieu).
+        // Saisie effacée dans les deux cas (pas de mot de passe gardé en mémoire).
+        property AuthFlow abandoned: null
+
         onClosing: {
-            if (root.flow && !root.flow.isCompleted)
-                root.flow.cancelAuthenticationRequest();
+            field.text = "";
+            if (closingLost) {
+                Qt.callLater(window.reopen);
+            } else {
+                abandoned = root.flow;
+                Qt.callLater(window.cancelAbandoned);
+            }
         }
 
+        function reopen(): void {
+            if (root.agent?.isActive && !visible)
+                show();
+        }
+
+        function cancelAbandoned(): void {
+            const flow = abandoned;
+            abandoned = null;
+            if (flow && !flow.isCompleted && !(visible && root.flow === flow))
+                flow.cancelAuthenticationRequest();
+        }
+
+        // Champ vide : rien envoyé (un essai vide compterait comme un échec pour faillock).
         function submit(): void {
-            if (root.flow?.isResponseRequired) {
+            if (root.flow?.isResponseRequired && field.text !== "") {
                 root.flow.submit(field.text);
                 field.text = "";
             }
@@ -100,14 +203,27 @@ Scope {
                     source: Icons.iconSource(root.flow?.iconName ?? "")
                 }
 
+                // Texte brut : le message reprend la commande de l'application (pkexec), qui pourrait y glisser du HTML.
                 Text {
                     Layout.fillWidth: true
                     text: root.flow?.message ?? ""
+                    textFormat: Text.PlainText
                     wrapMode: Text.Wrap
                     font.family: Theme.font.text
                     font.pixelSize: Theme.panel.fontSize
                     color: Theme.panel.text
                 }
+            }
+
+            Text {
+                Layout.fillWidth: true
+                visible: root.otherIdentity !== ""
+                text: `Password for ${root.otherIdentity}`
+                textFormat: Text.PlainText
+                wrapMode: Text.Wrap
+                font.family: Theme.font.text
+                font.pixelSize: Theme.panel.smallFontSize
+                color: Theme.panel.secondaryText
             }
 
             PanelField {
@@ -124,15 +240,21 @@ Scope {
                 Keys.onEscapePressed: root.flow?.cancelAuthenticationRequest()
             }
 
+            // Message de polkit (une information, ex. « posez le doigt », ou une erreur, ex. compte bloqué) ; refusé : l'erreur de
+            // polkit s'il y en a une, sinon « Wrong password » (une information d'avant n'a plus cours). Le message n'est pas remis
+            // à zéro d'un essai à l'autre.
             Text {
+                readonly property string supplementary: root.flow?.supplementaryMessage ?? ""
+                readonly property bool isError: root.flow?.supplementaryIsError ?? false
+
                 Layout.fillWidth: true
                 visible: text !== ""
-                // Message de polkit s'il y en a un, sinon celui de l'écran de verrouillage.
-                text: (root.flow?.supplementaryMessage ?? "") !== "" ? root.flow.supplementaryMessage : root.wrong ? "Wrong password" : ""
+                text: root.wrong && !(isError && supplementary !== "") ? "Wrong password" : supplementary
+                textFormat: Text.PlainText
                 wrapMode: Text.Wrap
                 font.family: Theme.font.text
                 font.pixelSize: Theme.panel.smallFontSize
-                color: root.wrong || root.flow?.supplementaryIsError ? Theme.panel.warning : Theme.panel.secondaryText
+                color: root.wrong || isError ? Theme.panel.warning : Theme.panel.secondaryText
             }
 
             RowLayout {

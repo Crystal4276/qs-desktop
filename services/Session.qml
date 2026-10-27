@@ -20,6 +20,9 @@ Singleton {
     // Verrouillage natif (modules/lock/LockScreen.qml, qui écoute ce signal et tient `locked` à jour) ; aussi `qs ipc call lock lock`.
     signal lockRequested
     property bool locked: false   // écran verrouillé et confirmé par le compositeur
+    // Verrouillage demandé (dès la demande, avant la confirmation du compositeur) jusqu'au déverrouillage : aucun popup à clavier
+    // ne s'ouvre (il prendrait le clavier de l'écran de verrouillage, et le mot de passe tapé pour déverrouiller avec).
+    property bool lockActive: false
 
     function lock(): void {
         lockRequested();

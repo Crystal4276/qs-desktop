@@ -29,7 +29,7 @@ PanelWindow {
     // Les autres popups se ferment ; `from` : bouton d'ancrage, ou null (lanceur).
     function prepareOpen(from: Item): void {
         if (!visible)
-            BarState.closePopups([]);
+            BarState.closePopups([], false);
         if (from)
             button = from;
     }
@@ -48,13 +48,18 @@ PanelWindow {
         initialFocus?.forceActiveFocus();
     }
 
+    property bool hiding: false   // masquée par close() (sinon : par le compositeur)
+
     function close(): void {
         if (visible)
             closing();
+        hiding = true;
         visible = false;
+        hiding = false;
     }
 
-    // Vrai pendant la fermeture due à la perte de l'écran ou du bouton (lu dans `closing` : rien n'a été abandonné par toi).
+    // Vrai pendant la fermeture due à la perte de l'écran ou du bouton, ou au verrouillage (lu dans `closing` : rien n'a été
+    // abandonné par toi).
     property bool closingLost: false
 
     function closeLost(): void {
@@ -84,14 +89,24 @@ PanelWindow {
         target: root
         function onVisibleChanged() {
             BarState.setPopupOpen(root, root.visible);
+            // Surface fermée par le compositeur (écran retiré) : Quickshell la masque sans passer par close().
+            if (!root.visible && !root.hiding) {
+                root.closingLost = true;
+                root.closing();
+                root.closingLost = false;
+            }
         }
     }
     Component.onDestruction: BarState.setPopupOpen(root, false)
 
     Connections {
         target: BarState
-        function onClosePopups(keep) {
-            if (!keep.includes(root))
+        function onClosePopups(keep, lost) {
+            if (keep.includes(root))
+                return;
+            if (lost)
+                root.closeLost();
+            else
                 root.close();
         }
     }

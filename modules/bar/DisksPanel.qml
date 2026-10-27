@@ -24,8 +24,8 @@ Panel {
     initialFocus: unlocking !== null ? passphrase.inputItem : frameItem
 
     // Fermé par toi (Échap, clic à côté, autre popup) : demandes abandonnées, les boutons Unlock restent. Pas quand son écran
-    // disparaît (`closingLost`) : le tray d'un autre écran reprend la demande ; ni un aperçu qui se referme (épinglé ensuite
-    // par le tray, une fois la capture finie…).
+    // disparaît ou au verrouillage (`closingLost`) : le tray (d'un autre écran) reprend la demande ; ni un aperçu qui se referme
+    // (épinglé ensuite par le tray, une fois la capture finie…).
     onClosing: {
         autoOpened = false;   // pas de second close() quand la file se vide (onUnlockingChanged)
         if (!closingLost && !previewing)

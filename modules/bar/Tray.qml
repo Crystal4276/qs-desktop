@@ -163,10 +163,10 @@ Item {
 
     // Disque chiffré branché (Disks.pending) : le panneau des disques déjà ouvert l'affiche (épinglé s'il n'était qu'un aperçu) ;
     // sinon celui du tray de l'écran préféré (focalisé, sinon principal) s'ouvre. Jamais par-dessus un autre popup épinglé ni
-    // l'outil de capture (saisie en cours qui serait perdue, clavier pris) : ouvert à leur fermeture. Décidé après coup
-    // (callLater) : pas pendant la diffusion qui ferme un popup, ni avant qu'un clic en ait ouvert un autre.
+    // l'outil de capture (saisie en cours qui serait perdue, clavier pris), ni pendant le verrouillage : ouvert à leur fin.
+    // Décidé après coup (callLater) : pas pendant la diffusion qui ferme un popup, ni avant qu'un clic en ait ouvert un autre.
     readonly property var openDisksPanel: BarState.openList.find(p => p instanceof DisksPanel) ?? null
-    readonly property bool promptHere: Disks.pending.length > 0 && !Screenshot.active
+    readonly property bool promptHere: Disks.pending.length > 0 && !Screenshot.active && !Session.lockActive
         && (openDisksPanel ? openDisksPanel === disksPanel && disksPanel.previewing
             : !BarState.popupPinned && BarState.preferredButton("disks") === disksButton)
     onPromptHereChanged: if (promptHere) Qt.callLater(root.openPrompt)
