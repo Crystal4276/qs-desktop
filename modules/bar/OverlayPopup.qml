@@ -19,12 +19,14 @@ PanelWindow {
     // Juste avant la fermeture (lanceur : enregistre la saisie) ; juste après si le compositeur a fermé la surface (écran retiré).
     signal closing
 
-    // Ouvert : se ferme (false). Sinon prépare l'ouverture sous `from` (true).
+    // Ouvert : se ferme (false). Sinon prépare l'ouverture sous `from` (true). Pendant le verrouillage : rien (false).
     function beginOpen(from: Item): bool {
         if (visible) {
             close();
             return false;
         }
+        if (Session.lockActive)
+            return false;
         prepareOpen(from);
         return true;
     }

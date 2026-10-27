@@ -570,14 +570,14 @@ Singleton {
         readonly property color selected: root.panel.rowHover
     }
 
-    // Écran de verrouillage (nouveau design, ARCHITECTURE § 10.1 R2) : fond d'écran de chaque écran flouté et assombri, horloge, date ;
-    // sur l'écran principal, initiale et nom de l'utilisateur, champ du mot de passe. Maquette validée le 2026-10-17.
     // Agent polkit (modules/polkit/PolkitDialog.qml) : cadre des panneaux ; icône de l'application à la moitié de celle des
     // notifications (50 px, validé avec la phase 8b).
     readonly property QtObject polkit: QtObject {
         readonly property int iconSize: root.notification.iconSize / 2
     }
 
+    // Écran de verrouillage (nouveau design, ARCHITECTURE § 10.1 R2) : fond d'écran de chaque écran flouté et assombri, horloge, date ;
+    // sur l'écran principal, initiale et nom de l'utilisateur, champ du mot de passe. Maquette validée le 2026-10-17.
     readonly property QtObject lock: QtObject {
         readonly property int blur: 64                            // rayon max du flou (MultiEffect)
         readonly property color dim: Qt.alpha(root.color.crust, 0.45)

@@ -37,3 +37,9 @@ Idées notées pendant le travail. Rien ici n'est implémenté sans accord.
   mettre la phrase dans la ligne de commande (petit programme qui la lit sur l'entrée standard).
 - Disques : images disque en boucle créées par un autre utilisateur (root : Waydroid, VM) gérées et montées comme les tiennes,
   comme le fait udiskie ; les limiter à `Loop.SetupByUID` = ton uid serait plus sûr (revue du 2026-10-27).
+- Polkit : agent perdu si polkitd redémarre (`systemctl restart polkit`, plantage) : Quickshell se croit toujours enregistré,
+  comme polkit-gnome. Surveiller le propriétaire de `org.freedesktop.PolicyKit1` (`gdbus monitor --system`) et recréer l'agent
+  (revue du 2026-10-27 ; non testable sans `sudo`).
+- Polkit : signaler à Quickshell (amont, avec ton accord) la file d'attente inopérante de `PolkitAgentImpl` (0.3.2 et `master` :
+  une demande remplace celle en cours ; `finishAuthenticationRequest` agit sur la demande active, pas sur celle qui finit) et
+  l'absence de nouvel essai d'enregistrement. Contournement en place : ARCHITECTURE § 10.1.9.

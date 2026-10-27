@@ -444,8 +444,11 @@ des modules de la barre (processeur `teal`, mémoire `green`, GPU `sky`), disque
 
 ## 7 quinquies. Agent polkit (nouveau composant, phase 8b)
 
-Style des panneaux (cadre centré sur l'écran), titre « Authentication Required », champ et boutons des panneaux ; refus : champ
-`red` et « Wrong password » en `red`. Icône de l'application : 50 px, moitié de celle des notifications (validé avec la phase 8b).
+Style des panneaux (cadre centré sur l'écran), titre « Authentication Required », message de l'application en texte des panneaux,
+champ et boutons des panneaux. Sous le message, « Password for … » (identité demandée si ce n'est pas toi) : petite taille,
+`subtext0` (texte secondaire). Sous le champ, message de polkit : information en texte secondaire, erreur en `red` ; refus :
+champ `red` et « Wrong password » en `red`. Icône de l'application : 50 px, moitié de celle des notifications (validé avec la
+phase 8b).
 
 ## 8. Fenêtres (compositeur, pour mémoire)
 
