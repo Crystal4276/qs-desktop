@@ -161,12 +161,14 @@ Item {
         id: disksPanel
     }
 
-    // Disque chiffré branché : phrase de passe demandée par le tray d'un seul écran (focalisé, sinon principal).
+    // Disque chiffré branché : phrase de passe demandée par le tray d'un seul écran (celui qui demande déjà, sinon le focalisé,
+    // sinon le principal).
     Connections {
         target: Disks
 
         function onUnlockRequested(volume) {
-            if (BarState.preferredButton("disks") === disksButton)
+            const owner = BarState.disksPrompt;
+            if (owner ? owner === disksPanel : BarState.preferredButton("disks") === disksButton)
                 disksPanel.askPassphrase(disksButton, volume);
         }
     }

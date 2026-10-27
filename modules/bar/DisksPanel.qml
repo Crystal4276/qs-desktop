@@ -17,8 +17,11 @@ Panel {
     // Autres disques chiffrés branchés, demandés ensuite (deux partitions LUKS d'une même clé…).
     property var queue: []
     // Ouvert par le branchement d'un disque chiffré : refermé une fois les disques déverrouillés (rend le clavier, comme la
-    // fenêtre d'udiskie).
+    // fenêtre d'udiskie) ; d'ici là, pas de fermeture automatique (Échap ou clic à côté abandonnent).
     property bool autoOpened: false
+    holdOpen: autoOpened && unlocking !== null
+    // Demande différée : un autre popup est épinglé (saisie en cours ailleurs, qui serait perdue) ; ouverte à sa fermeture.
+    property Item waitingUnder: null
 
     onVisibleChanged: {
         if (!visible) {
@@ -26,6 +29,19 @@ Panel {
             queue = [];
             autoOpened = false;
         }
+    }
+
+    // Ce panneau demande (ou attendra) une phrase de passe : les disques suivants lui sont confiés (Tray.qml).
+    readonly property bool prompting: unlocking !== null || waitingUnder !== null
+    onPromptingChanged: {
+        if (prompting)
+            BarState.disksPrompt = root;
+        else if (BarState.disksPrompt === root)
+            BarState.disksPrompt = null;
+    }
+    Component.onDestruction: {
+        if (BarState.disksPrompt === root)
+            BarState.disksPrompt = null;
     }
     // Autre volume : rien de ce qui a été tapé pour le précédent ne lui est envoyé.
     onUnlockingChanged: {
@@ -37,6 +53,13 @@ Panel {
     // Encore à demander : présent, verrouillé, et pas remplacé par un autre sous le même nom (/dev/sdb1).
     function stillLocked(u): bool {
         return Disks.volumes.some(v => v.path === u.path && v.label === u.label && v.size === u.size && v.cleartext === "/");
+    }
+
+    // Volume choisi (bouton Unlock) : la demande en cours reprend ensuite.
+    function prompt(volume): void {
+        if (unlocking && unlocking.path !== volume.path)
+            queue = [unlocking, ...queue.filter(q => q.path !== volume.path)];
+        unlocking = volume;
     }
 
     // Disque suivant de la file ; sinon champ retiré, et panneau fermé s'il s'était ouvert tout seul.
@@ -61,14 +84,39 @@ Panel {
     // Ouvert et épinglé sous `button` (ou gardé s'il l'est déjà), champ de la phrase de passe affiché avec le focus : ouvrir
     // d'abord, la surface donnant le focus à son cadre à l'ouverture. Une demande déjà affichée : celle-ci attend son tour.
     function askPassphrase(button: Item, volume): void {
+        if (unlocking?.path === volume.path || queue.some(q => q.path === volume.path))
+            return;
+        queue = [...queue, volume];
+        if (unlocking !== null)
+            return;
+        if (BarState.popupPinned && !pinned) {
+            waitingUnder = button;
+            return;
+        }
+        openPrompt(button);
+    }
+
+    function openPrompt(button: Item): void {
         if (!visible || previewing) {
             toggle(button, button.buttons);
             autoOpened = true;
         }
-        if (unlocking === null)
-            unlocking = volume;
-        else if (unlocking.path !== volume.path && !queue.some(q => q.path === volume.path))
-            queue = [...queue, volume];
+        nextPrompt();
+    }
+
+    Connections {
+        target: BarState
+
+        function onPopupPinnedChanged(): void {
+            if (root.waitingUnder === null || BarState.popupPinned)
+                return;
+            const button = root.waitingUnder;
+            root.waitingUnder = null;
+            if (root.queue.some(root.stillLocked))
+                root.openPrompt(button);
+            else
+                root.queue = [];
+        }
     }
 
     function sizeText(bytes: real): string {
@@ -96,6 +144,8 @@ Panel {
             id: drive
 
             required property var modelData
+            // Action en cours sur le disque (montage automatique, clic précédent, éjection) : boutons atténués.
+            readonly property bool busy: Disks.driveBusy(modelData)
 
             Layout.fillWidth: true
             spacing: 0
@@ -109,7 +159,7 @@ Panel {
 
                 PanelButton {
                     visible: drive.modelData.isLoop || drive.modelData.canPowerOff || drive.modelData.ejectable
-                    enabled: !Disks.driveBusy(drive.modelData)
+                    enabled: !drive.busy
                     text: drive.modelData.isLoop ? "Detach" : "Eject"
                     onClicked: Disks.eject(drive.modelData)
                 }
@@ -129,8 +179,6 @@ Panel {
                     readonly property bool unlocked: modelData.isCrypto && modelData.cleartext !== "/"
                     readonly property var clear: unlocked ? Disks.volumes.find(c => c.path === modelData.cleartext) ?? null : null
                     readonly property var volume: clear ?? modelData
-                    // Action en cours (montage automatique, clic précédent) : boutons atténués.
-                    readonly property bool busy: Disks.busy.includes(modelData.device) || Disks.busy.includes(volume.device)
 
                     icon: modelData.isCrypto ? (unlocked ? "changes-allow" : "changes-prevent") : "drive-removable-media"
                     text: modelData.uiLabel
@@ -140,18 +188,20 @@ Panel {
                         modelData.isCrypto && !unlocked ? "locked" : volume.mounted ? `mounted on ${volume.mountPoint}` : "not mounted"
                     ].filter(s => s).join(" · ")
                     active: volume.mounted
+                    // Ligne inactive aussi : un clic sur un bouton atténué ne l'atteint pas (il ouvrirait le dossier).
+                    locked: drive.busy
                     onClicked: volume.mounted ? root.run(() => Disks.browse(volume)) : null
 
                     PanelButton {
                         visible: modelData.canUnlock && !unlocked
-                        enabled: !busy
+                        enabled: !drive.busy
                         text: "Unlock"
-                        onClicked: root.unlocking = modelData
+                        onClicked: root.prompt(modelData)
                     }
 
                     PanelButton {
                         visible: volume.isFilesystem
-                        enabled: !busy
+                        enabled: !drive.busy
                         text: volume.mounted ? "Unmount" : "Mount"
                         onClicked: volume.mounted ? Disks.unmount(volume) : Disks.mount(volume)
                     }
@@ -164,7 +214,7 @@ Panel {
 
                     PanelButton {
                         visible: unlocked
-                        enabled: !busy
+                        enabled: !drive.busy
                         text: "Lock"
                         onClicked: Disks.lock(modelData)
                     }
@@ -189,17 +239,17 @@ Panel {
                 focusInput();
         }
         // Champ gardé jusqu'au résultat (ignoré si la demande a changé entre-temps) : refusée, en rouge et vidée (un autre
-        // essai) ; acceptée ou impossible à essayer (udisksctl absent : la notification le dit), disque suivant.
+        // essai) ; acceptée, ou échec d'une autre cause (polkit, udisksctl absent… : la notification le dit), disque suivant.
         onAccepted: text => {
             if (text === "" || root.checking)
                 return;
             const target = root.unlocking;
             root.checking = true;
             error = false;
-            Disks.unlock(target, text, (ok, code) => {
+            Disks.unlock(target, text, result => {
                 if (root.unlocking !== target)
                     return;
-                if (ok || code === -1) {
+                if (result !== "wrong") {
                     root.nextPrompt();
                 } else {
                     root.checking = false;
