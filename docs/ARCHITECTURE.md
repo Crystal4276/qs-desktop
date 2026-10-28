@@ -427,7 +427,9 @@ Proposition de placement dans les phases (CLAUDE.md n'est pas modifié sans ton 
   redimensionnement étiré). Clics gauche et droit : la carte (libayatana — Steam, Spotify — n'a pas d'Activate ; Quickshell
   n'expose pas l'absence d'ItemIsMenu, pas de détour par busctl : ta règle du 2026-10-28, rien que Quickshell). Steam : après
   une entrée autre qu'un jeu récent ou « Exit Steam », sa fenêtre est affichée aussitôt, son espace de travail avec, puis
-  celle qu'il ouvre dans les 3 s (`Compositor.showAppWindow`, Toplevel.activate ; mesuré : 2 ms jusqu'au changement d'espace).
+  celle qu'il ouvre dans les 3 s (`Compositor.showAppWindow` ; Sway : `mouse_warping none; [fenêtre] focus; mouse_warping output` en une commande, le
+  pointeur ne bouge pas et les autres applications — Deluge — gardent le déplacement ; Hyprland : Toplevel.activate, no_warps
+  dans ta config ; 21 ms du clic au changement d'espace).
 - **Panneaux du tray** (corrigé le 2026-10-20) : surfaces Overlay à clavier exclusif (`OverlayPopup`, comme le panneau de réglages et
   le lanceur), et non plus des popups « grab » : sous Sway, un popup `grabFocus` ouvert depuis une barre ne reçoit jamais le clavier
   (ni saisie, ni Échap). Fermés par un appui à côté du cadre (non transmis), sur une barre ou sur un autre écran, ou par Échap.

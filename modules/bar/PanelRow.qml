@@ -27,6 +27,7 @@ Rectangle {
     signal clicked
 
     Layout.fillWidth: true
+    implicitWidth: layout.implicitWidth + 2 * Theme.panel.rowPadding   // carte d'une application : largeur ajustée au contenu
     implicitHeight: Math.max(iconItem.implicitHeight, leadingRow.implicitHeight, texts.implicitHeight, trailingRow.implicitHeight) + 2 * Theme.panel.rowPadding
     radius: Theme.panel.rowRadius
     color: usable && hover.hovered ? Theme.panel.rowHover : "transparent"
@@ -56,6 +57,7 @@ Rectangle {
     }
 
     RowLayout {
+        id: layout
         anchors {
             fill: parent
             leftMargin: Theme.panel.rowPadding

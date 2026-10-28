@@ -223,13 +223,14 @@ Singleton {
     }
 
     // Fenêtre de l'application `appId` affichée, son espace de travail avec (carte du tray : Steam) : la plus ancienne déjà là
-    // (fenêtre principale) aussitôt, puis celle qu'elle ouvre dans les 3 s (Friends, Settings…). Toplevel.activate : même chemin
-    // sous Sway et Hyprland.
+    // (fenêtre principale) aussitôt, puis celle qu'elle ouvre dans les 3 s (Friends, Settings…). Focus par focusWindow (Sway :
+    // commande sans déplacement du pointeur ; Hyprland : Toplevel.activate).
     property string pendingApp: ""
     property var pendingKnown: []
 
     // Focus sur `toplevel` sans déplacer le pointeur (ta demande du 2026-10-28). Sway : mouse_warping coupé le temps du focus,
-    // dans la même commande (exécutée d'un bloc ; défaut de Sway rétabli) ; fenêtre désignée par app_id, ou classe sous
+    // dans la même commande (exécutée d'un bloc ; rétabli à `output`, défaut de Sway, que ta config ne change pas — à reprendre
+    // de dotfiles/sway en phase 10) ; fenêtre désignée par app_id, ou classe sous
     // XWayland, et titre. Hyprland : Toplevel.activate (ta config a no_warps).
     function focusWindow(toplevel: Toplevel): void {
         if (!isSway) {
