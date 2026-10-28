@@ -8,8 +8,8 @@ const HOST = "qs_desktop.open_link";
 
 // Domaines d'une même application : un lien de l'un vers l'autre reste dans la web app.
 const SITES = [
-    ["cloud.microsoft", "office.com", "microsoft365.com", "sharepoint.com", "onedrive.com", "live.com", "office.net",
-     "microsoftonline.com"],
+    ["cloud.microsoft", "office.com", "office365.com", "microsoft365.com", "sharepoint.com", "onedrive.com", "1drv.ms",
+     "live.com", "office.net", "microsoftonline.com"],
     ["notion.so", "notion.com", "notion.site"],
 ];
 
