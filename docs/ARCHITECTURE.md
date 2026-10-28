@@ -423,7 +423,10 @@ Proposition de placement dans les phases (CLAUDE.md n'est pas modifié sans ton 
   l'une d'elles est lancée par ailleurs) ; sans module natif (ex. NordVPN absent), l'icône de l'application reste.
 - **Popups** : les menus du tray sont des popups « grab » ; wlroots les ferme au clic sur une autre application (ce clic n'est pas
   transmis, comme les menus GTK), un clic sur une barre les ferme (`BarState.closePopups`). Un popup affiché ne se redimensionne pas
-  proprement sous Sway : les menus n'apparaissent qu'avec leurs entrées.
+  proprement sous Sway : les menus n'apparaissent qu'avec leurs entrées. Clavier (2026-10-28) : un popup n'a le clavier que si sa
+  barre l'accepte ; elle l'accepte « à la demande » pendant le survol des icônes d'applications et tant qu'un menu est affiché
+  (comme l'horloge). Menu placé comme GTK, sous un rectangle de 1 px au pointeur : ouvert sous le pointeur, un clic droit au
+  même point tombait sur son coin, où Qt 6.12 plante (élément focalisé détruit).
 - **Panneaux du tray** (corrigé le 2026-10-20) : surfaces Overlay à clavier exclusif (`OverlayPopup`, comme le panneau de réglages et
   le lanceur), et non plus des popups « grab » : sous Sway, un popup `grabFocus` ouvert depuis une barre ne reçoit jamais le clavier
   (ni saisie, ni Échap). Fermés par un appui à côté du cadre (non transmis), sur une barre ou sur un autre écran, ou par Échap.

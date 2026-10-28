@@ -154,6 +154,7 @@ Singleton {
         readonly property int separatorMargin: 4
         readonly property int toggleSize: 16          // place réservée avant le texte (case, radio ou icône)
         readonly property int toggleSpacing: 2        // texte à 18 px du bord intérieur de l'élément (mesuré)
+        readonly property int toggleMarginLeft: -3    // case et radio : marge gauche du thème GTK
         readonly property color toggleBackground: Qt.alpha(root.color.gtkText, 0.12)
         readonly property color toggleChecked: root.color.green
         readonly property color toggleMark: Qt.alpha(root.color.crust, 0.87)

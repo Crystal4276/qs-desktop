@@ -8,7 +8,8 @@ import qs.services
 // Zone de notification (INVENTORY.md § 1, `tray`) : icônes 32 px espacées de 5 px, padding horizontal 6 px ;
 // éléments « passifs » masqués (défaut de Waybar). Ordre : celui d'enregistrement des applications.
 // Actions à l'appui, comme Waybar (sni/item.cpp) : gauche → Activate (ou le menu si l'application n'a qu'un menu),
-// milieu → SecondaryActivate, droit → menu (TrayMenu.qml) ou ContextMenu de l'application ; molette → Scroll(∓1).
+// milieu → SecondaryActivate, droit → menu (TrayMenu.qml) ou ContextMenu de l'application ; molette → Scroll(∓1), verticale
+// ou horizontale.
 Item {
     id: root
 
@@ -66,6 +67,20 @@ Item {
 
                 WheelSteps {
                     onStep: direction => icon.modelData.scroll(-direction, false)
+                }
+
+                WheelSteps {
+                    orientation: Qt.Horizontal
+                    onStep: direction => icon.modelData.scroll(-direction, true)
+                }
+
+                HoverHandler {
+                    onHoveredChanged: {
+                        if (hovered)
+                            root.hoveredIcon = icon;
+                        else if (root.hoveredIcon === icon)
+                            root.hoveredIcon = null;
+                    }
                 }
             }
         }
@@ -184,7 +199,28 @@ Item {
         id: notificationsPanel
     }
 
-    // Un seul menu à la fois, ouvert au pointeur (coin haut-gauche), basculé s'il déborde de l'écran.
+    // Clavier des menus : sous Sway, un popup n'a le clavier que si sa barre l'accepte. La barre l'accepte « à la demande »
+    // pendant le survol des icônes d'applications (le clic qui ouvre un menu lui donne alors le focus) et tant qu'un menu est
+    // affiché ; ensuite Sway rend le focus à la fenêtre qui l'avait (comme l'horloge, CalendarPopup.qml).
+    property Item hoveredIcon: null
+    readonly property bool wantsKeyboard: hoveredIcon !== null || menu.visible
+    readonly property string screenName: QsWindow.window?.screen?.name ?? ""
+    property string claimedScreen: ""   // écran dont ce tray a demandé le clavier
+
+    onWantsKeyboardChanged: {
+        if (wantsKeyboard) {
+            claimedScreen = screenName;
+            BarState.trayKeyboardScreen = screenName;
+        } else if (BarState.trayKeyboardScreen === claimedScreen) {
+            BarState.trayKeyboardScreen = "";
+        }
+    }
+    Component.onDestruction: {
+        if (wantsKeyboard && BarState.trayKeyboardScreen === claimedScreen)
+            BarState.trayKeyboardScreen = "";
+    }
+
+    // Un seul menu à la fois, ouvert au pointeur, basculé s'il déborde de l'écran.
     TrayMenu {
         id: menu
 
@@ -192,8 +228,10 @@ Item {
         readonly property Item owner: open ? anchor.item : null
         property int ownerButtons: Qt.RightButton
 
+        // Menu affiché sur cette icône : fermé. Demandé mais pas encore affiché (entrées pas encore reçues, ou menu vide) :
+        // redemandé.
         function openAt(handle: var, item: Item, x: real, y: real, buttons: int): void {
-            if (open && anchor.item === item) {
+            if (visible && anchor.item === item) {
                 open = false;
                 return;
             }
@@ -206,7 +244,11 @@ Item {
             open = true;
         }
 
-        anchor.edges: Edges.Top | Edges.Left
+        // Comme GTK (gtk_menu_popup_at_pointer) : rectangle de 1 px au pointeur, menu sous son coin bas-droit. Un appui au
+        // point du clic reste sur l'icône (le menu commencerait sinon sous le pointeur : Qt 6.12 y plante sur un clic droit).
+        anchor.rect.width: 1
+        anchor.rect.height: 1
+        anchor.edges: Edges.Bottom | Edges.Right
         anchor.gravity: Edges.Bottom | Edges.Right
         onVisibleChanged: BarState.setPopupOpen(menu, visible)
         Component.onDestruction: BarState.setPopupOpen(menu, false)
