@@ -127,18 +127,23 @@ Commandes dont `install.sh` vérifiera la présence après installation :
 
 ### Web apps : ce que fait `install.sh`
 
-Tout en une fois, idempotent, sauvegarde `<fichier>.bak-<date>` avant de remplacer un fichier existant. `WEBAPPS` = dossier
+Tout en une fois, idempotent : un fichier généré identique à l'existant n'est pas réécrit ; sinon, sauvegarde
+`<fichier>.bak-<date>` avant de le remplacer, seulement si aucune sauvegarde n'existe encore (l'original de l'utilisateur, pas
+une sortie d'`install.sh`). `--uninstall` : copies générées (lanceurs, manifestes de l'hôte) retirées, sauvegardes remises
+s'il y en a. `WEBAPPS` = dossier
 `dotfiles/webapps` du dépôt (chemin absolu), `PROFILES` = `~/.local/share/ice/profiles` (dossier de `webapp-manager`, gardé :
 les profils et sessions déjà connectées de cette machine sont repris tels quels).
 
 1. Paquets : `chromium`, `python` (`deps/optional.txt`), `wireplumber`, `papirus-icon-theme` (icônes `whatsapp`, `discord`,
    `notion`, `solstice-microsoft-365-{word,excel,powerpoint}`).
 2. Règle WirePlumber : lien `~/.config/wireplumber/wireplumber.conf.d/50-dnd-no-restore.conf` →
-   `dotfiles/wireplumber/wireplumber.conf.d/50-dnd-no-restore.conf`, puis `systemctl --user restart wireplumber`.
+   `dotfiles/wireplumber/wireplumber.conf.d/50-dnd-no-restore.conf`, puis `systemctl --user restart wireplumber` si le lien
+   vient d'être créé ou changé (le redémarrage coupe le son un instant).
 3. Pour chaque modèle `dotfiles/webapps/applications/<lanceur>.desktop` : remplacer `@PROFILES@` et `@WEBAPPS@`, écrire le
    résultat dans `~/.local/share/applications/<lanceur>.desktop` (copie, pas lien : les chemins y sont développés), puis
-   `update-desktop-database ~/.local/share/applications` s'il existe. Chemin avec espace ou caractère spécial : argument
-   entier entre guillemets dans `Exec` (`"--load-extension=…"`, avec `\`, `"`, `` ` `` et `$` échappés, `%` doublé).
+   `update-desktop-database ~/.local/share/applications` s'il existe. Chemin avec espace : argument entier entre guillemets
+   dans `Exec` (`"--load-extension=…"`) ; chemin contenant `"`, `` ` ``, `$`, `\` ou `%` : refusé avec un message (deux
+   niveaux d'échappement dans `Exec`, pas la peine pour un cas improbable).
 4. Pour chaque profil (`Whatsapp8699`, `DiscordWeb2996`, `Word9053`, `Excel7169`, `Powerpoint0904`, `Notion5106`, lus dans
    `--user-data-dir` des modèles) : créer
    `PROFILES/<profil>/NativeMessagingHosts/` et y écrire `qs_desktop.open_link.json` depuis `dotfiles/webapps/qs_desktop.open_link.json`
