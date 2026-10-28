@@ -20,6 +20,8 @@ OverlayPopup {
     id: root
 
     property string title: ""
+    // Largeur du cadre (carte d'une application du tray : celle de son contenu, connue après l'ouverture : recentrée).
+    property real frameWidth: Theme.panel.width
     // Interrupteur du titre (Wi-Fi, Bluetooth…) : visible si `hasSwitch`.
     property bool hasSwitch: false
     property bool switchChecked: false
@@ -113,13 +115,13 @@ OverlayPopup {
     // Aperçu : fermé une fois le pointeur hors de l'icône et du cadre (délai bref : passage de l'une à l'autre).
     Timer {
         interval: Theme.panel.previewGrace
-        running: root.visible && root.previewing && !frameHover.hovered && BarState.hoveredTrayButton === null
+        running: root.visible && root.previewing && !frame.hovered && BarState.hoveredTrayButton === null
         onTriggered: root.close()
     }
 
     Timer {
         interval: Theme.panel.autoCloseDelay
-        running: root.pinned && root.pointerEntered && !root.typing && !root.holdOpen && !framePress.active && !frameHover.hovered
+        running: root.pinned && root.pointerEntered && !root.typing && !root.holdOpen && !framePress.active && !frame.hovered
             && !(root.button?.hovered ?? false)
         onTriggered: root.close()
     }
@@ -129,7 +131,7 @@ OverlayPopup {
 
         // 10 px sous la pilule ; hauteur : au plus jusqu'à 10 px du bas de l'écran.
         y: Theme.panel.gap
-        width: Theme.panel.width
+        width: root.frameWidth
         maxHeight: parent.height - Theme.panel.gap - Theme.bar.marginSide
         title: root.title
         hasSwitch: root.hasSwitch
@@ -139,18 +141,23 @@ OverlayPopup {
         onCloseRequested: root.close()
     }
 
-    // Au-dessus du cadre : survol vu avant ses enfants (un enfant qui accepte le survol, `hoverEnabled`, le cacherait à un
-    // HoverHandler du cadre).
+    Connections {
+        target: frame
+        function onHoveredChanged() {
+            if (frame.hovered)
+                root.pointerEntered = true;
+        }
+        function onWidthChanged() {
+            if (root.visible && root.button)
+                root.placeUnder(root.button);
+        }
+    }
+
     Item {
         x: frame.x
         y: frame.y
         width: frame.width
         height: frame.height
-
-        HoverHandler {
-            id: frameHover
-            onHoveredChanged: if (hovered) root.pointerEntered = true
-        }
 
         // Bouton appuyé dans le cadre (curseur de volume tiré hors du cadre…) : pas de fermeture automatique avant le relâchement.
         PointHandler {

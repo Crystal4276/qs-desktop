@@ -45,12 +45,17 @@ PanelWindow {
     // Ouverture sur l'écran de `item` (un bouton de barre), cadre centré sous lui sans dépasser les marges de la barre
     // (10 px du bord) ; focus donné après l'affichage (la surface peut être recréée pour un autre écran).
     function openUnder(item: Item): void {
-        const window = item.QsWindow.window;
-        screen = window.screen;
-        const x = item.mapToItem(null, 0, 0).x;
-        frameItem.x = BarState.panelLeft(x + (item.width - frameItem.width) / 2, frameItem.width, window.width);
+        screen = item.QsWindow.window.screen;
+        placeUnder(item);
         visible = true;
         initialFocus?.forceActiveFocus();
+    }
+
+    // Cadre centré sous `item` (aussi quand sa largeur change, ouvert : carte d'une application du tray).
+    function placeUnder(item: Item): void {
+        const window = item.QsWindow.window;
+        const x = item.mapToItem(null, 0, 0).x;
+        frameItem.x = BarState.panelLeft(x + (item.width - frameItem.width) / 2, frameItem.width, window.width);
     }
 
     // Vrai pendant `closing` quand la fermeture ne vient pas de toi (rien n'a été abandonné) : écran ou bouton disparu,

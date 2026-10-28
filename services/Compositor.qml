@@ -5,6 +5,7 @@ import Quickshell
 import Quickshell.I3
 import Quickshell.Hyprland
 import Quickshell.Io
+import Quickshell.Wayland
 
 // Interface unique sur le compositeur (docs/ARCHITECTURE.md § 2).
 // Backend choisi au démarrage : Sway (SWAYSOCK) via Quickshell.I3, Hyprland (HYPRLAND_INSTANCE_SIGNATURE) via Quickshell.Hyprland.
@@ -219,6 +220,45 @@ Singleton {
             return false;
         activationDeadline = 0;
         return true;
+    }
+
+    // Fenêtre de l'application `appId` affichée, son espace de travail avec (carte du tray : Steam) : celle qu'elle ouvre dans la
+    // seconde, sinon la plus ancienne déjà là (fenêtre principale). Toplevel.activate : même chemin sous Sway et Hyprland.
+    property string pendingApp: ""
+    property var pendingKnown: []
+
+    function appWindows(appId: string): var {
+        return ToplevelManager.toplevels.values.filter(t => t.appId.toLowerCase() === appId);
+    }
+
+    function showAppWindow(appId: string): void {
+        pendingApp = appId.toLowerCase();
+        pendingKnown = appWindows(pendingApp);
+        appWindowTimer.restart();
+    }
+
+    Connections {
+        target: ToplevelManager.toplevels
+        function onValuesChanged() {
+            if (root.pendingApp === "")
+                return;
+            const opened = root.appWindows(root.pendingApp).find(t => !root.pendingKnown.includes(t));
+            if (opened) {
+                root.pendingApp = "";
+                appWindowTimer.stop();
+                opened.activate();
+            }
+        }
+    }
+
+    Timer {
+        id: appWindowTimer
+        interval: 1000
+        onTriggered: {
+            const windows = root.appWindows(root.pendingApp);
+            root.pendingApp = "";
+            windows[0]?.activate();
+        }
     }
 
     // `output` : sortie focalisée d'abord, où l'espace est créé s'il n'existe pas (clic sur un espace persistant d'une barre).

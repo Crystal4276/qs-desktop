@@ -175,7 +175,7 @@ Rectangle {
                     }
 
                     Rectangle {
-                        visible: progress.seekable && (seekArea.containsMouse || seekArea.pressed || progress.activeFocus)
+                        visible: progress.seekable && (seekHover.hovered || seekArea.pressed || progress.activeFocus)
                         x: progress.value * progress.width - width / 2
                         anchors.verticalCenter: parent.verticalCenter
                         width: Theme.mediaCard.knobSize
@@ -184,11 +184,16 @@ Rectangle {
                         color: Theme.mediaCard.fill
                     }
 
+                    // Survol par un HoverHandler (passif) : un `hoverEnabled` cacherait le survol au cadre de la carte (PanelFrame.qml).
+                    HoverHandler {
+                        id: seekHover
+                        enabled: progress.seekable
+                    }
+
                     MouseArea {
                         id: seekArea
                         anchors.fill: parent
                         enabled: progress.seekable
-                        hoverEnabled: true
                         onPressed: mouse => progress.dragValue = progress.valueAt(mouse.x)
                         onPositionChanged: mouse => {
                             if (pressed)

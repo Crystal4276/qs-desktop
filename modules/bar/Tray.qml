@@ -7,9 +7,9 @@ import qs.services
 
 // Zone de notification (INVENTORY.md § 1, `tray`) : icônes 32 px espacées de 5 px, padding horizontal 6 px ;
 // éléments « passifs » masqués (défaut de Waybar). Ordre : celui d'enregistrement des applications.
-// Actions à l'appui, comme Waybar (sni/item.cpp) : gauche → Activate (ou le menu si l'application n'a qu'un menu),
-// milieu → SecondaryActivate, droit → menu (TrayMenu.qml) ou ContextMenu de l'application ; molette → Scroll(∓1), verticale
-// ou horizontale.
+// Applications : actions à l'appui, comme Waybar (sni/item.cpp) : gauche → Activate (ou le menu si l'application n'a qu'un
+// menu), milieu → SecondaryActivate, droit → menu, présenté en carte (AppMenuPanel.qml), ou ContextMenu de l'application ;
+// molette → Scroll(∓1), verticale ou horizontale.
 Item {
     id: root
 
@@ -38,42 +38,46 @@ Item {
                 values: root.items
             }
 
-            TrayIcon {
-                id: icon
+            // Carte de l'application (AppMenuPanel.qml), comme les modules natifs : aperçu au survol, épinglée au clic droit — et au
+            // clic gauche si l'application n'est qu'un menu (Steam, Spotify : TrayItems.qml), sinon Activate.
+            TrayButton {
+                id: appButton
 
                 required property SystemTrayItem modelData
-                // Clic gauche → menu (Steam, Spotify : TrayItems.qml).
                 readonly property bool menuOnly: TrayItems.menuOnly(modelData)
 
-                source: modelData.icon
-
-                MouseArea {
-                    anchors.fill: parent
-                    acceptedButtons: Qt.LeftButton | Qt.MiddleButton | Qt.RightButton
-                    onPressed: mouse => {
-                        const item = icon.modelData;
-                        if ((mouse.button === Qt.LeftButton && icon.menuOnly) || mouse.button === Qt.RightButton) {
-                            if (item.hasMenu)
-                                menu.openAt(item.menu, icon, mouse.x, mouse.y, Qt.RightButton | (icon.menuOnly ? Qt.LeftButton : 0));
-                            else {
-                                const p = icon.mapToItem(null, mouse.x, mouse.y);
-                                item.display(icon.QsWindow.window, p.x, p.y);
-                            }
-                        } else if (mouse.button === Qt.LeftButton) {
-                            item.activate();
-                        } else if (mouse.button === Qt.MiddleButton) {
-                            item.secondaryActivate();
-                        }
+                icon: modelData.icon
+                panel: appPanel
+                panelButtons: !modelData.hasMenu ? 0 : menuOnly ? Qt.LeftButton | Qt.RightButton : Qt.RightButton
+                onOtherPressed: button => {
+                    if (button === Qt.LeftButton) {
+                        modelData.activate();
+                    } else {
+                        // Pas de menu D-Bus : menu de l'application elle-même (ContextMenu), comme Waybar.
+                        const p = appButton.mapToItem(null, appButton.width / 2, appButton.height);
+                        modelData.display(appButton.QsWindow.window, p.x, p.y);
                     }
                 }
 
+                // Milieu (la zone d'aperçu ne prend que gauche et droit) : SecondaryActivate.
+                MouseArea {
+                    anchors.fill: parent
+                    acceptedButtons: Qt.MiddleButton
+                    onPressed: appButton.modelData.secondaryActivate()
+                }
+
                 WheelSteps {
-                    onStep: direction => icon.modelData.scroll(-direction, false)
+                    onStep: direction => appButton.modelData.scroll(-direction, false)
                 }
 
                 WheelSteps {
                     orientation: Qt.Horizontal
-                    onStep: direction => icon.modelData.scroll(-direction, true)
+                    onStep: direction => appButton.modelData.scroll(-direction, true)
+                }
+
+                AppMenuPanel {
+                    id: appPanel
+                    item: appButton.modelData
                 }
             }
         }
@@ -190,55 +194,5 @@ Item {
 
     NotificationsPanel {
         id: notificationsPanel
-    }
-
-    // Clavier des menus : sous Sway, un popup n'a le clavier que si sa barre l'a avant qu'il apparaisse. La barre le prend
-    // (exclusif) seulement de la demande d'un menu à sa fermeture ; ensuite Sway le rend à la fenêtre qui l'avait. Un clic
-    // sans menu (Activate…) n'y touche pas (jeu en plein écran : pas de perte de focus).
-    readonly property string keyboardScreen: menu.open ? QsWindow.window?.screen?.name ?? "" : ""
-    onKeyboardScreenChanged: BarState.claimKeyboard(root, keyboardScreen, true)
-    Component.onDestruction: BarState.claimKeyboard(root, "", true)
-
-    // Un seul menu à la fois, ouvert au pointeur, basculé s'il déborde de l'écran.
-    TrayMenu {
-        id: menu
-
-        // Clic qui ouvre ce menu sur son icône (`buttons`) : la barre le laisse, ce clic le ferme.
-        readonly property Item owner: open ? anchor.item : null
-        property int ownerButtons: Qt.RightButton
-
-        // Menu affiché sur cette icône : fermé. Demandé mais pas encore affiché (entrées pas encore reçues, ou menu vide) :
-        // redemandé.
-        function openAt(handle: var, item: Item, x: real, y: real, buttons: int): void {
-            if (visible && anchor.item === item) {
-                open = false;
-                return;
-            }
-            open = false;
-            ownerButtons = buttons;
-            menu.menu = handle;
-            anchor.item = item;
-            anchor.rect.x = x;
-            anchor.rect.y = y;
-            open = true;
-        }
-
-        // Comme GTK (gtk_menu_popup_at_pointer) : rectangle de 1 px au pointeur, menu sous son coin bas-droit. Un appui au
-        // point du clic reste sur l'icône (le menu commencerait sinon sous le pointeur : Qt 6.12 y plante sur un clic droit).
-        anchor.rect.width: 1
-        anchor.rect.height: 1
-        anchor.edges: Edges.Bottom | Edges.Right
-        anchor.gravity: Edges.Bottom | Edges.Right
-        // Inscrit dès la demande : un clic sur la barre annule aussi un menu pas encore affiché.
-        onOpenChanged: BarState.setPopupOpen(menu, open)
-        Component.onDestruction: BarState.setPopupOpen(menu, false)
-
-        Connections {
-            target: BarState
-            function onClosePopups(keep) {
-                if (!keep.includes(menu))
-                    menu.open = false;
-            }
-        }
     }
 }
