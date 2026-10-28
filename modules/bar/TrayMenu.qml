@@ -192,7 +192,7 @@ PopupWindow {
     // Menu qui reçoit le clavier : le sous-menu affiché le plus profond où une entrée est choisie (ou en attente de la première).
     function keyTarget(): var {
         const sub = submenu.item;
-        return sub && (sub.currentEntry || sub.selectFirst) ? sub.keyTarget() : root;
+        return sub && sub.visible && (sub.currentEntry || sub.selectFirst) ? sub.keyTarget() : root;
     }
 
     function currentRow(): Item {
@@ -396,8 +396,10 @@ PopupWindow {
                         }
                     }
 
+                    // N'importe quel bouton, comme GTK.
                     TapHandler {
                         enabled: !row.modelData.isSeparator
+                        acceptedButtons: Qt.LeftButton | Qt.MiddleButton | Qt.RightButton
                         onTapped: root.activate(row.modelData, row)
                     }
                 }
