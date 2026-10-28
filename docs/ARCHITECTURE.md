@@ -424,10 +424,10 @@ Proposition de placement dans les phases (CLAUDE.md n'est pas modifié sans ton 
 - **Menus des applications** (2026-10-28, ta demande) : présentés en **cartes** comme les modules natifs (`AppMenuPanel.qml` :
   aperçu au survol, épinglée au clic, titre jaune = nom de l'application, entrées dbusmenu en lignes, séparateurs en traits de
   bordure, sous-menu en section). Remplacent les popups « grab » copiés de GTK (plantage Qt 6.12, clavier impossible sous Sway,
-  redimensionnement étiré). Clic gauche : carte si l'application ne fournit pas ItemIsMenu (règle de Waybar ; libayatana —
-  Steam, Spotify — n'a ni ItemIsMenu ni Activate), lu par `services/TrayItems.qml` (`busctl introspect`). Steam : après une
-  entrée autre qu'un jeu récent ou « Exit Steam », sa fenêtre est affichée, son espace de travail avec
-  (`Compositor.showAppWindow`, Toplevel.activate).
+  redimensionnement étiré). Clics gauche et droit : la carte (libayatana — Steam, Spotify — n'a pas d'Activate ; Quickshell
+  n'expose pas l'absence d'ItemIsMenu, pas de détour par busctl : ta règle du 2026-10-28, rien que Quickshell). Steam : après
+  une entrée autre qu'un jeu récent ou « Exit Steam », sa fenêtre est affichée aussitôt, son espace de travail avec, puis
+  celle qu'il ouvre dans les 3 s (`Compositor.showAppWindow`, Toplevel.activate ; mesuré : 2 ms jusqu'au changement d'espace).
 - **Panneaux du tray** (corrigé le 2026-10-20) : surfaces Overlay à clavier exclusif (`OverlayPopup`, comme le panneau de réglages et
   le lanceur), et non plus des popups « grab » : sous Sway, un popup `grabFocus` ouvert depuis une barre ne reçoit jamais le clavier
   (ni saisie, ni Échap). Fermés par un appui à côté du cadre (non transmis), sur une barre ou sur un autre écran, ou par Échap.

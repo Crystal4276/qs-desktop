@@ -34,7 +34,7 @@ Chaque commande a été rattachée à son paquet sur cette machine avec `pacman 
 | Panneau de statistiques (clic CPU / mémoire / GPU, remplace btop et nvtop) | natif (`/proc`, `/sys`) | `procps-ng` (`ps`), `util-linux` (`kill`), `coreutils` (`df`) ; NVIDIA : `nvidia-smi` | — | Inter, Hack Nerd Font | — |
 | Horloge + fenêtre calendrier | natif (Qt) | `tzdata` (système) | — | Inter, Hack Nerd Font, Font Awesome 7 Free | — |
 | Réseau (débit) | natif (`/proc/net/dev`, `/proc/net/route`) | — | — | Inter, Hack Nerd Font | — |
-| Tray | natif (`Services.SystemTray` ; Quickshell fait aussi le rôle de « watcher »), `systemd` (`busctl` : ItemIsMenu) | — | — | Inter (menus) | — |
+| Tray | natif (`Services.SystemTray` ; Quickshell fait aussi le rôle de « watcher ») | — | — | Inter (menus) | — |
 | Engrenage → panneau de réglages (remplace le power menu) | natif (`Pipewire`, `UPower`, `PowerProfiles`, `IdleInhibitor`, IPC du compositeur pour HDR / VRR) | `systemd` (redémarrer, éteindre), `gammastep` (veilleuse), `util-linux` (`rfkill`, mode avion), capture et verrouiller : natifs (phase 8b, voir plus bas) | `power-profiles-daemon` (3 boutons masqués sans lui) ; `brightnessctl` (luminosité, laptop) | Inter, Symbols Nerd Font Mono | `assets/{lock,logout,restart,shutdown}.svg` |
 | Bouton Arch → menu d'applications (remplace nwg-menu) | natif (`DesktopEntries`) | `xdg-user-dirs` (dossiers), `xdg-utils` (ouvrir dossiers et fichiers) ; boutons de session comme le panneau de réglages | — | Inter, Symbols Nerd Font Mono | `assets/{lock,logout,restart,shutdown}.svg`, icônes Papirus-Dark |
 | Batterie (laptop) | natif (`Services.UPower`) | — | `upower` (service système) | Symbols Nerd Font Mono (icônes v3 `U+F0079`…) | — |
