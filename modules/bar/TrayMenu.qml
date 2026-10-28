@@ -36,11 +36,12 @@ PopupWindow {
             move(1);
         update();
     }
-    // Menu affiché qui se vide (application partie, menu effacé) : fermé.
+    // Menu affiché qui se vide (application partie, menu effacé) : fermé, après coup — Steam renumérote ses entrées en
+    // reconstruisant son menu : la liste passe par zéro dans la même mise à jour.
     function update(): void {
-        if (!open || (visible && entries.length === 0))
+        if (!open)
             visible = false;
-        else if (entries.length > 0 && !visible)
+        else if (visible !== (entries.length > 0))
             Qt.callLater(root.show);
     }
     function show(): void {
@@ -48,7 +49,7 @@ PopupWindow {
     }
 
     // Toujours sans entrées 2 s après la demande (menu vide, application muette) : abandonné (il s'afficherait sinon plus tard,
-    // tout seul, et garderait le clavier de la barre).
+    // tout seul, et la barre garde le clavier pendant l'attente).
     Timer {
         running: root.open && !root.visible
         interval: 2000
@@ -400,6 +401,7 @@ PopupWindow {
                     TapHandler {
                         enabled: !row.modelData.isSeparator
                         acceptedButtons: Qt.LeftButton | Qt.MiddleButton | Qt.RightButton
+                        longPressThreshold: 0   // appui long : activé aussi (sinon rien au relâchement)
                         onTapped: root.activate(row.modelData, row)
                     }
                 }
