@@ -16,6 +16,8 @@ Singleton {
     readonly property int openPopups: openList.length
     // Écran dont la barre accepte le clavier « à la demande » ("" : aucune) : celle de l'horloge survolée ou du calendrier épinglé.
     property string keyboardScreen: ""
+    // Idem pour le tray (icône d'application survolée ou menu affiché, Tray.qml) : à part, pour qu'aucun ne retire celle de l'autre.
+    property string trayKeyboardScreen: ""
 
     // Un popup inscrit est épinglé, sauf l'aperçu d'une carte du tray (`previewing` vrai, Panel.qml) : pas d'aperçu par-dessus.
     readonly property bool popupPinned: openList.some(p => p.previewing !== true)

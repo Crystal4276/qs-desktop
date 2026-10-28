@@ -7,7 +7,8 @@ import qs.config
 // Menu d'une application du tray (THEME.md § 3 « Menus du tray ») : copie des menus GTK du thème, texte en Inter.
 // Menu principal : popup avec prise du clavier et de la souris (`grabFocus`), fermé par wlroots au clic sur une autre
 // application ; un clic sur une barre le ferme aussi (BarState.closePopups). Sous-menus : même composant, sans prise.
-// Clavier : ↑/↓ pour choisir, Entrée pour activer, → / ← pour ouvrir / fermer un sous-menu, Échap pour fermer.
+// Clavier (la barre l'accepte pendant le survol des icônes et tant que le menu est ouvert, Tray.qml) : ↑/↓ pour choisir,
+// Entrée pour activer, → / ← pour ouvrir / fermer un sous-menu, Échap pour fermer ; il va au sous-menu où une entrée est choisie.
 PopupWindow {
     id: root
 
@@ -25,18 +26,39 @@ PopupWindow {
     // ne se redimensionne pas proprement (Sway étire l'ancienne image).
     property bool open: false
     onOpenChanged: update()
-    onEntriesChanged: update()
+    onEntriesChanged: {
+        if (submenuEntry && !entries.includes(submenuEntry))
+            submenuEntry = null;
+        if (currentEntry && !entries.includes(currentEntry))
+            currentEntry = null;
+        if (selectFirst && !currentEntry)
+            move(1);
+        update();
+    }
     function update(): void {
         if (!open)
             visible = false;
         else if (entries.length > 0 && !visible)
-            Qt.callLater(() => visible = open);
+            Qt.callLater(root.show);
+    }
+    function show(): void {
+        visible = open && entries.length > 0;
     }
 
-    // Élément survolé ou choisi au clavier (-1 : aucun) et sous-menu ouvert.
-    property int current: -1
-    property var submenuEntry: null
+    // Entrée survolée ou choisie au clavier (null : aucune ; suivie par objet, l'index change quand l'application en ajoute
+    // ou en retire), sous-menu ouvert et ligne de son entrée.
+    property QsMenuEntry currentEntry: null
+    readonly property int current: entries.indexOf(currentEntry)
+    property QsMenuEntry submenuEntry: null
     property Item submenuItem: null
+    // Sous-menu ouvert au clavier : sa première entrée est choisie dès qu'elle arrive.
+    property bool selectFirst: false
+
+    // Ligne de l'entrée disparue (menu mis à jour) : sous-menu fermé.
+    onSubmenuItemChanged: {
+        if (!submenuItem)
+            submenuEntry = null;
+    }
 
     function closeAll(): void {
         if (isRoot)
@@ -45,17 +67,30 @@ PopupWindow {
             rootMenu.closeAll();
     }
 
+    // Sous-menu d'une autre entrée : recréé (un popup affiché ne change ni de taille ni de place proprement).
+    function openSubmenu(entry: QsMenuEntry, item: Item): void {
+        if (submenuEntry === entry && submenuItem === item)
+            return;
+        submenuEntry = null;
+        submenuItem = item;
+        submenuEntry = entry;
+    }
+
     grabFocus: isRoot
     color: "transparent"
     implicitWidth: frame.implicitWidth
     implicitHeight: frame.implicitHeight
     anchor.adjustment: PopupAdjustment.Flip | PopupAdjustment.Slide
 
+    // Clavier au cadre à chaque affichage (avec un `focus: true` déclaré, Qt 6.12 plante sur un clic droit au coin du menu).
     onVisibleChanged: {
-        if (!visible) {
+        if (visible) {
+            frame.forceActiveFocus();
+        } else {
             open = false;   // fermé par wlroots (clic sur une autre application)
-            current = -1;
+            currentEntry = null;
             submenuEntry = null;
+            selectFirst = false;
         }
     }
 
@@ -66,30 +101,49 @@ PopupWindow {
 
     readonly property var entries: opener.children.values
 
-    // Rien de sélectionné (-1) : Bas part du début, Haut de la fin (comme GTK).
+    // Rien de sélectionné : Bas part du début, Haut de la fin (comme GTK).
     function move(step: int): void {
         const n = entries.length;
         const start = current >= 0 ? current : step > 0 ? -1 : n;
         for (let k = 1; k <= n; k++) {
             const i = ((start + step * k) % n + n) % n;
             if (!entries[i].isSeparator && entries[i].enabled) {
-                current = i;
+                currentEntry = entries[i];
                 return;
             }
         }
     }
 
-    function activate(index: int, item: Item): void {
-        const entry = entries[index];
+    function activate(entry: QsMenuEntry, item: Item): void {
         if (!entry || entry.isSeparator || !entry.enabled)
             return;
         if (entry.hasChildren) {
-            submenuItem = item;
-            submenuEntry = entry;
+            openSubmenu(entry, item);
             return;
         }
         entry.triggered();
         closeAll();
+    }
+
+    // Menu qui reçoit le clavier : le sous-menu affiché le plus profond où une entrée est choisie (ou en attente de la première).
+    function keyTarget(): var {
+        const sub = submenu.item;
+        return sub && (sub.currentEntry || sub.selectFirst) ? sub.keyTarget() : root;
+    }
+
+    function currentRow(): Item {
+        return current >= 0 ? repeater.itemAt(current) : null;
+    }
+
+    // → : ouvre le sous-menu de l'entrée choisie et y passe (rien sur une entrée simple, comme GTK).
+    function enterSubmenu(): void {
+        if (!currentEntry?.hasChildren || !currentEntry.enabled)
+            return;
+        openSubmenu(currentEntry, currentRow());
+        if (submenu.item) {
+            submenu.item.selectFirst = true;
+            submenu.item.move(1);
+        }
     }
 
     Rectangle {
@@ -101,16 +155,17 @@ PopupWindow {
         radius: Theme.trayMenu.radius + 1
         color: Theme.trayMenu.outline
 
-        focus: true
+        // Seul le menu principal a le clavier (popup « grab ») : il le passe au sous-menu actif.
         Keys.onEscapePressed: root.closeAll()
-        Keys.onUpPressed: root.move(-1)
-        Keys.onDownPressed: root.move(1)
-        Keys.onReturnPressed: root.activate(root.current, repeater.itemAt(root.current))
-        Keys.onEnterPressed: root.activate(root.current, repeater.itemAt(root.current))
-        Keys.onRightPressed: root.activate(root.current, repeater.itemAt(root.current))
+        Keys.onUpPressed: root.keyTarget().move(-1)
+        Keys.onDownPressed: root.keyTarget().move(1)
+        Keys.onReturnPressed: root.keyTarget().activateCurrent()
+        Keys.onEnterPressed: root.keyTarget().activateCurrent()
+        Keys.onRightPressed: root.keyTarget().enterSubmenu()
         Keys.onLeftPressed: {
-            if (!root.isRoot)
-                root.closeRequested();
+            const target = root.keyTarget();
+            if (!target.isRoot)
+                target.closeRequested();
         }
 
         Rectangle {
@@ -131,21 +186,21 @@ PopupWindow {
 
             Repeater {
                 id: repeater
-                model: root.entries
+                // Modèle d'objets : une mise à jour du menu garde les lignes des entrées inchangées.
+                model: opener.children
 
                 Item {
                     id: row
 
                     required property QsMenuEntry modelData
-                    required property int index
 
-                    readonly property bool highlighted: root.current === index || root.submenuEntry === modelData
+                    readonly property bool highlighted: root.currentEntry === modelData || root.submenuEntry === modelData
 
                     Layout.fillWidth: true
                     implicitWidth: modelData.isSeparator ? 0
                         : Theme.trayMenu.itemPaddingH * 2 + Theme.trayMenu.toggleSize + Theme.trayMenu.toggleSpacing + label.implicitWidth
                             + (modelData.hasChildren ? Theme.trayMenu.arrowMargin + Theme.trayMenu.toggleSize : 0)
-                    implicitHeight: modelData.isSeparator ? 1 + 2 * Theme.trayMenu.separatorMargin
+                    implicitHeight: modelData.isSeparator ? Theme.trayMenu.separatorHeight + 2 * Theme.trayMenu.separatorMargin
                         : Math.max(label.implicitHeight, Theme.trayMenu.toggleSize) + 2 * Theme.trayMenu.itemPaddingV
 
                     // Séparateur
@@ -172,8 +227,7 @@ PopupWindow {
                         // Marge gauche : case, radio ou icône de l'application.
                         Item {
                             id: toggle
-                            // Case et radio : marge gauche de -3 px dans le thème GTK.
-                            x: Theme.trayMenu.itemPaddingH - (isToggle ? 3 : 0)
+                            x: Theme.trayMenu.itemPaddingH + (isToggle ? Theme.trayMenu.toggleMarginLeft : 0)
                             anchors.verticalCenter: parent.verticalCenter
                             width: Theme.trayMenu.toggleSize
                             height: Theme.trayMenu.toggleSize
@@ -250,9 +304,9 @@ PopupWindow {
                         onHoveredChanged: {
                             if (!hovered)
                                 return;
-                            root.current = row.index;
+                            root.currentEntry = row.modelData;
                             if (row.modelData.hasChildren && row.modelData.enabled)
-                                root.activate(row.index, row);
+                                root.openSubmenu(row.modelData, row);
                             else
                                 root.submenuEntry = null;
                         }
@@ -260,26 +314,33 @@ PopupWindow {
 
                     TapHandler {
                         enabled: !row.modelData.isSeparator
-                        onTapped: root.activate(row.index, row)
+                        onTapped: root.activate(row.modelData, row)
                     }
                 }
             }
         }
     }
 
-    // Sous-menu : aligné sur l'élément parent, à sa droite (basculé à gauche s'il déborde).
-    // Chargé par URL : un composant ne peut pas s'instancier lui-même directement.
+    function activateCurrent(): void {
+        activate(currentEntry, currentRow());
+    }
+
+    // Sous-menu : à droite du cadre, aligné sur l'élément parent ; ancré sur toute la ligne (cadre compris) pour qu'en
+    // débordant, il bascule à gauche du cadre au lieu de le recouvrir. Chargé par URL : un composant ne peut pas
+    // s'instancier lui-même directement.
     Loader {
         id: submenu
         active: root.submenuEntry !== null && root.visible
         source: Qt.resolvedUrl("TrayMenu.qml")
         onLoaded: {
             item.rootMenu = Qt.binding(() => root.rootMenu);
-            item.menu = Qt.binding(() => root.submenuEntry);
+            item.menu = root.submenuEntry;
             item.anchor.item = root.submenuItem;
-            item.anchor.rect.x = root.submenuItem.width + root.inset;
+            item.anchor.rect.x = -root.inset;
             item.anchor.rect.y = -root.inset;
-            item.anchor.edges = Edges.Top | Edges.Left;
+            item.anchor.rect.width = root.submenuItem.width + 2 * root.inset;
+            item.anchor.rect.height = root.submenuItem.height + root.inset;
+            item.anchor.edges = Edges.Top | Edges.Right;
             item.anchor.gravity = Edges.Bottom | Edges.Right;
             item.closeRequested.connect(() => root.submenuEntry = null);
             item.open = true;
