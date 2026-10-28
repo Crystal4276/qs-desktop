@@ -228,6 +228,19 @@ Singleton {
     property string pendingApp: ""
     property var pendingKnown: []
 
+    // Focus sur `toplevel` sans déplacer le pointeur (ta demande du 2026-10-28). Sway : mouse_warping coupé le temps du focus,
+    // dans la même commande (exécutée d'un bloc ; défaut de Sway rétabli) ; fenêtre désignée par app_id, ou classe sous
+    // XWayland, et titre. Hyprland : Toplevel.activate (ta config a no_warps).
+    function focusWindow(toplevel: Toplevel): void {
+        if (!isSway) {
+            toplevel.activate();
+            return;
+        }
+        const quote = text => `"^${text.replace(/[\\^$.*+?()[\]{}|]/g, "\\$&").replace(/"/g, '\\"')}$"`;
+        const match = `${quote(toplevel.appId)} title=${quote(toplevel.title)}`;
+        I3.dispatch(`mouse_warping none; [app_id=${match}] focus; [class=${match}] focus; mouse_warping output`);
+    }
+
     function appWindows(appId: string): var {
         return ToplevelManager.toplevels.values.filter(t => t.appId.toLowerCase() === appId);
     }
@@ -235,7 +248,8 @@ Singleton {
     function showAppWindow(appId: string): void {
         pendingApp = appId.toLowerCase();
         pendingKnown = appWindows(pendingApp);
-        pendingKnown[0]?.activate();
+        if (pendingKnown.length > 0)
+            focusWindow(pendingKnown[0]);
         appWindowTimer.restart();
     }
 
@@ -248,7 +262,7 @@ Singleton {
             if (opened) {
                 root.pendingApp = "";
                 appWindowTimer.stop();
-                opened.activate();
+                root.focusWindow(opened);
             }
         }
     }
