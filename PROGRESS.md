@@ -1810,7 +1810,7 @@ sur des plages de commits, un fichier inchangé dans la plage n'y était que du 
 1. **Disques** : `services/Disks.qml`, `modules/bar/DisksPanel.qml` (montage, LUKS, éjection). **Fait** (ci-dessous).
 2. **Agent polkit** : `modules/polkit/PolkitDialog.qml` (seulement la boucle commune de la phase 8b). **Fait** (ci-dessous).
 3. **Web apps** : `dotfiles/webapps/open-link`, `open-links/background.js`, règle WirePlumber. **Fait** (ci-dessous).
-4. **Tray StatusNotifier** : `TrayMenu.qml`, `TrayIcon.qml`, partie applications de `Tray.qml`.
+4. **Tray StatusNotifier** : `TrayMenu.qml`, `TrayIcon.qml`, partie applications de `Tray.qml`. **Fait** (ci-dessous).
 5. **Statistiques système** : `services/Monitor.qml`, `modules/monitor/`.
 6. **Modules système de la barre** (phase 4) : `Gpu`, `SystemStats`, `Updates`, `Battery`, `Brightness`, `Displays`,
    `Profiles` et leurs widgets (`Cpu`, `Memory`, `GpuModule`, `InfoModule`, `NetworkModule`, `UpdatesModule`,
@@ -1918,6 +1918,39 @@ accord).
   onglet vide, refus de l'hôte, requête en double.
 - **À faire** : relancer les six web apps (nouvelle extension). **À tester** : un lien externe dans WhatsApp, Discord, Word et
   Notion (navigateur principal) ; un document ouvert depuis Word (reste dans l'app).
+
+### Tray : revue en boucle et cartes des applications (2026-10-28, ta demande)
+
+Revue en deux temps, chaque point vérifié sur un banc (Sway isolé, bus de session à part, application StatusNotifier factice
+pilotée — mode libayatana et menu de Steam relevé sur ta session —, fenêtres et sonde de pointeur ; rien sur ton bureau).
+- **Plantage de Quickshell** (`fda1faf`) : clic droit sur Steam puis clic droit au même point pour fermer le menu = plantage à
+  chaque fois (bogue de Qt 6.12 au coin du menu). Corrigé, puis le menu lui-même a disparu (ci-dessous).
+- Passes 1 à 7 sur le menu copié de GTK (`fda1faf` … `b041843`) : clavier, sous-menus, rafraîchissement du menu à chaque
+  ouverture (Steam n'était prévenu qu'à la première)… **Tangente reconnue** : beaucoup de cas sans rapport avec ton usage (tes
+  seules applications : Steam ; Spotify, masqué tant qu'il est « Passive » ; NordVPN, masqué). Revue recentrée sur ton usage
+  réel ensuite.
+- **Revue centrée sur l'usage réel** (`f376093`) : clic gauche sur Steam sans effet (libayatana n'a pas d'Activate ; Waybar
+  ouvrait le menu) ; menu de Steam fermé tout seul quand il le reconstruit ; focus volé au survol (jeu en plein écran) ; clic
+  long sans effet.
+- **Cartes des applications** (ta demande, `ae6c866` … `f6f7b71`) : le menu de Steam est une carte comme les autres
+  (`AppMenuPanel.qml` : aperçu au survol, clic gauche ou droit, titre jaune, lignes des panneaux, séparateurs en traits de
+  bordure — **à valider** —, largeur ajustée, centrée sous l'icône). L'ancien menu GTK et ses contournements sont supprimés
+  (ta règle : pas de menu GTK, pas de rustine, Quickshell d'abord ; détour `busctl` pour ItemIsMenu retiré aussi).
+- **Steam → son espace de travail** (ta demande) : après Store, Library, Community, Friends, Settings, Big Picture, SteamVR,
+  sa fenêtre est affichée (pas pour un jeu récent ni « Exit Steam ») ; mesuré : 21 ms du clic au changement d'espace (1 s de
+  trop à l'origine, supprimée) ; **pointeur laissé en place** (Sway : `mouse_warping` coupé pour ce seul focus, Deluge et les
+  autres gardent le déplacement ; vérifié avec une sonde sur deux écrans, Steam en XWayland compris). Testé par toi : OK.
+- **Surlignage des lignes rétabli dans toutes les cartes** (réseau, Wi-Fi, Bluetooth, disques, NordVPN, notifications,
+  réglages) : un élément posé sur le cadre cachait le survol aux lignes.
+- Revue finale (`f6f7b71`) : « Exit Steam » repéré comme dernière entrée (pas par son libellé anglais), clavier repris après
+  une reconstruction du menu, largeur tirée de la mise en page des lignes.
+- Laissés : WhatsDesk (inventaire) perdrait l'Activate au clic gauche, il ne tourne plus (web app WhatsApp) ; une fenêtre
+  Steam éphémère ouverte dans les 3 s après une entrée recevrait le focus ; une ligne « No matching node » par clic dans le
+  journal (une des deux sélections app_id / classe ne trouve rien, attendu).
+- **Pour le bloc 6** : calendrier épinglé fermé par Échap, pointeur sur l'horloge : la barre garde le clavier ;
+  `CalendarPopup.popupHovered` réunit quatre survols inutilement. **Pour la phase 10** : `mouse_warping` rétabli à `output`
+  (défaut de Sway, ta config ne le change pas) : à reprendre de `dotfiles/sway`.
+- **À tester à la main** : survol d'une ligne dans tes cartes (surlignage) ; séparateurs de la carte Steam.
 
 ## Prochaine étape
 
