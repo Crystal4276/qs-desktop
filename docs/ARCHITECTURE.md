@@ -426,7 +426,9 @@ Proposition de placement dans les phases (CLAUDE.md n'est pas modifié sans ton 
   proprement sous Sway : les menus n'apparaissent qu'avec leurs entrées. Clavier (2026-10-28) : un popup n'a le clavier que si sa
   barre l'accepte ; elle l'accepte « à la demande » pendant le survol des icônes d'applications et tant qu'un menu est affiché
   (comme l'horloge). Menu placé comme GTK, sous un rectangle de 1 px au pointeur : ouvert sous le pointeur, un clic droit au
-  même point tombait sur son coin, où Qt 6.12 plante (élément focalisé détruit).
+  même point tombait sur son coin, où Qt 6.12 plante (élément focalisé détruit). Sous-menus « grab » eux aussi : sans prise,
+  Qt 6.12 envoie leurs clics au menu principal, qui se ferme ; l'ancien est caché avant l'ouverture du suivant (sinon Qt
+  rattache le nouveau à l'ancien, qui garde la prise). Survol comme GTK : sous-menu changé après 225 ms (diagonale possible).
 - **Panneaux du tray** (corrigé le 2026-10-20) : surfaces Overlay à clavier exclusif (`OverlayPopup`, comme le panneau de réglages et
   le lanceur), et non plus des popups « grab » : sous Sway, un popup `grabFocus` ouvert depuis une barre ne reçoit jamais le clavier
   (ni saisie, ni Échap). Fermés par un appui à côté du cadre (non transmis), sur une barre ou sur un autre écran, ou par Échap.

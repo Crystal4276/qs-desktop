@@ -6,9 +6,10 @@ import qs.config
 
 // Menu d'une application du tray (THEME.md § 3 « Menus du tray ») : copie des menus GTK du thème, texte en Inter.
 // Menu principal : popup avec prise du clavier et de la souris (`grabFocus`), fermé par wlroots au clic sur une autre
-// application ; un clic sur une barre le ferme aussi (BarState.closePopups). Sous-menus : même composant, sans prise.
-// Clavier (la barre l'accepte pendant le survol des icônes et tant que le menu est ouvert, Tray.qml) : ↑/↓ pour choisir,
-// Entrée pour activer, → / ← pour ouvrir / fermer un sous-menu, Échap pour fermer ; il va au sous-menu où une entrée est choisie.
+// application ; un clic sur une barre le ferme aussi (BarState.closePopups). Sous-menus : même composant, avec prise aussi
+// (sans prise, Qt 6.12 envoie leurs clics au menu principal, qui se ferme). Clavier (la barre l'accepte pendant le survol des
+// icônes et tant que le menu est ouvert, Tray.qml) : ↑/↓ pour choisir, Entrée ou Espace pour activer, → / ← pour ouvrir /
+// fermer un sous-menu, Échap pour fermer ; il va au dernier sous-menu ouvert.
 PopupWindow {
     id: root
 
@@ -46,6 +47,19 @@ PopupWindow {
         visible = open && entries.length > 0;
     }
 
+    // Toujours sans entrées 2 s après la demande (menu vide, application muette) : abandonné (il s'afficherait sinon plus tard,
+    // tout seul, et garderait le clavier de la barre).
+    Timer {
+        running: root.open && !root.visible
+        interval: 2000
+        onTriggered: {
+            if (root.isRoot)
+                root.open = false;
+            else
+                root.closeRequested();
+        }
+    }
+
     // Entrée survolée ou choisie au clavier (null : aucune ; suivie par objet, l'index change quand l'application en ajoute
     // ou en retire), sous-menu ouvert et ligne de son entrée.
     property QsMenuEntry currentEntry: null
@@ -68,16 +82,51 @@ PopupWindow {
             rootMenu.closeAll();
     }
 
-    // Sous-menu d'une autre entrée : recréé (un popup affiché ne change ni de taille ni de place proprement).
+    // Sous-menu d'une autre entrée : recréé (un popup affiché ne change ni de taille ni de place proprement). L'ancien est
+    // caché d'abord : encore là (destruction différée), il garderait la prise et Qt lui rattacherait le nouveau, fermé avec lui.
     function openSubmenu(entry: QsMenuEntry, item: Item): void {
         if (!item || (submenuEntry === entry && submenuItem === item))
             return;
+        if (submenu.item)
+            submenu.item.visible = false;
         submenuEntry = null;
         submenuItem = item;
         submenuEntry = entry;
     }
 
-    grabFocus: isRoot
+    // Survol : ligne choisie aussitôt ; sous-menu ouvert, changé ou fermé après le délai de GTK (gtk-menu-popup-delay,
+    // 225 ms), pour qu'on puisse passer en diagonale sur d'autres lignes jusqu'au sous-menu ouvert.
+    property Item hoverRow: null
+    property point hoverPosition
+    signal pointerEntered
+
+    // Survol sans mouvement (pointeur rendu à ce menu quand un sous-menu se ferme) : ignoré, sinon ← rouvrirait le sous-menu.
+    function hover(row: Item, position: point): void {
+        if (position.x === hoverPosition.x && position.y === hoverPosition.y)
+            return;
+        hoverPosition = position;
+        currentEntry = row.modelData;
+        hoverRow = row;
+        submenuTimer.restart();
+        if (!isRoot)
+            pointerEntered();
+    }
+
+    Timer {
+        id: submenuTimer
+        interval: 225
+        onTriggered: {
+            const row = root.hoverRow;
+            if (!row || root.currentEntry !== row.modelData)
+                return;
+            if (row.modelData.hasChildren && row.modelData.enabled)
+                root.openSubmenu(row.modelData, row);
+            else
+                root.submenuEntry = null;
+        }
+    }
+
+    grabFocus: true
     color: "transparent"
     implicitWidth: frame.implicitWidth
     implicitHeight: frame.implicitHeight
@@ -92,6 +141,9 @@ PopupWindow {
             currentEntry = null;
             submenuEntry = null;
             selectFirst = false;
+            hoverPosition = Qt.point(-1, -1);
+            if (!isRoot)
+                closeRequested();   // sous-menu vidé : le parent l'oublie (il pourra le rouvrir)
         }
     }
 
@@ -109,6 +161,7 @@ PopupWindow {
         for (let k = 1; k <= n; k++) {
             const i = ((start + step * k) % n + n) % n;
             if (!entries[i].isSeparator && entries[i].enabled) {
+                submenuTimer.stop();
                 currentEntry = entries[i];
                 if (submenuEntry !== currentEntry)
                     submenuEntry = null;
@@ -158,13 +211,21 @@ PopupWindow {
         radius: Theme.trayMenu.radius + 1
         color: Theme.trayMenu.outline
 
-        // Seul le menu principal a le clavier (popup « grab ») : il le passe au sous-menu actif.
+        // Le clavier va au dernier popup « grab » ouvert ; à défaut, ce menu le passe au sous-menu actif.
         Keys.onEscapePressed: root.closeAll()
         Keys.onUpPressed: root.keyTarget().move(-1)
         Keys.onDownPressed: root.keyTarget().move(1)
         Keys.onReturnPressed: root.keyTarget().activateCurrent()
         Keys.onEnterPressed: root.keyTarget().activateCurrent()
-        Keys.onRightPressed: root.keyTarget().enterSubmenu()
+        Keys.onSpacePressed: root.keyTarget().activateCurrent()
+        Keys.onRightPressed: {
+            // Sous-menu ouvert au survol, rien de choisi : sa première entrée (comme GTK).
+            const target = root.keyTarget();
+            if (!target.isRoot && !target.currentEntry)
+                target.move(1);
+            else
+                target.enterSubmenu();
+        }
         Keys.onLeftPressed: {
             const target = root.keyTarget();
             if (!target.isRoot)
@@ -302,16 +363,16 @@ PopupWindow {
                         }
                     }
 
+                    // À l'entrée et à chaque mouvement (après un choix au clavier, bouger sur la ligne la choisit de nouveau).
                     HoverHandler {
                         enabled: !row.modelData.isSeparator
                         onHoveredChanged: {
-                            if (!hovered)
-                                return;
-                            root.currentEntry = row.modelData;
-                            if (row.modelData.hasChildren && row.modelData.enabled)
-                                root.openSubmenu(row.modelData, row);
-                            else
-                                root.submenuEntry = null;
+                            if (hovered)
+                                root.hover(row, point.scenePosition);
+                        }
+                        onPointChanged: {
+                            if (hovered && root.currentEntry !== row.modelData)
+                                root.hover(row, point.scenePosition);
                         }
                     }
 
@@ -349,7 +410,19 @@ PopupWindow {
             item.anchor.rect.height = root.submenuItem.height + 2 * root.inset;
             item.anchor.edges = Edges.Top | Edges.Right;
             item.anchor.gravity = Edges.Bottom | Edges.Right;
-            item.closeRequested.connect(() => root.submenuEntry = null);
+            // Seulement ce sous-menu : l'ancien, remplacé, peut se fermer après l'ouverture du suivant.
+            const sub = item;
+            sub.closeRequested.connect(() => {
+                if (submenu.item === sub)
+                    root.submenuEntry = null;
+            });
+            // Pointeur arrivé dans le sous-menu : il reste ouvert, son entrée parente choisie.
+            sub.pointerEntered.connect(() => {
+                submenuTimer.stop();
+                root.currentEntry = root.submenuEntry;
+                if (!root.isRoot)
+                    root.pointerEntered();
+            });
             item.open = true;
         }
     }
