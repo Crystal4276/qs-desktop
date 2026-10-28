@@ -1956,7 +1956,39 @@ pilotée — mode libayatana et menu de Steam relevé sur ta session —, fenêt
 
 ## Prochaine étape
 
-Revues restantes ci-dessus, puis phase 9 — parité Hyprland (tests à faire ensemble dans une session Hyprland : voir « Compatibilité Hyprland »).
+**Reprise (session arrêtée le 2026-10-28, fin de ton allocation hebdomadaire ; tout est committé, rien n'est poussé — 37 commits
+d'avance sur `origin/master`, push en fin de phase).** Quand tu dis « continue », reprendre ici :
+
+1. **Bloc 5 — Statistiques système** (`services/Monitor.qml`, `modules/monitor/`) : revue en boucle, puis blocs 6 à 9 de la liste
+   « Revues restantes avant la phase 9 » ci-dessus (blocs 1 à 4 faits). Puis phase 9 — parité Hyprland (tests à faire ensemble
+   dans une session Hyprland : voir « Compatibilité Hyprland »).
+2. **Méthode, retenue après le bloc 4** :
+   - partir de ton **usage réel** : relever d'abord ce que tu utilises vraiment (applications, réglages, chemins) et donner ce
+     relevé à la revue ; lui interdire les écarts de fidélité et les cas d'applications absentes (le bloc 4 a perdu 7 passes
+     sur une tangente avant d'être recentré) ;
+   - ta règle (mémoire) : **pas de menu GTK, pas de rustine, Quickshell d'abord** — chercher l'API Quickshell avant tout
+     `Process` ou contournement, préférer un comportement simple et natif ;
+   - `/code-review high` en arrière-plan sur les fichiers entiers, chaque constat vérifié sur un banc isolé avant correction,
+     un commit par passe, arrêt quand une passe ne trouve plus que du négligeable, compte rendu ci-dessus avant cette section ;
+   - ignorer les vieux rapports de revue qui arrivent en retard (ils portent sur du code remplacé).
+3. **Bancs** (scratchpad de session, perdu au redémarrage — à recréer au besoin) : Sway headless isolé (`WLR_BACKENDS=headless`,
+   `WLR_RENDERER=pixman`), copie du dépôt, `dbus-run-session` pour un bus à part, instance `qs` avec `QS_TEST=1`, pointeur et
+   clavier virtuels (protocoles wlr-virtual-pointer / virtual-keyboard via pywayland), applications factices (StatusNotifier
+   en Python + `Dbusmenu`). Pièges : avec deux écrans, les coordonnées absolues du pointeur virtuel portent sur toute la
+   disposition ; sans périphérique de pointage, Sway n'envoie aucun événement de pointeur aux clients ; ne jamais laisser
+   traîner une instance de test ; ne jamais lancer d'action `nordvpn`.
+4. **Ton instance de dev** : `qs -p .` (journal `/tmp/qs-dev.log`, relance `scripts/dev.sh`) ; vérifier en début de session
+   qu'elle tourne et qu'elle vise ton Sway (`SWAYSOCK`). Waybar et Dunst tournent toujours (coexistence jusqu'à la phase 10).
+5. **Notés pour plus tard** :
+   - bloc 6 : calendrier épinglé fermé par Échap pointeur sur l'horloge → la barre garde le clavier ; `CalendarPopup.popupHovered`
+     réunit quatre survols inutilement ; avertissement `services/Bluez.qml[31:5]` et `services/Tailscale.qml[172:9]`
+     (« Unable to assign [undefined] to bool ») au rechargement ;
+   - phase 10 : `mouse_warping` rétabli à `output` après le focus de Steam (défaut de Sway) ; règle Sway de Discord à viser
+     `chrome-discord.com__channels_@me-Default` ; historique du lanceur (ci-dessous) ;
+   - plantages de Quickshell après un rechargement à chaud (`lookupSingletonProperty`, vus à 00 h 46, 01 h 41, 07 h 17) : à
+     étudier, signalement amont à Quickshell seulement avec ton accord (BACKLOG).
+6. **À tester à la main** (en attente) : blocs 1 à 3 (clé USB et clé LUKS, demande polkit réelle, liens des web apps) — voir
+   leurs comptes rendus ci-dessus.
 
 Rappel pour la phase 10 : l'historique du lanceur (`~/.local/state/quickshell/by-shell/desktop/launcher.json`) est repris de Rofi
 quand il n'existe pas, et toute instance de test le recrée. Le supprimer juste avant la bascule, pour reprendre l'historique Rofi le
