@@ -222,8 +222,9 @@ Singleton {
         return true;
     }
 
-    // Fenêtre de l'application `appId` affichée, son espace de travail avec (carte du tray : Steam) : celle qu'elle ouvre dans la
-    // seconde, sinon la plus ancienne déjà là (fenêtre principale). Toplevel.activate : même chemin sous Sway et Hyprland.
+    // Fenêtre de l'application `appId` affichée, son espace de travail avec (carte du tray : Steam) : la plus ancienne déjà là
+    // (fenêtre principale) aussitôt, puis celle qu'elle ouvre dans les 3 s (Friends, Settings…). Toplevel.activate : même chemin
+    // sous Sway et Hyprland.
     property string pendingApp: ""
     property var pendingKnown: []
 
@@ -234,6 +235,7 @@ Singleton {
     function showAppWindow(appId: string): void {
         pendingApp = appId.toLowerCase();
         pendingKnown = appWindows(pendingApp);
+        pendingKnown[0]?.activate();
         appWindowTimer.restart();
     }
 
@@ -253,12 +255,8 @@ Singleton {
 
     Timer {
         id: appWindowTimer
-        interval: 1000
-        onTriggered: {
-            const windows = root.appWindows(root.pendingApp);
-            root.pendingApp = "";
-            windows[0]?.activate();
-        }
+        interval: 3000
+        onTriggered: root.pendingApp = ""
     }
 
     // `output` : sortie focalisée d'abord, où l'espace est créé s'il n'existe pas (clic sur un espace persistant d'une barre).

@@ -7,9 +7,8 @@ import qs.services
 
 // Zone de notification (INVENTORY.md § 1, `tray`) : icônes 32 px espacées de 5 px, padding horizontal 6 px ;
 // éléments « passifs » masqués (défaut de Waybar). Ordre : celui d'enregistrement des applications.
-// Applications : actions à l'appui, comme Waybar (sni/item.cpp) : gauche → Activate (ou le menu si l'application n'a qu'un
-// menu), milieu → SecondaryActivate, droit → menu, présenté en carte (AppMenuPanel.qml), ou ContextMenu de l'application ;
-// molette → Scroll(∓1), verticale ou horizontale.
+// Applications : gauche ou droit → menu, présenté en carte (AppMenuPanel.qml), ou ContextMenu de l'application ; milieu →
+// SecondaryActivate ; molette → Scroll(∓1), verticale ou horizontale (comme Waybar, sni/item.cpp).
 Item {
     id: root
 
@@ -38,25 +37,20 @@ Item {
                 values: root.items
             }
 
-            // Carte de l'application (AppMenuPanel.qml), comme les modules natifs : aperçu au survol, épinglée au clic droit — et au
-            // clic gauche si l'application n'est qu'un menu (Steam, Spotify : TrayItems.qml), sinon Activate.
+            // Carte de l'application (AppMenuPanel.qml), comme les modules natifs : aperçu au survol, épinglée au clic gauche ou
+            // droit (Steam, Spotify : leur menu est tout ce qu'elles offrent au clic).
             TrayButton {
                 id: appButton
 
                 required property SystemTrayItem modelData
-                readonly property bool menuOnly: TrayItems.menuOnly(modelData)
 
                 icon: modelData.icon
                 panel: appPanel
-                panelButtons: !modelData.hasMenu ? 0 : menuOnly ? Qt.LeftButton | Qt.RightButton : Qt.RightButton
-                onOtherPressed: button => {
-                    if (button === Qt.LeftButton) {
-                        modelData.activate();
-                    } else {
-                        // Pas de menu D-Bus : menu de l'application elle-même (ContextMenu), comme Waybar.
-                        const p = appButton.mapToItem(null, appButton.width / 2, appButton.height);
-                        modelData.display(appButton.QsWindow.window, p.x, p.y);
-                    }
+                // Pas de menu D-Bus : menu de l'application elle-même (ContextMenu), comme Waybar.
+                panelButtons: modelData.hasMenu ? Qt.LeftButton | Qt.RightButton : 0
+                onOtherPressed: {
+                    const p = appButton.mapToItem(null, appButton.width / 2, appButton.height);
+                    modelData.display(appButton.QsWindow.window, p.x, p.y);
                 }
 
                 // Milieu (la zone d'aperçu ne prend que gauche et droit) : SecondaryActivate.

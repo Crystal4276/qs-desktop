@@ -8,7 +8,7 @@ import qs.services
 // Carte d'une application du tray (ta demande du 2026-10-28, remplace le menu copié de GTK) : nom de l'application en titre,
 // entrées de son menu (dbusmenu) en lignes ; séparateurs en traits de bordure ; un sous-menu devient une section avec ses
 // entrées. Menu demandé à l'application seulement pendant l'affichage (elle le reconstruit à chaque ouverture).
-// Entrée choisie : carte fermée, puis fenêtre de l'application affichée (TrayItems.showWindowAfter).
+// Entrée choisie : carte fermée, puis fenêtre de l'application affichée (showWindowAfter).
 Panel {
     id: root
 
@@ -41,10 +41,17 @@ Panel {
         return text.replace(/_(?!_)/g, "").replace(/__/g, "_");
     }
 
+    // Fenêtre de l'application affichée après une entrée (ta demande du 2026-10-28) : Steam (Store, Library, Friends… s'ouvrent
+    // sur son espace de travail, invisibles depuis un autre), sauf ses jeux récents (premier groupe, avant le premier
+    // séparateur) et « Exit Steam ».
+    function showWindowAfter(entry: QsMenuEntry, group: int): bool {
+        return item.id === "steam" && group > 0 && !/^exit\b/i.test(entry.text);
+    }
+
     // `group` : nombre de séparateurs avant l'entrée (Steam : 0 = jeux récents). Entrée activée avant la fermeture (qui libère
     // le menu et ses entrées).
     function trigger(entry: QsMenuEntry, group: int): void {
-        const showWindow = TrayItems.showWindowAfter(item, entry, group);
+        const showWindow = showWindowAfter(entry, group);
         entry.triggered();
         close();
         if (showWindow)
