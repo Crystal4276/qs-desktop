@@ -20,7 +20,7 @@ Panel {
     }
 
     // Largeur ajustée au contenu (titre, entrées ou « Loading… »), pas celle des autres cartes.
-    frameWidth: Math.max(frameItem.headerWidth, frameItem.bodyWidth) + 2 * Theme.panel.padding
+    frameWidth: Math.ceil(Math.max(frameItem.headerWidth, frameItem.bodyWidth)) + 2 * Theme.panel.padding
 
     // Les mnémoniques GTK (« _Fichier ») ne sont pas affichées.
     function label(text: string): string {
@@ -28,10 +28,12 @@ Panel {
     }
 
     // Fenêtre de l'application affichée après une entrée (ta demande du 2026-10-28) : Steam (Store, Library, Friends… s'ouvrent
-    // sur son espace de travail, invisibles depuis un autre), sauf ses jeux récents (premier groupe, avant le premier
-    // séparateur) et « Exit Steam » (dernière entrée, quelle que soit la langue).
+    // sur son espace de travail, invisibles depuis un autre), sauf ses jeux récents et « Exit Steam » (dernière entrée). Les
+    // trois derniers groupes de son menu sont fixes (Store… ; Friends… ; Big Picture… Exit) : ce qui les précède, ce sont les
+    // jeux récents (aucun sur un compte neuf), quelle que soit la langue.
     function showWindowAfter(group: int, last: bool): bool {
-        return item.id === "steam" && group > 0 && !last;
+        const groups = opener.children.values.filter(e => e.isSeparator).length + 1;
+        return item.id === "steam" && group >= groups - 3 && !last;
     }
 
     // `group` : nombre de séparateurs avant l'entrée (Steam : 0 = jeux récents) ; `last` : dernière entrée du menu. Entrée
