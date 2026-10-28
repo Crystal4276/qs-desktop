@@ -83,15 +83,21 @@ PopupWindow {
     }
 
     // Sous-menu d'une autre entrée : recréé (un popup affiché ne change ni de taille ni de place proprement). L'ancien est
-    // caché d'abord : encore là (destruction différée), il garderait la prise et Qt lui rattacherait le nouveau, fermé avec lui.
+    // caché d'abord, avec ses propres sous-menus : encore là (destruction différée), il garderait la prise et Qt lui rattacherait
+    // le nouveau, fermé avec lui.
     function openSubmenu(entry: QsMenuEntry, item: Item): void {
         if (!item || (submenuEntry === entry && submenuItem === item))
             return;
-        if (submenu.item)
-            submenu.item.visible = false;
+        submenu.item?.hideChain();
         submenuEntry = null;
         submenuItem = item;
         submenuEntry = entry;
+    }
+
+    // Ce menu et ses sous-menus cachés, le plus profond d'abord.
+    function hideChain(): void {
+        submenu.item?.hideChain();
+        visible = false;
     }
 
     // Survol : ligne choisie aussitôt ; sous-menu ouvert, changé ou fermé après le délai de GTK (gtk-menu-popup-delay,
@@ -100,9 +106,9 @@ PopupWindow {
     property point hoverPosition
     signal pointerEntered
 
-    // Survol sans mouvement (pointeur rendu à ce menu quand un sous-menu se ferme) : ignoré, sinon ← rouvrirait le sous-menu.
+    // Même ligne sans mouvement (pointeur rendu à ce menu quand un sous-menu se ferme) : ignoré, sinon ← rouvrirait le sous-menu.
     function hover(row: Item, position: point): void {
-        if (position.x === hoverPosition.x && position.y === hoverPosition.y)
+        if (row === hoverRow && position.x === hoverPosition.x && position.y === hoverPosition.y)
             return;
         hoverPosition = position;
         currentEntry = row.modelData;
@@ -210,6 +216,14 @@ PopupWindow {
         implicitHeight: column.implicitHeight + 2 * root.inset
         radius: Theme.trayMenu.radius + 1
         color: Theme.trayMenu.outline
+
+        // Pointeur arrivé n'importe où dans un sous-menu (séparateur, marge compris) : le parent le garde ouvert.
+        HoverHandler {
+            onHoveredChanged: {
+                if (hovered && !root.isRoot)
+                    root.pointerEntered();
+            }
+        }
 
         // Le clavier va au dernier popup « grab » ouvert ; à défaut, ce menu le passe au sous-menu actif.
         Keys.onEscapePressed: root.closeAll()
@@ -338,6 +352,7 @@ PopupWindow {
                             anchors.verticalCenter: parent.verticalCenter
                             // Les mnémoniques GTK (« _Fichier ») ne sont pas affichées.
                             text: row.modelData.text.replace(/_(?!_)/g, "").replace(/__/g, "_")
+                            textFormat: Text.PlainText   // comme GTK : « <b> » affiché tel quel
                             font.family: Theme.font.text
                             font.pixelSize: Theme.trayMenu.fontSize
                             color: Theme.trayMenu.gtkForeground
@@ -366,9 +381,12 @@ PopupWindow {
                     // À l'entrée et à chaque mouvement (après un choix au clavier, bouger sur la ligne la choisit de nouveau).
                     HoverHandler {
                         enabled: !row.modelData.isSeparator
+                        // Ligne quittée avant le délai (vers l'extérieur du menu) : rien n'est ouvert ni fermé.
                         onHoveredChanged: {
                             if (hovered)
                                 root.hover(row, point.scenePosition);
+                            else if (root.hoverRow === row)
+                                submenuTimer.stop();
                         }
                         onPointChanged: {
                             if (hovered && root.currentEntry !== row.modelData)

@@ -207,10 +207,16 @@ Item {
     // Clavier des menus : sous Sway, un popup n'a le clavier que si sa barre l'accepte. La barre l'accepte « à la demande »
     // pendant le survol des icônes d'applications (le clic qui ouvre un menu lui donne alors le focus) et tant qu'un menu est
     // demandé ou affiché ; ensuite Sway rend le focus à la fenêtre qui l'avait (comme l'horloge). Un clic qui n'ouvre pas de
-    // menu (Activate…) rend le clavier jusqu'au prochain mouvement sur l'icône (sinon la frappe irait à la barre).
+    // menu (Activate…) ou la fermeture d'un menu rend le clavier jusqu'au prochain mouvement sur l'icône (sinon la frappe irait
+    // à la barre). Limite : un clic droit juste après, sans bouger, ouvre un menu sans clavier.
     property Item hoveredIcon: null
     property bool keyboardReleased: false
     readonly property bool wantsKeyboard: (hoveredIcon !== null && !keyboardReleased) || menu.open
+    readonly property bool menuOpen: menu.open
+    onMenuOpenChanged: {
+        if (!menuOpen)
+            keyboardReleased = true;
+    }
     readonly property string keyboardScreen: wantsKeyboard ? QsWindow.window?.screen?.name ?? "" : ""
     onKeyboardScreenChanged: BarState.claimKeyboard(root, keyboardScreen)
     Component.onDestruction: BarState.claimKeyboard(root, "")
