@@ -14,10 +14,16 @@ Singleton {
     // qu'il était ouvert) — une liste plutôt qu'un compteur, pour qu'aucun popup disparu ne reste compté.
     property var openList: []
     readonly property int openPopups: openList.length
-    // Écran dont la barre accepte le clavier « à la demande » ("" : aucune) : celle de l'horloge survolée ou du calendrier épinglé.
-    property string keyboardScreen: ""
-    // Idem pour le tray (icône d'application survolée ou menu affiché, Tray.qml) : à part, pour qu'aucun ne retire celle de l'autre.
-    property string trayKeyboardScreen: ""
+    // Barres qui acceptent le clavier « à la demande » : une demande par module ({ owner, screen }) — horloge survolée ou
+    // calendrier épinglé (CalendarPopup.qml), icône d'application survolée ou menu du tray (Tray.qml). Une liste, pour
+    // qu'aucun module ne retire celle d'un autre.
+    property var keyboardClaims: []
+
+    // Demande de `owner` pour l'écran `screen` ("" : retirée).
+    function claimKeyboard(owner: QtObject, screen: string): void {
+        const others = keyboardClaims.filter(c => c.owner !== owner);
+        keyboardClaims = screen !== "" ? [...others, { owner, screen }] : others;
+    }
 
     // Un popup inscrit est épinglé, sauf l'aperçu d'une carte du tray (`previewing` vrai, Panel.qml) : pas d'aperçu par-dessus.
     readonly property bool popupPinned: openList.some(p => p.previewing !== true)
@@ -105,12 +111,12 @@ Singleton {
         return on(Compositor.focusedOutput) ?? on(Outputs.primary?.name) ?? list[0] ?? null;
     }
 
-    // Tests (scripts/test-outputs.sh) : popups inscrits et écran au clavier « à la demande », en JSON.
+    // Tests (scripts/test-outputs.sh) : popups inscrits et écrans au clavier « à la demande », en JSON.
     IpcHandler {
         target: "bar"
 
         function state(): string {
-            return JSON.stringify({ openPopups: root.openPopups, keyboardScreen: root.keyboardScreen });
+            return JSON.stringify({ openPopups: root.openPopups, keyboardScreens: root.keyboardClaims.map(c => c.screen) });
         }
     }
 

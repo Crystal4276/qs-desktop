@@ -35,8 +35,9 @@ PopupWindow {
             move(1);
         update();
     }
+    // Menu affiché qui se vide (application partie, menu effacé) : fermé.
     function update(): void {
-        if (!open)
+        if (!open || (visible && entries.length === 0))
             visible = false;
         else if (entries.length > 0 && !visible)
             Qt.callLater(root.show);
@@ -69,7 +70,7 @@ PopupWindow {
 
     // Sous-menu d'une autre entrée : recréé (un popup affiché ne change ni de taille ni de place proprement).
     function openSubmenu(entry: QsMenuEntry, item: Item): void {
-        if (submenuEntry === entry && submenuItem === item)
+        if (!item || (submenuEntry === entry && submenuItem === item))
             return;
         submenuEntry = null;
         submenuItem = item;
@@ -101,7 +102,7 @@ PopupWindow {
 
     readonly property var entries: opener.children.values
 
-    // Rien de sélectionné : Bas part du début, Haut de la fin (comme GTK).
+    // Rien de sélectionné : Bas part du début, Haut de la fin (comme GTK). Le sous-menu d'une autre entrée se ferme.
     function move(step: int): void {
         const n = entries.length;
         const start = current >= 0 ? current : step > 0 ? -1 : n;
@@ -109,6 +110,8 @@ PopupWindow {
             const i = ((start + step * k) % n + n) % n;
             if (!entries[i].isSeparator && entries[i].enabled) {
                 currentEntry = entries[i];
+                if (submenuEntry !== currentEntry)
+                    submenuEntry = null;
                 return;
             }
         }
@@ -321,8 +324,12 @@ PopupWindow {
         }
     }
 
+    // Entrée : comme →, sur une entrée à sous-menu.
     function activateCurrent(): void {
-        activate(currentEntry, currentRow());
+        if (currentEntry?.hasChildren)
+            enterSubmenu();
+        else
+            activate(currentEntry, currentRow());
     }
 
     // Sous-menu : à droite du cadre, aligné sur l'élément parent ; ancré sur toute la ligne (cadre compris) pour qu'en
@@ -339,7 +346,7 @@ PopupWindow {
             item.anchor.rect.x = -root.inset;
             item.anchor.rect.y = -root.inset;
             item.anchor.rect.width = root.submenuItem.width + 2 * root.inset;
-            item.anchor.rect.height = root.submenuItem.height + root.inset;
+            item.anchor.rect.height = root.submenuItem.height + 2 * root.inset;
             item.anchor.edges = Edges.Top | Edges.Right;
             item.anchor.gravity = Edges.Bottom | Edges.Right;
             item.closeRequested.connect(() => root.submenuEntry = null);

@@ -54,12 +54,15 @@ Item {
                             if (item.hasMenu)
                                 menu.openAt(item.menu, icon, mouse.x, mouse.y, Qt.RightButton | (item.onlyMenu ? Qt.LeftButton : 0));
                             else {
+                                root.keyboardReleased = true;
                                 const p = icon.mapToItem(null, mouse.x, mouse.y);
                                 item.display(icon.QsWindow.window, p.x, p.y);
                             }
                         } else if (mouse.button === Qt.LeftButton) {
+                            root.keyboardReleased = true;
                             item.activate();
                         } else if (mouse.button === Qt.MiddleButton) {
+                            root.keyboardReleased = true;
                             item.secondaryActivate();
                         }
                     }
@@ -201,24 +204,17 @@ Item {
 
     // Clavier des menus : sous Sway, un popup n'a le clavier que si sa barre l'accepte. La barre l'accepte « à la demande »
     // pendant le survol des icônes d'applications (le clic qui ouvre un menu lui donne alors le focus) et tant qu'un menu est
-    // affiché ; ensuite Sway rend le focus à la fenêtre qui l'avait (comme l'horloge, CalendarPopup.qml).
+    // demandé ou affiché ; ensuite Sway rend le focus à la fenêtre qui l'avait (comme l'horloge, CalendarPopup.qml). Un clic qui
+    // n'ouvre pas de menu (Activate, SecondaryActivate, menu de l'application) rend le clavier aussitôt, jusqu'à la sortie
+    // de l'icône : sinon la frappe irait à la barre tant que le pointeur reste dessus.
     property Item hoveredIcon: null
-    readonly property bool wantsKeyboard: hoveredIcon !== null || menu.visible
+    property bool keyboardReleased: false
+    onHoveredIconChanged: keyboardReleased = false
+    readonly property bool wantsKeyboard: (hoveredIcon !== null && !keyboardReleased) || menu.open
     readonly property string screenName: QsWindow.window?.screen?.name ?? ""
-    property string claimedScreen: ""   // écran dont ce tray a demandé le clavier
-
-    onWantsKeyboardChanged: {
-        if (wantsKeyboard) {
-            claimedScreen = screenName;
-            BarState.trayKeyboardScreen = screenName;
-        } else if (BarState.trayKeyboardScreen === claimedScreen) {
-            BarState.trayKeyboardScreen = "";
-        }
-    }
-    Component.onDestruction: {
-        if (wantsKeyboard && BarState.trayKeyboardScreen === claimedScreen)
-            BarState.trayKeyboardScreen = "";
-    }
+    onWantsKeyboardChanged: BarState.claimKeyboard(root, wantsKeyboard ? screenName : "")
+    onScreenNameChanged: BarState.claimKeyboard(root, wantsKeyboard ? screenName : "")
+    Component.onDestruction: BarState.claimKeyboard(root, "")
 
     // Un seul menu à la fois, ouvert au pointeur, basculé s'il déborde de l'écran.
     TrayMenu {
