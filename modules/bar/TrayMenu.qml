@@ -153,9 +153,11 @@ PopupWindow {
         }
     }
 
+    // Menu tenu seulement pendant la demande : chaque ouverture renvoie AboutToShow et « opened », la fermeture « closed »
+    // (les applications qui reconstruisent leur menu à l'ouverture montrent sinon l'ancien).
     QsMenuOpener {
         id: opener
-        menu: root.menu
+        menu: root.open ? root.menu : null
     }
 
     readonly property var entries: opener.children.values
@@ -214,7 +216,7 @@ PopupWindow {
         // Liseré extérieur 1 px, puis cadre (fond, bordure intérieure) — mesurés sur le menu GTK.
         implicitWidth: column.implicitWidth + 2 * root.inset
         implicitHeight: column.implicitHeight + 2 * root.inset
-        radius: Theme.trayMenu.radius + 1
+        radius: Theme.trayMenu.radius + Theme.trayMenu.outlineWidth
         color: Theme.trayMenu.outline
 
         // Pointeur arrivé n'importe où dans un sous-menu (séparateur, marge compris) : le parent le garde ouvert.
