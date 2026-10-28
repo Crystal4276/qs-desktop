@@ -12,8 +12,12 @@ WheelHandler {
     property real accumulated: 0
 
     acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+    // Changement de sens : le reste d'avant est oublié (il annulerait un cran entier dans l'autre sens).
     onWheel: event => {
-        accumulated += orientation === Qt.Horizontal ? event.angleDelta.x : event.angleDelta.y;
+        const delta = orientation === Qt.Horizontal ? event.angleDelta.x : event.angleDelta.y;
+        if (delta * accumulated < 0)
+            accumulated = 0;
+        accumulated += delta;
         while (Math.abs(accumulated) >= 120) {
             const direction = accumulated > 0 ? 1 : -1;
             accumulated -= 120 * direction;

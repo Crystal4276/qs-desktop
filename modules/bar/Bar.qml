@@ -23,7 +23,7 @@ Variants {
         // pendant le survol d'une icône d'application du tray ou l'affichage de son menu (Tray.qml) : le clic qui épingle ou
         // ouvre donne alors le focus à la barre, sans le prendre aux fenêtres le reste du temps.
         readonly property string screenName: modelData?.name ?? ""
-        WlrLayershell.keyboardFocus: screenName !== "" && (BarState.keyboardScreen === screenName || BarState.trayKeyboardScreen === screenName)
+        WlrLayershell.keyboardFocus: screenName !== "" && BarState.keyboardClaims.some(c => c.screen === screenName)
             ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
         anchors {
             top: true
