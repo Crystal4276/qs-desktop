@@ -1893,9 +1893,10 @@ d'une image (capture en cours au verrouillage).
 
 ### Web apps : revue en boucle (2026-10-28, ta demande)
 
-3 passes de `/code-review high` (`988bf91`, `528a5ed`, puis cette passe) sur les fichiers entiers (extension, hôte, manifeste, modèles de lanceurs, règle WirePlumber,
-procédure d'installation), chaque point vérifié sur un banc : Chromium jetable dans un Sway isolé (rien sur ton bureau), sites
-simulés en HTTPS local, hôte réel avec un `chromium` factice ; règle WirePlumber testée sur ton WirePlumber (redémarré, ton
+3 passes de `/code-review high` (`988bf91`, `528a5ed`, `c33ce6e`) sur les fichiers entiers (extension, hôte, manifeste,
+modèles de lanceurs, règle WirePlumber, procédure d'installation), chaque point vérifié sur un banc : Chromium jetable dans un
+Sway isolé (rien sur ton bureau), sites simulés en HTTPS local, hôte réel avec un `chromium` factice ; règle WirePlumber
+testée sur ton WirePlumber (redémarré, ton
 accord).
 - **Onglet fermé à tort** : un lien cliqué dans une fenêtre remplie par l'app elle-même (`window.open()` puis contenu écrit)
   partait au navigateur et la fenêtre se fermait (reproduit sur l'ancienne version) : onglet vide suivi 10 s seulement.
