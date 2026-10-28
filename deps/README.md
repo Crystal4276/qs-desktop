@@ -137,11 +137,13 @@ les profils et sessions déjà connectées de cette machine sont repris tels que
    `dotfiles/wireplumber/wireplumber.conf.d/50-dnd-no-restore.conf`, puis `systemctl --user restart wireplumber`.
 3. Pour chaque modèle `dotfiles/webapps/applications/<lanceur>.desktop` : remplacer `@PROFILES@` et `@WEBAPPS@`, écrire le
    résultat dans `~/.local/share/applications/<lanceur>.desktop` (copie, pas lien : les chemins y sont développés), puis
-   `update-desktop-database ~/.local/share/applications` s'il existe.
+   `update-desktop-database ~/.local/share/applications` s'il existe. Chemin avec espace ou caractère spécial : argument
+   entier entre guillemets dans `Exec` (`"--load-extension=…"`, avec `\`, `"`, `` ` `` et `$` échappés, `%` doublé).
 4. Pour chaque profil (`Whatsapp8699`, `DiscordWeb2996`, `Word9053`, `Excel7169`, `Powerpoint0904`, `Notion5106`, lus dans
    `--user-data-dir` des modèles) : créer
    `PROFILES/<profil>/NativeMessagingHosts/` et y écrire `qs_desktop.open_link.json` depuis `dotfiles/webapps/qs_desktop.open_link.json`
-   (`@WEBAPPS@` remplacé : Chromium exige un chemin absolu). Vérifier que `dotfiles/webapps/open-link` est exécutable.
+   (`@WEBAPPS@` remplacé, échappé pour JSON : Chromium exige un chemin absolu). Vérifier que `dotfiles/webapps/open-link`
+   est exécutable.
 5. `hosts/<machine>.json` : `doNotDisturb.muteApps` contient `whatsapp` et `discord` (ex. `hosts/terrier.json`) ; la config
    par défaut d'une nouvelle machine laisse la liste vide.
 6. Message de fin : relancer les web apps si elles tournent ; nouvelle machine : se connecter une fois dans chacune (WhatsApp
@@ -154,6 +156,10 @@ Sur cette machine, `install.sh` remplacera les lanceurs actuels par les modèles
 son accueil (Discord : `https://discord.com/channels/@me` ; Word, Excel, PowerPoint : `https://www.office.com/launch/<app>` ;
 Notion : `https://www.notion.so/`). Les lanceurs actuels ouvrent une conversation, des documents SharePoint ou une page
 précis, laissés hors du dépôt (adresses personnelles).
+
+Sous Wayland, Chromium ignore `--class` : l'app_id d'une web app vient de son adresse de départ (`StartupWMClass` des
+modèles : app_id relevé avec ces adresses). Changer l'adresse d'un modèle change son app_id ; la règle Sway `assign` de
+Discord (espace 5) devra viser `chrome-discord.com__channels_@me-Default` (phase 10).
 
 ## Correspondance avec d'autres distributions
 

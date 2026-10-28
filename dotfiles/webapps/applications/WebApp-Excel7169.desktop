@@ -8,6 +8,5 @@ X-MultipleArgs=false
 Type=Application
 Icon=solstice-microsoft-365-excel
 Categories=GTK;Office;
-MimeType=text/html;text/xml;application/xhtml_xml;
-StartupWMClass=WebApp-Excel7169
+StartupWMClass=chrome-www.office.com__launch_excel-Default
 StartupNotify=true

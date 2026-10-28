@@ -8,6 +8,5 @@ X-MultipleArgs=false
 Type=Application
 Icon=solstice-microsoft-365-powerpoint
 Categories=GTK;Office;
-MimeType=text/html;text/xml;application/xhtml_xml;
-StartupWMClass=WebApp-Powerpoint0904
+StartupWMClass=chrome-www.office.com__launch_powerpoint-Default
 StartupNotify=true

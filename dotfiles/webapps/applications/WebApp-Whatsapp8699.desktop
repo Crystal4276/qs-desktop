@@ -8,6 +8,5 @@ X-MultipleArgs=false
 Type=Application
 Icon=whatsapp
 Categories=GTK;Network;
-MimeType=text/html;text/xml;application/xhtml_xml;
-StartupWMClass=WebApp-Whatsapp8699
+StartupWMClass=chrome-web.whatsapp.com__-Default
 StartupNotify=true
