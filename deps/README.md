@@ -136,7 +136,8 @@ les profils et sessions déjà connectées de cette machine sont repris tels que
 
 1. Paquets : `chromium`, `python` (`deps/optional.txt`), `wireplumber`, `papirus-icon-theme` (icônes `whatsapp`, `discord`,
    `notion`, `solstice-microsoft-365-{word,excel,powerpoint}`).
-2. Règle WirePlumber : lien `~/.config/wireplumber/wireplumber.conf.d/50-dnd-no-restore.conf` →
+2. Règle WirePlumber, seulement si `doNotDisturb.muteApps` de la machine n'est pas vide (sinon elle ne sert à rien et les web
+   apps perdent la mémoire de leur volume) : lien `~/.config/wireplumber/wireplumber.conf.d/50-dnd-no-restore.conf` →
    `dotfiles/wireplumber/wireplumber.conf.d/50-dnd-no-restore.conf`, puis `systemctl --user restart wireplumber` si le lien
    vient d'être créé ou changé (le redémarrage coupe le son un instant).
 3. Pour chaque modèle `dotfiles/webapps/applications/<lanceur>.desktop` : remplacer `@PROFILES@` et `@WEBAPPS@`, écrire le
