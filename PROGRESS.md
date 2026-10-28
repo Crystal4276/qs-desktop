@@ -1809,7 +1809,7 @@ sur des plages de commits, un fichier inchangé dans la plage n'y était que du 
 
 1. **Disques** : `services/Disks.qml`, `modules/bar/DisksPanel.qml` (montage, LUKS, éjection). **Fait** (ci-dessous).
 2. **Agent polkit** : `modules/polkit/PolkitDialog.qml` (seulement la boucle commune de la phase 8b). **Fait** (ci-dessous).
-3. **Web apps** : `dotfiles/webapps/open-link`, `open-links/background.js`, règle WirePlumber.
+3. **Web apps** : `dotfiles/webapps/open-link`, `open-links/background.js`, règle WirePlumber. **Fait** (ci-dessous).
 4. **Tray StatusNotifier** : `TrayMenu.qml`, `TrayIcon.qml`, partie applications de `Tray.qml`.
 5. **Statistiques système** : `services/Monitor.qml`, `modules/monitor/`.
 6. **Modules système de la barre** (phase 4) : `Gpu`, `SystemStats`, `Updates`, `Battery`, `Brightness`, `Displays`,
@@ -1890,6 +1890,33 @@ d'une image (capture en cours au verrouillage).
 - **À tester à la main** : une vraie demande (Nemo, `pkexec true`) : mot de passe faux puis bon ; verrouiller (`Super+…`) avec
   une demande ouverte puis déverrouiller : la demande revient ; disque LUKS branché puis verrouillage : la demande de phrase
   revient au déverrouillage.
+
+### Web apps : revue en boucle (2026-10-28, ta demande)
+
+3 passes de `/code-review high` (`988bf91`, `528a5ed`, puis cette passe) sur les fichiers entiers (extension, hôte, manifeste, modèles de lanceurs, règle WirePlumber,
+procédure d'installation), chaque point vérifié sur un banc : Chromium jetable dans un Sway isolé (rien sur ton bureau), sites
+simulés en HTTPS local, hôte réel avec un `chromium` factice ; règle WirePlumber testée sur ton WirePlumber (redémarré, ton
+accord).
+- **Onglet fermé à tort** : un lien cliqué dans une fenêtre remplie par l'app elle-même (`window.open()` puis contenu écrit)
+  partait au navigateur et la fenêtre se fermait (reproduit sur l'ancienne version) : onglet vide suivi 10 s seulement.
+- **Lien perdu** : réponse « refusé » de l'hôte, onglet fermé quand même : il reste maintenant dans la web app. Page source lue
+  aussitôt (une popup de connexion qui se ferme faisait sortir un document Microsoft) ; `1drv.ms`, `office365.com` ajoutés.
+- **Règle WirePlumber** : un programme lancé depuis WhatsApp ou Discord (lecteur vidéo…) héritait de leur identifiant et
+  perdait la mémoire de son volume ; limitée aux flux « Chromium », comme `Audio.qml`. Copie installée mise à jour.
+- **Modèles de lanceurs** : `MimeType=text/html…` retiré (les web apps se déclaraient lecteurs HTML et ignoraient le fichier) ;
+  `StartupWMClass` = app_id réel (sous Wayland, Chromium ignore `--class` : l'app_id vient de l'adresse de départ). Phase 10 :
+  la règle Sway qui place Discord sur l'espace 5 devra viser `chrome-discord.com__channels_@me-Default` (`deps/README.md`).
+- Procédure d'installation (`deps/README.md`) : fichier identique non réécrit, première sauvegarde gardée, copies générées
+  retirées par `--uninstall`, WirePlumber redémarré seulement si la règle change, chemins à caractères spéciaux refusés.
+- **Limite (BACKLOG)** : un lien envoyé au navigateur est aussi demandé par la web app (l'extension ne peut pas l'empêcher :
+  même en fermant l'onglet aussitôt, 2 liens sur 5 partaient). Un lien à usage unique peut être consommé par la web app.
+- Laissés : adresse posée plus de 10 s après `window.open()` (reste dans la web app) ; onglet nommé réutilisé ; `xdg-open`
+  depuis une web app qui démarre le navigateur principal (fermé) avec l'identifiant de la web app (coupé la nuit) ; ids en dur
+  dans la règle WirePlumber (phase 11) ; formulaire POST ouvert dans un nouvel onglet (rouvert en GET dans le navigateur).
+- Arrêt : passe 3 sans défaut bloquant (deux détails de documentation corrigés). Banc : 15 cas de domaines et popups, plus
+  onglet vide, refus de l'hôte, requête en double.
+- **À faire** : relancer les six web apps (nouvelle extension). **À tester** : un lien externe dans WhatsApp, Discord, Word et
+  Notion (navigateur principal) ; un document ouvert depuis Word (reste dans l'app).
 
 ## Prochaine étape
 
