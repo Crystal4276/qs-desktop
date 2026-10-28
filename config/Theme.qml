@@ -133,35 +133,6 @@ Singleton {
         readonly property int autoCloseDelay: 2000       // ms : épinglé, pointeur hors du calendrier et de l'horloge → fermeture (ton choix du 2026-10-21, 5 s avant)
     }
 
-    // § 3 — Menus du tray : copie des menus GTK du thème catppuccin-mocha-green (gtk-3.0/gtk-dark.css), mesurée sur capture ;
-    // texte en Inter (ta demande : police homogène) au lieu du repli monospace de Waybar.
-    readonly property QtObject trayMenu: QtObject {
-        readonly property color gtkForeground: root.color.gtkText
-        readonly property color background: root.color.surface0     // #313244
-        readonly property color frame: Qt.alpha(root.color.gtkText, 0.1)    // bordure intérieure 1 px
-        readonly property color outline: Qt.alpha(root.color.crust, 0.8)    // liseré extérieur 1 px, mesuré
-        readonly property int radius: 12
-        readonly property int padding: 6
-        readonly property int itemPaddingV: 4
-        readonly property int itemPaddingH: 8
-        readonly property int itemRadius: 6
-        readonly property color itemHover: Qt.alpha(root.color.gtkText, 0.08)
-        readonly property real disabledOpacity: 0.5
-        readonly property color separator: Qt.alpha(root.color.gtkText, 0.12)
-        readonly property int outlineWidth: 1         // liseré extérieur
-        readonly property int frameWidth: 1           // bordure intérieure
-        readonly property int separatorHeight: 1
-        readonly property int separatorMargin: 4
-        readonly property int toggleSize: 16          // place réservée avant le texte (case, radio ou icône)
-        readonly property int toggleSpacing: 2        // texte à 18 px du bord intérieur de l'élément (mesuré)
-        readonly property int toggleMarginLeft: -3    // case et radio : marge gauche du thème GTK
-        readonly property color toggleBackground: Qt.alpha(root.color.gtkText, 0.12)
-        readonly property color toggleChecked: root.color.green
-        readonly property color toggleMark: Qt.alpha(root.color.crust, 0.87)
-        readonly property int arrowMargin: 8          // flèche de sous-menu : 16 px, 8 px après le texte
-        readonly property int fontSize: 20            // texte GTK : 12 pt × 1,25
-    }
-
     // § 3 — Panneaux des modules natifs (réseau, Bluetooth, disques, NordVPN) : nouveau composant, style du calendrier,
     // valeurs reprises de la barre, du calendrier et du lanceur (THEME.md § 3 « Panneaux »).
     readonly property QtObject panel: QtObject {

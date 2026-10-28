@@ -8,7 +8,7 @@ qt6-svg                 # rendu des icônes et images SVG dans Quickshell
 # Outils supposés présents (paquet `base` d'Arch, à installer ailleurs) : sh, coreutils, sed, grep, gawk, findutils, procps-ng
 # (listes d'icônes, filtres des applications du lanceur ; `ps` du panneau de statistiques), util-linux (`rfkill` : mode avion du
 # panneau de réglages ; `kill` du panneau de statistiques ; `setpriv` : processus longs arrêtés avec Quickshell ; `setsid` : scripts/test-outputs.sh), systemd (`systemctl reboot|poweroff` du panneau de réglages,
-# `systemd-inhibit` de la veille, `busctl` des disques).
+# `systemd-inhibit` de la veille, `busctl` des disques et du tray).
 glib2                   # gdbus : disques amovibles, mise en veille du système (services/Idle.qml) ; gsettings : reconnexion Bluetooth reprise de blueman
 
 # --- Compositeurs et sorties ---

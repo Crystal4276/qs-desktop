@@ -421,15 +421,13 @@ Proposition de placement dans les phases (CLAUDE.md n'est pas modifié sans ton 
   leur **panneau** (`Panel.qml`, style du calendrier). L'icône StatusNotifier d'une application remplacée (nm-applet, blueman,
   udiskie, NordVPN) est masquée quand son module natif est présent (pas de doublon : ta demande ; utile aussi après la bascule si
   l'une d'elles est lancée par ailleurs) ; sans module natif (ex. NordVPN absent), l'icône de l'application reste.
-- **Popups** : les menus du tray sont des popups « grab » ; wlroots les ferme au clic sur une autre application (ce clic n'est pas
-  transmis, comme les menus GTK), un clic sur une barre les ferme (`BarState.closePopups`). Un popup affiché ne se redimensionne pas
-  proprement sous Sway : les menus n'apparaissent qu'avec leurs entrées. Clavier (2026-10-28) : un popup n'a le clavier que si sa
-  barre l'a avant qu'il apparaisse ; elle le prend (exclusif) de la demande d'un menu à sa fermeture, et jamais pour un clic
-  sans menu (jeu en plein écran : pas de perte de focus). Clic gauche : menu si l'application ne fournit pas ItemIsMenu (règle
-  de Waybar ; libayatana — Steam, Spotify — n'a ni ItemIsMenu ni Activate), lu sur D-Bus par `services/TrayItems.qml`. Menu placé comme GTK, sous un rectangle de 1 px au pointeur : ouvert sous le pointeur, un clic droit au
-  même point tombait sur son coin, où Qt 6.12 plante (élément focalisé détruit). Sous-menus « grab » eux aussi : sans prise,
-  Qt 6.12 envoie leurs clics au menu principal, qui se ferme ; l'ancien est caché avant l'ouverture du suivant (sinon Qt
-  rattache le nouveau à l'ancien, qui garde la prise). Survol comme GTK : sous-menu changé après 225 ms (diagonale possible).
+- **Menus des applications** (2026-10-28, ta demande) : présentés en **cartes** comme les modules natifs (`AppMenuPanel.qml` :
+  aperçu au survol, épinglée au clic, titre jaune = nom de l'application, entrées dbusmenu en lignes, séparateurs en traits de
+  bordure, sous-menu en section). Remplacent les popups « grab » copiés de GTK (plantage Qt 6.12, clavier impossible sous Sway,
+  redimensionnement étiré). Clic gauche : carte si l'application ne fournit pas ItemIsMenu (règle de Waybar ; libayatana —
+  Steam, Spotify — n'a ni ItemIsMenu ni Activate), lu par `services/TrayItems.qml` (`busctl introspect`). Steam : après une
+  entrée autre qu'un jeu récent ou « Exit Steam », sa fenêtre est affichée, son espace de travail avec
+  (`Compositor.showAppWindow`, Toplevel.activate).
 - **Panneaux du tray** (corrigé le 2026-10-20) : surfaces Overlay à clavier exclusif (`OverlayPopup`, comme le panneau de réglages et
   le lanceur), et non plus des popups « grab » : sous Sway, un popup `grabFocus` ouvert depuis une barre ne reçoit jamais le clavier
   (ni saisie, ni Échap). Fermés par un appui à côté du cadre (non transmis), sur une barre ou sur un autre écran, ou par Échap.

@@ -14,15 +14,14 @@ Singleton {
     // qu'il était ouvert) — une liste plutôt qu'un compteur, pour qu'aucun popup disparu ne reste compté.
     property var openList: []
     readonly property int openPopups: openList.length
-    // Barres qui prennent le clavier : une demande par module ({ owner, screen, exclusive }) — « à la demande » pour l'horloge
-    // survolée ou le calendrier épinglé (CalendarPopup.qml), exclusif pour un menu du tray affiché (Tray.qml). Une liste, pour
-    // qu'aucun module ne retire celle d'un autre.
+    // Barres qui acceptent le clavier « à la demande » : une demande par module ({ owner, screen }) — horloge survolée ou
+    // calendrier épinglé (CalendarPopup.qml). Une liste, pour qu'aucun module ne retire celle d'un autre.
     property var keyboardClaims: []
 
     // Demande de `owner` pour l'écran `screen` ("" : retirée).
-    function claimKeyboard(owner: QtObject, screen: string, exclusive: bool): void {
+    function claimKeyboard(owner: QtObject, screen: string): void {
         const others = keyboardClaims.filter(c => c.owner !== owner);
-        keyboardClaims = screen !== "" ? [...others, { owner, screen, exclusive }] : others;
+        keyboardClaims = screen !== "" ? [...others, { owner, screen }] : others;
     }
 
     // Un popup inscrit est épinglé, sauf l'aperçu d'une carte du tray (`previewing` vrai, Panel.qml) : pas d'aperçu par-dessus.

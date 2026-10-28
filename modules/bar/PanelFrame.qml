@@ -17,6 +17,13 @@ Rectangle {
     signal closeRequested
 
     default property alias content: body.data
+    // Pointeur dans le cadre. Sur le cadre lui-même (pas un élément posé dessus, qui cacherait le survol aux lignes) ; aucun
+    // enfant ne doit accepter le survol (`hoverEnabled`) : il le cacherait au cadre.
+    readonly property alias hovered: frameHover.hovered
+
+    HoverHandler {
+        id: frameHover
+    }
 
     height: Math.min(column.implicitHeight + 2 * Theme.panel.padding, maxHeight)
     clip: true

@@ -183,6 +183,9 @@ Transitions : aucune (`transition: none` sur le bouton menu et les espaces vides
 
 ### Menus du tray (phase 5)
 
+**Remplacés le 2026-10-28 (ta demande) par des cartes** au style des panneaux (§ 3 « Panneaux » : titre jaune, lignes des
+panneaux, séparateurs en traits de bordure `overlay0`, 1 px) ; valeurs ci-dessous gardées pour mémoire, plus utilisées.
+
 Copie des menus GTK de Waybar (thème `catppuccin-mocha-green-standard+default`, `gtk-3.0/gtk-dark.css`), mesurée sur capture (DP-2, échelle 1) :
 
 | Élément | Valeur |
