@@ -43,3 +43,8 @@ Idées notées pendant le travail. Rien ici n'est implémenté sans accord.
 - Polkit : signaler à Quickshell (amont, avec ton accord) la file d'attente inopérante de `PolkitAgentImpl` (0.3.2 et `master` :
   une demande remplace celle en cours ; `finishAuthenticationRequest` agit sur la demande active, pas sur celle qui finit) et
   l'absence de nouvel essai d'enregistrement. Contournement en place : ARCHITECTURE § 10.1.9.
+- Web apps : un lien envoyé au navigateur est aussi demandé par la web app (l'onglet a déjà lancé la requête quand
+  l'extension le ferme ; même fermé aussitôt, la requête part sur une connexion déjà ouverte). Un lien à usage unique (connexion
+  par e-mail, réinitialisation) peut donc être consommé par la web app. Seule parade : intercepter le clic dans la page (script
+  de contenu, `window.open` remplacé) avant l'ouverture de l'onglet ; plus invasif, risque de casser les apps (revue du
+  2026-10-28).

@@ -8,6 +8,5 @@ X-MultipleArgs=false
 Type=Application
 Icon=notion
 Categories=GTK;WebApps;
-MimeType=text/html;text/xml;application/xhtml_xml;
-StartupWMClass=WebApp-Notion5106
+StartupWMClass=chrome-www.notion.so__-Default
 StartupNotify=true

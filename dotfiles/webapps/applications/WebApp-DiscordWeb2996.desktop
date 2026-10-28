@@ -8,6 +8,5 @@ X-MultipleArgs=false
 Type=Application
 Icon=discord
 Categories=GTK;WebApps;
-MimeType=text/html;text/xml;application/xhtml_xml;
-StartupWMClass=WebApp-DiscordWeb2996
+StartupWMClass=chrome-discord.com__channels_@me-Default
 StartupNotify=true

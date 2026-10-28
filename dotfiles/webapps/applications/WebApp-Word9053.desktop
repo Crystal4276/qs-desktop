@@ -8,6 +8,5 @@ X-MultipleArgs=false
 Type=Application
 Icon=solstice-microsoft-365-word
 Categories=GTK;Office;
-MimeType=text/html;text/xml;application/xhtml_xml;
-StartupWMClass=WebApp-Word9053
+StartupWMClass=chrome-www.office.com__launch_word-Default
 StartupNotify=true
