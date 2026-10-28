@@ -1943,7 +1943,9 @@ pilotée — mode libayatana et menu de Steam relevé sur ta session —, fenêt
 - **Surlignage des lignes rétabli dans toutes les cartes** (réseau, Wi-Fi, Bluetooth, disques, NordVPN, notifications,
   réglages) : un élément posé sur le cadre cachait le survol aux lignes.
 - Revue finale (`f6f7b71`) : « Exit Steam » repéré comme dernière entrée (pas par son libellé anglais), clavier repris après
-  une reconstruction du menu, largeur tirée de la mise en page des lignes.
+  une reconstruction du menu, largeur tirée de la mise en page des lignes. **Passe de confirmation : rien de sérieux** ;
+  largeur arrondie au pixel, jeux récents repérés comme ce qui précède les trois groupes fixes de Steam (compte sans jeux
+  récents : Store mène bien à l'espace 9). Arrêt de la boucle.
 - Laissés : WhatsDesk (inventaire) perdrait l'Activate au clic gauche, il ne tourne plus (web app WhatsApp) ; une fenêtre
   Steam éphémère ouverte dans les 3 s après une entrée recevrait le focus ; une ligne « No matching node » par clic dans le
   journal (une des deux sélections app_id / classe ne trouve rien, attendu).
