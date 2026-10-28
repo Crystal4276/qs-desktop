@@ -42,30 +42,19 @@ Item {
                 id: icon
 
                 required property SystemTrayItem modelData
+                // Clic gauche → menu (Steam, Spotify : TrayItems.qml).
+                readonly property bool menuOnly: TrayItems.menuOnly(modelData)
 
                 source: modelData.icon
 
                 MouseArea {
                     anchors.fill: parent
-                    // Tous les boutons : Sway donne le clavier à la barre à n'importe quel appui ; il est rendu (un menu ouvert le
-                    // redemande lui-même).
-                    acceptedButtons: Qt.AllButtons
-                    hoverEnabled: true
-                    // Seulement un mouvement sur l'icône, pas l'arrivée du pointeur (rendu à la barre à la fermeture d'un menu).
-                    onEntered: root.pointerPosition = mapToItem(null, mouseX, mouseY)
-                    onPositionChanged: mouse => {
-                        const p = mapToItem(null, mouse.x, mouse.y);
-                        if (p.x !== root.pointerPosition.x || p.y !== root.pointerPosition.y) {
-                            root.pointerPosition = p;
-                            root.keyboardReleased = false;
-                        }
-                    }
+                    acceptedButtons: Qt.LeftButton | Qt.MiddleButton | Qt.RightButton
                     onPressed: mouse => {
-                        root.keyboardReleased = true;
                         const item = icon.modelData;
-                        if ((mouse.button === Qt.LeftButton && item.onlyMenu) || mouse.button === Qt.RightButton) {
+                        if ((mouse.button === Qt.LeftButton && icon.menuOnly) || mouse.button === Qt.RightButton) {
                             if (item.hasMenu)
-                                menu.openAt(item.menu, icon, mouse.x, mouse.y, Qt.RightButton | (item.onlyMenu ? Qt.LeftButton : 0));
+                                menu.openAt(item.menu, icon, mouse.x, mouse.y, Qt.RightButton | (icon.menuOnly ? Qt.LeftButton : 0));
                             else {
                                 const p = icon.mapToItem(null, mouse.x, mouse.y);
                                 item.display(icon.QsWindow.window, p.x, p.y);
@@ -85,15 +74,6 @@ Item {
                 WheelSteps {
                     orientation: Qt.Horizontal
                     onStep: direction => icon.modelData.scroll(-direction, true)
-                }
-
-                HoverHandler {
-                    onHoveredChanged: {
-                        if (hovered)
-                            root.hoveredIcon = icon;
-                        else if (root.hoveredIcon === icon)
-                            root.hoveredIcon = null;
-                    }
                 }
             }
         }
@@ -212,23 +192,12 @@ Item {
         id: notificationsPanel
     }
 
-    // Clavier des menus : sous Sway, un popup n'a le clavier que si sa barre l'accepte. La barre l'accepte « à la demande »
-    // pendant le survol des icônes d'applications (le clic qui ouvre un menu lui donne alors le focus) et tant qu'un menu est
-    // demandé ou affiché ; ensuite Sway rend le focus à la fenêtre qui l'avait (comme l'horloge). Après un appui ou la fermeture
-    // d'un menu, le survol ne compte plus jusqu'au prochain mouvement sur l'icône (sinon la frappe irait à la barre). Limite :
-    // un clic droit juste après, sans bouger, ouvre un menu sans clavier.
-    property Item hoveredIcon: null
-    property bool keyboardReleased: false
-    property point pointerPosition
-    readonly property bool wantsKeyboard: (hoveredIcon !== null && !keyboardReleased) || menu.open
-    readonly property bool menuOpen: menu.open
-    onMenuOpenChanged: {
-        if (!menuOpen)
-            keyboardReleased = true;
-    }
-    readonly property string keyboardScreen: wantsKeyboard ? QsWindow.window?.screen?.name ?? "" : ""
-    onKeyboardScreenChanged: BarState.claimKeyboard(root, keyboardScreen)
-    Component.onDestruction: BarState.claimKeyboard(root, "")
+    // Clavier des menus : sous Sway, un popup n'a le clavier que si sa barre l'a avant qu'il apparaisse. La barre le prend
+    // (exclusif) seulement de la demande d'un menu à sa fermeture ; ensuite Sway le rend à la fenêtre qui l'avait. Un clic
+    // sans menu (Activate…) n'y touche pas (jeu en plein écran : pas de perte de focus).
+    readonly property string keyboardScreen: menu.open ? QsWindow.window?.screen?.name ?? "" : ""
+    onKeyboardScreenChanged: BarState.claimKeyboard(root, keyboardScreen, true)
+    Component.onDestruction: BarState.claimKeyboard(root, "", true)
 
     // Un seul menu à la fois, ouvert au pointeur, basculé s'il déborde de l'écran.
     TrayMenu {

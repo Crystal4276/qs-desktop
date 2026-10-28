@@ -424,8 +424,9 @@ Proposition de placement dans les phases (CLAUDE.md n'est pas modifié sans ton 
 - **Popups** : les menus du tray sont des popups « grab » ; wlroots les ferme au clic sur une autre application (ce clic n'est pas
   transmis, comme les menus GTK), un clic sur une barre les ferme (`BarState.closePopups`). Un popup affiché ne se redimensionne pas
   proprement sous Sway : les menus n'apparaissent qu'avec leurs entrées. Clavier (2026-10-28) : un popup n'a le clavier que si sa
-  barre l'accepte ; elle l'accepte « à la demande » pendant le survol des icônes d'applications et tant qu'un menu est affiché
-  (comme l'horloge). Menu placé comme GTK, sous un rectangle de 1 px au pointeur : ouvert sous le pointeur, un clic droit au
+  barre l'a avant qu'il apparaisse ; elle le prend (exclusif) de la demande d'un menu à sa fermeture, et jamais pour un clic
+  sans menu (jeu en plein écran : pas de perte de focus). Clic gauche : menu si l'application ne fournit pas ItemIsMenu (règle
+  de Waybar ; libayatana — Steam, Spotify — n'a ni ItemIsMenu ni Activate), lu sur D-Bus par `services/TrayItems.qml`. Menu placé comme GTK, sous un rectangle de 1 px au pointeur : ouvert sous le pointeur, un clic droit au
   même point tombait sur son coin, où Qt 6.12 plante (élément focalisé détruit). Sous-menus « grab » eux aussi : sans prise,
   Qt 6.12 envoie leurs clics au menu principal, qui se ferme ; l'ancien est caché avant l'ouverture du suivant (sinon Qt
   rattache le nouveau à l'ancien, qui garde la prise). Survol comme GTK : sous-menu changé après 225 ms (diagonale possible).
