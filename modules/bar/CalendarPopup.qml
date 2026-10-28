@@ -73,8 +73,8 @@ Item {
     readonly property bool popupHovered: frameHover.hovered || previousHover.hovered || nextHover.hovered || titleHover.hovered
     readonly property string screenName: anchorItem.QsWindow.window?.screen?.name ?? ""
     readonly property bool wantsKeyboard: pinned || hovered
-    onWantsKeyboardChanged: BarState.claimKeyboard(root, wantsKeyboard ? screenName : "")
-    onScreenNameChanged: BarState.claimKeyboard(root, wantsKeyboard ? screenName : "")
+    readonly property string keyboardScreen: wantsKeyboard ? screenName : ""
+    onKeyboardScreenChanged: BarState.claimKeyboard(root, keyboardScreen)
 
     // Barre détruite (écran retiré) calendrier ouvert ou survolé : rien ne doit rester inscrit.
     Component.onDestruction: {

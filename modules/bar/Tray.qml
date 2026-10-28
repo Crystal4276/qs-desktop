@@ -48,6 +48,8 @@ Item {
                 MouseArea {
                     anchors.fill: parent
                     acceptedButtons: Qt.LeftButton | Qt.MiddleButton | Qt.RightButton
+                    hoverEnabled: true
+                    onPositionChanged: root.keyboardReleased = false
                     onPressed: mouse => {
                         const item = icon.modelData;
                         if ((mouse.button === Qt.LeftButton && item.onlyMenu) || mouse.button === Qt.RightButton) {
@@ -204,16 +206,13 @@ Item {
 
     // Clavier des menus : sous Sway, un popup n'a le clavier que si sa barre l'accepte. La barre l'accepte « à la demande »
     // pendant le survol des icônes d'applications (le clic qui ouvre un menu lui donne alors le focus) et tant qu'un menu est
-    // demandé ou affiché ; ensuite Sway rend le focus à la fenêtre qui l'avait (comme l'horloge, CalendarPopup.qml). Un clic qui
-    // n'ouvre pas de menu (Activate, SecondaryActivate, menu de l'application) rend le clavier aussitôt, jusqu'à la sortie
-    // de l'icône : sinon la frappe irait à la barre tant que le pointeur reste dessus.
+    // demandé ou affiché ; ensuite Sway rend le focus à la fenêtre qui l'avait (comme l'horloge). Un clic qui n'ouvre pas de
+    // menu (Activate…) rend le clavier jusqu'au prochain mouvement sur l'icône (sinon la frappe irait à la barre).
     property Item hoveredIcon: null
     property bool keyboardReleased: false
-    onHoveredIconChanged: keyboardReleased = false
     readonly property bool wantsKeyboard: (hoveredIcon !== null && !keyboardReleased) || menu.open
-    readonly property string screenName: QsWindow.window?.screen?.name ?? ""
-    onWantsKeyboardChanged: BarState.claimKeyboard(root, wantsKeyboard ? screenName : "")
-    onScreenNameChanged: BarState.claimKeyboard(root, wantsKeyboard ? screenName : "")
+    readonly property string keyboardScreen: wantsKeyboard ? QsWindow.window?.screen?.name ?? "" : ""
+    onKeyboardScreenChanged: BarState.claimKeyboard(root, keyboardScreen)
     Component.onDestruction: BarState.claimKeyboard(root, "")
 
     // Un seul menu à la fois, ouvert au pointeur, basculé s'il déborde de l'écran.
