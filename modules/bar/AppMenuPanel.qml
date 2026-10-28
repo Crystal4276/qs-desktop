@@ -19,22 +19,8 @@ Panel {
         return name.charAt(0).toUpperCase() + name.slice(1);
     }
 
-    // Largeur ajustée au contenu (titre, entrée la plus longue), pas celle des autres cartes.
-    frameWidth: Math.max(titleMetrics.advanceWidth, list.implicitWidth) + 2 * Theme.panel.padding
-
-    TextMetrics {
-        id: titleMetrics
-        font.family: Theme.font.text
-        font.pixelSize: Theme.panel.fontSize
-        font.bold: true
-        text: root.title
-    }
-
-    // Largeur d'une ligne (PanelRow) : texte (`textWidth`), marges, espacement de la colonne de droite (vide), icône éventuelle.
-    function rowWidth(textWidth: real, icon: string): real {
-        return Math.ceil(textWidth) + 2 * Theme.panel.rowPadding + Theme.panel.spacing
-            + (icon !== "" ? Theme.panel.iconSize + Theme.panel.spacing : 0);
-    }
+    // Largeur ajustée au contenu (titre, entrées ou « Loading… »), pas celle des autres cartes.
+    frameWidth: Math.max(frameItem.headerWidth, frameItem.bodyWidth) + 2 * Theme.panel.padding
 
     // Les mnémoniques GTK (« _Fichier ») ne sont pas affichées.
     function label(text: string): string {
@@ -43,15 +29,15 @@ Panel {
 
     // Fenêtre de l'application affichée après une entrée (ta demande du 2026-10-28) : Steam (Store, Library, Friends… s'ouvrent
     // sur son espace de travail, invisibles depuis un autre), sauf ses jeux récents (premier groupe, avant le premier
-    // séparateur) et « Exit Steam ».
-    function showWindowAfter(entry: QsMenuEntry, group: int): bool {
-        return item.id === "steam" && group > 0 && !/^exit\b/i.test(entry.text);
+    // séparateur) et « Exit Steam » (dernière entrée, quelle que soit la langue).
+    function showWindowAfter(group: int, last: bool): bool {
+        return item.id === "steam" && group > 0 && !last;
     }
 
-    // `group` : nombre de séparateurs avant l'entrée (Steam : 0 = jeux récents). Entrée activée avant la fermeture (qui libère
-    // le menu et ses entrées).
-    function trigger(entry: QsMenuEntry, group: int): void {
-        const showWindow = showWindowAfter(entry, group);
+    // `group` : nombre de séparateurs avant l'entrée (Steam : 0 = jeux récents) ; `last` : dernière entrée du menu. Entrée
+    // activée avant la fermeture (qui libère le menu et ses entrées).
+    function trigger(entry: QsMenuEntry, group: int, last: bool): void {
+        const showWindow = showWindowAfter(group, last);
         entry.triggered();
         close();
         if (showWindow)
@@ -61,6 +47,18 @@ Panel {
     QsMenuOpener {
         id: opener
         menu: root.visible && root.item.hasMenu ? root.item.menu : null
+    }
+
+    // Menu reconstruit (Steam renumérote ses entrées) : la ligne choisie au clavier disparaît ; le cadre reprend le clavier
+    // (Échap, flèches).
+    function keepKeyboard(): void {
+        if (!visible || previewing)
+            return;
+        for (let a = frameItem.focusedItem; a; a = a.parent) {
+            if (a === frameItem)
+                return;
+        }
+        frameItem.forceActiveFocus();
     }
 
     PanelSection {
@@ -75,6 +73,7 @@ Panel {
 
         Repeater {
             model: opener.children
+            onItemRemoved: Qt.callLater(root.keepKeyboard)
 
             Loader {
                 id: slot
@@ -114,20 +113,11 @@ Panel {
                     id: row
 
                     PanelRow {
-                        id: entryRow
-                        implicitWidth: root.rowWidth(entryMetrics.advanceWidth, slot.modelData.icon)
                         icon: slot.modelData.icon
                         text: root.label(slot.modelData.text)
                         active: slot.modelData.checkState === Qt.Checked
                         enabled: slot.modelData.enabled
-                        onClicked: root.trigger(slot.modelData, slot.group)
-
-                        TextMetrics {
-                            id: entryMetrics
-                            font.family: Theme.font.text
-                            font.pixelSize: Theme.panel.fontSize
-                            text: entryRow.text
-                        }
+                        onClicked: root.trigger(slot.modelData, slot.group, slot.index === opener.children.values.length - 1)
                     }
                 }
 
@@ -152,23 +142,14 @@ Panel {
                             model: subOpener.children
 
                             PanelRow {
-                                id: subRow
                                 required property QsMenuEntry modelData
 
                                 visible: !modelData.isSeparator
-                                implicitWidth: root.rowWidth(subMetrics.advanceWidth, modelData.icon)
                                 icon: modelData.icon
                                 text: root.label(modelData.text)
                                 active: modelData.checkState === Qt.Checked
                                 enabled: modelData.enabled && !modelData.hasChildren
-                                onClicked: root.trigger(modelData, slot.group)
-
-                                TextMetrics {
-                                    id: subMetrics
-                                    font.family: Theme.font.text
-                                    font.pixelSize: Theme.panel.fontSize
-                                    text: subRow.text
-                                }
+                                onClicked: root.trigger(modelData, slot.group, false)
                             }
                         }
                     }

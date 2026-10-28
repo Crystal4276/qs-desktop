@@ -17,9 +17,11 @@ Rectangle {
     signal closeRequested
 
     default property alias content: body.data
-    // Pointeur dans le cadre. Sur le cadre lui-même (pas un élément posé dessus, qui cacherait le survol aux lignes) ; aucun
-    // enfant ne doit accepter le survol (`hoverEnabled`) : il le cacherait au cadre.
+    // Pointeur dans le cadre. Sur le cadre lui-même : un élément posé dessus cachait le survol aux lignes (plus de surlignage).
     readonly property alias hovered: frameHover.hovered
+    // Largeurs naturelles du titre et du contenu (carte d'une application : cadre ajusté à son contenu).
+    readonly property real headerWidth: header.implicitWidth
+    readonly property real bodyWidth: body.implicitWidth
 
     HoverHandler {
         id: frameHover
@@ -82,6 +84,7 @@ Rectangle {
             spacing: Theme.panel.spacing
 
             RowLayout {
+                id: header
                 Layout.fillWidth: true
                 visible: root.title !== "" || root.hasSwitch
 
