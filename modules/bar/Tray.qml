@@ -47,24 +47,24 @@ Item {
 
                 MouseArea {
                     anchors.fill: parent
-                    acceptedButtons: Qt.LeftButton | Qt.MiddleButton | Qt.RightButton
+                    // Tous les boutons : Sway donne le clavier à la barre à n'importe quel appui ; il est rendu (un menu ouvert le
+                    // redemande lui-même).
+                    acceptedButtons: Qt.AllButtons
                     hoverEnabled: true
                     onPositionChanged: root.keyboardReleased = false
                     onPressed: mouse => {
+                        root.keyboardReleased = true;
                         const item = icon.modelData;
                         if ((mouse.button === Qt.LeftButton && item.onlyMenu) || mouse.button === Qt.RightButton) {
                             if (item.hasMenu)
                                 menu.openAt(item.menu, icon, mouse.x, mouse.y, Qt.RightButton | (item.onlyMenu ? Qt.LeftButton : 0));
                             else {
-                                root.keyboardReleased = true;
                                 const p = icon.mapToItem(null, mouse.x, mouse.y);
                                 item.display(icon.QsWindow.window, p.x, p.y);
                             }
                         } else if (mouse.button === Qt.LeftButton) {
-                            root.keyboardReleased = true;
                             item.activate();
                         } else if (mouse.button === Qt.MiddleButton) {
-                            root.keyboardReleased = true;
                             item.secondaryActivate();
                         }
                     }
@@ -206,17 +206,12 @@ Item {
 
     // Clavier des menus : sous Sway, un popup n'a le clavier que si sa barre l'accepte. La barre l'accepte « à la demande »
     // pendant le survol des icônes d'applications (le clic qui ouvre un menu lui donne alors le focus) et tant qu'un menu est
-    // demandé ou affiché ; ensuite Sway rend le focus à la fenêtre qui l'avait (comme l'horloge). Un clic qui n'ouvre pas de
-    // menu (Activate…) ou la fermeture d'un menu rend le clavier jusqu'au prochain mouvement sur l'icône (sinon la frappe irait
-    // à la barre). Limite : un clic droit juste après, sans bouger, ouvre un menu sans clavier.
+    // demandé ou affiché ; ensuite Sway rend le focus à la fenêtre qui l'avait (comme l'horloge). Après un appui, le survol ne
+    // compte plus jusqu'au prochain mouvement sur l'icône (sinon la frappe irait à la barre après un Activate ou la fermeture
+    // d'un menu). Limite : un clic droit juste après, sans bouger, ouvre un menu sans clavier.
     property Item hoveredIcon: null
     property bool keyboardReleased: false
-    readonly property bool wantsKeyboard: (hoveredIcon !== null && !keyboardReleased) || menu.open
-    readonly property bool menuOpen: menu.open
-    onMenuOpenChanged: {
-        if (!menuOpen)
-            keyboardReleased = true;
-    }
+    readonly property bool wantsKeyboard: (hoveredIcon !== null && !keyboardReleased) || menu.open || menu.switching
     readonly property string keyboardScreen: wantsKeyboard ? QsWindow.window?.screen?.name ?? "" : ""
     onKeyboardScreenChanged: BarState.claimKeyboard(root, keyboardScreen)
     Component.onDestruction: BarState.claimKeyboard(root, "")
@@ -230,12 +225,15 @@ Item {
         property int ownerButtons: Qt.RightButton
 
         // Menu affiché sur cette icône : fermé. Demandé mais pas encore affiché (entrées pas encore reçues, ou menu vide) :
-        // redemandé.
+        // redemandé. D'un menu à un autre (`switching`), la barre garde le clavier.
+        property bool switching: false
+
         function openAt(handle: var, item: Item, x: real, y: real, buttons: int): void {
             if (visible && anchor.item === item) {
                 open = false;
                 return;
             }
+            switching = true;
             open = false;
             ownerButtons = buttons;
             menu.menu = handle;
@@ -243,6 +241,7 @@ Item {
             anchor.rect.x = x;
             anchor.rect.y = y;
             open = true;
+            switching = false;
         }
 
         // Comme GTK (gtk_menu_popup_at_pointer) : rectangle de 1 px au pointeur, menu sous son coin bas-droit. Un appui au
@@ -251,7 +250,8 @@ Item {
         anchor.rect.height: 1
         anchor.edges: Edges.Bottom | Edges.Right
         anchor.gravity: Edges.Bottom | Edges.Right
-        onVisibleChanged: BarState.setPopupOpen(menu, visible)
+        // Inscrit dès la demande : un clic sur la barre annule aussi un menu pas encore affiché.
+        onOpenChanged: BarState.setPopupOpen(menu, open)
         Component.onDestruction: BarState.setPopupOpen(menu, false)
 
         Connections {
