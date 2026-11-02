@@ -4,9 +4,11 @@ import Quickshell.Wayland
 import qs.services
 
 // Base des panneaux ouverts par un bouton ou un raccourci (réglages, menu d'applications, lanceur) : surface Overlay sur la zone
-// utile de l'écran (sous les barres : `exclusiveZone` 0), clavier exclusif. Fermée par un appui à côté du cadre, sur une barre
-// ou sur un autre écran ; un seul popup ouvert à la fois. Jamais pendant le verrouillage (Session.lockActive) : il prendrait le
-// clavier de l'écran de verrouillage.
+// utile de l'écran (sous les barres : `exclusiveZone` 0). Fermée par un appui à côté du cadre, sur une barre, ou dès qu'elle perd
+// le clavier (clic sur un autre écran, fenêtre focalisée, changement d'espace) ; un seul popup ouvert à la fois. Jamais pendant le
+// verrouillage (Session.lockActive) : il prendrait le clavier de l'écran de verrouillage.
+// Clavier : exclusif jusqu'à l'obtenir (sous Sway, passer d'aucun clavier à `on_demand` ne le donne pas, vérifié sur banc), puis
+// `on_demand`, que le compositeur peut reprendre : le signal de cette fermeture, sans surface posée sur les autres écrans.
 PanelWindow {
     id: root
 
@@ -14,7 +16,10 @@ PanelWindow {
     property Item button       // bouton sous lequel il est (ou a été) ouvert
     readonly property Item owner: visible ? button : null   // appui sur ce bouton : la barre laisse le bouton le fermer
     property int ownerButtons: Qt.LeftButton                 // boutons de souris que gère ce bouton
-    property bool catchOutside: true                         // appui sur un autre écran : fermeture (OutsideClick)
+    // Saisie secrète : clavier exclusif, une fenêtre qui s'ouvre ne peut pas recevoir la suite de la frappe ; pas de fermeture à la
+    // perte du clavier (il n'est pas repris).
+    property bool secureKeyboard: false
+    property bool hadKeyboard: false                         // clavier obtenu depuis l'affichage
 
     // Juste avant la fermeture (lanceur : enregistre la saisie) ; juste après si le compositeur a fermé la surface (écran retiré).
     signal closing
@@ -85,7 +90,7 @@ PanelWindow {
 
     visible: false
     WlrLayershell.layer: WlrLayer.Overlay
-    WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
+    WlrLayershell.keyboardFocus: secureKeyboard || !hadKeyboard ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.OnDemand
     anchors {
         top: true
         bottom: true
@@ -104,6 +109,8 @@ PanelWindow {
                 return;
             }
             BarState.setPopupOpen(root, root.visible);
+            if (!root.visible)
+                root.hadKeyboard = false;
             // Surface fermée par le compositeur (écran retiré) : Quickshell la masque sans passer par close().
             if (!root.visible && !root.hiding)
                 root.emitClosing(true);
@@ -139,10 +146,13 @@ PanelWindow {
         }
     }
 
-    OutsideClick {
-        active: root.visible && root.catchOutside
-        screen: root.screen
-        onPressed: root.close()
+    Item {
+        Window.onActiveChanged: {
+            if (Window.active)
+                root.hadKeyboard = true;
+            else if (root.visible && root.hadKeyboard && !root.secureKeyboard && !Session.lockActive)
+                root.close();
+        }
     }
 
     // Appui à côté du cadre : fermeture.

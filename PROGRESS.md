@@ -2079,7 +2079,7 @@ de phase).
 
 **Performance (2026-11-02, branche `perf/profiling`, détail dans `docs/PERFORMANCE.md`)** : RSS 736 → ~510 Mo, VRAM 452 → ~388 Mio, CPU au repos ÷ 3 ; `basic` essayé puis écarté (ta décision). Fonds décodés à l'échelle réelle, largeurs fixes mesurées une fois, titre et mode retirés de `Compositor`, statut NordVPN
 moins fréquent, réglages du processus dans `scripts/qs-env.sh`. `test-outputs.sh` : 0 échec.
-Panneaux créés d'avance : gardés (ta décision). À tester à la main : saisie dans le lanceur, déverrouillage, application
+Panneaux créés d'avance : gardés (ta décision). `OutsideClick` retiré : popups fermés à la perte du clavier, exclusif seulement pour polkit et les champs masqués (lanceur 239 → 125 ms). À tester à la main : mot de passe Wi-Fi et disque (dont clic sur un autre écran pendant la saisie), demande polkit, clic sur une barre pendant qu'un popup est ouvert, réouverture d'un aperçu après Échap, saisie dans le lanceur, déverrouillage, application
 lancée depuis le lanceur sans `MALLOC_CONF` (`/proc/<pid>/environ`), Hyprland non rejoué.
 
 Rappel pour la phase 10 : l'historique du lanceur (`~/.local/state/quickshell/by-shell/desktop/launcher.json`) est repris de Rofi
