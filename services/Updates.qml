@@ -57,6 +57,7 @@ Singleton {
     // Le terminal est lancé avec attente (`--wait` de gnome-terminal) : sa fin déclenche le nouveau comptage.
     Process {
         id: upgrade
+        environment: Apps.launchEnvironment
         onExited: {
             console.info("Updates: terminal de mise à jour fermé, nouveau comptage");
             root.refresh();

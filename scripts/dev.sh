@@ -37,6 +37,8 @@ if [[ -z "${XDG_CURRENT_DESKTOP:-}" ]]; then
     desktop=$(systemctl --user show-environment 2>/dev/null | sed -n 's/^XDG_CURRENT_DESKTOP=//p') || true
     [[ -n "$desktop" ]] && export XDG_CURRENT_DESKTOP="$desktop"
 fi
+# PERF_NO_ENV : sans les réglages du processus (mesures A/B de scripts/perf.sh).
+[[ -n "${PERF_NO_ENV:-}" ]] || . "$repo/scripts/qs-env.sh"
 nohup qs -p "$repo" >"$log" 2>&1 9>&- &   # 9>&- : l'instance ne garde pas le verrou
 disown
 

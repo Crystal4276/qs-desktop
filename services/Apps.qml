@@ -143,8 +143,23 @@ Singleton {
         });
     }
 
+    // Réglages propres au processus Quickshell (scripts/qs-env.sh) : retirés pour les applications lancées d'ici. Forcer un pilote EGL
+    // gênerait par exemple les conteneurs de Steam.
+    readonly property var launchEnvironment: ({
+        MALLOC_CONF: null,
+        QSG_ATLAS_WIDTH: null,
+        QSG_ATLAS_HEIGHT: null,
+        QSG_RENDER_LOOP: null,
+        __EGL_VENDOR_LIBRARY_FILENAMES: null
+    })
+
+    // Lance une application (autre que les petites commandes du bureau), sans ces réglages.
+    function exec(command: var): void {
+        Quickshell.execDetached({ command, environment: launchEnvironment });
+    }
+
     function launch(entry: DesktopEntry): void {
-        const context = { command: entry.runInTerminal ? [...Settings.terminal, ...entry.command] : entry.command };
+        const context = { command: entry.runInTerminal ? [...Settings.terminal, ...entry.command] : entry.command, environment: launchEnvironment };
         if (entry.workingDirectory !== "")
             context.workingDirectory = entry.workingDirectory;
         Quickshell.execDetached(context);
@@ -153,7 +168,7 @@ Singleton {
 
     // Texte saisi lancé comme commande (Entrée sans résultat, Ctrl+Entrée ; dans un terminal : Ctrl+Maj+Entrée).
     function run(command: string, terminal: bool): void {
-        Quickshell.execDetached([...(terminal ? Settings.terminal : []), "sh", "-c", command]);
+        exec([...(terminal ? Settings.terminal : []), "sh", "-c", command]);
     }
 
     // Comme Rofi : +1 au compteur, tri stable par nombre de lancements, compteurs ramenés au plus petit, 25 entrées au plus.

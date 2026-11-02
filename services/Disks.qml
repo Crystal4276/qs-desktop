@@ -314,7 +314,7 @@ Singleton {
 
     function browse(v): void {
         if (v.mountPoint)
-            Quickshell.execDetached(["xdg-open", v.mountPoint]);
+            Apps.exec(["xdg-open", v.mountPoint]);
     }
 
     Component {

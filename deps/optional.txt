@@ -9,3 +9,5 @@ tailscale       # onglet Tailscale du panneau réseau (état, appareils, nœud d
 zerotier-one    # onglet ZeroTier du panneau réseau (zerotier-cli -j ; jeton copié dans ~/.zeroTierOneAuthToken, install.sh phase 11 ; sans lui, interfaces zt* lues par `ip`, iproute2 dans arch-pacman.txt) ; masqué si absent
 chromium        # web apps (WhatsApp, Discord, Word, Excel, PowerPoint, Notion) : navigateur ; liens ouverts dans son profil principal (dotfiles/webapps/)
 python          # dotfiles/webapps/open-link : hôte natif de l'extension des web apps
+heaptrack       # développement seulement : mémoire native de Quickshell (docs/PERFORMANCE.md) ; tire des dépendances KDE
+qt5-declarative # développement seulement : qmlprofiler, temps passé dans le QML, fonctionne avec Quickshell en Qt 6 (docs/PERFORMANCE.md)
