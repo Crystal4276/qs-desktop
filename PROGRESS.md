@@ -1811,7 +1811,7 @@ sur des plages de commits, un fichier inchangé dans la plage n'y était que du 
 2. **Agent polkit** : `modules/polkit/PolkitDialog.qml` (seulement la boucle commune de la phase 8b). **Fait** (ci-dessous).
 3. **Web apps** : `dotfiles/webapps/open-link`, `open-links/background.js`, règle WirePlumber. **Fait** (ci-dessous).
 4. **Tray StatusNotifier** : `TrayMenu.qml`, `TrayIcon.qml`, partie applications de `Tray.qml`. **Fait** (ci-dessous).
-5. **Statistiques système** : `services/Monitor.qml`, `modules/monitor/`.
+5. **Statistiques système** : `services/Monitor.qml`, `modules/monitor/`. **Fait** (ci-dessous).
 6. **Modules système de la barre** (phase 4) : `Gpu`, `SystemStats`, `Updates`, `Battery`, `Brightness`, `Displays`,
    `Profiles` et leurs widgets (`Cpu`, `Memory`, `GpuModule`, `InfoModule`, `NetworkModule`, `UpdatesModule`,
    `BatteryModule`, `Backlight`, `WheelSteps`, `RichLabel`), contenu de `CalendarPopup`.
@@ -1954,14 +1954,38 @@ pilotée — mode libayatana et menu de Steam relevé sur ta session —, fenêt
   (défaut de Sway, ta config ne le change pas) : à reprendre de `dotfiles/sway`.
 - **À tester à la main** : survol d'une ligne dans tes cartes (surlignage) ; séparateurs de la carte Steam.
 
+### Statistiques système : revue en boucle (2026-11-02, ta demande)
+
+Trois passes, vérifiées sur un banc isolé (Sway headless, pointeur virtuel pour les vrais clics, sonde IPC temporaire jamais
+committée, processus témoins : aucun de tes processus n'a reçu de signal).
+- **Colonne CPU fausse** (`aa825c5`) : avec `objectProp`, `ScriptModel` garde l'ancien objet d'une ligne qui change de rang
+  (reproduit sur un cas minimal, Quickshell 0.3.2) ; le modèle contient maintenant les PID, chaque ligne lit ses valeurs par PID.
+  Tailscale a le même schéma, sans correction : une erreur éventuelle disparaît au relevé suivant.
+- **Passe 1** (`2864d7b`) : un clic sur CPU, mémoire ou GPU referme enfin le panneau (fermé à l'appui, rouvert au relâchement ;
+  reproduit) et l'ouvre sur l'écran du module ; vrais chiffres en 0,3 s au lieu de 0 % pendant 2,6 s ; égalités stables ; retour en
+  haut ou sur le processus choisi ; sélection levée si la recherche le masque ; jauges de même longueur.
+- **Passe 2** (`61005f2`) : choisir un autre processus garde l'ordre ; End et Force relèvent 300 ms après (parti : retiré ;
+  survivant : reste choisi) ; valeurs du GPU séparées de `pmon` ; shell de relevé retiré de la liste.
+- **Passe 3** : le relevé à 300 ms remet les minuteries à zéro (plus de mesure sur quelques millisecondes) ; zombies masqués ; GPU
+  relevé après la liste, donc `nvidia-smi` n'y figure pas ; marge perdue des jauges de cœurs. Commentaire d'origine faux : `pmon`
+  répond en 30 ms, pas en 1 s (chronométré), ce qui a retiré deux ajouts devenus inutiles. Arrêt de la boucle ; ces dernières
+  corrections n'ont pas repassé de revue, seulement le banc.
+- **Laissés (négligeables)** : débordement de 2 px pour un disque entre 1000 et 1024 GiB utilisés ; processus qui change de nom et
+  sort du filtre sans perdre la sélection ; première ouverture de la session recomposée à l'arrivée des relevés ; texte d'une ligne
+  sans marge dans le surlignage.
+- **À tester à la main** : ouvrir et fermer le panneau en cliquant sur les trois modules, sur chacun de tes écrans ; longueur des
+  barres RAM et swap (raccourcies par la largeur réservée au texte).
+
 ## Prochaine étape
 
-**Reprise (session arrêtée le 2026-10-28, fin de ton allocation hebdomadaire ; tout est committé, rien n'est poussé — 37 commits
-d'avance sur `origin/master`, push en fin de phase).** Quand tu dis « continue », reprendre ici :
+**Reprise (2026-11-02) : tu as lancé `scripts/takeover.sh`, Quickshell est ton vrai bureau pour cette session Sway** (Waybar, Dunst
+et les autres arrêtés ; retour : `scripts/takeover.sh restore`). Ne pas les rétablir en fin de session. Chaque sauvegarde dans le
+dépôt recharge ton bureau : préparer et tester sur la copie du banc, puis copier d'un seul coup. Rien n'est poussé (push en fin
+de phase).
 
-1. **Bloc 5 — Statistiques système** (`services/Monitor.qml`, `modules/monitor/`) : revue en boucle, puis blocs 6 à 9 de la liste
-   « Revues restantes avant la phase 9 » ci-dessus (blocs 1 à 4 faits). Puis phase 9 — parité Hyprland (tests à faire ensemble
-   dans une session Hyprland : voir « Compatibilité Hyprland »).
+1. **Bloc 6 — Modules système de la barre** : revue en boucle, puis blocs 7 à 9 de la liste « Revues restantes avant la phase 9 »
+   ci-dessus (blocs 1 à 5 faits). Puis phase 9 — parité Hyprland (tests à faire ensemble dans une session Hyprland : voir
+   « Compatibilité Hyprland »).
 2. **Méthode, retenue après le bloc 4** :
    - partir de ton **usage réel** : relever d'abord ce que tu utilises vraiment (applications, réglages, chemins) et donner ce
      relevé à la revue ; lui interdire les écarts de fidélité et les cas d'applications absentes (le bloc 4 a perdu 7 passes
