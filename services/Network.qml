@@ -410,6 +410,6 @@ Singleton {
 
     // Édition des connexions : `nm-connection-editor` (repli, ARCHITECTURE R5).
     function openEditor(): void {
-        Quickshell.execDetached(["nm-connection-editor"]);
+        Apps.exec(["nm-connection-editor"]);
     }
 }

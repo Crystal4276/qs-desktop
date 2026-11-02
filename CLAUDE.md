@@ -281,7 +281,7 @@ Lire toute la config existante et produire :
 - rapatrier les configs Sway/Hyprland dans `dotfiles/`, avec sauvegarde préalable ;
 - remplacer les attributions fixes `workspace N output …` par le mécanisme dynamique ;
 - faire pointer les raccourcis clavier vers `qs ipc call …` ;
-- autostart `qs -c desktop` dans Sway (`exec`) et Hyprland (`exec-once`) ;
+- autostart `qs -c desktop` dans Sway (`exec`) et Hyprland (`exec-once`), après avoir sourcé `scripts/qs-env.sh` (`docs/PERFORMANCE.md`) ;
 - retirer de l'autostart Waybar, Dunst, Rofi, swaybg, swayidle/hypridle, polkit-gnome, nm-applet, blueman, udiskie ;
 - au démarrage, chaque écran affiche le premier espace de son bloc (1 / 4 / 7) ;
 - documenter la procédure de retour arrière.

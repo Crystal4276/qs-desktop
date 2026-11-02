@@ -53,3 +53,4 @@ Idées notées pendant le travail. Rien ici n'est implémenté sans accord.
   par e-mail, réinitialisation) peut donc être consommé par la web app. Seule parade : intercepter le clic dans la page (script
   de contenu, `window.open` remplacé) avant l'ouverture de l'onglet ; plus invasif, risque de casser les apps (revue du
   2026-10-28).
+- Performance : `perf` refuse tout événement sur cette machine (profil CPU natif non obtenu) ; pente mémoire sur plusieurs heures à relever ; coût mémoire du verrouillage sur le vrai GPU (`docs/PERFORMANCE.md`).
