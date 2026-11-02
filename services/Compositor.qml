@@ -300,8 +300,9 @@ Singleton {
         Component.onCompleted: Qt.callLater(() => i3Listener.loaded = true)
 
         onIpcEvent: event => {
-            // Changement de titre (fréquent : navigateur) : utile seulement si une activation est attendue, pas analysé sinon.
-            if (event.type === "window" && Date.now() > root.activationDeadline && /^\s*\{\s*"change"\s*:\s*"title"/.test(event.data))
+            // Changement de titre (fréquent : navigateur) : utile seulement si une activation est attendue, pas analysé sinon ; de focus
+            // (à chaque fenêtre survolée) : aucun usage.
+            if (event.type === "window" && Date.now() > root.activationDeadline && /^\s*\{\s*"change"\s*:\s*"(title|focus)"/.test(event.data))
                 return;
             const data = JSON.parse(event.data);
             // Fenêtre déjà urgente avant le clic : Sway n'envoie pas de nouvel « urgent » ; Chromium change alors d'onglet, donc

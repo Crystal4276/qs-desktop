@@ -16,7 +16,6 @@ Panel {
     frameWidth: Math.ceil(frameItem.bodyWidth) + 2 * Theme.panel.padding
     initialFocus: content
 
-    onVisibleChanged: monthOffset = 0
     onPinnedChanged: monthOffset = 0
 
     SystemClock {
