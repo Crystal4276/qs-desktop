@@ -22,8 +22,9 @@ import qs.services
 ShellRoot {
     // Services qui travaillent sans être affichés : créés dès le démarrage (un singleton ne l'est qu'à sa première lecture).
     // Apps : applications lues et filtrées avant la première ouverture du menu ou du lanceur. Audio : « ne pas déranger ».
-    // Disks : montage automatique et notifications, même sans tray (config machine, aucun écran actif).
-    readonly property var background: [NightLight, Idle, Apps, Audio, Disks]
+    // Disks : montage automatique et notifications, même sans tray (config machine, aucun écran actif). Displays : `$mod+d` avant la
+    // première ouverture du panneau de réglages.
+    readonly property var background: [NightLight, Idle, Apps, Audio, Disks, Displays]
 
     Background {}
     Bar {}

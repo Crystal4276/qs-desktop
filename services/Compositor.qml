@@ -162,32 +162,33 @@ Singleton {
         }
     }
 
-    // HDR / VRR sur une liste de sorties. Sway : `output X hdr on|off`, `adaptive_sync on|off`, comme ton `$mod+d`. Hyprland : règle
-    // `hl.monitor` partielle (fusionnée avec celle de l'écran, mode et échelle gardés), reposée après un `hyprctl reload` (réveil,
-    // services/Idle.qml), qui l'efface : Sway, lui, garde ces réglages.
+    // HDR / VRR sur une liste de sorties. Sway : `output X hdr on|off`, `adaptive_sync on|off`, comme ton `$mod+d`. Hyprland : règles
+    // à l'exécution, reposées après un `hyprctl reload` (réveil, services/Idle.qml), qui les efface : Sway, lui, garde ces réglages.
+    // HDR : `hl.monitor` partiel (fusionné avec la règle de l'écran, mode et échelle gardés). VRR : `misc.vrr`, seul effectif
+    // (le champ `vrr` de `hl.monitor` ne change rien, Hyprland 0.57 vérifié), et la bascule porte sur tous les écrans compatibles.
     function setHdr(names: var, on: bool): void {
         if (isSway && names.length > 0)
             I3.dispatch(names.map(n => `output "${n}" hdr ${on ? "on" : "off"}`).join("; "));
-        else if (isHyprland)
-            setMonitorRule(names, on ? `cm = "hdr", bitdepth = 10` : `cm = "srgb", bitdepth = 8`);
+        else if (isHyprland && names.length > 0)
+            setRuntimeRule("hdr", names.map(n => `hl.monitor({ output = "${n}", ${on ? `cm = "hdr", bitdepth = 10` : `cm = "srgb", bitdepth = 8`} })`).join(" "));
     }
 
     function setVrr(names: var, on: bool): void {
         if (isSway && names.length > 0)
             I3.dispatch(names.map(n => `output "${n}" adaptive_sync ${on ? "on" : "off"}`).join("; "));
-        else if (isHyprland)
-            setMonitorRule(names, `vrr = ${on ? 1 : 0}`);
+        else if (isHyprland && names.length > 0)
+            setRuntimeRule("vrr", `hl.config({ misc = { vrr = ${on ? 1 : 0} } })`);
     }
 
-    property var monitorRules: []   // règles posées depuis le démarrage, dans l'ordre : { names, fields }
+    property var runtimeRules: ({})   // dernière règle de chaque réglage : { hdr: "<Lua>", vrr: "<Lua>" }
 
-    function setMonitorRule(names: var, fields: string): void {
-        monitorRules = [...monitorRules, { names: names, fields: fields }];
-        applyMonitorRules([monitorRules[monitorRules.length - 1]]);
+    function setRuntimeRule(name: string, lua: string): void {
+        runtimeRules = Object.assign({}, runtimeRules, { [name]: lua });
+        applyRuntimeRules([lua]);
     }
 
-    function applyMonitorRules(rules: var): void {
-        hyprlandBatch(rules.flatMap(r => r.names.map(n => `function() hl.monitor({ output = "${n}", ${r.fields} }) end`)));
+    function applyRuntimeRules(rules: var): void {
+        hyprlandBatch(rules.map(r => `function() ${r} end`));
         monitorReread.restart();
     }
 
@@ -370,8 +371,8 @@ Singleton {
             // à vérifier en phase 9).
             else if (event.name === "moveworkspacev2")
                 Hyprland.refreshMonitors();
-            else if (event.name === "configreloaded" && root.monitorRules.length > 0)
-                root.applyMonitorRules(root.monitorRules);
+            else if (event.name === "configreloaded")
+                root.applyRuntimeRules(Object.values(root.runtimeRules));
             else if (event.name === "urgent" && root.takeActivation(Hyprland.toplevels.values.find(t => t.address === event.data)?.wayland?.appId ?? ""))   // « ADRESSE » (hexadécimal, sans 0x) ; à vérifier en phase 9
                 hyprlandBatch([`hl.dsp.focus({ window = "address:0x${event.data}" })`]);
         }
