@@ -24,8 +24,8 @@ Item {
     // dessine le fond et met `pillHighlighted` ; le texte passe en `mantle`.
     property var pillHighlight: null
     property bool pillHighlighted: false
-    // Pilule qui contient ce module (Bar.qml : pilule → Loader → module).
-    readonly property Item pill: parent?.parent ?? null
+    // Rangée de modules de la pilule (Pill.qml : rangée → Loader → module) : un clic sur l'un d'eux referme le panneau commun.
+    readonly property Item pillRow: parent?.parent ?? null
     readonly property bool highlighted: ownHighlight || pillHighlighted
 
     // [[police, texte, valeurs?, écart?], …] ; valeurs : tous les textes que le segment peut afficher. Il prend la largeur du plus large,

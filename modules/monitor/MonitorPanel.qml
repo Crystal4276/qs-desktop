@@ -32,17 +32,15 @@ OverlayPopup {
         // Départage par PID : le tri du moteur n'est pas stable, les lignes à égalité s'échangeraient à chaque relevé.
         return list.sort((a, b) => (typeof a[k] === "string" ? a[k].localeCompare(b[k]) : a[k] - b[k]) * d || a.pid - b.pid);
     }
+    // PID des lignes, modèle de la liste : avec des objets et objectProp, ScriptModel garde l'ancien objet d'une ligne qui change
+    // de rang (vérifié sur Quickshell 0.3.2), et ses valeurs resteraient périmées.
     readonly property var rows: {
+        const pids = sorted.map(p => p.pid);
         if (!frozen)
-            return sorted;
-        const byPid = {};
-        for (const p of sorted)
-            byPid[p.pid] = p;
-        const known = new Set(frozen);
-        return frozen.filter(pid => byPid[pid]).map(pid => byPid[pid]).concat(sorted.filter(p => !known.has(p.pid)));
+            return pids;
+        const found = new Set(pids), known = new Set(frozen);
+        return frozen.filter(pid => found.has(pid)).concat(pids.filter(pid => !known.has(pid)));
     }
-    // Valeurs de chaque ligne de la liste. Le modèle ne contient que les PID : avec des objets et objectProp, ScriptModel garde
-    // l'ancien objet d'une ligne qui change de rang (vérifié sur Quickshell 0.3.2), et ses valeurs resteraient périmées.
     readonly property var processByPid: {
         const byPid = {};
         for (const p of Monitor.processes)
@@ -64,17 +62,22 @@ OverlayPopup {
     function select(pid: int): void {
         selectedPid = pid;
         confirm = "";
-        frozen = null;
-        if (pid >= 0)
-            frozen = rows.map(p => p.pid);
+        // D'un processus à un autre : même ordre, la ligne cliquée reste sous le pointeur.
+        if (pid < 0)
+            frozen = null;
+        else if (!frozen)
+            frozen = rows;
     }
 
     // Tri ou recherche changés : nouvel ordre, figé de nouveau si un processus est choisi ; vue ramenée sur lui, sinon en haut.
     function refreeze(): void {
-        if (selectedPid >= 0)
-            select(sorted.some(p => p.pid === selectedPid) ? selectedPid : -1);
+        if (selectedPid >= 0) {
+            const found = sorted.some(p => p.pid === selectedPid);
+            frozen = null;
+            select(found ? selectedPid : -1);
+        }
         Qt.callLater(() => {
-            const i = selectedPid >= 0 ? rows.findIndex(p => p.pid === selectedPid) : -1;
+            const i = selectedPid >= 0 ? rows.indexOf(selectedPid) : -1;
             if (i >= 0)
                 list.positionViewAtIndex(i, ListView.Contain);
             else
@@ -82,7 +85,7 @@ OverlayPopup {
         });
     }
 
-    // `from` : pilule du module cliqué, qui referme le panneau et donne l'écran ; null (raccourci) : écran focalisé.
+    // `from` : rangée de modules de la pilule cliquée, qui referme le panneau et donne l'écran ; null (raccourci) : écran focalisé.
     function toggle(from: Item): void {
         if (!beginOpen(from))
             return;
@@ -106,6 +109,9 @@ OverlayPopup {
 
     readonly property int coreCount: Monitor.cores.length
     readonly property int coreLabelWidth: widest(Array.from({ length: coreCount }, (_, i) => String(i)))
+    readonly property int memoryValueWidth: usageWidest([Monitor.memTotal, Monitor.swapTotal])
+    readonly property real gpuMemoryTotal: (Monitor.gpu?.memTotal ?? 0) * 1048576
+    readonly property int gpuValueWidth: usageWidest([gpuMemoryTotal])
 
     function bytes(v: real): string {
         const units = ["B", "KiB", "MiB", "GiB", "TiB"];
@@ -272,7 +278,7 @@ OverlayPopup {
                 Gauge {
                     label: "RAM"
                     labelWidth: root.shortLabelWidth
-                    valueWidth: root.usageWidest([Monitor.memTotal, Monitor.swapTotal])
+                    valueWidth: root.memoryValueWidth
                     value: Monitor.memTotal > 0 ? Monitor.memUsed / Monitor.memTotal : 0
                     text: `${root.bytes(Monitor.memUsed)} / ${root.bytes(Monitor.memTotal)}`
                     tint: Theme.monitor.memory
@@ -282,7 +288,7 @@ OverlayPopup {
                     visible: Monitor.swapTotal > 0
                     label: "Swap"
                     labelWidth: root.shortLabelWidth
-                    valueWidth: root.usageWidest([Monitor.memTotal, Monitor.swapTotal])
+                    valueWidth: root.memoryValueWidth
                     value: Monitor.swapTotal > 0 ? Monitor.swapUsed / Monitor.swapTotal : 0
                     text: `${root.bytes(Monitor.swapUsed)} / ${root.bytes(Monitor.swapTotal)}`
                     tint: Theme.monitor.memory
@@ -313,7 +319,7 @@ OverlayPopup {
                     visible: (Monitor.gpu?.load ?? -1) >= 0
                     label: "Load"
                     labelWidth: root.shortLabelWidth
-                    valueWidth: root.usageWidest([(Monitor.gpu?.memTotal ?? 0) * 1048576])
+                    valueWidth: root.gpuValueWidth
                     value: (Monitor.gpu?.load ?? 0) / 100
                     text: `${Monitor.gpu?.load ?? 0} %`
                     tint: Theme.monitor.gpu
@@ -323,7 +329,7 @@ OverlayPopup {
                     visible: (Monitor.gpu?.memTotal ?? -1) > 0
                     label: "VRAM"
                     labelWidth: root.shortLabelWidth
-                    valueWidth: root.usageWidest([(Monitor.gpu?.memTotal ?? 0) * 1048576])
+                    valueWidth: root.gpuValueWidth
                     value: (Monitor.gpu?.memTotal ?? 0) > 0 ? Monitor.gpu.memUsed / Monitor.gpu.memTotal : 0
                     text: `${root.bytes((Monitor.gpu?.memUsed ?? 0) * 1048576)} / ${root.bytes((Monitor.gpu?.memTotal ?? 0) * 1048576)}`
                     tint: Theme.monitor.gpu
@@ -473,7 +479,7 @@ OverlayPopup {
             clip: true
             boundsBehavior: Flickable.StopAtBounds
             model: ScriptModel {
-                values: root.rows.map(p => p.pid)
+                values: root.rows
             }
 
             Text {
