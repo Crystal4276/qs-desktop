@@ -361,7 +361,7 @@ Singleton {
         repeat: true
         onTriggered: root.refresh()
     }
-    readonly property bool tunnelUp: /\bnord(lynx|tun)\b/.test(Network.interfaceNames)
+    readonly property bool tunnelUp: /\bnord/.test(Network.interfaceNames)
     onTunnelUpChanged: {
         refresh();
         interfaceFollowUp.restart();

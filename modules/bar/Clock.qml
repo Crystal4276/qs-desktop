@@ -32,7 +32,6 @@ InfoModule {
     }
 
     PreviewArea {
-        id: area
         button: root
         panel: calendar
         panelButtons: Qt.LeftButton
