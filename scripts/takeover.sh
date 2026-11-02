@@ -23,6 +23,7 @@ tools=(waybar dunst swaybg swayidle polkit-gnome-au nm-applet blueman-applet blu
 
 if [[ "${1:-}" == "restore" ]]; then
     "$repo/scripts/dev.sh" stop
+    systemctl --user unmask --runtime dunst.service >/dev/null 2>&1 || true
     if [[ -f "$state" ]]; then
         while IFS= read -r cmd; do
             swaymsg exec "$cmd" >/dev/null
@@ -34,10 +35,15 @@ if [[ "${1:-}" == "restore" ]]; then
     exit 0
 fi
 
+# Quickshell relancé ou planté : le nom D-Bus des notifications est libre un instant, une notification réactiverait Dunst, qui le
+# garderait. Bloqué jusqu'au prochain démarrage de session ou `restore` (--runtime : aucun fichier de config touché).
+systemctl --user mask --runtime dunst.service >/dev/null 2>&1 || true
+
 for name in "${tools[@]}"; do
     for pid in $(pgrep -u "$UID" -x "$name" || true); do
-        # Ligne de commande exacte, pour la relancer telle quelle (blueman-tray : relancé par blueman-applet ; swaybg : par Sway).
-        if [[ "$name" != swaybg && "$name" != blueman-tray ]]; then
+        # Ligne de commande exacte, pour la relancer telle quelle (blueman-tray : relancé par blueman-applet ; swaybg et Waybar : par
+        # Sway, `output … bg` et `exec_always` au `reload` de `restore` ; une seconde Waybar empilerait deux barres).
+        if [[ "$name" != swaybg && "$name" != blueman-tray && "$name" != waybar ]]; then
             cmd=$(xargs -0 printf '%q ' </proc/"$pid"/cmdline)
             grep -qxF "$cmd" "$state" 2>/dev/null || echo "$cmd" >>"$state"
         fi
@@ -45,7 +51,12 @@ for name in "${tools[@]}"; do
     done
 done
 
-"$repo/scripts/dev.sh"
+# L'instance ne démarre pas : retour à l'ancien bureau, plutôt qu'une session sans barre ni notifications.
+if ! "$repo/scripts/dev.sh"; then
+    echo "Quickshell n'a pas démarré : retour à l'ancien bureau." >&2
+    "$repo/scripts/takeover.sh" restore
+    exit 1
+fi
 
 ipc="qs ipc -p $(printf '%q' "$repo") call"
 bind() { swaymsg "bindsym $1 exec $ipc $2" >/dev/null; }

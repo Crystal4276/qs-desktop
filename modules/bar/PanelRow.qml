@@ -43,6 +43,8 @@ Rectangle {
 
     // Ligne inactive (action en cours) : la touche n'est pas prise, elle remonte au panneau.
     function activate(event: KeyEvent): void {
+        if (event.isAutoRepeat)   // touche maintenue : une seule action
+            return;
         if (usable)
             clicked();
         else

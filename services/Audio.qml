@@ -198,10 +198,11 @@ Singleton {
         Pipewire.preferredDefaultAudioSource = node;
     }
 
-    // Volume plafonné à 100 % (`max-volume` par défaut de Waybar).
+    // Volume plafonné à 100 % (`max-volume` par défaut de Waybar), sauf volume déjà au-dessus (réglé ailleurs), qui ne saute pas à
+    // 100 % d'un cran du curseur (voir `step`).
     function setVolume(v: real): void {
         if (ready)
-            sink.audio.volume = Math.max(0, Math.min(1, v));
+            sink.audio.volume = Math.max(0, Math.min(Math.max(1, volume), v));
     }
 
     // Pas en points de pourcentage (molette : ±5). Au-dessus de 100 % (réglé ailleurs, ex. pavucontrol), comme Waybar : monter
