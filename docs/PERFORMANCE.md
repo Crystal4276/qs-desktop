@@ -46,14 +46,14 @@ Testés un par un, contre 736 Mo :
 | `MALLOC_CONF=dirty_decay_ms…` | +3 Mo | = | écarté |
 | `QSG_NO_DEPTH_BUFFER`, `QSG_NO_STENCIL_BUFFER` | +114 Mo | −92 Mio | écarté : la RAM augmente, cause non cherchée |
 
-Ces variables valent pour le seul processus Quickshell : `Apps.launchEnvironment` les retire pour les applications lancées depuis le bureau
+Ces variables valent pour le seul processus Quickshell : `Launch.environment` les retire pour les applications lancées depuis le bureau
 (lanceur, menu, `xdg-open`, terminal de mise à jour). À garder identique à `qs-env.sh`. Lancer `qs` sans sourcer ce fichier fonctionne, sans ces gains.
 
 ### Boucle de rendu `basic` : essayée, écartée
 
 Rendu de toutes les fenêtres dans le thread principal, un seul contexte graphique : −100 Mo et ~50 ms de moins par ouverture, mais un dessin lent retarde aussi le
 QML et les entrées, et les animations suivent un minuteur de 16 ms au lieu de l'écran (documentation de Qt). `test-outputs.sh` passait dans ce mode. Pour y revenir :
-`QSG_RENDER_LOOP=basic` dans `qs-env.sh` et `Apps.launchEnvironment`.
+`QSG_RENDER_LOOP=basic` dans `qs-env.sh` et `Launch.environment`.
 
 ### Coût d'une ouverture
 
@@ -95,8 +95,8 @@ Le verrouillage coûte ~170 Mo sur ce banc (flou du fond en rendu logiciel), à 
 ## Méthode
 
 - `scripts/perf.sh snap | idle | ab` : mémoire, VRAM, CPU, réveils ; `ab` relance avec des variables. `PERF_NO_ENV=1` lance sans `qs-env.sh`.
-- `qs -p . --debug 3768 --waitfordebug` puis `qmlprofiler --interactive --attach localhost --port 3768` : commandes `r`, `o <fichier>`, `q` (rien n'est écrit si on l'interrompt).
+- `qs -p . --debug 3768 --waitfordebug` puis `/usr/lib/qt6/bin/qmlprofiler --interactive --attach localhost --port 3768` : commandes `r`, `o <fichier>`, `q` (rien n'est écrit si on l'interrompt).
 - Banc isolé : exporter `I3SOCK` comme `SWAYSOCK` (`scripts/test-outputs.sh`), sinon l'instance parle au vrai Sway ; clics par un pointeur virtuel Wayland, `seat - cursor press` n'atteint pas les surfaces Qt ; et une fenêtre focalisée ne suffit pas à reproduire tout ce que fait le bureau réel : vérifier les ouvertures sur le vrai.
-- `heaptrack -o <fichier> qs -p .` puis `heaptrack_print -f <fichier>.zst`. **Il ouvre son interface à la fin et bloque tant qu'elle reste ouverte.**
+- `heaptrack -o <fichier> qs -p .` puis `heaptrack_print -f <fichier>.zst` : installé pour la mesure, pas une dépendance du bureau. **Il ouvre son interface à la fin et bloque tant qu'elle reste ouverte.**
 - `perf` (7.3.1 sur noyau 7.2.14) refuse d'ouvrir tout événement sur cette machine, même `perf record -- sleep` : non résolu, profil CPU natif non obtenu.
 - Non mesuré : frappe dans le lanceur (pas de moyen sûr d'injecter des touches).

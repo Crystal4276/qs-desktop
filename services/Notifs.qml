@@ -605,7 +605,7 @@ Singleton {
             return;
         }
         if (link !== "")
-            Apps.exec(["xdg-open", link.replace(/^www\./i, "http://www.")]);   // « www. » seul : un fichier pour xdg-open
+            Launch.exec(["xdg-open", link.replace(/^www\./i, "http://www.")]);   // « www. » seul : un fichier pour xdg-open
         if (popups.includes(entry))
             close(entry);
     }
