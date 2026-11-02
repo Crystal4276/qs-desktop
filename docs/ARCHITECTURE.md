@@ -36,7 +36,7 @@ Point critique **Hyprland 0.56 en config Lua** : `hyprctl keyword` n'existe plus
 (`hl.dsp.focus({ workspace = 4 })`, `hl.dsp.workspace.move({ workspace = N, monitor = "DP-2" })`). Les commandes
 `hyprctl keyword workspace …` / `moveworkspacetomonitor` prévues par `CLAUDE.md` ne fonctionneront donc pas telles quelles.
 Quickshell 0.3.2 expose `Hyprland.usingLua` : le backend Hyprland générera la syntaxe Lua quand il est vrai, l'ancienne sinon.
-L'attribution persistante d'un espace à un écran passera par `hyprctl eval 'hl.workspace_rule({…})'` **[à vérifier en phase 9]**.
+Aucune attribution persistante n'est nécessaire (comme sous Sway, § 3.2) : `Outputs` déplace les espaces et corrige ceux créés hors de leur bloc. Vérifié en phase 9 sur Hyprland 0.57 ; les branches pour une config classique ont été retirées, jamais exécutées.
 
 Ni titre de la fenêtre active ni mode (Sway) ou submap (Hyprland) : aucun widget ne les lit, et les tenir à jour lançait un
 `swaymsg -t get_tree` à chaque focus. Retirés le 2026-11-02 (ta décision, `PERFORMANCE.md`), à rétablir avec le widget qui en aura besoin.
@@ -57,7 +57,7 @@ jamais par connecteur. Ces règles s'appliquent automatiquement à chaque connex
 
 | | Sway 1.12 | Hyprland 0.56 (Lua) |
 |---|---|---|
-| Identification | `output "LG Electronics 27GN950 207NTLEFY824" …` (make model serial, `man 5 sway-output`) | `hl.monitor({ output = "desc:…", … })` **[syntaxe `desc:` en Lua à vérifier en phase 9]** |
+| Identification | `output "LG Electronics 27GN950 207NTLEFY824" …` (make model serial, `man 5 sway-output`) | `hl.monitor({ output = "desc:…", … })` (accepté par Hyprland 0.57, vérifié sur le Dell avec des valeurs identiques à sa règle) |
 | Mode, position, échelle | `mode`, `pos`, `scale` | `mode`, `position`, `scale` |
 | HDR, profondeur | `hdr on/off/toggle`, `render_bit_depth 10` | `cm` (ex. `"hdr"`), `bitdepth` |
 | VRR (G-Sync) | `adaptive_sync on/off/toggle` | `vrr` |
@@ -131,7 +131,9 @@ ne pourrait donc plus être corrigée pour 4. La création au bon endroit est as
 `$mod+N` passeront par `qs ipc` et focaliseront directement le bon écran (`focus output X; workspace number N`), sans détour visible.
 
 Les commandes envoyées sont écrites dans le journal (`Compositor: placement des espaces : …`).
-Hyprland *(écrit le 2026-10-16, d'après le code source d'Hyprland 0.56.2 ; à tester dans une session Hyprland)* :
+Hyprland *(écrit le 2026-10-16 ; joué en phase 9 sur Hyprland 0.57, `scripts/test-outputs.sh hyprland`)* :
+- Hyprland ramène lui-même les espaces d'un écran rallumé, avant que les moniteurs soient relus : `monitoradded` et `monitorremoved` suspendent donc la mémorisation de la vue dès leur réception (`Compositor.outputsChanging`) ;
+- `FALLBACK` (sortie fictive quand aucun écran n'est actif) et un moniteur pas encore relu ne comptent pas comme écrans ;
 - placement en **une seule requête** : `hyprctl dispatch X` exécute `hl.dispatch(X)`, qui accepte une fonction Lua ; `Compositor` envoie
   `function() hl.dispatch(hl.dsp.workspace.move({ workspace = N, monitor = "X" })) … hl.dispatch(hl.dsp.focus({ monitor = "X" }))
   hl.dispatch(hl.dsp.focus({ workspace = N })) … end` (même séquence que sous Sway ; Lua vérifié avec `luac` et exécuté avec un faux `hl`) ;
@@ -562,7 +564,7 @@ Remplace le power menu Rofi. Base : les réglages rapides de GNOME 51 (code de g
   clic ailleurs laisserait le clavier bloqué sur lui. Flèche du choix de périphérique toujours affichée (avec un seul périphérique, GNOME
   la cache : tu ne la voyais pas). Veilleuse : `gammastep` lancé par le shell (fondu d'environ 4 s à l'activation, à l'arrêt par SIGTERM et aux
   heures de l'horaire ; wlsunset, utilisé jusqu'au 2026-10-26, changeait d'un coup), réglages de `hosts/*.json` (`nightLight`) écrits
-  dans son fichier de config, état dans un fichier d'état local. HDR / VRR : commandes `output` de Sway ; Hyprland en phase 9 (sa config Lua n'a pas d'équivalent sûr connu).
+  dans son fichier de config, état dans un fichier d'état local. HDR / VRR : commandes `output` de Sway ; Hyprland : HDR par `hl.monitor` partiel (`cm`, `bitdepth`), VRR par `misc.vrr` (le champ `vrr` de `hl.monitor` reste sans effet, Hyprland 0.57), règles reposées sur `configreloaded`, car le `hyprctl reload` du réveil les efface.
 
 ### 10.1.6 Phase 8b : fond d'écran natif (2026-10-17)
 
@@ -597,7 +599,7 @@ Voir `WALLPAPERS.md` § « Mise en œuvre ». Remplace `swaybg` (Sway) et le fon
   `output * power on`, comme swayidle). Le suivi est relancé quand le délai change (la config machine est lue après sa création ;
   sinon le délai par défaut restait en place — vérifié).
 - Pas de rallumage en deux temps (revue du 2026-10-27). Le délai de ton hypridle (écran principal 3 s après les autres)
-  contournait un bogue de Hyprland : non repris, un seul comportement pour les deux compositeurs (à tester en phase 9). Sous
+  contournait un bogue de Hyprland : non repris, un seul comportement pour les deux compositeurs (`hl.dsp.dpms` vérifié ; réveil réel sur tes écrans dans la liste des tests à la main de la phase 9). Sous
   Sway, chaque commande `output` réapplique la configuration de tous les écrans en un seul commit (Sway 1.12,
   `apply_output_configs`) : rallumer le principal à part refaisait un modeset qui éteignait de nouveau les écrans déjà rallumés (vu : latéraux allumés puis éteints, central, latéraux). De plus, rallumer par nom
   laissait `power off` sur la config `*` : un écran branché ensuite restait éteint. Sur banc (3 sorties headless) : 1 commit au
@@ -848,8 +850,8 @@ Légende : **utilisé** (déjà dans le code), **prévu** (phase indiquée), **a
 | | `JsonAdapter`, `JsonObject` | **utilisé** : derniers pays VPN (`vpn.json`, ancien `vpn-recent.json` converti) ; la config machine reste lue à la main (fusion `default.json` + machine) |
 | | `Socket`, `SocketServer`, `DataStream`, `DataStreamParser` | **écarté** : les raccourcis passent par `IpcHandler` |
 | `Quickshell.I3` | `I3`, `I3IpcListener`, `I3Monitor`, `I3Workspace` | **utilisé** (Sway) |
-| `Quickshell.Hyprland` | `Hyprland`, `HyprlandMonitor`, `HyprlandWorkspace`, `HyprlandEvent` | **utilisé** (écrit, à tester) |
-| | `HyprlandFocusGrab` | **ajouté** (phase 9) : sous Hyprland, fermeture des panneaux et du calendrier par un clic ailleurs, sans le mécanisme de contournement de Sway |
+| `Quickshell.Hyprland` | `Hyprland`, `HyprlandMonitor`, `HyprlandWorkspace`, `HyprlandEvent` | **utilisé** (vérifié en phase 9, Hyprland 0.57) |
+| | `HyprlandFocusGrab` | **écarté a priori** (phase 9) : `OutsideClick` et les popups sont communs aux deux compositeurs, un seul mécanisme ; à reconsidérer seulement si tes tests de clics sous Hyprland échouent |
 | | `HyprlandToplevel`, `HyprlandWindow` | au besoin, via `Toplevel` (ci-dessous) |
 | | `GlobalShortcut` | **écarté** : raccourcis par `qs ipc` sur les deux compositeurs (un seul mécanisme) |
 | `Quickshell.WindowManager` | `WindowManager`, `Windowset`, `WindowsetProjection`, `ScreenProjection` | **évalué, en réserve** (sonde sous Sway, 2026-10-16) : le protocole commun `ext-workspace` déplace et active bien un espace, mais n'indique ni l'espace focalisé, ni l'état vide, ni ne crée d'espace (pas d'API de création dans Quickshell), et son déplacement ne garde pas le focus comme la commande Sway sur laquelle la répartition validée est réglée. Migrer obligerait à mélanger deux sources pour le même état : pas de gain net. Gardé pour Hyprland si le placement en Lua échoue pendant la session de test, ou pour une config Hyprland non-Lua. Note : la liste n'est remplie qu'après le premier accès (initialisation paresseuse). |
@@ -932,7 +934,7 @@ Chaque raccourci de Sway et d'Hyprland confronté aux commandes `qs ipc` (tous l
   (sans pays : dernier pays utilisé) et `vpn disconnect`. Le choix entre « Netherlands » et « dernier pays » se fera en phase 10.
 - **HDR** (`$mod+d` nomme DP-1 et DP-3 en dur) : Sway indique les écrans compatibles (`features.hdr` : DP-1, DP-3 ; DP-2 non) et ceux
   qui gèrent le VRR (`features.adaptive_sync`) → commandes `qs ipc call display toggleHdr` / `toggleVrr` sur les écrans compatibles, sans nom en dur, qui
-  serviront aussi aux bascules de la fenêtre de réglages (phase 8 ; Hyprland en phase 9).
+  servent aussi aux bascules de la fenêtre de réglages (Hyprland : `hardwareDetails.hdr` et `.vrrCapable`).
 - Les autres raccourcis sont du compositeur (espaces, fenêtres, applications) ou déjà prévus : lanceur (phase 7), power menu (phase 8),
   captures (phase 8b), volume / micro / luminosité / média (faits), sortie audio suivante (`audio cycleSink`).
 
