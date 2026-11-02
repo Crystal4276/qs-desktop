@@ -99,8 +99,6 @@ Singleton {
 
     // Création d'un espace (événement du compositeur) : numéro et sortie où il est né.
     signal workspaceCreated(int number, string output)
-    // Une fenêtre reçoit le focus (clic, raccourci…).
-    signal windowFocused
 
     // Placement des espaces (docs/ARCHITECTURE.md § 3.2), en une seule commande :
     //   moves : [{ number, output }]  espaces existants à déplacer ;
@@ -322,9 +320,6 @@ Singleton {
             // Ouverture, fermeture, déplacement : l'état vide des espaces change, I3 ne le relit pas de lui-même.
             if (["new", "close", "move", "floating"].includes(data.change))
                 Qt.callLater(root.refreshWorkspaces);
-            // Sway envoie aussi « focus » pour une fenêtre qui ne le reçoit pas (clic sur un popup de barre) : on vérifie.
-            if (data.change === "focus" && data.container?.focused)
-                root.windowFocused();
         }
     }
 
@@ -343,8 +338,6 @@ Singleton {
             // à vérifier en phase 9).
             else if (event.name === "moveworkspacev2")
                 Hyprland.refreshMonitors();
-            else if (event.name === "activewindowv2" && event.data !== "")
-                root.windowFocused();
             else if (event.name === "urgent" && root.takeActivation())   // « ADRESSE » (hexadécimal, sans 0x) ; à vérifier en phase 9
                 Hyprland.dispatch(Hyprland.usingLua ? `hl.dsp.focus({ window = "address:0x${event.data}" })` : `focuswindow address:0x${event.data}`);
         }
