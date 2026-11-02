@@ -241,24 +241,29 @@ Singleton {
     IpcHandler {
         target: "audio"
 
+        // Pas d'OSD sans périphérique : il annoncerait un micro ouvert à 0 %, alors que rien n'a changé.
         function volumeUp(): void {
             root.step(5);
-            root.changedByKey("volume");
+            if (root.ready)
+                root.changedByKey("volume");
         }
 
         function volumeDown(): void {
             root.step(-5);
-            root.changedByKey("volume");
+            if (root.ready)
+                root.changedByKey("volume");
         }
 
         function toggleMute(): void {
             root.toggleMute();
-            root.changedByKey("volume");
+            if (root.ready)
+                root.changedByKey("volume");
         }
 
         function toggleMicMute(): void {
             root.toggleMicMute();
-            root.changedByKey("mic");
+            if (root.source?.audio)
+                root.changedByKey("mic");
         }
 
         // Sortie suivante (`$mod+s`, remplace audio-toggle.sh).

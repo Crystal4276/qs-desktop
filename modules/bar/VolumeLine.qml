@@ -17,6 +17,12 @@ ColumnLayout {
     Layout.fillWidth: true
     spacing: Theme.levelMeter.gap
 
+    FontMetrics {
+        id: buttonMetrics
+        font.family: Theme.font.text
+        font.pixelSize: Theme.panel.smallFontSize
+    }
+
     // Pourcentage et bouton centrés sur le curseur (le niveau est sous la ligne).
     RowLayout {
         Layout.fillWidth: true
@@ -40,6 +46,8 @@ ColumnLayout {
 
         PanelButton {
             id: button
+            // Largeur du libellé le plus long : le curseur ne bouge pas, et reste aligné d'une ligne à l'autre.
+            Layout.preferredWidth: Math.ceil(buttonMetrics.advanceWidth("Unmute")) + 2 * Theme.panel.buttonPaddingH
             text: line.node?.audio?.muted ? "Unmute" : "Mute"
             onClicked: line.node.audio.muted = !line.node.audio.muted
         }

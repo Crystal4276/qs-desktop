@@ -17,6 +17,11 @@ Item {
         root.moved(Math.max(0, Math.min(1, Math.round(100 * v) / 100)));
     }
 
+    // Molette, clavier : plafond à 100 %, sauf volume déjà au-dessus (réglé ailleurs), qui ne retombe pas à 100 % d'un cran (Audio.step).
+    function step(points: int): void {
+        root.moved(Math.max(0, Math.min(Math.max(1, value), Math.round(100 * value + points) / 100)));
+    }
+
     Rectangle {
         id: trough
         x: root.inset
@@ -54,8 +59,8 @@ Item {
 
     // Clavier : Gauche / Droite ±5 % (comme la molette) ; liseré quand le curseur est choisi.
     activeFocusOnTab: true
-    Keys.onLeftPressed: root.emit(Math.round(100 * root.value - 5) / 100)
-    Keys.onRightPressed: root.emit(Math.round(100 * root.value + 5) / 100)
+    Keys.onLeftPressed: root.step(-5)
+    Keys.onRightPressed: root.step(5)
 
     Rectangle {
         anchors.fill: parent
@@ -67,6 +72,6 @@ Item {
     }
 
     WheelSteps {
-        onStep: direction => root.emit(Math.round(100 * root.value + 5 * direction) / 100)
+        onStep: direction => root.step(5 * direction)
     }
 }
