@@ -4,6 +4,7 @@ import QtQuick
 import Quickshell
 import Quickshell.I3
 import Quickshell.Hyprland
+import Quickshell.Io
 import Quickshell.Wayland
 
 // Interface unique sur le compositeur (docs/ARCHITECTURE.md § 2).
@@ -208,6 +209,16 @@ Singleton {
 
     function focusNextActivation(): void {
         activationDeadline = Date.now() + 3000;
+    }
+
+    // Lien d'une web app envoyé au navigateur (dotfiles/webapps/open-link) : il atterrit dans la dernière fenêtre active, peut-être
+    // sur un autre espace de travail, qui est affiché.
+    IpcHandler {
+        target: "compositor"
+
+        function focusNextActivation(): void {
+            root.focusNextActivation();
+        }
     }
 
     function takeActivation(): bool {
