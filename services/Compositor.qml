@@ -20,7 +20,6 @@ Singleton {
 
     // Sorties actives : { name, description, x, y, width, height, scale, powered, hdrCapable, hdr, vrrCapable, vrr }
     // x, y, width, height en px logiques. description = « marque modèle numéro de série ». powered : faux si éteinte par la veille.
-    // HDR et VRR (bascules du panneau de réglages) : Sway seulement pour l'instant, Hyprland en phase 9.
     readonly property var outputs: {
         if (isSway)
             return I3.monitors.values.filter(m => m.lastIpcObject.active === true).map(m => ({
@@ -34,9 +33,11 @@ Singleton {
                 vrrCapable: m.lastIpcObject.features?.adaptive_sync === true,
                 vrr: m.lastIpcObject.adaptive_sync_status === "enabled"
             }));
-        // Écran en miroir d'un autre (`mirrorOf`, projecteur du laptop) : pas de bloc d'espaces à lui.
+        // Écran en miroir d'un autre (`mirrorOf`, projecteur du laptop) : pas de bloc d'espaces à lui. FALLBACK : sortie fictive
+        // d'Hyprland quand aucun écran n'est actif (= aucun écran, comme sous Sway). Moniteur pas encore relu (objet IPC vide,
+        // description inconnue) : compté à la relecture, sinon répartition d'un instant sans sa config machine.
         if (isHyprland)
-            return Hyprland.monitors.values.filter(m => !m.lastIpcObject.disabled
+            return Hyprland.monitors.values.filter(m => m.lastIpcObject.id !== undefined && m.name !== "FALLBACK" && !m.lastIpcObject.disabled
                     && (m.lastIpcObject.mirrorOf ?? "none") === "none").map(m => {
                 const o = m.lastIpcObject;
                 // Taille du mode en px physiques → logiques ; transformations impaires (90°, 270°…) : largeur et hauteur échangées.
@@ -50,10 +51,10 @@ Singleton {
                     width: rotated ? h : w, height: rotated ? w : h,
                     scale: m.scale,
                     powered: o.dpmsStatus !== false,
-                    hdrCapable: false,
-                    hdr: false,
-                    vrrCapable: false,
-                    vrr: false
+                    hdrCapable: o.hardwareDetails?.hdr === true,
+                    hdr: o.colorManagementPreset === "hdr",
+                    vrrCapable: o.hardwareDetails?.vrrCapable === true,
+                    vrr: o.vrr === true
                 };
             });
         return [];
@@ -144,7 +145,7 @@ Singleton {
         if (calls.length === 0)
             return;
         if (!Hyprland.usingLua) {
-            console.warn("Compositor: placement des espaces écrit pour une config Hyprland en Lua seulement");
+            console.warn("Compositor: actions écrites pour une config Hyprland en Lua seulement");
             return;
         }
         console.info("Compositor: actions Hyprland :", calls.join("; "));
@@ -161,15 +162,32 @@ Singleton {
         }
     }
 
-    // HDR / VRR sur une liste de sorties (Sway : `output X hdr on|off`, `adaptive_sync on|off`, comme ton `$mod+d`).
+    // HDR / VRR sur une liste de sorties. Sway : `output X hdr on|off`, `adaptive_sync on|off`, comme ton `$mod+d`. Hyprland : règle
+    // `hl.monitor` partielle (fusionnée avec celle de l'écran, mode et échelle gardés), oubliée au prochain `hyprctl reload`.
     function setHdr(names: var, on: bool): void {
         if (isSway && names.length > 0)
             I3.dispatch(names.map(n => `output "${n}" hdr ${on ? "on" : "off"}`).join("; "));
+        else if (isHyprland)
+            setMonitorRule(names, on ? `cm = "hdr", bitdepth = 10` : `cm = "srgb", bitdepth = 8`);
     }
 
     function setVrr(names: var, on: bool): void {
         if (isSway && names.length > 0)
             I3.dispatch(names.map(n => `output "${n}" adaptive_sync ${on ? "on" : "off"}`).join("; "));
+        else if (isHyprland)
+            setMonitorRule(names, `vrr = ${on ? 1 : 0}`);
+    }
+
+    function setMonitorRule(names: var, fields: string): void {
+        hyprlandBatch(names.map(n => `function() hl.monitor({ output = "${n}", ${fields} }) end`));
+        monitorReread.restart();
+    }
+
+    // Hyprland n'annonce pas ces changements : relecture une fois le mode appliqué.
+    Timer {
+        id: monitorReread
+        interval: 500
+        onTriggered: Hyprland.refreshMonitors()
     }
 
     // Déplacement nul du pointeur : Sway envoie l'entrée du pointeur à une surface apparue sous lui (outil de capture). Hyprland : inutile.
@@ -179,17 +197,14 @@ Singleton {
     }
 
     // Alimentation des écrans (veille, services/Idle.qml) : `names` vide = tous. Sway : `output X power on|off` ;
-    // Hyprland : `hl.dsp.dpms` (config Lua) ou `dpms` (config classique), comme hypridle.
+    // Hyprland : `hl.dsp.dpms`, comme ton hypridle.
     function setPower(names: var, on: bool): void {
         if (isSway) {
             I3.dispatch((names.length > 0 ? names : ["*"]).map(n => `output ${n === "*" ? "*" : `"${n}"`} power ${on ? "on" : "off"}`).join("; "));
         } else if (isHyprland) {
             const mode = on ? "on" : "off";
-            if (Hyprland.usingLua)
-                hyprlandBatch(names.length > 0 ? names.map(n => `hl.dsp.dpms({ mode = "${mode}", monitor = "${n}" })`)
-                    : [`hl.dsp.dpms({ mode = "${mode}" })`]);
-            else
-                (names.length > 0 ? names : [""]).forEach(n => Hyprland.dispatch(`dpms ${mode}${n ? ` ${n}` : ""}`));
+            hyprlandBatch(names.length > 0 ? names.map(n => `hl.dsp.dpms({ mode = "${mode}", monitor = "${n}" })`)
+                : [`hl.dsp.dpms({ mode = "${mode}" })`]);
         }
     }
 
@@ -198,7 +213,7 @@ Singleton {
         if (isSway)
             I3.dispatch("exit");
         else if (isHyprland)
-            Hyprland.dispatch(Hyprland.usingLua ? "hl.dsp.exit()" : "exit");
+            hyprlandBatch(["hl.dsp.exit()"]);
     }
 
     // Ouverture d'une notification (Notifs.open) : l'application demande ensuite l'activation de sa fenêtre (Chromium après
@@ -288,13 +303,7 @@ Singleton {
         if (isSway) {
             I3.dispatch(`${output ? `focus output "${output}"; ` : ""}workspace number ${n}`);
         } else if (isHyprland) {
-            if (Hyprland.usingLua) {
-                hyprlandBatch([...(output ? [`hl.dsp.focus({ monitor = "${output}" })`] : []), `hl.dsp.focus({ workspace = ${n} })`]);
-            } else {
-                if (output)
-                    Hyprland.dispatch(`focusmonitor ${output}`);
-                Hyprland.dispatch(`workspace ${n}`);
-            }
+            hyprlandBatch([...(output ? [`hl.dsp.focus({ monitor = "${output}" })`] : []), `hl.dsp.focus({ workspace = ${n} })`]);
         }
     }
 
@@ -354,7 +363,7 @@ Singleton {
             else if (event.name === "moveworkspacev2")
                 Hyprland.refreshMonitors();
             else if (event.name === "urgent" && root.takeActivation(Hyprland.toplevels.values.find(t => t.address === event.data)?.wayland?.appId ?? ""))   // « ADRESSE » (hexadécimal, sans 0x) ; à vérifier en phase 9
-                Hyprland.dispatch(Hyprland.usingLua ? `hl.dsp.focus({ window = "address:0x${event.data}" })` : `focuswindow address:0x${event.data}`);
+                hyprlandBatch([`hl.dsp.focus({ window = "address:0x${event.data}" })`]);
         }
     }
 }
