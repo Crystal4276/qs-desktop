@@ -2079,7 +2079,7 @@ de phase).
 
 **Performance (2026-11-02, branche `perf/profiling`, détail dans `docs/PERFORMANCE.md`)** : RSS 736 → ~510 Mo, VRAM 452 → ~388 Mio, CPU au repos ÷ 3 ; `basic` essayé puis écarté (ta décision). Fonds décodés à l'échelle réelle, largeurs fixes mesurées une fois, titre et mode retirés de `Compositor`, statut NordVPN
 moins fréquent, réglages du processus dans `scripts/qs-env.sh`. `test-outputs.sh` : 0 échec.
-Panneaux créés d'avance : gardés (ta décision). `OutsideClick` créé après l'affichage du popup (lanceur 239 → 131 ms) ; `on_demand` essayé et écarté (Sway reprend le clavier). À tester à la main : clic sur une icône du tray et sur le moniteur, mot de passe Wi-Fi ou disque puis clic sur un autre écran, saisie dans le lanceur, déverrouillage, application
+Panneaux créés d'avance : gardés (ta décision). `OutsideClick` créé après l'affichage du popup (lanceur 239 → 131 ms) ; `on_demand` essayé et écarté (Sway reprend le clavier). Testés à la main et validés : clic sur une icône du tray et sur le moniteur, mot de passe Wi-Fi ou disque puis clic sur un autre écran, saisie dans le lanceur. **Ouvert** : ton signalement du 2026-11-02, calendrier épinglé qui ne se ferme pas au clic extérieur ; non reproduit (clic sur la fenêtre focalisée : fermé en 0,1 s ; fond : ~2 s, délai voulu, comme sur `master`), lieu du clic à préciser. À tester à la main : déverrouillage, application
 lancée depuis le lanceur sans `MALLOC_CONF` (`/proc/<pid>/environ`), Hyprland non rejoué.
 
 Rappel pour la phase 10 : l'historique du lanceur (`~/.local/state/quickshell/by-shell/desktop/launcher.json`) est repris de Rofi
