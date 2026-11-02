@@ -38,7 +38,10 @@ Panel {
         }
     }
 
+    Component.onDestruction: Vpn.panelOpen = false
+
     onVisibleChanged: {
+        Vpn.panelOpen = visible;
         if (visible) {
             Vpn.refresh();
             Vpn.loadCountries();
