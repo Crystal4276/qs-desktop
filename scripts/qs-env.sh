@@ -1,6 +1,6 @@
 # Réglages du processus Quickshell, à sourcer avant de le lancer (scripts/dev.sh ; autostart en phase 10).
 # Chaque valeur est mesurée sur le bureau réel : docs/PERFORMANCE.md. Une valeur déjà présente dans l'environnement l'emporte
-# (scripts/perf.sh ab). Aucune n'est transmise aux applications lancées depuis le bureau (Apps.launchEnvironment) : à tenir à jour
+# (scripts/perf.sh ab). Aucune n'est transmise aux applications lancées depuis le bureau (Launch.environment) : à tenir à jour
 # avec cette liste.
 
 # Allocateur de Quickshell (jemalloc, lu au démarrage du processus, pas de `pragma Env` possible) : 2 zones au lieu de 64 par défaut

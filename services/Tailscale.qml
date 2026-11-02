@@ -157,7 +157,7 @@ Singleton {
     // bornée à 10 min par `timeout`.
     function login(): void {
         if (authUrl !== "")
-            Apps.exec(["xdg-open", authUrl]);
+            Launch.exec(["xdg-open", authUrl]);
         else
             loginCli.runCommand(["timeout", "600", "tailscale", "login"]);
         refresh();

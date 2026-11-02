@@ -275,6 +275,6 @@ Singleton {
 
     // Réglages avancés (bouton du panneau audio).
     function openMixer(): void {
-        Apps.exec(["pavucontrol"]);
+        Launch.exec(["pavucontrol"]);
     }
 }

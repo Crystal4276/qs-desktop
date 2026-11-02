@@ -143,22 +143,8 @@ Singleton {
         });
     }
 
-    // Réglages propres au processus Quickshell (scripts/qs-env.sh) : retirés pour les applications lancées d'ici. Forcer un pilote EGL
-    // gênerait par exemple les conteneurs de Steam.
-    readonly property var launchEnvironment: ({
-        MALLOC_CONF: null,
-        QSG_ATLAS_WIDTH: null,
-        QSG_ATLAS_HEIGHT: null,
-        __EGL_VENDOR_LIBRARY_FILENAMES: null
-    })
-
-    // Lance une application (autre que les petites commandes du bureau), sans ces réglages.
-    function exec(command: var): void {
-        Quickshell.execDetached({ command, environment: launchEnvironment });
-    }
-
     function launch(entry: DesktopEntry): void {
-        const context = { command: entry.runInTerminal ? [...Settings.terminal, ...entry.command] : entry.command, environment: launchEnvironment };
+        const context = { command: entry.runInTerminal ? [...Settings.terminal, ...entry.command] : entry.command, environment: Launch.environment };
         if (entry.workingDirectory !== "")
             context.workingDirectory = entry.workingDirectory;
         Quickshell.execDetached(context);

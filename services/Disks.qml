@@ -314,7 +314,7 @@ Singleton {
 
     function browse(v): void {
         if (v.mountPoint)
-            Apps.exec(["xdg-open", v.mountPoint]);
+            Launch.exec(["xdg-open", v.mountPoint]);
     }
 
     Component {

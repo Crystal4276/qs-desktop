@@ -27,7 +27,7 @@ Singleton {
     property var parsed: []   // entrées lues, avant le filtre des fichiers absents
 
     function open(path: string): void {
-        Apps.exec(["xdg-open", path]);
+        Launch.exec(["xdg-open", path]);
     }
 
     function refreshRecent(): void {

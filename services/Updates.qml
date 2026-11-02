@@ -25,7 +25,6 @@ Singleton {
             return;
         const command = Settings.updateCommand || fallbackCommand;
         upgrade.command = [...Settings.terminal, "bash", "-c", `${command}; echo -e "\\nPress Enter to close..."; read`];
-        upgrade.environment = Apps.launchEnvironment;   // lu ici : une liaison créerait Apps au démarrage (lanceur et menu différés)
         upgrade.running = true;
     }
 
@@ -58,6 +57,7 @@ Singleton {
     // Le terminal est lancé avec attente (`--wait` de gnome-terminal) : sa fin déclenche le nouveau comptage.
     Process {
         id: upgrade
+        environment: Launch.environment
         onExited: {
             console.info("Updates: terminal de mise à jour fermé, nouveau comptage");
             root.refresh();
