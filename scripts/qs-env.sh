@@ -10,10 +10,6 @@ export MALLOC_CONF=narenas:2
 export QSG_ATLAS_WIDTH=1024
 export QSG_ATLAS_HEIGHT=1024
 
-# Rendu dans le thread principal, un seul contexte graphique pour toutes les fenêtres : -100 Mo, et ouverture d'une fenêtre en 95 ms au
-# lieu de 230 ms (le rendu par fil recrée un contexte à chaque affichage).
-export QSG_RENDER_LOOP=basic
-
 # Pilote Nvidia actif : ne charge pas aussi Mesa et LLVM, inutilisés (-34 Mo). Jamais sur une autre carte.
 nvidia_egl=/usr/share/glvnd/egl_vendor.d/10_nvidia.json
 if [ -e /proc/driver/nvidia/version ] && [ -e "$nvidia_egl" ]; then

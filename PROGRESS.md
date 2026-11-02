@@ -2077,10 +2077,9 @@ de phase).
 6. **À tester à la main** (en attente) : blocs 1 à 3 (clé USB et clé LUKS, demande polkit réelle, liens des web apps) — voir
    leurs comptes rendus ci-dessus.
 
-**Performance (2026-11-02, branche `perf/profiling`, détail dans `docs/PERFORMANCE.md`)** : RSS 736 → 412 Mo, VRAM 452 → 378 Mio, CPU au repos ÷ 3,
-ouverture des fenêtres ~240 → ~95 ms. Fonds décodés à l'échelle réelle, largeurs fixes mesurées une fois, titre et mode retirés de `Compositor`, statut NordVPN
-moins fréquent, réglages du processus dans `scripts/qs-env.sh` (dont `QSG_RENDER_LOOP=basic`). `test-outputs.sh` : 0 échec, avec et sans `basic`.
-En attente : ta décision sur le différé des panneaux (§ Panneaux). À tester à la main : fluidité avec `basic`, saisie dans le lanceur, déverrouillage, application
+**Performance (2026-11-02, branche `perf/profiling`, détail dans `docs/PERFORMANCE.md`)** : RSS 736 → ~510 Mo, VRAM 452 → ~388 Mio, CPU au repos ÷ 3 ; `basic` essayé puis écarté (ta décision). Fonds décodés à l'échelle réelle, largeurs fixes mesurées une fois, titre et mode retirés de `Compositor`, statut NordVPN
+moins fréquent, réglages du processus dans `scripts/qs-env.sh`. `test-outputs.sh` : 0 échec.
+Panneaux créés d'avance : gardés (ta décision). À tester à la main : saisie dans le lanceur, déverrouillage, application
 lancée depuis le lanceur sans `MALLOC_CONF` (`/proc/<pid>/environ`), Hyprland non rejoué.
 
 Rappel pour la phase 10 : l'historique du lanceur (`~/.local/state/quickshell/by-shell/desktop/launcher.json`) est repris de Rofi

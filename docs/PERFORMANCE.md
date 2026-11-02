@@ -7,19 +7,17 @@ Instance neuve, 25 à 30 s après le lancement, relevé repos sur 30 à 60 s (`s
 
 | Mesure | Avant | Après | Écart |
 |---|---|---|---|
-| Mémoire résidente (RSS) | 736 Mo | 412 Mo | −44 % |
-| Mémoire proportionnelle (PSS) | 564 Mo | 301 Mo | −47 % |
-| Pic au démarrage | ~796 Mo | 458 Mo | −42 % |
-| VRAM | 452 Mio | 378 Mio | −16 % |
-| Threads | 23 | 16 | |
+| Mémoire résidente (RSS) | 736 Mo | ~510 Mo | −31 % |
+| Mémoire proportionnelle (PSS) | 564 Mo | ~350 Mo | −38 % |
+| Pic au démarrage | ~796 Mo | ~550 Mo | −31 % |
+| VRAM | 452 Mio | ~388 Mio | −14 % |
 | CPU au repos, Quickshell | 1,4 à 2,1 % d'un cœur | 0,6 % | environ ÷ 3 |
 | CPU au repos, processus enfants | 0,6 à 1,9 % | 0,5 % | |
 | Temps QML au repos (sur ~53 s) | 556 ms | 138 ms (avant retrait du titre) | −75 % |
 | Temps QML, 15 premières secondes | 776 ms | 548 ms | −29 % |
-| Ouverture lanceur / menu / réglages | ~230–250 ms | ~80–110 ms | ÷ 2,5 |
+| Ouverture du lanceur | 239 ms | 239 ms | voir « Coût d'une ouverture » |
 
-Ouverture : de `qs ipc call` au premier pixel changé à l'écran, l'appel IPC et la capture `grim` (25 ms) compris. Médiane de 95 ms, maximum
-de 121 ms sur 25 ouvertures du lanceur. Une valeur isolée à 2838 ms lors de la première série, jamais reproduite, reste inexpliquée.
+Ouverture : de `qs ipc call` au premier pixel changé à l'écran, appel IPC (26 ms) et capture `grim` (25 ms) compris ; médiane sur 25 ouvertures.
 
 Le CPU au repos est bruité (l'usage de la machine compte) : à lire comme un ordre de grandeur.
 
@@ -41,7 +39,7 @@ Testés un par un, contre 736 Mo :
 | Réglage | RSS | VRAM | Décision |
 |---|---|---|---|
 | `MALLOC_CONF=narenas:2` | −100 Mo | = | **gardé** ; `narenas:1` n'apporte que ~5 Mo de plus |
-| `QSG_RENDER_LOOP=basic` | −126 Mo seul, −100 Mo combiné | −13 Mio | **gardé** : aussi le gain de latence |
+| `QSG_RENDER_LOOP=basic` | −126 Mo seul, −100 Mo combiné | −13 Mio | **écarté, ta décision du 2026-11-02** (voir plus bas) |
 | `__EGL_VENDOR_LIBRARY_FILENAMES` (Nvidia) | −34 Mo | = | **gardé**, seulement si le pilote Nvidia est actif |
 | `QSG_ATLAS_WIDTH/HEIGHT=1024` | −29 Mo | −14 Mio | **gardé** ; barres identiques à l'œil |
 | `QSG_TRANSIENT_IMAGES=1` | −4 Mo | = | écarté : sans effet réel |
@@ -51,13 +49,23 @@ Testés un par un, contre 736 Mo :
 Ces variables valent pour le seul processus Quickshell : `Apps.launchEnvironment` les retire pour les applications lancées depuis le bureau
 (lanceur, menu, `xdg-open`, terminal de mise à jour). À garder identique à `qs-env.sh`. Lancer `qs` sans sourcer ce fichier fonctionne, sans ces gains.
 
-### Boucle de rendu `basic` : le compromis
+### Boucle de rendu `basic` : essayée, écartée
 
-Toutes les fenêtres sont rendues dans le thread principal, avec un seul contexte graphique. Le rendu par fil recrée vraisemblablement son
-contexte à chaque affichage (une ouverture à chaud y est aussi lente qu'à froid ; cause déduite, pas vérifiée dans le code de Qt). Contrepartie : un
-traitement QML long retarde aussi le rendu. Le QML au repos ne prend que 0,25 % du temps et aucun bloc n'a dépassé ~40 ms hors démarrage. À surveiller à l'usage ; retrait : une ligne dans `qs-env.sh`.
+Rendu de toutes les fenêtres dans le thread principal, un seul contexte graphique : −100 Mo et ~50 ms de moins par ouverture, mais un dessin lent retarde aussi le
+QML et les entrées, et les animations suivent un minuteur de 16 ms au lieu de l'écran (documentation de Qt). `test-outputs.sh` passait dans ce mode. Pour y revenir :
+`QSG_RENDER_LOOP=basic` dans `qs-env.sh` et `Apps.launchEnvironment`.
 
-Vérifié dans ce mode : `test-outputs.sh` sans échec (Sway isolé, rendu logiciel), outil de capture et verrouillage ouverts sur banc, 25 ouvertures du lanceur.
+### Coût d'une ouverture
+
+Quickshell détruit la fenêtre Qt quand elle est masquée. Par fil, chaque fenêtre affichée crée donc un thread et un contexte graphique (~43 ms sur cette carte, à la suite).
+Or un popup en affiche trois : le sien et deux `OutsideClick` sur les autres écrans, créés avant lui (trace `qt.scenegraph.renderloop`). Médianes du lanceur :
+
+| | Par fil | `basic` |
+|---|---|---|
+| Normal | 239 ms | 95 ms |
+| Sans `OutsideClick` | 128 ms | 76 ms |
+
+Une ouverture isolée à ~3 s apparaît dans les deux modes (1 sur ~50) ; cause inconnue.
 
 ## Corrections du code
 

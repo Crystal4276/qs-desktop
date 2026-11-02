@@ -149,7 +149,6 @@ Singleton {
         MALLOC_CONF: null,
         QSG_ATLAS_WIDTH: null,
         QSG_ATLAS_HEIGHT: null,
-        QSG_RENDER_LOOP: null,
         __EGL_VENDOR_LIBRARY_FILENAMES: null
     })
 
