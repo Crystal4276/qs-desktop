@@ -121,7 +121,7 @@ LazyLoader {
                         if (result.saveToFile(path))
                             Screenshot.copyToClipboard(path);
                         Screenshot.close();
-                    }, crop.textureSize);
+                    }, Qt.size(r.width, r.height));   // en px logiques : Qt la multiplie par l'échelle de l'écran
                     if (!started)
                         Screenshot.close();
                 }
