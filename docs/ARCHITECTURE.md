@@ -29,7 +29,7 @@ Celle de `CLAUDE.md`, avec trois ajouts :
 | Module | `Quickshell.I3` (`I3.workspaces`, `I3.monitors`, `I3.focusedWorkspace`, `I3.dispatch()`, `I3IpcListener`) | `Quickshell.Hyprland` (`Hyprland.workspaces`, `.monitors`, `.focusedWorkspace`, `.activeToplevel`, `.dispatch()`, `.usingLua`) |
 
 Interface exposée, identique pour les deux : `workspaces` (num, nom, écran, focalisé, visible, urgent, vide),
-`outputs` (nom, description, x, y, taille logique, scale, focalisé), `focusedOutput`, `activeWindowTitle`, `mode`,
+`outputs` (nom, description, x, y, taille logique, scale, focalisé), `focusedOutput`,
 et les actions `focusWorkspace(n)`, `assignWorkspace(n, output)`, `moveWorkspace(n, output)`, `exit()`.
 
 Point critique **Hyprland 0.56 en config Lua** : `hyprctl keyword` n'existe plus et `dispatch` attend une expression Lua
@@ -38,8 +38,8 @@ Point critique **Hyprland 0.56 en config Lua** : `hyprctl keyword` n'existe plus
 Quickshell 0.3.2 expose `Hyprland.usingLua` : le backend Hyprland générera la syntaxe Lua quand il est vrai, l'ancienne sinon.
 L'attribution persistante d'un espace à un écran passera par `hyprctl eval 'hl.workspace_rule({…})'` **[à vérifier en phase 9]**.
 
-`Quickshell.I3` n'expose ni le titre de la fenêtre active ni le mode : ils viendront d'un `I3IpcListener`
-(abonnements `window` et `mode`) dans le backend Sway.
+Ni titre de la fenêtre active ni mode (Sway) ou submap (Hyprland) : aucun widget ne les lit, et les tenir à jour lançait un
+`swaymsg -t get_tree` à chaque focus. Retirés le 2026-11-02 (ta décision, `PERFORMANCE.md`), à rétablir avec le widget qui en aura besoin.
 
 ## 3. Écrans dynamiques
 
@@ -293,7 +293,7 @@ n'est ni installé ni utilisé). Logout adapté au compositeur. Confirmation : a
 | Q1 | Règle « principal d'abord, puis gauche → droite, reste sur les premiers » **validée**. |
 | Q2 | Kanshi validé sous condition HDR / VRR, puis **remplacé** par la configuration native des compositeurs (Kanshi ne gère pas le HDR) — voir § 3.1 et § 8.1. |
 | Q3 | **nwg-menu est remplacé par un menu maison en QML, sur le modèle du menu de Cinnamon, dans le cadre du projet (phase 8).** État final : aucune dépendance à nwg-menu. D'ici là, le bouton Arch de la barre QML existe (apparence, survol) mais n'ouvre rien ; Waybar reste le bureau réel jusqu'à la bascule. Cinnamon n'est pas installé : il faudra une capture de référence de son menu au début de la phase 8. Style : charte de `THEME.md` (§ 7 reprend le style actuel de nwg-menu). |
-| Q4 | Parité : ni titre de fenêtre ni mode dans la barre (le service les expose quand même ; idée en `BACKLOG.md`). |
+| Q4 | Parité : ni titre de fenêtre ni mode dans la barre, ni dans le service depuis le 2026-11-02 (§ 2) ; idée en `BACKLOG.md`. |
 | Q5 | `custom/logout`, `custom/reboot`, `custom/power` ignorés. |
 | Q6 | Scripts morts abandonnés. |
 | Q8 | Dunst sera **désinstallé** au moment de la bascule (phase 10). |
