@@ -63,6 +63,7 @@ Singleton {
     }
 
     Timer {
+        id: fastTimer
         interval: 1000
         running: root.active
         repeat: true
@@ -74,19 +75,23 @@ Singleton {
     }
 
     Timer {
+        id: processTimer
         interval: 2600
         running: root.active
         repeat: true
         triggeredOnStart: true
-        // GPU au même rythme : `nvidia-smi pmon` mesure pendant 1 s, une requête par seconde le ferait tourner sans arrêt.
         onTriggered: {
             if (!processList.running)
                 processList.running = true;
-            if (!gpuQuery.running && (Gpu.useSmi || Gpu.sensorPath !== ""))
-                gpuQuery.running = true;
-            if (!gpuProcessList.running && Gpu.vendor === "nvidia" && Gpu.useSmi)
-                gpuProcessList.running = true;
         }
+    }
+
+    // GPU au rythme de la liste des processus, juste après elle : ces commandes n'y figurent pas.
+    function sampleGpu(): void {
+        if (!gpuQuery.running && (Gpu.useSmi || Gpu.sensorPath !== ""))
+            gpuQuery.running = true;
+        if (!gpuProcessList.running && Gpu.vendor === "nvidia" && Gpu.useSmi)
+            gpuProcessList.running = true;
     }
 
     Timer {
@@ -101,16 +106,16 @@ Singleton {
     }
 
     // Une charge se mesure entre deux relevés : second relevé peu après le premier, pour ne pas montrer des 0 % à l'ouverture
-    // jusqu'au prochain tour des minuteries.
+    // jusqu'au prochain tour des minuteries. Minuteries repartant de ce relevé (un redémarrage relève aussitôt) : le suivant ne
+    // peut pas tomber quelques millisecondes après, sur une durée trop courte pour mesurer une charge.
     Timer {
         id: secondSample
         interval: 300
         onTriggered: {
             if (!root.active)
                 return;
-            cpu.reload();
-            if (!processList.running)
-                processList.running = true;
+            fastTimer.restart();
+            processTimer.restart();
         }
     }
 
@@ -203,6 +208,8 @@ Singleton {
                     if (pid === self)
                         continue;
                     const rest = line.slice(close + 2).split(" ");
+                    if (rest[0] === "Z")   // zombie : déjà terminé, plus rien à arrêter
+                        continue;
                     const time = Number(rest[11]) + Number(rest[12]);
                     times[pid] = time;
                     const before = root.previousTimes[pid];
@@ -219,14 +226,14 @@ Singleton {
                 root.previousTimes = times;
                 root.previousTotal = total;
                 root.processes = list;
+                root.sampleGpu();
                 if (first)
                     secondSample.start();
             }
         }
     }
 
-    // Mémoire vidéo par processus (nvidia-smi) : `pmon` mesure pendant 1 s, à part pour ne pas retarder les valeurs du GPU. La liste
-    // des processus, relevée en même temps, a déjà fini : mise à jour ici, seulement si une valeur a changé.
+    // Mémoire vidéo par processus (nvidia-smi). Relevée après la liste des processus : mise à jour ici, seulement si une valeur a changé.
     Process {
         id: gpuProcessList
         command: ["nvidia-smi", "pmon", "-c", "1", "-s", "m"]

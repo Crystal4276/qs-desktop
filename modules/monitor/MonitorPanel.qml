@@ -179,6 +179,7 @@ OverlayPopup {
         }
 
         Text {
+            visible: parent.text !== ""
             Layout.preferredWidth: parent.valueWidth
             horizontalAlignment: Text.AlignRight
             text: parent.text
