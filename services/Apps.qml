@@ -153,7 +153,7 @@ Singleton {
 
     // Texte saisi lancé comme commande (Entrée sans résultat, Ctrl+Entrée ; dans un terminal : Ctrl+Maj+Entrée).
     function run(command: string, terminal: bool): void {
-        exec([...(terminal ? Settings.terminal : []), "sh", "-c", command]);
+        Launch.exec([...(terminal ? Settings.terminal : []), "sh", "-c", command]);
     }
 
     // Comme Rofi : +1 au compteur, tri stable par nombre de lancements, compteurs ramenés au plus petit, 25 entrées au plus.
