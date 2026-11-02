@@ -57,6 +57,13 @@ Singleton {
         onLoaded: root.parseMemory(text())
     }
 
+    // Une charge se mesure entre deux relevés : second relevé peu après le premier, sinon 0 % affiché pendant 5 s au démarrage.
+    Timer {
+        interval: 300
+        running: true
+        onTriggered: stat.reload()
+    }
+
     Timer {
         interval: 5000
         running: true

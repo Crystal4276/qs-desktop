@@ -19,6 +19,7 @@ Singleton {
     property string busyPath: ""      // utilisation (gpu_busy_percent) : AMD
     // Nvidia : nvidia-smi s'il est installé et répond ; sinon le capteur du noyau, comme les autres cartes.
     property bool useSmi: false
+    property bool smiAnswers: true    // dernier relevé de nvidia-smi réussi
     property int temperature: -1      // °C
     property int usage: -1            // %
     readonly property bool available: usage >= 0
@@ -63,9 +64,9 @@ Singleton {
         repeat: true
         triggeredOnStart: true
         onTriggered: {
-            if (root.useSmi) {
+            if (root.useSmi)
                 nvidiaSmi.running = true;
-            } else {
+            if (!root.useSmi || !root.smiAnswers) {
                 if (root.sensorPath !== "")
                     sensor.reload();
                 if (root.busyPath !== "")
@@ -84,16 +85,14 @@ Singleton {
                 root.usage = isNaN(usage) ? -1 : usage;
             }
         }
-        // nvidia-smi en échec (pilote propriétaire absent) : capteur du noyau à la place (température seule : module de la
-        // barre masqué) ; sans capteur, plus de sondage.
+        // nvidia-smi en échec (paquet en cours de remplacement, pilote absent ou à recharger) : module de la barre masqué, capteur du
+        // noyau s'il y en a un ; toujours interrogé, le module revient dès qu'il répond.
         onExited: code => {
-            if (code === 0)
+            const answers = code === 0;
+            if (answers === root.smiAnswers)
                 return;
-            root.temperature = -1;
-            root.usage = -1;
-            root.useSmi = false;
-            poll.running = root.sensorPath !== "" || root.busyPath !== "";
-            console.info(`Gpu: nvidia-smi en échec, capteur ${root.sensorPath || "aucun"}`);
+            root.smiAnswers = answers;
+            console.info(`Gpu: nvidia-smi ${answers ? "de nouveau disponible" : `en échec, capteur ${root.sensorPath || "aucun"}`}`);
         }
     }
 

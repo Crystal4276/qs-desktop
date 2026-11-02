@@ -33,15 +33,25 @@ Singleton {
         command: ["checkupdates"]
         stdout: StdioCollector {
             onStreamFinished: {
+                if (text.trim() === "")   // aucune mise à jour ou erreur : traité à la sortie
+                    return;
                 root.count = text.split("\n").filter(l => l.trim() !== "").length;
                 console.info(`Updates: ${root.count} mise(s) à jour en attente`);
             }
         }
-        // Code 2 : aucune mise à jour ; 1 : erreur (réseau…) ; absent : ne démarre pas.
+        // Code 2 : aucune mise à jour ; 1 : erreur (réseau…) : dernier compte gardé, nouvel essai bientôt ; absent : ne démarre pas.
         onExited: code => {
-            if (code !== 0)
+            if (code === 2)
                 root.count = 0;
+            else if (code !== 0)
+                retry.start();
         }
+    }
+
+    Timer {
+        id: retry
+        interval: 300 * 1000
+        onTriggered: root.refresh()
     }
 
     // Le terminal est lancé avec attente (`--wait` de gnome-terminal) : sa fin déclenche le nouveau comptage.
