@@ -19,11 +19,6 @@ Variants {
 
         screen: modelData
         WlrLayershell.namespace: "quickshell-bar"
-        // Clavier « à la demande » seulement pendant le survol de l'horloge ou l'épinglage du calendrier (CalendarPopup.qml) : le
-        // clic qui épingle donne alors le focus à la barre, sans le prendre aux fenêtres le reste du temps.
-        readonly property string screenName: modelData?.name ?? ""
-        WlrLayershell.keyboardFocus: screenName !== "" && BarState.keyboardClaims.some(c => c.screen === screenName)
-            ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
         anchors {
             top: true
             left: true

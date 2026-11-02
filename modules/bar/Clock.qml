@@ -7,7 +7,7 @@ import qs.services
 // l'icône et un padding de module avant le calendrier, comme les pilules système et réseau : ta demande du 2026-10-20).
 // Texte en Inter ; horloge en Hack Nerd Font, calendrier en Font Awesome 7 (THEME.md § 2).
 // Largeur fixe et minimale (ta demande du 2026-10-20) : l'heure et la date prennent la largeur de la plus large de leurs valeurs.
-// Locale et fuseau : ceux du système. Survol : aperçu du calendrier ; clic : calendrier épinglé (ARCHITECTURE § 8.3).
+// Locale et fuseau : ceux du système. Survol : aperçu du calendrier ; clic : calendrier épinglé (CalendarPanel.qml, comme le tray).
 // Survol ou calendrier épinglé : contrastes inversés, fond `yellow` et texte `mantle`, comme le bouton Arch (ta demande du 2026-10-21).
 InfoModule {
     id: root
@@ -31,22 +31,16 @@ InfoModule {
         precision: SystemClock.Minutes
     }
 
-    // Calendrier épinglé : fermé dès l'appui (même long ou glissé) ; sinon épinglé au clic.
-    TapHandler {
-        property bool closedOnPress: false
-        onPressedChanged: {
-            if (!pressed)
-                return;
-            closedOnPress = calendar.pinned;
-            if (closedOnPress)
-                calendar.toggle();
-        }
-        onTapped: if (!closedOnPress) calendar.toggle()
+    PreviewArea {
+        id: area
+        button: root
+        panel: calendar
+        panelButtons: Qt.LeftButton
+        onPreviewRequested: calendar.preview(root, Qt.LeftButton)
+        onToggleRequested: calendar.toggle(root, Qt.LeftButton)
     }
 
-    CalendarPopup {
+    CalendarPanel {
         id: calendar
-        anchorItem: root
-        hovered: root.hovered
     }
 }

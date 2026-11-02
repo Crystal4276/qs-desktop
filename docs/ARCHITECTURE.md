@@ -329,28 +329,12 @@ Inventaire et licences : `assets/fonts/README.md`. Total 5,7 Mo.
 
 Décision : le tooltip calendrier de l'horloge devient une **fenêtre Quickshell** (popup soignée, aux couleurs de la charte), en phase 4.
 C'est une évolution assumée de la parité : même contenu (mois en cours, aujourd'hui mis en évidence), présentation plus riche.
-Ouverture — **tranché le 2026-10-16 : survol + clic**. Le survol montre le mois en cours et se ferme quand le pointeur quitte l'horloge ;
-un clic l'épingle (navigation : flèches, molette, clavier ←/→ ; clic sur le titre : mois en cours). Fermeture de l'épinglé (ta demande) :
-Échap ; clic n'importe où ailleurs, **qui atteint aussi ce qui est dessous** (fenêtre, module) ; pointeur hors du calendrier et de l'horloge pendant 2 s (aussi quand le survol d'une fenêtre la
-focalise : `focus_follows_mouse` ; le calendrier se fermait sinon dès la sortie du pointeur, corrigé le 2026-10-21).
+Comportement — **depuis le 2026-11-02, le calendrier est une carte comme les autres** (`CalendarPanel.qml`, sur `Panel.qml` ; ta demande : cartes homogènes) : aperçu du mois en
+cours au survol de l'horloge, gardé sur le calendrier (300 ms de passage) ; un clic sur l'horloge ou dans l'aperçu l'épingle (navigation : flèches, molette, clavier ←/→ ; clic sur le
+titre : mois en cours). Fermeture de l'épinglé : Échap, clic sur l'horloge, à côté, sur une barre ou sur un autre écran, pointeur dehors pendant 2 s.
 
-Mise en œuvre (Sway 1.12, code source lu) :
-- le calendrier est un `PopupWindow` attaché à l'horloge, sans `grabFocus` (Sway ne ferme pas un tel popup au clic extérieur et il bloque le clic sur l'horloge) ;
-- pendant le survol de l'horloge, sa barre accepte le clavier « à la demande » ; le clic qui épingle lui donne donc le focus (Échap, ←/→).
-  Un clic sur une fenêtre le lui reprend → fermeture. Seul un clic donne durablement le focus à une surface « à la demande » :
-  Sway le lui retire à chaque réarrangement des couches (`arrange_layers`), d'où l'échec des variantes avec une surface dédiée ;
-- un appui sur une barre (n'importe quel écran) ferme le calendrier puis est transmis au module (`BarState.closePopups`, appui non accepté) ;
-- un clic dans le calendrier, que Sway traite comme un clic sur l'espace de travail, retire aussi le focus à la barre : il ne ferme pas ;
-  ensuite, c'est l'événement IPC « une fenêtre reçoit le focus » (`Compositor.windowFocused`, filtré sur `focused` : Sway l'envoie aussi à tort
-  lors d'un clic sur un popup) qui ferme au clic sur une fenêtre ;
-- à la fermeture, la barre repasse sans clavier : Sway rend le focus à la fenêtre qui l'avait.
-Limites : après un clic dans le calendrier, Échap ne marche plus (focus perdu) ; la fermeture automatique (2 s) s'en charge.
-Clic sur le fond d'écran : `swaybg` déclare une zone d'entrée vide (code lu) ; le clic atteint l'espace de travail, Sway le focalise,
-la barre perd le clavier et le calendrier se ferme (vérifié sur DP-2 et DP-1). Seule exception : juste après un clic dans le calendrier,
-le focus est déjà sur l'espace de travail et un clic sur le fond ne change rien → la fermeture automatique s'en charge.
-**Décidé le 2026-10-16** : pas d'ajout provisoire (une couche au-dessus de `swaybg` a été essayée puis retirée). En **phase 8b**, le fond
-d'écran natif pourra recevoir ce clic lui-même : fermer le calendrier (`BarState.closePopups()`) et focaliser l'espace de l'écran, comme
-`swaybg` le permet aujourd'hui (WALLPAPERS.md).
+Remplace le choix du 2026-10-16 : **le clic extérieur n'atteint plus ce qui est dessous**, comme pour toutes les cartes. L'ancien popup attaché à la barre le laissait passer, mais Sway ne
+signale pas un tel clic : clavier emprunté à la barre (perdu après un clic dans le calendrier), fermeture devinée d'après le focus, clic sur une fenêtre sans effet immédiat.
 
 **Tooltips** (décision du 2026-10-16) : aucun tooltip dans la barre Quickshell (`INVENTORY.md` § 1).
 
