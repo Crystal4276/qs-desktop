@@ -11,13 +11,17 @@ Item {
     required property var output
     required property var shown
 
+    // Échelle réelle de la sortie (1,5), pas `Screen.devicePixelRatio`, entier arrondi au-dessus (2) sous Wayland : l'image serait
+    // décodée en 5120×2880 pour un écran 3840×2160 (59 Mo au lieu de 33, mesuré avec heaptrack).
+    readonly property real pixelRatio: output?.scale ?? 1
+
     Image {
         anchors.fill: parent
         visible: root.shown?.kind === "image"
         // Pas de source avant la taille finale : sinon une première lecture à la taille du fichier (sourceSize nulle), puis une autre.
         source: visible && width > 0 && height > 0 ? root.shown.source : ""
         fillMode: Image.PreserveAspectCrop
-        sourceSize: Qt.size(Math.ceil(width * Screen.devicePixelRatio), Math.ceil(height * Screen.devicePixelRatio))
+        sourceSize: Qt.size(Math.ceil(width * root.pixelRatio), Math.ceil(height * root.pixelRatio))
         asynchronous: true
         retainWhileLoading: true
         cache: false
@@ -44,7 +48,7 @@ Item {
         // Panorama mesuré par le service (le précédent tant que le nouveau n'est pas mesuré) et taille de son fichier.
         readonly property string source: visible && b.height > 0 ? Wallpapers.panorama.source : ""
         readonly property size natural: Wallpapers.panorama.size
-        readonly property real dpr: Screen.devicePixelRatio
+        readonly property real dpr: root.pixelRatio
         readonly property real ratio: natural.height > 0 ? natural.width / natural.height : 0
         readonly property bool wide: ratio > 0 && b.width / b.height > ratio
         // Image entière telle qu'affichée (logique) : elle couvre l'ensemble des écrans, centrée ; position relative à cet écran.
