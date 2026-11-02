@@ -42,6 +42,7 @@ qs_pid=""
 bus_pid=""
 
 cleanup() {
+    local status=$?
     set +e
     # Tout le groupe de l'instance : Quickshell, son bus privé et leurs enfants (sinon orphelins : vu, un bus et un
     # `gdbus monitor` sur le vrai bus système par passage).
@@ -54,6 +55,8 @@ cleanup() {
     else
         rm -rf -- "$work"
     fi
+    # Arrêt avant la fin (session ou instance qui ne démarre pas) : pas de faux « 0 échec ».
+    [[ $status -eq 0 ]] || { echo "--- test interrompu (code $status)"; exit "$status"; }
     echo "--- $failures échec(s)"
     [[ $failures -eq 0 ]] || exit 1
 }
@@ -73,6 +76,7 @@ if [[ "$compositor" == sway ]]; then
     c_focus_output() { swaymsg "focus output $1" >/dev/null; }
     c_open_window() { swaymsg "workspace number $1; exec env GDK_BACKEND=wayland zenity --info --title=qs-test-$1 --text=$1" >/dev/null; }
     c_move_window() { swaymsg "[title=\"^qs-test-$1\$\"] move container to workspace number $2" >/dev/null; }   # le focus ne suit pas
+    c_move_focused_window_following() { swaymsg "move container to workspace number $1; workspace number $1" >/dev/null; }
     c_move_focused_ws() { swaymsg "move workspace to output $1" >/dev/null; }
     c_move_ws() { swaymsg "[workspace=\"^$1\$\"] move workspace to output $2" >/dev/null; }
     c_disable() { swaymsg output "$1" disable >/dev/null; }
@@ -101,6 +105,7 @@ else
         dsp "hl.dsp.exec_cmd(\"env GDK_BACKEND=wayland zenity --info --title=qs-test-$1 --text=$1\")"
     }
     c_move_window() { dsp "hl.dsp.window.move({ window = \"title:^qs-test-$1\$\", workspace = $2, follow = false })"; }
+    c_move_focused_window_following() { dsp "hl.dsp.window.move({ workspace = $1 })"; }   # ton `$mod+Ctrl+N`
     c_move_focused_ws() { dsp "hl.dsp.workspace.move({ monitor = \"$1\" })"; }
     c_move_ws() { dsp "hl.dsp.workspace.move({ workspace = $1, monitor = \"$2\" })"; }
     c_disable() { h eval "hl.monitor({ output = \"$1\", disabled = true })" >/dev/null; }
@@ -474,6 +479,65 @@ prev_visible="$(visible_map)"
 seen_views[$(layout_key)]="$prev_visible"
 check "remise en état" "$initial_expected"
 
+# Fenêtre envoyée vers un espace inexistant d'un autre écran, le focus la suit (`$mod+Ctrl+N` sous Hyprland) : l'espace rejoint son
+# écran, focalisé avec la fenêtre ; l'écran de départ retrouve un espace de son bloc.
+c_focus_output "$left"; c_goto "${left_block[2]}"
+sleep 0.5
+c_move_focused_window_following 3
+check "fenêtre ${left_block[2]} envoyée vers 3 (le focus suit)" "$initial_expected" 3 skip
+c_goto "${left_block[2]}"
+c_move_window "${left_block[2]}" "${left_block[2]}"
+c_goto "$initial_focus"
+sleep 1
+prev_visible="$(visible_map)"
+seen_views[$(layout_key)]="$prev_visible"
+check "remise en état" "$initial_expected"
+
+# Aucun écran actif (capot fermé sans écran externe) : Quickshell ne fait rien et l'instance survit ; tout revient au rallumage.
+reference_visible="$(visible_map)"
+placed_before="$(placement_count)"
+c_disable "$left"; c_disable "$right"; c_disable "$center"
+sleep 1.5
+blocks_none="$(qs ipc --pid "$qs_pid" call outputs blocks)"
+placed_after="$(placement_count)"
+if [[ "$blocks_none" == "{}" && "$placed_after" == "$placed_before" ]]; then
+    echo "OK    aucun écran actif : répartition vide, aucune commande"
+else
+    echo "ÉCHEC aucun écran actif : $blocks_none, $((placed_after - placed_before)) commande(s)"
+    failures=$((failures + 1))
+fi
+c_enable "$center"; c_enable "$left"; c_enable "$right"
+expect_active "$(printf '%s\n' "${outputs[@]}" | sort | xargs)"
+check "écrans rallumés après extinction totale" "$initial_expected"
+if [[ "$(visible_map)" == "$reference_visible" ]]; then
+    echo "OK    vue retrouvée après extinction totale"
+else
+    echo "ÉCHEC vue après extinction totale : $(visible_map) au lieu de $reference_visible"
+    failures=$((failures + 1))
+fi
+
+# Écran focalisé débranché avec une fenêtre (plantage de Quickshell sous Sway, 2026-11-02 : pointeur vers l'écran disparu relu).
+h3="$(add_output)"
+sleep 1
+check "+ $h3 (écran à débrancher)" "$(expected_rule)"
+h3_ws="$(jq -r --arg o "$h3" '[to_entries[] | select(.value == $o) | .key | tonumber] | min' <<<"$(expected_rule)")"
+c_focus_output "$h3"; c_goto "$h3_ws"
+c_move_window "$h3_ws" "$h3_ws"
+sleep 1
+c_unplug "$h3"
+check "$h3 focalisé débranché, espace $h3_ws conservé" "$initial_expected" "$h3_ws" skip
+if kill -0 "$qs_pid" 2>/dev/null; then
+    echo "OK    Quickshell toujours là"
+else
+    echo "ÉCHEC Quickshell a planté"
+    failures=$((failures + 1))
+fi
+c_goto "$initial_focus"
+sleep 1
+prev_visible="$(visible_map)"
+seen_views[$(layout_key)]="$prev_visible"
+check "remise en état" "$initial_expected"
+
 if [[ "$(windows)" == "$initial_windows" ]]; then
     echo "OK    fenêtres : $(jq length <<<"$initial_windows"), toutes dans leur espace d'origine"
 else
@@ -485,7 +549,7 @@ fi
 
 # Pas de boucle : une répartition par changement d'écrans, plus une correction par espace créé ailleurs.
 placements="$(placement_count)"
-if [[ "$placements" -le 30 ]]; then
+if [[ "$placements" -le 40 ]]; then
     echo "OK    commandes de placement envoyées : $placements"
 else
     echo "ÉCHEC commandes de placement : $placements (boucle ?)"
