@@ -432,7 +432,9 @@ Proposition de placement dans les phases (CLAUDE.md n'est pas modifié sans ton 
   dans ta config ; 21 ms du clic au changement d'espace).
 - **Panneaux du tray** (corrigé le 2026-10-20) : surfaces Overlay à clavier exclusif (`OverlayPopup`, comme le panneau de réglages et
   le lanceur), et non plus des popups « grab » : sous Sway, un popup `grabFocus` ouvert depuis une barre ne reçoit jamais le clavier
-  (ni saisie, ni Échap). Fermés par un appui à côté du cadre (non transmis), sur une barre ou sur un autre écran, ou par Échap.
+  (ni saisie, ni Échap). Fermés par un appui à côté du cadre (non transmis), sur une barre ou sur un autre écran, ou par Échap ;
+  mot de passe en cours de saisie (Wi-Fi, disques) : pas par un clic sur un autre écran. `OutsideClick` créé après l'affichage du popup
+  (`PERFORMANCE.md`) ; `on_demand` sans surfaces essayé et écarté le 2026-11-02 (Sway reprend aussitôt le clavier).
 - **Réseau** (R5) : `Quickshell.Networking` (filaire, Wi-Fi : interrupteur, réseaux, mot de passe, oubli) ; édition dans `nm-connection-editor`.
   Depuis le 2026-10-19 (ta demande), deux icônes : **réseau** (filaire et réseaux privés ; visible si un câble est branché ou
   sans Wi-Fi) et **Wi-Fi** (`WifiPanel.qml`). Le Wi-Fi s'inspire de GNOME (niveaux de signal et seuils 20 / 40 / 50 / 80 % de
@@ -632,8 +634,8 @@ Voir `WALLPAPERS.md` § « Mise en œuvre ». Remplace `swaybg` (Sway) et le fon
 
 - `services/Polkit.qml` (`PolkitAgent`, enregistrement, demandes) + `modules/polkit/PolkitDialog.qml` : fenêtre au style des
   panneaux (`OverlayPopup`, centrée sur l'écran focalisé, clavier exclusif) : icône et message de l'application, champ (masqué
-  si polkit le demande), message d'erreur, Cancel / Authenticate. Entrée valide ; Échap, un clic à côté, sur une barre ou sur un
-  autre écran annulent.
+  si polkit le demande), message d'erreur, Cancel / Authenticate. Entrée valide ; Échap, un clic à côté ou sur une barre annulent ; pas un clic
+  sur un autre écran.
 - Un seul agent par session : tant que `polkit-gnome` tourne (lancé par Sway jusqu'à la bascule), l'enregistrement de Quickshell
   échoue (avertissement dans le journal, nouvel essai toutes les 5 min). À la phase 10, `polkit-gnome` sort de l'autostart.
 - Identité : affichée (« Password for … ») seulement si ce n'est pas toi (plusieurs administrateurs : polkit propose le premier ;

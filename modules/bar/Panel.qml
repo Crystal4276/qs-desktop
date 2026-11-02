@@ -104,7 +104,8 @@ OverlayPopup {
     WlrLayershell.namespace: "quickshell-panel"
     WlrLayershell.keyboardFocus: previewing ? WlrKeyboardFocus.None : WlrKeyboardFocus.Exclusive
     mask: previewing ? previewInput : null
-    catchOutside: !previewing
+    // Mot de passe en cours de saisie : un clic sur un autre écran ne ferme pas le panneau (texte tapé gardé).
+    catchOutside: !previewing && frame.focusedItem?.echoMode !== TextInput.Password
     frameItem: frame
 
     Region {

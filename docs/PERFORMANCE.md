@@ -15,7 +15,7 @@ Instance neuve, 25 à 30 s après le lancement, relevé repos sur 30 à 60 s (`s
 | CPU au repos, processus enfants | 0,6 à 1,9 % | 0,5 % | |
 | Temps QML au repos (sur ~53 s) | 556 ms | 138 ms (avant retrait du titre) | −75 % |
 | Temps QML, 15 premières secondes | 776 ms | 548 ms | −29 % |
-| Ouverture du lanceur | 239 ms | 239 ms | voir « Coût d'une ouverture » |
+| Ouverture du lanceur | 239 ms | 131 ms | −45 % |
 
 Ouverture : de `qs ipc call` au premier pixel changé à l'écran, appel IPC (26 ms) et capture `grim` (25 ms) compris ; médiane sur 25 ouvertures.
 
@@ -58,14 +58,11 @@ QML et les entrées, et les animations suivent un minuteur de 16 ms au lieu de l
 ### Coût d'une ouverture
 
 Quickshell détruit la fenêtre Qt quand elle est masquée. Par fil, chaque fenêtre affichée crée donc un thread et un contexte graphique (~43 ms sur cette carte, à la suite).
-Or un popup en affiche trois : le sien et deux `OutsideClick` sur les autres écrans, créés avant lui (trace `qt.scenegraph.renderloop`). Médianes du lanceur :
+Un popup en affiche trois : le sien et deux `OutsideClick` sur les autres écrans, qui passaient avant lui (trace `qt.scenegraph.renderloop`). Ces surfaces sont
+désormais créées une fois le popup affiché et le clavier obtenu : lanceur à **131 ms** sur le bureau réel (médiane sur 25 ; appel IPC et capture inclus, 51 ms).
 
-| | Par fil | `basic` |
-|---|---|---|
-| Normal | 239 ms | 95 ms |
-| Sans `OutsideClick` | 128 ms | 76 ms |
-
-Une ouverture isolée à ~3 s apparaît dans les deux modes (1 sur ~50) ; cause inconnue.
+Essayé et écarté le même jour : clavier `on_demand` et fermeture à la perte du clavier, sans aucune surface. Sur le bureau réel, Sway reprend le clavier juste après le
+passage en `on_demand` (1,8 ms ; lanceur, cartes du tray et moniteur se referment aussitôt). Le banc isolé ne le reproduisait pas.
 
 ## Corrections du code
 
@@ -89,16 +86,17 @@ Essayé puis annulé : `nvidia-smi -l 5` résident au lieu d'un lancement toutes
 
 Ouverture à froid contre à chaud en boucle `basic` : lanceur 110 / ~85 ms, menu 117 / ~95 ms, réglages 92 / ~90 ms : un différé coûte environ 20 ms à la première ouverture.
 
-## Pentes mémoire (banc isolé, rendu logiciel)
+## Pentes mémoire (banc isolé, rendu logiciel, mode par fil)
 
-Départ 343 Mo → 50 ouvertures du lanceur 433 Mo → 50 des réglages 352 Mo → 200 notifications 359 Mo → capture 384 Mo → verrouillage 531 Mo.
-Pas de fuite visible sur les notifications ni sur les ouvertures répétées. Le verrouillage (flou du fond, un écran en logiciel) coûte ~150 Mo sur ce banc, à
-mesurer sur le vrai GPU. Pas encore relevé : la pente sur plusieurs heures de l'instance réelle.
+Départ 547 Mo → 50 ouvertures du lanceur 625 → 50 des réglages 656 → 100 notifications 657 → 200 notifications 671 → capture 661 → verrouillage 830 Mo.
+Pas de conclusion sur une fuite : la hausse peut venir du premier chargement de chaque élément, et aucun plateau n'a été mesuré. Relevé fait avec `OutsideClick` absent.
+Le verrouillage coûte ~170 Mo sur ce banc (flou du fond en rendu logiciel), à mesurer sur le vrai GPU. Pas encore relevé : la pente sur plusieurs heures de l'instance réelle.
 
 ## Méthode
 
 - `scripts/perf.sh snap | idle | ab` : mémoire, VRAM, CPU, réveils ; `ab` relance avec des variables. `PERF_NO_ENV=1` lance sans `qs-env.sh`.
 - `qs -p . --debug 3768 --waitfordebug` puis `qmlprofiler --interactive --attach localhost --port 3768` : commandes `r`, `o <fichier>`, `q` (rien n'est écrit si on l'interrompt).
+- Banc isolé : exporter `I3SOCK` comme `SWAYSOCK` (`scripts/test-outputs.sh`), sinon l'instance parle au vrai Sway ; clics par un pointeur virtuel Wayland, `seat - cursor press` n'atteint pas les surfaces Qt ; et une fenêtre focalisée ne suffit pas à reproduire tout ce que fait le bureau réel : vérifier les ouvertures sur le vrai.
 - `heaptrack -o <fichier> qs -p .` puis `heaptrack_print -f <fichier>.zst`. **Il ouvre son interface à la fin et bloque tant qu'elle reste ouverte.**
 - `perf` (7.3.1 sur noyau 7.2.14) refuse d'ouvrir tout événement sur cette machine, même `perf record -- sleep` : non résolu, profil CPU natif non obtenu.
 - Non mesuré : frappe dans le lanceur (pas de moyen sûr d'injecter des touches).

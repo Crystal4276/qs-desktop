@@ -69,6 +69,7 @@ Scope {
     OverlayPopup {
         id: window
 
+        catchOutside: false   // mot de passe : un clic sur un autre écran n'annule pas la demande
         WlrLayershell.namespace: "quickshell-polkit"
         frameItem: frame
 
