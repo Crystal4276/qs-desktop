@@ -212,14 +212,15 @@ Singleton {
     }
 
     // Alimentation des écrans (veille, services/Idle.qml) : `names` vide = tous. Sway : `output X power on|off` ;
-    // Hyprland : `hl.dsp.dpms`, comme ton hypridle.
+    // Hyprland : `hl.dsp.dpms`.
     function setPower(names: var, on: bool): void {
         if (isSway) {
             I3.dispatch((names.length > 0 ? names : ["*"]).map(n => `output ${n === "*" ? "*" : `"${n}"`} power ${on ? "on" : "off"}`).join("; "));
         } else if (isHyprland) {
             const mode = on ? "on" : "off";
-            hyprlandBatch(names.length > 0 ? names.map(n => `hl.dsp.dpms({ mode = "${mode}", monitor = "${n}" })`)
-                : [`hl.dsp.dpms({ mode = "${mode}" })`]);
+            // `action` : avec un autre nom d'argument (`mode`, dans ton hypridle.conf), Hyprland bascule sans le dire (0.57, vérifié).
+            hyprlandBatch(names.length > 0 ? names.map(n => `hl.dsp.dpms({ action = "${mode}", monitor = "${n}" })`)
+                : [`hl.dsp.dpms({ action = "${mode}" })`]);
         }
     }
 
