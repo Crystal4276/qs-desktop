@@ -105,8 +105,8 @@ PanelWindow {
                 return;
             }
             BarState.setPopupOpen(root, root.visible);
-            if (!root.visible)
-                root.hadKeyboard = false;
+            // Rouvert avant que le compositeur ait retiré le clavier : déjà actif, aucun changement à attendre.
+            root.hadKeyboard = root.visible && keyboardProbe.active;
             // Surface fermée par le compositeur (écran retiré) : Quickshell la masque sans passer par close().
             if (!root.visible && !root.hiding)
                 root.emitClosing(true);
@@ -145,8 +145,10 @@ PanelWindow {
     // Surfaces créées une fois le popup affiché, pas avant lui : chacune crée un thread et un contexte graphique (~43 ms, à la suite),
     // l'ouverture passait de ~125 à ~240 ms (docs/PERFORMANCE.md).
     Item {
-        Window.onActiveChanged: {
-            if (Window.active)
+        id: keyboardProbe
+        readonly property bool active: Window.active
+        onActiveChanged: {
+            if (active)
                 root.hadKeyboard = true;
         }
     }

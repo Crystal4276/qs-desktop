@@ -38,7 +38,11 @@ Panel {
         }
     }
 
-    Component.onDestruction: Vpn.panelOpen = false
+    // Seulement s'il était ouvert : celui d'une autre barre peut l'être.
+    Component.onDestruction: {
+        if (visible)
+            Vpn.panelOpen = false;
+    }
 
     onVisibleChanged: {
         Vpn.panelOpen = visible;

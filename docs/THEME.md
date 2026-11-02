@@ -292,8 +292,8 @@ Remplace le tooltip calendrier. Aucune valeur nouvelle : tout est repris de la b
 
 | Élément | Valeur | Origine |
 |---|---|---|
-| Position | centré sous l'horloge, 10 px sous la pilule (à la hauteur du haut des fenêtres) | marge haute de la barre / `gaps inner 10` |
-| Cadre | fond `mantle`, bordure 1 px `overlay0`, rayon 20 px, padding 15 px, espacement 10 px | pilules ; padding du lanceur |
+| Position, cadre, fermeture | ceux des panneaux (§ « Panneaux ») : carte comme les autres, largeur selon son contenu | ta demande du 2026-11-02 |
+| Espacement | 10 px | padding du lanceur |
 | Titre | `2026 October` (format du tooltip Waybar), Inter 26 px, `yellow` | texte de la barre, couleur de l'horloge |
 | Jours de la semaine | 2 lettres selon la locale (`Su Mo …`), Inter 20 px, `subtext0` | taille du lanceur |
 | Jours | Inter 20 px, `text` ; mois voisins `surface2` ; cases de 40 px | taille min. du bouton Arch |
