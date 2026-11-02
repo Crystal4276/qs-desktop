@@ -2037,7 +2037,7 @@ Scripts testés sur le banc (`takeover.sh` compris, garde-fou : abandon si un ou
 Hyprland 0.57.0, Quickshell 0.3.2. Plan validé par toi : `~/.claude/plans/il-faut-peut-etre-que-imperative-flame.md`.
 
 Tes décisions : **molette active partout** (écart à Waybar, qui la coupait sous Hyprland) ; banc lancé librement ; prise en main tôt.
-Décidé par moi, à reconsidérer si tes clics échouent : **pas de `HyprlandFocusGrab`** (`OutsideClick` commun aux deux compositeurs).
+Décidé par moi : **pas de `HyprlandFocusGrab`** (`OutsideClick` commun aux deux compositeurs, validé par de vrais clics).
 
 Produit :
 - `scripts/test-outputs.sh [sway|hyprland]` : mêmes 36 contrôles sur les deux. Hyprland imbriqué dans ta session (sous Nvidia, le mode headless n'alloue rien) : une fenêtre s'ouvre le temps du test. Nouveaux scénarios : fenêtre envoyée avec focus (`$mod+Ctrl+N`), aucun écran actif, écran focalisé débranché.
@@ -2060,15 +2060,22 @@ Vérifié sur banc seulement : répartition dynamique à 1, 2, 4 et 5 écrans (�
 Écart à trancher en phase 10 : fondu des couches hérité de tes animations `layers*` (`BACKLOG.md`).
 Limite signalée : mémoire libérée réutilisée dans l'IPC Hyprland de Quickshell ou Qt, sans effet observé hors `junk:free` (`BACKLOG.md`).
 
-**À tester à la main** (session en prise en main) :
-- clics : espaces de chaque barre et molette ; fermeture d'un panneau par clic à côté, sur une barre, **sur un autre écran** ; Échap, focus rendu ; calendrier (survol, épinglage) ;
-- tray : menus, clic droit, carte Steam (`Toplevel.activate` avec `focus_on_activate = false`) ;
-- notifications : clic qui ouvre l'application, lien d'une web app (ton vrai Chromium) ;
-- capture : curseur absent de l'image ;
-- HDR à l'œil : `$mod+d` sur les LG (non essayé, change le mode de tes écrans) ;
-- verrouillage, polkit réel ; veille d'écran (5 min) et rallumage d'un coup : l'ancien délai de 3 s du Dell contournait un bogue de Hyprland ;
-- veille du PC et réveil : disposition, VRR gardé ;
-- vrai câble débranché et rebranché.
+Deuxième passe, sans toi (2026-11-02, ta demande) : Hyprland imbriqué réglé comme ta config, pointeur et clavier virtuels (`pywayland`, outil hors dépôt), application factice du tray.
+- Validés par de vrais clics et touches : espaces des 3 barres et molette ; panneaux fermés par clic à côté, sur une barre, **sur un autre écran**, Échap, focus rendu (`HyprlandFocusGrab` inutile, écarté) ; lanceur (recherche, Entrée lance, Échap) ; calendrier (survol, épinglage) ; tray (gauche, droit, milieu, molette, clavier, entrée de menu) ; chemin de la carte Steam (espace masqué affiché, pointeur immobile) ; notifications (boutons d'action, clic corps et milieu, pause au survol, remplacement, critique, repli d'écran, cloche) ; capture (zone à la souris, fenêtre au clic) ; verrouillage sur tous les écrans, clavier capté, une tentative erronée refusée ; veille, inhibition « Keep Screen On », `hyprctl reload` écrans éteints ; `hl.dsp.exit`.
+- **Bogue majeur corrigé : réveil des écrans.** `hl.dsp.dpms({ mode = … })` bascule au lieu d'appliquer (l'argument est `action`) : le mouvement de souris rallumait les écrans et le « on » de Quickshell les rééteignait. Ton `hypridle.conf` écrit aussi `mode` : piste pour le « bogue » que le délai de 3 s du Dell contournait. Avant et après : rallumage bloqué 6 s (délai du banc), puis 0,04 s.
+- **Bogue corrigé : captures agrandies et floues en scale 1.5** (450 px sortis en 675) : `grabToImage` multiplie sa taille cible par l'échelle. Identique à `grim` sur banc, en scale 1.5 et 1. Sous Sway : même code, non vérifié (ce banc ne produit aucune capture).
+- Curseur absent de l'image : validé sur ton écran réel (curseur matériel). Visible sur le banc (curseur logiciel) : cas d'une machine sans curseur matériel, `BACKLOG.md`.
+- Non cliquée exprès : rangée Logout / Reboot / Power du panneau, le banc lancerait une vraie action.
+- Trace : une tentative de mot de passe erronée dans `faillock` pour ton compte (effacée à ta prochaine connexion réussie).
+
+**À tester à la main :**
+1. HDR à l'œil : `$mod+d` sur les LG, puis de nouveau.
+2. Déverrouillage avec ton mot de passe (`$mod+Escape`, cadenas) et polkit réel (ex. `pkexec true`).
+3. Veille d'écran (5 min sans toucher à rien), retour à la souris : tes 3 écrans rallumés d'un coup, sans clignotement.
+4. Veille du PC et réveil : disposition, barres, puis relancer `scripts/takeover.sh`.
+5. Vrai câble débranché et rebranché.
+6. Applications réelles : clic sur une entrée de la carte Steam, clic sur une notification Discord, lien d'une web app.
+7. Prochaine session Sway : une capture sur un LG, nette et aux bonnes dimensions.
 
 Attention, jusqu'à la phase 10 : `hyprctl reload`, donc **chaque réveil**, remet les raccourcis d'origine (Rofi, hyprshot). Relancer `scripts/takeover.sh`. Trois notifications « Test Hyprland » restent dans ton historique.
 

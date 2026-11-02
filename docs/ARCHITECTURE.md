@@ -851,7 +851,7 @@ Légende : **utilisé** (déjà dans le code), **prévu** (phase indiquée), **a
 | | `Socket`, `SocketServer`, `DataStream`, `DataStreamParser` | **écarté** : les raccourcis passent par `IpcHandler` |
 | `Quickshell.I3` | `I3`, `I3IpcListener`, `I3Monitor`, `I3Workspace` | **utilisé** (Sway) |
 | `Quickshell.Hyprland` | `Hyprland`, `HyprlandMonitor`, `HyprlandWorkspace`, `HyprlandEvent` | **utilisé** (vérifié en phase 9, Hyprland 0.57) |
-| | `HyprlandFocusGrab` | **écarté a priori** (phase 9) : `OutsideClick` et les popups sont communs aux deux compositeurs, un seul mécanisme ; à reconsidérer seulement si tes tests de clics sous Hyprland échouent |
+| | `HyprlandFocusGrab` | **écarté** (phase 9) : `OutsideClick` et les popups, communs aux deux compositeurs, fonctionnent sous Hyprland (vrais clics sur banc, y compris sur un autre écran) |
 | | `HyprlandToplevel`, `HyprlandWindow` | au besoin, via `Toplevel` (ci-dessous) |
 | | `GlobalShortcut` | **écarté** : raccourcis par `qs ipc` sur les deux compositeurs (un seul mécanisme) |
 | `Quickshell.WindowManager` | `WindowManager`, `Windowset`, `WindowsetProjection`, `ScreenProjection` | **évalué, en réserve** (sonde sous Sway, 2026-10-16) : le protocole commun `ext-workspace` déplace et active bien un espace, mais n'indique ni l'espace focalisé, ni l'état vide, ni ne crée d'espace (pas d'API de création dans Quickshell), et son déplacement ne garde pas le focus comme la commande Sway sur laquelle la répartition validée est réglée. Migrer obligerait à mélanger deux sources pour le même état : pas de gain net. Gardé pour Hyprland si le placement en Lua échoue pendant la session de test, ou pour une config Hyprland non-Lua. Note : la liste n'est remplie qu'après le premier accès (initialisation paresseuse). |
