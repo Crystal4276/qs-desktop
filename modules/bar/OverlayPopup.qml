@@ -155,7 +155,7 @@ PanelWindow {
     }
     Timer {
         interval: 300
-        running: root.visible && !root.outsideReady
+        running: root.visible && root.catchOutside && !root.outsideReady   // (aperçu épinglé : le délai part du clic)
         onTriggered: root.outsideReady = true
     }
 

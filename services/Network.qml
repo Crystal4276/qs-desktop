@@ -17,7 +17,7 @@ Singleton {
     // Détails nmcli des cartes Wi-Fi et filaire : toutes les 5 s.
     readonly property int detailsInterval: 5000
     property string interfaceName: ""
-    property string interfaceNames: ""   // toutes les interfaces ; un changement relit le statut NordVPN (Vpn.qml)
+    property string interfaceNames: ""   // toutes les interfaces ; celle de NordVPN fait relire son statut (Vpn.qml)
     property real downBytesPerSecond: 0
     property real upBytesPerSecond: 0
     property var previous: null

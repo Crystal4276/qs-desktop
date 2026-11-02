@@ -353,7 +353,7 @@ Singleton {
     readonly property bool settling: available && !["Connected", "Disconnected", "Paused"].includes(state)
 
     // Statut toutes les 5 s si le panneau est ouvert ou l'état transitoire ; sinon toutes les 30 s (`nordvpn status` à chaque fois),
-    // et aussitôt quand une interface réseau apparaît ou disparaît (Network.qml, 2,5 s au plus) : l'icône suit une connexion lancée
+    // et aussitôt quand l'interface NordVPN apparaît ou disparaît (Network.qml, 2,5 s au plus) : l'icône suit une connexion lancée
     // en ligne de commande. Module masqué (démon pas encore prêt, compte connecté plus tard) : nouvel essai toutes les 30 s.
     Timer {
         interval: root.panelOpen || root.settling ? 5000 : 30000
@@ -361,12 +361,10 @@ Singleton {
         repeat: true
         onTriggered: root.refresh()
     }
-    Connections {
-        target: Network
-        function onInterfaceNamesChanged() {
-            root.refresh();
-            interfaceFollowUp.restart();
-        }
+    readonly property bool tunnelUp: /\bnord(lynx|tun)\b/.test(Network.interfaceNames)
+    onTunnelUpChanged: {
+        refresh();
+        interfaceFollowUp.restart();
     }
     // Interface changée alors que le démon annonce encore l'ancien état : relu une fois de plus, sans attendre les 30 s.
     Timer {

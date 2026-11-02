@@ -43,6 +43,7 @@ Panel {
         Keys.onRightPressed: root.monthOffset++
 
         WheelSteps {
+            parent: root.frameItem   // toute la carte, marges comprises
             enabled: root.pinned
             onStep: direction => root.monthOffset -= direction
         }
