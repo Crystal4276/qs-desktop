@@ -19,7 +19,7 @@ Singleton {
     property var windows: []
     // Curseur masqué : les images figées peuvent être prises (voir pointerEntered).
     property bool cursorHidden: false
-    // Curseur à masquer par l'outil (curseur logiciel possible) : Sway. Hyprland : curseur matériel, exclu par `paintCursor: false`.
+    // Curseur à masquer par l'outil (curseur logiciel possible) : Sway. Hyprland : curseur matériel, exclu par `paintCursor: false` (logiciel : BACKLOG).
     readonly property bool hidesCursor: !Compositor.isHyprland
     readonly property string pictures: Places.pictures !== "" ? Places.pictures : `${Quickshell.env("HOME")}/Pictures`
 
