@@ -126,6 +126,10 @@ Singleton {
             if (!settle.running)
                 snapshot.restart();
         }
+        function onOutputsChanging() {
+            snapshot.stop();
+            settle.restart();
+        }
     }
 
     // Anti-rebond : un branchement produit plusieurs événements, le compositeur applique ses règles d'écran entre-temps.
