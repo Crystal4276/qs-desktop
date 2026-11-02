@@ -2064,8 +2064,16 @@ de phase).
      (« Unable to assign [undefined] to bool ») au rechargement ;
    - phase 10 : `mouse_warping` rétabli à `output` après le focus de Steam (défaut de Sway) ; règle Sway de Discord à viser
      `chrome-discord.com__channels_@me-Default` ; historique du lanceur (ci-dessous) ;
-   - plantages de Quickshell après un rechargement à chaud (`lookupSingletonProperty`, vus à 00 h 46, 01 h 41, 07 h 17) : à
-     étudier, signalement amont à Quickshell seulement avec ton accord (BACKLOG).
+   - plantages `lookupSingletonProperty` (11 rapports, 28–31 octobre) : **cause trouvée et corrigée le 2026-11-02**, sans lien avec
+     le rechargement à chaud. Quickshell 0.3.2 ne remet pas `I3.focusedMonitor` à zéro quand l'écran focalisé disparaît avec un
+     espace qui a des fenêtres (`bFocusedMonitor` écrit sans suivi de `destroyed`). `Compositor.focusedOutput` relisait ce pointeur
+     dès qu'aucun espace n'était focalisé, c'est-à-dire pendant le placement qui suit. Plantage aléatoire (mémoire libérée réutilisée
+     ou non) ; banc : Sway isolé, `MALLOC_CONF=junk:free`, écran focalisé retiré : même pile avant, 3 tours sans plantage après. Les
+     placements des journaux (blocs 1-5 / 6-9) montrent que DP-2 disparaissait au réveil ; `Outputs: écrans actifs` le journalise
+     désormais, à vérifier au prochain réveil. Signalement amont seulement avec ton accord (BACKLOG) ;
+   - OpenRGB (2026-11-02) : `purple.orp` n'existe plus depuis la migration d'OpenRGB 1.0 (`profiles/purple.json`), le profil échoue
+     à chaque connexion. Commande correcte : `openrgb -p purple`. Phase 10 : corriger `exec openrgb` et retirer
+     `openrgb-startup.service` (lié à SDDM, en concurrence avec l'autostart).
 6. **À tester à la main** (en attente) : blocs 1 à 3 (clé USB et clé LUKS, demande polkit réelle, liens des web apps) — voir
    leurs comptes rendus ci-dessus.
 
