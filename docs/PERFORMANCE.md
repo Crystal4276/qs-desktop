@@ -40,7 +40,7 @@ Testés un par un, contre 736 Mo :
 |---|---|---|---|
 | `MALLOC_CONF=narenas:2` | −100 Mo | = | **gardé** ; `narenas:1` n'apporte que ~5 Mo de plus |
 | `QSG_RENDER_LOOP=basic` | −126 Mo seul, −100 Mo combiné | −13 Mio | **écarté, ta décision du 2026-11-02** (voir plus bas) |
-| `__EGL_VENDOR_LIBRARY_FILENAMES` (Nvidia) | −34 Mo | = | **gardé**, seulement si le pilote Nvidia est actif |
+| `__EGL_VENDOR_LIBRARY_FILENAMES` (Nvidia) | −34 Mo | = | **gardé**, seulement si Nvidia est la seule carte de la machine |
 | `QSG_ATLAS_WIDTH/HEIGHT=1024` | −29 Mo | −14 Mio | **gardé** ; barres identiques à l'œil |
 | `QSG_TRANSIENT_IMAGES=1` | −4 Mo | = | écarté : sans effet réel |
 | `MALLOC_CONF=dirty_decay_ms…` | +3 Mo | = | écarté |
