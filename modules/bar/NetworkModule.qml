@@ -12,8 +12,8 @@ InfoModule {
     minWidth: Theme.bar.networkMinWidth
     segments: [
         [Theme.font.inlineIcons, Theme.icon.download],
-        [Theme.font.text, ` ${Network.format(Network.downBytesPerSecond)}`, Network.widestRates.map(r => ` ${r}`)],
+        [Theme.font.text, ` ${Network.format(Network.downBytesPerSecond)}`, Network.widestLabels],
         [Theme.font.inlineIcons, Theme.icon.upload, undefined, Theme.bar.modulePadding],
-        [Theme.font.text, ` ${Network.format(Network.upBytesPerSecond)}`, Network.widestRates.map(r => ` ${r}`)]
+        [Theme.font.text, ` ${Network.format(Network.upBytesPerSecond)}`, Network.widestLabels]
     ]
 }

@@ -8,6 +8,6 @@ import qs.services
 InfoModule {
     color: Theme.module.memory
     pillHighlight: Theme.module.statsHighlight
-    segments: [[Theme.font.inlineIcons, Theme.icon.memory], [Theme.font.text, ` ${SystemStats.memUsed.toFixed(0)}G`, Array.from({ length: Number(SystemStats.memTotal.toFixed(0)) + 1 }, (_, i) => ` ${i}G`)]]
+    segments: [[Theme.font.inlineIcons, Theme.icon.memory], [Theme.font.text, ` ${SystemStats.memUsed.toFixed(0)}G`, SystemStats.memoryTexts]]
     onClicked: Monitor.toggle(pillRow)
 }

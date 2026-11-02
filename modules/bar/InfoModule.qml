@@ -31,6 +31,8 @@ Item {
     // [[police, texte, valeurs?, écart?], …] ; valeurs : tous les textes que le segment peut afficher. Il prend la largeur du plus large,
     // mesurée dans sa police, et s'aligne à droite dedans : la pilule ne change jamais de taille, et n'est pas plus large que
     // nécessaire (ta demande du 2026-10-20). Écart : marge gauche du segment, en pixels.
+    // Valeurs : liste constante, lue dans un service et pas construite ici : elle n'est mesurée qu'une fois (à chaque nouvelle
+    // valeur affichée, cette mesure faisait plus de 80 % du temps QML au repos, qmlprofiler, docs/PERFORMANCE.md).
     property var segments: []
 
     signal clicked
@@ -54,11 +56,12 @@ Item {
         anchors.verticalCenter: parent.verticalCenter
         height: reference.implicitHeight
 
-        // Hauteur et ligne de base de la ligne entière (texte d'un seul tenant), que suivent les segments.
+        // Hauteur et ligne de base de la ligne entière (texte d'un seul tenant), que suivent les segments. Elles dépendent des polices,
+        // pas des valeurs : un chiffre à la place de chacune, le texte riche n'est pas remis en page à chaque valeur.
         RichLabel {
             id: reference
             visible: false
-            segments: Array.from(root.segments ?? []).map(([family, content]) => [family, content])
+            segments: Array.from(root.segments ?? []).map(([family, content, values]) => [family, values?.length ? "0" : content])
         }
 
         Repeater {
@@ -75,7 +78,23 @@ Item {
                 // Arrondi au pixel : la mesure et le texte affiché peuvent différer d'une fraction de pixel. Le dessin compte
                 // aussi : les icônes Nerd Font débordent de leur avance (jusqu'à 11 px), l'espace qui suit doit rester visible.
                 readonly property rect ink: metrics.tightBoundingRect(text)
-                width: Math.ceil(Math.max(implicitWidth, leftPadding + ink.x + ink.width, leftPadding + Math.max(0, ...Array.from(segment[2] ?? []).map(s => metrics.advanceWidth(s)))))
+                width: Math.ceil(Math.max(implicitWidth, leftPadding + ink.x + ink.width, leftPadding + reserved))
+
+                // Largeur du plus large texte de `segment[2]`, remesurée seulement si la liste ou la police change.
+                property var measuredValues: null
+                property real reserved: 0
+
+                function measure(): void {
+                    const values = segment[2] ?? null;
+                    if (values === measuredValues)
+                        return;
+                    measuredValues = values;
+                    reserved = values ? values.reduce((widest, s) => Math.max(widest, metrics.advanceWidth(s)), 0) : 0;
+                }
+
+                onSegmentChanged: measure()
+                Component.onCompleted: measure()
+
                 // Valeurs à largeur réservée : alignées à droite ; icônes : à gauche, leur débord tombe dans la largeur ajoutée.
                 horizontalAlignment: segment[2] ? Text.AlignRight : Text.AlignLeft
                 leftPadding: segment[3] ?? 0
@@ -87,6 +106,10 @@ Item {
                 FontMetrics {
                     id: metrics
                     font: label.font
+                    onFontChanged: {
+                        label.measuredValues = null;
+                        label.measure();
+                    }
                 }
             }
         }

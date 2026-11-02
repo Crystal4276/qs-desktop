@@ -28,6 +28,7 @@ Singleton {
     // Textes les plus larges que `format` peut produire, pour la largeur fixe du module : chaque chiffre répété (la largeur
     // d'un chiffre ne dépend pas de sa place), chaque forme (d.dd, dd.d, ddd), chaque préfixe jusqu'à G.
     readonly property var widestRates: [].concat(...Array.from({ length: 10 }, (_, d) => [].concat(...[`${d}.${d}${d}`, `${d}${d}.${d}`, `${d}${d}${d}`].map(n => ["", "k", "M", "G"].map(p => `${n}${p}B/s`.padStart(8))))))
+    readonly property var widestLabels: widestRates.map(r => ` ${r}`)   // avec l'espace après l'icône du module
 
     // Préfixe k / M / G… en base 1000 comme Waybar (`{bandwidthDownBytes}`), mais 3 chiffres significatifs au lieu d'une
     // décimale, pour une pilule plus étroite (ta demande du 2026-10-20) : « 4.32MB/s », « 14.3MB/s », « 833kB/s » ; aligné
