@@ -4,7 +4,7 @@
 
 - Machine : `terrier` — Arch, i9-9900K, RTX 2080 (nvidia-utils 615.78)
 - **Quickshell 0.3.2** (paquet Arch `quickshell 0.3.2-1`)
-- Sway 1.12, Hyprland 0.56.2 (**config Lua** : `hyprctl keyword` indisponible, `dispatch` en syntaxe Lua)
+- Sway 1.12, Hyprland 0.57.0 (phase 9 ; 0.56.2 aux phases précédentes ; **config Lua** : `hyprctl keyword` indisponible, `dispatch` en syntaxe Lua)
 - Écrans : DP-1 (LG 27GN950, gauche), DP-2 (Dell AW3418DW, centre, principal), DP-3 (LG 27GN950, droite)
 
 ## Phase 0 — Audit : faite et validée (2026-10-15)
@@ -2032,9 +2032,51 @@ Scripts testés sur le banc (`takeover.sh` compris, garde-fou : abandon si un ou
   développement) ; menu d'applications : après avoir effacé la recherche, pointeur déjà sorti, il se ferme au bout de 2 s sans touche.
 - **Passes de confirmation** : blocs 6 et 7 relus ; les toutes dernières corrections ci-dessus n'ont pas repassé de revue.
 
+## Phase 9 — Parité Hyprland : en attente de tes tests à la main (2026-11-02)
+
+Hyprland 0.57.0, Quickshell 0.3.2. Plan validé par toi : `~/.claude/plans/il-faut-peut-etre-que-imperative-flame.md`.
+
+Tes décisions : **molette active partout** (écart à Waybar, qui la coupait sous Hyprland) ; banc lancé librement ; prise en main tôt.
+Décidé par moi, à reconsidérer si tes clics échouent : **pas de `HyprlandFocusGrab`** (`OutsideClick` commun aux deux compositeurs).
+
+Produit :
+- `scripts/test-outputs.sh [sway|hyprland]` : mêmes 36 contrôles sur les deux. Hyprland imbriqué dans ta session (sous Nvidia, le mode headless n'alloue rien) : une fenêtre s'ouvre le temps du test. Nouveaux scénarios : fenêtre envoyée avec focus (`$mod+Ctrl+N`), aucun écran actif, écran focalisé débranché.
+- `scripts/takeover.sh` sur les deux compositeurs. `restore` testé à l'aller-retour.
+- `Compositor` : HDR et VRR Hyprland (`hardwareDetails`, `hl.monitor`, `misc.vrr`), reposés sur `configreloaded` ; `FALLBACK` et moniteur non relu ignorés ; branches « config classique » retirées.
+
+Bogues trouvés et corrigés :
+- **Vue perdue au rallumage d'un écran** (Hyprland) : Hyprland ramène les espaces avant la relecture des moniteurs, l'état transitoire était mémorisé, focus compris. Corrigé par `monitoradded` / `monitorremoved`.
+- **Écran rallumé jamais vu** (Hyprland, 3 écrans rallumés coup sur coup, cas du réveil) : sans barre jusqu'à l'événement d'écran suivant. Corrigé par une relecture après la dernière d'une rafale. Relecture perdue si une autre est en cours : déduit, code de Quickshell non lu.
+- Contre-épreuve de ces deux corrections, sur une copie : sans elles, 6 passages sur 6 échouent avec ces deux symptômes ; avec, 13 sur 13 à 36 OK.
+- **`$mod+d` sans effet avant la première ouverture des réglages** (Sway aussi) : `Displays` n'était créé qu'à sa première lecture. Ajouté aux services de `shell.qml`.
+- **udiskie en double après `restore` puis prise en main** (Sway aussi) : relancé par `python …`, il changeait de nom de processus. Commande enregistrée sans l'interpréteur.
+- Dans le test : `hl.monitor` fusionne les champs, `disabled = true` restait posé et un scénario passait à tort ; changements d'écran appliqués après la réponse d'Hyprland : le test attend l'état réel ; **banc infidèle à ton bureau** : sans `no_warps`, le pointeur suivait chaque focus du placement et `follow_mouse` rendait le focus au dernier écran visé (échecs aléatoires). Le test a désormais `no_warps` et déplace le pointeur comme un vrai geste.
+
+Soldés, renvois « phase 9 » du journal : conversion taille physique → logique et description (identiques à Sway) ; répartition et placement ; `moveworkspacev2` ; bouche-trou et focus ; moniteur non lu ; événement `urgent` (adresse sans `0x`, filtre `appId`) et focus : parcours lien → Chromium jetable sur banc, avec et sans IPC, autre application ; capture (fenêtres `hyprctl clients`, zone) ; `reload` : aucun replacement, `hyprland.start` non rejoué (donc ni nordvpn ni applications).
+
+Vérifié sur banc seulement : répartition dynamique à 1, 2, 4 et 5 écrans (écrans virtuels sans description). Vérifié sur ta session : barres, répartition `DP-2=1-3, DP-1=4-6, DP-3=7-9`, VRR aller-retour et à travers `reload`, règle `desc:`, panneau de réglages, lanceur, capture, notification critique, prise en main.
+
+Écarts acceptés : molette (ci-dessus) ; modules du tray et engrenage (tes décisions de phases 5 et 8).
+Écart à trancher en phase 10 : fondu des couches hérité de tes animations `layers*` (`BACKLOG.md`).
+Limite signalée : mémoire libérée réutilisée dans l'IPC Hyprland de Quickshell ou Qt, sans effet observé hors `junk:free` (`BACKLOG.md`).
+
+**À tester à la main** (session en prise en main) :
+- clics : espaces de chaque barre et molette ; fermeture d'un panneau par clic à côté, sur une barre, **sur un autre écran** ; Échap, focus rendu ; calendrier (survol, épinglage) ;
+- tray : menus, clic droit, carte Steam (`Toplevel.activate` avec `focus_on_activate = false`) ;
+- notifications : clic qui ouvre l'application, lien d'une web app (ton vrai Chromium) ;
+- capture : curseur absent de l'image ;
+- HDR à l'œil : `$mod+d` sur les LG (non essayé, change le mode de tes écrans) ;
+- verrouillage, polkit réel ; veille d'écran (5 min) et rallumage d'un coup : l'ancien délai de 3 s du Dell contournait un bogue de Hyprland ;
+- veille du PC et réveil : disposition, VRR gardé ;
+- vrai câble débranché et rebranché.
+
+Attention, jusqu'à la phase 10 : `hyprctl reload`, donc **chaque réveil**, remet les raccourcis d'origine (Rofi, hyprshot). Relancer `scripts/takeover.sh`. Trois notifications « Test Hyprland » restent dans ton historique.
+
 ## Prochaine étape
 
-**Reprise (2026-11-02) : tu as lancé `scripts/takeover.sh`, Quickshell est ton vrai bureau pour cette session Sway** (Waybar, Dunst
+**Phase 9 : voir ci-dessus, tes tests à la main puis validation ; phase 10 ensuite, sur ta décision. Session Hyprland en prise en main.**
+
+Reprise (2026-11-02, session Sway) : tu as lancé `scripts/takeover.sh`, **Quickshell est ton vrai bureau pour cette session Sway** (Waybar, Dunst
 et les autres arrêtés ; retour : `scripts/takeover.sh restore`). Ne pas les rétablir en fin de session. Chaque sauvegarde dans le
 dépôt recharge ton bureau : préparer et tester sur la copie du banc, puis copier d'un seul coup.
 
@@ -2086,6 +2128,8 @@ Lanceur vérifié sur banc (2026-11-02, Sway isolé, clavier virtuel, réglages 
 
 Liens des web apps (2026-11-02, ta demande) : lien externe validé par toi ; le lien atterrit dans la dernière fenêtre active du navigateur, et son espace de travail est maintenant affiché (`open-link` appelle `qs ipc call compositor focusNextWindowOf chromium` avant Chromium : première fenêtre urgente de Chromium dans les 3 s). Vérifié sur banc (Sway isolé, Chromium jetable, deux écrans) : sans l'appel, 10 ouvertures sur 10 laissent le focus sur place ; avec, autre écran, deux fenêtres, navigateur déjà au premier plan : bon espace ; validé par toi sur le vrai bureau. Faux pas de banc : `swaymsg exec chromium` visait ton vrai Chromium (PATH non transmis à Sway), des fenêtres `127.0.0.1:18765` se sont ouvertes sur ton bureau ; fermées depuis, garde-fou ajouté. Hyprland (filtre par `HyprlandToplevel.wayland.appId` compris) : à vérifier en phase 9.
 Revue (`/code-review medium`, 2026-11-02, 9 constats) : corrigés : autre fenêtre urgente qui prenait le focus (fenêtre étrangère vérifiée sur banc, ouverture de notification toujours sans filtre), attente de `qs ipc` ramenée à 0,5 s, documentation, ce journal. Écartés : `-c desktop` seul (échoue tant que l'instance est lancée avec `-p`, vérifié) ; `WAYLAND_DISPLAY` différent (Chromium en a besoin aussi). Laissés : pointeur qui suit le focus sur l'autre écran (comme une notification, tu as validé le comportement), délai de 3 s, repli de Hyprland à voir en phase 9.
+
+Rappel pour la phase 10 (ta demande du 2026-11-02) : `xwayland.use_nearest_neighbor = false` dans la config Lua d'Hyprland (`dotfiles/hypr`) pour le rendu des polices de Steam ; le défaut est `true`, tu l'as réglé à la main dans ta session.
 
 Rappel pour la phase 10 : l'historique du lanceur (`~/.local/state/quickshell/by-shell/desktop/launcher.json`) est repris de Rofi
 quand il n'existe pas, et toute instance de test le recrée. Le supprimer juste avant la bascule, pour reprendre l'historique Rofi le

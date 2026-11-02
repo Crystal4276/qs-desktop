@@ -54,3 +54,5 @@ Idées notées pendant le travail. Rien ici n'est implémenté sans accord.
   de contenu, `window.open` remplacé) avant l'ouverture de l'onglet ; plus invasif, risque de casser les apps (revue du
   2026-10-28).
 - Performance : `perf` refuse tout événement sur cette machine (profil CPU natif non obtenu) ; pente mémoire sur plusieurs heures à relever ; coût mémoire du verrouillage sur le vrai GPU (`docs/PERFORMANCE.md`).
+- Hyprland : signaler à Quickshell (amont, avec ton accord) une utilisation de mémoire libérée à chaque réponse de requête. Une config réduite à `Hyprland.refreshMonitors()` plante sous `MALLOC_CONF=junk:free` (pile : `QAbstractSocketPrivate::canReadNotification` → `QIODevice::channelReadyRead`), 26 requêtes sans plantage sinon. Source de Quickshell non lue : socket détruit pendant son `readyRead`, hypothèse. Conséquence : `junk:free` inutilisable pour tester sous Hyprland (0.3.2, Qt 6.12).
+- Hyprland, phase 10 : les couches Quickshell héritent de tes animations `layers*` (panneau encore invisible 50 ms après l'ouverture, fondu). Décider si une `hl.layer_rule` les retire pour `quickshell-*`, comme sous Sway où rien n'est animé.
