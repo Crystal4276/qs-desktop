@@ -18,7 +18,7 @@ instance() {
 status() { awk -v k="$2:" '$1 == k { print int($2 / 1024) }' "/proc/$1/status"; }
 ticks() { awk '{ print $14 + $15, $16 + $17 }' "/proc/$1/stat"; }
 switches() { awk '/^voluntary_ctxt_switches/ { print $2 }' "/proc/$1/status"; }
-vram() { command -v nvidia-smi >/dev/null && nvidia-smi 2>/dev/null | awk -v p="$1" '$5 == p { gsub("MiB", "", $(NF-1)); print $(NF-1); f = 1 } END { if (!f) print "-" }' || echo "-"; }
+vram() { { nvidia-smi 2>/dev/null || true; } | awk -v p="$1" '$5 == p { gsub("MiB", "", $(NF-1)); sum += $(NF-1); f = 1 } END { print f ? sum : "-" }'; }
 pss() { awk '/^Pss:/ { print int($2 / 1024) }' "/proc/$1/smaps_rollup"; }
 renderers() { cat "/proc/$1"/task/*/comm | grep -c QSGRenderThread || true; }
 

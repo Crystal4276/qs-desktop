@@ -15,7 +15,7 @@ PanelWindow {
     readonly property Item owner: visible ? button : null   // appui sur ce bouton : la barre laisse le bouton le fermer
     property int ownerButtons: Qt.LeftButton                 // boutons de souris que gère ce bouton
     property bool catchOutside: true                         // appui sur un autre écran : fermeture (OutsideClick)
-    property bool hadKeyboard: false                         // clavier obtenu depuis l'affichage
+    property bool outsideReady: false                        // popup affiché : surfaces d'OutsideClick à créer
 
     // Juste avant la fermeture (lanceur : enregistre la saisie) ; juste après si le compositeur a fermé la surface (écran retiré).
     signal closing
@@ -106,7 +106,7 @@ PanelWindow {
             }
             BarState.setPopupOpen(root, root.visible);
             // Rouvert avant que le compositeur ait retiré le clavier : déjà actif, aucun changement à attendre.
-            root.hadKeyboard = root.visible && keyboardProbe.active;
+            root.outsideReady = root.visible && keyboardProbe.active;
             // Surface fermée par le compositeur (écran retiré) : Quickshell la masque sans passer par close().
             if (!root.visible && !root.hiding)
                 root.emitClosing(true);
@@ -143,18 +143,24 @@ PanelWindow {
     }
 
     // Surfaces créées une fois le popup affiché, pas avant lui : chacune crée un thread et un contexte graphique (~43 ms, à la suite),
-    // l'ouverture passait de ~125 à ~240 ms (docs/PERFORMANCE.md).
+    // l'ouverture passait de ~125 à ~240 ms (docs/PERFORMANCE.md). Signal : le clavier obtenu ; ou le délai, s'il ne vient pas (une
+    // autre surface exclusive le garde).
     Item {
         id: keyboardProbe
         readonly property bool active: Window.active
         onActiveChanged: {
             if (active)
-                root.hadKeyboard = true;
+                root.outsideReady = true;
         }
+    }
+    Timer {
+        interval: 300
+        running: root.visible && !root.outsideReady
+        onTriggered: root.outsideReady = true
     }
 
     OutsideClick {
-        active: root.visible && root.catchOutside && root.hadKeyboard
+        active: root.visible && root.catchOutside && root.outsideReady
         screen: root.screen
         onPressed: root.close()
     }

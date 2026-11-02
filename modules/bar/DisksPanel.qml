@@ -20,7 +20,6 @@ Panel {
     // fenêtre d'udiskie) ; d'ici là, pas de fermeture automatique.
     property bool autoOpened: false
     holdOpen: unlocking !== null
-    secretTyped: passphrase.text !== ""
     // Le champ a le focus à l'ouverture (la surface le donne à cet élément).
     initialFocus: unlocking !== null ? passphrase.inputItem : frameItem
 
