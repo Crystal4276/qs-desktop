@@ -4,7 +4,6 @@ import QtQuick
 import Quickshell
 import Quickshell.I3
 import Quickshell.Hyprland
-import Quickshell.Io
 import Quickshell.Wayland
 
 // Interface unique sur le compositeur (docs/ARCHITECTURE.md § 2).
@@ -93,11 +92,6 @@ Singleton {
     // sur banc). `focused` d'un moniteur vivant ne suit pas ce pointeur.
     readonly property string focusedOutput: isSway ? (workspaces.find(w => w.focused)?.output ?? I3.monitors.values.find(m => m.focused)?.name ?? "")
         : isHyprland ? (Hyprland.focusedMonitor?.name ?? "") : ""
-
-    // Titre de la fenêtre focalisée ("" sans fenêtre) et mode / submap actif ("" pour le mode par défaut).
-    // Exposés sans widget (parité, ARCHITECTURE § 8 Q4).
-    readonly property string activeWindowTitle: isHyprland ? (Hyprland.activeToplevel?.title ?? "") : sway.title
-    readonly property string mode: isHyprland ? hyprland.submap : sway.mode
 
     function output(name: string): var {
         return outputs.find(o => o.name === name) ?? null;
@@ -292,13 +286,10 @@ Singleton {
         }
     }
 
-    // --- Backend Sway : titre et mode ne sont pas exposés par Quickshell.I3 ---
+    // --- Backend Sway : événements que Quickshell.I3 ne suit pas lui-même ---
 
-    QtObject {
-        id: sway
-
-        property string title: ""
-        property string mode: ""
+    function refreshWorkspaces(): void {
+        I3.refreshWorkspaces();
     }
 
     I3IpcListener {
@@ -307,10 +298,13 @@ Singleton {
         // Abonnements posés après le chargement : I3IpcListener se connecte dès qu'ils sont posés, puis recrée sa connexion après le
         // chargement (« I3 event socket disconnected »). Vide à ce moment-là, il ne se connecte qu'une fois (Quickshell 0.3.2).
         property bool loaded: false
-        subscriptions: root.isSway && loaded ? ["window", "mode", "workspace"] : []
+        subscriptions: root.isSway && loaded ? ["window", "workspace"] : []
         Component.onCompleted: Qt.callLater(() => i3Listener.loaded = true)
 
         onIpcEvent: event => {
+            // Changement de titre (fréquent : navigateur) : utile seulement si une activation est attendue, pas analysé sinon.
+            if (event.type === "window" && Date.now() > root.activationDeadline && /^\s*\{\s*"change"\s*:\s*"title"/.test(event.data))
+                return;
             const data = JSON.parse(event.data);
             // Fenêtre déjà urgente avant le clic : Sway n'envoie pas de nouvel « urgent » ; Chromium change alors d'onglet, donc
             // de titre (revue de code, passe 8).
@@ -321,91 +315,25 @@ Singleton {
                 if (data.change === "init" && data.current)
                     root.workspaceCreated(data.current.num, data.current.output ?? "");
                 // Focus et visibilité relus après chaque événement d'espace : ceux que portent les événements sont souvent faux
-                // (Sway 1.12, vérifié).
-                I3.refreshWorkspaces();
-                return;
-            }
-            if (event.type === "mode") {
-                sway.mode = data.change === "default" ? "" : data.change;
+                // (Sway 1.12, vérifié). Une relecture pour tous les événements d'une même rafale.
+                Qt.callLater(root.refreshWorkspaces);
                 return;
             }
             // Ouverture, fermeture, déplacement : l'état vide des espaces change, I3 ne le relit pas de lui-même.
             if (["new", "close", "move", "floating"].includes(data.change))
-                I3.refreshWorkspaces();
+                Qt.callLater(root.refreshWorkspaces);
             // Sway envoie aussi « focus » pour une fenêtre qui ne le reçoit pas (clic sur un popup de barre) : on vérifie.
             if (data.change === "focus" && data.container?.focused)
                 root.windowFocused();
-            // Seuls ces changements peuvent changer le titre focalisé ; titre, marque, urgence… d'une fenêtre non focalisée : rien à relire.
-            if ((data.change === "focus" || data.change === "title") && data.container?.focused)
-                sway.title = data.container.name ?? "";
-            else if (["new", "close", "move", "floating", "focus"].includes(data.change))
-                treeQuery.restart();
         }
     }
 
-    // Relecture du titre (démarrage, fermeture, changement d'espace) : get_tree. Le mode est lu une fois au démarrage
-    // (get_binding_state), puis suivi par les événements « mode ».
-    Timer {
-        id: treeQuery
-        interval: 50
-        running: root.isSway
-        onTriggered: swayTree.running = true
-    }
-
-    Connections {
-        target: root.isSway ? I3 : null
-        function onFocusedWorkspaceChanged() {
-            treeQuery.restart();
-        }
-    }
-
-    Process {
-        id: swayTree
-        command: ["swaymsg", "-t", "get_tree"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                const find = node => {
-                    if (node.focused)
-                        return node;
-                    for (const child of [...(node.nodes ?? []), ...(node.floating_nodes ?? [])]) {
-                        const found = find(child);
-                        if (found)
-                            return found;
-                    }
-                    return null;
-                };
-                const focused = find(JSON.parse(text));
-                sway.title = focused && focused.type !== "workspace" ? (focused.name ?? "") : "";
-            }
-        }
-    }
-
-    Process {
-        id: swayMode
-        running: root.isSway
-        command: ["swaymsg", "-t", "get_binding_state"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                const name = JSON.parse(text).name;
-                sway.mode = name === "default" ? "" : name;
-            }
-        }
-    }
-
-    // --- Backend Hyprland : submap ---
-
-    QtObject {
-        id: hyprland
-
-        property string submap: ""
-    }
+    // --- Backend Hyprland ---
 
     Connections {
         target: root.isHyprland ? Hyprland : null
         function onRawEvent(event) {
-            if (event.name === "submap")
-                hyprland.submap = event.data;
-            else if (event.name === "createworkspacev2") {
+            if (event.name === "createworkspacev2") {
                 // « ID,NOM » ; l'écran n'est connu qu'après relecture : "" laisse Outputs vérifier 100 ms plus tard.
                 const id = parseInt(event.data);
                 if (id > 0)

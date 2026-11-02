@@ -198,7 +198,7 @@ Adapter si l'inventaire le justifie, mais documenter le changement dans `ARCHITE
 - Services en `pragma Singleton` ; les widgets ne lisent que les services, jamais de `Process` dispersés dans l'UI.
 - Aucune couleur, police ou taille codée en dur hors de `Theme.qml`.
 - Multi-écran via `Variants { model: Quickshell.screens }` : une barre par écran actif, créée et détruite à chaud. Les modules affichés sur chaque écran viennent de la config machine, avec un repli raisonnable pour un écran inconnu.
-- **Compositeur** : `services/Compositor.qml` expose une interface unique (espaces de travail, fenêtre active, mode, sortie focalisée, liste des sorties) et s'appuie sur `Quickshell.I3` sous Sway et `Quickshell.Hyprland` sous Hyprland. Détection via `SWAYSOCK` / `HYPRLAND_INSTANCE_SIGNATURE`.
+- **Compositeur** : `services/Compositor.qml` expose une interface unique (espaces de travail, sortie focalisée, liste des sorties) et s'appuie sur `Quickshell.I3` sous Sway et `Quickshell.Hyprland` sous Hyprland. Détection via `SWAYSOCK` / `HYPRLAND_INSTANCE_SIGNATURE`.
 - Utiliser au maximum ce que Quickshell propose (revue complète des types : `ARCHITECTURE.md` § 12, à tenir à jour). Préférer les services natifs de Quickshell aux scripts externes : `Quickshell.Services.Pipewire` (audio), `.SystemTray`, `.Notifications`, `.Mpris`, `.UPower`, `DesktopEntries`, etc. Garder un script externe seulement si aucun équivalent natif n'existe (ex. `nvidia-smi` pour le GPU).
 - Tout ce qui doit être déclenché par un raccourci clavier passe par un `IpcHandler` (`qs ipc call <target> <fonction>`).
 - Commentaires courts, en anglais ou en français, mais cohérents dans un même fichier.
@@ -259,7 +259,7 @@ Lire toute la config existante et produire :
 
 **Phase 1 — Squelette.** `shell.qml`, `Theme` (complet dès maintenant), `Settings` + config machine, `Compositor`, une barre vide par écran actif, aux bonnes dimensions et aux bonnes couleurs, apparaissant et disparaissant avec les écrans, scripts de dev, lien `~/.config/quickshell/desktop`.
 
-**Phase 2 — Barre : modules de base.** Espaces de travail (seulement ceux de l'écran de la barre), horloge — sous Sway. Titre de fenêtre et mode Sway : exposés par `Compositor`, sans widget (parité, `ARCHITECTURE.md` § 8).
+**Phase 2 — Barre : modules de base.** Espaces de travail (seulement ceux de l'écran de la barre), horloge — sous Sway. Titre de fenêtre et mode Sway : ni widget ni exposition (parité ; retirés de `Compositor` le 2026-11-02, `ARCHITECTURE.md` § 2).
 
 **Phase 3 — Écrans dynamiques.** Répartition automatique des espaces de travail ; sorties configurées nativement par le compositeur, par description d'écran (Kanshi écarté, `ARCHITECTURE.md` § 3.1). `scripts/test-outputs.sh` passe sur tous les scénarios avec écrans virtuels. Sur mon desktop à trois écrans, le résultat est strictement identique à l'attribution actuelle. Liste des tests à faire à la main (vrai câble, capot) dans le rapport.
 
