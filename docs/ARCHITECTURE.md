@@ -12,7 +12,7 @@ Celle de `CLAUDE.md`, avec trois ajouts :
   le dépôt doit les embarquer pour être autonome.
 - `dotfiles/wireplumber/` *(2026-10-27)* : règle WirePlumber dont dépend la coupure des sons pendant « ne pas déranger »
   (§ 4, `doNotDisturb`) ; liée dans `~/.config/wireplumber/` par `install.sh`.
-- `dotfiles/webapps/` *(2026-10-27)* : extension Chromium `open-links/` et son hôte natif `open-link`, chargés par les web apps
+- `dotfiles/webapps/` *(2026-10-27 ; affichage de l'espace de travail du navigateur : 2026-11-02, IPC `compositor`)* : extension Chromium `open-links/` et son hôte natif `open-link`, chargés par les web apps
   (WhatsApp, Discord, Word, Excel, PowerPoint, Notion : `chromium --app … --user-data-dir=<profil isolé>
   --load-extension=…/open-links`). Un lien ouvert dans un nouvel onglet ou une nouvelle fenêtre part dans le profil Chromium
   principal, sauf s'il reste dans les domaines de l'app (Microsoft 365, Notion : liste `SITES` de l'extension) (onglet ajouté, navigateur démarré s'il ne tourne

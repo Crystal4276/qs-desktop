@@ -206,23 +206,26 @@ Singleton {
     // Hyprland la marquent seulement urgente. La première fenêtre devenue urgente dans les 3 s est affichée, son espace de
     // travail avec ; les autres fenêtres urgentes ne sont pas touchées.
     property real activationDeadline: 0
+    property string activationApp: ""   // vide : n'importe quelle fenêtre
 
     function focusNextActivation(): void {
         activationDeadline = Date.now() + 3000;
+        activationApp = "";
     }
 
     // Lien d'une web app envoyé au navigateur (dotfiles/webapps/open-link) : il atterrit dans la dernière fenêtre active, peut-être
-    // sur un autre espace de travail, qui est affiché.
+    // sur un autre espace de travail, qui est affiché. Seulement une fenêtre de `appId` : Discord peut devenir urgent entre-temps.
     IpcHandler {
         target: "compositor"
 
-        function focusNextActivation(): void {
+        function focusNextWindowOf(appId: string): void {
             root.focusNextActivation();
+            root.activationApp = appId;
         }
     }
 
-    function takeActivation(): bool {
-        if (Date.now() > activationDeadline)
+    function takeActivation(appId: string): bool {
+        if (Date.now() > activationDeadline || (activationApp !== "" && appId !== activationApp))
             return false;
         activationDeadline = 0;
         return true;
@@ -319,7 +322,7 @@ Singleton {
             // Fenêtre déjà urgente avant le clic : Sway n'envoie pas de nouvel « urgent » ; Chromium change alors d'onglet, donc
             // de titre (revue de code, passe 8).
             if (event.type === "window" && ["urgent", "title"].includes(data.change) && data.container?.urgent
-                    && !data.container.focused && root.takeActivation())
+                    && !data.container.focused && root.takeActivation(data.container.app_id ?? ""))
                 I3.dispatch(`[con_id=${data.container.id}] focus`);
             if (event.type === "workspace") {
                 if (data.change === "init" && data.current)
@@ -350,7 +353,7 @@ Singleton {
             // à vérifier en phase 9).
             else if (event.name === "moveworkspacev2")
                 Hyprland.refreshMonitors();
-            else if (event.name === "urgent" && root.takeActivation())   // « ADRESSE » (hexadécimal, sans 0x) ; à vérifier en phase 9
+            else if (event.name === "urgent" && root.takeActivation(Hyprland.toplevels.values.find(t => t.address === event.data)?.wayland?.appId ?? ""))   // « ADRESSE » (hexadécimal, sans 0x) ; à vérifier en phase 9
                 Hyprland.dispatch(Hyprland.usingLua ? `hl.dsp.focus({ window = "address:0x${event.data}" })` : `focuswindow address:0x${event.data}`);
         }
     }
