@@ -37,6 +37,11 @@ Idées notées pendant le travail. Rien ici n'est implémenté sans accord.
   mettre la phrase dans la ligne de commande (petit programme qui la lit sur l'entrée standard).
 - Disques : images disque en boucle créées par un autre utilisateur (root : Waydroid, VM) gérées et montées comme les tiennes,
   comme le fait udiskie ; les limiter à `Loop.SetupByUID` = ton uid serait plus sûr (revue du 2026-10-27).
+- Plantage `QQmlDelegateModel::_q_itemsMoved` (3 sur banc le 2026-11-02, à 07 h 24, 07 h 29 et 07 h 39, Qt 6.12.0-4 ; aucun sur ton
+  instance) : déplacement de lignes d'un `ScriptModel`, modèle non identifié. Non reproduit avec la fenêtre de statistiques ouverte
+  80 s sous charge. À reprendre si un rapport apparaît dans `~/.cache/quickshell/crashes/`.
+- Écrans : `I3.focusedMonitor` périmé quand l'écran focalisé disparaît (contourné dans `Compositor.qml`) : à signaler à Quickshell
+  (amont, avec ton accord). `bFocusedMonitor` est écrit sans suivre `destroyed`, le garde de `setFocusedMonitor` n'est jamais posé.
 - Polkit : agent perdu si polkitd redémarre (`systemctl restart polkit`, plantage) : Quickshell se croit toujours enregistré,
   comme polkit-gnome. Surveiller le propriétaire de `org.freedesktop.PolicyKit1` (`gdbus monitor --system`) et recréer l'agent
   (revue du 2026-10-27 ; non testable sans `sudo`).
