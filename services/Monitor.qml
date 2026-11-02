@@ -14,7 +14,7 @@ Singleton {
 
     property int users: 0
     readonly property bool active: users > 0
-    // Ouvrir ou fermer le panneau : modules/monitor/SystemMonitor.qml écoute. `from` : pilule du module cliqué (null : raccourci).
+    // Ouvrir ou fermer le panneau : modules/monitor/SystemMonitor.qml écoute. `from` : rangée de modules de la pilule cliquée (null : raccourci).
     signal toggleRequested(Item from)
 
     function toggle(from: Item): void {
@@ -46,12 +46,11 @@ Singleton {
     property real previousTotal: 0     // tics de tous les cœurs
     readonly property string me: Quickshell.env("USER") ?? ""
 
-    // Arrêt d'un de tes processus : SIGTERM (`force` : SIGKILL). Pas d'élévation de droits. SIGKILL : retiré de la liste tout de
-    // suite. SIGTERM : le processus peut l'ignorer ; il reste choisi jusqu'au relevé suivant, pour pouvoir le forcer s'il survit.
+    // Arrêt d'un de tes processus : SIGTERM (`force` : SIGKILL). Pas d'élévation de droits. Relevé peu après : le processus quitte
+    // la liste s'il est vraiment parti ; s'il survit (SIGTERM ignoré), il reste choisi, prêt à être forcé.
     function stop(pid: int, force: bool): void {
         Quickshell.execDetached(["kill", force ? "-KILL" : "-TERM", String(pid)]);
-        if (force)
-            processes = processes.filter(p => p.pid !== pid);
+        secondSample.restart();
     }
 
     // Panneau fermé : relevés précédents oubliés, sinon le premier % CPU à la réouverture serait une moyenne sur toute la fermeture.
@@ -85,6 +84,8 @@ Singleton {
                 processList.running = true;
             if (!gpuQuery.running && (Gpu.useSmi || Gpu.sensorPath !== ""))
                 gpuQuery.running = true;
+            if (!gpuProcessList.running && Gpu.vendor === "nvidia" && Gpu.useSmi)
+                gpuProcessList.running = true;
         }
     }
 
@@ -170,16 +171,18 @@ Singleton {
     }
 
     // Processus : temps CPU (/proc/PID/stat), mémoire résidente et utilisateurs (ps), total des cœurs (/proc/stat), en un seul
-    // passage. `user:64` : nom complet (8 caractères par défaut, au-delà tronqué ou remplacé par l'UID).
+    // passage. `user:64` : nom complet (8 caractères par défaut, au-delà tronqué ou remplacé par l'UID). `$$` : ce shell, que la
+    // liste ne montre pas (une ligne de plus à chaque relevé, déjà partie au suivant).
     Process {
         id: processList
-        command: ["sh", "-c", 'head -1 /proc/stat; echo ---; cat /proc/[0-9]*/stat 2>/dev/null; echo ---; ps -eo pid=,rss=,user:64=']
+        command: ["sh", "-c", 'echo $$; head -1 /proc/stat; echo ---; cat /proc/[0-9]*/stat 2>/dev/null; echo ---; ps -eo pid=,rss=,user:64=']
         stdout: StdioCollector {
             onStreamFinished: {
                 if (!root.active)
                     return;
                 const [head, stats, users] = text.split("\n---\n");
-                const total = head.trim().split(/\s+/).slice(1).map(Number).reduce((a, b) => a + b, 0);
+                const [self, stat] = head.split("\n");
+                const total = (stat ?? "").trim().split(/\s+/).slice(1).map(Number).reduce((a, b) => a + b, 0);
                 const owner = {}, rss = {};
                 for (const line of (users ?? "").split("\n")) {
                     const m = line.trim().match(/^(\d+)\s+(\d+)\s+(\S+)/);
@@ -197,6 +200,8 @@ Singleton {
                     if (open < 0 || close < 0)
                         continue;
                     const pid = line.slice(0, open).trim();
+                    if (pid === self)
+                        continue;
                     const rest = line.slice(close + 2).split(" ");
                     const time = Number(rest[11]) + Number(rest[12]);
                     times[pid] = time;
@@ -220,11 +225,36 @@ Singleton {
         }
     }
 
-    // GPU : nvidia-smi (requête + processus) ; AMD : sysfs ; autres : température seule (service Gpu).
+    // Mémoire vidéo par processus (nvidia-smi) : `pmon` mesure pendant 1 s, à part pour ne pas retarder les valeurs du GPU. La liste
+    // des processus, relevée en même temps, a déjà fini : mise à jour ici, seulement si une valeur a changé.
+    Process {
+        id: gpuProcessList
+        command: ["nvidia-smi", "pmon", "-c", "1", "-s", "m"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                if (!root.active)
+                    return;
+                const procs = {};
+                for (const line of text.split("\n")) {
+                    if (line.startsWith("#"))
+                        continue;
+                    const c = line.trim().split(/\s+/);
+                    if (c.length >= 4 && /^\d+$/.test(c[1]))
+                        procs[c[1]] = Number(c[3]) || 0;   // colonne fb (Mio)
+                }
+                if (JSON.stringify(procs) === JSON.stringify(root.gpuProcesses))
+                    return;
+                root.gpuProcesses = procs;
+                root.processes = root.processes.map(p => Object.assign({}, p, { gpu: procs[p.pid] ?? 0 }));
+            }
+        }
+    }
+
+    // GPU : nvidia-smi ; AMD : sysfs ; autres : température seule (service Gpu).
     Process {
         id: gpuQuery
         command: Gpu.vendor === "nvidia" && Gpu.useSmi
-            ? ["sh", "-c", "nvidia-smi --query-gpu=name,utilization.gpu,memory.used,memory.total,temperature.gpu,power.draw,fan.speed,clocks.gr --format=csv,noheader,nounits; echo ---; nvidia-smi pmon -c 1 -s m"]
+            ? ["nvidia-smi", "--query-gpu=name,utilization.gpu,memory.used,memory.total,temperature.gpu,power.draw,fan.speed,clocks.gr", "--format=csv,noheader,nounits"]
             // Fichier absent (Intel, Nvidia sans nvidia-smi) : ligne « nom » sans valeur, mesure masquée.
             : ["sh", "-c", 'd="$(dirname "$(dirname "$(dirname "$0")")")"; for f in gpu_busy_percent mem_info_vram_used mem_info_vram_total; do echo "$f $(cat "$d/$f" 2>/dev/null)"; done', Gpu.sensorPath]
         stdout: StdioCollector {
@@ -232,22 +262,10 @@ Singleton {
                 if (!root.active)
                     return;
                 if (Gpu.vendor === "nvidia" && Gpu.useSmi) {
-                    const [query, pmon] = text.split("\n---\n");
-                    const f = (query ?? "").split("\n")[0].split(",").map(s => s.trim());
+                    const f = text.split("\n")[0].split(",").map(s => s.trim());
                     const num = s => isNaN(Number(s)) ? -1 : Number(s);
                     root.gpu = { name: f[0] ?? "", load: num(f[1]), memUsed: num(f[2]), memTotal: num(f[3]), temperature: num(f[4]),
                         power: num(f[5]), fan: num(f[6]), clock: num(f[7]) };
-                    const procs = {};
-                    for (const line of (pmon ?? "").split("\n")) {
-                        if (line.startsWith("#"))
-                            continue;
-                        const c = line.trim().split(/\s+/);
-                        if (c.length >= 4 && /^\d+$/.test(c[1]))
-                            procs[c[1]] = Number(c[3]) || 0;   // colonne fb (Mio)
-                    }
-                    root.gpuProcesses = procs;
-                    // `pmon` dure 1 s : la liste des processus, relevée en même temps, a fini avant lui.
-                    root.processes = root.processes.map(p => Object.assign({}, p, { gpu: procs[p.pid] ?? 0 }));
                 } else {
                     const v = {};
                     for (const line of text.split("\n")) {

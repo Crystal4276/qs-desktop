@@ -8,5 +8,5 @@ InfoModule {
     color: Theme.module.cpu
     pillHighlight: Theme.module.statsHighlight
     segments: [[Theme.font.inlineIcons, Theme.icon.cpu], [Theme.font.text, ` ${Math.min(SystemStats.cpuUsage, 99)}%`, Array.from({ length: 100 }, (_, i) => ` ${i}%`)]]
-    onClicked: Monitor.toggle(pill)
+    onClicked: Monitor.toggle(pillRow)
 }
