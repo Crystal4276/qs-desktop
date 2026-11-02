@@ -5,9 +5,9 @@ import qs.config
 
 // Panneau d'un module natif du tray (THEME.md § 3 « Panneaux ») : cadre du calendrier, titre, interrupteur facultatif,
 // contenu libre. `toggle(item, boutons)` l'ouvre sous l'icône ou le ferme.
-// Surface Overlay à clavier exclusif, comme le panneau de réglages (OverlayPopup.qml) : sous Sway, un popup `grabFocus`
-// ouvert depuis une barre ne reçoit jamais le clavier (ni saisie ni Échap ; vu le 2026-10-20, Sway 1.12). Fermé par un
-// appui à côté du cadre, sur une barre ou sur un autre écran, ou par Échap.
+// Surface Overlay (OverlayPopup.qml), pas un popup `grabFocus` : sous Sway, ouvert depuis une barre, celui-ci ne reçoit jamais le
+// clavier (ni saisie ni Échap ; vu le 2026-10-20, Sway 1.12). Fermé par un appui à côté du cadre, sur une barre, par Échap, ou à
+// la perte du clavier ; mot de passe en cours de saisie : clavier exclusif, pas de fermeture par un clic sur un autre écran.
 // Aperçu (ta demande du 2026-10-21, comme l'horloge) : `preview(item, boutons)` l'ouvre au survol de l'icône, sans clavier (la
 // fenêtre où l'on tape le garde) ni pointeur hors du cadre (clics et survols atteignent les fenêtres) ; fermé quand le pointeur
 // quitte le cadre et les icônes des modules natifs du tray. Un clic sur l'icône ou dans le cadre l'épingle : il prend alors le clavier et se
@@ -102,9 +102,9 @@ OverlayPopup {
     }
 
     WlrLayershell.namespace: "quickshell-panel"
-    WlrLayershell.keyboardFocus: previewing ? WlrKeyboardFocus.None : WlrKeyboardFocus.Exclusive
+    WlrLayershell.keyboardFocus: previewing ? WlrKeyboardFocus.None : secureKeyboard || !hadKeyboard ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.OnDemand
+    secureKeyboard: frame.focusedItem?.echoMode === TextInput.Password
     mask: previewing ? previewInput : null
-    catchOutside: !previewing
     frameItem: frame
 
     Region {

@@ -430,9 +430,15 @@ Proposition de placement dans les phases (CLAUDE.md n'est pas modifié sans ton 
   celle qu'il ouvre dans les 3 s (`Compositor.showAppWindow` ; Sway : `mouse_warping none; [fenêtre] focus; mouse_warping output` en une commande, le
   pointeur ne bouge pas et les autres applications — Deluge — gardent le déplacement ; Hyprland : Toplevel.activate, no_warps
   dans ta config ; 21 ms du clic au changement d'espace).
-- **Panneaux du tray** (corrigé le 2026-10-20) : surfaces Overlay à clavier exclusif (`OverlayPopup`, comme le panneau de réglages et
-  le lanceur), et non plus des popups « grab » : sous Sway, un popup `grabFocus` ouvert depuis une barre ne reçoit jamais le clavier
-  (ni saisie, ni Échap). Fermés par un appui à côté du cadre (non transmis), sur une barre ou sur un autre écran, ou par Échap.
+- **Panneaux du tray** (corrigé le 2026-10-20) : surfaces Overlay (`OverlayPopup`, comme le panneau de réglages et le lanceur), et non
+  plus des popups « grab » : sous Sway, un popup `grabFocus` ouvert depuis une barre ne reçoit jamais le clavier (ni saisie, ni Échap).
+  Fermés par un appui à côté du cadre (non transmis), sur une barre, par Échap ou à la perte du clavier.
+- **Clavier des popups** (`OverlayPopup`, 2026-11-02) : exclusif jusqu'à l'obtenir (sous Sway, passer d'aucun clavier à `on_demand` ne le
+  donne pas : aperçu épinglé), puis `on_demand`. Quand le compositeur le reprend (clic sur un autre écran, fenêtre focalisée, changement
+  d'espace), le popup se ferme et le clic atteint sa cible. Remplace `OutsideClick.qml` (deux surfaces plein écran recréées à chaque
+  ouverture, ~110 ms, `PERFORMANCE.md`). **Exception, saisie secrète** (`secureKeyboard`) : exclusif tant qu'un champ masqué a le focus
+  (Wi-Fi, disques) et toujours pour polkit, pour qu'une fenêtre qui s'ouvre ne reçoive pas la suite de la frappe ; un clic sur un autre
+  écran ne ferme alors pas le popup.
 - **Réseau** (R5) : `Quickshell.Networking` (filaire, Wi-Fi : interrupteur, réseaux, mot de passe, oubli) ; édition dans `nm-connection-editor`.
   Depuis le 2026-10-19 (ta demande), deux icônes : **réseau** (filaire et réseaux privés ; visible si un câble est branché ou
   sans Wi-Fi) et **Wi-Fi** (`WifiPanel.qml`). Le Wi-Fi s'inspire de GNOME (niveaux de signal et seuils 20 / 40 / 50 / 80 % de
@@ -495,7 +501,7 @@ Comportement relu dans le code de Rofi 2.0.0 (`modes/drun.c`, `history.c`, `help
   (Rofi : `gnome-terminal -e`). Texte saisi sans résultat, ou Ctrl+Entrée : lancé comme commande (`sh -c`) ; Maj+Entrée sans résultat
   et Ctrl+Maj+Entrée : dans un terminal.
 - **Fenêtre** (`modules/launcher/`) : surface Overlay couvrant la zone utile de l'écran focalisé (comme Rofi, qui centre sa surface dans
-  la zone utile), clavier exclusif, cadre centré arrondi vers le haut et la gauche ; clic à côté ou sur une barre = fermeture
+  la zone utile), clavier comme les autres popups (ci-dessus), cadre centré arrondi vers le haut et la gauche ; clic à côté ou sur une barre = fermeture
   (`click-to-exit`). Liste par pages entières (`scroll-method 0`), sans boucle (`cycle: false`). Chargée à la première ouverture
   (`LazyLoader`). IPC `qs ipc call launcher toggle|open|close`.
 - **Clavier** (défauts de Rofi) : Entrée / Ctrl+J / Ctrl+M ; Haut / Bas / Ctrl+P / Ctrl+N / Tab / Maj+Tab ; Pages ; Début / Fin
@@ -573,8 +579,7 @@ Remplace le power menu Rofi. Base : les réglages rapides de GNOME 51 (code de g
   le panneau de réglages.
 - Repris de GNOME mais écarté : style sombre (thème toujours sombre), Réglages GNOME, veille, confirmation.
 - **Mise en œuvre** : surface de la couche Overlay plutôt que popup (un popup Wayland ne peut pas prendre le clavier sans clic, donc pas
-  d'ouverture par `$mod+Escape`) ; surfaces transparentes sur les autres écrans pendant qu'il est ouvert (`OutsideClick.qml`), sinon un
-  clic ailleurs laisserait le clavier bloqué sur lui. Flèche du choix de périphérique toujours affichée (avec un seul périphérique, GNOME
+  d'ouverture par `$mod+Escape`) ; fermé à la perte du clavier, comme les autres popups. Flèche du choix de périphérique toujours affichée (avec un seul périphérique, GNOME
   la cache : tu ne la voyais pas). Veilleuse : `gammastep` lancé par le shell (fondu d'environ 4 s à l'activation, à l'arrêt par SIGTERM et aux
   heures de l'horaire ; wlsunset, utilisé jusqu'au 2026-10-26, changeait d'un coup), réglages de `hosts/*.json` (`nightLight`) écrits
   dans son fichier de config, état dans un fichier d'état local. HDR / VRR : commandes `output` de Sway ; Hyprland en phase 9 (sa config Lua n'a pas d'équivalent sûr connu).
@@ -632,8 +637,8 @@ Voir `WALLPAPERS.md` § « Mise en œuvre ». Remplace `swaybg` (Sway) et le fon
 
 - `services/Polkit.qml` (`PolkitAgent`, enregistrement, demandes) + `modules/polkit/PolkitDialog.qml` : fenêtre au style des
   panneaux (`OverlayPopup`, centrée sur l'écran focalisé, clavier exclusif) : icône et message de l'application, champ (masqué
-  si polkit le demande), message d'erreur, Cancel / Authenticate. Entrée valide ; Échap, un clic à côté, sur une barre ou sur un
-  autre écran annulent.
+  si polkit le demande), message d'erreur, Cancel / Authenticate. Entrée valide ; Échap, un clic à côté ou sur une barre annulent ; pas un clic
+  sur un autre écran (clavier exclusif gardé, depuis le 2026-11-02).
 - Un seul agent par session : tant que `polkit-gnome` tourne (lancé par Sway jusqu'à la bascule), l'enregistrement de Quickshell
   échoue (avertissement dans le journal, nouvel essai toutes les 5 min). À la phase 10, `polkit-gnome` sort de l'autostart.
 - Identité : affichée (« Password for … ») seulement si ce n'est pas toi (plusieurs administrateurs : polkit propose le premier ;
@@ -864,7 +869,7 @@ Légende : **utilisé** (déjà dans le code), **prévu** (phase indiquée), **a
 | | `Socket`, `SocketServer`, `DataStream`, `DataStreamParser` | **écarté** : les raccourcis passent par `IpcHandler` |
 | `Quickshell.I3` | `I3`, `I3IpcListener`, `I3Monitor`, `I3Workspace` | **utilisé** (Sway) |
 | `Quickshell.Hyprland` | `Hyprland`, `HyprlandMonitor`, `HyprlandWorkspace`, `HyprlandEvent` | **utilisé** (écrit, à tester) |
-| | `HyprlandFocusGrab` | **ajouté** (phase 9) : sous Hyprland, fermeture des panneaux et du calendrier par un clic ailleurs, sans le mécanisme de contournement de Sway |
+| | `HyprlandFocusGrab` | **ajouté** (phase 9) : sous Hyprland, fermeture du calendrier par un clic ailleurs ; les panneaux suivent la perte du clavier (`OverlayPopup`), à vérifier en phase 9 |
 | | `HyprlandToplevel`, `HyprlandWindow` | au besoin, via `Toplevel` (ci-dessous) |
 | | `GlobalShortcut` | **écarté** : raccourcis par `qs ipc` sur les deux compositeurs (un seul mécanisme) |
 | `Quickshell.WindowManager` | `WindowManager`, `Windowset`, `WindowsetProjection`, `ScreenProjection` | **évalué, en réserve** (sonde sous Sway, 2026-10-16) : le protocole commun `ext-workspace` déplace et active bien un espace, mais n'indique ni l'espace focalisé, ni l'état vide, ni ne crée d'espace (pas d'API de création dans Quickshell), et son déplacement ne garde pas le focus comme la commande Sway sur laquelle la répartition validée est réglée. Migrer obligerait à mélanger deux sources pour le même état : pas de gain net. Gardé pour Hyprland si le placement en Lua échoue pendant la session de test, ou pour une config Hyprland non-Lua. Note : la liste n'est remplie qu'après le premier accès (initialisation paresseuse). |
