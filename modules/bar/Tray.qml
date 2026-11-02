@@ -114,8 +114,8 @@ Item {
         TrayButton {
             id: disksButton
 
-            visible: Disks.loaded
-            icon: "drive-removable-media-usb-panel"   // icône d'udiskie, toujours affichée comme lui
+            visible: Disks.drives.length > 0   // seulement avec un disque branché (ta demande du 2026-11-02)
+            icon: "drive-removable-media-usb-panel"   // icône d'udiskie
             panel: disksPanel
 
             Component.onCompleted: BarState.register("disks", disksButton)

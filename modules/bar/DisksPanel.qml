@@ -55,6 +55,10 @@ Panel {
         autoOpened = true;
     }
 
+    // Dernier disque retiré ou éjecté : son icône disparaît, le panneau aussi.
+    readonly property bool empty: Disks.drives.length === 0
+    onEmptyChanged: if (empty) close()
+
     // Ouvrir un volume monté : le panneau se ferme, sauf pendant une demande de phrase de passe (elle serait abandonnée).
     function browse(volume): void {
         if (unlocking !== null)
@@ -71,11 +75,6 @@ Panel {
             i++;
         }
         return `${value.toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
-    }
-
-    PanelSection {
-        visible: Disks.drives.length === 0
-        text: "No removable devices"
     }
 
     Repeater {

@@ -2074,8 +2074,9 @@ dépôt recharge ton bureau : préparer et tester sur la copie du banc, puis cop
    - OpenRGB (2026-11-02) : `purple.orp` n'existe plus depuis la migration d'OpenRGB 1.0 (`profiles/purple.json`), le profil échoue
      à chaque connexion. Commande correcte : `openrgb -p purple`. Phase 10 : corriger `exec openrgb` et retirer
      `openrgb-startup.service` (lié à SDDM, en concurrence avec l'autostart).
-6. **À tester à la main** (en attente) : clé USB (bloc 1 ; clé LUKS : tu n'en as pas, chemin non testé en réel), document Word ouvert depuis Word (bloc 3 : reste dans l'app ; plus tard,
-   ta décision) — voir leurs comptes rendus ci-dessus. Faits par toi le 2026-11-02 : polkit réel, lien externe d'une web app.
+6. **À tester à la main** (en attente) : clé LUKS (bloc 1 : tu n'en as pas, chemin non testé en réel), document Word ouvert depuis Word (bloc 3 : reste dans l'app ; plus tard,
+   ta décision) — voir leurs comptes rendus ci-dessus. Faits par toi le 2026-11-02 : polkit réel, lien externe d'une web app, clé USB (branchée, montée, ouverte, éjectée).
+   Icône des disques : visible seulement avec un disque branché (ta demande du 2026-11-02) ; le panneau se ferme avec le dernier disque. Banc (disques simulés) : icône, panneau, demande de phrase de passe ; à revoir à ton prochain branchement.
 
 **Performance (2026-11-02, branche `perf/profiling`, détail dans `docs/PERFORMANCE.md`)** : RSS 736 → ~510 Mo, VRAM 452 → ~388 Mio, CPU au repos ÷ 3 ; `basic` essayé puis écarté (ta décision). Fonds décodés à l'échelle réelle, largeurs fixes mesurées une fois, titre et mode retirés de `Compositor`, statut NordVPN
 moins fréquent, réglages du processus dans `scripts/qs-env.sh`. `test-outputs.sh` : 0 échec.
