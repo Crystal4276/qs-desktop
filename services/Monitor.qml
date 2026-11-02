@@ -270,6 +270,10 @@ Singleton {
                     return;
                 if (Gpu.vendor === "nvidia" && Gpu.useSmi) {
                     const f = text.split("\n")[0].split(",").map(s => s.trim());
+                    if (f.length < 8) {   // nvidia-smi en échec : message d'erreur à la place des valeurs
+                        root.gpu = null;
+                        return;
+                    }
                     const num = s => isNaN(Number(s)) ? -1 : Number(s);
                     root.gpu = { name: f[0] ?? "", load: num(f[1]), memUsed: num(f[2]), memTotal: num(f[3]), temperature: num(f[4]),
                         power: num(f[5]), fan: num(f[6]), clock: num(f[7]) };

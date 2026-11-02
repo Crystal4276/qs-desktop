@@ -1814,7 +1814,8 @@ sur des plages de commits, un fichier inchangé dans la plage n'y était que du 
 5. **Statistiques système** : `services/Monitor.qml`, `modules/monitor/`. **Fait** (ci-dessous).
 6. **Modules système de la barre** (phase 4) : `Gpu`, `SystemStats`, `Updates`, `Battery`, `Brightness`, `Displays`,
    `Profiles` et leurs widgets (`Cpu`, `Memory`, `GpuModule`, `InfoModule`, `NetworkModule`, `UpdatesModule`,
-   `BatteryModule`, `Backlight`, `WheelSteps`, `RichLabel`), contenu de `CalendarPopup`.
+   `BatteryModule`, `Backlight`, `WheelSteps`, `RichLabel`), contenu de `CalendarPopup`. **Fait** (ci-dessous ; `Battery`,
+   `Brightness`, `BatteryModule`, `Backlight` non revus : matériel absent, à reprendre sur le laptop).
 7. **OSD et widgets partagés** : `Osd.qml`, `VolumeSlider`, `PercentLabel`, `MixerButton`, `OutsideClick`, `PanelButton`,
    `PanelSection`.
 8. **Scripts** : `takeover.sh`, `dev.sh`, `shot.sh`, `crop.sh`.
@@ -1976,6 +1977,27 @@ committée, processus témoins : aucun de tes processus n'a reçu de signal).
 - **À tester à la main** : ouvrir et fermer le panneau en cliquant sur les trois modules, sur chacun de tes écrans ; longueur des
   barres RAM et swap (raccourcies par la largeur réservée au texte).
 
+### Modules système de la barre : revue (2026-11-02, ta demande)
+
+Défauts reproduits d'abord sur le banc (faux `nvidia-smi` et `checkupdates`, pointeur et clavier virtuels), puis re-testés corrigés.
+- **Mises à jour** : un échec de `checkupdates` (réseau) remettait le compteur à 0 pour 2 h 23. Dernier compte gardé, nouvel essai
+  dans 5 min (prouvé avec un intervalle raccourci sur le banc).
+- **GPU** : un seul échec de `nvidia-smi` masquait le module jusqu'au redémarrage du shell (ta carte n'a aucun capteur du noyau).
+  Il reste interrogé et le module revient ; le panneau de statistiques ne prend plus le message d'erreur pour un nom de carte.
+- **Calendrier** : Échap ou fermeture, pointeur sur l'horloge : plus de retour en aperçu, la barre rend le clavier. Aperçu au bout
+  de 150 ms (comme le tray), jamais par-dessus un panneau épinglé. 10 px de marge au bord de l'écran (`anchor.onAnchoring`).
+  `popupHovered` réduit à un seul survol (fermeture automatique toujours correcte, vérifié).
+- **Barre** : CPU réel 0,3 s après le démarrage (0 % pendant 5 s avant) ; icône montante du réseau à sa place (environ 2 px).
+- **Limites connues, écrites dans `CalendarPopup.qml`** (pas d'API pour redonner le clavier à la barre) : après un clic dans le
+  calendrier, Échap et ←/→ ne répondent plus (souris et délai restent) ; idem si on rouvre d'un clic sans avoir quitté l'horloge.
+- **Non résolu** : avertissement `Bluez.qml[31:5]` (« Unable to assign [undefined] to bool », 2 fois au démarrage) : hypothèse du
+  chaînage optionnel testée, fausse ; sans effet connu. `Tailscale.qml[172:9]` n'apparaît plus dans le journal actuel.
+- **Banc** : `grim` sur tes vrais écrans bloque quand ils sont en veille (aucune image n'arrive) ; lire `power` dans
+  `swaymsg -t get_outputs` avant. Pointeur virtuel : garder le client vivant, sinon le survol tombe à sa sortie.
+- **À tester à la main** : Échap sur le calendrier pointeur sur l'horloge (le clavier revient à ta fenêtre) ; passage rapide sur
+  l'horloge sans ouverture ; DP-1 et DP-3 : marge du calendrier au bord droit. Profils d'énergie : `power-profiles-daemon` n'est pas
+  installé, boutons masqués normalement.
+
 ## Prochaine étape
 
 **Reprise (2026-11-02) : tu as lancé `scripts/takeover.sh`, Quickshell est ton vrai bureau pour cette session Sway** (Waybar, Dunst
@@ -1983,8 +2005,8 @@ et les autres arrêtés ; retour : `scripts/takeover.sh restore`). Ne pas les r�
 dépôt recharge ton bureau : préparer et tester sur la copie du banc, puis copier d'un seul coup. Rien n'est poussé (push en fin
 de phase).
 
-1. **Bloc 6 — Modules système de la barre** : revue en boucle, puis blocs 7 à 9 de la liste « Revues restantes avant la phase 9 »
-   ci-dessus (blocs 1 à 5 faits). Puis phase 9 — parité Hyprland (tests à faire ensemble dans une session Hyprland : voir
+1. **Bloc 7 — OSD et widgets partagés** : revue en boucle, puis blocs 8 et 9 de la liste « Revues restantes avant la phase 9 »
+   ci-dessus (blocs 1 à 6 faits). Puis phase 9 — parité Hyprland (tests à faire ensemble dans une session Hyprland : voir
    « Compatibilité Hyprland »).
 2. **Méthode, retenue après le bloc 4** :
    - partir de ton **usage réel** : relever d'abord ce que tu utilises vraiment (applications, réglages, chemins) et donner ce
