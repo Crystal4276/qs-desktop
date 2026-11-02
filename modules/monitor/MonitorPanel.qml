@@ -11,7 +11,8 @@ import qs.modules.bar
 // fréquence), disques, réseau ; processus triables (nom, PID, utilisateur, CPU, mémoire, mémoire vidéo), recherche, arrêt de tes
 // processus avec confirmation (SIGTERM, puis « Force » : SIGKILL). Mesures relevées seulement panneau ouvert (Monitor.users).
 // Un processus choisi fige l'ordre de la liste (les valeurs continuent de changer, les nouveaux processus s'ajoutent en bas) jusqu'à
-// ce qu'on le désélectionne (nouveau clic), qu'il s'arrête, ou qu'on change le tri ou la recherche (la liste est alors refigée).
+// ce qu'on le désélectionne (nouveau clic) ou qu'il s'arrête. Tri ou recherche changés : liste refigée et ramenée sur lui ; sélection
+// levée s'il ne correspond plus à la recherche (pas d'arrêt d'un processus qu'on ne voit plus).
 OverlayPopup {
     id: root
 
@@ -28,7 +29,8 @@ OverlayPopup {
         const list = Monitor.processes.filter(p => q === "" || p.name.toLowerCase().includes(q) || String(p.pid).startsWith(q)
             || p.user.toLowerCase().includes(q));
         const k = sortKey, d = descending ? -1 : 1;
-        return list.sort((a, b) => (typeof a[k] === "string" ? a[k].localeCompare(b[k]) : a[k] - b[k]) * d);
+        // Départage par PID : le tri du moteur n'est pas stable, les lignes à égalité s'échangeraient à chaque relevé.
+        return list.sort((a, b) => (typeof a[k] === "string" ? a[k].localeCompare(b[k]) : a[k] - b[k]) * d || a.pid - b.pid);
     }
     readonly property var rows: {
         if (!frozen)
@@ -67,24 +69,43 @@ OverlayPopup {
             frozen = rows.map(p => p.pid);
     }
 
-    // Tri ou recherche changés : nouvel ordre, figé de nouveau si un processus est choisi.
+    // Tri ou recherche changés : nouvel ordre, figé de nouveau si un processus est choisi ; vue ramenée sur lui, sinon en haut.
     function refreeze(): void {
         if (selectedPid >= 0)
-            select(selectedPid);
+            select(sorted.some(p => p.pid === selectedPid) ? selectedPid : -1);
+        Qt.callLater(() => {
+            const i = selectedPid >= 0 ? rows.findIndex(p => p.pid === selectedPid) : -1;
+            if (i >= 0)
+                list.positionViewAtIndex(i, ListView.Contain);
+            else
+                list.positionViewAtBeginning();
+        });
     }
 
-    function toggle(): void {
-        if (visible) {
-            close();
+    // `from` : pilule du module cliqué, qui referme le panneau et donne l'écran ; null (raccourci) : écran focalisé.
+    function toggle(from: Item): void {
+        if (!beginOpen(from))
             return;
-        }
-        screen = Outputs.focusedScreen();
-        prepareOpen(null);
+        screen = from ? from.QsWindow.window.screen : Outputs.focusedScreen();
         search.text = "";
         select(-1);
+        list.positionViewAtBeginning();
         visible = true;
         search.focusInput();
     }
+
+    // Largeur commune d'une colonne de textes (jauges de même longueur).
+    function widest(texts: var): int {
+        return Math.ceil(Math.max(0, ...texts.map(t => smallMetrics.advanceWidth(t))));
+    }
+
+    // Largeur de « utilisé / total » : la valeur utilisée la plus large, pour que la jauge ne bouge pas quand elle change.
+    function usageWidest(totals: var): int {
+        return widest(totals.map(total => `888.8 GiB / ${bytes(total)}`));
+    }
+
+    readonly property int coreCount: Monitor.cores.length
+    readonly property int coreLabelWidth: widest(Array.from({ length: coreCount }, (_, i) => String(i)))
 
     function bytes(v: real): string {
         const units = ["B", "KiB", "MiB", "GiB", "TiB"];
@@ -119,6 +140,7 @@ OverlayPopup {
     component Gauge: RowLayout {
         property string label: ""
         property real labelWidth: -1    // largeur commune des étiquettes d'une carte (jauges alignées)
+        property real valueWidth: -1    // largeur commune des valeurs (jauges de même longueur)
         property real value: 0          // 0 → 1
         property string text: ""
         property color tint: Theme.monitor.cpu
@@ -151,6 +173,8 @@ OverlayPopup {
         }
 
         Text {
+            Layout.preferredWidth: parent.valueWidth
+            horizontalAlignment: Text.AlignRight
             text: parent.text
             font.family: Theme.font.text
             font.pixelSize: Theme.panel.smallFontSize
@@ -188,14 +212,14 @@ OverlayPopup {
         }
     }
 
-    // Largeur commune des étiquettes RAM, Swap, Load, VRAM.
-    Text {
-        id: labelMeasure
-        visible: false
-        text: "VRAM"
+    FontMetrics {
+        id: smallMetrics
         font.family: Theme.font.text
         font.pixelSize: Theme.panel.smallFontSize
     }
+
+    // Largeur commune des étiquettes RAM, Swap, Load, VRAM.
+    readonly property int shortLabelWidth: widest(["VRAM"])
 
     PanelFrame {
         id: frame
@@ -216,6 +240,7 @@ OverlayPopup {
                 Gauge {
                     value: Monitor.cpuTotal / 100
                     text: `${Monitor.cpuTotal} %`
+                    valueWidth: root.widest(["100 %"])
                     tint: Theme.monitor.cpu
                 }
 
@@ -228,12 +253,12 @@ OverlayPopup {
                     // Modèles en nombre d'éléments (cœurs, disques, cellules d'une ligne) : les valeurs changent à chaque relevé sans
                     // recréer les délégués.
                     Repeater {
-                        model: Monitor.cores.length
+                        model: root.coreCount
 
                         Gauge {
                             required property int index
                             label: String(index)
-                            labelWidth: Math.ceil(Math.max(0, ...Monitor.cores.map((_, i) => mountMetrics.advanceWidth(String(i)))))   // jauges alignées
+                            labelWidth: root.coreLabelWidth   // jauges alignées
                             value: (Monitor.cores[index] ?? 0) / 100
                             tint: Theme.monitor.cpu
                         }
@@ -246,7 +271,8 @@ OverlayPopup {
 
                 Gauge {
                     label: "RAM"
-                    labelWidth: labelMeasure.implicitWidth
+                    labelWidth: root.shortLabelWidth
+                    valueWidth: root.usageWidest([Monitor.memTotal, Monitor.swapTotal])
                     value: Monitor.memTotal > 0 ? Monitor.memUsed / Monitor.memTotal : 0
                     text: `${root.bytes(Monitor.memUsed)} / ${root.bytes(Monitor.memTotal)}`
                     tint: Theme.monitor.memory
@@ -255,7 +281,8 @@ OverlayPopup {
                 Gauge {
                     visible: Monitor.swapTotal > 0
                     label: "Swap"
-                    labelWidth: labelMeasure.implicitWidth
+                    labelWidth: root.shortLabelWidth
+                    valueWidth: root.usageWidest([Monitor.memTotal, Monitor.swapTotal])
                     value: Monitor.swapTotal > 0 ? Monitor.swapUsed / Monitor.swapTotal : 0
                     text: `${root.bytes(Monitor.swapUsed)} / ${root.bytes(Monitor.swapTotal)}`
                     tint: Theme.monitor.memory
@@ -285,7 +312,8 @@ OverlayPopup {
                 Gauge {
                     visible: (Monitor.gpu?.load ?? -1) >= 0
                     label: "Load"
-                    labelWidth: labelMeasure.implicitWidth
+                    labelWidth: root.shortLabelWidth
+                    valueWidth: root.usageWidest([(Monitor.gpu?.memTotal ?? 0) * 1048576])
                     value: (Monitor.gpu?.load ?? 0) / 100
                     text: `${Monitor.gpu?.load ?? 0} %`
                     tint: Theme.monitor.gpu
@@ -294,7 +322,8 @@ OverlayPopup {
                 Gauge {
                     visible: (Monitor.gpu?.memTotal ?? -1) > 0
                     label: "VRAM"
-                    labelWidth: labelMeasure.implicitWidth
+                    labelWidth: root.shortLabelWidth
+                    valueWidth: root.usageWidest([(Monitor.gpu?.memTotal ?? 0) * 1048576])
                     value: (Monitor.gpu?.memTotal ?? 0) > 0 ? Monitor.gpu.memUsed / Monitor.gpu.memTotal : 0
                     text: `${root.bytes((Monitor.gpu?.memUsed ?? 0) * 1048576)} / ${root.bytes((Monitor.gpu?.memTotal ?? 0) * 1048576)}`
                     tint: Theme.monitor.gpu
@@ -319,13 +348,11 @@ OverlayPopup {
             title: "Disks"
             Layout.fillHeight: false
 
-            FontMetrics {
-                id: mountMetrics
-                font.family: Theme.font.text
-                font.pixelSize: Theme.panel.smallFontSize
-            }
-
             GridLayout {
+                id: diskGrid
+                readonly property int labelWidth: root.widest(Monitor.disks.map(d => d.mount))
+                readonly property int valueWidth: root.usageWidest(Monitor.disks.map(d => d.size))
+
                 Layout.fillWidth: true
                 columns: 2
                 columnSpacing: 2 * Theme.panel.spacing
@@ -338,7 +365,8 @@ OverlayPopup {
                         required property int index
                         readonly property var modelData: Monitor.disks[index] ?? { mount: "", size: 0, used: 0 }
                         label: modelData.mount
-                        labelWidth: Math.ceil(Math.max(0, ...Monitor.disks.map(d => mountMetrics.advanceWidth(d.mount))))
+                        labelWidth: diskGrid.labelWidth
+                        valueWidth: diskGrid.valueWidth
                         value: modelData.size > 0 ? modelData.used / modelData.size : 0
                         text: `${root.bytes(modelData.used)} / ${root.bytes(modelData.size)}`
                         tint: Theme.monitor.disk
@@ -356,7 +384,7 @@ OverlayPopup {
                 id: search
                 placeholder: "Search processes"
                 search: true
-                onTextChanged: root.refreeze()
+                onTextChanged: Qt.callLater(root.refreeze)   // après la mise à jour de `sorted`
                 Keys.onEscapePressed: root.close()
             }
 

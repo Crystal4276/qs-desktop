@@ -13,9 +13,9 @@ Scope {
 
     Connections {
         target: Monitor
-        function onToggleRequested() {
+        function onToggleRequested(from: Item) {
             loader.active = true;
-            loader.item.toggle();
+            loader.item.toggle(from);
         }
     }
 }
