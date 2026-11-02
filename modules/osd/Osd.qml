@@ -16,6 +16,7 @@ PanelWindow {
 
     function show(k: string): void {
         kind = k;
+        screen = Quickshell.screens.find(s => s.name === Compositor.focusedOutput) ?? null;   // reste sur cet écran si le focus part
         visible = true;
         hide.restart();
     }
@@ -29,7 +30,6 @@ PanelWindow {
         : Audio.muted ? Theme.icon.muted
         : Theme.level(Theme.icon.volume, Audio.percent)
 
-    screen: Quickshell.screens.find(s => s.name === Compositor.focusedOutput) ?? null
     visible: false
     WlrLayershell.namespace: "quickshell-osd"
     WlrLayershell.layer: WlrLayer.Overlay

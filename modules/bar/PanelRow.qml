@@ -49,11 +49,16 @@ Rectangle {
             event.accepted = false;
     }
 
-    // Sous le contenu : reçoit les clics hors des boutons (qui consomment les leurs, PanelButton.qml).
+    // Sous le contenu : reçoit les clics hors des boutons (qui consomment les leurs, PanelButton.qml). Un bouton désactivé laisse
+    // passer le clic : il n'active pas la ligne pour autant.
     MouseArea {
         anchors.fill: parent
         enabled: root.usable
-        onClicked: root.clicked()
+        onClicked: mouse => {
+            const p = mapToItem(trailingRow, mouse.x, mouse.y);
+            if (trailingRow.childAt(p.x, p.y)?.enabled !== false)
+                root.clicked();
+        }
     }
 
     RowLayout {

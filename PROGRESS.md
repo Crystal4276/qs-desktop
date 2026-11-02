@@ -1817,7 +1817,7 @@ sur des plages de commits, un fichier inchangé dans la plage n'y était que du 
    `BatteryModule`, `Backlight`, `WheelSteps`, `RichLabel`), contenu de `CalendarPopup`. **Fait** (ci-dessous ; `Battery`,
    `Brightness`, `BatteryModule`, `Backlight` non revus : matériel absent, à reprendre sur le laptop).
 7. **OSD et widgets partagés** : `Osd.qml`, `VolumeSlider`, `PercentLabel`, `MixerButton`, `OutsideClick`, `PanelButton`,
-   `PanelSection`.
+   `PanelSection`. **Fait** (ci-dessous).
 8. **Scripts** : `takeover.sh`, `dev.sh`, `shot.sh`, `crop.sh`.
 9. **Ajouts postérieurs à leur boucle** : clic droit sur la cloche (`Tray`, `PreviewArea`, `TrayButton`), fermeture auto du
    menu et `EmptyState`, titre de la carte des réglages, largeurs fixes de `NetworkModule`, `shell.qml`.
@@ -1998,6 +1998,19 @@ Défauts reproduits d'abord sur le banc (faux `nvidia-smi` et `checkupdates`, po
   l'horloge sans ouverture ; DP-1 et DP-3 : marge du calendrier au bord droit. Profils d'énergie : `power-profiles-daemon` n'est pas
   installé, boutons masqués normalement.
 
+### OSD et widgets partagés : revue (2026-11-02, ta demande)
+
+Vérifié sur banc (harnais avec vrais événements, deux écrans virtuels pour l'OSD). Banc sans PipeWire : le chemin avec un vrai
+périphérique reste à tester à la main.
+- **Boutons des panneaux** : une touche maintenue déclenchait le bouton en rafale (25 fois en 1,5 s, Mute basculait au hasard) : une
+  seule action. Clic sur un bouton désactivé : n'active plus la ligne dessous.
+- **Curseur de volume** : au-dessus de 100 % (réglé ailleurs), un cran vers le haut faisait retomber à 100 % ; ne bouge plus vers le
+  haut, descend par pas de 5 (comme `Audio.step`).
+- **Panneau audio** : bouton Mute / Unmute à largeur fixe (88 px) : le curseur ne bouge plus quand on coupe le son.
+- **OSD** : plus d'annonce « micro actif, 0 % » sans périphérique ; reste sur son écran si le focus part pendant son affichage.
+- Passe de confirmation du bloc 6 : rien de nouveau.
+- **À tester à la main** : touches volume et micro (OSD) ; Mute dans le panneau audio ; molette à plus de 100 %.
+
 ## Prochaine étape
 
 **Reprise (2026-11-02) : tu as lancé `scripts/takeover.sh`, Quickshell est ton vrai bureau pour cette session Sway** (Waybar, Dunst
@@ -2005,8 +2018,8 @@ et les autres arrêtés ; retour : `scripts/takeover.sh restore`). Ne pas les r�
 dépôt recharge ton bureau : préparer et tester sur la copie du banc, puis copier d'un seul coup. Rien n'est poussé (push en fin
 de phase).
 
-1. **Bloc 7 — OSD et widgets partagés** : revue en boucle, puis blocs 8 et 9 de la liste « Revues restantes avant la phase 9 »
-   ci-dessus (blocs 1 à 6 faits). Puis phase 9 — parité Hyprland (tests à faire ensemble dans une session Hyprland : voir
+1. **Blocs 8 et 9 — Scripts, ajouts postérieurs à leur boucle** : revue de la liste « Revues restantes avant la phase 9 »
+   ci-dessus (blocs 1 à 7 faits). Puis phase 9 — parité Hyprland (tests à faire ensemble dans une session Hyprland : voir
    « Compatibilité Hyprland »).
 2. **Méthode, retenue après le bloc 4** :
    - partir de ton **usage réel** : relever d'abord ce que tu utilises vraiment (applications, réglages, chemins) et donner ce

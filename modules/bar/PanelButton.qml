@@ -21,9 +21,15 @@ Rectangle {
     activeFocusOnTab: enabled
     border.width: activeFocus ? Theme.panel.border : 0
     border.color: Theme.panel.focusRing
-    Keys.onReturnPressed: root.clicked()
-    Keys.onEnterPressed: root.clicked()
-    Keys.onSpacePressed: root.clicked()
+    Keys.onReturnPressed: event => root.press(event)
+    Keys.onEnterPressed: event => root.press(event)
+    Keys.onSpacePressed: event => root.press(event)
+
+    // Touche maintenue : une seule action (Mute basculerait en rafale).
+    function press(event: KeyEvent): void {
+        if (!event.isAutoRepeat)
+            clicked();
+    }
 
     Text {
         id: label
@@ -38,7 +44,8 @@ Rectangle {
         id: hover
     }
 
-    // MouseArea (et non TapHandler) : le clic est consommé ici et n'atteint pas la ligne qui contient le bouton.
+    // MouseArea (et non TapHandler) : le clic est consommé ici et n'atteint pas la ligne qui contient le bouton. Bouton désactivé :
+    // cette zone l'est aussi, c'est PanelRow qui ignore le clic.
     MouseArea {
         anchors.fill: parent
         onClicked: root.clicked()
