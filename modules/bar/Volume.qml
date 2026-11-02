@@ -2,7 +2,8 @@ import QtQuick
 import qs.config
 import qs.services
 
-// Icône de volume (INVENTORY.md § 1, `pulseaudio`) : 3 paliers (seuils 33 et 66 %, getIcon de Waybar), muet `U+F466␣`.
+// Icône de volume (INVENTORY.md § 1, `pulseaudio`) : 3 paliers (seuils 33 et 66 %, getIcon de Waybar), muet `U+F466` (sans l'espace
+// de Waybar, qui élargissait la pilule à l'état muet : ta demande du 2026-11-02).
 // Clic gauche : muet ; milieu : sortie suivante ; droit : panneau audio (pavucontrol dans Waybar ; ton choix du 2026-10-16) ;
 // molette : ±5 % (plafond 100 %).
 // Largeur min. 35 px, padding gauche 10 px seulement en tête de pilule, 0 à droite (style.css).
@@ -24,8 +25,7 @@ Item {
         id: label
         anchors.verticalCenter: parent.verticalCenter
         x: root.paddingLeft + (Math.max(Theme.bar.volumeIconMinWidth, implicitWidth) - implicitWidth) / 2
-        text: Audio.muted ? Theme.icon.muted + " "
-            : Theme.level(Theme.icon.volume, Audio.percent)
+        text: Audio.muted ? Theme.icon.muted : Theme.level(Theme.icon.volume, Audio.percent)
         font.family: Theme.font.icons
         font.pixelSize: Theme.font.volumeIcon
         color: Theme.module.volume
