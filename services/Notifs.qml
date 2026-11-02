@@ -221,7 +221,10 @@ Singleton {
 
     readonly property int historyLength: 20               // dunstrc
     readonly property int ageThreshold: 60                // dunstrc show_age_threshold, en secondes
-    readonly property var defaultTimeouts: [10000, 10000, 0] // basse, normale, critique (défauts Dunst, non fixés dans dunstrc)
+    // Durée d'affichage maximale (ta demande du 2026-11-02), y compris pour une application qui demande plus ou « jamais ».
+    // Seule exception : une notification critique sans délai reste jusqu'à sa fermeture (comme sous Dunst).
+    readonly property int maxTimeout: 4000
+    readonly property var defaultTimeouts: [maxTimeout, maxTimeout, 0] // basse, normale, critique
     readonly property var stackTagHints: ["synchronous", "private-synchronous", "x-canonical-private-synchronous", "x-dunst-stack-tag"]
     // Actions sans bouton : « default » (clic milieu, dunstrc) ; « settings » de Chromium et de ses applications web (ouvre les
     // réglages de notification du site : pas une action sur la notification ; ta décision du 2026-10-20). Identifiants vérifiés
@@ -286,8 +289,14 @@ Singleton {
         readonly property bool hasActions: notification ? notification.actions.length > 0 : false
         readonly property var urls: Notifs.urlsOf(summary, body)
         // Délai en ms (0 : jamais). Rappelée de l'historique : jamais (sticky_history).
-        readonly property real timeout: redisplayed ? 0 : notification && notification.expireTimeout >= 0 ? notification.expireTimeout
-            : Notifs.defaultTimeouts[urgency] ?? 10000
+        readonly property real timeout: {
+            if (redisplayed)
+                return 0;
+            const asked = notification && notification.expireTimeout >= 0 ? notification.expireTimeout : Notifs.defaultTimeouts[urgency] ?? Notifs.maxTimeout;
+            if (asked === 0)
+                return urgency === NotificationUrgency.Critical ? 0 : Notifs.maxTimeout;
+            return Math.min(asked, Notifs.maxTimeout);
+        }
         // Texte affiché (StyledText).
         // L'âge n'apparaît qu'après ageThreshold : avant, l'horloge ne refait pas le texte (ageClock reste à 0).
         readonly property real ageClock: Notifs.clock - timestamp >= Notifs.ageThreshold * 1000 ? Notifs.clock : 0
