@@ -163,7 +163,8 @@ Singleton {
     }
 
     // HDR / VRR sur une liste de sorties. Sway : `output X hdr on|off`, `adaptive_sync on|off`, comme ton `$mod+d`. Hyprland : règle
-    // `hl.monitor` partielle (fusionnée avec celle de l'écran, mode et échelle gardés), oubliée au prochain `hyprctl reload`.
+    // `hl.monitor` partielle (fusionnée avec celle de l'écran, mode et échelle gardés), reposée après un `hyprctl reload` (réveil,
+    // services/Idle.qml), qui l'efface : Sway, lui, garde ces réglages.
     function setHdr(names: var, on: bool): void {
         if (isSway && names.length > 0)
             I3.dispatch(names.map(n => `output "${n}" hdr ${on ? "on" : "off"}`).join("; "));
@@ -178,8 +179,15 @@ Singleton {
             setMonitorRule(names, `vrr = ${on ? 1 : 0}`);
     }
 
+    property var monitorRules: []   // règles posées depuis le démarrage, dans l'ordre : { names, fields }
+
     function setMonitorRule(names: var, fields: string): void {
-        hyprlandBatch(names.map(n => `function() hl.monitor({ output = "${n}", ${fields} }) end`));
+        monitorRules = [...monitorRules, { names: names, fields: fields }];
+        applyMonitorRules([monitorRules[monitorRules.length - 1]]);
+    }
+
+    function applyMonitorRules(rules: var): void {
+        hyprlandBatch(rules.flatMap(r => r.names.map(n => `function() hl.monitor({ output = "${n}", ${r.fields} }) end`)));
         monitorReread.restart();
     }
 
@@ -362,6 +370,8 @@ Singleton {
             // à vérifier en phase 9).
             else if (event.name === "moveworkspacev2")
                 Hyprland.refreshMonitors();
+            else if (event.name === "configreloaded" && root.monitorRules.length > 0)
+                root.applyMonitorRules(root.monitorRules);
             else if (event.name === "urgent" && root.takeActivation(Hyprland.toplevels.values.find(t => t.address === event.data)?.wayland?.appId ?? ""))   // « ADRESSE » (hexadécimal, sans 0x) ; à vérifier en phase 9
                 hyprlandBatch([`hl.dsp.focus({ window = "address:0x${event.data}" })`]);
         }
