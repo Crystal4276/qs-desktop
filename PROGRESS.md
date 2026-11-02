@@ -1818,9 +1818,9 @@ sur des plages de commits, un fichier inchangé dans la plage n'y était que du 
    `Brightness`, `BatteryModule`, `Backlight` non revus : matériel absent, à reprendre sur le laptop).
 7. **OSD et widgets partagés** : `Osd.qml`, `VolumeSlider`, `PercentLabel`, `MixerButton`, `OutsideClick`, `PanelButton`,
    `PanelSection`. **Fait** (ci-dessous).
-8. **Scripts** : `takeover.sh`, `dev.sh`, `shot.sh`, `crop.sh`.
+8. **Scripts** : `takeover.sh`, `dev.sh`, `shot.sh`, `crop.sh`. **Fait** (ci-dessous).
 9. **Ajouts postérieurs à leur boucle** : clic droit sur la cloche (`Tray`, `PreviewArea`, `TrayButton`), fermeture auto du
-   menu et `EmptyState`, titre de la carte des réglages, largeurs fixes de `NetworkModule`, `shell.qml`.
+   menu et `EmptyState`, titre de la carte des réglages, largeurs fixes de `NetworkModule`, `shell.qml`. **Fait** (ci-dessous).
 
 Hors périmètre : chemins propres à Hyprland (phase 9), `Theme.qml` (valeurs). Méthode : `/code-review high` sur les fichiers
 entiers, chaque point vérifié sur banc isolé avant correction, un commit par passe, arrêt quand une passe ne trouve plus que
@@ -2011,6 +2011,27 @@ périphérique reste à tester à la main.
 - Passe de confirmation du bloc 6 : rien de nouveau.
 - **À tester à la main** : touches volume et micro (OSD) ; Mute dans le panneau audio ; molette à plus de 100 %.
 
+### Scripts et ajouts récents : revue (2026-11-02, ta demande)
+
+Scripts testés sur le banc (`takeover.sh` compris, garde-fou : abandon si un outil réel tourne, son `pgrep` vise tout l'utilisateur).
+- **`dev.sh`** : répertoire courant = dossier personnel (les applications lancées depuis le shell démarraient dans le dépôt), variables
+  du terminal retirées, verrou contre deux relances rapprochées (deux instances possibles, donc deux barres), échec de lecture de
+  l'environnement systemd sans conséquence (arrêtait le script en silence). **Effet à la prochaine relance** de l'instance.
+- **`takeover.sh`** : instance qui ne démarre pas : retour automatique à l'ancien bureau (prouvé avec une config cassée) ; Waybar
+  n'est plus relancée en double au `restore` (`exec_always` de ta config s'en charge) ; Dunst bloqué tant que Quickshell a la main
+  (`systemctl --user mask --runtime`, sans fichier de config touché, annulé par `restore`) : une notification pendant une relance ou
+  après un plantage l'aurait réactivé. **Le blocage n'est pas testé** (il faudrait libérer le nom D-Bus de ta session), **et ne
+  s'applique pas à la session en cours** : il prend effet au prochain `takeover.sh`.
+- **Volume au-dessus de 100 %** : correction du bloc 7 incomplète, les curseurs de la barre et des réglages passaient par
+  `Audio.setVolume`, qui plafonnait encore à 100 % ; corrigé (lecture et calcul seulement, banc sans PipeWire).
+- **Touche maintenue** : même correction sur `PanelRow` et `PanelSwitch` (une ligne « Connect automatically » basculait en rafale).
+  Relu, non rejoué pour ces deux éléments.
+- **Sans défaut** : `PanelRow` relu sur ses 19 usages (lignes toujours cliquables), clic droit sur la cloche (lu), `EmptyState`,
+  `shell.qml`, `shot.sh`, `crop.sh`, largeurs de `NetworkModule` (4000 débits tirés au sort, toujours 129 px).
+- **Laissés** : `$mod+Ctrl+w` avec une config cassée : l'ancienne instance est tuée et l'erreur ne s'affiche nulle part (cas de
+  développement) ; menu d'applications : après avoir effacé la recherche, pointeur déjà sorti, il se ferme au bout de 2 s sans touche.
+- **Passes de confirmation** : blocs 6 et 7 relus ; les toutes dernières corrections ci-dessus n'ont pas repassé de revue.
+
 ## Prochaine étape
 
 **Reprise (2026-11-02) : tu as lancé `scripts/takeover.sh`, Quickshell est ton vrai bureau pour cette session Sway** (Waybar, Dunst
@@ -2018,8 +2039,7 @@ et les autres arrêtés ; retour : `scripts/takeover.sh restore`). Ne pas les r�
 dépôt recharge ton bureau : préparer et tester sur la copie du banc, puis copier d'un seul coup. Rien n'est poussé (push en fin
 de phase).
 
-1. **Blocs 8 et 9 — Scripts, ajouts postérieurs à leur boucle** : revue de la liste « Revues restantes avant la phase 9 »
-   ci-dessus (blocs 1 à 7 faits). Puis phase 9 — parité Hyprland (tests à faire ensemble dans une session Hyprland : voir
+1. **Liste « Revues restantes avant la phase 9 » terminée (blocs 1 à 9).** Prochaine étape : tes tests à la main, puis phase 9 — parité Hyprland (tests à faire ensemble dans une session Hyprland : voir
    « Compatibilité Hyprland »).
 2. **Méthode, retenue après le bloc 4** :
    - partir de ton **usage réel** : relever d'abord ce que tu utilises vraiment (applications, réglages, chemins) et donner ce

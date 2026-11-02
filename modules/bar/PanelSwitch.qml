@@ -11,6 +11,8 @@ Rectangle {
     signal toggled(bool checked)
 
     function flip(event: KeyEvent): void {
+        if (event?.isAutoRepeat)   // touche maintenue : une seule bascule
+            return;
         if (!locked)
             toggled(!checked);
         else if (event)
