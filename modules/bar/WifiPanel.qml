@@ -21,6 +21,7 @@ Panel {
     // Réseau protégé inconnu en attente de mot de passe ; `passwordRefused` : le précédent a été refusé.
     property var passwordFor: null
     property bool passwordRefused: false
+    secretTyped: password.text !== ""
     // Dernier réseau dont la connexion a été demandée ici, et message de son échec.
     property var pending: null
     property string failText: ""

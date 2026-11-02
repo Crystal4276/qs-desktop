@@ -8,6 +8,6 @@ InfoModule {
     shown: Gpu.available
     color: Theme.module.gpu
     pillHighlight: Theme.module.statsHighlight
-    segments: [[Theme.font.inlineIcons, Theme.icon.gpu], [Theme.font.text, ` ${Math.min(Gpu.usage, 99)}%`, SystemStats.percentTexts]]
+    segments: [[Theme.font.inlineIcons, Theme.icon.gpu], [Theme.font.text, ` ${Math.min(Gpu.usage, 99)}%`, WidthTexts.percents]]
     onClicked: Monitor.toggle(pillRow)
 }

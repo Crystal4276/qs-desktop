@@ -113,12 +113,6 @@ Singleton {
 
     // § 3 — Calendrier de l'horloge (nouveau composant, ARCHITECTURE § 8.3) : valeurs reprises de la barre et du lanceur
     readonly property QtObject calendar: QtObject {
-        readonly property int gap: 10                    // sous la pilule, à la hauteur du haut des fenêtres (gaps 10)
-        readonly property color background: root.color.mantle
-        readonly property int border: 1
-        readonly property color borderColor: root.color.overlay0
-        readonly property int radius: 20
-        readonly property int padding: 15
         readonly property int spacing: 10
         readonly property int titleSize: 26
         readonly property int fontSize: 20
@@ -130,7 +124,6 @@ Singleton {
         readonly property color otherMonth: root.color.surface2
         readonly property color today: root.color.green
         readonly property color todayText: root.color.mantle
-        readonly property int autoCloseDelay: 2000       // ms : épinglé, pointeur hors du calendrier et de l'horloge → fermeture (ton choix du 2026-10-21, 5 s avant)
     }
 
     // § 3 — Panneaux des modules natifs (réseau, Bluetooth, disques, NordVPN) : nouveau composant, style du calendrier,
@@ -138,7 +131,7 @@ Singleton {
     readonly property QtObject panel: QtObject {
         readonly property int gap: 10                       // sous la pilule, comme le calendrier
         readonly property int previewDelay: 150             // ms : arrêt sur une icône du tray avant l'aperçu de sa carte (pas en passant ; ton choix du 2026-10-21)
-        readonly property int autoCloseDelay: root.calendar.autoCloseDelay   // épinglé, pointeur hors de la carte et de l'icône → fermeture (ta demande du 2026-10-21)
+        readonly property int autoCloseDelay: 2000       // ms : épinglé, pointeur hors de la carte et de l'icône → fermeture (ta demande du 2026-10-21)
         readonly property int previewGrace: 300             // ms : aperçu au survol (tray), pointeur hors de l'icône et de la carte → fermeture (passage de l'une à l'autre)
         readonly property int width: 500                    // largeur du lanceur
         readonly property color background: root.color.mantle
@@ -472,7 +465,7 @@ Singleton {
         // du 2026-10-17) ; au-delà, les noms de favoris sont abrégés.
         readonly property int sidebarMaxWidth: 270
         // Pointeur hors du menu → fermeture (ta demande du 2026-10-21 : 2 s), comme le calendrier épinglé.
-        readonly property int autoCloseDelay: root.calendar.autoCloseDelay
+        readonly property int autoCloseDelay: root.panel.autoCloseDelay
         // Curseur de défilement du thème GTK (catppuccin) : bordure transparente de 4 px, au moins 24 px de haut, arrondi complet.
         readonly property int scrollbarInset: 4
         readonly property int scrollbarMinLength: 24

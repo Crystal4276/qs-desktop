@@ -19,8 +19,7 @@ Singleton {
 
     property var previousCpu: null
 
-    // Toutes les valeurs affichables, pour la largeur fixe des modules (InfoModule.qml) : pourcentages (CPU, GPU), Gio de 0 à la totale.
-    readonly property var percentTexts: Array.from({ length: 100 }, (_, i) => ` ${i}%`)
+    // Toutes les valeurs affichables, pour la largeur fixe du module (InfoModule.qml) : Gio de 0 à la totale.
     readonly property var memoryTexts: Array.from({ length: Number(memTotal.toFixed(0)) + 1 }, (_, i) => ` ${i}G`)
 
     // Première ligne de /proc/stat : temps cumulés de tous les cœurs ; inactif = idle + iowait.

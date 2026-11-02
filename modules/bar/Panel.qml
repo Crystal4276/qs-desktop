@@ -61,6 +61,8 @@ OverlayPopup {
     property bool pointerEntered: false
     // Pas de fermeture automatique (phrase de passe demandée d'office au branchement d'un disque : attend sa réponse).
     property bool holdOpen: false
+    // Mot de passe tapé, même si le focus a quitté le champ : un clic sur un autre écran ne ferme pas le panneau (texte gardé).
+    property bool secretTyped: false
     // Champ focalisé en cours de saisie : `pending` de PanelField.qml (heure modifiée pour TimeField.qml), sinon texte non vide.
     readonly property bool typing: frame.focusedItem?.cursorPosition !== undefined
         && (frame.focusedItem.parent instanceof PanelField ? frame.focusedItem.parent.pending : (frame.focusedItem.text ?? "") !== "")
@@ -104,8 +106,7 @@ OverlayPopup {
     WlrLayershell.namespace: "quickshell-panel"
     WlrLayershell.keyboardFocus: previewing ? WlrKeyboardFocus.None : WlrKeyboardFocus.Exclusive
     mask: previewing ? previewInput : null
-    // Mot de passe en cours de saisie : un clic sur un autre écran ne ferme pas le panneau (texte tapé gardé).
-    catchOutside: !previewing && frame.focusedItem?.echoMode !== TextInput.Password
+    catchOutside: !previewing && !secretTyped
     frameItem: frame
 
     Region {

@@ -365,7 +365,14 @@ Singleton {
         target: Network
         function onInterfaceNamesChanged() {
             root.refresh();
+            interfaceFollowUp.restart();
         }
+    }
+    // Interface changée alors que le démon annonce encore l'ancien état : relu une fois de plus, sans attendre les 30 s.
+    Timer {
+        id: interfaceFollowUp
+        interval: 3000
+        onTriggered: root.refresh()
     }
     Component.onCompleted: refresh()
 

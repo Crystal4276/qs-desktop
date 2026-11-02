@@ -7,6 +7,6 @@ import qs.services
 InfoModule {
     color: Theme.module.cpu
     pillHighlight: Theme.module.statsHighlight
-    segments: [[Theme.font.inlineIcons, Theme.icon.cpu], [Theme.font.text, ` ${Math.min(SystemStats.cpuUsage, 99)}%`, SystemStats.percentTexts]]
+    segments: [[Theme.font.inlineIcons, Theme.icon.cpu], [Theme.font.text, ` ${Math.min(SystemStats.cpuUsage, 99)}%`, WidthTexts.percents]]
     onClicked: Monitor.toggle(pillRow)
 }

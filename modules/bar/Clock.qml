@@ -19,10 +19,10 @@ InfoModule {
     held: calendar.pinned
     segments: [
         [Theme.font.inlineIcons, Theme.icon.clock],
-        [Theme.font.text, " " + clock.date.toLocaleString(Qt.locale(), "HH:mm"), ClockTexts.times],
+        [Theme.font.text, " " + clock.date.toLocaleString(Qt.locale(), "HH:mm"), WidthTexts.times],
         ...(root.showDate ? [
             [Theme.font.awesome, Theme.icon.calendar, [], Theme.bar.modulePadding],
-            [Theme.font.text, " " + clock.date.toLocaleString(Qt.locale(), "ddd-dd"), ClockTexts.dates]
+            [Theme.font.text, " " + clock.date.toLocaleString(Qt.locale(), "ddd-dd"), WidthTexts.dates]
         ] : [])
     ]
 
