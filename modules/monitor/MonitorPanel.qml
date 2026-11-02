@@ -39,7 +39,15 @@ OverlayPopup {
         const known = new Set(frozen);
         return frozen.filter(pid => byPid[pid]).map(pid => byPid[pid]).concat(sorted.filter(p => !known.has(p.pid)));
     }
-    readonly property var selectedProcess: Monitor.processes.find(p => p.pid === selectedPid) ?? null
+    // Valeurs de chaque ligne de la liste. Le modèle ne contient que les PID : avec des objets et objectProp, ScriptModel garde
+    // l'ancien objet d'une ligne qui change de rang (vérifié sur Quickshell 0.3.2), et ses valeurs resteraient périmées.
+    readonly property var processByPid: {
+        const byPid = {};
+        for (const p of Monitor.processes)
+            byPid[p.pid] = p;
+        return byPid;
+    }
+    readonly property var selectedProcess: processByPid[selectedPid] ?? null
 
     // Processus choisi arrêté : sélection levée, la liste reprend son tri (après coup : changer selectedPid ici, pendant
     // l'évaluation de selectedProcess, ferait une boucle de liaison).
@@ -437,8 +445,7 @@ OverlayPopup {
             clip: true
             boundsBehavior: Flickable.StopAtBounds
             model: ScriptModel {
-                values: root.rows
-                objectProp: "pid"
+                values: root.rows.map(p => p.pid)
             }
 
             Text {
@@ -452,13 +459,15 @@ OverlayPopup {
             delegate: Rectangle {
                 id: row
 
-                required property var modelData
-                readonly property var cells: [modelData.name, String(modelData.pid), modelData.user, `${modelData.cpu.toFixed(1)} %`,
-                    root.bytes(modelData.memory), modelData.gpu > 0 ? `${modelData.gpu} MiB` : ""]
+                required property int modelData    // PID
+                // Absent le temps qu'une ligne soit retirée du modèle.
+                readonly property var process: root.processByPid[modelData] ?? null
+                readonly property var cells: process ? [process.name, String(process.pid), process.user, `${process.cpu.toFixed(1)} %`,
+                    root.bytes(process.memory), process.gpu > 0 ? `${process.gpu} MiB` : ""] : ["", "", "", "", "", ""]
                 width: list.width
                 height: measure.implicitHeight + Theme.panel.rowPadding
                 radius: Theme.panel.rowRadius / 2
-                color: root.selectedPid === modelData.pid ? Theme.monitor.selected : "transparent"
+                color: root.selectedPid === modelData ? Theme.monitor.selected : "transparent"
 
                 RowLayout {
                     anchors.fill: parent
@@ -484,7 +493,7 @@ OverlayPopup {
 
                 MouseArea {
                     anchors.fill: parent
-                    onClicked: root.select(root.selectedPid === row.modelData.pid ? -1 : row.modelData.pid)
+                    onClicked: root.select(root.selectedPid === row.modelData ? -1 : row.modelData)
                 }
             }
         }
