@@ -17,6 +17,7 @@ OverlayPopup {
     property string target: ""   // description de l'écran visé ("" : tous)
 
     readonly property var outputs: [...Compositor.outputs].sort((a, b) => a.x - b.x)
+    readonly property real pixelRatio: Compositor.output(screen?.name ?? "")?.scale ?? 1   // réelle (WallpaperView.qml)
     readonly property var tabs: [
         { key: "simple", name: "Images" },
         ...(outputs.length > 1 ? [{ key: "panorama", name: "Panoramas" }] : []),
@@ -182,7 +183,7 @@ OverlayPopup {
                                 // Pas de source avant la taille finale : elle fait partie du nom de la vignette en cache.
                                 source: width > 0 && height > 0 ? Wallpapers.thumbSource(modelData, sourceSize) : ""
                                 fillMode: Image.PreserveAspectCrop
-                                sourceSize: Qt.size(Math.ceil(width * Screen.devicePixelRatio), Math.ceil(height * Screen.devicePixelRatio))
+                                sourceSize: Qt.size(Math.ceil(width * root.pixelRatio), Math.ceil(height * root.pixelRatio))
                                 asynchronous: true
                                 // Pas le cache mémoire de Qt (par adresse) : une image remplacée sous le même nom y resterait
                                 // l'ancienne, et serait enregistrée comme vignette de la nouvelle.
