@@ -416,9 +416,8 @@ Proposition de placement dans les phases (CLAUDE.md n'est pas modifié sans ton 
   dans ta config ; 21 ms du clic au changement d'espace).
 - **Panneaux du tray** (corrigé le 2026-10-20) : surfaces Overlay à clavier exclusif (`OverlayPopup`, comme le panneau de réglages et
   le lanceur), et non plus des popups « grab » : sous Sway, un popup `grabFocus` ouvert depuis une barre ne reçoit jamais le clavier
-  (ni saisie, ni Échap). Fermés par un appui à côté du cadre (non transmis), sur une barre ou sur un autre écran, ou par Échap ;
-  mot de passe en cours de saisie (Wi-Fi, disques) : pas par un clic sur un autre écran. `OutsideClick` créé après l'affichage du popup
-  (`PERFORMANCE.md`) ; `on_demand` sans surfaces essayé et écarté le 2026-11-02 (Sway reprend aussitôt le clavier).
+  (ni saisie, ni Échap). Fermés par un appui à côté du cadre (non transmis), sur une barre ou sur un autre écran, ou par Échap.
+  `OutsideClick` créé après l'affichage du popup, une fois le clavier obtenu ou après 300 ms (`PERFORMANCE.md`) ; `on_demand` sans surfaces essayé et écarté le 2026-11-02 (Sway reprend aussitôt le clavier).
 - **Réseau** (R5) : `Quickshell.Networking` (filaire, Wi-Fi : interrupteur, réseaux, mot de passe, oubli) ; édition dans `nm-connection-editor`.
   Depuis le 2026-10-19 (ta demande), deux icônes : **réseau** (filaire et réseaux privés ; visible si un câble est branché ou
   sans Wi-Fi) et **Wi-Fi** (`WifiPanel.qml`). Le Wi-Fi s'inspire de GNOME (niveaux de signal et seuils 20 / 40 / 50 / 80 % de
