@@ -48,7 +48,9 @@ if ! running; then
     cat "$log" >&2
     exit 1
 fi
-qs log -p "$repo" | grep -E "WARN|ERROR" || echo "Démarré sans erreur."
+# Sans effet, donc non affichés ici (ils restent dans `qs log`) : lignes vides de fichiers .desktop générés par SteamVR, échecs de la
+# reconnexion automatique Bluetooth d'un appareil éteint (le panneau affiche les échecs des connexions demandées).
+qs log -p "$repo" -r "quickshell.desktopentry.warning=false;quickshell.bluetooth.device.warning=false" | grep -E "WARN|ERROR" || echo "Démarré sans erreur."
 # Avertissement attendu à chaque démarrage sous Sway, sans effet : « I3 event socket disconnected. »
 if pgrep -u "$UID" -x dunst >/dev/null || pgrep -u "$UID" -x polkit-gnome-au >/dev/null; then
     echo "Dunst ou polkit-gnome tourne : notifications et polkit restent à l'ancien bureau (prise en main : scripts/takeover.sh)."
