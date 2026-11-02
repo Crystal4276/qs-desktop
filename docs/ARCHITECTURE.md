@@ -599,7 +599,7 @@ Voir `WALLPAPERS.md` § « Mise en œuvre ». Remplace `swaybg` (Sway) et le fon
   `output * power on`, comme swayidle). Le suivi est relancé quand le délai change (la config machine est lue après sa création ;
   sinon le délai par défaut restait en place — vérifié).
 - Pas de rallumage en deux temps (revue du 2026-10-27). Le délai de ton hypridle (écran principal 3 s après les autres)
-  contournait un bogue de Hyprland : non repris, un seul comportement pour les deux compositeurs (`hl.dsp.dpms` vérifié ; réveil réel sur tes écrans dans la liste des tests à la main de la phase 9). Sous
+  contournait un bogue de Hyprland : non repris, un seul comportement pour les deux compositeurs (`hl.dsp.dpms({ action = … })` vérifié sur banc ; `mode`, écrit dans ton hypridle, bascule au lieu d'appliquer : piste pour le « bogue » que le délai contournait). Sous
   Sway, chaque commande `output` réapplique la configuration de tous les écrans en un seul commit (Sway 1.12,
   `apply_output_configs`) : rallumer le principal à part refaisait un modeset qui éteignait de nouveau les écrans déjà rallumés (vu : latéraux allumés puis éteints, central, latéraux). De plus, rallumer par nom
   laissait `power off` sur la config `*` : un écran branché ensuite restait éteint. Sur banc (3 sorties headless) : 1 commit au
