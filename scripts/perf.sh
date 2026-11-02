@@ -17,7 +17,7 @@ instance() {
 
 status() { awk -v k="$2:" '$1 == k { print int($2 / 1024) }' "/proc/$1/status"; }
 ticks() { awk '{ print $14 + $15, $16 + $17 }' "/proc/$1/stat"; }
-switches() { awk '/^voluntary_ctxt_switches/ { print $2 }' "/proc/$1/status"; }
+switches() { cat "/proc/$1"/task/*/status 2>/dev/null | awk '/^voluntary_ctxt_switches/ { sum += $2 } END { print sum + 0 }'; }   # tous les threads
 vram() { { nvidia-smi 2>/dev/null || true; } | awk -v p="$1" '$5 == p { gsub("MiB", "", $(NF-1)); sum += $(NF-1); f = 1 } END { print f ? sum : "-" }'; }
 pss() { awk '/^Pss:/ { print int($2 / 1024) }' "/proc/$1/smaps_rollup"; }
 renderers() { cat "/proc/$1"/task/*/comm | grep -c QSGRenderThread || true; }

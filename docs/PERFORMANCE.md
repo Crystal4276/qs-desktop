@@ -72,7 +72,7 @@ passage en `on_demand` (1,8 ms ; lanceur, cartes du tray et moniteur se refermen
 | Largeurs fixes mesurées une fois par liste (`InfoModule`, listes constantes dans `WidthTexts`, `SystemStats`, `Network`) | temps QML au repos −75 %, démarrage −29 %, largeurs identiques au pixel |
 | Texte riche de référence stable (`InfoModule`) | inclus ci-dessus |
 | Titre et mode retirés (`Compositor`, ta décision) ; plus de `swaymsg -t get_tree` à chaque focus ; événements de titre non analysés ; relectures d'espaces regroupées | plus aucun processus au changement de focus |
-| NordVPN : 30 s au repos, 5 s panneau ouvert ou état transitoire, relecture immédiate si une interface change | enfants −5 lancements sur 6 |
+| NordVPN : 30 s au repos, 5 s panneau ouvert ou état transitoire, relecture immédiate si l'interface NordVPN change | enfants −5 lancements sur 6 |
 
 Essayé puis annulé : `nvidia-smi -l 5` résident au lieu d'un lancement toutes les 5 s. Il économise ~0,2 % de CPU mais coûte 30 Mo de PSS.
 
