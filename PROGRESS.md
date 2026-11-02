@@ -2036,8 +2036,7 @@ Scripts testés sur le banc (`takeover.sh` compris, garde-fou : abandon si un ou
 
 **Reprise (2026-11-02) : tu as lancé `scripts/takeover.sh`, Quickshell est ton vrai bureau pour cette session Sway** (Waybar, Dunst
 et les autres arrêtés ; retour : `scripts/takeover.sh restore`). Ne pas les rétablir en fin de session. Chaque sauvegarde dans le
-dépôt recharge ton bureau : préparer et tester sur la copie du banc, puis copier d'un seul coup. Rien n'est poussé (push en fin
-de phase).
+dépôt recharge ton bureau : préparer et tester sur la copie du banc, puis copier d'un seul coup.
 
 1. **Liste « Revues restantes avant la phase 9 » terminée (blocs 1 à 9).** Prochaine étape : tes tests à la main, puis phase 9 — parité Hyprland (tests à faire ensemble dans une session Hyprland : voir
    « Compatibilité Hyprland »).
@@ -2057,7 +2056,8 @@ de phase).
    disposition ; sans périphérique de pointage, Sway n'envoie aucun événement de pointeur aux clients ; ne jamais laisser
    traîner une instance de test ; ne jamais lancer d'action `nordvpn`.
 4. **Ton instance de dev** : `qs -p .` (journal `/tmp/qs-dev.log`, relance `scripts/dev.sh`) ; vérifier en début de session
-   qu'elle tourne et qu'elle vise ton Sway (`SWAYSOCK`). Waybar et Dunst tournent toujours (coexistence jusqu'à la phase 10).
+   qu'elle tourne et qu'elle vise ton Sway (`SWAYSOCK`). Waybar et Dunst sont arrêtés tant que dure `takeover.sh` ; à la prochaine
+   session Sway ils reviennent (autostart inchangé jusqu'à la phase 10).
 5. **Notés pour plus tard** :
    - bloc 6 : calendrier épinglé fermé par Échap pointeur sur l'horloge → la barre garde le clavier ; `CalendarPopup.popupHovered`
      réunit quatre survols inutilement ; avertissement `services/Bluez.qml[31:5]` et `services/Tailscale.qml[172:9]`
@@ -2074,14 +2074,15 @@ de phase).
    - OpenRGB (2026-11-02) : `purple.orp` n'existe plus depuis la migration d'OpenRGB 1.0 (`profiles/purple.json`), le profil échoue
      à chaque connexion. Commande correcte : `openrgb -p purple`. Phase 10 : corriger `exec openrgb` et retirer
      `openrgb-startup.service` (lié à SDDM, en concurrence avec l'autostart).
-6. **À tester à la main** (en attente) : blocs 1 à 3 (clé USB et clé LUKS, demande polkit réelle, liens des web apps) — voir
-   leurs comptes rendus ci-dessus.
+6. **À tester à la main** (en attente) : clé USB et clé LUKS (bloc 1), liens des web apps (bloc 3) — voir leurs comptes rendus
+   ci-dessus. Polkit réel : fait par toi le 2026-11-02.
 
 **Performance (2026-11-02, branche `perf/profiling`, détail dans `docs/PERFORMANCE.md`)** : RSS 736 → ~510 Mo, VRAM 452 → ~388 Mio, CPU au repos ÷ 3 ; `basic` essayé puis écarté (ta décision). Fonds décodés à l'échelle réelle, largeurs fixes mesurées une fois, titre et mode retirés de `Compositor`, statut NordVPN
 moins fréquent, réglages du processus dans `scripts/qs-env.sh`. `test-outputs.sh` : 0 échec.
 Panneaux créés d'avance : gardés (ta décision). `OutsideClick` créé après l'affichage du popup (lanceur 239 → 131 ms) ; `on_demand` essayé et écarté (Sway reprend le clavier). Testés à la main et validés : clic sur une icône du tray et sur le moniteur, mot de passe Wi-Fi ou disque puis clic sur un autre écran, saisie dans le lanceur. Calendrier reconstruit sur `Panel` (cartes homogènes, ta demande du 2026-11-02) : le clic extérieur le ferme aussitôt mais n'atteint plus la fenêtre dessous. À tester à la main : déverrouillage, application
 lancée depuis le lanceur sans `MALLOC_CONF` (`/proc/<pid>/environ`), Hyprland non rejoué.
-Revue en boucle du chantier (6 passes, branche `fix/perf-review`, 2026-11-02, ta demande) : RSS ~490 Mo, VRAM ~353 Mio (un relevé). Un clic sur un autre écran ferme de nouveau un panneau même avec un mot de passe tapé (protection retirée, polkit excepté). Laissés, négligeables : variables de session retirées aux applications (`Launch.environment`), ~30 s pour voir un changement NordVPN sans changement d'interface, largeurs de l'horloge mesurées par barre au démarrage. À tester à la main : molette sur les marges du calendrier, clic sur un autre écran avec un mot de passe tapé, commande tapée dans le lanceur.
+Revue en boucle du chantier (6 passes, branche `fix/perf-review`, 2026-11-02, ta demande) : RSS ~490 Mo, VRAM ~353 Mio (un relevé). Un clic sur un autre écran ferme de nouveau un panneau même avec un mot de passe tapé (protection retirée, polkit excepté). Laissés, négligeables : variables de session retirées aux applications (`Launch.environment`), ~30 s pour voir un changement NordVPN sans changement d'interface, largeurs de l'horloge mesurées par barre au démarrage. À tester à la main : clic sur un autre écran avec un mot de passe tapé. Molette sur les marges du calendrier : validée par toi le 2026-11-02.
+Lanceur vérifié sur banc (2026-11-02, Sway isolé, clavier virtuel, réglages de `qs-env.sh` présents dans l'instance) : une entrée `.desktop` et une commande tapée (Entrée) démarrent, sans `MALLOC_CONF`, `QSG_ATLAS_*` ni `__EGL_VENDOR_LIBRARY_FILENAMES`. Non couverts : Maj+Entrée et Ctrl+Entrée (même fonction `Apps.run`). Sur le vrai bureau, seuls `qs` et ses services internes (`gdbus`, `gammastep`) ont `MALLOC_CONF`.
 
 Rappel pour la phase 10 : l'historique du lanceur (`~/.local/state/quickshell/by-shell/desktop/launcher.json`) est repris de Rofi
 quand il n'existe pas, et toute instance de test le recrée. Le supprimer juste avant la bascule, pour reprendre l'historique Rofi le
