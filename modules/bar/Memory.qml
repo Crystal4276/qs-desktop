@@ -9,5 +9,5 @@ InfoModule {
     color: Theme.module.memory
     pillHighlight: Theme.module.statsHighlight
     segments: [[Theme.font.inlineIcons, Theme.icon.memory], [Theme.font.text, ` ${SystemStats.memUsed.toFixed(0)}G`, Array.from({ length: Number(SystemStats.memTotal.toFixed(0)) + 1 }, (_, i) => ` ${i}G`)]]
-    onClicked: Monitor.toggle()
+    onClicked: Monitor.toggle(pill)
 }

@@ -14,11 +14,11 @@ Singleton {
 
     property int users: 0
     readonly property bool active: users > 0
-    // Ouvrir ou fermer le panneau (modules de la barre, raccourci) : modules/monitor/Monitor.qml écoute.
-    signal toggleRequested
+    // Ouvrir ou fermer le panneau : modules/monitor/SystemMonitor.qml écoute. `from` : pilule du module cliqué (null : raccourci).
+    signal toggleRequested(Item from)
 
-    function toggle(): void {
-        toggleRequested();
+    function toggle(from: Item): void {
+        toggleRequested(from);
     }
 
     // --- Processeur ---
@@ -46,11 +46,12 @@ Singleton {
     property real previousTotal: 0     // tics de tous les cœurs
     readonly property string me: Quickshell.env("USER") ?? ""
 
-    // Arrêt d'un de tes processus : SIGTERM (`force` : SIGKILL). Pas d'élévation de droits. Retiré de la liste tout de suite (le
-    // relevé suivant le remet s'il a survécu) : un relevé immédiat, trop proche du précédent, fausserait les % CPU.
+    // Arrêt d'un de tes processus : SIGTERM (`force` : SIGKILL). Pas d'élévation de droits. SIGKILL : retiré de la liste tout de
+    // suite. SIGTERM : le processus peut l'ignorer ; il reste choisi jusqu'au relevé suivant, pour pouvoir le forcer s'il survit.
     function stop(pid: int, force: bool): void {
         Quickshell.execDetached(["kill", force ? "-KILL" : "-TERM", String(pid)]);
-        processes = processes.filter(p => p.pid !== pid);
+        if (force)
+            processes = processes.filter(p => p.pid !== pid);
     }
 
     // Panneau fermé : relevés précédents oubliés, sinon le premier % CPU à la réouverture serait une moyenne sur toute la fermeture.
@@ -95,6 +96,20 @@ Singleton {
         onTriggered: {
             if (!diskList.running)
                 diskList.running = true;
+        }
+    }
+
+    // Une charge se mesure entre deux relevés : second relevé peu après le premier, pour ne pas montrer des 0 % à l'ouverture
+    // jusqu'au prochain tour des minuteries.
+    Timer {
+        id: secondSample
+        interval: 300
+        onTriggered: {
+            if (!root.active)
+                return;
+            cpu.reload();
+            if (!processList.running)
+                processList.running = true;
         }
     }
 
@@ -195,9 +210,12 @@ Singleton {
                         gpu: root.gpuProcesses[pid] ?? 0
                     });
                 }
+                const first = root.previousTotal === 0;
                 root.previousTimes = times;
                 root.previousTotal = total;
                 root.processes = list;
+                if (first)
+                    secondSample.start();
             }
         }
     }
@@ -228,6 +246,8 @@ Singleton {
                             procs[c[1]] = Number(c[3]) || 0;   // colonne fb (Mio)
                     }
                     root.gpuProcesses = procs;
+                    // `pmon` dure 1 s : la liste des processus, relevée en même temps, a fini avant lui.
+                    root.processes = root.processes.map(p => Object.assign({}, p, { gpu: procs[p.pid] ?? 0 }));
                 } else {
                     const v = {};
                     for (const line of text.split("\n")) {
@@ -259,7 +279,7 @@ Singleton {
         target: "monitor"
 
         function toggle(): void {
-            root.toggle();
+            root.toggle(null);
         }
     }
 }
