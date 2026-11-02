@@ -69,7 +69,6 @@ Scope {
     OverlayPopup {
         id: window
 
-        secureKeyboard: true   // mot de passe : ni clavier repris, ni fermeture par un clic sur un autre écran
         WlrLayershell.namespace: "quickshell-polkit"
         frameItem: frame
 
