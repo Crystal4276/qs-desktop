@@ -82,6 +82,7 @@ Singleton {
     readonly property string blocksKey: JSON.stringify(blocks)
 
     onLayoutKeyChanged: {
+        console.info("Outputs: écrans actifs :", Compositor.outputs.map(o => o.name).join(", ") || "aucun");
         snapshot.stop();
         settle.restart();
     }

@@ -88,7 +88,10 @@ Singleton {
         return [];
     }
 
-    readonly property string focusedOutput: isSway ? (workspaces.find(w => w.focused)?.output ?? I3.focusedMonitor?.name ?? "")
+    // Jamais `I3.focusedMonitor` : Quickshell 0.3.2 ne le remet pas à zéro quand l'écran focalisé disparaît sans événement « focus »
+    // (son espace, avec fenêtres, passe sur un autre écran) ; le relire fait planter (pile : lookupSingletonProperty → wrap, reproduit
+    // sur banc). `focused` d'un moniteur vivant ne suit pas ce pointeur.
+    readonly property string focusedOutput: isSway ? (workspaces.find(w => w.focused)?.output ?? I3.monitors.values.find(m => m.focused)?.name ?? "")
         : isHyprland ? (Hyprland.focusedMonitor?.name ?? "") : ""
 
     // Titre de la fenêtre focalisée ("" sans fenêtre) et mode / submap actif ("" pour le mode par défaut).
