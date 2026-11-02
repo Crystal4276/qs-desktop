@@ -17,6 +17,7 @@ Singleton {
     // Détails nmcli des cartes Wi-Fi et filaire : toutes les 5 s.
     readonly property int detailsInterval: 5000
     property string interfaceName: ""
+    property string interfaceNames: ""   // toutes les interfaces ; un changement relit le statut NordVPN (Vpn.qml)
     property real downBytesPerSecond: 0
     property real upBytesPerSecond: 0
     property var previous: null
@@ -48,6 +49,9 @@ Singleton {
 
     // Appelé à la fin de chaque lecture de /proc/net/dev (reload() est asynchrone) ; la route a été relue juste avant.
     function update(): void {
+        const names = dev.text().split("\n").slice(2).map(l => l.split(":")[0].trim()).filter(n => n).join(" ");
+        if (names !== interfaceNames)
+            interfaceNames = names;
         // Route par défaut : destination et masque 00000000 (pas les 0.0.0.0/1 d'un VPN) ; la plus petite métrique l'emporte.
         let best = null;
         for (const line of route.text().split("\n").slice(1)) {
