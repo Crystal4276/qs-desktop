@@ -102,6 +102,10 @@ Singleton {
     // Création d'un espace (événement du compositeur) : numéro et sortie où il est né.
     signal workspaceCreated(int number, string output)
 
+    // Hyprland : écran ajouté ou retiré, avant que `outputs` soit relu. Il a déjà déplacé les espaces (il ramène ceux d'un écran
+    // rallumé) : ce qu'on lit jusque-là n'est plus la vue de l'utilisateur.
+    signal outputsChanging
+
     // Placement des espaces (docs/ARCHITECTURE.md § 3.2), en une seule commande :
     //   moves : [{ number, output }]  espaces existants à déplacer ;
     //   show  : [{ number, output }]  espace à afficher sur chaque sortie (créé s'il n'existe pas) ;
@@ -192,7 +196,9 @@ Singleton {
         monitorReread.restart();
     }
 
-    // Hyprland n'annonce pas ces changements : relecture une fois le mode appliqué.
+    // Relecture des moniteurs après la dernière d'une rafale : HDR et VRR, qu'Hyprland n'annonce pas (une fois le mode appliqué) ;
+    // écrans et espaces : quand plusieurs événements se suivent, le dernier écran pouvait rester invisible jusqu'à l'événement
+    // d'écran suivant (3 écrans rallumés coup sur coup, sur banc ; relecture perdue si une autre est en cours, déduit, code non lu).
     Timer {
         id: monitorReread
         interval: 500
@@ -367,13 +373,17 @@ Singleton {
                 if (id > 0)
                     root.workspaceCreated(id, Hyprland.workspaces.values.find(w => w.id === id)?.monitor?.name ?? "");
             }
-            // Comme sous Sway : un espace déplacé ne met pas à jour l'espace affiché par chaque écran (Quickshell 0.3.2, code lu ;
-            // à vérifier en phase 9).
-            else if (event.name === "moveworkspacev2")
+            // Comme sous Sway : un espace déplacé ne met pas à jour l'espace affiché par chaque écran (Quickshell 0.3.2, code lu).
+            else if (event.name === "moveworkspacev2") {
                 Hyprland.refreshMonitors();
+                monitorReread.restart();
+            } else if (["monitoradded", "monitorremoved"].includes(event.name)) {
+                root.outputsChanging();
+                monitorReread.restart();
+            }
             else if (event.name === "configreloaded")
                 root.applyRuntimeRules(Object.values(root.runtimeRules));
-            else if (event.name === "urgent" && root.takeActivation(Hyprland.toplevels.values.find(t => t.address === event.data)?.wayland?.appId ?? ""))   // « ADRESSE » (hexadécimal, sans 0x) ; à vérifier en phase 9
+            else if (event.name === "urgent" && root.takeActivation(Hyprland.toplevels.values.find(t => t.address === event.data)?.wayland?.appId ?? ""))   // « ADRESSE » (hexadécimal, sans 0x, vérifié)
                 hyprlandBatch([`hl.dsp.focus({ window = "address:0x${event.data}" })`]);
         }
     }

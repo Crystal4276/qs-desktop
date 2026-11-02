@@ -99,20 +99,40 @@ else
     }
     c_windows() { h clients -j | jq -cS '[.[] | {name: .title, ws: .workspace.id}] | sort_by(.name)'; }
     c_goto() { dsp "hl.dsp.focus({ workspace = $1 })"; }
-    c_focus_output() { dsp "hl.dsp.focus({ monitor = \"$1\" })"; }
+    # Comme un vrai geste : le pointeur va sur l'écran (follow_mouse donne le focus ; `no_warps`, comme ta config, ne le déplace jamais).
+    c_focus_output() {
+        local x y
+        read -r x y < <(c_outs | jq -r --arg n "$1" '.[] | select(.name == $n) | "\(.x + (.width / 2 | floor)) \(.y + (.height / 2 | floor))"')
+        dsp "hl.dsp.cursor.move({ x = $x, y = $y })"
+        dsp "hl.dsp.focus({ monitor = \"$1\" })"
+    }
+    # L'espace visé par une règle : sans pointeur réel, une fenêtre s'ouvrirait sur l'écran sous le curseur virtuel (no_warps).
     c_open_window() {
         c_goto "$1"
-        dsp "hl.dsp.exec_cmd(\"env GDK_BACKEND=wayland zenity --info --title=qs-test-$1 --text=$1\")"
+        dsp "hl.dsp.exec_cmd(\"env GDK_BACKEND=wayland zenity --info --title=qs-test-$1 --text=$1\", { workspace = \"$1\" })"
     }
     c_move_window() { dsp "hl.dsp.window.move({ window = \"title:^qs-test-$1\$\", workspace = $2, follow = false })"; }
     c_move_focused_window_following() { dsp "hl.dsp.window.move({ workspace = $1 })"; }   # ton `$mod+Ctrl+N`
     c_move_focused_ws() { dsp "hl.dsp.workspace.move({ monitor = \"$1\" })"; }
     c_move_ws() { dsp "hl.dsp.workspace.move({ workspace = $1, monitor = \"$2\" })"; }
-    c_disable() { h eval "hl.monitor({ output = \"$1\", disabled = true })" >/dev/null; }
+    # Hyprland applique ces changements après avoir répondu (Sway avant) : la règle attendue serait calculée sur l'ancien état.
+    wait_output() {
+        for _ in $(seq 1 50); do
+            [[ "$(c_outs | jq -r --arg n "$1" '.[] | select(.name == $n) | .active')" == "$2" ]] && return 0
+            sleep 0.1
+        done
+        echo "ÉCHEC écran $1 : état « $2 » jamais atteint"
+        failures=$((failures + 1))
+    }
+    c_disable() { h eval "hl.monitor({ output = \"$1\", disabled = true })" >/dev/null; wait_output "$1" false; }
     # hl.monitor fusionne avec la règle existante de cet écran : `disabled` reste posé tant qu'on ne le remet pas à faux.
-    c_enable() { h eval "hl.monitor({ output = \"$1\", disabled = false, ${output_rules[$1]:-mode = \"preferred\", position = \"auto\", scale = 1} })" >/dev/null; }
-    c_unplug() { h output remove "$1" >/dev/null; }
-    c_create_output() { h output create headless >/dev/null; }
+    c_enable() { h eval "hl.monitor({ output = \"$1\", disabled = false, ${output_rules[$1]:-mode = \"preferred\", position = \"auto\", scale = 1} })" >/dev/null; wait_output "$1" true; }
+    c_unplug() { h output remove "$1" >/dev/null; wait_output "$1" ""; }
+    c_create_output() {
+        local count; count="$(c_outs | jq length)"
+        h output create headless >/dev/null
+        for _ in $(seq 1 50); do [[ "$(c_outs | jq length)" -gt "$count" ]] && break; sleep 0.1; done
+    }
     c_set_output() {
         output_rules[$1]="mode = \"$2\", position = \"$4\", scale = $3"
         h eval "hl.monitor({ output = \"$1\", ${output_rules[$1]} })" >/dev/null
@@ -139,8 +159,11 @@ if [[ "$compositor" == sway ]]; then
     wayland="$(cat "$work/wayland")"
     session_env=(-u HYPRLAND_INSTANCE_SIGNATURE SWAYSOCK="$SWAYSOCK" I3SOCK="$SWAYSOCK")
 else
+    # no_warps : comme ta config. Sinon, chaque focus d'écran du placement déplace le pointeur, et `follow_mouse` rend ensuite le
+    # focus à l'écran sous lui : le focus finit sur le dernier écran visé.
     printf '%s\n' 'hl.config({ misc = { disable_hyprland_logo = true, disable_splash_rendering = true, disable_autoreload = true },' \
-        '  ecosystem = { no_update_news = true, no_donation_nag = true }, animations = { enabled = false } })' \
+        '  ecosystem = { no_update_news = true, no_donation_nag = true }, animations = { enabled = false },' \
+        '  cursor = { no_warps = true } })' \
         'hl.monitor({ output = "", mode = "preferred", position = "auto", scale = 1 })' >"$work/hyprland.lua"
     known="$(ls "$XDG_RUNTIME_DIR/hypr" | sort)"
     env -u HYPRLAND_INSTANCE_SIGNATURE -u SWAYSOCK -u I3SOCK -u DISPLAY Hyprland -c "$work/hyprland.lua" >"$work/session.log" 2>&1 &
@@ -202,7 +225,13 @@ for n in 1 2 4 5 6 7 8 9; do
     done
     sleep 0.2
 done
-c_goto 2
+# Une fenêtre qui vient d'apparaître peut encore prendre le focus (Hyprland, zenity : aucune commande de Quickshell en cause) :
+# le test ne part que d'un focus stable.
+for _ in $(seq 1 20); do
+    c_goto 2
+    sleep 0.5
+    [[ "$(c_ws | jq -r '.[] | select(.focused) | .num')" == 2 ]] && break
+done
 sleep 1
 
 # --- Outils -------------------------------------------------------------------------------------------
