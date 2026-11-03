@@ -176,72 +176,63 @@ Singleton {
         if (isSway && names.length > 0)
             I3.dispatch(names.map(n => `output "${n}" hdr ${on ? "on" : "off"}`).join("; "));
         else if (isHyprland && names.length > 0) {
-            // Arrêt : retour au préréglage et à la profondeur d'avant (10 bits si la config de l'écran les donne, comme
-            // `render_bit_depth 10` sous Sway, que `hdr off` garde) ; inconnus (HDR déjà actif au démarrage) : sRGB 8 bits.
-            // Aussi pour un écran passé en HDR puis absent (éteint) : sa règle HDR lui serait rendue à son retour.
-            const sdr = Object.assign({}, sdrModes);
-            if (on)
+            if (on) {
+                // Mode SDR relevé avant le HDR, rendu à l'arrêt (10 bits si la config de l'écran les donne, comme
+                // `render_bit_depth 10` sous Sway, que `hdr off` garde).
+                const sdr = Object.assign({}, sdrModes);
                 for (const n of names) {
                     const o = Hyprland.monitors.values.find(m => m.name === n)?.lastIpcObject;
                     if (o?.colorManagementPreset && o.colorManagementPreset !== "hdr")
-                        sdr[n] = { cm: o.colorManagementPreset, bitdepth: /2101010/.test(o.currentFormat ?? "") ? 10 : 8 };
+                        sdr[n] = { cm: o.colorManagementPreset, bitdepth: /2101010/.test(o.currentFormat ?? "") ? 10 : 8,
+                            luminance: o.sdrMaxLuminance ?? 80 };
                 }
-            sdrModes = sdr;
-            const targets = on ? names : [...new Set([...names, ...hdrNames])];
-            hdrNames = on ? names : [];
-            setRuntimeRule("hdr", hdrRule(targets, on), on);
+                sdrModes = sdr;
+            }
+            // Arrêt : aussi pour un écran passé en HDR puis absent (éteint), à qui sa règle HDR serait rendue à son retour.
+            const targets = on ? names : [...new Set([...names, ...hdrOnOutputs])];
+            hdrOnOutputs = on ? [...new Set([...names, ...hdrOnOutputs])] : [];
+            applyRuntimeRules([hdrRule(targets, on)]);
         }
     }
 
-    property var sdrModes: ({})   // Hyprland : { "<écran>": { cm, bitdepth } } relevés avant le passage en HDR
-    property var hdrNames: []     // Hyprland : écrans passés en HDR par la dernière bascule
+    function setVrr(names: var, on: bool): void {
+        if (isSway && names.length > 0)
+            I3.dispatch(names.map(n => `output "${n}" adaptive_sync ${on ? "on" : "off"}`).join("; "));
+        else if (isHyprland && names.length > 0) {
+            vrrOn = on;
+            applyRuntimeRules([vrrRule(on)]);
+        }
+    }
+
+    // Hyprland, état posé par les bascules, reposé après un `reload` : écrans passés en HDR, VRR actif ; mode SDR de chaque écran
+    // relevé avant le HDR (inconnu, HDR déjà actif au démarrage : sRGB 8 bits, blanc à 80 nits, défaut d'Hyprland).
+    property var hdrOnOutputs: []
+    property bool vrrOn: false
+    property var sdrModes: ({})   // { "<écran>": { cm, bitdepth, luminance } }
 
     // Blanc SDR à 203 nits (BT.2408), comme Sway à ma connaissance : Hyprland l'affiche par défaut à 80 nits en HDR, d'où un
     // bureau terne (ton constat du 2026-11-03).
     function hdrRule(names: var, on: bool): string {
-        return names.map(n => `hl.monitor({ output = "${n}", ${on ? `cm = "hdr", bitdepth = 10, sdr_max_luminance = 203`
-            : `cm = "${sdrModes[n]?.cm ?? "srgb"}", bitdepth = ${sdrModes[n]?.bitdepth ?? 8}`} })`).join(" ");
+        return names.map(n => {
+            const sdr = sdrModes[n];
+            return `hl.monitor({ output = "${n}", ${on ? `cm = "hdr", bitdepth = 10, sdr_max_luminance = 203`
+                : `cm = "${sdr?.cm ?? "srgb"}", bitdepth = ${sdr?.bitdepth ?? 8}, sdr_max_luminance = ${sdr?.luminance ?? 80}`} })`;
+        }).join(" ");
     }
 
     function vrrRule(on: bool): string {
         return `hl.config({ misc = { vrr = ${on ? 1 : 0} } })`;
     }
 
-    // Shell relancé (rechargement à chaud, $mod+Ctrl+w) HDR ou VRR actifs : règles reprises de l'état des écrans, sinon le prochain
+    // Shell relancé (rechargement à chaud, $mod+Ctrl+w) HDR ou VRR actifs : état repris de celui des écrans, sinon le prochain
     // `reload` les couperait. Une fois, à la première lecture des écrans.
     property bool runtimeAdopted: false
     onOutputsChanged: {
         if (!isHyprland || runtimeAdopted || outputs.length === 0)
             return;
         runtimeAdopted = true;
-        const rules = {};
-        const hdr = outputs.filter(o => o.hdr).map(o => o.name);
-        if (hdr.length > 0) {
-            hdrNames = hdr;
-            rules.hdr = hdrRule(hdr, true);
-        }
-        if (outputs.some(o => o.vrr))
-            rules.vrr = vrrRule(true);
-        runtimeRules = Object.assign(rules, runtimeRules);
-    }
-
-    function setVrr(names: var, on: bool): void {
-        if (isSway && names.length > 0)
-            I3.dispatch(names.map(n => `output "${n}" adaptive_sync ${on ? "on" : "off"}`).join("; "));
-        else if (isHyprland && names.length > 0)
-            setRuntimeRule("vrr", vrrRule(on), on);
-    }
-
-    property var runtimeRules: ({})   // règle de chaque réglage activé, reposée après un reload : { hdr: "<Lua>", vrr: "<Lua>" }
-
-    function setRuntimeRule(name: string, lua: string, keep: bool): void {
-        const rules = Object.assign({}, runtimeRules);
-        if (keep)
-            rules[name] = lua;
-        else
-            delete rules[name];
-        runtimeRules = rules;
-        applyRuntimeRules([lua]);
+        hdrOnOutputs = [...new Set([...hdrOnOutputs, ...outputs.filter(o => o.hdr).map(o => o.name)])];
+        vrrOn = vrrOn || outputs.some(o => o.vrr);
     }
 
     function applyRuntimeRules(rules: var): void {
@@ -436,7 +427,8 @@ Singleton {
                 monitorReread.restart();
             }
             else if (event.name === "configreloaded")
-                root.applyRuntimeRules(Object.values(root.runtimeRules));
+                root.applyRuntimeRules([...(root.hdrOnOutputs.length > 0 ? [root.hdrRule(root.hdrOnOutputs, true)] : []),
+                    ...(root.vrrOn ? [root.vrrRule(true)] : [])]);
             else if (event.name === "urgent" && root.takeActivation(Hyprland.toplevels.values.find(t => t.address === event.data)?.wayland?.appId ?? ""))   // « ADRESSE » (hexadécimal, sans 0x, vérifié)
                 hyprlandBatch([`hl.dsp.focus({ window = "address:0x${event.data}" })`]);
         }
