@@ -7,7 +7,7 @@ quickshell              # le shell lui-même (barre, notifications, lanceur, men
 qt6-svg                 # rendu des icônes et images SVG dans Quickshell
 # Outils supposés présents (paquet `base` d'Arch, à installer ailleurs) : sh, coreutils, sed, grep, gawk, findutils, procps-ng
 # (listes d'icônes, filtres des applications du lanceur ; `ps` du panneau de statistiques), util-linux (`rfkill` : mode avion du
-# panneau de réglages ; `kill` du panneau de statistiques ; `setpriv` : processus longs arrêtés avec Quickshell ; `setsid` : scripts/test-outputs.sh ; `flock` : scripts/dev.sh), systemd (`systemctl reboot|poweroff` du panneau de réglages,
+# panneau de réglages ; `kill` du panneau de statistiques ; `setpriv` : processus longs arrêtés avec Quickshell ; `setsid` : scripts/test-outputs.sh, scripts/desktop.sh ; `flock` : scripts/desktop.sh), systemd (`systemctl reboot|poweroff` du panneau de réglages,
 # `systemd-inhibit` de la veille, `busctl` des disques).
 glib2                   # gdbus : disques amovibles, mise en veille du système (services/Idle.qml) ; gsettings : reconnexion Bluetooth reprise de blueman
 
@@ -58,8 +58,8 @@ gnome-terminal          # terminal lancé par les modules (configurable par mach
 libnotify               # notify-send (sortie audio suivante, connexions et batterie Bluetooth, disques amovibles, tests)
 
 # --- Captures et outils de dev ---
-grim                    # captures des outils de dev (scripts/shot.sh) ; touche Impr. actuelle jusqu'à la phase 10
-slurp                   # sélection de zone de la touche Impr. actuelle, jusqu'à la phase 10 (outil natif ensuite)
+grim                    # captures des outils de dev (scripts/shot.sh) ; touche Impr. : outil natif depuis la phase 10
+slurp                   # choix de l'écran partagé (xdg-desktop-portal-wlr, ARCHITECTURE § 12) ; plus utilisé par la touche Impr.
 iproute2                # `ip -j addr` : interfaces ZeroTier sans jeton (panneau réseau) ; dans `base`
 wl-clipboard            # presse-papiers : captures (outil natif), IP / noms copiés depuis le panneau réseau
 imagemagick             # scripts/crop.sh

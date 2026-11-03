@@ -2032,7 +2032,7 @@ Scripts testés sur le banc (`takeover.sh` compris, garde-fou : abandon si un ou
   développement) ; menu d'applications : après avoir effacé la recherche, pointeur déjà sorti, il se ferme au bout de 2 s sans touche.
 - **Passes de confirmation** : blocs 6 et 7 relus ; les toutes dernières corrections ci-dessus n'ont pas repassé de revue.
 
-## Phase 9 — Parité Hyprland : en attente de tes tests à la main (2026-11-02)
+## Phase 9 — Parité Hyprland : validée (2026-11-03 ; points 2 à 5 ci-dessous reportés)
 
 Hyprland 0.57.0, Quickshell 0.3.2. Plan validé par toi : `~/.claude/plans/il-faut-peut-etre-que-imperative-flame.md`.
 
@@ -2085,15 +2085,102 @@ Revue en boucle du code Hyprland (2026-11-03, ta demande, 9 passes : 2 à la mai
 4. Prochaine ouverture de session Hyprland : les web apps Discord et WhatsApp démarrent et vont sur l'espace 5.
 5. Laptop : veille du PC et réveil (non configurée sur ce desktop), plus la liste « Laptop » plus haut.
 
-Attention, jusqu'à la phase 10 : `hyprctl reload`, donc **chaque réveil**, remet les raccourcis d'origine (Rofi, hyprshot). Relancer `scripts/takeover.sh`. Trois notifications « Test Hyprland » restent dans ton historique.
+~~Attention, jusqu'à la phase 10 : `hyprctl reload` remet les raccourcis d'origine~~ : sans objet depuis la bascule (raccourcis dans `dotfiles/hypr`).
+
+## Phase 10 — Bascule : faite, en attente de tes tests à la main (2026-11-03)
+
+Sur `master` (ta règle), pas sur une branche dédiée comme le prévoyait `CLAUDE.md`.
+
+Tes décisions (2026-11-03) : Dunst ne doit plus être utilisé du tout (masqué durablement, paquet gardé) ; `$mod+u` = dernier pays
+utilisé ; fondu des panneaux gardé sous Hyprland (comme Rofi et Waybar) ; `$mod+N` et `$mod+Ctrl+N` par `qs ipc` (~45 ms de plus,
+repli natif).
+
+Décidé par moi :
+- lancement par `scripts/desktop.sh` plutôt que par un service systemd (`ARCHITECTURE.md` § 11.2) ;
+- fenêtre « config rechargée » gardée ;
+- même jeu de raccourcis sur les deux compositeurs : touches média ajoutées sous Sway (elles existaient sous Hyprland), `$mod+Escape` et `$mod+d` ajoutés sous Hyprland (déjà utilisés en prise en main).
+
+Fait :
+- **Configs dans le dépôt** :
+  - `dotfiles/sway/config` + `hosts/terrier.conf` ;
+  - `dotfiles/hypr/hyprland.lua` + `lua/` + `hosts/terrier.lua` ;
+  - reprises de tes configs en l'état, changements non commités du 2026-11-03 compris ;
+  - liens `~/.config/sway` et `~/.config/hypr` vers le dépôt ;
+  - anciennes configs dans `~/.config/sway.bak-2026-11-03/` et `~/.config/hypr.bak-2026-11-03/` ;
+  - retour arrière : `docs/ROLLBACK.md`.
+- **Partie machine** (`hosts/<hostname>`, choisie par `/etc/hostname`, absente = ignorée, vérifié pour les deux compositeurs) :
+  - écrans par description ;
+  - renvoi des espaces 7 et 8 vers l'écran central (par description) ;
+  - `default_monitor` ;
+  - sidewinder, OpenRGB, openrazer ;
+  - montage `gio` de Sway.
+- **Retirés** :
+  - de l'autostart : Waybar, Dunst, Rofi, swaybg, swayidle et hypridle, polkit-gnome, nm-applet, blueman, udiskie ;
+  - des raccourcis : hyprshot, grim/slurp, pactl/wpctl, brightnessctl, playerctl ;
+  - `workspace N output …`, règles `persistent`, choix des espaces au démarrage ;
+  - la ligne `nordvpn login --token …` de Sway (secret : jamais dans le dépôt ; ton compte reste connecté, comme sous Hyprland).
+- **Ajoutés** :
+  - `hl.animation({ leaf = "fadeDpms", enabled = false })` ;
+  - `xwayland.use_nearest_neighbor = false` ;
+  - règle Discord couvrant les deux app_id de la web app (`…@me-Default` et `…@me_<salon>-Default`), Sway et Hyprland ;
+  - repli Hyprland pour un écran inconnu (`preferred`, `auto`, échelle `auto`).
+- **`scripts/desktop.sh`** (autostart des deux compositeurs) :
+  - lance le bureau ;
+  - au premier lancement de la session : `outputs home`, chaque écran affiche le premier espace de son bloc (1 / 4 / 7), focus sur l'écran principal ;
+  - relance après un arrêt, en gardant la vue ;
+  - abandon et message du compositeur après 5 arrêts en une minute ;
+  - `restart` (`$mod+Ctrl+W`), `stop`, `log` ;
+  - instance désignée par son PID.
+- **`scripts/ipc.sh`** (raccourcis). `scripts/dev.sh` renvoie à `desktop.sh`. `scripts/takeover.sh` supprimé.
+- **`Outputs`** : `focus`, `moveWindow`, `home`.
+- **`Compositor`** :
+  - `createWorkspace` (Hyprland : créé sur place puis déplacé, en une requête ; sinon le pointeur reprenait le focus) ;
+  - `moveWindowToWorkspace` ;
+  - règle HDR Hyprland visant `desc:…`. Sur banc, une règle visant le connecteur faisait perdre échelle et position à un écran déclaré par description (1,5 devenait 2).
+- **Session Hyprland en cours basculée à chaud** :
+  - nouvelle config rechargée, sans erreur ;
+  - écrans et espaces inchangés ;
+  - bureau lancé par `desktop.sh` ;
+  - historique du lanceur recréé depuis Rofi.
+
+Vérifié :
+- `test-outputs.sh` : 0 échec sous Sway (45 contrôles, deux passages) et sous Hyprland imbriqué, nouveaux scénarios compris : `$mod+3` et `$mod+Ctrl+3` depuis un autre écran (espace créé au bon endroit, aucune correction après coup), espace existant, début de session ;
+- `desktop.sh` sur un Sway isolé : démarrage 1/4/7, relance après `SIGSEGV`, `restart`, `stop`, abandon après 6 arrêts, fin de session ;
+- `sway -C`, `luac -p`, `Hyprland --verify-config` : configs valides ; fichier de machine chargé et fichier absent toléré, vérifiés.
+
+**Incidents de la session (de ma faute)** :
+- un `hyprctl dispatch` de mesure a focalisé l'espace 2 sur ta session ;
+- **un `kill -SEGV` de test a touché ton instance réelle** : `qs list -c desktop` voit toutes les copies du dépôt (même `ShellId`) et j'ai pris le premier PID de la liste. Ton bureau a planté vers 18 h 02, je l'ai relancé aussitôt (rapport de plantage dans `~/.cache/quickshell/crashes/`). D'où le ciblage par PID de `desktop.sh` et `ipc.sh`, et la règle : jamais `-c desktop` dans un test ;
+- un banc a démarré sans `GIO_USE_VFS=local` : son `gvfsd` n'a pas pu monter, ton montage est resté intact (vérifié).
+
+**À tester à la main** :
+1. Prochaine connexion **Sway** :
+   - barre seule, sans Waybar ni Dunst ;
+   - écrans sur 1 / 4 / 7, focus sur le centre ;
+   - applications sur leurs espaces ;
+   - `$mod+w`, `$mod+Escape`, `Print` (capture sur un LG nette et à la bonne taille : point 2 reporté de la phase 9), volume et micro, `$mod+s` ;
+   - `$mod+3` depuis l'écran de gauche, `$mod+Ctrl+3` avec une fenêtre ;
+   - `$mod+Ctrl+W` ;
+   - une fenêtre ouverte sur l'espace 7 ou 8 part au centre.
+2. Prochaine connexion **Hyprland** : la même liste, plus les web apps Discord et WhatsApp sur l'espace 5 (point 4 reporté) et OpenRGB.
+3. `$mod+d` sous Hyprland : les LG gardent échelle 1,5 et position (règle par description).
+4. `$mod+u` / `$mod+i` (VPN) : je n'y touche jamais. `vpn connect ""` = dernier pays, l'argument vide n'a pas été essayé.
+5. Touches média (lecture, suivant, précédent) sous Sway, nouvelles.
+
+**Pour toi, hors dépôt** :
+- jeton NordVPN en clair dans l'historique du dépôt privé `Crystal4276/sway` (et un autre dans `~/.config/autostart/nordvpn.desktop`, GNOME seulement) : à révoquer si tu le juges utile ;
+- `openrgb-startup.service` (système, désactivé, vise `purple.orp` qui n'existe plus) : suppression possible avec `sudo` ;
+- paquets devenus inutiles (`deps/README.md`) : désinstallation à ta décision ;
+- les dépôts `Crystal4276/sway` et `Crystal4276/hyprland` ne sont plus utilisés (à archiver si tu veux).
 
 ## Prochaine étape
 
-**Phase 9 : voir ci-dessus, tes tests à la main puis validation ; phase 10 ensuite, sur ta décision. Session Hyprland en prise en main.**
+**Phase 10 : tes tests à la main (ci-dessus) aux prochaines connexions Sway et Hyprland, puis validation ; phase 11 (portabilité)
+ensuite. Le bureau est lancé par `scripts/desktop.sh` (relance : `$mod+Ctrl+W` ou `scripts/dev.sh`).** Chaque sauvegarde dans le
+dépôt recharge ton bureau : préparer et tester sur une copie, puis copier d'un seul coup. Dans un test, viser une instance par
+`--pid`, jamais par `-c desktop`.
 
-Reprise (2026-11-02, session Sway) : tu as lancé `scripts/takeover.sh`, **Quickshell est ton vrai bureau pour cette session Sway** (Waybar, Dunst
-et les autres arrêtés ; retour : `scripts/takeover.sh restore`). Ne pas les rétablir en fin de session. Chaque sauvegarde dans le
-dépôt recharge ton bureau : préparer et tester sur la copie du banc, puis copier d'un seul coup.
+Historique (2026-11-02, avant la bascule) : la session était prise en main par `scripts/takeover.sh`, supprimé en phase 10.
 
 1. **Liste « Revues restantes avant la phase 9 » terminée (blocs 1 à 9).** Prochaine étape : tes tests à la main, puis phase 9 — parité Hyprland (tests à faire ensemble dans une session Hyprland : voir
    « Compatibilité Hyprland »).
@@ -2112,9 +2199,8 @@ dépôt recharge ton bureau : préparer et tester sur la copie du banc, puis cop
    en Python + `Dbusmenu`). Pièges : avec deux écrans, les coordonnées absolues du pointeur virtuel portent sur toute la
    disposition ; sans périphérique de pointage, Sway n'envoie aucun événement de pointeur aux clients ; ne jamais laisser
    traîner une instance de test ; ne jamais lancer d'action `nordvpn`.
-4. **Ton instance de dev** : `qs -p .` (journal `/tmp/qs-dev.log`, relance `scripts/dev.sh`) ; vérifier en début de session
-   qu'elle tourne et qu'elle vise ton Sway (`SWAYSOCK`). Waybar et Dunst sont arrêtés tant que dure `takeover.sh` ; à la prochaine
-   session Sway ils reviennent (autostart inchangé jusqu'à la phase 10).
+4. **Ton bureau** (depuis la phase 10) : `qs -c desktop` lancé par `scripts/desktop.sh` (journal `$XDG_RUNTIME_DIR/qs-desktop.log`
+   ou `scripts/dev.sh log`, relance `scripts/dev.sh` ou `$mod+Ctrl+W`). Waybar, Dunst et les autres ne sont plus lancés.
 5. **Notés pour plus tard** :
    - bloc 6 : calendrier épinglé fermé par Échap pointeur sur l'horloge → la barre garde le clavier ; `CalendarPopup.popupHovered`
      réunit quatre survols inutilement ; avertissement `services/Bluez.qml[31:5]` et `services/Tailscale.qml[172:9]`

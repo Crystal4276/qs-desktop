@@ -45,7 +45,7 @@ Rien n'est supprimé ni modifié dans `~/.config` : les décisions s'appliquent 
 | Appelé par | `$mod+Shift+Print` (Sway) |
 | Rôle | Liste les rectangles des fenêtres (`swaymsg -t get_tree`), sélection avec `slurp -r` (couleurs Catppuccin), capture `grim` → `~/Pictures/screenshot/<date>.png` + presse-papiers |
 | Dépendances | `sway`, `jq`, `slurp`, `grim`, `wl-clipboard`, `coreutils` |
-| Décision | **gardé** tel quel (fonction du compositeur, pas du shell ; Hyprland utilise `hyprshot`). Rapatrié en phase 10 avec la config Sway dans `scripts/`, chemin `~/Pictures/screenshot` remplacé par `$(xdg-user-dir PICTURES)/screenshot`. |
+| Décision | ~~gardé~~ → **QML natif** : remplacé par l'outil de capture (phase 8b, mode fenêtre, `qs ipc call screenshot window`) ; plus appelé depuis la bascule (phase 10), resté dans `~/.config/sway.bak-2026-11-03/`. Hyprland : `hyprshot` remplacé de même. |
 
 ### `~/.config/waybar/scripts/check-updates.sh`
 
