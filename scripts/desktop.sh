@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 # Bureau Quickshell de la session : config `desktop` (~/.config/quickshell/desktop → ce dépôt), lancée par l'autostart de Sway et
 # d'Hyprland (dotfiles/). Un seul processus porte tout le bureau (ARCHITECTURE.md § 11.2) : s'il s'arrête, il est relancé tant que
-# la session dure ; plus de 5 arrêts en une minute : abandon, avec un message du compositeur.
+# la session dure ; 5 arrêts en une minute : abandon, avec un message du compositeur.
 # Usage : desktop.sh           autostart : lance l'instance, chaque écran affiche le premier espace de son bloc (1 / 4 / 7), surveille
 #         desktop.sh restart   relance la surveillance et l'instance depuis l'environnement de l'appelant ($mod+Ctrl+W,
 #                              scripts/dev.sh), sans toucher aux espaces, et affiche les erreurs du démarrage
 #         desktop.sh stop      arrête la surveillance et l'instance
 #         desktop.sh log       suit le journal de l'instance (Ctrl+C pour quitter)
-#         desktop.sh pid       PID de l'instance (scripts/perf.sh)
+#         desktop.sh pid       PID de l'instance (scripts/ipc.sh, scripts/perf.sh)
+#         desktop.sh watch     surveillance seule, sans la vue de départ (lancée par `restart`)
 # Instance visée par son PID, jamais par `-c desktop` : toutes les copies du dépôt (bancs de test) ont le même identifiant
 # (`//@ pragma ShellId desktop`), un `qs kill -c desktop` les arrêterait toutes.
 set -uo pipefail
@@ -170,7 +171,7 @@ case "${1:-}" in
             || echo "Démarré sans erreur."
         ;;
     *)
-        echo "Usage : $0 [restart|stop|log]" >&2
+        echo "Usage : $0 [restart|stop|log|pid|watch]" >&2
         exit 2
         ;;
 esac

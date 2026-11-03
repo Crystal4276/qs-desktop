@@ -98,6 +98,7 @@ Singleton {
     property var visibleByLayout: ({})
     property string currentLayout: ""   // configuration à laquelle la vue mémorisée correspond
     property var lastPlaced: ({})       // vue posée par le dernier placement : ce qui en diffère a été choisi par l'utilisateur
+    property int lastPlacedFocus: 0
 
     function remember(visible: var, focus: int): void {
         const all = Object.assign({}, visibleByLayout);
@@ -116,7 +117,13 @@ Singleton {
             for (const w of Compositor.workspaces)
                 if (w.visible)
                     map[w.output] = w.number;
-            root.remember(map, Compositor.workspaces.find(w => w.focused)?.number ?? 0);
+            const focus = Compositor.workspaces.find(w => w.focused)?.number ?? 0;
+            root.remember(map, focus);
+            // Choix de l'utilisateur pendant la fenêtre de la vue de départ ($mod+5 juste après la connexion) : elle ne s'impose
+            // plus aux répartitions suivantes.
+            if (root.homeRequested && (focus !== root.lastPlacedFocus
+                    || Object.keys(map).some(o => root.lastPlaced[o] !== undefined && map[o] !== root.lastPlaced[o])))
+                root.homeRequested = false;
         }
     }
 
@@ -203,7 +210,7 @@ Singleton {
     // (1 / 4 / 7 ici), focus sur l'écran principal. Demandé avant la première répartition : fait par elle. Vaut pour toutes
     // les répartitions des 10 s suivantes : au démarrage, les écrans peuvent arriver l'un après l'autre (Hyprland, NVIDIA), à
     // plus de 500 ms d'écart ; sinon un écran arrivé après la première répartition afficherait un espace déjà ouvert de son
-    // bloc (5, Discord) plutôt que le premier.
+    // bloc (5, Discord) plutôt que le premier. Finie plus tôt si l'utilisateur change d'espace entre-temps (snapshot).
     property bool homeRequested: false
 
     function home(): void {
@@ -282,6 +289,7 @@ Singleton {
         // Mémorisé tout de suite : un nouveau changement d'écrans peut arriver avant la prochaine lecture.
         remember(intended, focus);
         lastPlaced = intended;
+        lastPlacedFocus = focus;
 
         if (moves.length === 0 && show.length === 0 && !home)
             return;

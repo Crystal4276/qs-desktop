@@ -219,12 +219,17 @@ Singleton {
     // le remplacerait : mode et échelle par défaut).
     property var ruleKeys: ({})
 
+    // `desc:` désigne tout écran dont la description COMMENCE par elle : deux écrans identiques sans numéro de série recevraient
+    // la même règle (position comprise). Dans ce cas, le connecteur. Échelle publiée à 2 décimales (1.67) : ramenée au 1/120 le
+    // plus proche, la grille d'Hyprland, sinon il la corrige lui-même en affichant une erreur.
     function ruleKey(name: string): string {
         const m = Hyprland.monitors.values.find(m => m.name === name)?.lastIpcObject;
         const description = output(name)?.description ?? "";
+        const byDescription = description !== "" && !outputs.some(o => o.name !== name && o.description.startsWith(description));
         if (m?.width)
-            ruleKeys[name] = `output = ${luaString(description !== "" ? `desc:${description}` : name)}, `
-                + `mode = "${m.width}x${m.height}@${m.refreshRate}", position = "${m.x}x${m.y}", scale = ${m.scale}, transform = ${m.transform ?? 0}`;
+            ruleKeys[name] = `output = ${luaString(byDescription ? `desc:${description}` : name)}, `
+                + `mode = "${m.width}x${m.height}@${m.refreshRate}", position = "${m.x}x${m.y}", `
+                + `scale = ${Math.round(m.scale * 120) / 120}, transform = ${m.transform ?? 0}`;
         return ruleKeys[name] ?? `output = ${luaString(name)}`;
     }
 
@@ -448,7 +453,9 @@ Singleton {
                 output ? createWorkspace(n, output) : focusWorkspace(n, "");
                 return;
             }
-            hyprlandBatch([`hl.dsp.window.move({ window = "address:0x${window.address}", workspace = ${n} })`,
+            // Adresse pas encore reçue (fenêtre qui vient de s'ouvrir) : sans `window`, Hyprland prend la fenêtre active.
+            const target = window.address ? `window = "address:0x${window.address}", ` : "";
+            hyprlandBatch([`hl.dsp.window.move({ ${target}workspace = ${n} })`,
                 ...(output && output !== focusedOutput ? moveBackCalls(n, output) : [])]);
         }
     }

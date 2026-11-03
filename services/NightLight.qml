@@ -85,8 +85,8 @@ Singleton {
     }
 
     function launch(): void {
-        if (!enabled)
-            return;   // désactivée pendant l'attente
+        if (!enabled || !validSchedule)
+            return;   // désactivée, ou horaire devenu invalide, pendant l'attente (avertissement : start)
         configFile.setText(configText);   // config à jour, même changée pendant l'attente (écriture bloquante)
         gammaOn = true;
         ready = false;
