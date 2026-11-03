@@ -12,12 +12,16 @@ hl.monitor({ output = lgLeft,  mode = "3840x2160@60",  position = "0x0",    scal
 hl.monitor({ output = dell,    mode = "3440x1440@100", position = "2560x0", scale = 1 })
 hl.monitor({ output = lgRight, mode = "3840x2160@60",  position = "6000x0", scale = 1.5 })
 
--- Curseur au démarrage sur l'écran central (option par connecteur).
-hl.config({ cursor = { default_monitor = "DP-2" } })
+-- Curseur au démarrage sur l'écran central (sélecteur d'écran : `desc:` accepté).
+hl.config({ cursor = { default_monitor = dell } })
 
--- Fenêtres ouvertes sur les espaces 7 et 8 (écran de droite) renvoyées sur l'écran central.
-hl.window_rule({ name = "ws7-to-center", match = { workspace = "7" }, monitor = dell })
-hl.window_rule({ name = "ws8-to-center", match = { workspace = "8" }, monitor = dell })
+-- Fenêtres ouvertes sur les espaces 7 et 8 (écran de droite) renvoyées sur l'écran central, sauf Deluge et Thunderbird
+-- (comme sous Sway).
+hl.window_rule({ name = "ws7-to-center", match = { workspace = "7", class = "negative:^(deluge)$" }, monitor = dell })
+hl.window_rule({ name = "ws8-to-center", match = { workspace = "8", class = "negative:^(org\\.mozilla\\.Thunderbird)$" }, monitor = dell })
+
+-- Décodage vidéo matériel NVIDIA (VA-API, backend direct) : propre au GPU de cette machine (RTX 2080).
+hl.env("NVD_BACKEND", "direct")
 
 return {
    -- Matériel de cette machine.

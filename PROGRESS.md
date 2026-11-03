@@ -2256,6 +2256,27 @@ Ton bureau a été relancé avec le nouveau `desktop.sh` : une instance, aucune 
 - correction : `render.cm_auto_hdr = 0` (`lua/looknfeel.lua`), aussi posé à chaud sur ta session. Le HDR reste manuel, comme sous Sway. Ta config Sway n'a pas d'équivalent ;
 - **à confirmer par toi** : une vidéo en plein écran ne doit plus éteindre l'écran de droite.
 
+**Passe 3**, 10 constats.
+
+Corrigés :
+- **Plantage de Quickshell écran verrouillé** : la session restait verrouillée sur un écran vide, sans champ de mot de passe. Quickshell note maintenant l'état du verrou dans un fichier propre à la session (`$XDG_RUNTIME_DIR/qs-desktop.<session>.locked`, donné par `desktop.sh`), et l'instance relancée reverrouille. Sous Hyprland, il faut en plus `misc.allow_session_lock_restore = true`. Testé sur banc Sway et Hyprland : verrouillé, `kill -9`, relancé, reverrouillé et confirmé par le compositeur ; un fichier à 0 ne verrouille pas. Nouvelle fonction IPC `lock isSecure`, pour les tests.
+- **Vue de départ (1 / 4 / 7)** : elle vaut maintenant pour toutes les répartitions des 10 s qui suivent la demande. Avant, un écran arrivé après la première répartition (Hyprland, NVIDIA) affichait un espace déjà ouvert de son bloc. Banc Sway (1 écran, puis 2 ajoutés, fenêtre sur 5) : l'ancien code affichait 6, le nouveau 4. `desktop.sh` réessaie maintenant la demande tant que l'instance vit (2 min au plus), et non plus 10 s.
+- **`open-link`** (liens des web apps) visait `-c desktop` et pouvait atteindre un banc : il passe maintenant par `scripts/ipc.sh`.
+- **Hyprland, `hosts/terrier.lua`** :
+  - le curseur de départ vise le Dell par sa description (`desc:` accepté, source d'Hyprland lue) ;
+  - les espaces 7 et 8 font l'exception pour Deluge et Thunderbird (`negative:`), comme sous Sway ;
+  - `NVD_BACKEND` (NVIDIA) est sorti de `lua/env.lua`, commun à toutes les machines.
+- **`desktop.sh`** :
+  - abandon après le 5ᵉ arrêt en une minute, et non plus le 6ᵉ (le message disait 5) ;
+  - lancé depuis un TTY, il reprend `WAYLAND_DISPLAY` et `XDG_CURRENT_DESKTOP` dans l'environnement de systemd. Vérifié : ton bureau a été relancé ainsi, sans erreur ;
+  - `docs/ROLLBACK.md` mis à jour.
+
+Écartés :
+- **Dunst pourrait reprendre les notifications pendant une relance** : le paquet est désinstallé et le service masqué. Pour une autre machine, ce sera traité par `install.sh` (phase 11) ;
+- **latence d'`ipc.sh`** : déjà mesurée, négligeable (passe 2).
+
+Config Hyprland rechargée sur ta session : aucune erreur. Deluge et Thunderbird sont restés sur 7 et 8, écran de droite.
+
 ## Prochaine étape
 
 **Phase 10 : tes tests à la main (ci-dessus) aux prochaines connexions Sway et Hyprland, puis validation ; phase 11 (portabilité)
