@@ -3,7 +3,7 @@
 -- Aucun hl.exec_cmd hors de l'autostart : `Hyprland --verify-config` exécute le code de premier niveau.
 
 local MODULE = ...   -- nom passé par require ("lua/host")
-local file = io.open("/etc/hostname")
+local file = io.open("/proc/sys/kernel/hostname")   -- même source que config/Settings.qml
 local name = file and file:read("l") or ""
 if file then
    file:close()

@@ -85,7 +85,7 @@ watch() {
         if [[ -n "$home" ]]; then
             # Tant que l'instance vit (2 min au plus) : un démarrage à froid peut dépasser 10 s.
             for _ in $(seq 1 600); do
-                qs ipc --pid "$pid" call outputs home >/dev/null 2>&1 && break
+                timeout 2 qs ipc --pid "$pid" call outputs home >/dev/null 2>&1 && break
                 kill -0 "$pid" 2>/dev/null || break
                 sleep 0.2
             done

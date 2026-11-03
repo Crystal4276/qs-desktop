@@ -272,8 +272,11 @@ Singleton {
     Timer {
         id: replayAfterReread
         interval: 500   // comme monitorReread : réponse de refreshMonitors reçue
-        onTriggered: root.applyRuntimeRules([...(root.hdrOnOutputs.length > 0 ? [root.hdrRule(root.hdrOnOutputs, true)] : []),
-            ...(root.vrrOn ? [root.vrrRule(true)] : [])])
+        // Écrans présents seulement : la règle d'un écran absent (éteint, désactivé) le rallumerait avec sa géométrie d'avant.
+        onTriggered: {
+            const present = root.hdrOnOutputs.filter(n => root.outputs.some(o => o.name === n));
+            root.applyRuntimeRules([...(present.length > 0 ? [root.hdrRule(present, true)] : []), ...(root.vrrOn ? [root.vrrRule(true)] : [])]);
+        }
     }
 
     function applyRuntimeRules(rules: var): void {

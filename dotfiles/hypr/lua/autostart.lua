@@ -25,7 +25,7 @@ hl.on("hyprland.start", function()
    hl.exec_cmd("nordvpn c Netherlands")
 
    -- Curseur.
-   hl.exec_cmd("hyprctl setcursor Catppuccin-Mocha-Green-Cursors 48")
+   hl.exec_cmd("hyprctl setcursor catppuccin-mocha-green-cursors 48")
    hl.exec_cmd("gsettings set org.gnome.desktop.interface cursor-size 48")
 
    -- Applications.

@@ -1,4 +1,4 @@
--- Machine « terrier » (chargée par lua/host.lua selon /etc/hostname). Écrans identifiés par description (marque modèle numéro de
+-- Machine « terrier » (chargée par lua/host.lua selon le nom de machine). Écrans identifiés par description (marque modèle numéro de
 -- série), jamais par connecteur : un connecteur (DP-2…) peut changer de nom sur un dock ou un autre câble (docs/ARCHITECTURE.md
 -- § 3.1). Mêmes réglages que dotfiles/sway/hosts/terrier.conf. Aucun espace de travail attaché à un écran (services/Outputs.qml).
 --
