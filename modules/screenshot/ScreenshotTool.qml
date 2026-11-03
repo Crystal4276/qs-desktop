@@ -111,17 +111,25 @@ LazyLoader {
                         Screenshot.close();
                         return;
                     }
+                    // Copie 1:1 de l'image figée : découpe calée sur ses pixels, et de la taille que rendra grabToImage (il prend
+                    // une taille logique entière et la multiplie par l'échelle de l'écran). Sélection à la souris en scale 1.5 :
+                    // coordonnées fractionnaires, découpe sinon rééchantillonnée d'un pixel.
                     const scale = view.sourceSize.width / view.width;
-                    crop.sourceRect = Qt.rect(r.x, r.y, r.width, r.height);
-                    crop.width = r.width;
-                    crop.height = r.height;
-                    crop.textureSize = Qt.size(Math.round(r.width * scale), Math.round(r.height * scale));
+                    const target = Qt.size(Math.max(1, Math.round(r.width)), Math.max(1, Math.round(r.height)));
+                    const pw = Math.min(Math.round(target.width * scale), view.sourceSize.width);
+                    const ph = Math.min(Math.round(target.height * scale), view.sourceSize.height);
+                    const px = Math.min(Math.round(r.x * scale), view.sourceSize.width - pw);
+                    const py = Math.min(Math.round(r.y * scale), view.sourceSize.height - ph);
+                    crop.sourceRect = Qt.rect(px / scale, py / scale, pw / scale, ph / scale);
+                    crop.width = pw / scale;
+                    crop.height = ph / scale;
+                    crop.textureSize = Qt.size(pw, ph);
                     const path = Screenshot.nextPath();
                     const started = crop.grabToImage(result => {
                         if (result.saveToFile(path))
                             Screenshot.copyToClipboard(path);
                         Screenshot.close();
-                    }, Qt.size(r.width, r.height));   // en px logiques : Qt la multiplie par l'échelle de l'écran
+                    }, target);
                     if (!started)
                         Screenshot.close();
                 }

@@ -66,7 +66,10 @@ for name in "${tools[@]}"; do
         # empilerait deux barres là où le `reload` en relance une.
         if [[ "$name" != blueman-tray && " ${restarted_by_reload[*]} " != *" $name "* ]]; then
             # Script Python : relancé par son propre nom, sinon il s'appelle `python` et la prise en main suivante ne le voit plus.
-            mapfile -d '' -t argv </proc/"$pid"/cmdline
+            # Outil terminé entre-temps : rien à enregistrer ni à arrêter (sans ce garde-fou, `set -e` arrêtait le script avant
+            # Quickshell, Dunst bloqué : bureau sans barre ni notifications).
+            mapfile -d '' -t argv 2>/dev/null </proc/"$pid"/cmdline || continue
+            [[ ${#argv[@]} -gt 0 ]] || continue
             [[ "${argv[0]##*/}" == python* ]] && argv=("${argv[@]:1}")
             cmd=$(printf '%q ' "${argv[@]}")
             grep -qxF "$cmd" "$state" 2>/dev/null || echo "$cmd" >>"$state"

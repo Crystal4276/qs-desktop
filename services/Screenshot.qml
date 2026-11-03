@@ -53,7 +53,7 @@ Singleton {
         ensureDirectory();   // le temps de choisir la zone suffit à le créer
         // Hyprland : fenêtres et moniteurs (espace affiché, espace spécial ouvert) lus ensemble, pour un état cohérent.
         windowList.command = Compositor.isHyprland
-            ? ["sh", "-c", `jq -n --argjson clients "$(hyprctl clients -j)" --argjson monitors "$(hyprctl monitors -j)" '{ $clients, $monitors }'`]
+            ? ["sh", "-c", `printf '{"clients":'; hyprctl clients -j; printf ',"monitors":'; hyprctl monitors -j; printf '}'`]
             : ["swaymsg", "-t", "get_tree"];
         windowList.running = true;
         cursorHidden = !hidesCursor;
