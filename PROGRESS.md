@@ -2070,14 +2070,14 @@ Deuxième passe, sans toi (2026-11-02, ta demande) : Hyprland imbriqué réglé 
 
 Tes tests (2026-11-03) : HDR actif sur les LG, aller-retour bon, mais **terne par rapport à Sway** → blanc SDR passé de 80 (défaut d'Hyprland) à 203 nits : plus lumineux, validé par toi ; lien de web app : bon ; verrouillage, déverrouillage, polkit (`pkexec true`) : bons ; veille d'écran : bonne, **rallumage plus lent que sous Sway** → essai : `fadeDpms` coupé en direct (`hyprctl eval`, annulé par un `reload`) ; câble débranché et rebranché : espaces réorganisés ; veille du PC : non configurée chez toi, à voir sur le laptop.
 
-**À tester à la main (reste) :**
-1. HDR à l'œil : `$mod+d` sur les LG, puis de nouveau.
-2. Déverrouillage avec ton mot de passe (`$mod+Escape`, cadenas) et polkit réel (ex. `pkexec true`).
-3. Veille d'écran (5 min sans toucher à rien), retour à la souris : tes 3 écrans rallumés d'un coup, sans clignotement.
-4. Veille du PC et réveil : disposition, barres, puis relancer `scripts/takeover.sh`.
-5. Vrai câble débranché et rebranché.
-6. Applications réelles : clic sur une entrée de la carte Steam, clic sur une notification Discord, lien d'une web app.
-7. Prochaine session Sway : une capture sur un LG, nette et aux bonnes dimensions.
+Validé aussi par toi (2026-11-03) : carte Steam (entrée du tray, fenêtre et espace affichés).
+
+**Reste à vérifier (noté le 2026-11-03, ta demande) :**
+1. Rallumage après la veille d'écran : aussi rapide que sous Sway, maintenant que `fadeDpms` est coupé en direct ? Si oui, le couper dans la config Hyprland (phase 10) ; sinon, lenteur d'Hyprland et Nvidia.
+2. Prochaine session Sway (change de session, donc hors session de code) : une capture sur un LG (`Print`), nette et à la bonne taille (correctif d'échelle non vérifié sous Sway).
+3. Notification Discord : la prochaine fois qu'une arrive d'elle-même, clic dessus → la web app Discord s'affiche, son espace avec. Même mécanisme que le lien de web app, déjà validé.
+4. Prochaine ouverture de session Hyprland : les web apps Discord et WhatsApp démarrent et vont sur l'espace 5.
+5. Laptop : veille du PC et réveil (non configurée sur ce desktop), plus la liste « Laptop » plus haut.
 
 Attention, jusqu'à la phase 10 : `hyprctl reload`, donc **chaque réveil**, remet les raccourcis d'origine (Rofi, hyprshot). Relancer `scripts/takeover.sh`. Trois notifications « Test Hyprland » restent dans ton historique.
 
