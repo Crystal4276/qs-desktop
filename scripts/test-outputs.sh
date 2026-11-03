@@ -160,7 +160,7 @@ if [[ "$compositor" == sway ]]; then
     swaymsg "exec echo \$WAYLAND_DISPLAY > $work/wayland" >/dev/null
     for _ in $(seq 1 50); do [[ -s "$work/wayland" ]] && break; sleep 0.1; done
     wayland="$(cat "$work/wayland")"
-    session_env=(-u HYPRLAND_INSTANCE_SIGNATURE SWAYSOCK="$SWAYSOCK" I3SOCK="$SWAYSOCK")
+    session_env=(-u QS_LOCK_STATE -u HYPRLAND_INSTANCE_SIGNATURE SWAYSOCK="$SWAYSOCK" I3SOCK="$SWAYSOCK")
 else
     # no_warps : comme ta config. Sinon, chaque focus d'écran du placement déplace le pointeur, et `follow_mouse` rend ensuite le
     # focus à l'écran sous lui : le focus finit sur le dernier écran visé.
@@ -189,7 +189,7 @@ else
     sleep 0.5
     h eval 'hl.monitor({ output = "WAYLAND-1", disabled = true })' >/dev/null
     sleep 0.5
-    session_env=(-u SWAYSOCK -u I3SOCK HYPRLAND_INSTANCE_SIGNATURE="$instance")
+    session_env=(-u QS_LOCK_STATE -u SWAYSOCK -u I3SOCK HYPRLAND_INSTANCE_SIGNATURE="$instance")
 fi
 # Sans lui, Quickshell retomberait sur wayland-0, peut-être ta session.
 [[ -n "$wayland" ]] || { echo "Socket Wayland de la session de test introuvable : arrêt." >&2; exit 2; }
