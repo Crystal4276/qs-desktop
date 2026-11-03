@@ -200,6 +200,7 @@ Singleton {
                 try {
                     data = JSON.parse(text);
                 } catch (e) {
+                    console.warn("Screenshot: liste des fenêtres illisible, mode fenêtre sans fenêtres :", e);
                     return;
                 }
                 const list = [];
