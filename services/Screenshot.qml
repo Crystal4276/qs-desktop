@@ -190,8 +190,9 @@ Singleton {
 
     // Fenêtres des espaces affichés, de la plus basse à la plus haute (windowAt prend la dernière) : Sway, feuilles visibles
     // (`visible` : une fenêtre cachée par un plein écran ou un onglet garde son rectangle), flottantes après ; Hyprland, clients des
-    // espaces affichés (l'ordre de `hyprctl clients` n'est pas l'empilement) : en mosaïque, flottants, puis plein écran, et par-dessus
-    // tout l'espace spécial ouvert sur un écran (`$mod+H`), dans le même ordre ; dans chaque couche, par focus le plus récent.
+    // espaces affichés (l'ordre de `hyprctl clients` n'est pas l'empilement) : en mosaïque et agrandies (`$mod+TAB`) en dessous ;
+    // au-dessus, flottantes et plein écran (`$mod+F`), par focus le plus récent (une flottante focalisée après le plein écran est
+    // dessinée sur lui, sinon cachée : vu sur Hyprland 0.57) ; par-dessus tout, l'espace spécial ouvert sur un écran (`$mod+H`).
     Process {
         id: windowList
         stdout: StdioCollector {
@@ -207,11 +208,12 @@ Singleton {
                 if (Compositor.isHyprland) {
                     const shown = (data.monitors ?? []).map(m => m.activeWorkspace?.id);
                     const special = (data.monitors ?? []).map(m => m.specialWorkspace?.name).filter(n => n);
-                    const layer = c => (special.includes(c.workspace?.name) ? 3 : 0) + (c.fullscreen ? 2 : c.floating ? 1 : 0);
+                    // `fullscreen` : 1 agrandie, 2 plein écran.
+                    const layer = c => (special.includes(c.workspace?.name) ? 2 : 0) + (c.floating || (c.fullscreen & 2) ? 1 : 0);
+                    const age = c => c.focusHistoryID >= 0 ? c.focusHistoryID : Infinity;   // -1 : jamais focalisée
                     for (const c of (data.clients ?? []).filter(c => (shown.includes(c.workspace?.id) || special.includes(c.workspace?.name))
                             && !c.hidden && c.mapped !== false)
-                            // Même couche : la plus récemment focalisée au-dessus (Hyprland monte une flottante au focus).
-                            .sort((a, b) => layer(a) - layer(b) || (b.focusHistoryID ?? 0) - (a.focusHistoryID ?? 0)))
+                            .sort((a, b) => layer(a) - layer(b) || (age(b) - age(a) || 0)))
                         list.push({ x: c.at[0], y: c.at[1], width: c.size[0], height: c.size[1], title: c.title });
                 } else {
                     const visit = (node, visible) => {
