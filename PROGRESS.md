@@ -2078,7 +2078,7 @@ Revue en boucle du code Hyprland (2026-11-03, ta demande, 9 passes : 2 à la mai
 - `takeover.sh` : un outil qui se termine pendant la boucle ne peut plus l'arrêter à mi-course (Dunst bloqué, pas de barre).
 - Laissés, négligeables pour ton usage : préréglages HDR autres que `hdr`, double appui sur `$mod+d` en moins de 0,5 s, refus partiel du HDR par Hyprland, fenêtres épinglées, échelles à largeur non entière, raccourcis de la prise en main remis par le `reload` du réveil (temporaire). Hors parité, dans `BACKLOG.md` : noms de capture à la seconde, VRAM de la découpe, `gdbus monitor` de la veille non relancé.
 
-**Reste à vérifier (noté le 2026-11-03, ta demande) :**
+**Reste à vérifier (noté le 2026-11-03, ta demande) — points 2 à 5 reportés à plus tard (2026-11-03 : pas vérifiables maintenant, ne bloquent pas la phase 10) :**
 1. ~~Rallumage après la veille d'écran~~ **validé par toi (2026-11-03)** : avec l'animation `fadeDpms` coupée en direct par moi (toujours coupée au réveil, vérifié avec `hyprctl animations`), le rallumage est bon. **Phase 10** : ajouter `hl.animation({ leaf = "fadeDpms", enabled = false })` à côté des autres animations (`lua/looknfeel.lua` aujourd'hui), sinon le `fade` dont elle hérite revient au prochain démarrage.
 2. Prochaine session Sway (change de session, donc hors session de code) : une capture sur un LG (`Print`), nette et à la bonne taille (correctif d'échelle non vérifié sous Sway).
 3. Notification Discord : la prochaine fois qu'une arrive d'elle-même, clic dessus → la web app Discord s'affiche, son espace avec. Même mécanisme que le lien de web app, déjà validé.
