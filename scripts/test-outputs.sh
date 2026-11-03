@@ -73,6 +73,7 @@ if [[ "$compositor" == sway ]]; then
             | .. | objects | select(.pid? != null) | {name, ws: $n}] | sort_by(.name)'
     }
     c_goto() { swaymsg workspace number "$1" >/dev/null; }
+    c_focus_window() { swaymsg "[title=\"^qs-test-$1\$\"] focus" >/dev/null; }
     c_focus_output() { swaymsg "focus output $1" >/dev/null; }
     c_open_window() { swaymsg "workspace number $1; exec env GDK_BACKEND=wayland zenity --info --title=qs-test-$1 --text=$1" >/dev/null; }
     c_move_window() { swaymsg "[title=\"^qs-test-$1\$\"] move container to workspace number $2" >/dev/null; }   # le focus ne suit pas
@@ -99,6 +100,8 @@ else
     }
     c_windows() { h clients -j | jq -cS '[.[] | {name: .title, ws: .workspace.id}] | sort_by(.name)'; }
     c_goto() { dsp "hl.dsp.focus({ workspace = $1 })"; }
+    # Afficher un espace ne focalise pas forcément sa fenêtre (pointeur ailleurs) : la fenêtre active resterait celle d'avant.
+    c_focus_window() { dsp "hl.dsp.focus({ window = \"title:^qs-test-$1\$\" })"; }
     # Comme un vrai geste : le pointeur va sur l'écran (follow_mouse donne le focus ; `no_warps`, comme ta config, ne le déplace jamais).
     c_focus_output() {
         local x y
@@ -176,6 +179,11 @@ else
     done
     [[ -n "$instance" ]] || { echo "La session Hyprland de test n'a pas démarré :" >&2; cat "$work/session.log" >&2; exit 2; }
     sleep 1
+    # Fenêtre du Hyprland imbriqué rangée dans un espace spécial caché de ta session, sans changer ton focus : un mouvement de
+    # souris au-dessus lui envoyait des événements de pointeur, et `follow_mouse` changeait le focus en plein test (échecs
+    # aléatoires pendant que tu travaillais). Elle disparaît avec la session de test.
+    window="$(hyprctl clients -j | jq -r --argjson p "$session_pid" '.[] | select(.pid == $p) | .address' | head -1)"
+    [[ -n "$window" ]] && hyprctl dispatch "hl.dsp.window.move({ window = \"address:$window\", workspace = \"special:qs-test\", follow = false })" >/dev/null
     wayland="$(h instances -j | jq -r --arg i "$instance" '.[] | select(.instance == $i) | .wl_socket')"
     for _ in 1 2 3; do c_create_output; done
     sleep 0.5
@@ -585,8 +593,14 @@ else
     echo "ÉCHEC $((placed_after - placed_before)) correction(s) après \$mod+3 : détour par $left"
     failures=$((failures + 1))
 fi
-c_focus_output "$left"; c_goto "${left_block[2]}"
+# L'espace 3, vide, disparaît une fois masqué : sinon `moveWindow` prendrait la branche « espace existant ».
+c_goto "$initial_focus"
+c_focus_output "$left"; c_goto "${left_block[2]}"; c_focus_window "${left_block[2]}"
 sleep 0.5
+if c_ws | jq -e 'any(.num == 3)' >/dev/null; then
+    echo "ÉCHEC l'espace 3 existe encore : le scénario suivant ne testerait pas un espace inexistant"
+    failures=$((failures + 1))
+fi
 placed_before="$(placement_count)"
 ipc outputs moveWindow 3
 check "\$mod+Ctrl+3 depuis $left : fenêtre ${left_block[2]} envoyée, espace 3 inexistant" "$initial_expected" 3 skip

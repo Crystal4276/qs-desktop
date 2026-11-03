@@ -2186,6 +2186,35 @@ Suite du 2026-11-03 (tes demandes) :
 - **Hyprland : changement d'espace sans fondu** (`workspaces`, `workspacesIn`, `workspacesOut` coupés). L'espace spécial (`$mod+H`) garde son animation.
 - **`openrgb-startup.service`** : demande `sudo` (mot de passe), commande donnée.
 - **Anciens paquets** : commande donnée. `nm-connection-editor`, `wl-clipboard` et `jq` sont d'abord marqués explicites, sinon `-Rns` les retirerait avec `network-manager-applet` et Waybar.
+- **Faits par toi** : `openrgb-startup.service` supprimé, anciens paquets désinstallés (vérifié).
+- **Raccourcis retirés** (ta demande) : espace spécial d'Hyprland (`Super+H`, `Super+Shift+S`) et scratchpad de Sway (`$mod+Shift+o`, `$mod+Shift+p`).
+- **Module média** (ta demande, Chromium affiché vide) : un lecteur arrêté n'est plus suivi, c'est Spotify (lecteur préféré) qui s'affiche. **À tester à la main** : lancer une vidéo dans Chromium puis fermer l'onglet doit ramener Spotify.
+
+### Revue en boucle de la phase 10 (2026-11-03, ta demande)
+
+**Passe 1** (`/code-review high`, commits `ebe1fbb..HEAD`), 10 constats.
+
+Corrigés, chaque fois vérifiés sur banc :
+- **Test** : `$mod+Ctrl+3` « espace inexistant » passait par la branche « espace existant », puisque l'étape précédente avait créé l'espace 3. Corrigé : l'espace est d'abord masqué, et sa disparition est vérifiée. Sous Hyprland, la fenêtre est focalisée explicitement : afficher un espace ne focalise pas sa fenêtre.
+- **`desktop.sh restart`** remplace la surveillance par une nouvelle, partie de l'environnement de l'appelant :
+  - les relances voulues ne comptent plus parmi les arrêts (avant, 6 relances en une minute laissaient la session sans bureau) ;
+  - `perf.sh ab` transmet de nouveau ses variables ;
+  - `perf.sh` vise l'instance de la session (`desktop.sh pid`).
+- **Verrou** : il n'est plus vidé à l'ouverture, et le PID qu'il contient n'est lu que tant qu'une surveillance le tient (jamais un PID périmé).
+- **Hyprland `$mod+Ctrl+N`** :
+  - la fenêtre est désignée par son adresse ;
+  - sans fenêtre active sur l'espace focalisé, l'espace est seulement affiché ;
+  - l'espace déplacé est désigné par son numéro : l'espace de départ ne peut plus partir à sa place.
+- **Règle HDR Hyprland** : complète (mode, position, échelle, rotation relus sur l'écran), et description échappée dans la chaîne Lua. Sur banc, avec la seule règle de repli, une règle partielle faisait passer l'échelle de 1,5 à 2.
+- **`ipc.sh`** : plus de repli `-c desktop`, qui pouvait viser un banc pendant une relance.
+
+Trouvé en route : le banc Hyprland échouait au hasard pendant que tu travaillais. Le pointeur au-dessus de la fenêtre imbriquée changeait le focus du test. La fenêtre est maintenant rangée dans un espace spécial caché de ta session, le temps du test.
+
+Écarté : `dev.sh` n'arrête plus une instance lancée à la main avec `qs -p .`. Pour l'arrêter, il faudrait viser toutes les instances du même identifiant, bancs compris, ce qui est le danger évité.
+
+À ta décision : la ligne `gio mount ssh://<utilisateur>@<serveur>` de `hosts/terrier.conf` (ton identifiant et l'adresse du serveur, dans le dépôt privé).
+
+Vérifié : `test-outputs.sh` 0 échec sous Sway et deux fois sous Hyprland ; `desktop.sh` sur un Sway isolé (7 relances, variable transmise, `stop` deux fois). Ton bureau a été relancé par Hyprland avec le nouveau script : une instance, aucune erreur.
 
 ## Prochaine étape
 

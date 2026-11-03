@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Mesures de performance de l'instance Quickshell (docs/PERFORMANCE.md). Lecture seule, sauf `ab`, qui relance l'instance de dev.
+# Mesures de performance de l'instance Quickshell (docs/PERFORMANCE.md). Lecture seule, sauf `ab`, qui relance le bureau
+# (scripts/dev.sh → desktop.sh restart : la nouvelle surveillance garde les variables données, jusqu'à la relance suivante).
 # Usage : scripts/perf.sh snap [étiquette]                  mémoire de l'instance, tout de suite
 #         scripts/perf.sh idle [secondes] [étiquette]       mémoire + CPU et réveils sur la durée (60 s par défaut)
 #         scripts/perf.sh ab <étiquette> [VAR=valeur …]     relance avec ces variables, attend, puis `idle`
@@ -12,7 +13,8 @@ settle="${PERF_SETTLE:-30}"   # s entre le lancement et la mesure (fonds décod�
 mkdir -p "$repo/.shots"
 
 instance() {
-    pgrep -nf "^qs -p $repo" || pgrep -nf "^qs -c desktop" || { echo "Aucune instance Quickshell." >&2; exit 1; }
+    # Instance du bureau de cette session (scripts/desktop.sh), jamais une autre copie du dépôt (banc de test, même ShellId).
+    "$repo/scripts/desktop.sh" pid || { echo "Aucune instance Quickshell lancée par desktop.sh." >&2; exit 1; }
 }
 
 status() { awk -v k="$2:" '$1 == k { print int($2 / 1024) }' "/proc/$1/status"; }

@@ -3,10 +3,11 @@
 # d'Hyprland (dotfiles/). Un seul processus porte tout le bureau (ARCHITECTURE.md § 11.2) : s'il s'arrête, il est relancé tant que
 # la session dure ; plus de 5 arrêts en une minute : abandon, avec un message du compositeur.
 # Usage : desktop.sh           autostart : lance l'instance, chaque écran affiche le premier espace de son bloc (1 / 4 / 7), surveille
-#         desktop.sh restart   relance l'instance ($mod+Ctrl+W, scripts/dev.sh) et affiche les erreurs du démarrage ; sans
-#                              surveillance en cours, la démarre, sans toucher aux espaces
+#         desktop.sh restart   relance la surveillance et l'instance depuis l'environnement de l'appelant ($mod+Ctrl+W,
+#                              scripts/dev.sh), sans toucher aux espaces, et affiche les erreurs du démarrage
 #         desktop.sh stop      arrête la surveillance et l'instance
 #         desktop.sh log       suit le journal de l'instance (Ctrl+C pour quitter)
+#         desktop.sh pid       PID de l'instance (scripts/perf.sh)
 # Instance visée par son PID, jamais par `-c desktop` : toutes les copies du dépôt (bancs de test) ont le même identifiant
 # (`//@ pragma ShellId desktop`), un `qs kill -c desktop` les arrêterait toutes.
 set -uo pipefail
@@ -51,11 +52,19 @@ prepare() {
     [[ -n "${PERF_NO_ENV:-}" ]] || . "$repo/scripts/qs-env.sh"
 }
 
+# Surveillance en cours dans cette session : son PID (verrou tenu, processus `desktop.sh watch`).
+supervisor() {
+    local pid
+    flock -n "$lock" true 2>/dev/null && return 1
+    pid="$(cat "$lock" 2>/dev/null)"
+    [[ -n "$pid" ]] && grep -qa "desktop.sh" "/proc/$pid/cmdline" 2>/dev/null && echo "$pid"
+}
+
 # watch [home]
 watch() {
-    exec 9>"$lock"
+    exec 9>>"$lock"   # sans vider le fichier : il porte le PID d'une surveillance peut-être en cours
     flock -n 9 || { echo "Bureau déjà surveillé dans cette session."; exit 0; }
-    echo $$ >&9
+    echo $$ >"$lock"   # lu seulement tant que le verrou est tenu (supervisor) : jamais un PID périmé
     prepare
     local home="${1:-}" starts=() now t pid
     while alive; do
@@ -86,7 +95,18 @@ kill_instance() {
     pid="$(instance)" || return 0
     qs kill --pid "$pid" >/dev/null 2>&1 || kill "$pid" 2>/dev/null
     for _ in {1..20}; do kill -0 "$pid" 2>/dev/null || return 0; sleep 0.1; done
-    kill -9 "$pid" 2>/dev/null   # bloqué (gestionnaire de plantage) : la surveillance relance
+    kill -9 "$pid" 2>/dev/null   # bloqué (gestionnaire de plantage)
+}
+
+# Surveillance arrêtée d'abord (elle relancerait l'instance), puis l'instance.
+stop() {
+    local pid
+    if pid="$(supervisor)"; then
+        kill "$pid" 2>/dev/null
+        for _ in {1..20}; do kill -0 "$pid" 2>/dev/null || break; sleep 0.1; done
+    fi
+    kill_instance
+    rm -f "$pidfile"
 }
 
 case "${1:-}" in
@@ -101,20 +121,17 @@ case "${1:-}" in
         exec qs log -f --pid "$pid"
         ;;
     stop)
-        supervisor="$(cat "$lock" 2>/dev/null || true)"
-        [[ -n "$supervisor" ]] && kill "$supervisor" 2>/dev/null
-        kill_instance
-        rm -f "$pidfile"
+        stop
+        ;;
+    pid)
+        instance
         ;;
     restart)
+        # Nouvelle surveillance, partie de l'environnement de l'appelant (variables de scripts/perf.sh ab, comme l'ancien dev.sh) ;
+        # une relance voulue ne compte donc pas parmi les arrêts de la précédente. Détachée de ce terminal.
         old="$(instance)" || old=""
-        if flock -n "$lock" true 2>/dev/null; then
-            # Aucune surveillance : démarrée à part, détachée de ce terminal.
-            kill_instance
-            setsid -f "$0" watch >/dev/null 2>&1 </dev/null
-        else
-            kill_instance   # la surveillance la relance
-        fi
+        stop
+        setsid -f "$0" watch >/dev/null 2>&1 </dev/null
         pid=""
         for _ in {1..30}; do
             pid="$(instance)" && [[ "$pid" != "$old" ]] && break

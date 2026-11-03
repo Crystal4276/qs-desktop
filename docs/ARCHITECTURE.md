@@ -25,7 +25,8 @@ Celle de `CLAUDE.md`, avec trois ajouts :
   désigné par le lien de la config Quickshell (`~/.config/quickshell/desktop`), jamais par un chemin personnel.
 - `scripts/desktop.sh` *(phase 10)* : lancé par l'autostart des deux compositeurs (§ 11.2) ; `scripts/ipc.sh` : `qs ipc call` des
   raccourcis vers l'instance de la session, désignée par son PID (toutes les copies du dépôt portent `//@ pragma ShellId desktop` :
-  `-c desktop` pourrait viser un banc de test).
+  `-c desktop` pourrait viser un banc de test ; aucun repli sur `-c desktop` : sans instance, l'appel échoue et `$mod+N` retombe sur
+  la commande native).
 
 ## 2. Compositeur
 
@@ -101,7 +102,9 @@ output "LG Electronics 27GN950 207NTHMFY841"   mode 3840x2160@60Hz  pos 6000 0 s
 
 Le raccourci HDR (`$mod+d`) vise les écrans compatibles sans nom en dur (`qs ipc call display toggleHdr`). Hyprland : la règle HDR
 posée à l'exécution vise l'écran par la même clé que la config (`desc:…`) ; sinon elle ne se fond pas dans la règle de l'écran et
-lui fait perdre échelle et position (vu sur banc, phase 10).
+lui fait perdre échelle et position (vu sur banc, phase 10). La règle est de plus complète (mode, position, échelle, rotation relus
+sur l'écran) : sur une machine sans `hosts/`, seule la règle de repli `output = ""` existe, et une règle partielle la remplacerait
+(échelle 1,5 → 2 sur banc).
 
 Les espaces de travail (§ 3.2) ne dépendent pas de ce choix : ils suivent la liste des écrans **actifs**, quelle que soit la façon dont ils ont été configurés.
 
@@ -780,7 +783,8 @@ Barre, notifications, verrouillage, agent polkit, agent Bluetooth et veille vive
   d'Hyprland, relance `qs` s'il s'arrête, tant que le compositeur répond (abandon et message du compositeur après 5 arrêts en une
   minute). Pas de service systemd : l'environnement systemd est commun aux sessions Sway et Hyprland (un `SWAYSOCK` resté d'une
   session Sway ferait choisir le mauvais compositeur à `Compositor`), et rien ne lierait le service à la vie du compositeur ;
-  `$mod+Ctrl+W` = `desktop.sh restart` ;
+  `$mod+Ctrl+W` = `desktop.sh restart`, qui remplace la surveillance par une nouvelle, partie de l'environnement de l'appelant
+  (une relance voulue ne compte pas parmi les arrêts ; `scripts/perf.sh ab` transmet ses variables) ;
 - **écran verrouillé** : le protocole `ext-session-lock` garde la session verrouillée si le verrouilleur meurt (c'est voulu, c'est sûr) ; il faut donc que le `qs` redémarré
   puisse reprendre le verrouillage, et documenter un **retour de secours** depuis un TTY. À tester explicitement en phase 8b, sans risque pour ta session (écran virtuel ou session de test).
 
