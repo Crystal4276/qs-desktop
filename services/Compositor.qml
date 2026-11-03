@@ -174,7 +174,9 @@ Singleton {
         if (isSway && names.length > 0)
             I3.dispatch(names.map(n => `output "${n}" hdr ${on ? "on" : "off"}`).join("; "));
         else if (isHyprland && names.length > 0)
-            setRuntimeRule("hdr", names.map(n => `hl.monitor({ output = "${n}", ${on ? `cm = "hdr", bitdepth = 10` : `cm = "srgb", bitdepth = 8`} })`).join(" "));
+            // Blanc SDR à 203 nits (BT.2408), comme Sway à ma connaissance : Hyprland l'affiche par défaut à 80 nits en HDR, d'où un
+            // bureau terne (ton constat du 2026-11-03).
+            setRuntimeRule("hdr", names.map(n => `hl.monitor({ output = "${n}", ${on ? `cm = "hdr", bitdepth = 10, sdr_max_luminance = 203` : `cm = "srgb", bitdepth = 8`} })`).join(" "));
     }
 
     function setVrr(names: var, on: bool): void {

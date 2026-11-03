@@ -2068,7 +2068,9 @@ Deuxième passe, sans toi (2026-11-02, ta demande) : Hyprland imbriqué réglé 
 - Non cliquée exprès : rangée Logout / Reboot / Power du panneau, le banc lancerait une vraie action.
 - Trace : une tentative de mot de passe erronée dans `faillock` pour ton compte (effacée à ta prochaine connexion réussie).
 
-**À tester à la main :**
+Tes tests (2026-11-03) : HDR actif sur les LG, aller-retour bon, mais **terne par rapport à Sway** → blanc SDR passé de 80 (défaut d'Hyprland) à 203 nits, à revoir ; verrouillage, déverrouillage, polkit (`pkexec true`) : bons ; veille d'écran : bonne, **rallumage plus lent que sous Sway** → essai : `fadeDpms` coupé en direct (`hyprctl eval`, annulé par un `reload`) ; câble débranché et rebranché : espaces réorganisés ; veille du PC : non configurée chez toi, à voir sur le laptop.
+
+**À tester à la main (reste) :**
 1. HDR à l'œil : `$mod+d` sur les LG, puis de nouveau.
 2. Déverrouillage avec ton mot de passe (`$mod+Escape`, cadenas) et polkit réel (ex. `pkexec true`).
 3. Veille d'écran (5 min sans toucher à rien), retour à la souris : tes 3 écrans rallumés d'un coup, sans clignotement.
@@ -2135,6 +2137,8 @@ Lanceur vérifié sur banc (2026-11-02, Sway isolé, clavier virtuel, réglages 
 
 Liens des web apps (2026-11-02, ta demande) : lien externe validé par toi ; le lien atterrit dans la dernière fenêtre active du navigateur, et son espace de travail est maintenant affiché (`open-link` appelle `qs ipc call compositor focusNextWindowOf chromium` avant Chromium : première fenêtre urgente de Chromium dans les 3 s). Vérifié sur banc (Sway isolé, Chromium jetable, deux écrans) : sans l'appel, 10 ouvertures sur 10 laissent le focus sur place ; avec, autre écran, deux fenêtres, navigateur déjà au premier plan : bon espace ; validé par toi sur le vrai bureau. Faux pas de banc : `swaymsg exec chromium` visait ton vrai Chromium (PATH non transmis à Sway), des fenêtres `127.0.0.1:18765` se sont ouvertes sur ton bureau ; fermées depuis, garde-fou ajouté. Hyprland (filtre par `HyprlandToplevel.wayland.appId` compris) : à vérifier en phase 9.
 Revue (`/code-review medium`, 2026-11-02, 9 constats) : corrigés : autre fenêtre urgente qui prenait le focus (fenêtre étrangère vérifiée sur banc, ouverture de notification toujours sans filtre), attente de `qs ipc` ramenée à 0,5 s, documentation, ce journal. Écartés : `-c desktop` seul (échoue tant que l'instance est lancée avec `-p`, vérifié) ; `WAYLAND_DISPLAY` différent (Chromium en a besoin aussi). Laissés : pointeur qui suit le focus sur l'autre écran (comme une notification, tu as validé le comportement), délai de 3 s, repli de Hyprland à voir en phase 9.
+
+Rappel pour la phase 10 (ta demande du 2026-11-03) : autostart Hyprland comme Sway, web apps Discord et WhatsApp (`gtk-launch WebApp-DiscordWeb2996`, `gtk-launch WebApp-Whatsapp8699`) au lieu de `discord` et `whatsdesk` ; règles d'espace 5 sur leurs classes (`chrome-discord.com__channels_@me_346332481131380736-Default`, `chrome-web.whatsapp.com__-Default`, comme les `assign` de Sway).
 
 Rappel pour la phase 10 (ta demande du 2026-11-02) : `xwayland.use_nearest_neighbor = false` dans la config Lua d'Hyprland (`dotfiles/hypr`) pour le rendu des polices de Steam ; le défaut est `true`, tu l'as réglé à la main dans ta session.
 
