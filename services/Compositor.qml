@@ -249,13 +249,25 @@ Singleton {
         return [...new Set([...a, ...b])];
     }
 
-    // Après un `reload` : HDR et VRR reposés. Aussi ceux que montrent les écrans, encore lus d'avant le `reload` (relus 500 ms
-    // après) : état d'un shell relancé HDR actif (rechargement à chaud, $mod+Ctrl+w), qui ne les a pas posés lui-même.
+    // Après un `reload` : HDR et VRR reposés. Aussi ceux que montrent les écrans, encore lus d'avant le `reload` : état d'un shell
+    // relancé HDR actif (rechargement à chaud, $mod+Ctrl+w), qui ne les a pas posés lui-même. Règles posées une fois les écrans
+    // relus : la règle HDR est complète (ruleKey), elle reprend donc le mode, la position et l'échelle de la config rechargée,
+    // pas ceux d'avant le `reload`.
     function replayRuntimeRules(): void {
         hdrOnOutputs = union(hdrOnOutputs, outputs.filter(o => o.hdr).map(o => o.name));
         const vrrOutputs = outputs.filter(o => o.vrrCapable);
         vrrOn = vrrOn || (vrrOutputs.length > 0 && vrrOutputs.every(o => o.vrr));   // comme la bascule (Displays.vrr)
-        applyRuntimeRules([...(hdrOnOutputs.length > 0 ? [hdrRule(hdrOnOutputs, true)] : []), ...(vrrOn ? [vrrRule(true)] : [])]);
+        if (hdrOnOutputs.length > 0 || vrrOn) {
+            Hyprland.refreshMonitors();
+            replayAfterReread.restart();
+        }
+    }
+
+    Timer {
+        id: replayAfterReread
+        interval: 500   // comme monitorReread : réponse de refreshMonitors reçue
+        onTriggered: root.applyRuntimeRules([...(root.hdrOnOutputs.length > 0 ? [root.hdrRule(root.hdrOnOutputs, true)] : []),
+            ...(root.vrrOn ? [root.vrrRule(true)] : [])])
     }
 
     function applyRuntimeRules(rules: var): void {

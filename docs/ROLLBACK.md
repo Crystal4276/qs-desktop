@@ -42,7 +42,7 @@ systemctl --user mask dunst.service
 
 La session reste utilisable : raccourcis et fenêtres sont ceux du compositeur ; `$mod+1…9` et `$mod+Ctrl+1…9` retombent sur la
 commande native. Relance : `$mod+Ctrl+W` (ou `~/qs-desktop/scripts/desktop.sh restart` dans un terminal, qui affiche les erreurs) ;
-journal : `scripts/desktop.sh log` ou `$XDG_RUNTIME_DIR/qs-desktop.log`. Après 5 arrêts en une minute, `desktop.sh` abandonne et
+journal : `scripts/desktop.sh log` ou `$XDG_RUNTIME_DIR/qs-desktop.<session>.log` (instance précédente : `.log.1`). Après 5 arrêts en une minute, `desktop.sh` abandonne et
 le compositeur affiche un message.
 
 Écran verrouillé quand Quickshell s'arrête : la session reste verrouillée (protocole `ext-session-lock`, voulu). `desktop.sh` relance

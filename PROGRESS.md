@@ -2226,6 +2226,29 @@ Trouvé en route : le banc Hyprland échouait au hasard pendant que tu travailla
 
 Vérifié : `test-outputs.sh` 0 échec sous Sway et deux fois sous Hyprland ; `desktop.sh` sur un Sway isolé (7 relances, variable transmise, `stop` deux fois). Ton bureau a été relancé par Hyprland avec le nouveau script : une instance, aucune erreur.
 
+**Anciens dépôts nettoyés aussi** (ta demande, « c'est tout qui doit être clean ») :
+- `sway` : historique réécrit (adresse masquée) et poussé en forçant ; le montage y est lu depuis `~/.config/qs-desktop.local/sway.conf` ;
+- `hyprland` : rien à retirer ;
+- vérifié sur des clones miroirs neufs de GitHub et sur les copies locales (dépôt, sauvegardes `~/.config/*.bak-2026-11-03`,
+  objets Git compris) : 0 occurrence. Clones de travail, *bundles* et copies de bancs temporaires supprimés.
+
+**Passe 2**, 8 constats.
+
+Corrigés, avec un banc qui reproduit le défaut sur l'ancienne version et passe sur la nouvelle :
+- **`hosts/<machine>.lua` en erreur** : `lua/autostart.lua` le chargeait une deuxième fois et s'arrêtait sur la même erreur. Le bureau, le VPN et les applications ne démarraient donc pas. Maintenant `pcall`, l'erreur reste signalée par le premier chargement. Testé avec `lua` et un `hl` factice : 10 commandes lancées malgré l'erreur.
+- **`desktop.sh`**, sur un Hyprland imbriqué avec bus à part (ancienne version : 7 échecs, nouvelle : 0) :
+  - **`restart` juste après un arrêt de Quickshell** : le `sleep 1` de la surveillance tuée gardait le verrou, et la nouvelle surveillance se croyait en double. Résultat : « Échec du démarrage » et plus de bureau. `stop` attend maintenant que le verrou soit libéré (3 s au plus) ;
+  - **PID repris par un autre processus** (fichier laissé par une surveillance tuée) : `stop` le tuait. Le PID n'est retenu que s'il désigne Quickshell (`/proc/<pid>/exe`) ;
+  - **journal** : propre à la session (`$XDG_RUNTIME_DIR/qs-desktop.<session>.log`), comme le verrou et le PID ; celui de l'instance précédente est gardé (`.log.1`), donc la raison d'un arrêt reste lisible après la relance.
+- **HDR Hyprland reposé après `reload`** : la règle complète reprenait la géométrie lue avant le `reload`. Après une modification des écrans dans la config, le `reload` était annulé tant que le HDR restait actif. Les règles sont maintenant posées après relecture des écrans (500 ms). Pas de banc : les écrans virtuels n'ont pas de HDR. **À tester à la main** : HDR actif, `hyprctl reload`, le HDR revient, avec la même échelle.
+
+Écartés :
+- **règles Hyprland des espaces 7 et 8 sans exception pour Deluge et Thunderbird** : c'est la parité avec ton ancienne config Hyprland, qui avait les mêmes règles sans exception, et tu n'as rien signalé ;
+- **`mark` refusé par Sway quand le focus est sur l'espace lui-même** (`focus parent` jusqu'en haut) : la fenêtre n'est pas déplacée. L'ancienne commande native ne faisait rien d'utile non plus dans ce cas. Négligeable ;
+- **latence de `ipc.sh`** : `desktop.sh pid` prend 5 ms, contre 23 ms pour `qs ipc`. Négligeable.
+
+Ton bureau a été relancé avec le nouveau `desktop.sh` : une instance, aucune erreur, répartition 1-3 / 4-6 / 7-9.
+
 ## Prochaine étape
 
 **Phase 10 : tes tests à la main (ci-dessus) aux prochaines connexions Sway et Hyprland, puis validation ; phase 11 (portabilité)
@@ -2252,7 +2275,7 @@ Historique (2026-11-02, avant la bascule) : la session était prise en main par 
    en Python + `Dbusmenu`). Pièges : avec deux écrans, les coordonnées absolues du pointeur virtuel portent sur toute la
    disposition ; sans périphérique de pointage, Sway n'envoie aucun événement de pointeur aux clients ; ne jamais laisser
    traîner une instance de test ; ne jamais lancer d'action `nordvpn`.
-4. **Ton bureau** (depuis la phase 10) : `qs -c desktop` lancé par `scripts/desktop.sh` (journal `$XDG_RUNTIME_DIR/qs-desktop.log`
+4. **Ton bureau** (depuis la phase 10) : `qs -c desktop` lancé par `scripts/desktop.sh` (journal `$XDG_RUNTIME_DIR/qs-desktop.<session>.log`
    ou `scripts/dev.sh log`, relance `scripts/dev.sh` ou `$mod+Ctrl+W`). Waybar, Dunst et les autres ne sont plus lancés.
 5. **Notés pour plus tard** :
    - bloc 6 : calendrier épinglé fermé par Échap pointeur sur l'horloge → la barre garde le clavier ; `CalendarPopup.popupHovered`
