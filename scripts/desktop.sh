@@ -39,6 +39,7 @@ instance() {
     local pid exe
     pid="$(cat "$pidfile" 2>/dev/null)" || return 1
     [[ -n "$pid" ]] && exe="$(readlink "/proc/$pid/exe" 2>/dev/null)" || return 1
+    exe="${exe% (deleted)}"   # binaire remplacé par une mise à jour, instance toujours en cours
     [[ "${exe##*/}" == quickshell || "${exe##*/}" == qs ]] && echo "$pid"
 }
 
@@ -158,7 +159,9 @@ case "${1:-}" in
         sleep 1.5
         if [[ -z "$pid" ]] || ! kill -0 "$pid" 2>/dev/null; then
             echo "Échec du démarrage :" >&2
-            cat "$log" >&2
+            # Déjà relancée par la surveillance : le journal de l'instance qui a échoué est passé en .log.1.
+            cur="$(instance)" || cur=""
+            if [[ -n "$pid" && -n "$cur" && "$cur" != "$pid" ]]; then cat "$log.1" >&2; else cat "$log" >&2; fi
             exit 1
         fi
         # Sans effet, donc non affichés ici (ils restent dans `qs log`) : lignes vides de fichiers .desktop générés par SteamVR,

@@ -11,7 +11,9 @@ Singleton {
         MALLOC_CONF: null,
         QSG_ATLAS_WIDTH: null,
         QSG_ATLAS_HEIGHT: null,
-        __EGL_VENDOR_LIBRARY_FILENAMES: null
+        __EGL_VENDOR_LIBRARY_FILENAMES: null,
+        // Fichier de verrouillage de la session (scripts/desktop.sh) : un `qs` lancé depuis un terminal ne doit pas le partager.
+        QS_LOCK_STATE: null
     })
 
     function exec(command: var): void {

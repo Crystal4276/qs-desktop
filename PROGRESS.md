@@ -2285,6 +2285,22 @@ Config Hyprland rechargée sur ta session : aucune erreur. Deluge et Thunderbird
 - **correction** (`services/NightLight.qml`) : jamais deux gammastep à la fois ; le précédent est attendu, 10 s au plus. Au-delà (orphelin), pas de lancement, nouvel essai dans une minute. Banc Sway, avec un faux gammastep vivant 4 s : l'ancien code relançait 4 fois pendant sa vie, le nouveau une seule fois, 0,1 s après sa fin ;
 - **à tester par toi** : après ta prochaine connexion à Hyprland, la veilleuse sur les trois écrans, y compris après `Super+Ctrl+W`.
 
+**Passe 4**, 8 constats.
+
+Corrigés :
+- **`desktop.sh` après une mise à jour de Quickshell** : l'exécutable de l'instance en cours apparaît alors comme « `/usr/bin/quickshell (deleted)` ». L'instance n'était plus reconnue, tous les raccourcis `ipc.sh` échouaient, et `$mod+Ctrl+W` lançait un second bureau par-dessus le premier. Le suffixe est maintenant ignoré. Vérifié avec une copie effacée d'un binaire : l'ancien code ne la reconnaît pas, le nouveau oui.
+- **`QS_LOCK_STATE` hérité par les applications** : un `qs` de test lancé depuis un terminal aurait lu et écrit l'état du verrou de ta session. La variable est retirée au lancement des applications (`services/Launch.qml`) et dans les bancs (`test-outputs.sh`).
+- **État du verrou écrit de façon synchrone** (`blockWrites`) : un arrêt juste après le verrouillage le trouve à jour.
+- **Veilleuse** :
+  - seul un gammastep de la même session Wayland est attendu, et non celui d'un banc imbriqué. Banc : un faux gammastep (vraie ligne de commande, vrai environnement) sur la même session fait attendre, un faux d'une autre session non. Le premier faux, en Perl, effaçait son propre environnement en changeant `$0`, ce qui faussait le test ;
+  - la config est écrite au lancement, plus avant l'attente : un changement d'horaire pendant l'attente n'est plus perdu.
+- **`desktop.sh restart`** affiche le journal de l'instance qui a échoué (`.log.1` si la surveillance l'a déjà relancée).
+- **`.pyc` commité par erreur** (passe 3, mon `py_compile`) : retiré, `__pycache__/` et `*.pyc` ajoutés à `.gitignore`.
+
+Noté dans `BACKLOG.md` :
+- la règle HDR complète d'Hyprland fige la position de l'écran. Ça ne compte que sans `hosts/` et avec un écran HDR, jusqu'au `reload` suivant ;
+- le bug du contrôle gamma d'Hyprland, à signaler en amont.
+
 ## Prochaine étape
 
 **Phase 10 : tes tests à la main (ci-dessus) aux prochaines connexions Sway et Hyprland, puis validation ; phase 11 (portabilité)

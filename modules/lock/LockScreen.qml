@@ -37,6 +37,7 @@ Scope {
         id: lockState
         path: root.statePath
         printErrors: false
+        blockWrites: true   // « 1 » écrit avant de continuer : un arrêt juste après le verrouillage doit le trouver
         onLoaded: {
             if (text().trim() === "1" && !root.locked) {
                 console.info("lock: session locked when Quickshell stopped, locking again");

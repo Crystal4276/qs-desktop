@@ -81,13 +81,13 @@ Singleton {
             console.warn(`NightLight: horaire ${schedule} invalide`);
             return;
         }
-        configFile.setText(configText);
         previous.running = true;   // lancement une fois le gammastep précédent arrêté (launch)
     }
 
     function launch(): void {
         if (!enabled)
             return;   // désactivée pendant l'attente
+        configFile.setText(configText);   // config à jour, même changée pendant l'attente (écriture bloquante)
         gammaOn = true;
         ready = false;
         startedAt = Date.now();
@@ -99,11 +99,16 @@ Singleton {
     // reste enregistré (protocols/GammaControl.cpp, lu) : l'écran est refusé à tout client jusqu'au redémarrage d'Hyprland.
     // Vu le 2026-11-03 : veilleuse sur le seul Dell, après des relances de Quickshell pendant lesquelles l'ancien gammastep
     // faisait encore son fondu de sortie. Le précédent (instance arrêtée ou rechargée) est donc attendu, 10 s au plus ; au-delà
-    // (orphelin), pas de lancement, nouvel essai dans une minute.
+    // (orphelin), pas de lancement, nouvel essai dans une minute. Seul compte un gammastep de cette session Wayland (même
+    // WAYLAND_DISPLAY) : celui d'un banc imbriqué ne tient pas ces écrans.
     Process {
         id: previous
-        command: ["sh", "-c", 'for _ in $(seq 50); do pgrep -xf "gammastep -c $1" >/dev/null || exit 0; sleep 0.2; done; exit 1',
-            "sh", configFile.path]
+        command: ["sh", "-c", 'for _ in $(seq 50); do
+                held=; for p in $(pgrep -xf "gammastep -c $1"); do
+                    tr "\\0" "\\n" <"/proc/$p/environ" 2>/dev/null | grep -qx "WAYLAND_DISPLAY=$WAYLAND_DISPLAY" && held=1
+                done
+                [ -z "$held" ] && exit 0; sleep 0.2
+            done; exit 1', "sh", configFile.path]
         onExited: code => {
             if (code === 0) {
                 root.launch();
