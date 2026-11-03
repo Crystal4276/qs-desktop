@@ -2249,6 +2249,13 @@ Corrigés, avec un banc qui reproduit le défaut sur l'ancienne version et passe
 
 Ton bureau a été relancé avec le nouveau `desktop.sh` : une instance, aucune erreur, répartition 1-3 / 4-6 / 7-9.
 
+**Bug signalé : l'écran LG de droite s'éteint quand une vidéo passe en plein écran sur le LG de gauche, et à la sortie** (Hyprland, 2026-11-03) :
+- le journal d'aquamarine montre un *modeset* de DP-1 (le LG de gauche) à chaque passage ;
+- cause, lue dans la source d'Hyprland 0.57 (`handleFullscreenSettings`, `getAutoHDRImageDescription`) : `render:cm_auto_hdr`, actif par défaut. Hyprland propose le HDR à la fenêtre plein écran, Chromium l'adopte, et l'écran bascule en HDR puis en SDR à la sortie. Dans aquamarine, un changement de métadonnées HDR impose un modeset (`needsReconfig`) ;
+- l'extinction de l'autre LG pendant ce modeset vient du pilote NVIDIA (déduit, pas vérifié) ;
+- correction : `render.cm_auto_hdr = 0` (`lua/looknfeel.lua`), aussi posé à chaud sur ta session. Le HDR reste manuel, comme sous Sway. Ta config Sway n'a pas d'équivalent ;
+- **à confirmer par toi** : une vidéo en plein écran ne doit plus éteindre l'écran de droite.
+
 ## Prochaine étape
 
 **Phase 10 : tes tests à la main (ci-dessus) aux prochaines connexions Sway et Hyprland, puis validation ; phase 11 (portabilité)
