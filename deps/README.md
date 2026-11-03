@@ -65,8 +65,14 @@ Thème d'icônes des applications (tray, lanceur, menu d'applications, notificat
 ### Hors barre (configs compositeur, phase 10)
 
 Thème GTK et curseur (AUR). Tout le reste (fond, veille, verrouillage, polkit, applets réseau/Bluetooth/disques, captures) est repris par Quickshell :
-`swaybg`, `swayidle`, `hypridle`, `swaylock`, `polkit-gnome`, `blueman`, `udiskie`, `hyprshot` ne seront plus nécessaires après la bascule.
+`swaybg`, `swayidle`, `hypridle`, `swaylock`, `polkit-gnome`, `blueman`, `udiskie`, `hyprshot`, ainsi que `waybar`, `dunst` et `rofi`, ne sont
+plus utilisés depuis la bascule (phase 10, 2026-11-03 ; Dunst masqué : `systemctl --user mask dunst.service`). Leur désinstallation reste ta décision.
 Les applications personnelles lancées au démarrage (Steam, Spotify, Thunderbird, NordVPN…) ne sont **pas** des dépendances du bureau.
+
+| Script (phase 10) | Rôle | Commandes |
+|---|---|---|
+| `scripts/desktop.sh [restart\|stop\|log]` | lance le bureau depuis l'autostart de Sway / Hyprland, le relance s'il s'arrête | `qs`, `flock`, `setsid` (`util-linux`), `swaymsg` / `swaynag` (`sway`), `hyprctl` |
+| `scripts/ipc.sh <cible> <fonction> …` | `qs ipc call` vers le bureau de la session (raccourcis) | `qs` |
 
 ### Web apps et « ne pas déranger » (2026-10-27)
 
@@ -88,10 +94,10 @@ lui (il réécrit la ligne `Exec` et ferait sauter `PULSE_PROP_OVERRIDE` et `--l
 
 | Script | Rôle | Commandes |
 |---|---|---|
-| `scripts/dev.sh [stop]` | (re)lance l'instance de dev depuis le dépôt, affiche les erreurs | `qs` |
+| `scripts/dev.sh [stop\|log]` | relance le bureau et affiche les erreurs (`scripts/desktop.sh restart` depuis la phase 10) | `qs` |
 | `scripts/shot.sh <nom> [sortie\|géométrie]` | capture dans `.shots/` (ignoré par git) | `grim` |
 | `scripts/crop.sh <image> <géométrie> [sortie]` | recadre une capture | `magick` (`imagemagick`) |
-| `scripts/test-outputs.sh [-v]` | teste la répartition des espaces dans une session Sway isolée | `sway`, `jq`, `zenity`, `qs` |
+| `scripts/test-outputs.sh [sway\|hyprland] [-v]` | teste la répartition des espaces (et `$mod+N`, `$mod+Ctrl+N`, début de session) dans une session isolée | `sway` ou `hyprland`, `jq`, `zenity`, `qs` |
 
 ## Prérequis système d'un nouveau PC (au-delà des paquets)
 

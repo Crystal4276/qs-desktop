@@ -18,6 +18,14 @@ Celle de `CLAUDE.md`, avec trois ajouts :
   principal, sauf s'il reste dans les domaines de l'app (Microsoft 365, Notion : liste `SITES` de l'extension) (onglet ajouté, navigateur démarré s'il ne tourne
   pas) ; les popups (connexion OAuth) restent dans la web app. Modèles des lanceurs (`applications/`) et du manifeste de l'hôte
   (`qs_desktop.open_link.json`), développés par `install.sh` (phase 11 ; procédure : `deps/README.md`, « Web apps »).
+- `dotfiles/sway/`, `dotfiles/hypr/` *(phase 10, 2026-11-03)* : configs des compositeurs, liées en `~/.config/sway` et `~/.config/hypr`
+  (sauvegardes et retour arrière : `docs/ROLLBACK.md`). Partie commune (`config`, `hyprland.lua` + `lua/`) et partie machine
+  (`hosts/<hostname>.conf` inclus par `include hosts/$(cat /etc/hostname).conf` ; `hosts/<hostname>.lua` chargé par `lua/host.lua`) :
+  écrans par description, règles qui les visent, matériel. Fichier absent : ignoré (Sway et Hyprland vérifiés). Le dépôt est
+  désigné par le lien de la config Quickshell (`~/.config/quickshell/desktop`), jamais par un chemin personnel.
+- `scripts/desktop.sh` *(phase 10)* : lancé par l'autostart des deux compositeurs (§ 11.2) ; `scripts/ipc.sh` : `qs ipc call` des
+  raccourcis vers l'instance de la session, désignée par son PID (toutes les copies du dépôt portent `//@ pragma ShellId desktop` :
+  `-c desktop` pourrait viser un banc de test).
 
 ## 2. Compositeur
 
@@ -91,7 +99,9 @@ output "Dell Inc. Dell AW3418DW #ASPFPBQwWjbd" mode 3440x1440@100Hz pos 2560 0 s
 output "LG Electronics 27GN950 207NTHMFY841"   mode 3840x2160@60Hz  pos 6000 0 scale 1.5 hdr off render_bit_depth 10
 ```
 
-Le raccourci HDR (`$mod+d`) visera aussi les écrans par description (`output "LG …824" hdr toggle`).
+Le raccourci HDR (`$mod+d`) vise les écrans compatibles sans nom en dur (`qs ipc call display toggleHdr`). Hyprland : la règle HDR
+posée à l'exécution vise l'écran par la même clé que la config (`desc:…`) ; sinon elle ne se fond pas dans la règle de l'écran et
+lui fait perdre échelle et position (vu sur banc, phase 10).
 
 Les espaces de travail (§ 3.2) ne dépendent pas de ce choix : ils suivent la liste des écrans **actifs**, quelle que soit la façon dont ils ont été configurés.
 
@@ -128,8 +138,13 @@ Algorithme (implémenté et testé en phase 3, Sway) :
 
 **Aucune attribution `workspace N output X`** (contrairement à ce que prévoyait `CLAUDE.md`) — vérifié sur Sway 1.12 : la **première**
 attribution d'un espace l'emporte ; les commandes suivantes ne la remplacent pas. Une attribution envoyée pour 3 écrans
-ne pourrait donc plus être corrigée pour 4. La création au bon endroit est assurée par l'étape 6 ; en phase 10, les raccourcis
-`$mod+N` passeront par `qs ipc` et focaliseront directement le bon écran (`focus output X; workspace number N`), sans détour visible.
+ne pourrait donc plus être corrigée pour 4. La création au bon endroit est assurée par l'étape 6 ; depuis la phase 10, les raccourcis
+`$mod+N` et `$mod+Ctrl+N` passent par `qs ipc call outputs focus|moveWindow N` (environ 45 ms de plus, ta décision du 2026-11-03 ;
+commande native si Quickshell ne répond pas) : un espace qui n'existe pas encore naît sur l'écran de son bloc, sans détour visible.
+Sway : `focus output X; workspace number N` (fenêtre envoyée : marquée, puis rejoint N). Hyprland : un espace vide créé sur un autre
+écran que celui du pointeur perd aussitôt le focus (`follow_mouse`, `no_warps` : vu sur banc) ; il est donc créé sur l'écran focalisé
+puis déplacé, dans la même requête (même séquence que l'étape 6). Début de session : `outputs home` (`scripts/desktop.sh`), chaque
+écran affiche le premier espace de son bloc, focus sur l'écran principal.
 
 Les commandes envoyées sont écrites dans le journal (`Compositor: placement des espaces : …`).
 Hyprland *(écrit le 2026-10-16 ; joué en phase 9 sur Hyprland 0.57, `scripts/test-outputs.sh hyprland`)* :
@@ -140,8 +155,8 @@ Hyprland *(écrit le 2026-10-16 ; joué en phase 9 sur Hyprland 0.57, `scripts/t
   hl.dispatch(hl.dsp.focus({ workspace = N })) … end` (même séquence que sous Sway ; jouée sur Hyprland 0.57 en phase 9) ;
 - espace focalisé déplacé : `hl.dsp.workspace.move({ monitor = "X" })` ; création d'espace : événement `createworkspacev2` ;
 - config Hyprland non-Lua : placement non pris en charge (avertissement) — seule la config Lua est utilisée ;
-- tant que la config actuelle (`lua/workspaces.lua`) attache les espaces aux écrans par des règles `persistent`, elles peuvent contrarier
-  le placement : elles disparaissent à la bascule (phase 10), comme les lignes `workspace N output` de Sway.
+- les règles `persistent` de l'ancienne config (`lua/workspaces.lua`) et les lignes `workspace N output` de Sway ont disparu à la
+  bascule (phase 10).
 
 ### 3.3 Règle générale — validée (Q1)
 
@@ -362,6 +377,7 @@ et vérifier que les calendriers Owl sont bien dans ce cache. Alternative plus p
   tu voudras peut-être le révoquer, puisque `~/.config/sway` et `~/.config/hypr` sont des dépôts git.
 - **Q8 — Dunst en phase 10** : Dunst est activé par D-Bus ; si Quickshell n'a pas encore pris le nom, D-Bus relancera Dunst. Il faudra
   désactiver son activation (`systemctl --user mask dunst`) au moment de la bascule — je demanderai à ce moment-là.
+  **Fait le 2026-11-03** (ta réponse : « Dunst ne doit plus être utilisé du tout ») : masqué durablement ; paquet gardé, désinstallation à ta décision.
 
 ## 10. Seconde passe : décisions à prendre
 
@@ -760,7 +776,11 @@ aucun contrôle Qt Quick Controls stylé par la plateforme (composants dessinés
 ### 11.2 Un seul processus pour tout le bureau
 
 Barre, notifications, verrouillage, agent polkit, agent Bluetooth et veille vivent dans le même processus `qs`. S'il plante :
-- tout disparaît en même temps → lancer `qs` comme **service systemd utilisateur avec redémarrage automatique** (plutôt qu'un simple `exec` du compositeur), à décider en phase 10 ;
+- tout disparaît en même temps → **décidé en phase 10 : `scripts/desktop.sh`**, lancé par l'`exec` de Sway et le `hyprland.start`
+  d'Hyprland, relance `qs` s'il s'arrête, tant que le compositeur répond (abandon et message du compositeur après 5 arrêts en une
+  minute). Pas de service systemd : l'environnement systemd est commun aux sessions Sway et Hyprland (un `SWAYSOCK` resté d'une
+  session Sway ferait choisir le mauvais compositeur à `Compositor`), et rien ne lierait le service à la vie du compositeur ;
+  `$mod+Ctrl+W` = `desktop.sh restart` ;
 - **écran verrouillé** : le protocole `ext-session-lock` garde la session verrouillée si le verrouilleur meurt (c'est voulu, c'est sûr) ; il faut donc que le `qs` redémarré
   puisse reprendre le verrouillage, et documenter un **retour de secours** depuis un TTY. À tester explicitement en phase 8b, sans risque pour ta session (écran virtuel ou session de test).
 
@@ -932,7 +952,7 @@ un faux lecteur MPRIS.
 
 Chaque raccourci de Sway et d'Hyprland confronté aux commandes `qs ipc` (tous les raccourcis passeront par elles en phase 10) :
 - **VPN** (`$mod+u` = `nordvpn c Netherlands`, `$mod+i` = `nordvpn d`) : il manquait la commande → `qs ipc call vpn connect [pays]`
-  (sans pays : dernier pays utilisé) et `vpn disconnect`. Le choix entre « Netherlands » et « dernier pays » se fera en phase 10.
+  (sans pays : dernier pays utilisé) et `vpn disconnect`. Phase 10 (ta décision) : `$mod+u` = dernier pays utilisé.
 - **HDR** (`$mod+d` nomme DP-1 et DP-3 en dur) : Sway indique les écrans compatibles (`features.hdr` : DP-1, DP-3 ; DP-2 non) et ceux
   qui gèrent le VRR (`features.adaptive_sync`) → commandes `qs ipc call display toggleHdr` / `toggleVrr` sur les écrans compatibles, sans nom en dur, qui
   servent aussi aux bascules de la fenêtre de réglages (Hyprland : `hardwareDetails.hdr` et `.vrrCapable`).
@@ -949,7 +969,8 @@ Inventaire relu (§ 10.2, § 11.4 d'INVENTORY) — tes choix :
 - Les modules installés (0.3.2) sont exactement ceux de la page 0.3.0, plus `Quickshell.X11` (sans objet sous Wayland) : aucun module
   non documenté à exploiter.
 - Singleton `Quickshell` : `reload()` → commande `qs ipc` pour remplacer `$mod+Ctrl+W` (`killall waybar && waybar`) à la bascule
-  (phase 10) ; `inhibitReloadPopup()` → garder ou masquer la fenêtre « config rechargée » sur le bureau final (décision en phase 10) ;
+  (phase 10 : relance par `desktop.sh restart`, plus sûre qu'un `reload()` si l'instance est bloquée) ; `inhibitReloadPopup()` →
+  phase 10 : fenêtre « config rechargée » gardée (comportement par défaut, utile quand on modifie le dépôt) ;
   `cachePath` / `dataPath` → miniatures du sélecteur de fond (phase 8b) ; le reste est déjà utilisé (`env`, `execDetached`, `iconPath`,
   `shellPath`, `statePath`, `screens`, `clipboardText`).
 - **Aucune fonction nouvelle trouvée** : les passes convergent.
