@@ -9,7 +9,12 @@
 -- Quickshell, lancé en premier.
 
 local prog = require("lua/programs")
-local host = require("lua/host")
+-- Fichier de la machine en erreur : déjà signalé par son require() dans hyprland.lua ; ici, le bureau et les applications
+-- démarrent quand même (sans pcall, l'erreur relevée une deuxième fois arrêterait ce fichier entier).
+local ok, host = pcall(require, "lua/host")
+if not ok then
+   host = {}
+end
 
 hl.on("hyprland.start", function()
    -- Bureau Quickshell : relancé s'il s'arrête ; chaque écran affiche le premier espace de son bloc (1 / 4 / 7).

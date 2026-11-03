@@ -14,7 +14,6 @@ set -uo pipefail
 
 repo="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
 runtime="${XDG_RUNTIME_DIR:-/tmp}"
-log="$runtime/qs-desktop.log"
 
 if [[ -n "${SWAYSOCK:-}" ]]; then
     session="$(basename "$SWAYSOCK" .sock)"
@@ -28,14 +27,19 @@ else
     echo "Ni Sway ni Hyprland." >&2
     exit 1
 fi
-# Propres à cette session : verrou de la surveillance (son PID y est écrit) et PID de l'instance qu'elle a lancée.
+# Propres à cette session : verrou de la surveillance (son PID y est écrit), PID de l'instance qu'elle a lancée, journal de
+# l'instance (celui de la précédente : .log.1).
 lock="$runtime/qs-desktop.$session.lock"
 pidfile="$runtime/qs-desktop.$session.pid"
+log="$runtime/qs-desktop.$session.log"
 
+# PID de l'instance, s'il désigne toujours Quickshell : fichier laissé par une surveillance tuée, PID repris depuis par un autre
+# processus, qu'un `stop` tuerait sinon.
 instance() {
-    local pid
+    local pid exe
     pid="$(cat "$pidfile" 2>/dev/null)" || return 1
-    [[ -n "$pid" ]] && kill -0 "$pid" 2>/dev/null && echo "$pid"
+    [[ -n "$pid" ]] && exe="$(readlink "/proc/$pid/exe" 2>/dev/null)" || return 1
+    [[ "${exe##*/}" == quickshell || "${exe##*/}" == qs ]] && echo "$pid"
 }
 
 # Répertoire et environnement hérités par les applications lancées depuis le bureau : le dossier personnel, sans les jetons
@@ -68,6 +72,7 @@ watch() {
     prepare
     local home="${1:-}" starts=() now t pid
     while alive; do
+        [[ -s "$log" ]] && mv -f "$log" "$log.1"   # journal de l'instance précédente (raison d'un arrêt) gardé
         qs -c desktop >"$log" 2>&1 9>&- &
         pid=$!
         echo "$pid" >"$pidfile"
@@ -103,7 +108,9 @@ stop() {
     local pid
     if pid="$(supervisor)"; then
         kill "$pid" 2>/dev/null
-        for _ in {1..20}; do kill -0 "$pid" 2>/dev/null || break; sleep 0.1; done
+        # Verrou libéré : un `sleep` de la surveillance tuée, qui en a hérité, le tient jusqu'à sa fin (1 s au plus) ; sinon la
+        # surveillance relancée par `restart` se croirait en double et s'arrêterait.
+        flock -w 3 "$lock" true 2>/dev/null
     fi
     kill_instance
     rm -f "$pidfile"
