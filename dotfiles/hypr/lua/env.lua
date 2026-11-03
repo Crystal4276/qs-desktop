@@ -5,7 +5,7 @@
 -- Chargé avant autostart.lua, qui dépend de ces valeurs.
 
 hl.env("XCURSOR_SIZE", "48")
-hl.env("XCURSOR_THEME", "Catppuccin-Mocha-Green-Cursors")
+hl.env("XCURSOR_THEME", "catppuccin-mocha-green-cursors")   -- nom installé (minuscules), comme sous Sway
 hl.env("HYPRCURSOR_SIZE", "48")
 
 hl.env("XDG_CURRENT_DESKTOP", "Hyprland")

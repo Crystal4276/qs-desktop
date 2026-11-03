@@ -207,7 +207,7 @@
     exec "pkill spotify || true; sleep 4 && LD_PRELOAD=/usr/lib/spotify-adblock.so spotify"
 
 # Réglages de cette machine : écrans (par description), matériel. Absent sur une autre machine : ignoré.
-include hosts/$(cat /etc/hostname).conf
+include hosts/$(cat /proc/sys/kernel/hostname).conf
 
 # Réglages privés (adresses, identifiants, montages) : hors dépôt, jamais versionnés. Absent : ignoré.
 include ~/.config/qs-desktop.local/sway.conf

@@ -2352,6 +2352,23 @@ Vérifié aussi : `test-outputs.sh` à 0 échec sous Sway et sous Hyprland ; ban
 - **commande native appliquée en double après les 2 s de `timeout`** : seulement avec une instance qui met plus de 2 s à répondre ;
 - **déjà écartés, sans élément nouveau** : latence d'`ipc.sh` (5ᵉ fois), cache des règles HDR, interrogation au démarrage, longueur des commentaires.
 
+**Passe 8**, 10 constats, jugés modérés ou mineurs par la revue elle-même.
+
+Corrigés :
+- **Curseur sous Hyprland** : `Catppuccin-Mocha-Green-Cursors`, repris de l'ancienne config, n'existe pas. Seul `catppuccin-mocha-green-cursors` (minuscules) est installé, et c'est le nom qu'utilise Sway. Hyprland affichait donc le curseur par défaut. Corrigé dans `lua/env.lua` et `lua/autostart.lua`, effectif à ta prochaine connexion à Hyprland.
+- **Nom de machine** : Sway et Hyprland lisaient `/etc/hostname`, Quickshell `/proc/sys/kernel/hostname`. Tous lisent maintenant le second, qui existe toujours ; les deux donnent `terrier` ici.
+- **Rejeu HDR après `reload`** : seulement pour les écrans présents ; la règle d'un écran éteint ou désactivé l'aurait rallumé avec sa géométrie d'avant.
+- **`docs/ROLLBACK.md`** : la commande de secours depuis un TTY prenait le premier dossier d'Hyprland par ordre alphabétique (9 ici, dont 8 de sessions finies). Elle vise maintenant l'instance vivante (`hyprctl instances`, vérifié sans la variable d'environnement), et sous Sway le socket qui répond.
+- **`desktop.sh`** : `timeout 2` sur la demande de vue de départ, pour qu'une instance figée au démarrage ne bloque pas la surveillance.
+
+Écartés comme négligeables :
+- **verrou refusé par un autre verrouilleur** (« 1 » gardé, la relance suivante reverrouille) : il n'y en a plus sur ce bureau, et l'erreur va dans le sens de la sécurité ;
+- **`open-link`** : `qs ipc` peut finir après le délai de 0,5 s ; ça affiche l'espace un peu plus tard, ce qu'on voulait de toute façon ;
+- **focus repris par la vue de départ** dans les 10 s si un écran arrive en retard : c'est le compromis de la passe 6 ;
+- **redites** : latence d'`ipc.sh` (6ᵉ fois), `mark` sous Sway (5ᵉ fois).
+
+**Fin de la boucle de revue** : la passe 8 ne trouve plus que du modéré ou du mineur, sans régression, et les constats restants sont des redites déjà jugées négligeables.
+
 ## Prochaine étape
 
 **Phase 10 : tes tests à la main (ci-dessus) aux prochaines connexions Sway et Hyprland, puis validation ; phase 11 (portabilité)

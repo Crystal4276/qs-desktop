@@ -52,8 +52,8 @@ Hyprland : `misc.allow_session_lock_restore`). Testé sur banc sous Sway et Hypr
 la session (`Ctrl+Alt+F1` ou `F2`) et taper le mot de passe :
 
 ```sh
-SWAYSOCK=$(ls $XDG_RUNTIME_DIR/sway-ipc.*.sock | head -1) ~/qs-desktop/scripts/desktop.sh restart   # Sway
-HYPRLAND_INSTANCE_SIGNATURE=$(ls $XDG_RUNTIME_DIR/hypr | head -1) ~/qs-desktop/scripts/desktop.sh restart   # Hyprland
+SWAYSOCK=$(for s in $XDG_RUNTIME_DIR/sway-ipc.*.sock; do swaymsg -s "$s" -t get_version >/dev/null 2>&1 && echo "$s" && break; done) ~/qs-desktop/scripts/desktop.sh restart   # Sway
+HYPRLAND_INSTANCE_SIGNATURE=$(hyprctl instances -j | jq -r '.[0].instance') ~/qs-desktop/scripts/desktop.sh restart   # Hyprland
 ```
 
 En dernier recours : `loginctl terminate-user $USER` (ferme la session, applications comprises).
