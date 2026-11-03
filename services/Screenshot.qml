@@ -191,7 +191,7 @@ Singleton {
     // Fenêtres des espaces affichés, de la plus basse à la plus haute (windowAt prend la dernière) : Sway, feuilles visibles
     // (`visible` : une fenêtre cachée par un plein écran ou un onglet garde son rectangle), flottantes après ; Hyprland, clients des
     // espaces affichés (l'ordre de `hyprctl clients` n'est pas l'empilement) : en mosaïque, flottants, puis plein écran, et par-dessus
-    // tout l'espace spécial ouvert sur un écran (`$mod+H`), dans le même ordre.
+    // tout l'espace spécial ouvert sur un écran (`$mod+H`), dans le même ordre ; dans chaque couche, par focus le plus récent.
     Process {
         id: windowList
         stdout: StdioCollector {
@@ -210,7 +210,8 @@ Singleton {
                     const layer = c => (special.includes(c.workspace?.name) ? 3 : 0) + (c.fullscreen ? 2 : c.floating ? 1 : 0);
                     for (const c of (data.clients ?? []).filter(c => (shown.includes(c.workspace?.id) || special.includes(c.workspace?.name))
                             && !c.hidden && c.mapped !== false)
-                            .sort((a, b) => layer(a) - layer(b)))
+                            // Même couche : la plus récemment focalisée au-dessus (Hyprland monte une flottante au focus).
+                            .sort((a, b) => layer(a) - layer(b) || (b.focusHistoryID ?? 0) - (a.focusHistoryID ?? 0)))
                         list.push({ x: c.at[0], y: c.at[1], width: c.size[0], height: c.size[1], title: c.title });
                 } else {
                     const visit = (node, visible) => {
