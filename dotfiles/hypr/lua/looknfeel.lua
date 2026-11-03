@@ -74,9 +74,11 @@ hl.animation({ leaf = "layersIn",      enabled = true, speed = 4,    bezier = "e
 hl.animation({ leaf = "layersOut",     enabled = true, speed = 1.5,  bezier = "linear",       style = "fade" })
 hl.animation({ leaf = "fadeLayersIn",  enabled = true, speed = 1.79, bezier = "almostLinear" })
 hl.animation({ leaf = "fadeLayersOut", enabled = true, speed = 1.39, bezier = "almostLinear" })
-hl.animation({ leaf = "workspaces",    enabled = true, speed = 1.94, bezier = "almostLinear", style = "fade" })
-hl.animation({ leaf = "workspacesIn",  enabled = true, speed = 1.21, bezier = "almostLinear", style = "fade" })
-hl.animation({ leaf = "workspacesOut", enabled = true, speed = 1.94, bezier = "almostLinear", style = "fade" })
+-- Changement d'espace instantané, sans fondu (ta demande du 2026-11-03). Entrée et sortie coupées aussi : non déclarées,
+-- `hyprctl animations` les montre encore actives. L'espace spécial ($mod+H) garde son animation.
+hl.animation({ leaf = "workspaces",    enabled = false })
+hl.animation({ leaf = "workspacesIn",  enabled = false })
+hl.animation({ leaf = "workspacesOut", enabled = false })
 -- Rallumage des écrans après la veille sans fondu : avec celui hérité de `fade`, le réveil était plus lent que sous Sway (validé
 -- par toi le 2026-11-03).
 hl.animation({ leaf = "fadeDpms",      enabled = false })
