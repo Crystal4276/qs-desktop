@@ -2173,6 +2173,20 @@ Vérifié :
 - paquets devenus inutiles (`deps/README.md`) : désinstallation à ta décision ;
 - les dépôts `Crystal4276/sway` et `Crystal4276/hyprland` ne sont plus utilisés (à archiver si tu veux).
 
+Suite du 2026-11-03 (tes demandes) :
+- **Jeton NordVPN** :
+  - jamais présent dans `qs-desktop` : fichiers et historique complet vérifiés, pour les deux jetons ;
+  - retiré de l'historique de `Crystal4276/sway` et `Crystal4276/hyprland` (remplacé par `REDACTED`, push forcé, vérifié sur un clone neuf de GitHub) ;
+  - retiré des sauvegardes locales, où les lignes `nordvpn login` sont commentées ;
+  - reste en clair dans `~/.config/autostart/nordvpn.desktop` (GNOME seulement), non touché.
+- **Erreur de ma part pendant le nettoyage** :
+  - en alignant les sauvegardes sur GitHub, j'ai effacé deux commits locaux jamais poussés par dépôt (fonds d'écran consolidés, option Chromium retirée) ;
+  - leur contenu était intact dans les fichiers : je les ai recréés avec les mêmes messages (nouveaux SHA et dates) ;
+  - puis, à ta demande, tout le non commité a été commité et poussé : les deux anciens dépôts n'ont plus rien en attente.
+- **Hyprland : changement d'espace sans fondu** (`workspaces`, `workspacesIn`, `workspacesOut` coupés). L'espace spécial (`$mod+H`) garde son animation.
+- **`openrgb-startup.service`** : demande `sudo` (mot de passe), commande donnée.
+- **Anciens paquets** : commande donnée. `nm-connection-editor`, `wl-clipboard` et `jq` sont d'abord marqués explicites, sinon `-Rns` les retirerait avec `network-manager-applet` et Waybar.
+
 ## Prochaine étape
 
 **Phase 10 : tes tests à la main (ci-dessus) aux prochaines connexions Sway et Hyprland, puis validation ; phase 11 (portabilité)
