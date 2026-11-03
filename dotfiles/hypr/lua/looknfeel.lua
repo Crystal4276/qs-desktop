@@ -49,6 +49,13 @@ hl.config({
    xwayland = {
       use_nearest_neighbor = false,
    },
+
+   -- Pas de bascule HDR automatique en plein écran (défaut : 1). Hyprland propose le HDR à la fenêtre plein écran, Chromium
+   -- l'adopte, et l'écran passe en HDR, puis revient en SDR à la sortie : un modeset à chaque fois, et l'autre LG s'éteignait
+   -- pendant ce temps (ton constat du 2026-11-03). Le HDR reste manuel, comme sous Sway ($mod+d, réglages).
+   render = {
+      cm_auto_hdr = 0,
+   },
 })
 
 -- Courbes. Remplace `bezier = nom,x0,y0,x1,y1`.
