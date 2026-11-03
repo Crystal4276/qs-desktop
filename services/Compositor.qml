@@ -173,11 +173,25 @@ Singleton {
     function setHdr(names: var, on: bool): void {
         if (isSway && names.length > 0)
             I3.dispatch(names.map(n => `output "${n}" hdr ${on ? "on" : "off"}`).join("; "));
-        else if (isHyprland && names.length > 0)
+        else if (isHyprland && names.length > 0) {
+            // Arrêt : retour au préréglage et à la profondeur d'avant (10 bits si la config de l'écran les donne, comme
+            // `render_bit_depth 10` sous Sway, que `hdr off` garde) ; inconnus (HDR déjà actif au démarrage) : sRGB 8 bits.
+            const sdr = Object.assign({}, sdrModes);
+            if (on)
+                for (const n of names) {
+                    const o = Hyprland.monitors.values.find(m => m.name === n)?.lastIpcObject;
+                    if (o?.colorManagementPreset && o.colorManagementPreset !== "hdr")
+                        sdr[n] = { cm: o.colorManagementPreset, bitdepth: /2101010/.test(o.currentFormat ?? "") ? 10 : 8 };
+                }
+            sdrModes = sdr;
             // Blanc SDR à 203 nits (BT.2408), comme Sway à ma connaissance : Hyprland l'affiche par défaut à 80 nits en HDR, d'où un
             // bureau terne (ton constat du 2026-11-03).
-            setRuntimeRule("hdr", names.map(n => `hl.monitor({ output = "${n}", ${on ? `cm = "hdr", bitdepth = 10, sdr_max_luminance = 203` : `cm = "srgb", bitdepth = 8`} })`).join(" "));
+            setRuntimeRule("hdr", names.map(n => `hl.monitor({ output = "${n}", ${on ? `cm = "hdr", bitdepth = 10, sdr_max_luminance = 203`
+                : `cm = "${sdr[n]?.cm ?? "srgb"}", bitdepth = ${sdr[n]?.bitdepth ?? 8}`} })`).join(" "));
+        }
     }
+
+    property var sdrModes: ({})   // Hyprland : { "<écran>": { cm, bitdepth } } relevés avant le passage en HDR
 
     function setVrr(names: var, on: bool): void {
         if (isSway && names.length > 0)
