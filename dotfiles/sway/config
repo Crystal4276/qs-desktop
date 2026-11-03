@@ -47,11 +47,6 @@
 
 # Moving / resizing windows around:
 
-    # Send window to scratchpad
-    bindsym $mod+Shift+o move scratchpad
-    # Show/toggle scratchpad window
-    bindsym $mod+Shift+p scratchpad show
-
     # Kill focused window
     bindsym $mod+q kill
 

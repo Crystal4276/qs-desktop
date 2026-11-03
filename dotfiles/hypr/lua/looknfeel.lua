@@ -75,7 +75,7 @@ hl.animation({ leaf = "layersOut",     enabled = true, speed = 1.5,  bezier = "l
 hl.animation({ leaf = "fadeLayersIn",  enabled = true, speed = 1.79, bezier = "almostLinear" })
 hl.animation({ leaf = "fadeLayersOut", enabled = true, speed = 1.39, bezier = "almostLinear" })
 -- Changement d'espace instantané, sans fondu (ta demande du 2026-11-03). Entrée et sortie coupées aussi : non déclarées,
--- `hyprctl animations` les montre encore actives. L'espace spécial ($mod+H) garde son animation.
+-- `hyprctl animations` les montre encore actives.
 hl.animation({ leaf = "workspaces",    enabled = false })
 hl.animation({ leaf = "workspacesIn",  enabled = false })
 hl.animation({ leaf = "workspacesOut", enabled = false })
