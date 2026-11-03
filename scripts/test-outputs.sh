@@ -570,6 +570,69 @@ prev_visible="$(visible_map)"
 seen_views[$(layout_key)]="$prev_visible"
 check "remise en état" "$initial_expected"
 
+# Raccourcis des configs compositeur (dotfiles/) : `$mod+N` et `$mod+Ctrl+N` passent par `qs ipc call outputs focus|moveWindow`.
+# Un espace inexistant naît directement sur son écran : focalisé, à sa place, sans aucune correction après coup.
+ipc() { qs ipc --pid "$qs_pid" call "$@" >/dev/null; }
+c_focus_output "$left"; c_goto "${left_block[2]}"
+sleep 0.5
+placed_before="$(placement_count)"
+ipc outputs focus 3
+check "\$mod+3 depuis $left (espace 3 inexistant)" "$initial_expected" 3 skip
+placed_after="$(placement_count)"
+if [[ "$placed_after" == "$placed_before" ]]; then
+    echo "OK    espace 3 créé au centre directement, aucune correction"
+else
+    echo "ÉCHEC $((placed_after - placed_before)) correction(s) après \$mod+3 : détour par $left"
+    failures=$((failures + 1))
+fi
+c_focus_output "$left"; c_goto "${left_block[2]}"
+sleep 0.5
+placed_before="$(placement_count)"
+ipc outputs moveWindow 3
+check "\$mod+Ctrl+3 depuis $left : fenêtre ${left_block[2]} envoyée, espace 3 inexistant" "$initial_expected" 3 skip
+placed_after="$(placement_count)"
+moved_ws="$(windows | jq -r --arg t "qs-test-${left_block[2]}" '.[] | select(.name == $t) | .ws')"
+if [[ "$placed_after" == "$placed_before" && "$moved_ws" == 3 ]]; then
+    echo "OK    fenêtre dans l'espace 3, créé au centre directement, aucune correction"
+else
+    echo "ÉCHEC fenêtre dans l'espace $moved_ws, $((placed_after - placed_before)) correction(s)"
+    failures=$((failures + 1))
+fi
+# Espace existant : comme la commande native (la fenêtre y va, le focus suit).
+ipc outputs moveWindow "${left_block[2]}"
+check "\$mod+Ctrl+${left_block[2]} : retour vers un espace existant" "$initial_expected" "${left_block[2]}" skip
+moved_ws="$(windows | jq -r --arg t "qs-test-${left_block[2]}" '.[] | select(.name == $t) | .ws')"
+if [[ "$moved_ws" == "${left_block[2]}" ]]; then
+    echo "OK    fenêtre revenue dans l'espace ${left_block[2]}"
+else
+    echo "ÉCHEC fenêtre dans l'espace $moved_ws au lieu de ${left_block[2]}"
+    failures=$((failures + 1))
+fi
+c_goto "$initial_focus"
+sleep 1
+prev_visible="$(visible_map)"
+seen_views[$(layout_key)]="$prev_visible"
+check "remise en état" "$initial_expected"
+
+# Début de session (scripts/desktop.sh) : chaque écran affiche le premier espace de son bloc, focus sur le principal.
+c_focus_output "$left"; c_goto "${left_block[1]}"
+sleep 0.5
+ipc outputs home
+want_home="$(jq -cS 'to_entries | group_by(.value) | map({(.[0].value): (map(.key | tonumber) | min)}) | add' <<<"$initial_expected")"
+home_focus="$(jq -r --arg o "$center" '.[$o]' <<<"$want_home")"
+for _ in $(seq 1 20); do [[ "$(visible_map)" == "$want_home" && "$(focused_num)" == "$home_focus" ]] && break; sleep 0.2; done
+if [[ "$(visible_map)" == "$want_home" && "$(focused_num)" == "$home_focus" ]]; then
+    echo "OK    début de session : $(jq -r 'to_entries | map("\(.key)=\(.value)") | join(" ")' <<<"$want_home"), focus $home_focus"
+else
+    echo "ÉCHEC début de session : $(visible_map), focus $(focused_num) (attendu $want_home, focus $home_focus)"
+    failures=$((failures + 1))
+fi
+c_goto "$initial_focus"
+sleep 1
+prev_visible="$(visible_map)"
+seen_views[$(layout_key)]="$prev_visible"
+check "remise en état" "$initial_expected"
+
 if [[ "$(windows)" == "$initial_windows" ]]; then
     echo "OK    fenêtres : $(jq length <<<"$initial_windows"), toutes dans leur espace d'origine"
 else
