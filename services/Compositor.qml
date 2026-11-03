@@ -178,6 +178,7 @@ Singleton {
         else if (isHyprland && names.length > 0) {
             // Arrêt : retour au préréglage et à la profondeur d'avant (10 bits si la config de l'écran les donne, comme
             // `render_bit_depth 10` sous Sway, que `hdr off` garde) ; inconnus (HDR déjà actif au démarrage) : sRGB 8 bits.
+            // Aussi pour un écran passé en HDR puis absent (éteint) : sa règle HDR lui serait rendue à son retour.
             const sdr = Object.assign({}, sdrModes);
             if (on)
                 for (const n of names) {
@@ -186,20 +187,49 @@ Singleton {
                         sdr[n] = { cm: o.colorManagementPreset, bitdepth: /2101010/.test(o.currentFormat ?? "") ? 10 : 8 };
                 }
             sdrModes = sdr;
-            // Blanc SDR à 203 nits (BT.2408), comme Sway à ma connaissance : Hyprland l'affiche par défaut à 80 nits en HDR, d'où un
-            // bureau terne (ton constat du 2026-11-03).
-            setRuntimeRule("hdr", names.map(n => `hl.monitor({ output = "${n}", ${on ? `cm = "hdr", bitdepth = 10, sdr_max_luminance = 203`
-                : `cm = "${sdr[n]?.cm ?? "srgb"}", bitdepth = ${sdr[n]?.bitdepth ?? 8}`} })`).join(" "), on);
+            const targets = on ? names : [...new Set([...names, ...hdrNames])];
+            hdrNames = on ? names : [];
+            setRuntimeRule("hdr", hdrRule(targets, on), on);
         }
     }
 
     property var sdrModes: ({})   // Hyprland : { "<écran>": { cm, bitdepth } } relevés avant le passage en HDR
+    property var hdrNames: []     // Hyprland : écrans passés en HDR par la dernière bascule
+
+    // Blanc SDR à 203 nits (BT.2408), comme Sway à ma connaissance : Hyprland l'affiche par défaut à 80 nits en HDR, d'où un
+    // bureau terne (ton constat du 2026-11-03).
+    function hdrRule(names: var, on: bool): string {
+        return names.map(n => `hl.monitor({ output = "${n}", ${on ? `cm = "hdr", bitdepth = 10, sdr_max_luminance = 203`
+            : `cm = "${sdrModes[n]?.cm ?? "srgb"}", bitdepth = ${sdrModes[n]?.bitdepth ?? 8}`} })`).join(" ");
+    }
+
+    function vrrRule(on: bool): string {
+        return `hl.config({ misc = { vrr = ${on ? 1 : 0} } })`;
+    }
+
+    // Shell relancé (rechargement à chaud, $mod+Ctrl+w) HDR ou VRR actifs : règles reprises de l'état des écrans, sinon le prochain
+    // `reload` les couperait. Une fois, à la première lecture des écrans.
+    property bool runtimeAdopted: false
+    onOutputsChanged: {
+        if (!isHyprland || runtimeAdopted || outputs.length === 0)
+            return;
+        runtimeAdopted = true;
+        const rules = {};
+        const hdr = outputs.filter(o => o.hdr).map(o => o.name);
+        if (hdr.length > 0) {
+            hdrNames = hdr;
+            rules.hdr = hdrRule(hdr, true);
+        }
+        if (outputs.some(o => o.vrr))
+            rules.vrr = vrrRule(true);
+        runtimeRules = Object.assign(rules, runtimeRules);
+    }
 
     function setVrr(names: var, on: bool): void {
         if (isSway && names.length > 0)
             I3.dispatch(names.map(n => `output "${n}" adaptive_sync ${on ? "on" : "off"}`).join("; "));
         else if (isHyprland && names.length > 0)
-            setRuntimeRule("vrr", `hl.config({ misc = { vrr = ${on ? 1 : 0} } })`, on);
+            setRuntimeRule("vrr", vrrRule(on), on);
     }
 
     property var runtimeRules: ({})   // règle de chaque réglage activé, reposée après un reload : { hdr: "<Lua>", vrr: "<Lua>" }

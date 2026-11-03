@@ -51,7 +51,7 @@ Singleton {
         selection = mode === "screen" && o ? { x: o.x, y: o.y, width: o.width, height: o.height } : null;
         windows = [];
         ensureDirectory();   // le temps de choisir la zone suffit à le créer
-        // Hyprland : fenêtres et moniteurs (espace affiché, espace spécial ouvert) lus ensemble, pour un état cohérent.
+        // Hyprland : fenêtres, puis moniteurs (espace affiché, espace spécial ouvert), coup sur coup.
         windowList.command = Compositor.isHyprland
             ? ["sh", "-c", `printf '{"clients":'; hyprctl clients -j; printf ',"monitors":'; hyprctl monitors -j; printf '}'`]
             : ["swaymsg", "-t", "get_tree"];
