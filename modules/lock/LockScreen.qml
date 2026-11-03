@@ -40,6 +40,11 @@ Scope {
         printErrors: false
         blockWrites: true   // « 1 » écrit avant de continuer : un arrêt juste après le verrouillage doit le trouver
         onLoaded: {
+            // Au lancement du processus seulement : un rechargement à chaud se fait déverrouillé (watchFiles), et un « 1 » resté
+            // d'un verrou perdu (compositeur) ne doit pas verrouiller en pleine session.
+            if (persist.stateChecked)
+                return;
+            persist.stateChecked = true;
             if (text().trim() === "1" && !root.locked) {
                 console.info("lock: session locked when Quickshell stopped, locking again");
                 root.lock();
@@ -131,6 +136,7 @@ Scope {
 
         property bool locked: false
         property string lockedScreen: ""
+        property bool stateChecked: false   // fichier d'état lu une seule fois par processus, pas à chaque rechargement
     }
 
     Connections {

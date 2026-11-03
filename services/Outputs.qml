@@ -98,8 +98,6 @@ Singleton {
     property var visibleByLayout: ({})
     property string currentLayout: ""   // configuration à laquelle la vue mémorisée correspond
     property var lastPlaced: ({})       // vue posée par le dernier placement : ce qui en diffère a été choisi par l'utilisateur
-    property int lastPlacedFocus: 0
-
     function remember(visible: var, focus: int): void {
         const all = Object.assign({}, visibleByLayout);
         all[currentLayout] = { visible: visible, focus: focus };
@@ -117,12 +115,10 @@ Singleton {
             for (const w of Compositor.workspaces)
                 if (w.visible)
                     map[w.output] = w.number;
-            const focus = Compositor.workspaces.find(w => w.focused)?.number ?? 0;
-            root.remember(map, focus);
-            // Choix de l'utilisateur pendant la fenêtre de la vue de départ ($mod+5 juste après la connexion) : elle ne s'impose
-            // plus aux répartitions suivantes.
-            if (root.homeRequested && (focus !== root.lastPlacedFocus
-                    || Object.keys(map).some(o => root.lastPlaced[o] !== undefined && map[o] !== root.lastPlaced[o])))
+            root.remember(map, Compositor.workspaces.find(w => w.focused)?.number ?? 0);
+            // Espace changé par l'utilisateur pendant la fenêtre de la vue de départ ($mod+5 juste après la connexion) : elle ne
+            // s'impose plus. Le focus seul ne compte pas : le compositeur le déplace de lui-même (écran sous le pointeur).
+            if (root.homeRequested && Object.keys(map).some(o => root.lastPlaced[o] !== undefined && map[o] !== root.lastPlaced[o]))
                 root.homeRequested = false;
         }
     }
@@ -289,7 +285,6 @@ Singleton {
         // Mémorisé tout de suite : un nouveau changement d'écrans peut arriver avant la prochaine lecture.
         remember(intended, focus);
         lastPlaced = intended;
-        lastPlacedFocus = focus;
 
         if (moves.length === 0 && show.length === 0 && !home)
             return;
