@@ -212,22 +212,31 @@ Singleton {
 
     // Blanc SDR à 203 nits (BT.2408), comme Sway à ma connaissance : Hyprland l'affiche par défaut à 80 nits en HDR, d'où un
     // bureau terne (ton constat du 2026-11-03).
-    // Règle visée par la description de l'écran, comme dans dotfiles/hypr/hosts/ : la règle partielle se fond dans celle de la
-    // config (même clé), mode, position et échelle gardés. Clé retenue tant que l'écran est actif (un écran éteint depuis garde la
-    // sienne) ; écran sans description : son connecteur.
+    // Règle visée par la description de l'écran, comme dans dotfiles/hypr/hosts/ (même clé que la config : une règle par
+    // connecteur ne s'y fondrait pas) ; écran sans description : son connecteur. Retenue tant que l'écran est actif (un écran
+    // éteint depuis garde la sienne). Règle complète (mode, position, échelle, rotation relus sur l'écran) : rien ne dépend de la
+    // règle de la config, qui peut n'être que le repli `output = ""` d'une machine sans hosts/ (une règle partielle plus précise
+    // le remplacerait : mode et échelle par défaut).
     property var ruleKeys: ({})
 
     function ruleKey(name: string): string {
+        const m = Hyprland.monitors.values.find(m => m.name === name)?.lastIpcObject;
         const description = output(name)?.description ?? "";
-        if (description !== "")
-            ruleKeys[name] = `desc:${description}`;
-        return ruleKeys[name] ?? name;
+        if (m?.width)
+            ruleKeys[name] = `output = ${luaString(description !== "" ? `desc:${description}` : name)}, `
+                + `mode = "${m.width}x${m.height}@${m.refreshRate}", position = "${m.x}x${m.y}", scale = ${m.scale}, transform = ${m.transform ?? 0}`;
+        return ruleKeys[name] ?? `output = ${luaString(name)}`;
+    }
+
+    // Chaîne Lua : la description vient de l'EDID de l'écran, guillemets et barres obliques inverses possibles.
+    function luaString(text: string): string {
+        return `"${text.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n")}"`;
     }
 
     function hdrRule(names: var, on: bool): string {
         return names.map(n => {
             const sdr = sdrModes[n];
-            return `hl.monitor({ output = "${ruleKey(n)}", ${on ? `cm = "hdr", bitdepth = 10, sdr_max_luminance = 203`
+            return `hl.monitor({ ${ruleKey(n)}, ${on ? `cm = "hdr", bitdepth = 10, sdr_max_luminance = 203`
                 : `cm = "${sdr?.cm ?? "srgb"}", bitdepth = ${sdr?.bitdepth ?? 8}, sdr_max_luminance = ${sdr?.luminance ?? 80}`} })`;
         }).join(" ");
     }
@@ -399,7 +408,8 @@ Singleton {
     function moveBackCalls(n: int, output: string): var {
         const from = focusedOutput;
         const shown = workspaces.find(w => w.visible && w.output === from)?.number;
-        return [`hl.dsp.workspace.move({ monitor = "${output}" })`,
+        // N désigné par son numéro : si l'action précédente n'a pas eu lieu, l'espace de départ ne part pas à sa place.
+        return [`hl.dsp.workspace.move({ workspace = ${n}, monitor = "${output}" })`,
             ...(shown !== undefined && shown !== n ? [`hl.dsp.focus({ monitor = "${from}" })`, `hl.dsp.focus({ workspace = ${shown} })`,
                 `hl.dsp.focus({ workspace = ${n} })`] : [])];
     }
@@ -418,8 +428,15 @@ Singleton {
                 + `[con_mark="^_qs_move$"] move container to workspace number ${n}; [con_mark="^_qs_move$"] focus; unmark _qs_move`
                 : `move container to workspace number ${n}; workspace number ${n}`);
         } else if (isHyprland) {
+            // Fenêtre active désignée par son adresse ; aucune sur l'espace focalisé (liste pas à jour, fenêtre qui vient de se
+            // fermer) : l'espace est seulement affiché, sinon `moveBackCalls` déplacerait l'espace de départ à sa place.
             // `window.move` suit la fenêtre (comme ton `$mod+Ctrl+N`) : N naît ici avec elle, puis rejoint `output`.
-            hyprlandBatch([`hl.dsp.window.move({ workspace = ${n} })`,
+            const window = Hyprland.activeToplevel;
+            if (!window || window.workspace?.id !== current.number) {
+                output ? createWorkspace(n, output) : focusWorkspace(n, "");
+                return;
+            }
+            hyprlandBatch([`hl.dsp.window.move({ window = "address:0x${window.address}", workspace = ${n} })`,
                 ...(output && output !== focusedOutput ? moveBackCalls(n, output) : [])]);
         }
     }
