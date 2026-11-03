@@ -200,13 +200,23 @@ Singleton {
     }
 
     // Début de session (scripts/desktop.sh, une seule fois par session) : chaque écran affiche le premier espace de son bloc
-    // (1 / 4 / 7 ici), focus sur l'écran principal. Demandé avant la première répartition : fait par elle.
+    // (1 / 4 / 7 ici), focus sur l'écran principal. Demandé avant la première répartition : fait par elle. Vaut pour toutes
+    // les répartitions des 10 s suivantes : au démarrage, les écrans peuvent arriver l'un après l'autre (Hyprland, NVIDIA), à
+    // plus de 500 ms d'écart ; sinon un écran arrivé après la première répartition afficherait un espace déjà ouvert de son
+    // bloc (5, Discord) plutôt que le premier.
     property bool homeRequested: false
 
     function home(): void {
         homeRequested = true;
+        homeWindow.restart();
         if (!settle.running)
             apply();
+    }
+
+    Timer {
+        id: homeWindow
+        interval: 10000
+        onTriggered: root.homeRequested = false
     }
 
     // Place tous les espaces 1–9 sur l'écran de leur bloc, sans perdre l'espace visible de chaque écran ni le focus.
@@ -215,7 +225,6 @@ Singleton {
         if (outs.length === 0)
             return;
         const home = homeRequested;
-        homeRequested = false;
         const workspaces = Compositor.workspaces;
         // Vue à retrouver, écran par écran : l'espace que l'utilisateur y a choisi depuis le dernier placement ;
         // sinon la vue de cette configuration si elle a déjà existé (écran rallumé) ; sinon celle d'avant le changement.

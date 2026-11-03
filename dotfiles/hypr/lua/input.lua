@@ -38,6 +38,9 @@ hl.config({
       -- Introduit en 0.53 : remplace new_window_takes_over_fullscreen et
       -- master:inherit_fullscreen.
       on_focus_under_fullscreen  = 0,
+      -- Quickshell relancé après un arrêt pendant le verrouillage : la nouvelle instance reprend le verrou (défaut : false,
+      -- la session resterait sur l'écran « verrouillage mort » ; modules/lock/LockScreen.qml).
+      allow_session_lock_restore = true,
    },
 
    cursor = {

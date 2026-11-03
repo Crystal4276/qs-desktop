@@ -22,7 +22,28 @@ Scope {
     // faits pendant le verrouillage sont pris au suivant. État gardé malgré tout d'un rechargement à l'autre (rechargement
     // demandé à la main) : en cas d'échec, la session reste verrouillée plutôt que de s'ouvrir.
     property alias locked: persist.locked
-    onLockedChanged: Quickshell.watchFiles = !locked
+    onLockedChanged: {
+        Quickshell.watchFiles = !locked;
+        if (statePath !== "")
+            lockState.setText(locked ? "1" : "0");
+    }
+
+    // Verrouillage repris après un arrêt de Quickshell : scripts/desktop.sh donne un fichier propre à la session (QS_LOCK_STATE),
+    // « 1 » tant que la session est verrouillée ; l'instance relancée le lit au démarrage et reverrouille (le compositeur garde la
+    // session verrouillée entre-temps ; Hyprland : misc.allow_session_lock_restore, dotfiles/hypr). Sans lui (instance lancée à
+    // la main, banc) : rien.
+    readonly property string statePath: Quickshell.env("QS_LOCK_STATE") ?? ""
+    FileView {
+        id: lockState
+        path: root.statePath
+        printErrors: false
+        onLoaded: {
+            if (text().trim() === "1" && !root.locked) {
+                console.info("lock: session locked when Quickshell stopped, locking again");
+                root.lock();
+            }
+        }
+    }
     Binding {
         target: Session
         property: "lockActive"
@@ -125,6 +146,11 @@ Scope {
 
         function isLocked(): bool {
             return root.locked;
+        }
+
+        // Verrouillage confirmé par le compositeur (tests).
+        function isSecure(): bool {
+            return sessionLock.secure;
         }
     }
 

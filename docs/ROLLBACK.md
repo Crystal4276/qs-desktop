@@ -46,12 +46,14 @@ journal : `scripts/desktop.sh log` ou `$XDG_RUNTIME_DIR/qs-desktop.<session>.log
 le compositeur affiche un message.
 
 Écran verrouillé quand Quickshell s'arrête : la session reste verrouillée (protocole `ext-session-lock`, voulu). `desktop.sh` relance
-Quickshell, mais la nouvelle instance ne reprend pas d'elle-même le verrouillage (non testé en réel) : l'écran reste vide. Depuis un TTY
-(`Ctrl+Alt+F3`), redemander l'écran de verrouillage à la nouvelle instance, puis revenir à la session (`Ctrl+Alt+F1` ou `F2`) et taper
-le mot de passe :
+Quickshell, et la nouvelle instance reprend d'elle-même le verrouillage (fichier `$XDG_RUNTIME_DIR/qs-desktop.<session>.locked` ;
+Hyprland : `misc.allow_session_lock_restore`). Testé sur banc sous Sway et Hyprland, pas en réel. Si l'écran reste vide malgré tout
+(après 5 arrêts, la relance est abandonnée) : depuis un TTY (`Ctrl+Alt+F3`), relancer le bureau, qui reverrouille, puis revenir à
+la session (`Ctrl+Alt+F1` ou `F2`) et taper le mot de passe :
 
 ```sh
-qs ipc -c desktop call lock lock
+SWAYSOCK=$(ls $XDG_RUNTIME_DIR/sway-ipc.*.sock | head -1) ~/qs-desktop/scripts/desktop.sh restart   # Sway
+HYPRLAND_INSTANCE_SIGNATURE=$(ls $XDG_RUNTIME_DIR/hypr | head -1) ~/qs-desktop/scripts/desktop.sh restart   # Hyprland
 ```
 
 En dernier recours : `loginctl terminate-user $USER` (ferme la session, applications comprises).

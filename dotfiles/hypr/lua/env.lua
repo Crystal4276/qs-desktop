@@ -15,8 +15,4 @@ hl.env("DESKTOP_SESSION", "Hyprland")
 
 hl.env("ELECTRON_OZONE_PLATFORM_HINT", "auto")
 
--- RESTAURÉ. Supprimé par erreur lors de la conversion 0.53 (aucune trace
--- d'intention dans le diff, le reste du bloc env était intact).
--- Indique à NVIDIA VA-API d'utiliser le backend direct pour le décodage vidéo
--- matériel sous Wayland. Le GPU de cette machine est une RTX 2080.
-hl.env("NVD_BACKEND", "direct")
+-- NVD_BACKEND (NVIDIA) : hosts/<machine>.lua.

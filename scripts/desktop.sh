@@ -47,11 +47,13 @@ instance() {
 prepare() {
     cd "$HOME" || exit 1
     unset DESKTOP_STARTUP_ID XDG_ACTIVATION_TOKEN TERM COLORTERM VTE_VERSION GNOME_TERMINAL_SCREEN GNOME_TERMINAL_SERVICE
-    if [[ -z "${XDG_CURRENT_DESKTOP:-}" ]]; then
-        local desktop
-        desktop=$(systemctl --user show-environment 2>/dev/null | sed -n 's/^XDG_CURRENT_DESKTOP=//p') || true
-        [[ -n "$desktop" ]] && export XDG_CURRENT_DESKTOP="$desktop"
-    fi
+    # Absentes (relance depuis un TTY, docs/ROLLBACK.md) : celles que la session a données à systemd.
+    local name value
+    for name in XDG_CURRENT_DESKTOP WAYLAND_DISPLAY; do
+        [[ -n "${!name:-}" ]] && continue
+        value=$(systemctl --user show-environment 2>/dev/null | sed -n "s/^$name=//p") || true
+        [[ -n "$value" ]] && export "$name=$value"
+    done
     # PERF_NO_ENV : sans les réglages du processus (mesures A/B de scripts/perf.sh).
     [[ -n "${PERF_NO_ENV:-}" ]] || . "$repo/scripts/qs-env.sh"
 }
@@ -70,6 +72,8 @@ watch() {
     flock -n 9 || { echo "Bureau déjà surveillé dans cette session."; exit 0; }
     echo $$ >"$lock"   # lu seulement tant que le verrou est tenu (supervisor) : jamais un PID périmé
     prepare
+    # Verrouillage de la session, repris par une instance relancée (modules/lock/LockScreen.qml).
+    export QS_LOCK_STATE="$runtime/qs-desktop.$session.locked"
     local home="${1:-}" starts=() now t pid
     while alive; do
         [[ -s "$log" ]] && mv -f "$log" "$log.1"   # journal de l'instance précédente (raison d'un arrêt) gardé
@@ -77,7 +81,12 @@ watch() {
         pid=$!
         echo "$pid" >"$pidfile"
         if [[ -n "$home" ]]; then
-            for _ in $(seq 1 50); do qs ipc --pid "$pid" call outputs home >/dev/null 2>&1 && break; sleep 0.2; done
+            # Tant que l'instance vit (2 min au plus) : un démarrage à froid peut dépasser 10 s.
+            for _ in $(seq 1 600); do
+                qs ipc --pid "$pid" call outputs home >/dev/null 2>&1 && break
+                kill -0 "$pid" 2>/dev/null || break
+                sleep 0.2
+            done
             home=""
         fi
         wait "$pid"
@@ -86,13 +95,14 @@ watch() {
         local recent=()
         for t in "${starts[@]}"; do (( now - t < 60 )) && recent+=("$t"); done
         starts=("${recent[@]}" "$now")
-        if (( ${#starts[@]} > 5 )); then
+        if (( ${#starts[@]} >= 5 )); then
             warn "Quickshell s'est arrêté 5 fois en une minute : bureau non relancé. Journal : $log ; relance : Super+Ctrl+W"
             break
         fi
         sleep 1
     done
     rm -f "$pidfile"
+    alive || rm -f "$QS_LOCK_STATE"   # fin de session ; abandon (5 arrêts) : gardé, une relance depuis un TTY reverrouille
 }
 
 kill_instance() {
