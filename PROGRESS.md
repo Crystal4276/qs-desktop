@@ -2337,6 +2337,21 @@ Corrigés :
 - **interrogation de l'instance au démarrage par `desktop.sh`** : quelques processus `qs ipc` le temps du démarrage ;
 - répétés pour la 3ᵉ ou 4ᵉ fois, sans élément nouveau : `mark` sous Sway, latence d'`ipc.sh`, longueur des commentaires (style déjà suivi dans tout le dépôt).
 
+**Passe 7**, 10 constats.
+
+Corrigés, chacun avec une contre-épreuve sur l'ancien code :
+- **Verrou** : sans fichier d'état au démarrage (cas normal), la lecture « une fois par processus » n'était jamais marquée (régression de la passe 6). Elle l'est maintenant aussi quand la lecture échoue (`onLoadFailed`). Banc Sway : démarrage sans fichier, « 1 » laissé, rechargement à chaud ; l'ancien code verrouille, le nouveau non.
+- **Fichier `hosts/` d'Hyprland en erreur** : il était exécuté une deuxième fois par `lua/autostart.lua`, avec ses règles posées deux fois. `lua/host.lua` enregistre maintenant le module (vide) avant de relever l'erreur. Test `lua`, erreur en fin de fichier : règle posée 2 fois avant, 1 fois après ; les 10 commandes de démarrage sont lancées.
+- **Bouton d'un espace qui vient d'être créé** : il montre déjà son état (focalisé, affiché), au lieu d'apparaître éteint un instant.
+- **Hyprland, écran de départ inconnu** (écran focalisé tout juste retiré) : plus de `focus monitor ""`, qui arrêtait la suite des commandes.
+
+Vérifié aussi : `test-outputs.sh` à 0 échec sous Sway et sous Hyprland ; bancs du verrou (Sway, Hyprland) et des boutons d'espaces rejoués.
+
+Écartés :
+- **règles natives `workspace N output X` à la place de l'IPC** : c'est le choix d'architecture de la phase 3 (un seul mécanisme, `Outputs`), et la phase 10 retire ces règles fixes ;
+- **commande native appliquée en double après les 2 s de `timeout`** : seulement avec une instance qui met plus de 2 s à répondre ;
+- **déjà écartés, sans élément nouveau** : latence d'`ipc.sh` (5ᵉ fois), cache des règles HDR, interrogation au démarrage, longueur des commentaires.
+
 ## Prochaine étape
 
 **Phase 10 : tes tests à la main (ci-dessus) aux prochaines connexions Sway et Hyprland, puis validation ; phase 11 (portabilité)
