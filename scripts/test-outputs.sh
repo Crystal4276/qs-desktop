@@ -264,6 +264,8 @@ visible_map() { c_ws | jq -cS 'map(select(.visible) | {(.output): .num}) | add /
 windows() { c_windows; }
 # Commandes de placement envoyées depuis le démarrage (journal de l'instance de test).
 placement_count() { qs log --pid "$qs_pid" | grep -c "placement des espaces" || true; }
+# Toutes les commandes envoyées au compositeur (Hyprland : aussi focus, veille, règles HDR/VRR).
+command_count() { qs log --pid "$qs_pid" | grep -cE "Compositor: (placement des espaces|actions Hyprland)" || true; }
 
 # Vue attendue d'une configuration déjà vue : celle qu'elle avait (même règle que Outputs.qml, sans choix de l'utilisateur).
 declare -A seen_views
@@ -524,11 +526,11 @@ check "remise en état" "$initial_expected"
 
 # Aucun écran actif (capot fermé sans écran externe) : Quickshell ne fait rien et l'instance survit ; tout revient au rallumage.
 reference_visible="$(visible_map)"
-placed_before="$(placement_count)"
+placed_before="$(command_count)"
 c_disable "$left"; c_disable "$right"; c_disable "$center"
 sleep 1.5
 blocks_none="$(qs ipc --pid "$qs_pid" call outputs blocks)"
-placed_after="$(placement_count)"
+placed_after="$(command_count)"
 if [[ "$blocks_none" == "{}" && "$placed_after" == "$placed_before" ]]; then
     echo "OK    aucun écran actif : répartition vide, aucune commande"
 else
