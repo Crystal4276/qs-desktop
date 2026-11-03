@@ -11,7 +11,10 @@ Item {
     required property string output
 
     readonly property var shown: {
-        const all = Compositor.workspaces;
+        // Espace sans écran connu (Hyprland : créé à l'instant, écran lu par la relecture qui suit) : compté comme absent, son
+        // bouton reste en place. Sinon il disparaissait une fraction de seconde à chaque `$mod+N` vers un espace vide, et la
+        // pilule média, à droite des espaces, sautait vers la gauche (ton constat du 2026-11-03).
+        const all = Compositor.workspaces.filter(w => w.output !== "");
         const here = all.filter(w => w.output === output);
         const persistent = Outputs.blockFor(output).filter(n => !all.some(w => w.number === n)).map(n => ({
             number: n,

@@ -2318,6 +2318,11 @@ Corrigés :
 - `mark` sous Sway quand le focus est sur l'espace lui-même ;
 - latence d'`ipc.sh` (5 ms, contre 23 ms pour `qs ipc`).
 
+**Bug signalé : la pastille musique saute vers la gauche une fraction de seconde quand tu changes d'espace (1, 2, 3)** (Hyprland, 2026-11-03) :
+- **cause** : un espace créé à l'instant (`$mod+N` vers un espace vide) n'a pas encore d'écran connu de Quickshell, qui ne le lit qu'à la relecture suivante. Pendant ce court instant, la barre ne l'affichait ni comme espace de son écran, ni comme espace du bloc pas encore créé. Son bouton disparaissait, la pilule des espaces rétrécissait, et la pilule média, juste à droite, glissait vers la gauche ;
+- **correction** (`modules/bar/Workspaces.qml`) : un espace sans écran connu compte comme pas encore créé, et son bouton reste en place ;
+- **banc Hyprland** (copie du dépôt qui journalise la liste des boutons, 9 changements vers des espaces vides) : l'ancien code perd un bouton 9 fois (par exemple `[1,2,4,…,9]`), le nouveau jamais.
+
 ## Prochaine étape
 
 **Phase 10 : tes tests à la main (ci-dessus) aux prochaines connexions Sway et Hyprland, puis validation ; phase 11 (portabilité)
