@@ -51,7 +51,10 @@ Singleton {
         selection = mode === "screen" && o ? { x: o.x, y: o.y, width: o.width, height: o.height } : null;
         windows = [];
         ensureDirectory();   // le temps de choisir la zone suffit à le créer
-        windowList.command = Compositor.isHyprland ? ["hyprctl", "clients", "-j"] : ["swaymsg", "-t", "get_tree"];
+        // Hyprland : fenêtres et moniteurs (espace affiché, espace spécial ouvert) lus ensemble, pour un état cohérent.
+        windowList.command = Compositor.isHyprland
+            ? ["sh", "-c", `jq -n --argjson clients "$(hyprctl clients -j)" --argjson monitors "$(hyprctl monitors -j)" '{ $clients, $monitors }'`]
+            : ["swaymsg", "-t", "get_tree"];
         windowList.running = true;
         cursorHidden = !hidesCursor;
         active = true;
@@ -187,7 +190,8 @@ Singleton {
 
     // Fenêtres des espaces affichés, de la plus basse à la plus haute (windowAt prend la dernière) : Sway, feuilles visibles
     // (`visible` : une fenêtre cachée par un plein écran ou un onglet garde son rectangle), flottantes après ; Hyprland, clients des
-    // espaces affichés (l'ordre de `hyprctl clients` n'est pas l'empilement) : en mosaïque, flottants, puis plein écran.
+    // espaces affichés (l'ordre de `hyprctl clients` n'est pas l'empilement) : en mosaïque, flottants, puis plein écran, et par-dessus
+    // tout l'espace spécial ouvert sur un écran (`$mod+H`), dans le même ordre.
     Process {
         id: windowList
         stdout: StdioCollector {
@@ -200,9 +204,11 @@ Singleton {
                 }
                 const list = [];
                 if (Compositor.isHyprland) {
-                    const shown = Compositor.workspaces.filter(w => w.visible).map(w => w.number);
-                    const layer = c => c.fullscreen ? 2 : c.floating ? 1 : 0;
-                    for (const c of data.filter(c => shown.includes(c.workspace?.id) && !c.hidden && c.mapped !== false)
+                    const shown = (data.monitors ?? []).map(m => m.activeWorkspace?.id);
+                    const special = (data.monitors ?? []).map(m => m.specialWorkspace?.name).filter(n => n);
+                    const layer = c => (special.includes(c.workspace?.name) ? 3 : 0) + (c.fullscreen ? 2 : c.floating ? 1 : 0);
+                    for (const c of (data.clients ?? []).filter(c => (shown.includes(c.workspace?.id) || special.includes(c.workspace?.name))
+                            && !c.hidden && c.mapped !== false)
                             .sort((a, b) => layer(a) - layer(b)))
                         list.push({ x: c.at[0], y: c.at[1], width: c.size[0], height: c.size[1], title: c.title });
                 } else {

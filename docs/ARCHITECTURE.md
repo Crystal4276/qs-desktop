@@ -35,8 +35,9 @@ et les actions `focusWorkspace(n)`, `assignWorkspace(n, output)`, `moveWorkspace
 Point critique **Hyprland 0.56 en config Lua** : `hyprctl keyword` n'existe plus et `dispatch` attend une expression Lua
 (`hl.dsp.focus({ workspace = 4 })`, `hl.dsp.workspace.move({ workspace = N, monitor = "DP-2" })`). Les commandes
 `hyprctl keyword workspace …` / `moveworkspacetomonitor` prévues par `CLAUDE.md` ne fonctionneront donc pas telles quelles.
-Quickshell 0.3.2 expose `Hyprland.usingLua` : le backend Hyprland générera la syntaxe Lua quand il est vrai, l'ancienne sinon.
-Aucune attribution persistante n'est nécessaire (comme sous Sway, § 3.2) : `Outputs` déplace les espaces et corrige ceux créés hors de leur bloc. Vérifié en phase 9 sur Hyprland 0.57 ; les branches pour une config classique ont été retirées, jamais exécutées.
+Le backend n'écrit que la syntaxe Lua : avec une config classique (`Hyprland.usingLua` faux, Quickshell 0.3.2), il n'envoie aucune
+action et l'écrit dans le journal. Les branches pour une config classique ont été retirées en phase 9, jamais exécutées.
+Aucune attribution persistante n'est nécessaire (comme sous Sway, § 3.2) : `Outputs` déplace les espaces et corrige ceux créés hors de leur bloc. Vérifié en phase 9 sur Hyprland 0.57.
 
 Ni titre de la fenêtre active ni mode (Sway) ou submap (Hyprland) : aucun widget ne les lit, et les tenir à jour lançait un
 `swaymsg -t get_tree` à chaque focus. Retirés le 2026-11-02 (ta décision, `PERFORMANCE.md`), à rétablir avec le widget qui en aura besoin.
@@ -55,7 +56,7 @@ Kanshi installé mais inutilisé.
 Proposition : chaque compositeur configure ses sorties **nativement**, avec des règles par **description** d'écran,
 jamais par connecteur. Ces règles s'appliquent automatiquement à chaque connexion de l'écran concerné.
 
-| | Sway 1.12 | Hyprland 0.56 (Lua) |
+| | Sway 1.12 | Hyprland 0.57 (Lua) |
 |---|---|---|
 | Identification | `output "LG Electronics 27GN950 207NTLEFY824" …` (make model serial, `man 5 sway-output`) | `hl.monitor({ output = "desc:…", … })` (accepté par Hyprland 0.57, vérifié sur le Dell avec des valeurs identiques à sa règle) |
 | Mode, position, échelle | `mode`, `pos`, `scale` | `mode`, `position`, `scale` |
@@ -136,7 +137,7 @@ Hyprland *(écrit le 2026-10-16 ; joué en phase 9 sur Hyprland 0.57, `scripts/t
 - `FALLBACK` (sortie fictive quand aucun écran n'est actif) et un moniteur pas encore relu ne comptent pas comme écrans ;
 - placement en **une seule requête** : `hyprctl dispatch X` exécute `hl.dispatch(X)`, qui accepte une fonction Lua ; `Compositor` envoie
   `function() hl.dispatch(hl.dsp.workspace.move({ workspace = N, monitor = "X" })) … hl.dispatch(hl.dsp.focus({ monitor = "X" }))
-  hl.dispatch(hl.dsp.focus({ workspace = N })) … end` (même séquence que sous Sway ; Lua vérifié avec `luac` et exécuté avec un faux `hl`) ;
+  hl.dispatch(hl.dsp.focus({ workspace = N })) … end` (même séquence que sous Sway ; jouée sur Hyprland 0.57 en phase 9) ;
 - espace focalisé déplacé : `hl.dsp.workspace.move({ monitor = "X" })` ; création d'espace : événement `createworkspacev2` ;
 - config Hyprland non-Lua : placement non pris en charge (avertissement) — seule la config Lua est utilisée ;
 - tant que la config actuelle (`lua/workspaces.lua`) attache les espaces aux écrans par des règles `persistent`, elles peuvent contrarier

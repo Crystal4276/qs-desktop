@@ -63,5 +63,5 @@ slurp                   # sélection de zone de la touche Impr. actuelle, jusqu'
 iproute2                # `ip -j addr` : interfaces ZeroTier sans jeton (panneau réseau) ; dans `base`
 wl-clipboard            # presse-papiers : captures (outil natif), IP / noms copiés depuis le panneau réseau
 imagemagick             # scripts/crop.sh
-jq                      # scripts de test (lecture JSON swaymsg/hyprctl)
+jq                      # scripts de test (lecture JSON swaymsg/hyprctl), capture d'une fenêtre sous Hyprland
 zenity                  # fenêtres de test (scripts/test-outputs.sh)
