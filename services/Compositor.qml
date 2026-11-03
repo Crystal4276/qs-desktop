@@ -189,8 +189,8 @@ Singleton {
                 sdrModes = sdr;
             }
             // Arrêt : aussi pour un écran passé en HDR puis absent (éteint), à qui sa règle HDR serait rendue à son retour.
-            const targets = on ? names : [...new Set([...names, ...hdrOnOutputs])];
-            hdrOnOutputs = on ? [...new Set([...names, ...hdrOnOutputs])] : [];
+            const targets = on ? names : union(names, hdrOnOutputs);
+            hdrOnOutputs = on ? union(names, hdrOnOutputs) : [];
             applyRuntimeRules([hdrRule(targets, on)]);
         }
     }
@@ -224,18 +224,22 @@ Singleton {
         return `hl.config({ misc = { vrr = ${on ? 1 : 0} } })`;
     }
 
-    // Shell relancé (rechargement à chaud, $mod+Ctrl+w) HDR ou VRR actifs : état repris de celui des écrans, sinon le prochain
-    // `reload` les couperait. Une fois, à la première lecture des écrans.
-    property bool runtimeAdopted: false
-    onOutputsChanged: {
-        if (!isHyprland || runtimeAdopted || outputs.length === 0)
-            return;
-        runtimeAdopted = true;
-        hdrOnOutputs = [...new Set([...hdrOnOutputs, ...outputs.filter(o => o.hdr).map(o => o.name)])];
-        vrrOn = vrrOn || outputs.some(o => o.vrr);
+    function union(a: var, b: var): var {
+        return [...new Set([...a, ...b])];
+    }
+
+    // Après un `reload` : HDR et VRR reposés. Aussi ceux que montrent les écrans, encore lus d'avant le `reload` (relus 500 ms
+    // après) : état d'un shell relancé HDR actif (rechargement à chaud, $mod+Ctrl+w), qui ne les a pas posés lui-même.
+    function replayRuntimeRules(): void {
+        hdrOnOutputs = union(hdrOnOutputs, outputs.filter(o => o.hdr).map(o => o.name));
+        const vrrOutputs = outputs.filter(o => o.vrrCapable);
+        vrrOn = vrrOn || (vrrOutputs.length > 0 && vrrOutputs.every(o => o.vrr));   // comme la bascule (Displays.vrr)
+        applyRuntimeRules([...(hdrOnOutputs.length > 0 ? [hdrRule(hdrOnOutputs, true)] : []), ...(vrrOn ? [vrrRule(true)] : [])]);
     }
 
     function applyRuntimeRules(rules: var): void {
+        if (rules.length === 0)
+            return;
         hyprlandBatch(rules.map(r => `function() ${r} end`));
         monitorReread.restart();
     }
@@ -427,8 +431,7 @@ Singleton {
                 monitorReread.restart();
             }
             else if (event.name === "configreloaded")
-                root.applyRuntimeRules([...(root.hdrOnOutputs.length > 0 ? [root.hdrRule(root.hdrOnOutputs, true)] : []),
-                    ...(root.vrrOn ? [root.vrrRule(true)] : [])]);
+                root.replayRuntimeRules();
             else if (event.name === "urgent" && root.takeActivation(Hyprland.toplevels.values.find(t => t.address === event.data)?.wayland?.appId ?? ""))   // « ADRESSE » (hexadécimal, sans 0x, vérifié)
                 hyprlandBatch([`hl.dsp.focus({ window = "address:0x${event.data}" })`]);
         }
