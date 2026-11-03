@@ -2072,6 +2072,12 @@ Tes tests (2026-11-03) : HDR actif sur les LG, aller-retour bon, mais **terne pa
 
 Validé aussi par toi (2026-11-03) : carte Steam (entrée du tray, fenêtre et espace affichés).
 
+Revue en boucle du code Hyprland (2026-11-03, ta demande, 9 passes : 2 à la main puis `/code-review high` sur les fichiers entiers ; chaque correction vérifiée sur Hyprland imbriqué, contre-épreuve sur l'ancien code ; `test-outputs.sh` 36/36 sous Hyprland et Sway). Arrêt à la passe 9 : plus que du négligeable ou de l'hypothétique.
+- Capture : fenêtre de l'espace spécial ouvert (`$mod+H`) ; empilement réel (dialogue sur une fenêtre agrandie `$mod+TAB` : avant, toute la fenêtre agrandie était prise ; flottante et plein écran selon le focus ; flottantes qui se chevauchent) ; zone copiée au pixel près même à coordonnées fractionnaires en scale 1.5.
+- HDR / VRR : arrêt du HDR = retour au mode d'avant (préréglage, 10 bits si ta config les donne comme sous Sway, blanc SDR) ; activés seulement, reposés après `reload`, y compris après une relance du shell ; arrêt aussi sur un LG éteint entre-temps ; état tenu en un seul endroit.
+- `takeover.sh` : un outil qui se termine pendant la boucle ne peut plus l'arrêter à mi-course (Dunst bloqué, pas de barre).
+- Laissés, négligeables pour ton usage : préréglages HDR autres que `hdr`, double appui sur `$mod+d` en moins de 0,5 s, refus partiel du HDR par Hyprland, fenêtres épinglées, échelles à largeur non entière, raccourcis de la prise en main remis par le `reload` du réveil (temporaire). Hors parité, dans `BACKLOG.md` : noms de capture à la seconde, VRAM de la découpe, `gdbus monitor` de la veille non relancé.
+
 **Reste à vérifier (noté le 2026-11-03, ta demande) :**
 1. Rallumage après la veille d'écran : aussi rapide que sous Sway, maintenant que `fadeDpms` est coupé en direct ? Si oui, le couper dans la config Hyprland (phase 10) ; sinon, lenteur d'Hyprland et Nvidia.
 2. Prochaine session Sway (change de session, donc hors session de code) : une capture sur un LG (`Print`), nette et à la bonne taille (correctif d'échelle non vérifié sous Sway).
@@ -2139,6 +2145,8 @@ Liens des web apps (2026-11-02, ta demande) : lien externe validé par toi ; le 
 Revue (`/code-review medium`, 2026-11-02, 9 constats) : corrigés : autre fenêtre urgente qui prenait le focus (fenêtre étrangère vérifiée sur banc, ouverture de notification toujours sans filtre), attente de `qs ipc` ramenée à 0,5 s, documentation, ce journal. Écartés : `-c desktop` seul (échoue tant que l'instance est lancée avec `-p`, vérifié) ; `WAYLAND_DISPLAY` différent (Chromium en a besoin aussi). Laissés : pointeur qui suit le focus sur l'autre écran (comme une notification, tu as validé le comportement), délai de 3 s, repli de Hyprland à voir en phase 9.
 
 Fait le 2026-11-03 à ta demande, dans ta config Hyprland actuelle (sauvegardes `lua/*.bak-2026-11-03-130713`, rien commité dans `~/.config/hypr`) : autostart des web apps Discord et WhatsApp (`gtk-launch WebApp-DiscordWeb2996`, `WebApp-Whatsapp8699`) au lieu de `discord` et `whatsdesk`, règles d'espace 5 sur leurs classes. `reload` sans erreur ; lancement et placement à voir à ta prochaine ouverture de session. À reprendre tel quel dans `dotfiles/hypr` en phase 10.
+
+Rappel pour la phase 10 (revue du 2026-11-03) : les règles HDR de `Compositor` (`hl.monitor` partiel) visent le connecteur (`DP-1`). Si `dotfiles/hypr` déclare les écrans par `desc:`, vérifier sur tes écrans qu'une bascule `$mod+d` garde échelle et position ; sinon, viser la même clé que la config (non vérifié : sans effet avec ta config actuelle, par connecteur).
 
 Rappel pour la phase 10 (ta demande du 2026-11-02) : `xwayland.use_nearest_neighbor = false` dans la config Lua d'Hyprland (`dotfiles/hypr`) pour le rendu des polices de Steam ; le défaut est `true`, tu l'as réglé à la main dans ta session.
 
