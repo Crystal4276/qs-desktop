@@ -264,7 +264,8 @@ visible_map() { c_ws | jq -cS 'map(select(.visible) | {(.output): .num}) | add /
 windows() { c_windows; }
 # Commandes de placement envoyées depuis le démarrage (journal de l'instance de test).
 placement_count() { qs log --pid "$qs_pid" | grep -c "placement des espaces" || true; }
-# Toutes les commandes envoyées au compositeur (Hyprland : aussi focus, veille, règles HDR/VRR).
+# Commandes envoyées au compositeur : sous Hyprland toutes (focus, veille, règles HDR/VRR aussi) ; sous Sway, seul le placement est
+# journalisé.
 command_count() { qs log --pid "$qs_pid" | grep -cE "Compositor: (placement des espaces|actions Hyprland)" || true; }
 
 # Vue attendue d'une configuration déjà vue : celle qu'elle avait (même règle que Outputs.qml, sans choix de l'utilisateur).
