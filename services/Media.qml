@@ -10,8 +10,9 @@ import qs.config
 // molette lançait `playerctld shift`, sans effet visible ; ici (ton choix du 2026-10-16) la molette passe d'un lecteur MPRIS
 // à l'autre. Lecteur suivi (ton choix du 2026-10-16) : celui choisi à la molette, jusqu'au prochain démarrage d'une lecture ;
 // sinon le lecteur préféré (`Settings.mediaPlayer`) s'il joue, sinon un lecteur qui joue (ex. Chromium seul en lecture),
-// sinon le dernier suivi pendant une lecture (une pause ne fait pas passer au lecteur préféré : le clic suivant reprend la
-// même lecture), sinon le lecteur préféré, sinon le premier présent. Aucun lecteur → module masqué.
+// sinon le dernier suivi pendant une lecture, s'il est en pause (une pause ne fait pas passer au lecteur préféré : le clic suivant
+// reprend la même lecture ; arrêté, il n'a plus rien à reprendre : ta demande du 2026-11-03, Chromium affiché vide), sinon le lecteur
+// préféré, sinon le premier présent. Aucun lecteur → module masqué.
 Singleton {
     id: root
 
@@ -23,7 +24,8 @@ Singleton {
     readonly property string preferred: `org.mpris.MediaPlayer2.${Settings.mediaPlayer}`
     property string recent: ""     // nom D-Bus du dernier lecteur suivi pendant une lecture
     readonly property MprisPlayer player: players.find(p => p.dbusName === selected)
-        ?? playing.find(p => p.dbusName === preferred) ?? playing[0] ?? players.find(p => p.dbusName === recent)
+        ?? playing.find(p => p.dbusName === preferred) ?? playing[0]
+        ?? players.find(p => p.dbusName === recent && p.playbackState !== MprisPlaybackState.Stopped)
         ?? players.find(p => p.dbusName === preferred) ?? players[0] ?? null
     readonly property string playingName: player?.isPlaying ? player.dbusName : ""
     onPlayingNameChanged: if (playingName !== "") recent = playingName
