@@ -212,10 +212,22 @@ Singleton {
 
     // Blanc SDR à 203 nits (BT.2408), comme Sway à ma connaissance : Hyprland l'affiche par défaut à 80 nits en HDR, d'où un
     // bureau terne (ton constat du 2026-11-03).
+    // Règle visée par la description de l'écran, comme dans dotfiles/hypr/hosts/ : la règle partielle se fond dans celle de la
+    // config (même clé), mode, position et échelle gardés. Clé retenue tant que l'écran est actif (un écran éteint depuis garde la
+    // sienne) ; écran sans description : son connecteur.
+    property var ruleKeys: ({})
+
+    function ruleKey(name: string): string {
+        const description = output(name)?.description ?? "";
+        if (description !== "")
+            ruleKeys[name] = `desc:${description}`;
+        return ruleKeys[name] ?? name;
+    }
+
     function hdrRule(names: var, on: bool): string {
         return names.map(n => {
             const sdr = sdrModes[n];
-            return `hl.monitor({ output = "${n}", ${on ? `cm = "hdr", bitdepth = 10, sdr_max_luminance = 203`
+            return `hl.monitor({ output = "${ruleKey(n)}", ${on ? `cm = "hdr", bitdepth = 10, sdr_max_luminance = 203`
                 : `cm = "${sdr?.cm ?? "srgb"}", bitdepth = ${sdr?.bitdepth ?? 8}, sdr_max_luminance = ${sdr?.luminance ?? 80}`} })`;
         }).join(" ");
     }
@@ -368,6 +380,47 @@ Singleton {
             I3.dispatch(`${output ? `focus output "${output}"; ` : ""}workspace number ${n}`);
         } else if (isHyprland) {
             hyprlandBatch([...(output ? [`hl.dsp.focus({ monitor = "${output}" })`] : []), `hl.dsp.focus({ workspace = ${n} })`]);
+        }
+    }
+
+    // Espace N, qui n'existe pas encore, créé et affiché sur `output` (`$mod+N`), sans détour visible par l'écran focalisé.
+    // Hyprland : un espace vide créé sur un autre écran que celui du pointeur perd aussitôt le focus au profit de la fenêtre sous le
+    // pointeur (`follow_mouse`, `no_warps` : vu sur banc). Créé ici puis déplacé, comme la correction de services/Outputs.qml, mais
+    // dans la même requête : l'écran de départ reprend l'espace qu'il affichait.
+    function createWorkspace(n: int, output: string): void {
+        if (isHyprland && output && output !== focusedOutput)
+            hyprlandBatch([`hl.dsp.focus({ workspace = ${n} })`, ...moveBackCalls(n, output)]);
+        else
+            focusWorkspace(n, output);
+    }
+
+    // Hyprland : espace N (focalisé, sur l'écran de départ) envoyé sur `output` ; l'écran de départ réaffiche son espace, puis N
+    // est refocalisé. Lu avant la requête.
+    function moveBackCalls(n: int, output: string): var {
+        const from = focusedOutput;
+        const shown = workspaces.find(w => w.visible && w.output === from)?.number;
+        return [`hl.dsp.workspace.move({ monitor = "${output}" })`,
+            ...(shown !== undefined && shown !== n ? [`hl.dsp.focus({ monitor = "${from}" })`, `hl.dsp.focus({ workspace = ${shown} })`,
+                `hl.dsp.focus({ workspace = ${n} })`] : [])];
+    }
+
+    // Fenêtre focalisée envoyée sur l'espace N, qui est ensuite affiché (`$mod+Ctrl+N`). `output` : sortie où créer N, qui n'existe
+    // pas encore. Aucune fenêtre focalisée : l'espace est seulement affiché.
+    function moveWindowToWorkspace(n: int, output: string): void {
+        const current = workspaces.find(w => w.focused);
+        if (!current || current.empty) {
+            output ? createWorkspace(n, output) : focusWorkspace(n, "");
+            return;
+        }
+        if (isSway) {
+            // Fenêtre marquée, espace créé sur sa sortie, fenêtre envoyée et focalisée : en une commande, sans détour visible.
+            I3.dispatch(output ? `mark --add _qs_move; focus output "${output}"; workspace number ${n}; `
+                + `[con_mark="^_qs_move$"] move container to workspace number ${n}; [con_mark="^_qs_move$"] focus; unmark _qs_move`
+                : `move container to workspace number ${n}; workspace number ${n}`);
+        } else if (isHyprland) {
+            // `window.move` suit la fenêtre (comme ton `$mod+Ctrl+N`) : N naît ici avec elle, puis rejoint `output`.
+            hyprlandBatch([`hl.dsp.window.move({ workspace = ${n} })`,
+                ...(output && output !== focusedOutput ? moveBackCalls(n, output) : [])]);
         }
     }
 

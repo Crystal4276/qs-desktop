@@ -199,11 +199,23 @@ Singleton {
         }
     }
 
+    // Début de session (scripts/desktop.sh, une seule fois par session) : chaque écran affiche le premier espace de son bloc
+    // (1 / 4 / 7 ici), focus sur l'écran principal. Demandé avant la première répartition : fait par elle.
+    property bool homeRequested: false
+
+    function home(): void {
+        homeRequested = true;
+        if (!settle.running)
+            apply();
+    }
+
     // Place tous les espaces 1–9 sur l'écran de leur bloc, sans perdre l'espace visible de chaque écran ni le focus.
     function apply(): void {
         const outs = Compositor.outputs;
         if (outs.length === 0)
             return;
+        const home = homeRequested;
+        homeRequested = false;
         const workspaces = Compositor.workspaces;
         // Vue à retrouver, écran par écran : l'espace que l'utilisateur y a choisi depuis le dernier placement ;
         // sinon la vue de cette configuration si elle a déjà existé (écran rallumé) ; sinon celle d'avant le changement.
@@ -216,7 +228,7 @@ Singleton {
             return (chosen ? [before, seen[name]] : [seen[name], before]).filter(n => n !== undefined);
         };
         currentLayout = layoutKey;
-        const focused = workspaces.find(w => w.number === previous?.focus) ?? workspaces.find(w => w.focused);
+        const focused = home ? null : workspaces.find(w => w.number === previous?.focus) ?? workspaces.find(w => w.focused);
         const isOurs = n => homes[n] !== undefined;
 
         const moves = workspaces.filter(w => isOurs(w.number) && w.output !== homes[w.number])
@@ -237,7 +249,9 @@ Singleton {
             let wanted;
             // Écran d'arrivée de l'espace focalisé : il l'affiche. Un autre espace masquerait celui-ci, que Sway détruirait
             // s'il est vide, et le focus final le recréerait sur un autre écran.
-            if (focused && finalOutput(focused) === o.name)
+            if (home && block.length > 0)
+                wanted = block[0];
+            else if (focused && finalOutput(focused) === o.name)
                 wanted = focused.number;
             else if (remembered !== undefined)
                 wanted = remembered;
@@ -255,13 +269,29 @@ Singleton {
             if (wanted !== undefined)
                 intended[o.name] = wanted;
         }
+        const focus = home ? (blockFor(primary?.name ?? "")[0] ?? 0) : focused ? focused.number : 0;
         // Mémorisé tout de suite : un nouveau changement d'écrans peut arriver avant la prochaine lecture.
-        remember(intended, focused ? focused.number : 0);
+        remember(intended, focus);
         lastPlaced = intended;
 
-        if (moves.length === 0 && show.length === 0)
+        if (moves.length === 0 && show.length === 0 && !home)
             return;
-        Compositor.placeWorkspaces(moves, show, focused ? focused.number : 0);
+        Compositor.placeWorkspaces(moves, show, focus);
+    }
+
+    // `$mod+N` et `$mod+Ctrl+N` (configs compositeur, dotfiles/) : un espace qui n'existe pas encore est créé directement sur
+    // l'écran de son bloc, sans détour visible par l'écran focalisé. Existant, déplacé à la main compris : rejoint là où il est.
+    function focus(n: int): void {
+        const exists = Compositor.workspaces.some(w => w.number === n);
+        if (exists)
+            Compositor.focusWorkspace(n, "");
+        else
+            Compositor.createWorkspace(n, homes[n] ?? "");
+    }
+
+    function moveWindow(n: int): void {
+        const exists = Compositor.workspaces.some(w => w.number === n);
+        Compositor.moveWindowToWorkspace(n, exists ? "" : homes[n] ?? "");
     }
 
     IpcHandler {
@@ -275,6 +305,21 @@ Singleton {
         // Réapplique la répartition tout de suite.
         function apply(): void {
             root.apply();
+        }
+
+        // Début de session : premier espace du bloc de chaque écran (scripts/desktop.sh).
+        function home(): void {
+            root.home();
+        }
+
+        // Espace N affiché, créé sur son écran s'il n'existe pas ($mod+N).
+        function focus(n: int): void {
+            root.focus(n);
+        }
+
+        // Fenêtre focalisée envoyée sur l'espace N, qui est affiché ($mod+Ctrl+N).
+        function moveWindow(n: int): void {
+            root.moveWindow(n);
         }
     }
 
