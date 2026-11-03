@@ -170,7 +170,8 @@ Singleton {
     // HDR / VRR sur une liste de sorties. Sway : `output X hdr on|off`, `adaptive_sync on|off`, comme ton `$mod+d`. Hyprland : règles
     // à l'exécution ; une fois activés, reposés après un `hyprctl reload` (réveil, services/Idle.qml), qui les efface : Sway, lui,
     // garde ces réglages. Désactivés : rien n'est reposé, le `reload` rend les valeurs de ta config.
-    // HDR : `hl.monitor` partiel (fusionné avec la règle de l'écran, mode et échelle gardés). VRR : `misc.vrr`, seul effectif
+    // HDR : `hl.monitor` complet (ruleKey : mode, position, échelle, rotation relus ; les autres champs de la règle de la config,
+    // miroir ou zone réservée, ne sont pas repris : BACKLOG.md). VRR : `misc.vrr`, seul effectif
     // (le champ `vrr` de `hl.monitor` ne change rien, Hyprland 0.57 vérifié), et la bascule porte sur tous les écrans compatibles.
     function setHdr(names: var, on: bool): void {
         if (isSway && names.length > 0)

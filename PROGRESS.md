@@ -2323,6 +2323,20 @@ Corrigés :
 - **correction** (`modules/bar/Workspaces.qml`) : un espace sans écran connu compte comme pas encore créé, et son bouton reste en place ;
 - **banc Hyprland** (copie du dépôt qui journalise la liste des boutons, 9 changements vers des espaces vides) : l'ancien code perd un bouton 9 fois (par exemple `[1,2,4,…,9]`), le nouveau jamais.
 
+**Passe 6**, 10 constats, dont deux régressions de mes corrections de la passe 5.
+
+Corrigés :
+- **Verrou** : un « 1 » resté dans le fichier d'état (verrou perdu côté compositeur) verrouillait la session au rechargement à chaud suivant. Le fichier n'est plus lu qu'une fois par processus (`PersistentProperties`). Banc Sway (copie du dépôt, vrai rechargement) : l'ancien code verrouille, le nouveau non. Autres cas du verrou rejoués : 0 échec.
+- **Vue de départ** : seul un changement d'espace visible l'annule désormais, plus un simple déplacement du focus par le compositeur (écran sous le pointeur). Banc du choix de l'utilisateur rejoué : gardé.
+- **Commentaire faux** dans `Compositor.qml` (règle HDR dite « partielle »). Limite notée dans `BACKLOG.md` : la règle complète ne reprend pas le miroir ni la zone réservée.
+
+Écartés, jugés négligeables :
+- **`open-link` sans l'environnement du compositeur** : Hyprland met bien `HYPRLAND_INSTANCE_SIGNATURE` dans l'environnement de systemd (vérifié), et ta config Sway y importe `SWAYSOCK` ;
+- **règle d'un écran débranché, par connecteur** : seulement pour deux écrans identiques sans numéro de série, en HDR, avec un autre écran rebranché sur le même port ;
+- **filtre de l'écran inconnu, dans la barre seulement** : les autres utilisateurs le gèrent déjà (`Outputs` revérifie un espace créé sans écran 100 ms plus tard) ;
+- **interrogation de l'instance au démarrage par `desktop.sh`** : quelques processus `qs ipc` le temps du démarrage ;
+- répétés pour la 3ᵉ ou 4ᵉ fois, sans élément nouveau : `mark` sous Sway, latence d'`ipc.sh`, longueur des commentaires (style déjà suivi dans tout le dépôt).
+
 ## Prochaine étape
 
 **Phase 10 : tes tests à la main (ci-dessus) aux prochaines connexions Sway et Hyprland, puis validation ; phase 11 (portabilité)
