@@ -21,7 +21,9 @@ Celle de `CLAUDE.md`, avec trois ajouts :
 - `dotfiles/sway/`, `dotfiles/hypr/` *(phase 10, 2026-11-03)* : configs des compositeurs, liées en `~/.config/sway` et `~/.config/hypr`
   (sauvegardes et retour arrière : `docs/ROLLBACK.md`). Partie commune (`config`, `hyprland.lua` + `lua/`) et partie machine
   (`hosts/<hostname>.conf` inclus par `include hosts/$(cat /etc/hostname).conf` ; `hosts/<hostname>.lua` chargé par `lua/host.lua`) :
-  écrans par description, règles qui les visent, matériel. Fichier absent : ignoré (Sway et Hyprland vérifiés). Le dépôt est
+  écrans par description, règles qui les visent, matériel. Fichier absent : ignoré (Sway et Hyprland vérifiés). Données privées
+  (adresses, identifiants, montages) : jamais dans le dépôt, mais dans `~/.config/qs-desktop.local/` (`sway.conf`, inclus par la
+  config Sway ; absent : ignoré). Le dépôt est
   désigné par le lien de la config Quickshell (`~/.config/quickshell/desktop`), jamais par un chemin personnel.
 - `scripts/desktop.sh` *(phase 10)* : lancé par l'autostart des deux compositeurs (§ 11.2) ; `scripts/ipc.sh` : `qs ipc call` des
   raccourcis vers l'instance de la session, désignée par son PID (toutes les copies du dépôt portent `//@ pragma ShellId desktop` :

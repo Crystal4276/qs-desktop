@@ -209,4 +209,7 @@
 # Réglages de cette machine : écrans (par description), matériel. Absent sur une autre machine : ignoré.
 include hosts/$(cat /etc/hostname).conf
 
+# Réglages privés (adresses, identifiants, montages) : hors dépôt, jamais versionnés. Absent : ignoré.
+include ~/.config/qs-desktop.local/sway.conf
+
 include /etc/sway/config.d/*
