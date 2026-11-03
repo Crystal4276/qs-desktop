@@ -263,7 +263,7 @@ focused_num() { c_ws | jq -r '.[] | select(.focused) | .num'; }
 visible_map() { c_ws | jq -cS 'map(select(.visible) | {(.output): .num}) | add // {}'; }
 windows() { c_windows; }
 # Commandes de placement envoyées depuis le démarrage (journal de l'instance de test).
-placement_count() { qs log --pid "$qs_pid" | grep -cE "placement des espaces|actions Hyprland" || true; }
+placement_count() { qs log --pid "$qs_pid" | grep -c "placement des espaces" || true; }
 
 # Vue attendue d'une configuration déjà vue : celle qu'elle avait (même règle que Outputs.qml, sans choix de l'utilisateur).
 declare -A seen_views

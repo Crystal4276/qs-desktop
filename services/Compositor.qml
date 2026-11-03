@@ -139,20 +139,21 @@ Singleton {
                 calls.push(`hl.dsp.focus({ monitor = "${s.output}" })`, `hl.dsp.focus({ workspace = ${s.number} })`);
             if (focus > 0)
                 calls.push(`hl.dsp.focus({ workspace = ${focus} })`);
-            hyprlandBatch(calls);
+            hyprlandBatch(calls, "placement des espaces");
         }
     }
 
     // Hyprland en config Lua (la seule prise en charge pour le placement) : `hyprctl dispatch X` exécute `hl.dispatch(X)`,
     // qui accepte une fonction ; une seule requête enchaîne donc toutes les actions dans l'ordre (code d'Hyprland 0.56 lu).
-    function hyprlandBatch(calls: var): void {
+    // `label` : libellé du journal, le même que sous Sway pour le placement (compté par scripts/test-outputs.sh).
+    function hyprlandBatch(calls: var, label: var): void {
         if (calls.length === 0)
             return;
         if (!Hyprland.usingLua) {
             console.warn("Compositor: actions écrites pour une config Hyprland en Lua seulement");
             return;
         }
-        console.info("Compositor: actions Hyprland :", calls.join("; "));
+        console.info(`Compositor: ${label ?? "actions Hyprland"} :`, calls.join("; "));
         Hyprland.dispatch(`function() ${calls.map(c => `hl.dispatch(${c})`).join(" ")} end`);
     }
 
@@ -162,12 +163,13 @@ Singleton {
             console.info("Compositor: placement des espaces :", `move workspace to output "${output}"`);
             I3.dispatch(`move workspace to output "${output}"`);
         } else if (isHyprland) {
-            hyprlandBatch([`hl.dsp.workspace.move({ monitor = "${output}" })`]);
+            hyprlandBatch([`hl.dsp.workspace.move({ monitor = "${output}" })`], "placement des espaces");
         }
     }
 
     // HDR / VRR sur une liste de sorties. Sway : `output X hdr on|off`, `adaptive_sync on|off`, comme ton `$mod+d`. Hyprland : règles
-    // à l'exécution, reposées après un `hyprctl reload` (réveil, services/Idle.qml), qui les efface : Sway, lui, garde ces réglages.
+    // à l'exécution ; une fois activés, reposés après un `hyprctl reload` (réveil, services/Idle.qml), qui les efface : Sway, lui,
+    // garde ces réglages. Désactivés : rien n'est reposé, le `reload` rend les valeurs de ta config.
     // HDR : `hl.monitor` partiel (fusionné avec la règle de l'écran, mode et échelle gardés). VRR : `misc.vrr`, seul effectif
     // (le champ `vrr` de `hl.monitor` ne change rien, Hyprland 0.57 vérifié), et la bascule porte sur tous les écrans compatibles.
     function setHdr(names: var, on: bool): void {
@@ -187,7 +189,7 @@ Singleton {
             // Blanc SDR à 203 nits (BT.2408), comme Sway à ma connaissance : Hyprland l'affiche par défaut à 80 nits en HDR, d'où un
             // bureau terne (ton constat du 2026-11-03).
             setRuntimeRule("hdr", names.map(n => `hl.monitor({ output = "${n}", ${on ? `cm = "hdr", bitdepth = 10, sdr_max_luminance = 203`
-                : `cm = "${sdr[n]?.cm ?? "srgb"}", bitdepth = ${sdr[n]?.bitdepth ?? 8}`} })`).join(" "));
+                : `cm = "${sdr[n]?.cm ?? "srgb"}", bitdepth = ${sdr[n]?.bitdepth ?? 8}`} })`).join(" "), on);
         }
     }
 
@@ -197,13 +199,18 @@ Singleton {
         if (isSway && names.length > 0)
             I3.dispatch(names.map(n => `output "${n}" adaptive_sync ${on ? "on" : "off"}`).join("; "));
         else if (isHyprland && names.length > 0)
-            setRuntimeRule("vrr", `hl.config({ misc = { vrr = ${on ? 1 : 0} } })`);
+            setRuntimeRule("vrr", `hl.config({ misc = { vrr = ${on ? 1 : 0} } })`, on);
     }
 
-    property var runtimeRules: ({})   // dernière règle de chaque réglage : { hdr: "<Lua>", vrr: "<Lua>" }
+    property var runtimeRules: ({})   // règle de chaque réglage activé, reposée après un reload : { hdr: "<Lua>", vrr: "<Lua>" }
 
-    function setRuntimeRule(name: string, lua: string): void {
-        runtimeRules = Object.assign({}, runtimeRules, { [name]: lua });
+    function setRuntimeRule(name: string, lua: string, keep: bool): void {
+        const rules = Object.assign({}, runtimeRules);
+        if (keep)
+            rules[name] = lua;
+        else
+            delete rules[name];
+        runtimeRules = rules;
         applyRuntimeRules([lua]);
     }
 
