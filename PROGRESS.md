@@ -2212,7 +2212,17 @@ Trouvé en route : le banc Hyprland échouait au hasard pendant que tu travailla
 
 Écarté : `dev.sh` n'arrête plus une instance lancée à la main avec `qs -p .`. Pour l'arrêter, il faudrait viser toutes les instances du même identifiant, bancs compris, ce qui est le danger évité.
 
-À ta décision : la ligne `gio mount ssh://<utilisateur>@<serveur>` de `hosts/terrier.conf` (ton identifiant et l'adresse du serveur, dans le dépôt privé).
+**Informations personnelles retirées du dépôt** (ta décision, 2026-11-03 ; ma faute, je n'aurais pas dû versionner cette ligne) :
+- le montage SSH de ton serveur (identifiant et adresse) est sorti de `hosts/terrier.conf`. Il est maintenant dans
+  `~/.config/qs-desktop.local/sway.conf` : hors dépôt, droits 600, inclus par la config Sway, ignoré s'il est absent ;
+- tout l'historique de `qs-desktop` est réécrit puis poussé en forçant. L'adresse est masquée dans les 3 commits qui la
+  contenaient (montage, inventaire de la phase 0, note de la passe 1), tes noms de réseaux Wi-Fi aussi ;
+- audit du dépôt et de son historique, captures de référence comprises : aucune autre adresse IP, URL `ssh://`, adresse MAC,
+  jeton, mot de passe, réseau ZeroTier ou Tailscale, ni nom d'appareil Bluetooth. Restent, non sensibles : ton e-mail d'auteur
+  des commits (métadonnée Git), ton nom d'utilisateur dans des chemins de l'ancienne config (docs), les numéros de série des
+  écrans (nécessaires à leur reconnaissance) ;
+- **règle pour la suite** : adresses, identifiants, montages et toute donnée privée vont dans `~/.config/qs-desktop.local/`,
+  jamais dans le dépôt.
 
 Vérifié : `test-outputs.sh` 0 échec sous Sway et deux fois sous Hyprland ; `desktop.sh` sur un Sway isolé (7 relances, variable transmise, `stop` deux fois). Ton bureau a été relancé par Hyprland avec le nouveau script : une instance, aucune erreur.
 
