@@ -22,17 +22,18 @@ Scope {
     // faits pendant le verrouillage sont pris au suivant. État gardé malgré tout d'un rechargement à l'autre (rechargement
     // demandé à la main) : en cas d'échec, la session reste verrouillée plutôt que de s'ouvrir.
     property alias locked: persist.locked
-    onLockedChanged: {
-        Quickshell.watchFiles = !locked;
-        if (statePath !== "")
-            lockState.setText(locked ? "1" : "0");
-    }
+    onLockedChanged: Quickshell.watchFiles = !locked
 
     // Verrouillage repris après un arrêt de Quickshell : scripts/desktop.sh donne un fichier propre à la session (QS_LOCK_STATE),
     // « 1 » tant que la session est verrouillée ; l'instance relancée le lit au démarrage et reverrouille (le compositeur garde la
     // session verrouillée entre-temps ; Hyprland : misc.allow_session_lock_restore, dotfiles/hypr). Sans lui (instance lancée à
-    // la main, banc) : rien.
+    // la main, banc) : rien. Écrit au verrouillage et au déverrouillage par mot de passe seulement : un verrou perdu (arrêt de
+    // Quickshell, reprise refusée) ne l'efface pas, la relance suivante reverrouille.
     readonly property string statePath: Quickshell.env("QS_LOCK_STATE") ?? ""
+    function writeState(value: string): void {
+        if (statePath !== "")
+            lockState.setText(value);
+    }
     FileView {
         id: lockState
         path: root.statePath
@@ -78,6 +79,7 @@ Scope {
         // Session.lockActive : les popups à clavier et l'outil de capture se ferment d'eux-mêmes (ils prendraient le clavier de
         // l'écran de verrouillage), en gardant ce qui était en cours ; puis les menus du tray.
         locked = true;
+        writeState("1");
         BarState.closePopups([]);
     }
 
@@ -184,6 +186,7 @@ Scope {
                 root.pending = "";   // PAM a pu réussir sans le demander
                 root.message = "";
                 root.password = "";
+                root.writeState("0");
                 root.locked = false;
             } else {
                 root.fail(root.pamText !== "" ? root.pamText

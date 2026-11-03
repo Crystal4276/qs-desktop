@@ -5,4 +5,6 @@
 # native.
 # Usage : ipc.sh <cible> <fonction> [arguments…]      code de sortie non nul si l'instance ne répond pas
 pid="$("$(dirname "$(readlink -f "$0")")/desktop.sh" pid)" || exit 1
-exec qs ipc --pid "$pid" call "$@"
+# 2 s au plus : une instance figée (vivante, sans réponse) ne doit pas bloquer les raccourcis, `$mod+N` retombe sur la
+# commande native.
+exec timeout 2 qs ipc --pid "$pid" call "$@"

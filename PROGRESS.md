@@ -2301,6 +2301,23 @@ Noté dans `BACKLOG.md` :
 - la règle HDR complète d'Hyprland fige la position de l'écran. Ça ne compte que sans `hosts/` et avec un écran HDR, jusqu'au `reload` suivant ;
 - le bug du contrôle gamma d'Hyprland, à signaler en amont.
 
+**Passe 5**, 10 constats.
+
+Corrigés :
+- **`ipc.sh` limité à 2 s** (`timeout`) : une instance figée mais vivante bloquait tous les raccourcis, et `$mod+N` ne retombait jamais sur la commande native.
+- **Vue de départ** : si tu changes d'espace pendant les 10 s, elle ne s'impose plus aux écrans qui arrivent ensuite. Banc Sway : `$mod+5` juste après la connexion, puis 2 écrans ajoutés ; l'espace 5 et le focus sont gardés.
+- **État du verrou** : il n'est plus écrit qu'au verrouillage et au déverrouillage par mot de passe. Avant, un verrou perdu à l'arrêt de Quickshell écrivait « 0 », et la relance ne reverrouillait plus. Bancs du verrou rejoués : 0 échec.
+- **Veilleuse** : horaire revérifié au lancement, après l'attente.
+- **Règle HDR d'Hyprland** :
+  - si la description d'un écran désigne aussi un autre écran (`desc:` compare le début de la description ; deux écrans identiques sans numéro de série), c'est le connecteur qui sert ;
+  - l'échelle est ramenée au 1/120 le plus proche, la grille d'Hyprland. Elle est publiée avec 2 décimales (1.67), et Hyprland l'aurait corrigée lui-même en affichant une erreur.
+- **`$mod+Ctrl+N` sous Hyprland** : quand l'adresse de la fenêtre n'est pas encore connue (fenêtre qui vient de s'ouvrir), le déplacement vise la fenêtre active (dispatcher sans `window`, source lue).
+- **En-tête et usage de `desktop.sh`** mis à jour : 5 arrêts, sous-commandes `pid` et `watch`.
+
+Écartés une nouvelle fois (passes 2 et 3), sans élément nouveau :
+- `mark` sous Sway quand le focus est sur l'espace lui-même ;
+- latence d'`ipc.sh` (5 ms, contre 23 ms pour `qs ipc`).
+
 ## Prochaine étape
 
 **Phase 10 : tes tests à la main (ci-dessus) aux prochaines connexions Sway et Hyprland, puis validation ; phase 11 (portabilité)
