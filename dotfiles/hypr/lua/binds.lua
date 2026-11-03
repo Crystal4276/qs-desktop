@@ -109,10 +109,6 @@ for i = 1, 9 do
       .. " || hyprctl dispatch 'hl.dsp.window.move({ workspace = " .. i .. " })'"))
 end
 
--- Espace spécial (scratchpad).
-hl.bind(mod .. " + H", hl.dsp.workspace.toggle_special("magic"))
-hl.bind(mod .. " + SHIFT + S", hl.dsp.window.move({ workspace = "special:magic" }))
-
 -- Molette pour faire défiler les espaces existants.
 hl.bind(mod .. " + mouse_down", hl.dsp.focus({ workspace = "e+1" }))
 hl.bind(mod .. " + mouse_up", hl.dsp.focus({ workspace = "e-1" }))
