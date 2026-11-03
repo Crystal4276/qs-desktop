@@ -82,6 +82,12 @@ Singleton {
             return;
         }
         configFile.setText(configText);
+        previous.running = true;   // lancement une fois le gammastep précédent arrêté (launch)
+    }
+
+    function launch(): void {
+        if (!enabled)
+            return;   // désactivée pendant l'attente
         gammaOn = true;
         ready = false;
         startedAt = Date.now();
@@ -89,8 +95,30 @@ Singleton {
         readyDelay.restart();
     }
 
+    // Jamais deux gammastep à la fois. Hyprland 0.57 : un contrôle gamma demandé pour un écran déjà tenu échoue, et cet échec
+    // reste enregistré (protocols/GammaControl.cpp, lu) : l'écran est refusé à tout client jusqu'au redémarrage d'Hyprland.
+    // Vu le 2026-11-03 : veilleuse sur le seul Dell, après des relances de Quickshell pendant lesquelles l'ancien gammastep
+    // faisait encore son fondu de sortie. Le précédent (instance arrêtée ou rechargée) est donc attendu, 10 s au plus ; au-delà
+    // (orphelin), pas de lancement, nouvel essai dans une minute.
+    Process {
+        id: previous
+        command: ["sh", "-c", 'for _ in $(seq 50); do pgrep -xf "gammastep -c $1" >/dev/null || exit 0; sleep 0.2; done; exit 1',
+            "sh", configFile.path]
+        onExited: code => {
+            if (code === 0) {
+                root.launch();
+            } else if (root.enabled) {
+                console.warn("NightLight: un gammastep précédent ne s'arrête pas, nouvel essai dans une minute");
+                retry.interval = 60000;
+                retry.start();
+            }
+        }
+    }
+
     function apply(): void {
         release.stop();
+        if (previous.running)
+            return;   // launch() suivra
         if (!gammastep.running) {
             if (enabled)
                 start();
@@ -116,8 +144,8 @@ Singleton {
         id: gammastep
         // Arrêté avec Quickshell (`qs kill`) : un gammastep orphelin garderait le gamma, la veilleuse ne répondrait plus (vu le 2026-10-27).
         command: ["setpriv", "--pdeathsig", "TERM", "gammastep", "-c", configFile.path]
-        // Réglage gamma tenu par un autre client (au rechargement, l'ancienne instance le garde le temps de son fondu) : gammastep
-        // ne quitte pas, il tourne sans effet en le signalant ; arrêté, donc relancé (onExited). Vérifié le 2026-10-26.
+        // Réglage gamma tenu par un autre client (programme tiers ; sous Hyprland, écran bloqué, voir `previous`) : gammastep ne
+        // quitte pas, il tourne sans effet en le signalant ; arrêté, donc relancé (onExited). Vérifié le 2026-10-26.
         stderr: SplitParser {
             onRead: line => {
                 if (line.includes("Zero outputs support gamma adjustment")) {

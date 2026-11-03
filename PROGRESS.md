@@ -2277,6 +2277,14 @@ Corrigés :
 
 Config Hyprland rechargée sur ta session : aucune erreur. Deluge et Thunderbird sont restés sur 7 et 8, écran de droite.
 
+**Bug signalé : la veilleuse ne s'applique qu'au Dell** (Hyprland, 2026-11-03 ; sous Sway, les trois écrans sont teintés, selon toi) :
+- journal d'Hyprland activé le temps du diagnostic : gammastep n'envoie de table gamma que pour DP-2 ;
+- une sonde Wayland (demande de contrôle gamma, rendu aussitôt, sans rien régler) montre les LG refusés, et même, une fois gammastep arrêté, les trois écrans refusés sans aucun client ;
+- **cause**, lue dans `protocols/GammaControl.cpp` d'Hyprland 0.57 : une demande de contrôle pour un écran déjà tenu échoue, mais l'objet refusé reste dans la liste d'Hyprland et n'est jamais retiré. L'écran est alors refusé à tout client jusqu'au redémarrage d'Hyprland (bug d'Hyprland, wlroots n'a pas ce défaut) ;
+- **déclencheur de notre côté** : à chaque relance ou rechargement de Quickshell, le nouveau gammastep démarrait pendant le fondu de sortie de l'ancien, qui tenait encore les écrans ; d'où les LG bloqués. Ma sonde a fait de même pour le Dell : la veilleuse est bloquée sur les trois écrans jusqu'à ta prochaine connexion à Hyprland ;
+- **correction** (`services/NightLight.qml`) : jamais deux gammastep à la fois ; le précédent est attendu, 10 s au plus. Au-delà (orphelin), pas de lancement, nouvel essai dans une minute. Banc Sway, avec un faux gammastep vivant 4 s : l'ancien code relançait 4 fois pendant sa vie, le nouveau une seule fois, 0,1 s après sa fin ;
+- **à tester par toi** : après ta prochaine connexion à Hyprland, la veilleuse sur les trois écrans, y compris après `Super+Ctrl+W`.
+
 ## Prochaine étape
 
 **Phase 10 : tes tests à la main (ci-dessus) aux prochaines connexions Sway et Hyprland, puis validation ; phase 11 (portabilité)
