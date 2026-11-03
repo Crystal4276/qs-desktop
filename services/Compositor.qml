@@ -428,7 +428,8 @@ Singleton {
         const shown = workspaces.find(w => w.visible && w.output === from)?.number;
         // N désigné par son numéro : si l'action précédente n'a pas eu lieu, l'espace de départ ne part pas à sa place.
         return [`hl.dsp.workspace.move({ workspace = ${n}, monitor = "${output}" })`,
-            ...(shown !== undefined && shown !== n ? [`hl.dsp.focus({ monitor = "${from}" })`, `hl.dsp.focus({ workspace = ${shown} })`,
+            // Écran de départ inconnu (écran focalisé tout juste retiré) : pas de retour, `focus monitor ""` arrêterait la suite.
+            ...(from !== "" && shown !== undefined && shown !== n ? [`hl.dsp.focus({ monitor = "${from}" })`, `hl.dsp.focus({ workspace = ${shown} })`,
                 `hl.dsp.focus({ workspace = ${n} })`] : [])];
     }
 

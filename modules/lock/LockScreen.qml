@@ -39,6 +39,7 @@ Scope {
         path: root.statePath
         printErrors: false
         blockWrites: true   // « 1 » écrit avant de continuer : un arrêt juste après le verrouillage doit le trouver
+        onLoadFailed: persist.stateChecked = true   // pas de fichier (début de session) : rien à reprendre
         onLoaded: {
             // Au lancement du processus seulement : un rechargement à chaud se fait déverrouillé (watchFiles), et un « 1 » resté
             // d'un verrou perdu (compositeur) ne doit pas verrouiller en pleine session.

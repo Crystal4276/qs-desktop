@@ -16,7 +16,9 @@ Item {
         // pilule média, à droite des espaces, sautait vers la gauche (ton constat du 2026-11-03).
         const all = Compositor.workspaces.filter(w => w.output !== "");
         const here = all.filter(w => w.output === output);
-        const persistent = Outputs.blockFor(output).filter(n => !all.some(w => w.number === n)).map(n => ({
+        // Espace sans écran connu : son état (focalisé, affiché) est déjà montré sur le bouton.
+        const unknown = Compositor.workspaces.filter(w => w.output === "");
+        const persistent = Outputs.blockFor(output).filter(n => !all.some(w => w.number === n)).map(n => Object.assign({
             number: n,
             name: `${n}`,
             output: output,
@@ -25,7 +27,7 @@ Item {
             urgent: false,
             empty: true,
             persistent: true
-        }));
+        }, unknown.find(w => w.number === n) ?? {}, { output: output }));
         return [...here, ...persistent].sort((a, b) => a.number - b.number);
     }
 
