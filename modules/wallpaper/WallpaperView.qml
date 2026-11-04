@@ -53,9 +53,7 @@ Item {
                 root.displayed();
             if (status === Image.Ready && path !== "" && !fromCopy) {
                 keptName = copyName;
-                // Image plus petite que l'écran (agrandie) : décodée vite, une copie serait plus lourde sans gain.
-                if (implicitWidth >= sourceSize.width || implicitHeight >= sourceSize.height)
-                    saveDelay.restart();
+                saveDelay.restart();
             }
         }
 
