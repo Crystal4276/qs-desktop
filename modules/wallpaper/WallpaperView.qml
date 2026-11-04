@@ -25,14 +25,14 @@ Item {
 
         anchors.fill: parent
         visible: root.shown?.kind === "image"
-        // Copie à la taille de l'écran si elle existe (Wallpapers.screenSource), sauf celle de l'image que cette vue a déjà chargée
+        // Copie à la taille de l'écran si elle existe (Wallpapers.hasCopy), sauf celle de l'image que cette vue a déjà chargée
         // depuis l'original (`keptName` : même image, pas relue quand la copie est écrite). Pas de source avant la taille finale :
         // sinon une première lecture à la taille du fichier (sourceSize nulle), puis une autre.
         property string keptName: ""
         onPathChanged: keptName = ""   // autre fond : sa copie, si elle existe, est lue
         readonly property string copyName: path !== "" ? Wallpapers.screenName(path, sourceSize) : ""
-        readonly property bool fromCopy: copyName !== "" && copyName !== keptName && Wallpapers.usesCopy(path, sourceSize)
-        source: visible && width > 0 && height > 0 ? (fromCopy ? Wallpapers.screenSource(path, sourceSize) : root.shown?.source ?? "") : ""
+        readonly property bool fromCopy: copyName !== "" && copyName !== keptName && Wallpapers.hasCopy(copyName)
+        source: visible && width > 0 && height > 0 ? (fromCopy ? Wallpapers.copyUrl(copyName) : root.shown?.source ?? "") : ""
         fillMode: Image.PreserveAspectCrop
         sourceSize: Qt.size(Math.ceil(width * root.pixelRatio), Math.ceil(height * root.pixelRatio))
         asynchronous: true

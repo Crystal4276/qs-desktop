@@ -27,7 +27,7 @@ Singleton {
     }
 
     // Ce qu'affiche une sortie (Compositor.outputs) : { kind: "image", source, path } ou { kind: "panorama", source }, ou null.
-    // `path` : chemin dans le dossier, clé de la copie à la taille de l'écran (screenSource).
+    // `path` : chemin dans le dossier, clé de la copie à la taille de l'écran (screenName).
     function forOutput(output: var, outputs: var): var {
         if (!output || dir === "" || !stateRead)
             return null;
@@ -166,12 +166,12 @@ Singleton {
         return `${Qt.md5(`${dir}/${path}`)}-${size.width}x${size.height}.bmp`;
     }
 
-    function usesCopy(path: string, size: size): bool {
-        return !!state.screenCache?.[screenName(path, size)];
+    function hasCopy(name: string): bool {
+        return !!state.screenCache?.[name];
     }
 
-    function screenSource(path: string, size: size): string {
-        return usesCopy(path, size) ? Icons.fileUrl(`${screenDir}/${screenName(path, size)}`) : url(path);
+    function copyUrl(name: string): string {
+        return Icons.fileUrl(`${screenDir}/${name}`);
     }
 
     // Fichier où écrire la copie de `path` ("" : déjà en cache ou en cours d'écriture).

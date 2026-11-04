@@ -203,8 +203,7 @@ sleep 0.5
 
 # Quickshell sur cette session, avec son propre bus de session (notifications, tray, lecteurs : rien n'atteint les tiens)
 # et ni montage automatique ni reconnexion Bluetooth automatique (QS_TEST : le bus système, lui, est le vrai). État à part
-# (XDG_STATE_HOME) : les fichiers d'état de ton instance (historique du lanceur, fond, veilleuse…) ne sont ni lus ni écrits ;
-# cache à part (XDG_CACHE_HOME) : ses copies de fonds à la taille des écrans (services/Wallpapers.qml) ne touchent pas les tiennes.
+# (XDG_STATE_HOME) : les fichiers d'état de ton instance (historique du lanceur, fond, veilleuse…) ne sont ni lus ni écrits.
 # Sans gvfs : un second gvfsd lancé sur ce bus casserait le montage /run/user/$UID/gvfs de ta session (vu le 2026-10-26).
 # Groupe de processus à lui (setsid, sans fork : son PID est $bus_pid), arrêté en entier à la fin.
 # Cache : celui de cette config Quickshell seul est à part (copies de fonds, vignettes : by-shell) ; les autres (polices, shaders de

@@ -82,7 +82,8 @@ Item {
                 width: Math.ceil(Math.max(implicitWidth, leftPadding + ink.x + ink.width, leftPadding + reserved))
 
                 // Largeur du plus large texte de `segment[2]` (mesurée une fois par liste et par police, pour toutes les barres).
-                readonly property real reserved: WidthTexts.widest(segment[2] ?? null, font)
+                // Pas avant que la police du segment soit posée (sinon une mesure de plus avec la police par défaut).
+                readonly property real reserved: font.family === (segment[0] ?? Theme.font.text) ? WidthTexts.widest(segment[2] ?? null, font) : 0
 
                 // Valeurs à largeur réservée : alignées à droite ; icônes : à gauche, leur débord tombe dans la largeur ajoutée.
                 horizontalAlignment: segment[2] ? Text.AlignRight : Text.AlignLeft
