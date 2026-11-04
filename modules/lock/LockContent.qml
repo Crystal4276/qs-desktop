@@ -21,8 +21,9 @@ Item {
     property bool capsLock: false
     property string user: ""
     property bool showPower: false   // éteindre, redémarrer, veille (PowerRow)
-    // Écran de connexion : image du fond (sinon celui du bureau, Wallpapers), noms des sessions et session choisie (vide : pas de
-    // choix), liste ouverte.
+    // Écran de connexion (`exported`) : fond = image exportée par le bureau (`background`, "" : uni), jamais Wallpapers ; noms des
+    // sessions et session choisie (vide : pas de choix), liste ouverte.
+    property bool exported: false
     property string background: ""
     property var sessions: []
     property int sessionIndex: 0
@@ -45,7 +46,7 @@ Item {
     // Fond flouté (effet de calque sur le rendu du fond d'écran). Écran de connexion : l'image exportée, sans lire Wallpapers.
     Loader {
         anchors.fill: parent
-        sourceComponent: root.background !== "" ? exported : desktop
+        sourceComponent: !root.exported ? desktop : root.background !== "" ? exportedImage : null
         layer.enabled: true
         layer.effect: MultiEffect {
             blurEnabled: true
@@ -64,7 +65,7 @@ Item {
     }
 
     Component {
-        id: exported
+        id: exportedImage
 
         Image {
             source: root.background

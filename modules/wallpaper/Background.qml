@@ -62,9 +62,11 @@ Variants {
             interval: 3000
             onTriggered: {
                 const key = window.shown ? `${window.shown.kind}:${window.shown.source}:${view.width}x${view.height}` : "";
-                const file = key !== "" ? Wallpapers.greeterFile(window.output?.description ?? "", key) : "";
+                const description = window.output?.description ?? "";
+                const file = key !== "" ? Wallpapers.greeterFile(description, key) : "";
                 if (file !== "")
-                    view.grabToImage(result => result.saveToFile(file), Qt.size(view.width, view.height));
+                    view.grabToImage(result => Wallpapers.greeterWritten(description, key, result.saveToFile(file)),
+                        Qt.size(view.width, view.height));
             }
         }
     }
