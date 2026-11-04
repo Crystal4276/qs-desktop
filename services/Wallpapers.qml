@@ -295,8 +295,13 @@ Singleton {
         id: greeterCheck
         command: ["test", "-d", root.greeterDir, "-a", "-w", root.greeterDir]
         running: root.greeterDir !== ""
-        onExited: code => root.greeterWritable = code === 0
+        onExited: code => {
+            root.greeterWritable = code === 0;
+            if (root.greeterWritable)
+                root.greeterReady();   // exports refusés en attendant : relancés (Background.qml)
+        }
     }
+    signal greeterReady
 
     // Fichier où écrire le fond `key` de l'écran `description` ("" : déjà écrit, ou pas de dossier). Même nom côté greeter
     // (services/Greeter.qml). Retenu seulement une fois écrit (greeterWritten) : un échec est retenté au prochain affichage.
@@ -307,7 +312,7 @@ Singleton {
             greeterCheck.running = true;
             return "";
         }
-        return `${greeterDir}/${Qt.md5(description)}.jpg`;
+        return Settings.greeterWallpaper(Quickshell.env("USER") ?? "", description);
     }
 
     function greeterWritten(description: string, key: string, ok: bool): void {

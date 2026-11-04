@@ -57,6 +57,13 @@ Variants {
 
         // Copie du fond affiché pour l'écran de connexion (Wallpapers.greeterFile), 3 s après qu'il est prêt, comme les copies
         // à la taille de l'écran (pas à chaque essai dans l'utilitaire). grabToImage prend une taille logique.
+        Connections {
+            target: Wallpapers
+            function onGreeterReady() {
+                greeterDelay.restart();
+            }
+        }
+
         Timer {
             id: greeterDelay
             interval: 3000

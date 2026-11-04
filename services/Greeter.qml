@@ -158,7 +158,7 @@ Singleton {
     property var wallpapers: []
 
     function wallpaper(description: string): string {
-        const path = `${dir}/${user}/${Qt.md5(description)}.jpg`;
+        const path = Settings.greeterWallpaper(user, description);
         return description !== "" && wallpapers.includes(path) ? `file://${path}` : "";
     }
 
