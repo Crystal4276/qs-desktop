@@ -2371,10 +2371,22 @@ Corrigés :
 
 ## Prochaine étape
 
-**Phase 10 : tes tests à la main (ci-dessus) aux prochaines connexions Sway et Hyprland, puis validation ; phase 11 (portabilité)
-ensuite. Le bureau est lancé par `scripts/desktop.sh` (relance : `$mod+Ctrl+W` ou `scripts/dev.sh`).** Chaque sauvegarde dans le
-dépôt recharge ton bureau : préparer et tester sur une copie, puis copier d'un seul coup. Dans un test, viser une instance par
-`--pid`, jamais par `-c desktop`.
+**Phase 10 : bascule faite, revue en boucle terminée (8 passes), en attente de ta validation ; phase 11 (portabilité) ensuite.**
+Le bureau est lancé par `scripts/desktop.sh` (relance : `$mod+Ctrl+W` ou `scripts/dev.sh`). Chaque sauvegarde dans le dépôt recharge
+ton bureau : préparer et tester sur une copie, puis copier d'un seul coup. Dans un test, viser une instance par `--pid`, jamais par
+`-c desktop`.
+
+Validés par toi le 2026-11-04 (Hyprland) : plein écran sans extinction du LG de droite, pastille musique stable au changement
+d'espace, HDR revenu avec la même échelle après `hyprctl reload`.
+
+**To-do, au prochain redémarrage d'Hyprland** (reporté : il fermerait ta session de travail en cours) :
+- veilleuse sur les trois écrans, y compris après `Super+Ctrl+W` (bloquée d'ici là par le bug d'Hyprland sur le gamma) ;
+- curseur Catppuccin vert sous Hyprland (nom corrigé, effectif à la connexion) ;
+- au passage : premiers espaces 1 / 4 / 7 au démarrage, Discord et WhatsApp sur 5.
+
+**To-do, à ta prochaine connexion Sway** (pas encore rejouée depuis la bascule) : démarrage du bureau par `desktop.sh`, espaces
+1 / 4 / 7, raccourcis (`$mod+N`, `$mod+Ctrl+N`, volume, médias, VPN), `$mod+d` (HDR, échelle gardée), montage privé
+(`~/.config/qs-desktop.local/sway.conf`), veilleuse sur les trois écrans.
 
 Historique (2026-11-02, avant la bascule) : la session était prise en main par `scripts/takeover.sh`, supprimé en phase 10.
 
