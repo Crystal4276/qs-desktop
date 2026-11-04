@@ -72,9 +72,13 @@ ici `sddm.service`) et active greetd. **SDDM n'est pas désinstallé.**
 Depuis un terminal de la session, ou un TTY (`Ctrl+Alt+F2`, connexion en texte) si l'écran de connexion ne marche pas :
 
 ```sh
-~/qs-desktop/scripts/greeter-setup.sh uninstall   # greetd désactivé, SDDM réactivé, fichiers d'origine remis, copie retirée
+~/qs-desktop/scripts/greeter-setup.sh uninstall   # greetd désactivé, SDDM réactivé
 sudo reboot
+~/qs-desktop/scripts/greeter-setup.sh uninstall   # après le redémarrage : fichiers d'origine remis, copie retirée
 ```
+
+Tant que greetd tourne (session ouverte par lui), `uninstall` ne fait que rebasculer les services : greetd garde sa config en mémoire
+et relancerait l'écran de connexion à la déconnexion. Lancé depuis un TTY ou une session SDDM, il fait tout en une fois.
 
 À la main, sans le script : `sudo systemctl disable greetd && sudo systemctl enable sddm && sudo reboot`.
 

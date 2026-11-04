@@ -77,8 +77,9 @@ install_file() {
 }
 
 do_install() {
-    command -v greetd >/dev/null || { echo "greetd n'est pas installé (paquets : deps/arch-pacman.txt)." >&2; exit 1; }
-    getent passwd greeter >/dev/null || { echo "Utilisateur « greeter » absent (créé par le paquet greetd)." >&2; exit 1; }
+    # Prérequis : en simulation (machine neuve, conteneur), signalés sans arrêter la liste des commandes.
+    command -v greetd >/dev/null || { echo "! greetd n'est pas installé (paquets : deps/arch-pacman.txt)." >&2; [[ -n "$dry" ]] || exit 1; }
+    getent passwd greeter >/dev/null || { echo "! utilisateur « greeter » absent (créé par le paquet greetd)." >&2; [[ -n "$dry" ]] || exit 1; }
     [[ -z "$(git -C "$repo" status --porcelain)" ]] || echo "! modifications non committées : seule la version committée est copiée"
 
     # Dossiers d'état : greeter (dernier choix, caches), fond d'écran exporté par le bureau de l'utilisateur (lisible par greeter).
@@ -138,6 +139,12 @@ do_uninstall() {
         run systemctl enable "$(cat "$previous_dm")"
     elif [[ -n "$greetd_enabled" ]]; then
         echo "! aucun ancien gestionnaire de connexion noté : connexion en console au prochain démarrage"
+    fi
+    # greetd encore en marche (session ouverte par lui) : il garde sa config en mémoire et relancerait l'écran de connexion à la
+    # déconnexion. Fichiers et copie gardés jusqu'au redémarrage ; la seconde exécution les retire.
+    if [[ -z "$dry" ]] && systemctl is-active --quiet greetd.service 2>/dev/null; then
+        echo "Gestionnaire de connexion rebasculé. greetd tourne encore : redémarre, puis relance $0 uninstall pour finir."
+        return
     fi
     local missing=""
     if [[ -f "$backups" ]]; then
