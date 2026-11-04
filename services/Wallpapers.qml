@@ -183,10 +183,10 @@ Singleton {
         return `${screenDir}/${name}`;
     }
 
-    // Fonds choisis (par écran, et pour tous : `selection`, celui de la config machine si rien n'est choisi) : leurs copies restent,
-    // écran éteint ou capot fermé compris.
+    // Fonds choisis (par écran, et pour tous : `selection`, celui de la config machine si rien n'est choisi) et fonds affichés (repli
+    // quand le choix a disparu du dossier) : leurs copies restent, écran éteint ou capot fermé compris.
     function chosenPaths(): var {
-        const paths = Object.values(overrides);
+        const paths = [...Object.values(overrides), ...Compositor.outputs.map(o => forOutput(o, Compositor.outputs)?.path).filter(p => p)];
         if (selection?.kind === "triptych")
             paths.push(...Object.values(library.triptych.find(t => t.path === selection.path)?.parts ?? {}));
         else if (selection?.path)
