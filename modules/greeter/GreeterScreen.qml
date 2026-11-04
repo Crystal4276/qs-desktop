@@ -19,8 +19,7 @@ Scope {
         id: entry
         onSubmitted: {
             root.sessionsOpen = false;
-            Greeter.submit(text);
-            if (Greeter.checking)
+            if (Greeter.submit(text))
                 text = "";   // la frappe continue pendant la vérification, pour l'essai suivant
         }
         onTyped: Greeter.clearMessage()

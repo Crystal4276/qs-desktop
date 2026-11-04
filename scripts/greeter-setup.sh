@@ -27,7 +27,10 @@ files=(
 )
 # Session Sway sur Nvidia (Sway refuse de démarrer sans --unsupported-gpu ; config machine `greeter.defaultSession`) : copie du
 # fichier fait à la main pour SDDM, dans /usr/local/share (avant /usr/share dans XDG_DATA_DIRS, hors des fichiers des paquets).
-[[ -d /sys/module/nvidia ]] && files+=("dotfiles/greetd/sway-vulkan.desktop /usr/local/share/wayland-sessions/sway-vulkan.desktop")
+# Nvidia seule carte (comme le Sway du greeter, scripts/greeter.sh) ; laptop hybride : à traiter en phase 12.
+if (. "$repo/scripts/qs-env.sh" && qs_nvidia_only); then
+    files+=("dotfiles/greetd/sway-vulkan.desktop /usr/local/share/wayland-sessions/sway-vulkan.desktop")
+fi
 
 run() {
     printf '+ %s\n' "$*"
@@ -63,7 +66,7 @@ install_file() {
     run install -D -m 644 -o root -g root "$src" "$target"
 }
 
-install() {
+do_install() {
     command -v greetd >/dev/null || { echo "greetd n'est pas installé (paquets : deps/arch-pacman.txt)." >&2; exit 1; }
     getent passwd greeter >/dev/null || { echo "Utilisateur « greeter » absent (créé par le paquet greetd)." >&2; exit 1; }
     [[ "$user" != root ]] || { echo "À lancer en utilisateur (sudo est appelé pour chaque commande)." >&2; exit 1; }
@@ -95,7 +98,7 @@ install() {
     echo "Pour le rendre actif au prochain démarrage de la machine : $0 enable"
 }
 
-enable() {
+do_enable() {
     local link=/etc/systemd/system/display-manager.service current=""
     [[ -L "$link" ]] && current="$(basename "$(readlink -f "$link")")"   # absent : aucun gestionnaire (ex. connexion en console)
     if [[ "$current" == greetd.service ]]; then
@@ -112,7 +115,7 @@ enable() {
 
 # greetd toujours désactivé (sa config va être retirée) ; l'ancien gestionnaire réactivé s'il y en avait un. Une sauvegarde
 # introuvable est signalée sans arrêter le reste.
-uninstall() {
+do_uninstall() {
     if systemctl is-enabled --quiet greetd.service 2>/dev/null; then
         run systemctl disable greetd.service
     fi
@@ -144,8 +147,8 @@ uninstall() {
 
 [[ "${1:-}" == --dry-run ]] && { dry=1; shift; }
 case "${1:-}" in
-    install) install ;;
-    enable) enable ;;
-    uninstall) uninstall ;;
+    install) do_install ;;
+    enable) do_enable ;;
+    uninstall) do_uninstall ;;
     *) sed -n '5,11p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 2 ;;
 esac
