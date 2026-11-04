@@ -2369,6 +2369,14 @@ Corrigés :
 
 **Fin de la boucle de revue** : la passe 8 ne trouve plus que du modéré ou du mineur, sans régression, et les constats restants sont des redites déjà jugées négligeables.
 
+**Bug signalé : la pastille des espaces saute de gauche à droite au démarrage d'Hyprland** (2026-11-04) :
+- **cause** : la barre affichait les espaces présents à cet instant sur son écran. Au démarrage, Hyprland crée 1, 2 et 3 sur les trois écrans, et les applications lancées au démarrage créent 5, 8 et 9 sur l'écran focalisé. `Outputs` les déplace ensuite (500 ms, puis 100 ms après chaque création). Pendant chaque passage, un bouton apparaissait sur une barre et disparaissait d'une autre, puis l'inverse. Le correctif du 2026-11-03 ne traitait qu'un seul de ces cas (espace dont l'écran n'est pas encore connu) ;
+- **correction** (`modules/bar/Workspaces.qml`) : les boutons d'une barre sont exactement les numéros de son bloc, qu'ils existent ou non. Leur nombre ne change plus qu'avec les écrans. La lueur ne s'affiche que si l'espace est visible sur cet écran, ou sur un écran pas encore connu (le correctif d'hier est gardé). Les espaces au-delà de 9 ne sont plus affichés : tu n'en utilises jamais (ta réponse). Écart noté dans `BACKLOG.md` : un espace déplacé à la main reste sur la barre de son bloc ;
+- **banc Hyprland imbriqué** (copies du dépôt qui journalisent les boutons de chaque barre ; démarrage avec 5 et 6 sur le mauvais écran, puis 9, 8, 9 créés depuis l'écran du milieu ; écran débranché puis rebranché). Ancien code : barres fausses pendant 500 ms, puis un bouton en plus ou en moins pendant 100 ms à chaque création. Nouveau code : aucun changement de boutons après les 100 premières millisecondes, seule la lueur bouge ; au débranchement, chaque barre passe directement de son ancien bloc au nouveau ;
+- reste, au tout premier instant : Quickshell reçoit les écrans un par un (sur le banc, 3 en 53 ms). Pendant ces quelques images, la première barre affiche 1-9, puis son bloc à deux écrans, avant les 3 boutons ;
+- `test-outputs.sh` : 0 échec sous Hyprland et sous Sway. Captures avant/après (régime normal) identiques ;
+- **à tester à la main** : un vrai démarrage d'Hyprland, `Super+N` vers un espace sans fenêtre, une connexion Sway.
+
 ## Prochaine étape
 
 **Phase 10 : bascule faite, revue en boucle terminée (8 passes), en attente de ta validation ; phase 11 (portabilité) ensuite.**

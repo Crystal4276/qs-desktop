@@ -4,31 +4,42 @@ import qs.config
 import qs.services
 
 // Espaces de travail de l'écran de la barre (INVENTORY.md § 1, THEME.md § 3).
-// Affichés : les espaces existants sur cet écran, plus ceux de son bloc qui n'existent nulle part (espaces persistants de Waybar).
+// Boutons : exactement les numéros du bloc de cet écran (services/Outputs.qml), qu'ils existent ou non. Ils ne suivent pas la
+// position instantanée des espaces : au démarrage d'Hyprland, et à chaque espace créé sur l'écran focalisé (fenêtre envoyée sur
+// 5, 8, 9…), l'espace passait un instant sur un autre écran avant qu'Outputs ne le déplace ; un bouton apparaissait sur une
+// barre et disparaissait de l'autre, et les pilules à droite sautaient (tes constats des 2026-11-03 et 2026-11-04). Le nombre
+// de boutons ne change plus qu'avec la répartition, donc avec les écrans.
+// Écart à Waybar : un espace déplacé à la main sur un autre écran reste sur la barre de son bloc (BACKLOG.md).
 Item {
     id: root
 
     required property string output
 
     readonly property var shown: {
-        // Espace sans écran connu (Hyprland : créé à l'instant, écran lu par la relecture qui suit) : compté comme absent, son
-        // bouton reste en place. Sinon il disparaissait une fraction de seconde à chaque `$mod+N` vers un espace vide, et la
-        // pilule média, à droite des espaces, sautait vers la gauche (ton constat du 2026-11-03).
-        const all = Compositor.workspaces.filter(w => w.output !== "");
-        const here = all.filter(w => w.output === output);
-        // Espace sans écran connu : son état (focalisé, affiché) est déjà montré sur le bouton.
-        const unknown = Compositor.workspaces.filter(w => w.output === "");
-        const persistent = Outputs.blockFor(output).filter(n => !all.some(w => w.number === n)).map(n => Object.assign({
-            number: n,
-            name: `${n}`,
-            output: output,
-            focused: false,
-            visible: false,
-            urgent: false,
-            empty: true,
-            persistent: true
-        }, unknown.find(w => w.number === n) ?? {}, { output: output }));
-        return [...here, ...persistent].sort((a, b) => a.number - b.number);
+        const workspaces = Compositor.workspaces;
+        return Outputs.blockFor(output).map(n => {
+            const w = workspaces.find(w => w.number === n);
+            if (!w)
+                return {
+                    number: n,
+                    name: `${n}`,
+                    output: output,
+                    focused: false,
+                    visible: false,
+                    urgent: false,
+                    empty: true,
+                    persistent: true
+                };
+            // Affiché ou focalisé ailleurs, le temps qu'Outputs le ramène : pas de lueur ici. Écran pas encore connu (Hyprland :
+            // créé à l'instant, `$mod+N`) : son état est montré tout de suite.
+            const here = w.output === output || w.output === "";
+            return Object.assign({}, w, {
+                output: output,
+                focused: w.focused && here,
+                visible: w.visible && here,
+                persistent: false
+            });
+        });
     }
 
     // Couleur au point t (0 → 1) du dégradé linéaire passant par les couleurs de Theme.module.workspaces.
