@@ -2392,6 +2392,12 @@ Corrigés :
 - **sécurité** : le nettoyage ne touche que les copies de l'état de l'instance (une instance de test n'efface jamais celles du bureau) ; `test-outputs.sh` a maintenant son propre cache (`XDG_CACHE_HOME`). `test-outputs.sh` : 0 échec sous Hyprland et sous Sway, tes copies intactes ;
 - **à tester à la main** : prochain démarrage d'Hyprland (fonds et barres ensemble, plus tôt), changement de fond par l'utilitaire, verrouillage (même rendu du fond).
 
+**Accélérer la détection des écrans ?** (2026-11-04, ta question) :
+- **Hyprland n'est pas en cause** : config Quickshell minimale, les trois écrans sont connus 3 ms après le démarrage. Dans le bureau, la réponse attendait que Quickshell ait fini son travail de démarrage : boucle d'événements bloquée environ 450 ms d'affilée (banc Hyprland imbriqué, battement toutes les 10 ms) ;
+- **cause principale** (`qmlprofiler`, traces `qt.scenegraph`) : chaque barre recréait tous ses modules (~50 ms par barre) à chaque nouvelle disposition, à la lecture de la config machine puis à chaque écran annoncé un par un (un écran seul passe pour le principal) ;
+- **correction** (`modules/bar/Bar.qml`) : disposition appliquée une fois l'écran connu, au tour suivant de la boucle d'événements, et seulement si elle a changé (comparaison en JSON). Banc : écrans connus à +270 ms au lieu de +390 à +440 ms, en une seule fois ; fonds affichés à +519 à +579 ms au lieu de +629 à +686 ms. Barres vérifiées sur ton bureau (modules de chaque écran inchangés), `test-outputs.sh` 0 échec sous Hyprland et Sway ;
+- **reste** : un contexte graphique OpenGL par fenêtre (6 au démarrage), dont le premier affichage bloque Quickshell (41 à 74 ms par fenêtre). Essayés sans gain : barres créées après les écrans (coût seulement déplacé), rendu Vulkan (plus lent : fonds à +745 ms), cache de pipelines de Qt (environ 10 ms). Seul levier mesuré : la boucle de rendu `basic` (un seul contexte), fonds à +285 à +320 ms, soit environ 250 ms de moins. Écartée par ta décision du 2026-11-02 : non réactivée, à toi de voir.
+
 ## Prochaine étape
 
 **Phase 10 : bascule faite, revue en boucle terminée (8 passes), en attente de ta validation ; phase 11 (portabilité) ensuite.**
