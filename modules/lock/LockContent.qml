@@ -47,7 +47,7 @@ Item {
     Loader {
         anchors.fill: parent
         sourceComponent: !root.exported ? desktop : root.background !== "" ? exportedImage : null
-        layer.enabled: true
+        layer.enabled: sourceComponent !== null
         layer.effect: MultiEffect {
             blurEnabled: true
             blur: 1
@@ -294,8 +294,11 @@ Item {
             }
         }
 
+        // Désactivée tant que la liste des sessions, qui la couvre, est ouverte : un clic sur une ligne (TapHandler, prise passive)
+        // atteignait aussi le bouton dessous (mise en veille, vue sur banc).
         PowerRow {
             visible: root.primary && root.showPower
+            enabled: !root.sessionsOpen
             Layout.alignment: Qt.AlignHCenter
         }
     }
