@@ -117,7 +117,8 @@ verrouillage).
 
 **Qt Quick**
 - Un `TapHandler` ne prend qu'une prise passive : un clic sur lui atteint aussi le `TapHandler` d'un élément **dessous** (liste des
-  sessions au-dessus des boutons d'alimentation : mise en veille vue sur banc). Désactiver l'élément couvert (`enabled`).
+  sessions au-dessus des boutons d'alimentation : mise en veille vue sur banc). Un élément posé par-dessus d'autres absorbe ses clics
+  avec des `MouseArea` (prise exclusive), fond compris.
 - `startx` recoupe aux espaces les arguments de son client (`clientargs` non cité).
 
 **Hyprland 0.57 (config Lua)**

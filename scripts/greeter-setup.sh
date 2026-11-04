@@ -16,7 +16,8 @@ dest=/usr/local/share/qs-desktop
 var=/var/lib/qs-desktop
 backups="$var/backups"        # « fichier sauvegarde » par ligne ; « fichier - » : absent avant nous (retiré par uninstall)
 previous_dm="$var/previous-dm"
-user="${SUDO_USER:-$USER}"
+[[ $EUID -ne 0 ]] || { echo "À lancer en utilisateur, sans sudo (sudo est appelé pour chaque commande)." >&2; exit 1; }
+user="$USER"
 stamp="$(date +%Y%m%d-%H%M%S)"
 dry=""
 
@@ -73,7 +74,6 @@ install_file() {
 do_install() {
     command -v greetd >/dev/null || { echo "greetd n'est pas installé (paquets : deps/arch-pacman.txt)." >&2; exit 1; }
     getent passwd greeter >/dev/null || { echo "Utilisateur « greeter » absent (créé par le paquet greetd)." >&2; exit 1; }
-    [[ "$user" != root ]] || { echo "À lancer en utilisateur (sudo est appelé pour chaque commande)." >&2; exit 1; }
     [[ -z "$(git -C "$repo" status --porcelain)" ]] || echo "! modifications non committées : seule la version committée est copiée"
 
     # Dossiers d'état : greeter (dernier choix, caches), fond d'écran exporté par le bureau de l'utilisateur (lisible par greeter).

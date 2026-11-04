@@ -251,6 +251,11 @@ Item {
                 border.width: Theme.panel.border
                 border.color: Theme.panel.borderColor
 
+                // La liste couvre la rangée éteindre / redémarrer / veille : ses clics (marges comprises) s'arrêtent à elle.
+                MouseArea {
+                    anchors.fill: parent
+                }
+
                 Column {
                     id: list
 
@@ -285,8 +290,10 @@ Item {
                                 id: rowHover
                             }
 
-                            TapHandler {
-                                onTapped: root.sessionChosen(parent.index)
+                            // MouseArea (prise exclusive), pas TapHandler (prise passive : le clic atteindrait aussi le bouton dessous).
+                            MouseArea {
+                                anchors.fill: parent
+                                onClicked: root.sessionChosen(parent.index)
                             }
                         }
                     }
@@ -298,7 +305,6 @@ Item {
         // atteignait aussi le bouton dessous (mise en veille, vue sur banc).
         PowerRow {
             visible: root.primary && root.showPower
-            enabled: !root.sessionsOpen
             Layout.alignment: Qt.AlignHCenter
         }
     }
