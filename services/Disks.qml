@@ -392,8 +392,6 @@ Singleton {
         reloadableId: "disks"
 
         property string read: ""   // [volumes, disques] en JSON : relecture sans changement ignorée
-
-        onLoaded: root.read()
     }
 
     function read(): void {
@@ -445,7 +443,9 @@ Singleton {
     }
 
     // Tout signal d'UDisks2 (ajout, retrait, montage…) déclenche une relecture, sauf ceux des tâches (« jobs », relus par leurs
-    // effets). Relancé s'il s'arrête ; ses lignes d'en-tête (« Monitoring signals… ») relisent tout à chaque démarrage.
+    // effets). Relancé s'il s'arrête ; ses lignes d'en-tête (« Monitoring signals… ») relisent tout à chaque démarrage : c'est la
+    // première lecture, faite une fois l'écoute en place (aucun changement perdu entre les deux ; une lecture de plus au
+    // chargement faisait doublon). Arrêté ou pas démarré (gdbus absent) : lu quand même.
     Process {
         id: monitor
         // Arrêté avec Quickshell (`qs kill`, fin de session) : sinon il lui survit (vu : un par relance de dev).
@@ -458,7 +458,12 @@ Singleton {
             }
         }
         // `running` faux aussi quand gdbus ne démarre pas (pas d'`exited`).
-        onRunningChanged: if (!running) restartMonitor.start()
+        onRunningChanged: {
+            if (!running) {
+                restartMonitor.start();
+                root.scheduleRefresh();
+            }
+        }
     }
 
     Timer {

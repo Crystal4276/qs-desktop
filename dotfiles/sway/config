@@ -191,14 +191,16 @@
 # System settings
     exec_always "gsettings set org.gnome.desktop.interface cursor-size 48"
     seat seat0 xcursor_theme catppuccin-mocha-green-cursors 48
-    exec systemctl --user import-environment WAYLAND_DISPLAY DISPLAY XDG_CURRENT_DESKTOP SWAYSOCK I3SOCK XCURSOR_SIZE XCURSOR_THEME
+    # Les autres (WAYLAND_DISPLAY, DISPLAY, XDG_CURRENT_DESKTOP, SWAYSOCK) : /etc/sway/config.d/50-systemd-user.conf, inclus en fin
+    # de fichier.
+    exec systemctl --user import-environment I3SOCK XCURSOR_SIZE XCURSOR_THEME
     # Numlock on
     input * xkb_numlock enabled
 
 # VPN : connexion au démarrage (le compte reste connecté, `nordvpn login` n'est pas à rejouer)
     exec "nordvpn c Netherlands"
 
-# Apps autostart
+# Apps autostart (`pkill` : une instance restée d'une session précédente, Steam surtout, est remplacée)
     exec "pkill deluge-gtk || true; deluge-gtk"
     exec "pkill thunderbird || true; sleep 4 && thunderbird"
     exec "pkill steam || true; sleep 4 && steam"

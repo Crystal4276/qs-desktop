@@ -209,6 +209,22 @@ Singleton {
     // bloc (5, Discord) plutôt que le premier. Finie plus tôt si l'utilisateur change d'espace entre-temps (snapshot).
     property bool homeRequested: false
 
+    // Premier lancement de la session (scripts/desktop.sh : QS_DESKTOP_HOME=1) : demandée dès la création, une fois par processus
+    // (pas à chaque rechargement à chaud, où l'environnement est le même).
+    PersistentProperties {
+        reloadableId: "outputs"
+
+        property bool homeChecked: false
+
+        onLoaded: {
+            if (homeChecked)
+                return;
+            homeChecked = true;
+            if (Quickshell.env("QS_DESKTOP_HOME") === "1")
+                root.home();
+        }
+    }
+
     function home(): void {
         homeRequested = true;
         homeWindow.restart();
