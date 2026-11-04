@@ -393,7 +393,10 @@ Singleton {
                 root.refresh();
         }
     }
-    Component.onCompleted: refresh()
+    Component.onCompleted: {
+        tunnelSeen = tunnelUp !== null;   // interfaces déjà lues (Network créé avant) : pas de première lecture à venir
+        refresh();
+    }
 
     // Connexion arrêtée qui ne rend pas la main (SIGINT ignoré) : arrêt forcé.
     Timer {

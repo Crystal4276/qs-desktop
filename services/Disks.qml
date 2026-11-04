@@ -379,6 +379,7 @@ Singleton {
 
     // Changement signalé pendant une lecture : relu à la fin de celle-ci (sinon il serait perdu).
     property bool queryAgain: false
+    property bool fallbackRead: false   // lecture faite sans écoute (gdbus pas démarré), une seule fois
 
     // Relecture 300 ms après le premier signal d'une rafale (pas repoussée par les suivants : un flot continu la bloquerait).
     function scheduleRefresh(): void {
@@ -461,8 +462,10 @@ Singleton {
         onRunningChanged: {
             if (!running) {
                 restartMonitor.start();
-                if (!root.loaded)   // jamais lu (gdbus absent) : une lecture, puis `retry` si elle échoue
+                if (!root.loaded && !root.fallbackRead) {   // jamais lu (gdbus absent) : une lecture, puis `retry` et son espacement
+                    root.fallbackRead = true;
                     root.scheduleRefresh();
+                }
             }
         }
     }
