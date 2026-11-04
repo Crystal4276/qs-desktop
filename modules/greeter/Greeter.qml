@@ -64,6 +64,7 @@ Scope {
                 anchors.fill: parent
                 output: window.output
                 primary: window.primary
+                exported: true
                 background: Greeter.wallpaper(window.output?.description ?? "")
                 length: entry.text.length
                 message: Greeter.message

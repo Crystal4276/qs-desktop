@@ -8,7 +8,8 @@ import qs.config
 
 // Écran de connexion (greeter.qml, modules/greeter ; ARCHITECTURE § 9) : utilisateurs, sessions, dernier choix, dialogue avec greetd.
 //  - utilisateurs : comptes de /etc/passwd (UID 1000 à 59999, shell de connexion) ; le dernier connecté d'abord ;
-//  - sessions : fichiers .desktop de `wayland-sessions` puis `xsessions` (XDG_DATA_DIRS), sans ceux dont `TryExec` manque ;
+//  - sessions : fichiers .desktop de `wayland-sessions` puis `xsessions` (XDG_DATA_DIRS ; X11 seulement si `startx` est là), sans
+//    ceux dont `TryExec` manque ;
 //    la dernière de l'utilisateur, sinon `greeter.defaultSession` de la config machine (« wayland/sway »), sinon la première ;
 //  - connexion : greetd demande le mot de passe (PAM, /etc/pam.d/greetd), puis lance la session par scripts/greeter-session.sh
 //    (shell de connexion de l'utilisateur, comme SDDM ; X11 par startx) et Quickshell s'arrête.
@@ -60,9 +61,7 @@ Singleton {
 
     onUserChanged: {
         pickSession();
-        wallpapers = [];
-        listWallpapers.running = false;
-        listWallpapers.running = user !== "";
+        listWallpapers();
     }
 
     function parseSessions(text: string): void {
@@ -105,7 +104,9 @@ Singleton {
         running: true
         // Fichiers séparés par U+001E (chemin sur la première ligne).
         command: ["sh", "-c", `
-            for kind in wayland-sessions xsessions; do
+            kinds=wayland-sessions
+            command -v startx >/dev/null 2>&1 && kinds="$kinds xsessions"   # X11 : par startx (xorg-xinit)
+            for kind in $kinds; do
                 for d in $(echo "\${XDG_DATA_DIRS:-/usr/local/share:/usr/share}" | tr : ' '); do
                     for f in "$d/$kind"/*.desktop; do
                         [ -f "$f" ] || continue
@@ -129,6 +130,7 @@ Singleton {
         path: `${root.dir}/greeter/state.json`
         printErrors: false
         blockLoading: true
+        blockWrites: true   // écrit avant Greetd.launch(), qui arrête Quickshell
         onLoaded: {
             try {
                 root.state = JSON.parse(text()) ?? {};
@@ -154,19 +156,26 @@ Singleton {
 
     // Fond de l'écran `description` exporté par le bureau de l'utilisateur affiché (même nom que Wallpapers.greeterFile) ; "" s'il
     // n'y en a pas (écran inconnu du bureau, utilisateur qui n'a jamais ouvert de session) : fond uni.
-    property var wallpapers: []   // fichiers présents dans le dossier de l'utilisateur
+    // Chemins complets : une liste en retard, lue pour le compte précédent, ne correspond jamais au compte affiché.
+    property var wallpapers: []
 
     function wallpaper(description: string): string {
-        const name = `${Qt.md5(description)}.jpg`;
-        return description !== "" && wallpapers.includes(name) ? `file://${dir}/${user}/${name}` : "";
+        const path = `${dir}/${user}/${Qt.md5(description)}.jpg`;
+        return description !== "" && wallpapers.includes(path) ? `file://${path}` : "";
     }
 
+    function listWallpapers(): void {
+        wallpapers = [];
+        if (user !== "")
+            wallpaperList.exec(["sh", "-c", 'for f in "$1"/*.jpg; do [ -f "$f" ] && echo "$f"; done', "sh", `${dir}/${user}`]);
+    }
+
+    Component.onCompleted: listWallpapers()
+
     Process {
-        id: listWallpapers
-        command: ["ls", "-1", `${root.dir}/${root.user}`]
-        running: root.user !== ""
+        id: wallpaperList
         stdout: StdioCollector {
-            onStreamFinished: root.wallpapers = text.split("\n").filter(n => n.endsWith(".jpg"))
+            onStreamFinished: root.wallpapers = text.split("\n").filter(p => p !== "")
         }
     }
 

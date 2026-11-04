@@ -289,12 +289,16 @@ Singleton {
     readonly property var greeterSaved: ({})   // description → fond écrit (« nature:source:taille »)
 
     // Fichier où écrire le fond `key` de l'écran `description` ("" : déjà écrit, ou pas de dossier). Même nom côté greeter
-    // (services/Greeter.qml).
+    // (services/Greeter.qml). Retenu seulement une fois écrit (greeterWritten) : un échec est retenté au prochain affichage.
     function greeterFile(description: string, key: string): string {
         if (greeterDir === "" || description === "" || greeterSaved[description] === key)
             return "";
-        greeterSaved[description] = key;
         return `${greeterDir}/${Qt.md5(description)}.jpg`;
+    }
+
+    function greeterWritten(description: string, key: string, ok: bool): void {
+        if (ok)
+            greeterSaved[description] = key;
     }
 
     readonly property bool ready: stateRead && libraryRead

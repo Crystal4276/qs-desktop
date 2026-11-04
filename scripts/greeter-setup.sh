@@ -40,8 +40,9 @@ record() {
     run sh -c "echo '$1 $2' >> '$backups'"
 }
 
+# Fichier `$1` de la version committée (extraite dans $tree par install) vers `$2`.
 install_file() {
-    local src="$repo/$1" target="$2"
+    local src="$tree/$1" target="$2"
     if [[ -f "$target" ]] && cmp -s "$src" "$target"; then
         echo "= $target à jour"
         return
@@ -68,33 +69,35 @@ install() {
     run install -d -m 700 -o greeter -g greeter "$var/greeter"
     run install -d -m 755 -o "$user" -g "$(id -gn "$user")" "$var/$user"
 
-    # Copie du dépôt lisible par greeter (ton dossier personnel ne l'est pas) : remplacée d'un bloc.
-    local archive
-    archive="$(mktemp)"
-    git -C "$repo" archive --format=tar HEAD >"$archive"
+    # Version committée, extraite à part : copie du dépôt lisible par greeter (ton dossier personnel ne l'est pas), remplacée d'un
+    # bloc, et source des fichiers système.
+    tree="$(mktemp -d)"
+    trap 'rm -rf "$tree"' EXIT
+    git -C "$repo" archive --format=tar HEAD | tar -x -C "$tree"
     run rm -rf "$dest.new"
     run install -d -m 755 -o root -g root "$dest.new"
-    run tar -x --no-same-owner -f "$archive" -C "$dest.new"
+    run cp -r --no-preserve=ownership "$tree/." "$dest.new/"
     run chmod -R u=rwX,go=rX "$dest.new"
     run rm -rf "$dest"
     run mv "$dest.new" "$dest"
-    rm -f "$archive"
 
     for entry in "${files[@]}"; do
         # shellcheck disable=SC2086
         install_file $entry
     done
-    echo "Écran de connexion installé. Pour le rendre actif au prochain démarrage : $0 enable"
+    [[ -n "$dry" ]] && return
+    echo "Écran de connexion installé. Le bureau y dépose son fond au prochain démarrage de Quickshell (\$mod+Ctrl+W)."
+    echo "Pour le rendre actif au prochain démarrage de la machine : $0 enable"
 }
 
 enable() {
-    local current
-    current="$(basename "$(readlink -f /etc/systemd/system/display-manager.service 2>/dev/null || true)")"
+    local link=/etc/systemd/system/display-manager.service current=""
+    [[ -L "$link" ]] && current="$(basename "$(readlink -f "$link")")"   # absent : aucun gestionnaire (ex. connexion en console)
     if [[ "$current" == greetd.service ]]; then
         echo "= greetd est déjà le gestionnaire de connexion"
         return
     fi
-    if [[ -n "$current" && "$current" != . ]]; then
+    if [[ -n "$current" ]]; then
         [[ -f "$previous_dm" ]] || run sh -c "echo '$current' > '$previous_dm'"
         run systemctl disable "$current"
     fi
@@ -102,19 +105,25 @@ enable() {
     echo "greetd prendra la main au prochain démarrage (retour : $0 uninstall, ou docs/ROLLBACK.md)."
 }
 
+# greetd toujours désactivé (sa config va être retirée) ; l'ancien gestionnaire réactivé s'il y en avait un. Une sauvegarde
+# introuvable est signalée sans arrêter le reste.
 uninstall() {
-    if [[ -f "$previous_dm" ]]; then
-        local dm
-        dm="$(cat "$previous_dm")"
+    if systemctl is-enabled --quiet greetd.service 2>/dev/null; then
         run systemctl disable greetd.service
-        run systemctl enable "$dm"
+    fi
+    if [[ -f "$previous_dm" ]]; then
+        run systemctl enable "$(cat "$previous_dm")"
+    else
+        echo "! aucun ancien gestionnaire de connexion noté : connexion en console au prochain démarrage"
     fi
     if [[ -f "$backups" ]]; then
         while read -r target backup; do
             if [[ "$backup" == - ]]; then
                 run rm -f "$target"
-            else
+            elif [[ -f "$backup" ]]; then
                 run mv -f "$backup" "$target"
+            else
+                echo "! sauvegarde $backup introuvable : $target laissé tel quel"
             fi
         done <"$backups"
     fi
