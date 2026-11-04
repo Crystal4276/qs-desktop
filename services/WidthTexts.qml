@@ -9,7 +9,7 @@ Singleton {
     id: root
 
     // Largeur du plus large texte d'une liste dans une police, mesurée une seule fois pour toutes les barres (les heures : 1 440
-    // textes, par horloge et deux fois chacune avant, ~25 ms au démarrage). Clé : la police et la liste résumée (longueur, premier
+    // textes, par horloge et deux fois chacune avant, ~25 ms au démarrage). Clé : la police (attributs qui changent la largeur) et la liste résumée (longueur, premier
     // et dernier texte), qui distingue toutes les listes des modules. Pas de WeakMap par liste : le moteur JavaScript de Qt 6
     // plantait dessus (`sameValueZero`, test-outputs.sh du 2026-11-04).
     readonly property var widths: ({})
@@ -17,7 +17,8 @@ Singleton {
     function widest(values: var, font: font): real {
         if (!values?.length)
             return 0;
-        const key = `${font.family}/${font.pixelSize}/${font.weight}|${values.length}|${values[0]}|${values[values.length - 1]}`;
+        const style = [font.family, font.pixelSize, font.pointSize, font.weight, font.italic, font.letterSpacing, font.wordSpacing, font.capitalization].join("/");
+        const key = `${style}|${values.length}|${values[0]}|${values[values.length - 1]}`;
         if (widths[key] === undefined) {
             metrics.font = font;
             widths[key] = values.reduce((widest, s) => Math.max(widest, metrics.advanceWidth(s)), 0);

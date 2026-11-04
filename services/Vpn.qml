@@ -371,7 +371,8 @@ Singleton {
             return;
         const first = !tunnelSeen;
         tunnelSeen = true;
-        if (first && !(tunnelUp && state !== "Connected"))
+        // Statut du démarrage pas encore revenu (`state` vide) : il donnera l'état du tunnel.
+        if (first && !(tunnelUp && state !== "" && state !== "Connected"))
             return;
         refresh();
         interfaceFollowUp.restart();

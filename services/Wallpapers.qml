@@ -171,9 +171,14 @@ Singleton {
         return `${Qt.md5(path)}-${size.width}x${size.height}.bmp`;
     }
 
-    function screenSource(path: string, size: size): string {
+    // La copie est lue à la place de l'original (WallpaperView : `fromCopy`, sans comparer d'URL, encodées différemment).
+    function usesCopy(path: string, size: size): bool {
         const name = screenName(path, size);
-        return state.screenCache?.[name] && !writtenNow[name] ? Icons.fileUrl(`${screenDir}/${name}`) : url(path);
+        return !!state.screenCache?.[name] && !writtenNow[name];
+    }
+
+    function screenSource(path: string, size: size): string {
+        return usesCopy(path, size) ? Icons.fileUrl(`${screenDir}/${screenName(path, size)}`) : url(path);
     }
 
     // Fichier où écrire la copie de `path` ("" : déjà en cache ou en cours d'écriture).
@@ -231,7 +236,8 @@ Singleton {
     }
 
     // Écran sans image (aucun fond, ou partie de triptyque introuvable : source vide, fenêtre jamais affichée) : rien à attendre.
-    readonly property bool allShown: ready && Compositor.outputs.length > 0
+    // Après le démarrage : plus calculé (`startupShown` en tête).
+    readonly property bool allShown: !startupShown && ready && Compositor.outputs.length > 0
         && Compositor.outputs.every(o => !forOutput(o, Compositor.outputs)?.source || shownScreens.includes(o.name))
     onAllShownChanged: {
         if (allShown)
@@ -316,13 +322,12 @@ Singleton {
                 const used = new Set(Object.keys(stamps).map(p => Qt.md5(`${p}\t${stamps[p]}`)));
                 const stale = Object.keys(thumbs).filter(f => !used.has(f.split("-")[0]));
                 if (used.size > 0 && stale.length > 0) {
-                    prune.command = ["rm", "-f", "--", ...stale.map(f => `${root.thumbDir}/${f}`)];
-                    prune.running = true;
+                    root.removeFiles(stale.map(f => `${root.thumbDir}/${f}`));
                     stale.forEach(f => delete thumbs[f]);
                 }
                 // Copies d'écran : gardées si le fichier existe et que l'image n'a pas changé depuis, ou si elles viennent d'être écrites ;
-                // les autres sont oubliées et effacées (pas si le dossier n'a pas pu être lu). Seulement celles de l'état local : une
-                // instance de test (autre état) n'efface jamais celles du bureau.
+                // les autres sont oubliées, et tout fichier sans entrée effacé (écriture ratée, état perdu), sauf une copie en cours
+                // d'écriture ; pas si le dossier n'a pas pu être lu. Les instances de test ont leur propre cache (test-outputs.sh).
                 if (used.size > 0) {
                     const entries = {};
                     for (const [name, entry] of Object.entries(state.screenCache ?? {})) {
@@ -333,8 +338,7 @@ Singleton {
                         if (fresh || entry.written >= root.scanStarted)
                             entries[name] = Object.assign({}, entry, { stamp: entry.stamp || stamp || null });
                     }
-                    root.removeFiles(Object.keys(state.screenCache ?? {}).filter(n => !entries[n] && screens[n] !== undefined)
-                        .map(n => `${root.screenDir}/${n}`));
+                    root.removeFiles(Object.keys(screens).filter(n => !entries[n] && !root.screenSaving[n]).map(n => `${root.screenDir}/${n}`));
                     if (JSON.stringify(entries) !== JSON.stringify(state.screenCache ?? {}))
                         state.screenCache = entries;
                 }
@@ -354,7 +358,4 @@ Singleton {
         }
     }
 
-    Process {
-        id: prune
-    }
 }
