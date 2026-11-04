@@ -187,13 +187,17 @@ Variants {
             }
         }
 
+        // Démarrage : contenu affiché en même temps que les fonds d'écran (Wallpapers.startupShown) ; la fenêtre, elle, est là dès
+        // le début (zone réservée : les fenêtres ne sont pas réarrangées à son arrivée).
         Side {
+            visible: Wallpapers.startupShown
             anchors.left: parent.left
             anchors.leftMargin: Theme.bar.marginSide
             pills: bar.layout.left
         }
 
         Side {
+            visible: Wallpapers.startupShown
             anchors.right: parent.right
             anchors.rightMargin: Theme.bar.marginSide
             pills: bar.layout.right

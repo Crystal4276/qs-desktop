@@ -84,6 +84,14 @@ Reste à faire (suppression, bloquée par le garde-fou : à faire par toi ou à 
   gardée ouverte ; rangée « All screens » / un écran pour les images simples ; flèches, Échap, clic à côté. Vignettes en cache
   (`~/.cache/quickshell/by-shell/desktop/wallpaper-thumbs/`, PNG à la taille affichée, nom tiré du chemin, de la date de l'image et
   de la taille ; périmées effacées à la lecture du dossier) : supprimer ce dossier est sans risque, il se reconstruit.
+- **Copie à la taille de l'écran** (2026-11-04, démarrage plus rapide) : chaque fond simple affiché est enregistré tel qu'affiché, en
+  BMP, dans `~/.cache/quickshell/by-shell/desktop/wallpaper-screens/` (nom : empreinte du chemin et taille en pixels ; liste dans
+  `wallpaper.json`, `screenCache`). Décodé en 28 ms au lieu de 125 à 165 ms pour tes PNG, sans perte (copies des écrans 4K
+  vérifiées identiques à l'original, pixel pour pixel ; JPEG de Qt : qualité 75, écart visible). Seules restent celles des fonds affichés
+  (environ 65 Mo pour les trois écrans) ; image modifiée depuis : copie effacée et refaite ; copie absente : l'original est relu.
+  Supprimer ce dossier est sans risque. Panorama : pas de copie (chaque écran n'en décode déjà que sa part).
+- **Démarrage** : le contenu des barres attend que chaque écran affiche son fond (au plus 3 s), pour que tout apparaisse ensemble ;
+  pas au rechargement à chaud.
 - IPC de test : `qs ipc call wallpaper state` (JSON) et `qs ipc call wallpaper set <kind> <chemin>`.
 
 ## Décisions à prendre

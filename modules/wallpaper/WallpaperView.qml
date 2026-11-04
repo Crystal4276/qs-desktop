@@ -11,20 +11,45 @@ Item {
     required property var output
     required property var shown
 
+    // Fond affiché (image prête, ou illisible : rien ne viendra) ; Background.qml le signale au service (barres au démarrage).
+    signal displayed
+
     // Échelle réelle de la sortie (1,5), pas `Screen.devicePixelRatio`, entier arrondi au-dessus (2) sous Wayland : l'image serait
     // décodée en 5120×2880 pour un écran 3840×2160 (59 Mo au lieu de 33, mesuré avec heaptrack).
     readonly property real pixelRatio: output?.scale ?? 1
 
     Image {
+        id: image
+
+        readonly property string path: root.shown?.path ?? ""
+
         anchors.fill: parent
         visible: root.shown?.kind === "image"
         // Pas de source avant la taille finale : sinon une première lecture à la taille du fichier (sourceSize nulle), puis une autre.
-        source: visible && width > 0 && height > 0 ? root.shown.source : ""
+        // Copie à la taille de l'écran si elle existe (Wallpapers.screenSource), sinon l'original.
+        source: visible && width > 0 && height > 0 ? (path !== "" ? Wallpapers.screenSource(path, sourceSize) : root.shown?.source ?? "") : ""
         fillMode: Image.PreserveAspectCrop
         sourceSize: Qt.size(Math.ceil(width * root.pixelRatio), Math.ceil(height * root.pixelRatio))
         asynchronous: true
         retainWhileLoading: true
         cache: false
+
+        // Décodé depuis l'original : copie enregistrée telle qu'affichée (grabToImage prend une taille logique, multipliée par
+        // l'échelle de l'écran), relue ensuite à sa place.
+        onStatusChanged: {
+            if (status === Image.Error && path !== "" && source.toString().startsWith(Icons.fileUrl(Wallpapers.screenDir))) {
+                Wallpapers.screenFailed(path, sourceSize);
+                return;
+            }
+            if (status === Image.Ready || status === Image.Error)
+                root.displayed();
+            if (status !== Image.Ready || path === "")
+                return;
+            const file = Wallpapers.screenFile(path, sourceSize);
+            const p = path;
+            if (file !== "" && !grabToImage(result => Wallpapers.screenWritten(file, p, result.saveToFile(file)), Qt.size(width, height)))
+                Wallpapers.screenWritten(file, p, false);
+        }
     }
 
     Item {
@@ -79,6 +104,10 @@ Item {
             asynchronous: true
             retainWhileLoading: true
             cache: false
+            onStatusChanged: {
+                if (status === Image.Ready || status === Image.Error)
+                    root.displayed();
+            }
             x: panorama.fx + panorama.lx
             y: panorama.fy + panorama.ly
             width: panorama.lw

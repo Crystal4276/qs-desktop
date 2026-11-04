@@ -2384,6 +2384,14 @@ Corrigés :
 - **essayé puis retiré** : fond mémorisé par connecteur, affiché avant que les écrans soient décrits (`ShellScreen` n'a ni marque ni numéro de série, tes deux LG sont indiscernables). Gain mesuré 80 à 170 ms seulement : pas justifié (règle « simplicité ») ;
 - **à vérifier au prochain démarrage d'Hyprland** : le fond doit arriver environ une seconde plus tôt. Relevé possible : `ps -o lstart= -p $(pgrep -x Hyprland)` et `scripts/desktop.sh pid`.
 
+**Fonds au démarrage, suite : les deux pistes demandées** (2026-11-04, ta demande « implémente les deux ») :
+- **copie de chaque fond à la taille de l'écran** (`services/Wallpapers.qml`, `modules/wallpaper/WallpaperView.qml`) : écrite telle qu'affichée (`grabToImage`) au premier décodage depuis l'original, relue ensuite à sa place. **BMP plutôt que JPEG** : JPEG de `saveToFile` en qualité 75, non réglable, PSNR 36 dB ; BMP décodé en 28 ms (PNG d'origine : 125 ms en 4K), sans perte. Copies de tes deux écrans 4K comparées à l'original : 0 pixel différent. Environ 65 Mo pour les trois écrans, seules les copies des fonds affichés restent ;
+- **barres et fonds ensemble** (`modules/bar/Bar.qml`) : le contenu des barres attend que chaque écran affiche son fond, au plus 3 s. La fenêtre de la barre existe dès le début (zone réservée, fenêtres pas réarrangées). Pas au rechargement à chaud (`PersistentProperties`) ;
+- **mesure** (relances de ton instance, mesure temporaire retirée) : fonds affichés à +615 / +669 / +687 ms après la création du service, barres à +687 ms, en même temps. Avant : barres d'abord, fonds jusqu'à +830 ms après elles ;
+- **banc Hyprland imbriqué** (état et cache isolés) : premier démarrage (3 copies du triptyque), changement de fond (anciennes copies effacées), copie antidatée (effacée puis refaite), copie supprimée à la main (original relu, copie refaite) ;
+- **sécurité** : le nettoyage ne touche que les copies de l'état de l'instance (une instance de test n'efface jamais celles du bureau) ; `test-outputs.sh` a maintenant son propre cache (`XDG_CACHE_HOME`). `test-outputs.sh` : 0 échec sous Hyprland et sous Sway, tes copies intactes ;
+- **à tester à la main** : prochain démarrage d'Hyprland (fonds et barres ensemble, plus tôt), changement de fond par l'utilitaire, verrouillage (même rendu du fond).
+
 ## Prochaine étape
 
 **Phase 10 : bascule faite, revue en boucle terminée (8 passes), en attente de ta validation ; phase 11 (portabilité) ensuite.**

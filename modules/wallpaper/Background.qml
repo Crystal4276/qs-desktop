@@ -33,6 +33,7 @@ Variants {
             anchors.fill: parent
             output: window.output
             shown: window.shown
+            onDisplayed: Wallpapers.markShown(window.modelData?.name ?? "")
         }
     }
 }

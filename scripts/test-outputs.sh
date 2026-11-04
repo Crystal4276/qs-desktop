@@ -203,11 +203,12 @@ sleep 0.5
 
 # Quickshell sur cette session, avec son propre bus de session (notifications, tray, lecteurs : rien n'atteint les tiens)
 # et ni montage automatique ni reconnexion Bluetooth automatique (QS_TEST : le bus système, lui, est le vrai). État à part
-# (XDG_STATE_HOME) : les fichiers d'état de ton instance (historique du lanceur, fond, veilleuse…) ne sont ni lus ni écrits.
+# (XDG_STATE_HOME) : les fichiers d'état de ton instance (historique du lanceur, fond, veilleuse…) ne sont ni lus ni écrits ;
+# cache à part (XDG_CACHE_HOME) : ses copies de fonds à la taille des écrans (services/Wallpapers.qml) ne touchent pas les tiennes.
 # Sans gvfs : un second gvfsd lancé sur ce bus casserait le montage /run/user/$UID/gvfs de ta session (vu le 2026-10-26).
 # Groupe de processus à lui (setsid, sans fork : son PID est $bus_pid), arrêté en entier à la fin.
 (cd "$repo" && exec setsid env "${session_env[@]}" WAYLAND_DISPLAY="$wayland" \
-    QS_TEST=1 XDG_STATE_HOME="$work/state" GIO_USE_VFS=local GVFS_DISABLE_FUSE=1 \
+    QS_TEST=1 XDG_STATE_HOME="$work/state" XDG_CACHE_HOME="$work/cache" GIO_USE_VFS=local GVFS_DISABLE_FUSE=1 \
     dbus-run-session -- qs -p "$repo" >"$work/qs.log" 2>&1) &
 bus_pid=$!
 # Quickshell est l'enfant de dbus-run-session : c'est son PID que `qs ipc --pid` attend.
