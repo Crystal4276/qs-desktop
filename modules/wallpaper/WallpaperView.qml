@@ -25,16 +25,18 @@ Item {
 
         anchors.fill: parent
         visible: root.shown?.kind === "image"
-        // Pas de source avant la taille finale : sinon une première lecture à la taille du fichier (sourceSize nulle), puis une autre.
-        // Copie à la taille de l'écran si elle existe (Wallpapers.screenSource), sinon l'original.
-        source: visible && width > 0 && height > 0 ? (path !== "" ? Wallpapers.screenSource(path, sourceSize) : root.shown?.source ?? "") : ""
+        // Copie à la taille de l'écran si elle existe (Wallpapers.screenSource), sauf celle de l'image que cette vue a déjà chargée
+        // depuis l'original (`keptName` : même image, pas relue quand la copie est écrite). Pas de source avant la taille finale :
+        // sinon une première lecture à la taille du fichier (sourceSize nulle), puis une autre.
+        property string keptName: ""
+        readonly property string copyName: path !== "" ? Wallpapers.screenName(path, sourceSize) : ""
+        readonly property bool fromCopy: copyName !== "" && copyName !== keptName && Wallpapers.usesCopy(path, sourceSize)
+        source: visible && width > 0 && height > 0 ? (fromCopy ? Wallpapers.screenSource(path, sourceSize) : root.shown?.source ?? "") : ""
         fillMode: Image.PreserveAspectCrop
         sourceSize: Qt.size(Math.ceil(width * root.pixelRatio), Math.ceil(height * root.pixelRatio))
         asynchronous: true
         retainWhileLoading: true
         cache: false
-
-        readonly property bool fromCopy: path !== "" && Wallpapers.usesCopy(path, sourceSize)
 
         onStatusChanged: {
             saveDelay.stop();
@@ -44,8 +46,10 @@ Item {
             }
             if (status === Image.Ready || status === Image.Error)
                 root.displayed();
-            if (status === Image.Ready && path !== "" && !fromCopy)
+            if (status === Image.Ready && path !== "" && !fromCopy) {
+                keptName = copyName;
                 saveDelay.restart();
+            }
         }
 
         // Décodé depuis l'original et gardé 3 s (pas à chaque essai dans l'utilitaire : 25 Mo écrits par écran 4K) : copie

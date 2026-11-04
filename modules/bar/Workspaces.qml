@@ -4,12 +4,8 @@ import qs.config
 import qs.services
 
 // Espaces de travail de l'écran de la barre (INVENTORY.md § 1, THEME.md § 3).
-// Boutons : exactement les numéros du bloc de cet écran (services/Outputs.qml), qu'ils existent ou non. Ils ne suivent pas la
-// position instantanée des espaces : au démarrage d'Hyprland, et à chaque espace créé sur l'écran focalisé (fenêtre envoyée sur
-// 5, 8, 9…), l'espace passait un instant sur un autre écran avant qu'Outputs ne le déplace ; un bouton apparaissait sur une
-// barre et disparaissait de l'autre, et les pilules à droite sautaient (tes constats des 2026-11-03 et 2026-11-04). Le nombre
-// de boutons ne change plus qu'avec la répartition, donc avec les écrans.
-// Écart à Waybar : un espace déplacé à la main sur un autre écran reste sur la barre de son bloc (BACKLOG.md).
+// Boutons : exactement les numéros du bloc de cet écran (services/Outputs.qml), qu'ils existent ou non, pas la position
+// instantanée des espaces (un espace créé ailleurs puis déplacé faisait sauter les pilules). Écart à Waybar : BACKLOG.md.
 Item {
     id: root
 
