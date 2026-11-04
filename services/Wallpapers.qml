@@ -184,15 +184,38 @@ Singleton {
     }
 
     // Fonds choisis (par écran, et pour tous : `selection`, celui de la config machine si rien n'est choisi) et fonds affichés (repli
-    // quand le choix a disparu du dossier) : leurs copies restent, écran éteint ou capot fermé compris.
+    // quand le choix a disparu du dossier ; panorama sur un seul écran) : leurs copies restent, écran éteint ou capot fermé compris.
     function chosenPaths(): var {
         const paths = [...Object.values(overrides), ...Compositor.outputs.map(o => forOutput(o, Compositor.outputs)?.path).filter(p => p)];
         if (selection?.kind === "triptych")
             paths.push(...Object.values(library.triptych.find(t => t.path === selection.path)?.parts ?? {}));
-        else if (selection?.path)
+        else if (selection?.kind === "simple")
             paths.push(selection.path);
         return paths;
     }
+
+    // Copies des fonds qui ne sont plus choisis : retirées de `entries`, fichiers effacés. Dossier pas encore lu (parties des
+    // triptyques inconnues) : rien n'est retiré, ce sera fait plus tard.
+    function dropUnchosen(entries: var): void {
+        if (!libraryRead)
+            return;
+        const keep = chosenPaths();
+        const unused = Object.keys(entries).filter(n => !keep.includes(entries[n].path));
+        unused.forEach(n => delete entries[n]);
+        removeFiles(unused.map(n => `${screenDir}/${n}`));
+    }
+
+    // Choix changé (fond déjà copié, panorama : aucune copie écrite ensuite) : copies des anciens fonds retirées aussitôt.
+    function pruneCopies(): void {
+        if (!stateRead)
+            return;
+        const entries = Object.assign({}, state.screenCache ?? {});
+        dropUnchosen(entries);
+        if (Object.keys(entries).length !== Object.keys(state.screenCache ?? {}).length)
+            state.screenCache = entries;
+    }
+    onSelectionChanged: pruneCopies()
+    onOverridesChanged: pruneCopies()
 
     // Copie écrite (`ok`) ou échouée. Les copies des fonds qui ne sont plus choisis sont effacées.
     function screenWritten(file: string, path: string, ok: bool): void {
@@ -203,11 +226,7 @@ Singleton {
         // Date de l'original : inconnue si le dossier n'est pas encore lu, relevée alors à sa lecture.
         writtenSinceScan[name] = true;
         const entries = Object.assign({}, state.screenCache ?? {}, { [name]: { path: path, stamp: stamps[path] ?? null } });
-        // Dossier pas encore lu : parties des triptyques inconnues, rien n'est effacé (fait à la copie suivante).
-        const keep = libraryRead ? chosenPaths() : null;
-        const unused = keep ? Object.keys(entries).filter(n => !keep.includes(entries[n].path)) : [];
-        unused.forEach(n => delete entries[n]);
-        removeFiles(unused.map(n => `${screenDir}/${n}`));
+        dropUnchosen(entries);
         state.screenCache = entries;
     }
 
@@ -243,6 +262,7 @@ Singleton {
                 entries[name] = Object.assign({}, entry, { stamp: entry.stamp || stamp || null });
         }
         removeFiles(Object.keys(files).filter(n => !entries[n] && !screenSaving[n]).map(n => `${screenDir}/${n}`));
+        dropUnchosen(entries);
         if (JSON.stringify(entries) !== JSON.stringify(state.screenCache ?? {}))
             state.screenCache = entries;
     }
@@ -360,11 +380,11 @@ Singleton {
                 // Dates et vignettes avant la bibliothèque : les vignettes recréées partent directement du cache.
                 root.stamps = stamps;
                 root.screenFiles = used.size > 0 ? screens : null;   // dossier illisible : copies pas vérifiées
-                root.checkCopies();
                 root.thumbs = thumbs;
                 root.saved.clear();
                 root.library = lib;
                 root.libraryRead = true;
+                root.checkCopies();   // après la bibliothèque : parties des triptyques connues (dropUnchosen)
             }
         }
         onExited: {

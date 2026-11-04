@@ -19,12 +19,18 @@ Variants {
         visible: shown !== null && shown.source !== ""
         // Écran décrit, choix lus, mais aucune image (aucun fond, partie de triptyque introuvable) : rien à attendre au démarrage.
         readonly property bool nothingToShow: output !== null && Wallpapers.ready && !visible
-        function reportNothing(): void {
-            if (nothingToShow)
-                Wallpapers.markShown(modelData?.name ?? "");
+        // Vérifié au tour suivant : notifié avant `shown` et `visible` (ordre de QML), il pourrait se croire vrai un instant.
+        onNothingToShowChanged: nothingCheck.restart()
+        Component.onCompleted: nothingCheck.restart()
+
+        Timer {
+            id: nothingCheck
+            interval: 0
+            onTriggered: {
+                if (window.nothingToShow)
+                    Wallpapers.markShown(window.modelData?.name ?? "");
+            }
         }
-        onNothingToShowChanged: reportNothing()
-        Component.onCompleted: reportNothing()
         WlrLayershell.layer: WlrLayer.Background
         WlrLayershell.namespace: "quickshell-wallpaper"
         exclusionMode: ExclusionMode.Ignore

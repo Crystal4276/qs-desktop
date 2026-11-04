@@ -22,11 +22,12 @@ Variants {
         // après les autres (un écran branché est décrit un peu après son apparition : pas de barre provisoire à reconstruire).
         readonly property bool outputsKnown: Compositor.outputs.length > 0 || Compositor.type === ""
         property bool fallbackDue: false
+        property bool described: false   // décrit au moins une fois : un retrait passager garde la disposition, sans repli
         onOutputChanged: {
             if (output)
-                fallbackDue = false;   // décrit : un retrait passager garde de nouveau sa disposition
+                described = true;
         }
-        readonly property string wantedLayout: output || fallbackDue
+        readonly property string wantedLayout: output || (fallbackDue && !described)
             ? JSON.stringify(Settings.barFor(output?.description ?? "", Outputs.isPrimary(modelData?.name ?? ""))) : ""
         property string appliedLayout: ""
         readonly property var layout: appliedLayout !== "" ? JSON.parse(appliedLayout) : ({ left: [], right: [] })
@@ -38,7 +39,7 @@ Variants {
 
         Timer {
             interval: 2000
-            running: !bar.output && bar.outputsKnown && !bar.fallbackDue
+            running: !bar.output && !bar.described && bar.outputsKnown && !bar.fallbackDue
             onTriggered: bar.fallbackDue = true
         }
 
