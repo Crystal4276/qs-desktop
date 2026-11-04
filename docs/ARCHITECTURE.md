@@ -148,9 +148,10 @@ ne pourrait donc plus être corrigée pour 4. La création au bon endroit est as
 commande native si Quickshell ne répond pas) : un espace qui n'existe pas encore naît sur l'écran de son bloc, sans détour visible.
 Sway : `focus output X; workspace number N` (fenêtre envoyée : marquée, puis rejoint N). Hyprland : un espace vide créé sur un autre
 écran que celui du pointeur perd aussitôt le focus (`follow_mouse`, `no_warps` : vu sur banc) ; il est donc créé sur l'écran focalisé
-puis déplacé, dans la même requête (même séquence que l'étape 6). Début de session : `QS_DESKTOP_HOME=1` au premier lancement par
-`scripts/desktop.sh`, lu par `Outputs` à sa création (avant la première répartition, une seule fois par processus ; `qs ipc call outputs
-home` reste pour les tests) : chaque écran affiche le premier espace de son bloc, focus sur l'écran principal.
+puis déplacé, dans la même requête (même séquence que l'étape 6). Début de session : `QS_DESKTOP_HOME=<secondes de /proc/uptime>` au
+premier lancement par `scripts/desktop.sh`, lu par `Outputs` à sa création (avant la première répartition, une seule fois par processus,
+dans la minute du lancement ; `qs ipc call outputs home` reste pour les tests) : chaque écran affiche le premier espace de son bloc, focus
+sur l'écran principal.
 
 Les commandes envoyées sont écrites dans le journal (`Compositor: placement des espaces : …`).
 Hyprland *(écrit le 2026-10-16 ; joué en phase 9 sur Hyprland 0.57, `scripts/test-outputs.sh hyprland`)* :

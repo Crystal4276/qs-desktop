@@ -183,15 +183,14 @@ Singleton {
         return `${screenDir}/${name}`;
     }
 
-    // Fonds choisis (par écran, pour tous, config machine) : leurs copies restent, écran éteint ou capot fermé compris.
+    // Fonds choisis (par écran, et pour tous : `selection`, celui de la config machine si rien n'est choisi) : leurs copies restent,
+    // écran éteint ou capot fermé compris.
     function chosenPaths(): var {
         const paths = Object.values(overrides);
-        for (const s of [selection, Settings.wallpaper]) {
-            if (s?.kind === "triptych")
-                paths.push(...Object.values(library.triptych.find(t => t.path === s.path)?.parts ?? {}));
-            else if (s?.path)
-                paths.push(s.path);
-        }
+        if (selection?.kind === "triptych")
+            paths.push(...Object.values(library.triptych.find(t => t.path === selection.path)?.parts ?? {}));
+        else if (selection?.path)
+            paths.push(selection.path);
         return paths;
     }
 
@@ -201,11 +200,12 @@ Singleton {
         delete screenSaving[name];
         if (!ok)
             return;
-        const keep = chosenPaths();
         // Date de l'original : inconnue si le dossier n'est pas encore lu, relevée alors à sa lecture.
         writtenSinceScan[name] = true;
         const entries = Object.assign({}, state.screenCache ?? {}, { [name]: { path: path, stamp: stamps[path] ?? null } });
-        const unused = Object.keys(entries).filter(n => !keep.includes(entries[n].path));
+        // Dossier pas encore lu : parties des triptyques inconnues, rien n'est effacé (fait à la copie suivante).
+        const keep = libraryRead ? chosenPaths() : null;
+        const unused = keep ? Object.keys(entries).filter(n => !keep.includes(entries[n].path)) : [];
         unused.forEach(n => delete entries[n]);
         removeFiles(unused.map(n => `${screenDir}/${n}`));
         state.screenCache = entries;

@@ -22,8 +22,12 @@ Variants {
         // après les autres (un écran branché est décrit un peu après son apparition : pas de barre provisoire à reconstruire).
         readonly property bool outputsKnown: Compositor.outputs.length > 0 || Compositor.type === ""
         property bool fallbackDue: false
-        readonly property string wantedLayout: output ? JSON.stringify(Settings.barFor(output.description, Outputs.isPrimary(modelData?.name ?? "")))
-            : fallbackDue ? JSON.stringify(Settings.barFor("", Outputs.isPrimary(modelData?.name ?? ""))) : ""
+        onOutputChanged: {
+            if (output)
+                fallbackDue = false;   // décrit : un retrait passager garde de nouveau sa disposition
+        }
+        readonly property string wantedLayout: output || fallbackDue
+            ? JSON.stringify(Settings.barFor(output?.description ?? "", Outputs.isPrimary(modelData?.name ?? ""))) : ""
         property string appliedLayout: ""
         readonly property var layout: appliedLayout !== "" ? JSON.parse(appliedLayout) : ({ left: [], right: [] })
 
