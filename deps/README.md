@@ -6,11 +6,10 @@
 - Fichiers fournis par le dépôt lui-même (polices, images, feuilles de style) : colonne « Fichiers du dépôt » ci-dessous.
 
 Règle : chaque composant ajouté au dépôt met à jour **dans le même commit** la table « Par module » et les listes de paquets.
-`install.sh` (phase 11) vérifiera, pour chaque ligne, que la commande, la police ou le service est réellement présent après installation.
+`install.sh` (phase 12) vérifiera, pour chaque ligne, que la commande, la police ou le service est réellement présent après installation.
 
 ## Par module
 
-Établi en phase 0 pour l'implémentation **Quickshell** prévue (pas pour Waybar).
 Chaque commande a été rattachée à son paquet sur cette machine avec `pacman -Qo`.
 
 « Natif » = fait par Quickshell lui-même, sans programme externe. Le paquet `quickshell` installe déjà Qt 6, `qt6-svg`,
@@ -22,11 +21,11 @@ Chaque commande a été rattachée à son paquet sur cette machine avec `pacman 
 | Module | Comment il obtient ses données | Paquets requis | Optionnel (module masqué / clic inactif si absent) | Polices | Fichiers du dépôt |
 |---|---|---|---|---|---|
 | Barre (toutes) | layer-shell Wayland | `quickshell`, `sway` ou `hyprland` | — | — | — |
-| Bouton Arch | natif (ouvre le menu d'applications maison, phase 8) | — | — | — | `assets/arch_linux_icon_green.svg`, `arch_linux_icon_mantle.svg` |
+| Bouton Arch | natif (ouvre le menu d'applications maison) | — | — | — | `assets/arch_linux_icon_green.svg`, `arch_linux_icon_mantle.svg` |
 | Espaces de travail | natif (`Quickshell.I3` / `Quickshell.Hyprland`) | — | — | Symbols Nerd Font Mono | — |
 | Média (mpris) | natif (`Services.Mpris`, D-Bus) | — | un lecteur MPRIS (Spotify, AUR, n'est pas une dépendance du bureau) ; choix du lecteur à la molette natif (plus de `playerctl`) | Inter, Font Awesome 7 Brands, FontAwesome 4.7 | — |
 | Volume (icône + curseur) | natif (`Services.Pipewire`) | `pipewire`, `wireplumber` (services utilisateur actifs) | `pavucontrol` (réglages avancés du panneau audio ; `pipewire-pulse`) | Symbols Nerd Font Mono | — |
-| Sortie audio suivante (ex-`audio-toggle.sh`) | natif (`Services.Pipewire`) + `notify-send` (phase 6 : notification interne) | `libnotify` | — | — | — |
+| Sortie audio suivante (ex-`audio-toggle.sh`) | natif (`Services.Pipewire`) + `notify-send` | `libnotify` | — | — | — |
 | Mises à jour | `checkupdates` | `pacman-contrib`, **`fakeroot`** (`checkupdates` échoue sans lui ; non déclaré par `pacman-contrib`) | `paru` ou `yay` (clic) ; terminal | Inter, Hack Nerd Font | — |
 | GPU | NVIDIA : `nvidia-smi` ; AMD / Intel : sysfs (natif) | — | `nvidia-utils` (NVIDIA uniquement : température, charge, mémoire vidéo, processus) ; module masqué sans température lisible | Inter, Hack Nerd Font | — |
 | CPU | natif (`/proc/stat`) | — | — | Inter, Hack Nerd Font | — |
@@ -43,38 +42,38 @@ Chaque commande a été rattachée à son paquet sur cette machine avec `pacman 
 Rendu de tous les SVG : `qt6-svg` (installé avec `quickshell`).
 Thème d'icônes des applications (tray, lanceur, menu d'applications, notifications) : `papirus-icon-theme` (`Papirus-Dark`).
 
-### Autres composants (phases suivantes, à compléter)
+### Autres composants
 
 | Composant | Paquets requis | Optionnel | Polices | Fichiers du dépôt |
 |---|---|---|---|---|
-| Notifications | — (natif) | `libnotify` (tests `notify-send`) | Inter (police homogène ; Dunst : Noto Sans Mono) | — |
+| Notifications | — (natif) | `libnotify` (tests `notify-send`) | Inter | — |
 | Lanceur | — (natif, `DesktopEntries`) | terminal pour les applis `Terminal=true` | Inter, Symbols Nerd Font Mono | — |
-| Menu d'applications (modèle Cinnamon, remplace nwg-menu) | — (natif, `DesktopEntries`) | à préciser en phase 8 (ex. ouverture de dossiers → gestionnaire de fichiers par défaut via `xdg-open`) | à préciser | — |
-| Verrouillage (design refait, phase 8b) | — (natif, `WlSessionLock` + `PamContext`, `pam` installé avec `quickshell`) | — | — | Inter |
-| Fond d'écran + utilitaire (phase 8b) | — (natif) | `xdg-user-dirs` (dossier Images) | dépôt privé des fonds cloné dans `~/Pictures/Wallpapers` | Inter, Symbols Nerd Font Mono |
+| Menu d'applications (modèle Cinnamon, remplace nwg-menu) | — (natif, `DesktopEntries`) ; `xdg-user-dirs` (dossiers), `xdg-utils` (ouvrir dossiers et fichiers) | — | Inter, Symbols Nerd Font Mono | icônes de session `assets/*.svg` |
+| Verrouillage | — (natif, `WlSessionLock` + `PamContext`, `pam` installé avec `quickshell`) | — | Inter | — |
+| Fond d'écran + utilitaire | — (natif) | `xdg-user-dirs` (dossier Images) ; dépôt privé des fonds cloné dans `~/Pictures/Wallpapers` | Inter, Symbols Nerd Font Mono | — |
 | Veille des écrans | natif (`IdleMonitor` + commande DPMS au compositeur) ; `systemd` (`systemd-inhibit`), `glib2` (`gdbus` : mise en veille du système) | — | — | — |
-| Agent polkit | — (natif, `PolkitAgent` ; `polkit` installé avec `quickshell`) | — | à définir | — |
+| Agent polkit | — (natif, `PolkitAgent` ; `polkit` installé avec `quickshell`) | — | Inter | — |
 | Réseau (tray) | `networkmanager` (natif, `Networking` ; `nmcli` pour les détails filaires), `wl-clipboard` (copies) | `nm-connection-editor` pour l'édition des connexions ; onglets `tailscale` (actions : `tailscale set --operator=$USER`) et `zerotier-one` (jeton copié dans `~/.zeroTierOneAuthToken`), masqués si absents | icônes Papirus-Dark (`nm-*`, `network-vpn`, `zerotier-gui`, `computer`, `smartphone`) | — |
 | Wi-Fi (tray) | `networkmanager` (natif ; `nmcli` pour bande, canal, débit, adresse) | — | glyphe dessiné (géométrie Papirus) | — |
 | Bluetooth (tray) | `bluez` (natif, `Bluetooth`), `bluez-utils` (agent d'appairage) | — | icônes Papirus-Dark (`blueman-tray*`) | — |
 | Disques amovibles (tray) | `udisks2`, `glib2` (`gdbus`), `systemd` (`busctl`), `xdg-utils` (ouvrir), `libnotify` (notifications), `util-linux` (`setpriv`) | — | icônes Papirus-Dark | — |
 | NordVPN (tray) | — | `nordvpn-bin` (AUR) + service `nordvpnd` + compte connecté (sinon module masqué) ; icônes `nordvpn-tray-*` du paquet | — | historique des pays : `~/.local/state/quickshell/by-shell/desktop/vpn.json` |
-| Outil de capture (phase 8b) | natif (`ScreencopyView`) ; `wl-clipboard` (presse-papiers), `xdg-user-dirs` (dossier Images) | — | Inter, Symbols Nerd Font Mono | — |
+| Outil de capture | natif (`ScreencopyView`) ; `wl-clipboard` (presse-papiers), `xdg-user-dirs` (dossier Images) | — | Inter, Symbols Nerd Font Mono | — |
 | Événements Thunderbird (backlog) | `sqlite` | — | — | — |
 
-### Hors barre (configs compositeur, phase 10)
+### Hors barre (configs compositeur)
 
-Thème GTK et curseur (AUR). Tout le reste (fond, veille, verrouillage, polkit, applets réseau/Bluetooth/disques, captures) est repris par Quickshell :
-`swaybg`, `swayidle`, `hypridle`, `swaylock`, `polkit-gnome`, `blueman`, `udiskie`, `hyprshot`, ainsi que `waybar`, `dunst` et `rofi`, ne sont
-plus utilisés depuis la bascule (phase 10, 2026-11-03 ; Dunst masqué : `systemctl --user mask dunst.service`). Leur désinstallation reste ta décision.
+Thème GTK et curseur (AUR). Tout le reste (fond, veille, verrouillage, polkit, applets réseau/Bluetooth/disques, captures) est fait par
+Quickshell : `swaybg`, `swayidle`, `hypridle`, `swaylock`, `polkit-gnome`, `blueman`, `udiskie`, `hyprshot`, `waybar`, `dunst`, `rofi`
+ne sont pas des dépendances (Dunst, s'il est installé, doit être masqué : `systemctl --user mask dunst.service`).
 Les applications personnelles lancées au démarrage (Steam, Spotify, Thunderbird, NordVPN…) ne sont **pas** des dépendances du bureau.
 
-| Script (phase 10) | Rôle | Commandes |
+| Script | Rôle | Commandes |
 |---|---|---|
 | `scripts/desktop.sh [restart\|stop\|log]` | lance le bureau depuis l'autostart de Sway / Hyprland, le relance s'il s'arrête | `qs`, `flock`, `setsid` (`util-linux`), `swaymsg` / `swaynag` (`sway`), `hyprctl` |
 | `scripts/ipc.sh <cible> <fonction> …` | `qs ipc call` vers le bureau de la session (raccourcis) | `qs` |
 
-### Web apps et « ne pas déranger » (2026-10-27)
+### Web apps et « ne pas déranger »
 
 Web apps du dépôt : WhatsApp, Discord, Word, Excel, PowerPoint, Notion (`dotfiles/webapps/applications/`).
 
@@ -88,20 +87,20 @@ Web apps du dépôt : WhatsApp, Discord, Word, Excel, PowerPoint, Notion (`dotfi
 `webapp-manager` n'est **pas** une dépendance : les lanceurs de ces web apps viennent du dépôt. Ne pas les modifier avec
 lui (il réécrit la ligne `Exec` et ferait sauter `PULSE_PROP_OVERRIDE` et `--load-extension`) ; modifier le modèle du dépôt.
 
-### Outils de développement (phases 1–9)
+### Outils de développement
 
 `grim`, `imagemagick` (captures et recadrage), `jq` (tests), `libnotify` (tests de notifications), `zenity` (fenêtres de test de `scripts/test-outputs.sh`).
 
 | Script | Rôle | Commandes |
 |---|---|---|
-| `scripts/dev.sh [stop\|log]` | relance le bureau et affiche les erreurs (`scripts/desktop.sh restart` depuis la phase 10) | `qs` |
+| `scripts/dev.sh [stop\|log]` | relance le bureau (`scripts/desktop.sh restart`) et affiche les erreurs | `qs` |
 | `scripts/shot.sh <nom> [sortie\|géométrie]` | capture dans `.shots/` (ignoré par git) | `grim` |
 | `scripts/crop.sh <image> <géométrie> [sortie]` | recadre une capture | `magick` (`imagemagick`) |
 | `scripts/test-outputs.sh [sway\|hyprland] [-v]` | teste la répartition des espaces (et `$mod+N`, `$mod+Ctrl+N`, début de session) dans une session isolée | `sway` ou `hyprland`, `jq`, `zenity`, `qs` |
 
 ## Prérequis système d'un nouveau PC (au-delà des paquets)
 
-Ce que `install.sh` (phase 11) devra installer, activer ou vérifier — relevé sur cette machine le 2026-10-15.
+Ce que `install.sh` (phase 12) devra installer, activer ou vérifier — relevé sur cette machine.
 
 | Élément | Pourquoi | Sur cette machine | Action sur un nouveau PC |
 |---|---|---|---|
@@ -110,22 +109,34 @@ Ce que `install.sh` (phase 11) devra installer, activer ou vérifier — relevé
 | `upower`, `udisks2` | batterie, disques | activés à la demande par D-Bus | rien |
 | `polkit` | agent polkit natif, montage des disques sans mot de passe | actif (statique) | rien |
 | Services utilisateur `pipewire.socket`, `pipewire-pulse.socket`, `wireplumber` | audio | activés | `systemctl --user enable --now …` |
-| Fichier PAM du verrouillage | `WlSessionLock` + `PamContext` vérifient le mot de passe ; aujourd'hui c'est `/etc/pam.d/swaylock` (installé par `swaylock`, qui sera retiré) | `swaylock`, `login`, `system-auth` présents | **vérifié en phase 8b** : configuration `login` de `/etc/pam.d` (présente partout, celle qu'incluait swaylock) ; un fichier propre au dépôt ne marche pas (`include` se résout dans son propre dossier). Rien n'est écrit dans `/etc` |
+| Fichier PAM du verrouillage | `WlSessionLock` + `PamContext` vérifient le mot de passe | configuration `login` de `/etc/pam.d` (présente partout) | rien : un fichier propre au dépôt ne marche pas (`include` se résout dans son propre dossier) ; rien n'est écrit dans `/etc` |
 | Polices d'icônes (Symbols Nerd Font Mono, Hack Nerd Font, Font Awesome 7 Free / Brands, FontAwesome 4.7) | icônes de la barre (`THEME.md` § 2) | paquets (`ttf-nerd-fonts-symbols-mono`, `ttf-hack-nerd`, `otf-font-awesome`, `awesome-terminal-fonts`) | copiées depuis `assets/fonts/` dans `~/.local/share/fonts` + `fc-cache` ; aucun paquet nécessaire |
-| Images `assets/*.svg` | bouton Arch, power menu | dans `~/.config/sway/assets/` | versionnées dans le dépôt depuis la phase 1 (`THEME.md` § 12) |
-| Lien `~/.config/quickshell/desktop` → dépôt | lancement par `qs -c desktop` | créé en phase 1 | créé par `install.sh` |
-| Thème d'icônes `Papirus-Dark` | icônes d'applications | paquet | paquet + `//@ pragma IconTheme Papirus-Dark` dans `shell.qml` (indispensable : le thème `breeze` de qt6ct n'est pas installé ici, `ARCHITECTURE.md` § 11.1) |
-| Curseur, thème GTK | apparence des applications et des tooltips | AUR | paquets AUR + `gtk-3.0/settings.ini` (à rapatrier en phase 10) |
+| Images `assets/*.svg` | bouton Arch, icônes de session | dans le dépôt | rien (`THEME.md` § 12) |
+| Lien `~/.config/quickshell/desktop` → dépôt | lancement par `qs -c desktop` | existe | créé par `install.sh` |
+| Thème d'icônes `Papirus-Dark` | icônes d'applications | paquet | paquet + `//@ pragma IconTheme Papirus-Dark` dans `shell.qml` (indispensable : le thème `breeze` de qt6ct n'est pas installé ici, `ARCHITECTURE.md` § 8.1) |
+| Curseur, thème GTK | apparence des applications | AUR | paquets AUR + `gtk-3.0/settings.ini` et `gtk-4.0/settings.ini` (ici incohérents : `prefer-dark` 1 et 0) |
 | Dépôt `wallpapers` | fonds d'écran | `~/Pictures/Wallpapers` | `git clone git@github.com:Crystal4276/wallpapers.git "$(xdg-user-dir PICTURES)/Wallpapers"` (dépôt privé : clé SSH GitHub nécessaire) ; facultatif |
-| Commande de session Sway sur Nvidia | `WLR_RENDERER=vulkan sway --unsupported-gpu` | fichier `sway-vulkan.desktop` créé à la main pour SDDM | SDDM abandonné : la commande sera fournie par la config du greeter Quickshell (phase 12), selon la présence d'un GPU Nvidia |
-| Gestionnaire de connexion | greetd + greeter Quickshell (phase 12, `ARCHITECTURE.md` § 10.4) | SDDM activé (`sddm.service`), PAM `/etc/pam.d/sddm` avec `pam_gnome_keyring.so` | paquets `greetd` + `greetd-agreety`, `/etc/greetd/config.toml`, `/etc/pam.d/greetd` (lignes du trousseau), `systemctl disable sddm` / `enable greetd` — fichiers système, avec ton accord |
-| `QT_QPA_PLATFORMTHEME=qt6ct` | thème des applications Qt (Kvantum `KvArcDark`) | dans `/etc/environment` | à reproduire (fichier système, `sudo`) ; Quickshell en hérite (`ARCHITECTURE.md` § 11.1) |
-| Réglages dconf (`text-scaling-factor 1.25`, thème GTK, icônes, polices, `prefer-dark`) | apparence des applications GTK | dconf | `gsettings set …` par `install.sh` (liste : `INVENTORY.md` § 11.2) |
+| Commande de session Sway sur Nvidia | `WLR_RENDERER=vulkan sway --unsupported-gpu` | fichier `sway-vulkan.desktop` créé à la main pour SDDM | fournie par la config du greeter Quickshell (phase 11), selon la présence d'un GPU Nvidia |
+| Gestionnaire de connexion | greetd + greeter Quickshell (phase 11, `ARCHITECTURE.md` § 9) | SDDM activé (`sddm.service`), PAM `/etc/pam.d/sddm` avec `pam_gnome_keyring.so` | paquets `greetd` + `greetd-agreety`, `/etc/greetd/config.toml`, `/etc/pam.d/greetd` (lignes du trousseau), `systemctl disable sddm` / `enable greetd` — fichiers système, avec ton accord |
+| `QT_QPA_PLATFORMTHEME=qt6ct` | thème des applications Qt (Kvantum `KvArcDark`, icônes `breeze`) | dans `/etc/environment` | à reproduire (fichier système, `sudo`) ; Quickshell en hérite (`ARCHITECTURE.md` § 8.1) |
+| Réglages dconf | apparence des applications GTK | dconf | `gsettings set org.gnome.desktop.interface …` par `install.sh` (liste ci-dessous) |
 | Polices CJK | titres et notifications en japonais/chinois/coréen | polices MS copiées à la main | `noto-fonts-cjk` (repli du bureau) |
 | Polices Microsoft (optionnel) | documents Word, repli CJK | `/usr/share/fonts/MS_Fonts` (363 Mo) | dépôt privé `Crystal4276/fonts-ms`, cloné à la demande dans `~/.local/share/fonts/fonts-ms` + `fc-cache -f` (clé SSH GitHub nécessaire) |
 | Règle WirePlumber « ne pas déranger » | les flux coupés la nuit ne sont pas retenus par WirePlumber (sinon coupés le lendemain) | copiée dans `~/.config/wireplumber/wireplumber.conf.d/` | lien vers `dotfiles/wireplumber/wireplumber.conf.d/50-dnd-no-restore.conf`, puis `systemctl --user restart wireplumber` ; voir « Web apps » ci-dessous |
 | Web apps (WhatsApp, Discord, Word, Excel, PowerPoint, Notion) | lanceurs, coupure de nuit (WhatsApp, Discord), liens vers le navigateur | créées avec `webapp-manager`, puis lanceurs modifiés à la main | générées par `install.sh` depuis `dotfiles/webapps/` : voir « Web apps » ci-dessous |
 | Utilisateur dans le groupe `video` ou règles udev | `brightnessctl` sans `sudo` (laptop) | sans objet (pas de rétroéclairage) | fourni par le paquet `brightnessctl` (règles udev) ; à vérifier sur le laptop |
+
+Réglages dconf de cette machine (`org.gnome.desktop.interface`) : `gtk-theme` `catppuccin-mocha-green-standard+default`,
+`icon-theme` `Papirus-Dark`, `font-name` `Inter Light 12`, `document-font-name` `Inter Light 13`, `monospace-font-name`
+`Source Code Pro 12`, `text-scaling-factor` `1.25`, `color-scheme` `prefer-dark`, `cursor-size` `48` (thème du curseur fixé par
+les compositeurs), `clock-format` `24h`.
+
+Autres constats pour un nouveau PC :
+- trousseau `gnome-keyring` déverrouillé par PAM à la connexion (aujourd'hui SDDM, demain greetd) ;
+- `logind` par défaut (bouton power = extinction ; capot = mise en veille) ;
+- polices de repli : `noto-fonts-cjk` (japonais, chinois, coréen ; ici les polices Microsoft le font), `noto-fonts-emoji` ;
+- partage d'écran sous Sway : `xdg-desktop-portal-wlr` choisit l'écran avec `slurp` ;
+- **secrets jamais versionnés** : jetons (NordVPN…), adresses de montage (`gio mount ssh://…`) → `~/.config/qs-desktop.local/`.
 
 Commandes dont `install.sh` vérifiera la présence après installation :
 `qs`, `checkupdates`, `fakeroot`, `bluetoothctl`, `udisksctl`, `gdbus`, `busctl`, `grim`, `slurp`, `wl-copy`, `pavucontrol`
@@ -170,12 +181,12 @@ Notion : `https://www.notion.so/`). Les lanceurs actuels ouvrent une conversatio
 précis, laissés hors du dépôt (adresses personnelles).
 
 Sous Wayland, Chromium ignore `--class` : l'app_id d'une web app vient de son adresse de départ (`StartupWMClass` des
-modèles : app_id relevé avec ces adresses). Changer l'adresse d'un modèle change son app_id ; la règle Sway `assign` de
-Discord (espace 5) devra viser `chrome-discord.com__channels_@me-Default` (phase 10).
+modèles : app_id relevé avec ces adresses). Changer l'adresse d'un modèle change son app_id, donc les règles d'espace des
+configs compositeur (Discord : `…@me-Default` et `…@me_<salon>-Default`, espace 5).
 
 ## Correspondance avec d'autres distributions
 
-Correspondances attendues, **non encore vérifiées** (phase 11).
+Correspondances attendues, **non encore vérifiées** (phase 12).
 
 | Arch | Fedora | Debian / Ubuntu | Remarque |
 |---|---|---|---|
@@ -183,8 +194,6 @@ Correspondances attendues, **non encore vérifiées** (phase 11).
 | qt6-svg | qt6-qtsvg | qt6-svg-plugins | |
 | sway | sway | sway | |
 | hyprland | hyprland | hyprland (Debian ≥ 13) | |
-| swaybg / swayidle / swaylock | idem | idem | |
-| hypridle | hypridle | — | à compiler |
 | *(polices d'icônes : Symbols Nerd Font Mono, Hack Nerd Font, Font Awesome 7, FontAwesome 4.7)* | — | — | fournies par le dépôt (`assets/fonts/`), aucun paquet nécessaire |
 | inter-font | rsms-inter-fonts | fonts-inter | |
 | noto-fonts | google-noto-sans-mono-fonts | fonts-noto-mono | |
@@ -206,7 +215,6 @@ Correspondances attendues, **non encore vérifiées** (phase 11).
 | iproute2 | iproute | iproute2 | toujours présent |
 | zerotier-one (optionnel) | — (dépôt de l'éditeur : install.zerotier.com) | — (dépôt de l'éditeur : install.zerotier.com) | absent des dépôts officiels Fedora et Debian/Ubuntu |
 | pacman-contrib + fakeroot | — | — | spécifique Arch : module mises à jour masqué |
-| btop / nvtop | idem | idem | |
 | gnome-terminal | idem | idem | |
 | libnotify | libnotify | libnotify-bin | |
 | grim / slurp / wl-clipboard / jq | idem | idem | |

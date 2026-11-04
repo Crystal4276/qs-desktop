@@ -1,65 +1,54 @@
-# Backlog — améliorations hors parité
+# Backlog
 
-Idées notées pendant le travail. Rien ici n'est implémenté sans accord.
+Idées et défauts connus hors du programme des phases. Rien ici n'est implémenté sans accord.
 
-- Titre de la fenêtre active / mode Sway dans la barre (absents de la Waybar actuelle ; décision Q4 : parité d'abord).
-- Activer le VRR (`adaptive_sync on` / `vrr = 1`) dans les règles d'écran : accepté par Sway + Nvidia sur les 3 écrans (phase 3) ; reste à juger l'effet à l'œil.
-- **Événements Thunderbird dans la fenêtre calendrier** (lecture seule de `calendar-data/cache.sqlite` / `local.sqlite` ; 3 CalDAV, 2 Owl, 1 local). Voir ARCHITECTURE § 8.3.
-- Réévaluer Kanshi si un jour le même écran doit être placé différemment selon les autres écrans présents (plusieurs docks).
-- Confirmation avant Reboot / Shutdown (écartée pour la phase 8, le 2026-10-16 : comme Rofi).
-- ~~Power menu → panneau de réglages façon GNOME~~ : **décidé le 2026-10-16, fait en phase 8** (`ARCHITECTURE.md` § 10.1.4). Commandes
-  `qs ipc` pour le HDR et le VRR aussi (`$mod+d`).
-- Seuil critique de température GPU réellement appliqué (l'option `critical-threshold` de Waybar est sans effet sur un `custom/*`).
-- Raccourcis `XF86AudioPlay/Next/Prev` sous Sway (existants sous Hyprland seulement).
-- Passer DP-1 / DP-3 en 144 Hz (piste notée dans `~/.config/hypr/lua/layout.lua`).
-- Thème d'icônes Qt (`qt6ct` : breeze) différent du thème GTK (Papirus-Dark) : à harmoniser ?
-- Informations des anciens tooltips Waybar (non repris, décision du 2026-10-16) : swap, nom de la sortie audio, titre complet du morceau —
-  à placer dans la fenêtre de statistiques (phase 8b) ou le panneau audio (nom de la sortie : fait).
-- Panneaux natifs (phase 5), fonctions des applets non reprises : nm-applet (« Enable Networking » global, connexions VPN de NetworkManager,
-  réseau Wi-Fi caché, création d'un point d'accès, fenêtre d'informations), blueman (envoi de fichiers, gestion des adaptateurs),
-  udiskie (« Mount disc image », interrupteurs montage automatique / notifications), NordVPN (réglages, compte).
-- Notifications (phase 6) : raccourcis clavier pour le centre et « ne pas déranger » (IPC à ajouter) ; historique et « ne pas déranger »
-  conservés après un redémarrage de Quickshell (en mémoire aujourd'hui, comme Dunst) ; menu pour choisir parmi plusieurs liens d'une
-  notification (Dunst passait par `dmenu`, absent) ; couleurs par notification (`fgcolor`, `bgcolor`… : ignorées).
-- **Animations** (ta demande du 2026-10-16) : aucune dans la première version (parité) ; à ajouter ensuite, au fur et à mesure
-  (ouverture des panneaux, menus et notifications, changement d'espace de travail…), avec `EasingCurve` et les animations de Qt Quick.
+## Fonctions
+
+- Titre de la fenêtre active / mode Sway dans la barre (retirés de `Compositor` faute de widget : à rétablir avec lui).
+- Événements Thunderbird dans le calendrier : lecture seule de `calendar-data/cache.sqlite` et `local.sqlite` (3 CalDAV, 2 Owl, 1 local) ;
+  difficultés : lecture sans gêner Thunderbird (WAL : `immutable` ou copie), récurrences, fuseaux, présence des calendriers Owl dans le cache.
+- Vue des fenêtres façon « Activités » : aperçus en direct (`Toplevel` + `ScreencopyView`), clic pour y aller, raccourci.
+- Animations (ouverture des panneaux, menus, notifications, changement d'espace) avec `EasingCurve` et Qt Quick.
+- Effet verre : panneaux, menu et lanceur semi-transparents sur le fond d'écran flouté par Quickshell (`MultiEffect`) ; les fenêtres
+  derrière n'apparaîtraient pas (Sway ne floute pas). Valeurs de transparence à choisir ensemble.
 - Partage d'écran : choix de l'écran par une fenêtre Quickshell au lieu de `slurp` (`chooser_cmd` de `xdg-desktop-portal-wlr`).
-- **Vue des fenêtres** (accepté le 2026-10-16, après la première version) : aperçus en direct de toutes les fenêtres (`Toplevel` +
-  `ScreencopyView`), clic pour y aller, ouverte par un raccourci.
+- Confirmation avant Reboot / Shutdown (absente, comme Rofi).
+- Notifications : raccourcis clavier pour le centre et « ne pas déranger » ; historique conservé après un redémarrage de Quickshell ;
+  choix parmi plusieurs liens d'une notification ; couleurs par notification (`fgcolor`, `bgcolor`).
+- Fonctions des applets non reprises : nm-applet (« Enable Networking », VPN NetworkManager — `NMSettings`, Wi-Fi caché, point
+  d'accès), blueman (envoi de fichiers, adaptateurs), udiskie (« Mount disc image », interrupteurs), NordVPN (réglages, compte ;
+  recherche par ville, qui demanderait `nordvpn cities` pour ~150 pays).
+- Informations des anciens tooltips Waybar : swap, titre complet du morceau.
+- Seuil critique de température GPU (l'option de Waybar était sans effet).
+- Écrans : activer le VRR dans les règles d'écran (accepté par Sway + Nvidia ; effet à juger à l'œil) ; DP-1 / DP-3 en 144 Hz ;
+  réévaluer Kanshi si un même écran doit être placé différemment selon les autres (plusieurs docks).
+- Disques : VeraCrypt et BitLocker (`udisksctl --key-file` ne vaut que pour LUKS : appeler `Encrypted.Unlock` sans mettre la phrase
+  dans la ligne de commande) ; images en boucle d'un autre utilisateur limitées à `Loop.SetupByUID` = son uid.
 
-- Panneau NordVPN : recherche par ville (« amsterdam ») ; demanderait les villes des ~150 pays (`nordvpn cities` pour chacun).
-- **Effet verre façon iOS** (ta idée du 2026-10-21) : panneaux, menu et lanceur semi-transparents sur le fond d'écran flouté. Sur un
-  panneau opaque, un surlignage translucide ne se distingue pas d'un gris uni : il faut un fond flouté derrière. Sway ne floute pas
-  (SwayFX ou Hyprland oui, seulement pour l'ensemble de la fenêtre) ; Quickshell peut l'imiter en floutant le fond d'écran qu'il dessine
-  lui-même (`MultiEffect`) sous chaque panneau — les fenêtres derrière n'apparaîtraient pas. Valeurs de transparence à choisir ensemble.
-- Disques : déverrouiller VeraCrypt (TCRYPT) et BitLocker (revue du 2026-10-27). `udisksctl` ne lit une phrase de passe qu'au
-  terminal ; passée en fichier de clé (`--key-file`), elle ne vaut que pour LUKS. Il faudrait appeler `Encrypted.Unlock` sans
-  mettre la phrase dans la ligne de commande (petit programme qui la lit sur l'entrée standard).
-- Disques : images disque en boucle créées par un autre utilisateur (root : Waydroid, VM) gérées et montées comme les tiennes,
-  comme le fait udiskie ; les limiter à `Loop.SetupByUID` = ton uid serait plus sûr (revue du 2026-10-27).
-- Plantage `QQmlDelegateModel::_q_itemsMoved` (3 sur banc le 2026-11-02, à 07 h 24, 07 h 29 et 07 h 39, Qt 6.12.0-4 ; aucun sur ton
-  instance) : déplacement de lignes d'un `ScriptModel`, modèle non identifié. Non reproduit avec la fenêtre de statistiques ouverte
-  80 s sous charge. À reprendre si un rapport apparaît dans `~/.cache/quickshell/crashes/`.
-- Écrans : `I3.focusedMonitor` périmé quand l'écran focalisé disparaît (contourné dans `Compositor.qml`) : à signaler à Quickshell
-  (amont, avec ton accord). `bFocusedMonitor` est écrit sans suivre `destroyed`, le garde de `setFocusedMonitor` n'est jamais posé.
-- Polkit : agent perdu si polkitd redémarre (`systemctl restart polkit`, plantage) : Quickshell se croit toujours enregistré,
-  comme polkit-gnome. Surveiller le propriétaire de `org.freedesktop.PolicyKit1` (`gdbus monitor --system`) et recréer l'agent
-  (revue du 2026-10-27 ; non testable sans `sudo`).
-- Polkit : signaler à Quickshell (amont, avec ton accord) la file d'attente inopérante de `PolkitAgentImpl` (0.3.2 et `master` :
-  une demande remplace celle en cours ; `finishAuthenticationRequest` agit sur la demande active, pas sur celle qui finit) et
-  l'absence de nouvel essai d'enregistrement. Contournement en place : ARCHITECTURE § 10.1.9.
-- Web apps : un lien envoyé au navigateur est aussi demandé par la web app (l'onglet a déjà lancé la requête quand
-  l'extension le ferme ; même fermé aussitôt, la requête part sur une connexion déjà ouverte). Un lien à usage unique (connexion
-  par e-mail, réinitialisation) peut donc être consommé par la web app. Seule parade : intercepter le clic dans la page (script
-  de contenu, `window.open` remplacé) avant l'ouverture de l'onglet ; plus invasif, risque de casser les apps (revue du
-  2026-10-28).
-- Performance : `perf` refuse tout événement sur cette machine (profil CPU natif non obtenu) ; pente mémoire sur plusieurs heures à relever ; coût mémoire du verrouillage sur le vrai GPU (`docs/PERFORMANCE.md`).
-- Hyprland : signaler à Quickshell (amont, avec ton accord) une utilisation de mémoire libérée à chaque réponse de requête. Une config réduite à `Hyprland.refreshMonitors()` plante sous `MALLOC_CONF=junk:free` (pile : `QAbstractSocketPrivate::canReadNotification` → `QIODevice::channelReadyRead`), 26 requêtes sans plantage sinon. Source de Quickshell non lue : socket détruit pendant son `readyRead`, hypothèse. Conséquence : `junk:free` inutilisable pour tester sous Hyprland (0.3.2, Qt 6.12).
-- Hyprland, phase 10 : les couches Quickshell héritent de tes animations `layers*` (panneau encore invisible 50 ms après l'ouverture, fondu). Décidé en phase 10 (2026-11-03, ta réponse) : fondu gardé, comme Rofi et Waybar sous Hyprland.
-- Capture sous Hyprland avec un curseur logiciel (écrans virtuels, peut-être une VM ou certains laptops) : le curseur figure dans l'image, `paintCursor: false` ne suffit pas. À traiter si cela se présente ; tes écrans ont un curseur matériel, sans ce défaut.
-- Capture (revue du 2026-11-03, hors parité Hyprland) : deux captures dans la même seconde portent le même nom, la seconde écrase la première (nom à la seconde, repris du script de la touche Impr.) ; la découpe (`ShaderEffectSource`) de l'outil est rendue sur chaque écran tant qu'il est ouvert, environ 85 Mo de VRAM pour rien sur deux écrans sur trois (la créer à la demande dans `onCaptureRequested`).
-- Veille du système (revue du 2026-11-03, laptop surtout) : le `gdbus monitor` de `services/Idle.qml` (verrouillage avant la veille, `hyprctl reload` au réveil sous Hyprland) n'est pas relancé s'il s'arrête (redémarrage de dbus-broker ou de logind après une mise à jour) ; rien n'est journalisé. Le relancer à sa sortie.
-- HDR sous Hyprland (revue du 2026-11-03, laptop surtout) : la règle HDR posée à l'exécution est complète (mode, position, échelle, relus sur l'écran), sinon l'échelle se perd (passe 1). Elle fige donc la position : sur une machine sans `hosts/` (repli `position = "auto"`), un écran HDR ne serait plus replacé si un autre écran apparaît ou disparaît, jusqu'au `reload` suivant (réveil, ou à la main). Piste : à l'arrêt du HDR, un `reload` plutôt qu'une règle SDR complète, sans readopter l'état lu avant le `reload`.
-- Hyprland (amont, avec ton accord) : un contrôle gamma refusé (écran déjà tenu) reste enregistré, et l'écran est refusé à tout client jusqu'au redémarrage d'Hyprland (`protocols/GammaControl.cpp`, 0.57 : objet laissé dans `m_gammaControllers` sans gestionnaire de destruction). À signaler. Contourné ici : la veilleuse ne lance jamais deux gammastep à la fois.
-- HDR sous Hyprland (revue, passe 6) : la règle complète ne reprend que le mode, la position, l'échelle et la rotation. Les autres champs de la règle de la config pour cet écran (miroir, zone réservée…) sont perdus tant que le HDR est actif, jusqu'au `reload` suivant. Aucun sur cette machine. Même piste que ci-dessus.
-- Barre des espaces (2026-11-04) : chaque barre montre exactement les numéros de son bloc. Un espace déplacé à la main sur un autre écran (aucun raccourci ne le fait, seulement `swaymsg` / `hyprctl` tapé à la main) reste sur la barre de son bloc, jusqu'à ce qu'`Outputs` le ramène au changement d'écrans suivant. Si un jour un raccourci déplace des espaces d'un écran à l'autre : le montrer sur sa nouvelle barre, après un délai, pour ne pas réintroduire les sauts du démarrage.
+## Défauts connus
+
+- Capture : deux captures dans la même seconde portent le même nom (la seconde écrase la première) ; la découpe
+  (`ShaderEffectSource`) est rendue sur chaque écran tant que l'outil est ouvert (~85 Mo de VRAM pour rien sur deux écrans sur trois :
+  la créer dans `onCaptureRequested`) ; avec un curseur logiciel (écrans virtuels, VM, certains laptops), le curseur est dans l'image.
+- Veille du système : le `gdbus monitor` de `services/Idle.qml` n'est pas relancé s'il s'arrête (redémarrage de dbus-broker ou logind).
+- Polkit : agent perdu si polkitd redémarre (surveiller le propriétaire de `org.freedesktop.PolicyKit1` et recréer l'agent).
+- HDR sous Hyprland : la règle complète fige la position (sans `hosts/`, un écran HDR n'est plus replacé si un autre écran change,
+  jusqu'au `reload` suivant) et perd les autres champs de la règle de l'écran (miroir, zone réservée) tant que le HDR est actif.
+  Piste : à l'arrêt du HDR, un `reload` plutôt qu'une règle SDR complète.
+- Barre des espaces : un espace déplacé à la main (`swaymsg` / `hyprctl`) sur un autre écran reste sur la barre de son bloc jusqu'au
+  changement d'écrans suivant. Si un raccourci déplace un jour des espaces : le montrer sur sa nouvelle barre, après un délai.
+- Web apps : un lien envoyé au navigateur est aussi demandé par la web app (un lien à usage unique peut être consommé). Parade :
+  intercepter le clic dans la page (script de contenu) — plus invasif.
+- Plantage `QQmlDelegateModel::_q_itemsMoved` (3 sur banc le 2026-11-02, jamais sur le vrai bureau) : déplacement de lignes d'un
+  `ScriptModel` non identifié. À reprendre si un rapport apparaît dans `~/.cache/quickshell/crashes/`.
+- Performance : `perf` refuse tout événement sur cette machine ; pente mémoire sur plusieurs heures et coût du verrouillage à relever
+  (`docs/PERFORMANCE.md`).
+
+## À signaler en amont (avec ton accord)
+
+- Quickshell : `I3.focusedMonitor` pendant quand l'écran focalisé disparaît (`bFocusedMonitor` écrit sans suivre `destroyed`) ;
+  file d'attente inopérante de `PolkitAgentImpl` et aucun nouvel essai d'enregistrement ; mémoire libérée réutilisée à chaque
+  réponse de requête Hyprland (`QAbstractSocketPrivate::canReadNotification`, visible sous `MALLOC_CONF=junk:free`, qui devient
+  inutilisable pour tester sous Hyprland).
+- Hyprland 0.57 : un contrôle gamma refusé reste enregistré (`protocols/GammaControl.cpp`) et l'écran est refusé à tout client
+  jusqu'au redémarrage (contourné : jamais deux gammastep à la fois).

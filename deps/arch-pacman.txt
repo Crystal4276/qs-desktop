@@ -1,6 +1,5 @@
 # Paquets des dépôts officiels Arch (core/extra), un par ligne.
 # Installer : pacman -S --needed - < <(grep -v '^#' deps/arch-pacman.txt | cut -d'#' -f1 | xargs -n1)
-# Première version (phase 0) : tout ce que le bureau actuel utilise et que la config Quickshell reprendra.
 
 # --- Shell ---
 quickshell              # le shell lui-même (barre, notifications, lanceur, menus)
@@ -14,24 +13,24 @@ glib2                   # gdbus : disques amovibles, mise en veille du système 
 # --- Compositeurs et sorties ---
 sway                    # compositeur principal
 hyprland                # compositeur secondaire
-# (fond d'écran, veille, verrouillage : natifs Quickshell en phase 8b — swaybg, swayidle, hypridle, swaylock ne sont plus requis)
+# (fond d'écran, veille, verrouillage : natifs Quickshell — swaybg, swayidle, hypridle, swaylock ne sont plus requis)
 
-# --- Panneau de réglages (phase 8) ---
+# --- Panneau de réglages ---
 gammastep               # veilleuse (Night Light) : écran plus chaud le soir, en fondu, Sway et Hyprland (wlr-gamma-control)
 xdg-user-dirs           # dossier Images des captures et des fonds d'écran, dossiers du menu d'applications (`xdg-user-dir`)
 
 # --- Énergie ---
-power-profiles-daemon   # profils d'énergie (économie / équilibré / performance) : 3 boutons de la fenêtre de réglages (phase 8),
+power-profiles-daemon   # profils d'énergie (économie / équilibré / performance) : 3 boutons de la fenêtre de réglages,
                         # via UPower.PowerProfiles ; service système à activer (install.sh) ; fonctionne aussi sur le desktop (intel_pstate)
 
-# --- Écran de connexion (phase 12, ARCHITECTURE § 10.4 ; remplace SDDM) ---
+# --- Écran de connexion (phase 11, ARCHITECTURE § 9 ; remplace SDDM) ---
 # Installés par install.sh comme le reste ; inactifs tant que le service greetd n'est pas activé (étape système d'install.sh).
 greetd                  # gestionnaire de connexion ; lance le greeter Quickshell (module Greetd)
 greetd-agreety          # greeter console : fournit `greetd-greeter` (requis par greetd) et sert de secours
 
 # --- Polices et thèmes ---
 # Polices d'icônes (Symbols Nerd Font Mono, Hack Nerd Font, Font Awesome 7 Free/Brands, FontAwesome 4.7) :
-# versionnées dans assets/fonts/, installées par install.sh (ARCHITECTURE § 8.2, THEME § 2) — aucun paquet
+# versionnées dans assets/fonts/, installées par install.sh (ARCHITECTURE § 8.3, THEME § 2) — aucun paquet
 inter-font              # « Inter » : texte de la barre et du lanceur
 noto-fonts              # police de repli (caractères absents d'Inter) ; Dunst l'utilisait pour les notifications (Monospace)
 noto-fonts-cjk          # japonais / chinois / coréen (titres MPRIS, notifications) — remplace les polices MS copiées à la main
@@ -49,8 +48,8 @@ upower                  # batterie (Quickshell.Services.UPower), utile sur lapto
 networkmanager          # réseau (Quickshell.Networking s'appuie sur NetworkManager)
 nm-connection-editor    # édition des connexions, ouverte depuis le panneau réseau (repli, ARCHITECTURE R5)
 bluez                   # Bluetooth (Quickshell.Bluetooth s'appuie sur BlueZ)
-bluez-utils             # bluetoothctl : agent d'appairage piloté par Quickshell (ARCHITECTURE § 10.2)
-udisks2                 # disques amovibles (busctl / gdbus / udisksctl, ARCHITECTURE § 10.3)
+bluez-utils             # bluetoothctl : agent d'appairage piloté par Quickshell (ARCHITECTURE § 7.7)
+udisks2                 # disques amovibles (busctl / gdbus / udisksctl, ARCHITECTURE § 7.8)
 xdg-utils               # xdg-open : « Open » d'un disque monté, dossiers et fichiers récents du menu d'applications
 pacman-contrib          # checkupdates (module mises à jour)
 fakeroot                # requis par checkupdates (non déclaré par pacman-contrib)
@@ -58,8 +57,8 @@ gnome-terminal          # terminal lancé par les modules (configurable par mach
 libnotify               # notify-send (sortie audio suivante, connexions et batterie Bluetooth, disques amovibles, tests)
 
 # --- Captures et outils de dev ---
-grim                    # captures des outils de dev (scripts/shot.sh) ; touche Impr. : outil natif depuis la phase 10
-slurp                   # choix de l'écran partagé (xdg-desktop-portal-wlr, ARCHITECTURE § 12) ; plus utilisé par la touche Impr.
+grim                    # captures des outils de dev (scripts/shot.sh) ; touche Impr. : outil natif
+slurp                   # choix de l'écran partagé (xdg-desktop-portal-wlr, ARCHITECTURE § 10) ; plus utilisé par la touche Impr.
 iproute2                # `ip -j addr` : interfaces ZeroTier sans jeton (panneau réseau) ; dans `base`
 wl-clipboard            # presse-papiers : captures (outil natif), IP / noms copiés depuis le panneau réseau
 imagemagick             # scripts/crop.sh

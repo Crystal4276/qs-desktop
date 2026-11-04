@@ -8,4 +8,4 @@
 | `FontAwesome7Brands-Regular-400.otf` | Font Awesome 7 Brands | logo Spotify (mpris) | SIL OFL 1.1 (`LICENSE-FontAwesome7.txt`) |
 | `FontAwesome4-Regular.ttf` | FontAwesome | pause (mpris) | SIL OFL 1.1 (`LICENSE-FontAwesome4.txt`) |
 
-Installées dans `~/.local/share/fonts` par `install.sh` (phase 11), sur toutes les distributions.
+Installées dans `~/.local/share/fonts` par `install.sh` (phase 12), sur toutes les distributions.
