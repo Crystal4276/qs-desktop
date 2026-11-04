@@ -19,14 +19,12 @@ Variants {
         visible: shown !== null && shown.source !== ""
         // Écran décrit, choix lus, mais aucune image (aucun fond, partie de triptyque introuvable) : rien à attendre au démarrage.
         readonly property bool nothingToShow: output !== null && Wallpapers.ready && !visible
-        onNothingToShowChanged: {
+        function reportNothing(): void {
             if (nothingToShow)
                 Wallpapers.markShown(modelData?.name ?? "");
         }
-        Component.onCompleted: {
-            if (nothingToShow)
-                Wallpapers.markShown(modelData?.name ?? "");
-        }
+        onNothingToShowChanged: reportNothing()
+        Component.onCompleted: reportNothing()
         WlrLayershell.layer: WlrLayer.Background
         WlrLayershell.namespace: "quickshell-wallpaper"
         exclusionMode: ExclusionMode.Ignore
