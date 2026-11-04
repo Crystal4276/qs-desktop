@@ -282,7 +282,7 @@ Singleton {
     // d'après sa description, récrite quand le fond affiché change (Background.qml). Banc (QS_TEST) : seulement sous QS_GREETER_DIR.
     readonly property string greeterDir: {
         const user = Quickshell.env("USER") ?? "";
-        const base = Quickshell.env("QS_GREETER_DIR") ?? (Quickshell.env("QS_TEST") ? "" : "/var/lib/qs-desktop");
+        const base = Quickshell.env("QS_GREETER_DIR") || !Quickshell.env("QS_TEST") ? Settings.greeterDir : "";
         return base === "" || user === "" ? "" : `${base}/${user}`;
     }
     readonly property var greeterSaved: ({})   // description → fond écrit (« nature:source:taille »)

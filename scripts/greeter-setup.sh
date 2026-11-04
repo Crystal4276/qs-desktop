@@ -51,8 +51,12 @@ install_file() {
     local src="$tree/$1" target="$2"
     if [[ -f "$target" ]] && cmp -s "$src" "$target"; then
         echo "= $target à jour"
-        # Déjà là sans être noté (registre perdu, copie à la main) : noté comme nôtre, retiré par uninstall.
-        [[ -n "$(recorded "$target")" ]] || record "$target" -
+        # Déjà là sans être noté (registre perdu, copie à la main) : sauvegardé tel quel, pour qu'uninstall le remette au lieu de
+        # le supprimer (il peut appartenir à un paquet).
+        if [[ -z "$(recorded "$target")" ]]; then
+            run cp -a "$target" "$target.bak-$stamp"
+            record "$target" "$target.bak-$stamp"
+        fi
         return
     fi
     if [[ -z "$(recorded "$target")" ]]; then
@@ -75,7 +79,7 @@ do_install() {
     # Dossiers d'état : greeter (dernier choix, caches), fond d'écran exporté par le bureau de l'utilisateur (lisible par greeter).
     run install -d -m 755 -o root -g root "$var"
     run install -d -m 700 -o greeter -g greeter "$var/greeter"
-    run install -d -m 755 -o "$user" -g "$(id -gn "$user")" "$var/$user"
+    run install -d -m 750 -o "$user" -g greeter "$var/$user"   # fonds : lisibles par greeter seul (groupe)
 
     # Version committée, extraite à part : copie du dépôt lisible par greeter (ton dossier personnel ne l'est pas), remplacée d'un
     # bloc, et source des fichiers système.
@@ -116,12 +120,14 @@ do_enable() {
 # greetd toujours désactivé (sa config va être retirée) ; l'ancien gestionnaire réactivé s'il y en avait un. Une sauvegarde
 # introuvable est signalée sans arrêter le reste.
 do_uninstall() {
+    local greetd_enabled=""
     if systemctl is-enabled --quiet greetd.service 2>/dev/null; then
+        greetd_enabled=1
         run systemctl disable greetd.service
     fi
     if [[ -f "$previous_dm" ]]; then
         run systemctl enable "$(cat "$previous_dm")"
-    else
+    elif [[ -n "$greetd_enabled" ]]; then
         echo "! aucun ancien gestionnaire de connexion noté : connexion en console au prochain démarrage"
     fi
     local missing=""
