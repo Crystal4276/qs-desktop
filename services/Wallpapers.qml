@@ -287,11 +287,26 @@ Singleton {
     }
     readonly property var greeterSaved: ({})   // description → fond écrit (« nature:source:taille »)
 
+    // Dossier présent et inscriptible, vérifié au démarrage puis à chaque export refusé : sans écran de connexion (laptop, avant
+    // greeter-setup.sh), aucun rendu pour rien ; dossier créé ensuite : pris au fond affiché suivant.
+    property bool greeterWritable: false
+
+    Process {
+        id: greeterCheck
+        command: ["test", "-d", root.greeterDir, "-a", "-w", root.greeterDir]
+        running: root.greeterDir !== ""
+        onExited: code => root.greeterWritable = code === 0
+    }
+
     // Fichier où écrire le fond `key` de l'écran `description` ("" : déjà écrit, ou pas de dossier). Même nom côté greeter
     // (services/Greeter.qml). Retenu seulement une fois écrit (greeterWritten) : un échec est retenté au prochain affichage.
     function greeterFile(description: string, key: string): string {
         if (greeterDir === "" || description === "" || greeterSaved[description] === key)
             return "";
+        if (!greeterWritable) {
+            greeterCheck.running = true;
+            return "";
+        }
         return `${greeterDir}/${Qt.md5(description)}.jpg`;
     }
 

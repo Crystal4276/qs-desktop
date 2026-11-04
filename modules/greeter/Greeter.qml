@@ -75,9 +75,11 @@ Scope {
                 sessions: Greeter.sessions.map(s => s.name)
                 sessionIndex: Greeter.sessionIndex
                 sessionsOpen: root.sessionsOpen
-                onSessionsToggled: root.sessionsOpen = !root.sessionsOpen
+                // Session figée pendant la vérification (comme ↑/↓) : celle lancée est celle affichée à l'envoi.
+                onSessionsToggled: root.sessionsOpen = !root.sessionsOpen && !Greeter.checking
                 onSessionChosen: index => {
-                    Greeter.sessionIndex = index;
+                    if (!Greeter.checking)
+                        Greeter.sessionIndex = index;
                     root.sessionsOpen = false;
                 }
                 onUserClicked: Greeter.nextUser()

@@ -25,6 +25,9 @@ files=(
     "dotfiles/greetd/pam-greetd /etc/pam.d/greetd"
     "dotfiles/greetd/pam-greetd-greeter /etc/pam.d/greetd-greeter"
 )
+# Session Sway sur Nvidia (Sway refuse de démarrer sans --unsupported-gpu ; config machine `greeter.defaultSession`) : copie du
+# fichier fait à la main pour SDDM, dans /usr/local/share (avant /usr/share dans XDG_DATA_DIRS, hors des fichiers des paquets).
+[[ -d /sys/module/nvidia ]] && files+=("dotfiles/greetd/sway-vulkan.desktop /usr/local/share/wayland-sessions/sway-vulkan.desktop")
 
 run() {
     printf '+ %s\n' "$*"
@@ -45,6 +48,8 @@ install_file() {
     local src="$tree/$1" target="$2"
     if [[ -f "$target" ]] && cmp -s "$src" "$target"; then
         echo "= $target à jour"
+        # Déjà là sans être noté (registre perdu, copie à la main) : noté comme nôtre, retiré par uninstall.
+        [[ -n "$(recorded "$target")" ]] || record "$target" -
         return
     fi
     if [[ -z "$(recorded "$target")" ]]; then
@@ -118,7 +123,7 @@ uninstall() {
     fi
     local missing=""
     if [[ -f "$backups" ]]; then
-        while read -r target backup; do
+        while read -r target backup <&3; do
             if [[ "$backup" == - ]]; then
                 run rm -f "$target"
             elif [[ -f "$backup" ]]; then
@@ -127,7 +132,7 @@ uninstall() {
                 echo "! sauvegarde $backup introuvable : $target laissé tel quel"
                 missing=1
             fi
-        done <"$backups"
+        done 3<"$backups"   # pas sur l'entrée standard : sudo la transmettrait à la commande
     fi
     run rm -rf "$dest"
     if [[ -n "$missing" ]]; then
