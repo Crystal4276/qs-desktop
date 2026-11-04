@@ -1,0 +1,109 @@
+# Développement
+
+Savoir-faire pour modifier le bureau sans le casser. Version cible : **Quickshell 0.3.2**, Qt 6.
+
+## Le bureau réel
+
+- `~/.config/quickshell/desktop` → ce dépôt. L'instance de la session est lancée par `scripts/desktop.sh` (autostart de Sway et
+  d'Hyprland, `dotfiles/`), qui la relance après un arrêt (abandon après 5 arrêts en une minute).
+- **Chaque fichier QML sauvegardé dans le dépôt recharge à chaud le vrai bureau** (barres, fonds, services).
+- Commandes : `scripts/dev.sh` (= `desktop.sh restart`, affiche les erreurs du démarrage), `scripts/dev.sh stop`, `scripts/dev.sh log`,
+  `scripts/desktop.sh pid`. Journal : `$XDG_RUNTIME_DIR/qs-desktop.<session>.log`. Relance au clavier : `$mod+Ctrl+W`.
+- Raccourcis → `scripts/ipc.sh <cible> <fonction> [args]` : `qs ipc --pid <instance de la session>`, 2 s au plus, sinon échec et
+  repli natif (`$mod+N`).
+- **Jamais `-c desktop`** dans un test ou un `kill` : toutes les copies du dépôt portent `//@ pragma ShellId desktop`, `qs list -c desktop`
+  les voit toutes (incident du 2026-11-03 : un `kill -SEGV` de test a touché le vrai bureau). Viser par `--pid`.
+- Variables du processus : `scripts/qs-env.sh` (sourcé par `desktop.sh`), mesures dans `docs/PERFORMANCE.md`.
+
+## Méthode
+
+1. **Préparer sur une copie du dépôt** (scratchpad), tester sur un banc, puis copier les fichiers d'un seul coup dans le dépôt.
+   Jamais d'expérience écrite directement dans le dépôt (incident du 2026-11-04 : un `WeakMap` a planté le bureau 5 fois, abandon
+   de la surveillance, ~5 min sans barres ni fonds).
+2. Sur le banc, lire **toutes** les lignes WARN/ERROR d'un **démarrage complet**, pas seulement d'un rechargement à chaud (une boucle
+   de liaison n'apparaissait qu'au démarrage complet).
+3. Après la copie : instance réelle vivante (`scripts/desktop.sh pid`, `qs log --pid`), 3 barres et 3 fonds (captures `scripts/shot.sh`).
+4. Si les écrans ou les espaces sont touchés : `scripts/test-outputs.sh sway` et `scripts/test-outputs.sh hyprland` (0 échec).
+5. Un banc ne prouve pas le focus clavier : vérifier l'ouverture des popups sur la vraie session avant d'annoncer un succès.
+6. **Revue en boucle** (quand demandée) : `/code-review high` sur les fichiers entiers, chaque constat reproduit sur banc avant
+   correction (contre-épreuve sur l'ancien code), un commit par passe, arrêt quand une passe ne trouve plus que du négligeable.
+   Partir de l'usage réel (applications, réglages, chemins vraiment utilisés) ; ignorer les rapports en retard sur du code remplacé.
+7. **Jamais d'action `nordvpn`** (connexion, déconnexion, réglage), ni sur le vrai système ni sur banc : faux `nordvpn` qui transmet
+   les lectures et simule les actions. Consigne à transmettre à tout sous-agent, avec celles des bancs.
+8. Ne pas laisser traîner d'instance de test : l'arrêter avec tout son groupe de processus (bus privés, `gdbus monitor`).
+
+## Bancs d'essai
+
+Construits dans le scratchpad de session (perdus au redémarrage). Reprendre le bloc d'environnement de `scripts/test-outputs.sh`.
+
+**Sway isolé (headless)** — lançable depuis n'importe quelle session :
+- `WLR_BACKENDS=headless WLR_RENDERER=pixman sway`, écrans virtuels `swaymsg create_output` puis `output HEADLESS-N pos … res …`.
+- Exporter **`SWAYSOCK` et `I3SOCK`** (le même socket) et retirer `HYPRLAND_INSTANCE_SIGNATURE` : `Quickshell.I3` lit `I3SOCK` d'abord ;
+  sans lui, l'instance du banc parle au vrai Sway sans que `swaymsg` le montre. Contrôle : `qs ipc --pid $pid call outputs blocks`
+  doit lister des `HEADLESS-*`.
+- Instance : `QS_TEST=1 XDG_STATE_HOME=… XDG_CACHE_HOME=… GIO_USE_VFS=local GVFS_DISABLE_FUSE=1 dbus-run-session -- qs -p <copie>`.
+  `QS_TEST` coupe montage automatique, reconnexion Bluetooth et agent polkit ; état et cache à part (sinon partagés avec le vrai
+  bureau par le `ShellId`) ; le PID à viser est celui de `qs`, enfant de `dbus-run-session`. Le bus système reste le vrai.
+- La veille de l'instance de test éteint les écrans virtuels et `grim` bloque : `swaymsg output '*' power on` ou inhibition.
+  Idem sur les vrais écrans en veille : lire `power` dans `swaymsg -t get_outputs` avant `grim`.
+
+**Hyprland imbriqué** — dans la session Hyprland (sous Nvidia, le mode headless n'alloue aucune image ; imbriqué dans Sway : refusé,
+`xdg_wm_base` v5) : une fenêtre s'ouvre le temps du test. Régler le banc comme la vraie config, en particulier `cursor.no_warps` ;
+déplacer le pointeur comme un vrai geste (sinon `follow_mouse` rend le focus au dernier écran visé : échecs aléatoires).
+
+**Entrées et applications factices** (outils hors dépôt, à recréer) :
+- clics et frappe : client Wayland `zwlr_virtual_pointer_v1` + `zwp_virtual_keyboard_v1` (pywayland) ; `swaymsg seat - cursor press`
+  n'atteint pas les surfaces Qt. Avec plusieurs écrans, les coordonnées absolues portent sur toute la disposition ; sans périphérique
+  de pointage, Sway n'envoie aucun événement de pointeur ; garder le client vivant (sinon le survol tombe) ;
+- tray : StatusNotifierItem en Python + `Dbusmenu` ;
+- audio : sortie `module-null-sink` ; verrouillage : PAM factice (`pam_exec`, `pam_echo`) ;
+- web apps : profil Chromium jetable, page pilotée par DevTools, sites simulés (`--host-resolver-rules`). Ne jamais lancer
+  `swaymsg exec chromium` depuis un banc : le `PATH` n'est pas transmis, c'est le vrai Chromium qui s'ouvre.
+- mémoire : `MALLOC_CONF=junk:free` révèle les accès à de la mémoire libérée.
+
+## Scripts (`scripts/`)
+
+| Script | Rôle |
+|---|---|
+| `desktop.sh` | lance et surveille le bureau de la session ; `restart`, `stop`, `log`, `pid` |
+| `dev.sh` | raccourci de `desktop.sh restart` / `stop` / `log` |
+| `ipc.sh` | `qs ipc call` des raccourcis vers l'instance de la session (par PID) |
+| `qs-env.sh` | variables du processus Quickshell (allocateur, atlas…) |
+| `test-outputs.sh [sway\|hyprland]` | répartition dynamique des espaces sur banc isolé, ~45 contrôles |
+| `shot.sh <nom> [sortie\|géométrie]` | capture `grim` dans `.shots/` |
+| `crop.sh <image> <géométrie>` | recadrage ImageMagick |
+| `perf.sh snap\|idle\|ab` | mesures mémoire / CPU (`docs/PERFORMANCE.md`) |
+
+## Pièges connus
+
+**Moteur JavaScript de Qt 6 / QML**
+- `WeakMap` : plante le moteur (`QV4::Value::sameValueZero`). Cache à clé texte à la place.
+- `flatMap`, `Object.fromEntries` : absents.
+- `grabToImage` multiplie sa taille cible par l'échelle de l'écran (450 px → 675 en scale 1.5) : diviser.
+- Bogue de Qt 6.12 au coin des menus (raison parmi d'autres de l'abandon du menu copié de GTK).
+
+**Quickshell 0.3.2**
+- `FileView` dont on change `path` rend encore les données de l'ancien fichier : un `FileView` par fichier. `setData` crée les dossiers.
+- `I3.focusedMonitor` n'est pas remis à zéro quand l'écran focalisé disparaît avec un espace qui a des fenêtres : pointeur pendant,
+  plantage aléatoire (`lookupSingletonProperty`). Ne pas le relire pendant un changement d'écrans (`Compositor.focusedOutput`).
+- L'écran affiché par un espace n'est pas mis à jour quand l'espace change d'écran : relire les sorties après chaque déplacement.
+- Aucun jeton d'activation transmis : une fenêtre activée n'est que marquée urgente (d'où `Compositor.focusNextActivation()`).
+- `onNotificationChanged` est émis aussi à la création ; au rechargement, les notifications affichées sont réémises *après* la
+  restauration de l'historique.
+- `qs kill` moins d'une seconde après un rechargement à chaud peut planter (deux générations du moteur) : rapport dans
+  `~/.cache/quickshell/crashes/`, sans gravité.
+- Le cache disque QML de Qt ne prend pas les chemins `qs:@/` : tout est recompilé à chaque lancement.
+- `Hyprland.usingLua` faux : le backend Hyprland n'envoie aucune action (seule la config Lua est prise en charge).
+
+**Hyprland 0.57 (config Lua)**
+- `hyprctl keyword` n'existe plus ; `hyprctl dispatch` attend une expression Lua (`hl.dsp.focus({ workspace = 4 })`).
+- `hl.monitor` **fusionne** les champs avec la règle existante (`disabled = true` reste posé) ; une règle partielle visant le connecteur
+  fait perdre échelle et position à un écran déclaré par `desc:` : toujours une règle complète, sur la même clé que la config.
+- `hl.dsp.dpms` attend `action`, pas `mode` (avec `mode`, il bascule).
+- Les changements d'écran sont appliqués après la réponse de `hyprctl` : attendre l'état réel.
+- Au rallumage d'un écran, les espaces reviennent avant la relecture des moniteurs : se fier à `monitoradded` / `monitorremoved`.
+- Afficher un espace ne focalise pas sa fenêtre.
+
+**Sway**
+- `swaymsg` et `Quickshell.I3` lisent `I3SOCK` avant `SWAYSOCK` (voir Bancs).
+- `GIO_USE_VFS=local` dans tout banc : sinon son `gvfsd` tente de monter à côté du vrai.
