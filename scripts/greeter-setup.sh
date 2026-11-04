@@ -1,0 +1,130 @@
+#!/usr/bin/env bash
+# Mise en place système de l'écran de connexion (greetd + greeter Quickshell, docs/ARCHITECTURE.md § 9). À lancer en utilisateur :
+# chaque commande système passe par sudo. Idempotent ; repris par install.sh (phase 12).
+#
+# Usage : greeter-setup.sh [--dry-run] install     copie du dépôt (version committée) dans /usr/local/share/qs-desktop, fichiers greetd
+#                                                  et PAM (dotfiles/greetd, ancien fichier sauvegardé), dossiers de /var/lib/qs-desktop ;
+#                                                  aucun service touché. À relancer après un changement du greeter.
+#         greeter-setup.sh [--dry-run] enable      greetd devient le gestionnaire de connexion au prochain démarrage (l'ancien,
+#                                                  ex. sddm, est désactivé et noté pour `uninstall`)
+#         greeter-setup.sh [--dry-run] uninstall   ancien gestionnaire réactivé, fichiers d'origine restaurés, copie et dossiers retirés
+#         --dry-run : affiche les commandes sans rien modifier.
+set -euo pipefail
+
+repo="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
+dest=/usr/local/share/qs-desktop
+var=/var/lib/qs-desktop
+backups="$var/backups"        # « fichier sauvegarde » par ligne ; « fichier - » : absent avant nous (retiré par uninstall)
+previous_dm="$var/previous-dm"
+user="${SUDO_USER:-$USER}"
+stamp="$(date +%Y%m%d-%H%M%S)"
+dry=""
+
+files=(
+    "dotfiles/greetd/config.toml /etc/greetd/config.toml"
+    "dotfiles/greetd/pam-greetd /etc/pam.d/greetd"
+    "dotfiles/greetd/pam-greetd-greeter /etc/pam.d/greetd-greeter"
+)
+
+run() {
+    printf '+ %s\n' "$*"
+    [[ -n "$dry" ]] || sudo "$@"
+}
+
+# Ligne enregistrée pour `file` dans $backups ("" : aucune).
+recorded() {
+    [[ -f "$backups" ]] && awk -v f="$1" '$1 == f { print $2; exit }' "$backups" || true
+}
+
+record() {
+    run sh -c "echo '$1 $2' >> '$backups'"
+}
+
+install_file() {
+    local src="$repo/$1" target="$2"
+    if [[ -f "$target" ]] && cmp -s "$src" "$target"; then
+        echo "= $target à jour"
+        return
+    fi
+    if [[ -z "$(recorded "$target")" ]]; then
+        if [[ -e "$target" ]]; then
+            run cp -a "$target" "$target.bak-$stamp"
+            record "$target" "$target.bak-$stamp"
+        else
+            record "$target" -
+        fi
+    fi
+    run install -D -m 644 -o root -g root "$src" "$target"
+}
+
+install() {
+    command -v greetd >/dev/null || { echo "greetd n'est pas installé (paquets : deps/arch-pacman.txt)." >&2; exit 1; }
+    getent passwd greeter >/dev/null || { echo "Utilisateur « greeter » absent (créé par le paquet greetd)." >&2; exit 1; }
+    [[ "$user" != root ]] || { echo "À lancer en utilisateur (sudo est appelé pour chaque commande)." >&2; exit 1; }
+    [[ -z "$(git -C "$repo" status --porcelain)" ]] || echo "! modifications non committées : seule la version committée est copiée"
+
+    # Dossiers d'état : greeter (dernier choix, caches), fond d'écran exporté par le bureau de l'utilisateur (lisible par greeter).
+    run install -d -m 755 -o root -g root "$var"
+    run install -d -m 700 -o greeter -g greeter "$var/greeter"
+    run install -d -m 755 -o "$user" -g "$(id -gn "$user")" "$var/$user"
+
+    # Copie du dépôt lisible par greeter (ton dossier personnel ne l'est pas) : remplacée d'un bloc.
+    local archive
+    archive="$(mktemp)"
+    git -C "$repo" archive --format=tar HEAD >"$archive"
+    run rm -rf "$dest.new"
+    run install -d -m 755 -o root -g root "$dest.new"
+    run tar -x --no-same-owner -f "$archive" -C "$dest.new"
+    run chmod -R u=rwX,go=rX "$dest.new"
+    run rm -rf "$dest"
+    run mv "$dest.new" "$dest"
+    rm -f "$archive"
+
+    for entry in "${files[@]}"; do
+        # shellcheck disable=SC2086
+        install_file $entry
+    done
+    echo "Écran de connexion installé. Pour le rendre actif au prochain démarrage : $0 enable"
+}
+
+enable() {
+    local current
+    current="$(basename "$(readlink -f /etc/systemd/system/display-manager.service 2>/dev/null || true)")"
+    if [[ "$current" == greetd.service ]]; then
+        echo "= greetd est déjà le gestionnaire de connexion"
+        return
+    fi
+    if [[ -n "$current" && "$current" != . ]]; then
+        [[ -f "$previous_dm" ]] || run sh -c "echo '$current' > '$previous_dm'"
+        run systemctl disable "$current"
+    fi
+    run systemctl enable greetd.service
+    echo "greetd prendra la main au prochain démarrage (retour : $0 uninstall, ou docs/ROLLBACK.md)."
+}
+
+uninstall() {
+    if [[ -f "$previous_dm" ]]; then
+        local dm
+        dm="$(cat "$previous_dm")"
+        run systemctl disable greetd.service
+        run systemctl enable "$dm"
+    fi
+    if [[ -f "$backups" ]]; then
+        while read -r target backup; do
+            if [[ "$backup" == - ]]; then
+                run rm -f "$target"
+            else
+                run mv -f "$backup" "$target"
+            fi
+        done <"$backups"
+    fi
+    run rm -rf "$dest" "$var"
+}
+
+[[ "${1:-}" == --dry-run ]] && { dry=1; shift; }
+case "${1:-}" in
+    install) install ;;
+    enable) enable ;;
+    uninstall) uninstall ;;
+    *) sed -n '5,11p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 2 ;;
+esac

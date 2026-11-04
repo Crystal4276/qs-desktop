@@ -1,0 +1,13 @@
+#%PAM-1.0
+# /etc/pam.d/greetd — installé par scripts/greeter-setup.sh. Celui du paquet greetd, plus le déverrouillage du trousseau
+# gnome-keyring par le mot de passe de connexion (lignes reprises de /etc/pam.d/sddm ; `-` : ignorées si le module manque).
+
+auth       required     pam_securetty.so
+auth       requisite    pam_nologin.so
+auth       include      system-local-login
+-auth      optional     pam_gnome_keyring.so
+account    include      system-local-login
+password   include      system-local-login
+-password  optional     pam_gnome_keyring.so use_authtok
+session    include      system-local-login
+-session   optional     pam_gnome_keyring.so auto_start
