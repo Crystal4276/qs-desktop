@@ -77,8 +77,9 @@ sudo reboot
 ~/qs-desktop/scripts/greeter-setup.sh uninstall   # après le redémarrage : fichiers d'origine remis, copie retirée
 ```
 
-Tant que greetd tourne (session ouverte par lui), `uninstall` ne fait que rebasculer les services : greetd garde sa config en mémoire
-et relancerait l'écran de connexion à la déconnexion. Lancé depuis un TTY ou une session SDDM, il fait tout en une fois.
+Tant que greetd tourne (y compris depuis un TTY, écran de connexion cassé), `uninstall` ne fait que rebasculer les services : greetd
+garde sa config en mémoire et relancerait l'écran de connexion à la déconnexion. Après le redémarrage (SDDM revenu), la seconde
+exécution remet les fichiers d'origine et retire la copie.
 
 À la main, sans le script : `sudo systemctl disable greetd && sudo systemctl enable sddm && sudo reboot`.
 

@@ -146,7 +146,7 @@ do_uninstall() {
         echo "Gestionnaire de connexion rebasculé. greetd tourne encore : redémarre, puis relance $0 uninstall pour finir."
         return
     fi
-    local missing=""
+    local left=""   # lignes du registre non traitées (sauvegarde introuvable) : seules gardées
     if [[ -f "$backups" ]]; then
         while read -r target backup <&3; do
             if [[ "$backup" == - ]]; then
@@ -155,13 +155,14 @@ do_uninstall() {
                 run mv -f "$backup" "$target"
             else
                 echo "! sauvegarde $backup introuvable : $target laissé tel quel"
-                missing=1
+                left+="$target $backup"$'\n'
             fi
         done 3<"$backups"   # pas sur l'entrée standard : sudo la transmettrait à la commande
     fi
     run rm -rf "$dest"
-    if [[ -n "$missing" ]]; then
-        echo "! $var gardé : registre des sauvegardes ($backups) et ancien gestionnaire ($previous_dm)"
+    if [[ -n "$left" ]]; then
+        run sh -c "printf '%s' '$left' > '$backups'"
+        echo "! $var gardé : registre des sauvegardes non restaurées ($backups) et ancien gestionnaire ($previous_dm)"
     else
         run rm -rf "$var"
     fi

@@ -100,7 +100,7 @@ Singleton {
                 id: id,
                 name: (entry.Name ?? id) + (x11 ? " (X11)" : ""),
                 // Codes de champ : sans objet pour une session ; `%%` : un `%`.
-                exec: entry.Exec.replace(/%[fFuUdDnNickvm]/g, "").replace(/%%/g, "%"),
+                exec: entry.Exec.replace(/%([%fFuUdDnNickvm])/g, (m, c) => c === "%" ? "%" : ""),
                 desktopNames: (entry.DesktopNames ?? "").split(";").filter(n => n !== "").join(":"),
                 x11: x11
             });
