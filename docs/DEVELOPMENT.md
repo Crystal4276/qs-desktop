@@ -106,7 +106,19 @@ verrouillage).
 - `Hyprland.usingLua` faux : le backend Hyprland n'envoie aucune action (seule la config Lua est prise en charge).
 - `Greetd` : après un refus (`auth_error`), Quickshell annule lui-même la session puis journalise « Received unexpected greetd response
   success » (réponse de greetd à cette annulation) : sans effet. Ne pas rappeler `cancelSession()` après `authFailure`.
-- `Greetd.launch(…, true)` arrête Quickshell aussitôt la session acceptée : enregistrer l'état (dernier choix) **avant**.
+- `Greetd.launch(…, true)` arrête Quickshell aussitôt la session acceptée : enregistrer l'état (dernier choix) **avant**
+  (`blockWrites`).
+
+**greetd 0.10**
+- La commande de `start_session` est **recollée avec des espaces** et passée à `sh -c "exec …"` (`session/worker.rs`) : pas
+  d'argument à espaces ou guillemets (passer par l'environnement). Le faux greetd du banc ne l'exécute pas : vérifier `cmd` à la main.
+- `source_profile` (vrai par défaut) lit `/etc/profile` et `~/.profile` avant la commande.
+- Service PAM du greeter : `greetd-greeter`, sinon repli sur `greetd`.
+
+**Qt Quick**
+- Un `TapHandler` ne prend qu'une prise passive : un clic sur lui atteint aussi le `TapHandler` d'un élément **dessous** (liste des
+  sessions au-dessus des boutons d'alimentation : mise en veille vue sur banc). Désactiver l'élément couvert (`enabled`).
+- `startx` recoupe aux espaces les arguments de son client (`clientargs` non cité).
 
 **Hyprland 0.57 (config Lua)**
 - `hyprctl keyword` n'existe plus ; `hyprctl dispatch` attend une expression Lua (`hl.dsp.focus({ workspace = 4 })`).

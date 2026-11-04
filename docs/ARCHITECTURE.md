@@ -479,11 +479,14 @@ Dépôt privé séparé `Crystal4276/fonts-ms` (polices propriétaires, jamais d
 - **Service** (`services/Greeter.qml`) : comptes de `/etc/passwd` (UID 1000–59999, shell de connexion) ; sessions des fichiers
   `.desktop` de `wayland-sessions` puis `xsessions` (`XDG_DATA_DIRS`), sans ceux dont `TryExec` manque, X11 suffixées « (X11) » ; dernier
   compte et dernière session par compte dans `/var/lib/qs-desktop/greeter/state.json`, sinon `greeter.defaultSession` (§ 4).
-  Connexion : `Greetd.createSession` → mot de passe → `launch` de `scripts/greeter-session.sh wayland|x11 <Exec>` avec
-  `XDG_SESSION_TYPE`, `XDG_SESSION_DESKTOP`, `XDG_CURRENT_DESKTOP` (`DesktopNames`).
+  Connexion : `Greetd.createSession` → mot de passe → `launch` de `scripts/greeter-session.sh wayland|x11` avec `XDG_SESSION_TYPE`,
+  `XDG_SESSION_DESKTOP`, `XDG_CURRENT_DESKTOP` (`DesktopNames`) et `GREETER_SESSION_EXEC` (= `Exec`) : greetd recolle la commande avec
+  des espaces pour `sh -c`, `Exec` ne peut donc pas y figurer tel quel.
 - **Lancement de la session** (`scripts/greeter-session.sh`, sous l'utilisateur) : shell de connexion de l'utilisateur (profil lu, comme
-  SDDM), puis `Exec` ; X11 : `startx` sur le terminal virtuel de la session (`xorg-xinit`). Sway Nvidia : session `sway-vulkan.desktop`
-  (`env WLR_RENDERER=vulkan sway --unsupported-gpu`), créée à la main pour SDDM (à générer par `install.sh`, phase 12).
+  SDDM ; shell non POSIX : `/bin/sh` de connexion), puis `Exec` ; X11 : `startx` sur le terminal virtuel de la session (`xorg-xinit` ;
+  sessions X11 masquées sans lui), le script lui-même comme client (`startx` recoupe les arguments aux espaces). Profil lu une seule
+  fois (`source_profile = false` côté greetd). Sway Nvidia : session `sway-vulkan.desktop` (`env WLR_RENDERER=vulkan sway
+  --unsupported-gpu`), versionnée dans `dotfiles/greetd/`, installée dans `/usr/local/share/wayland-sessions/` sur une machine Nvidia.
 - **PAM** : `/etc/pam.d/greetd` (celui du paquet + `pam_gnome_keyring.so` en `auth`, `password`, `session auto_start`, comme
   `/etc/pam.d/sddm`) ; `/etc/pam.d/greetd-greeter` pour la session du greeter lui-même (comme `sddm-greeter` : sans lui, greetd
   reprend `greetd` et lancerait le trousseau pour `greeter`).

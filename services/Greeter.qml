@@ -12,6 +12,7 @@ import qs.config
 //    ceux dont `TryExec` manque ;
 //    la dernière de l'utilisateur, sinon `greeter.defaultSession` de la config machine (« wayland/sway »), sinon la première ;
 //  - connexion : greetd demande le mot de passe (PAM, /etc/pam.d/greetd), puis lance la session par scripts/greeter-session.sh
+//    (`Exec` dans GREETER_SESSION_EXEC)
 //    (shell de connexion de l'utilisateur, comme SDDM ; X11 par startx) et Quickshell s'arrête.
 // Dernier utilisateur et dernière session : `<dir>/greeter/state.json` ; fonds d'écran du bureau : `<dir>/<utilisateur>/`
 // (Wallpapers.greeterDir). Dossiers créés par scripts/greeter-setup.sh.
@@ -137,9 +138,6 @@ Singleton {
             } catch (e) {
                 root.state = {};
             }
-            const i = root.users.indexOf(root.state.user ?? "");
-            root.userIndex = Math.max(i, 0);
-            root.pickSession();
         }
     }
 
@@ -170,7 +168,12 @@ Singleton {
             wallpaperList.exec(["sh", "-c", 'for f in "$1"/*.jpg; do [ -f "$f" ] && echo "$f"; done', "sh", `${dir}/${user}`]);
     }
 
-    Component.onCompleted: listWallpapers()
+    // Après la lecture de l'état et de /etc/passwd (tous deux bloquants), dans n'importe quel ordre : dernier compte, sa session.
+    Component.onCompleted: {
+        userIndex = Math.max(users.indexOf(state.user ?? ""), 0);
+        pickSession();
+        listWallpapers();
+    }
 
     Process {
         id: wallpaperList
@@ -227,11 +230,13 @@ Singleton {
             return;
         }
         saveState();
-        const env = [`XDG_SESSION_TYPE=${s.x11 ? "x11" : "wayland"}`, `XDG_SESSION_DESKTOP=${s.id}`];
+        // greetd recolle la commande avec des espaces et la passe à `sh -c` : `Exec` (espaces, guillemets) passe par
+        // l'environnement, la commande ne garde que des mots simples.
+        const env = [`XDG_SESSION_TYPE=${s.x11 ? "x11" : "wayland"}`, `XDG_SESSION_DESKTOP=${s.id}`, `GREETER_SESSION_EXEC=${s.exec}`];
         if (s.desktopNames !== "")
             env.push(`XDG_CURRENT_DESKTOP=${s.desktopNames}`);
         console.info(`Greeter: ${user} → ${s.key} : ${s.exec}`);
-        Greetd.launch([Quickshell.shellPath("scripts/greeter-session.sh"), s.x11 ? "x11" : "wayland", s.exec], env, true);
+        Greetd.launch([Quickshell.shellPath("scripts/greeter-session.sh"), s.x11 ? "x11" : "wayland"], env, true);
     }
 
     Connections {

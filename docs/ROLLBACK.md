@@ -62,7 +62,8 @@ En dernier recours : `loginctl terminate-user $USER` (ferme la session, applicat
 
 `scripts/greeter-setup.sh install` copie le dépôt dans `/usr/local/share/qs-desktop`, crée `/var/lib/qs-desktop/` et remplace
 `/etc/greetd/config.toml` et `/etc/pam.d/greetd` (originaux sauvegardés en `*.bak-<date>`, notés dans `/var/lib/qs-desktop/backups`),
-plus `/etc/pam.d/greetd-greeter` (nouveau). `enable` désactive l'ancien gestionnaire (noté dans `/var/lib/qs-desktop/previous-dm`,
+plus `/etc/pam.d/greetd-greeter` et, sur une machine Nvidia, `/usr/local/share/wayland-sessions/sway-vulkan.desktop` (nouveaux,
+retirés par `uninstall`). `enable` désactive l'ancien gestionnaire (noté dans `/var/lib/qs-desktop/previous-dm`,
 ici `sddm.service`) et active greetd. **SDDM n'est pas désinstallé.**
 
 ### Revenir à SDDM
