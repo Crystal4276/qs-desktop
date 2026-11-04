@@ -10,6 +10,11 @@ kind=$1
 if [ "$kind" = x11-client ]; then
     command=$GREETER_SESSION_EXEC
     unset GREETER_SESSION_EXEC
+    # Comme le xinitrc par défaut (et le Xsession de SDDM) : DISPLAY, XAUTHORITY transmis à systemd --user et D-Bus.
+    for f in /etc/X11/xinit/xinitrc.d/?*.sh; do
+        [ -x "$f" ] && . "$f"
+    done
+    unset f
     eval "exec $command"
 fi
 case "${SHELL##*/}" in

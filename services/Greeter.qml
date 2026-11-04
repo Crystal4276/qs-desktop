@@ -189,16 +189,17 @@ Singleton {
     property string message: ""
     property string pamText: ""   // messages de PAM pendant la vérification, montrés si elle échoue
 
-    function submit(password: string): void {
+    // Vrai si la vérification a commencé (le champ peut être vidé) ; Entrée pendant une vérification : ignorée, frappe gardée.
+    function submit(password: string): bool {
         if (checking || password === "" || user === "")
-            return;
+            return false;
         if (!Greetd.available) {
             fail("greetd is not running");
-            return;
+            return false;
         }
         if (!session) {
             fail("No session");
-            return;
+            return false;
         }
         pending = password;
         checking = true;
@@ -206,6 +207,7 @@ Singleton {
         message = "Checking…";
         pamText = "";
         Greetd.createSession(user);
+        return true;
     }
 
     function fail(text: string): void {

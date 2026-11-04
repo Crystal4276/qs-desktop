@@ -26,7 +26,9 @@ outputs="$repo/dotfiles/sway/hosts/$(cat /proc/sys/kernel/hostname).outputs.conf
 set --
 if [ -d /sys/module/nvidia ]; then
     set -- --unsupported-gpu
-    . "$repo/scripts/qs-env.sh"   # qs_nvidia_only
-    qs_nvidia_only && export WLR_RENDERER="${WLR_RENDERER:-vulkan}"   # déjà fixé (banc) : gardé
+    # qs_nvidia_only dans un sous-shell : les réglages de qs-env.sh sont pour Quickshell, pas pour Sway.
+    if (. "$repo/scripts/qs-env.sh" && qs_nvidia_only); then
+        export WLR_RENDERER="${WLR_RENDERER:-vulkan}"   # déjà fixé (banc) : gardé
+    fi
 fi
 exec sway "$@" -c "$config"

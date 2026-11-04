@@ -70,6 +70,8 @@ Retour arrière de la bascule : `docs/ROLLBACK.md`.
 batterie (alertes 30 % et 15 %), rétroéclairage et OSD de luminosité, mode avion, Wi-Fi (mot de passe, portail captif), modules masqués
 selon le matériel, GPU AMD / Intel réels, verrouillage avant la mise en veille et réveil, menu et lanceur sur un petit écran ;
 `Brightness`, `BatteryModule`, `Backlight` jamais revus sur du vrai matériel.
+Écran de connexion sur un laptop hybride Intel + Nvidia (pilote propriétaire) : `sway` refuse de démarrer sans `--unsupported-gpu`,
+`sway-vulkan.desktop` n'est installé que si Nvidia est la seule carte : session Sway à prévoir (config machine `greeter.defaultSession`).
 
 ## Décisions en attente
 

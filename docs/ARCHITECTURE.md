@@ -472,7 +472,7 @@ Dépôt privé séparé `Crystal4276/fonts-ms` (polices propriétaires, jamais d
 - **Chaîne** : greetd (VT 1, `/etc/greetd/config.toml`) lance `scripts/greeter.sh` sous l'utilisateur `greeter` → Sway minimal
   (`dotfiles/greetd/sway.conf` + écrans de la machine `dotfiles/sway/hosts/<hostname>.outputs.conf` ; Nvidia : `--unsupported-gpu`, et
   rendu Vulkan si c'est la seule carte) → `qs -p greeter.qml` → session choisie lancée par greetd, Quickshell s'arrête, Sway aussi.
-- **Écran** (`modules/greeter/Greeter.qml`, `LockContent.qml`) : une surface par écran (couche Overlay), clavier à l'écran principal
+- **Écran** (`modules/greeter/GreeterScreen.qml`, `LockContent.qml`) : une surface par écran (couche Overlay), clavier à l'écran principal
   (`Settings.primaryOf`, sans `Outputs` qui placerait des espaces de travail). Fond flouté : la copie du bureau (§ 7.11), sinon uni.
   Sur l'écran principal : horloge, date, initiale et nom (clic : compte suivant s'il y en a plusieurs), champ, message, **pastille de
   session** (clic : liste au style des panneaux ; ↑/↓ : précédente, suivante), éteindre / redémarrer / veille.

@@ -313,6 +313,8 @@ Singleton {
     function greeterWritten(description: string, key: string, ok: bool): void {
         if (ok)
             greeterSaved[description] = key;
+        else
+            greeterWritable = false;   // dossier retiré entre-temps : revérifié au prochain export
     }
 
     // Choix enregistré et dossier lus : forOutput donne le fond définitif.
