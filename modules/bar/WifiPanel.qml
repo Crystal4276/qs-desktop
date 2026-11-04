@@ -5,7 +5,7 @@ import Quickshell.Networking as NM
 import qs.config
 import qs.services
 
-// Panneau Wi-Fi (ta demande du 2026-10-19 : sorti du panneau réseau ; THEME.md § 3 « Module Wi-Fi », ARCHITECTURE R5) :
+// Panneau Wi-Fi (ta demande du 2026-10-19 : sorti du panneau réseau ; THEME.md § 3 « Module Wi-Fi », ARCHITECTURE § 7.6) :
 // interrupteur ; carte du réseau courant (WifiCard.qml : qualité du signal et détails, comme KDE) ; autres réseaux visibles
 // avec force, bande et état (GNOME, Cinnamon) ; mot de passe demandé sous la liste pour un réseau protégé inconnu, redemandé en
 // rouge s'il est refusé ; échec de connexion signalé ; édition des connexions.

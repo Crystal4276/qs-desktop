@@ -6,7 +6,7 @@ import Quickshell.Io
 import Quickshell.Wayland
 import qs.config
 
-// Veille des écrans (remplace swayidle et hypridle, ARCHITECTURE § 10.1 R3) : après `Settings.idle.timeout` secondes sans activité,
+// Veille des écrans (remplace swayidle et hypridle, ARCHITECTURE § 7.13) : après `Settings.idle.timeout` secondes sans activité,
 // écrans éteints par le compositeur ; à la reprise, tous rallumés ensemble. Les inhibitions sont respectées : règles `inhibit_idle`
 // du compositeur, « Keep Screen On »
 // (IdleInhibitor des barres), manette Bluetooth connectée (même inhibiteur), vidéos des applications Wayland.

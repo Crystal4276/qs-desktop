@@ -5,7 +5,7 @@ import Quickshell
 import Quickshell.Io
 import qs.config
 
-// Applications du lanceur (remplace `rofi -show drun`, INVENTORY § 3) et du menu d'applications (catégories, favoris) : comportement de Rofi 2.0.0, code lu (modes/drun.c, history.c).
+// Applications du lanceur (remplace `rofi -show drun`) et du menu d'applications (catégories, favoris) : comportement de Rofi 2.0.0, code lu (modes/drun.c, history.c).
 // - Liste : DesktopEntries, plus les filtres de Rofi que Quickshell n'applique pas (OnlyShowIn / NotShowIn selon
 //   XDG_CURRENT_DESKTOP, TryExec introuvable, Exec absent).
 // - Ordre : historique d'abord (du plus lancé au moins lancé), puis le reste par nom.

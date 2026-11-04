@@ -7,7 +7,7 @@ import qs.config
 import qs.services
 import qs.modules.bar
 
-// Écran de verrouillage natif (remplace swaylock, ARCHITECTURE § 10.1 R2) : protocole ext-session-lock (WlSessionLock) — si
+// Écran de verrouillage natif (remplace swaylock, ARCHITECTURE § 7.12) : protocole ext-session-lock (WlSessionLock) — si
 // Quickshell s'arrête, la session reste verrouillée — et mot de passe vérifié par PAM (`/etc/pam.d/login`, comme swaylock).
 // Une surface par écran (LockContent) ; le champ du mot de passe s'affiche sur l'écran principal (services/Outputs.qml), la saisie
 // est prise quel que soit l'écran qui a le clavier. Pas de déverrouillage par IPC.

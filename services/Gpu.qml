@@ -4,7 +4,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 
-// Utilisation et température du GPU (INVENTORY.md § 1, module `custom/nvidia` ; ARCHITECTURE.md § 11.5), toutes les 5 s.
+// Utilisation et température du GPU (module Waybar `custom/nvidia` ; ARCHITECTURE.md § 7.16), toutes les 5 s.
 // Carte : celle qui affiche le démarrage (`boot_vga`), sinon la première. Lecture selon le constructeur :
 // NVIDIA → `nvidia-smi` (aucun capteur hwmon) ; AMD → `gpu_busy_percent` et capteur hwmon (`edge` de préférence) ;
 // Intel → capteur hwmon seulement (aucune utilisation dans sysfs).

@@ -3,7 +3,7 @@ import Quickshell
 import Quickshell.Io
 
 // Lanceur d'applications (remplace `rofi -show drun`, `$mod+w`) : `qs ipc call launcher toggle|open|close`.
-// La fenêtre n'est chargée qu'à la première ouverture (LazyLoader, ARCHITECTURE § 12).
+// La fenêtre n'est chargée qu'à la première ouverture (LazyLoader, ARCHITECTURE § 10).
 Scope {
     LazyLoader {
         id: loader

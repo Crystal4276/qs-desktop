@@ -3,9 +3,9 @@ pragma Singleton
 import QtQuick
 import Quickshell
 
-// Traduction fidèle de docs/THEME.md, et rien d'autre.
-// Toute valeur ajoutée ici doit d'abord figurer dans THEME.md.
-// Unités : px logiques. 1rem de la CSS Waybar = 20 px (THEME.md, en-tête).
+// Toutes les valeurs de la charte, et seulement ici ; règles et usages : docs/THEME.md (sections « § N » ci-dessous).
+// Aucune valeur inventée : partir d'une valeur existante, sinon demander.
+// Unités : px logiques. 1rem de l'ancienne CSS Waybar = 20 px (THEME.md, règles).
 Singleton {
     id: root
 
@@ -111,7 +111,7 @@ Singleton {
         readonly property int workspaceGlowMargin: 17
     }
 
-    // § 3 — Calendrier de l'horloge (nouveau composant, ARCHITECTURE § 8.3) : valeurs reprises de la barre et du lanceur
+    // § 3 — Calendrier de l'horloge (nouveau composant, ARCHITECTURE § 7.17) : valeurs reprises de la barre et du lanceur
     readonly property QtObject calendar: QtObject {
         readonly property int spacing: 10
         readonly property int titleSize: 26
@@ -252,7 +252,7 @@ Singleton {
         readonly property color statsHighlight: root.module.memory // survol de la pilule GPU / CPU / mémoire, en bloc (ta demande du 2026-10-21)
     }
 
-    // Glyphes (INVENTORY.md § 1, planche docs/reference/glyphs.png), avec leur police
+    // Glyphes (planche docs/reference/glyphs.png), avec leur police
     readonly property QtObject icon: QtObject {
         // font.icons (Symbols Nerd Font Mono)
         readonly property list<string> workspaces: ["\ue79a", "\ue78c", "\uf32e", "\u{f043e}", "\uf1ff", "\uf1bc", "\uf043", "\uf0e0", "\uf1b6"]  // par numéro, 1 à 9
@@ -541,7 +541,7 @@ Singleton {
         readonly property int iconSize: root.notification.iconSize / 2
     }
 
-    // Écran de verrouillage (nouveau design, ARCHITECTURE § 10.1 R2) : fond d'écran de chaque écran flouté et assombri, horloge, date ;
+    // Écran de verrouillage (nouveau design, ARCHITECTURE § 7.12) : fond d'écran de chaque écran flouté et assombri, horloge, date ;
     // sur l'écran principal, initiale et nom de l'utilisateur, champ du mot de passe. Maquette validée le 2026-10-17.
     readonly property QtObject lock: QtObject {
         readonly property int blur: 64                            // rayon max du flou (MultiEffect)
@@ -576,7 +576,7 @@ Singleton {
         readonly property int gap: 64                          // entre la date et l'utilisateur
     }
 
-    // Polices embarquées (assets/fonts, ARCHITECTURE § 8.2) chargées depuis le dépôt : prioritaires sur une copie système
+    // Polices embarquées (assets/fonts, ARCHITECTURE § 8.3) chargées depuis le dépôt : prioritaires sur une copie système
     // du même nom, qui peut différer (ex. `fa-brands-400.woff2` du paquet woff2-font-awesome).
     readonly property list<FontLoader> embeddedFonts: [
         FontLoader { source: Quickshell.shellPath("assets/fonts/SymbolsNerdFontMono-Regular.ttf") },

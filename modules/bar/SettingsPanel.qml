@@ -7,7 +7,7 @@ import Quickshell.Wayland
 import qs.config
 import qs.services
 
-// Panneau de réglages façon GNOME (ARCHITECTURE § 10.1.4) : ouvert par l'engrenage de la barre ou `qs ipc call settings toggle`.
+// Panneau de réglages façon GNOME (ARCHITECTURE § 7.5) : ouvert par l'engrenage de la barre ou `qs ipc call settings toggle`.
 // Remplace le power menu Rofi. De haut en bas, dans l'ordre des réglages rapides de GNOME 51 :
 // - batterie (laptop), capture d'écran ; à droite verrouiller, se déconnecter, redémarrer, éteindre (sans confirmation) ;
 // - curseurs : sortie son, luminosité (laptop) ; flèche : choix du périphérique (toujours affichée, même avec un seul

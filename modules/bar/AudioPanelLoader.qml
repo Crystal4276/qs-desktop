@@ -1,7 +1,7 @@
 import QtQuick
 import Quickshell
 
-// Panneau audio chargé seulement à sa première ouverture (LazyLoader, ARCHITECTURE § 12), pour chaque module qui l'ouvre.
+// Panneau audio chargé seulement à sa première ouverture (LazyLoader, ARCHITECTURE § 10), pour chaque module qui l'ouvre.
 LazyLoader {
     id: root
 

@@ -5,7 +5,7 @@ import Quickshell
 import Quickshell.Io
 import qs.config
 
-// Mises à jour en attente (INVENTORY.md § 1, module `custom/updates`) : `checkupdates | wc -l` toutes les 8600 s,
+// Mises à jour en attente (module Waybar `custom/updates`) : `checkupdates | wc -l` toutes les 8600 s,
 // comme Waybar. `checkupdates` absent (autre distribution) ou 0 mise à jour → module masqué.
 // Clic : `Settings.updateCommand` dans un terminal, qui attend Entrée, puis nouveau comptage (update-wrapper.sh).
 Singleton {
@@ -17,7 +17,7 @@ Singleton {
         check.running = true;
     }
 
-    // Sans commande dans la config machine : paru, sinon yay, sinon pacman (SCRIPTS.md, update-wrapper.sh).
+    // Sans commande dans la config machine : paru, sinon yay, sinon pacman (comme l'ancien update-wrapper.sh).
     readonly property string fallbackCommand: "if command -v paru >/dev/null; then paru -Syu; elif command -v yay >/dev/null; then yay -Syu; else sudo pacman -Syu; fi"
 
     function update(): void {

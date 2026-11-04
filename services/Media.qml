@@ -6,7 +6,7 @@ import Quickshell.Io
 import Quickshell.Services.Mpris
 import qs.config
 
-// Lecteur suivi par le module `mpris` et les touches média (INVENTORY.md § 1). Waybar ne suivait que Spotify (`player`) et sa
+// Lecteur suivi par le module `mpris` et les touches média (Waybar). Waybar ne suivait que Spotify (`player`) et sa
 // molette lançait `playerctld shift`, sans effet visible ; ici (ton choix du 2026-10-16) la molette passe d'un lecteur MPRIS
 // à l'autre. Lecteur suivi (ton choix du 2026-10-16) : celui choisi à la molette, jusqu'au prochain démarrage d'une lecture ;
 // sinon le lecteur préféré (`Settings.mediaPlayer`) s'il joue, sinon un lecteur qui joue (ex. Chromium seul en lecture),

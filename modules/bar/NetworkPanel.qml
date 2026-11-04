@@ -4,7 +4,7 @@ import Quickshell
 import qs.config
 import qs.services
 
-// Panneau réseau (remplace le menu de nm-applet, ARCHITECTURE R5 ; refonte du 2026-10-19, ta demande — THEME.md § 3
+// Panneau réseau (remplace le menu de nm-applet, ARCHITECTURE § 7.6 ; refonte du 2026-10-19, ta demande — THEME.md § 3
 // « Panneau réseau ») : onglets Wired / Tailscale / ZeroTier (seulement ceux qui existent ; pas d'onglets s'il n'y en a qu'un),
 // boutons cochés comme le sélecteur de fonds. Filaire : une carte par câble (WiredCard.qml) ; Tailscale et ZeroTier : leurs
 // vues. Le Wi-Fi a son propre module (WifiPanel.qml). Libellés en anglais, comme nm-applet et la locale du système.

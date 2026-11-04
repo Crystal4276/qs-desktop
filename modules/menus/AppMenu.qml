@@ -8,7 +8,7 @@ import qs.services
 import qs.modules.bar
 
 // Menu d'applications (remplace nwg-menu) : disposition de Cinnamon, style de nwg-menu (THEME.md § 7). Comportement :
-// ARCHITECTURE § 10.1.5 (survol, visée vers la liste, clavier, recherche jamais effacée par le survol).
+// ARCHITECTURE § 7.4 (survol, visée vers la liste, clavier, recherche jamais effacée par le survol).
 OverlayPopup {
     id: root
 

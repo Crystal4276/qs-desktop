@@ -4,7 +4,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 
-// Disques amovibles (module natif du tray, remplace udiskie ; ARCHITECTURE R7, § 10.3). Pas d'accès D-Bus générique en QML :
+// Disques amovibles (module natif du tray, remplace udiskie ; ARCHITECTURE § 7.8). Pas d'accès D-Bus générique en QML :
 //  - état : `busctl --json` (GetManagedObjects d'UDisks2), relu après chaque changement signalé par `gdbus monitor` ;
 //  - actions : `udisksctl` (monter, démonter, déverrouiller avec la phrase de passe sur l'entrée standard, verrouiller, éteindre) ;
 //  - comme udiskie (réglages par défaut, aucun fichier de config) : montage automatique, notifications avec ses textes.

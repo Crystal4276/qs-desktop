@@ -4,7 +4,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 
-// NordVPN (module natif du tray, remplace l'icône de norduserd ; ARCHITECTURE § 11.4). Aucune API : commande `nordvpn`,
+// NordVPN (module natif du tray, remplace l'icône de norduserd ; ARCHITECTURE § 7.9). Aucune API : commande `nordvpn`,
 // statut relu toutes les 30 s (5 s panneau ouvert ou état transitoire ; plus bas) et après chaque action. Masqué si `nordvpn` est absent ou si tu n'es pas connecté au compte
 // (revérifié toutes les 30 s).
 // Toutes les commandes passent par une seule file (ta demande du 2026-10-20) : une à la fois, dans l'ordre ; une lecture

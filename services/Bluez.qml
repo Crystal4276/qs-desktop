@@ -6,12 +6,12 @@ import Quickshell.Io
 import Quickshell.Bluetooth
 import Quickshell.Services.Pipewire
 
-// Bluetooth (module natif du tray, remplace blueman ; ARCHITECTURE R6, § 10.2).
+// Bluetooth (module natif du tray, remplace blueman ; ARCHITECTURE § 7.7).
 // État, connexion, oubli, nom : Quickshell.Bluetooth (BlueZ). Appairage : Quickshell n'a pas d'agent BlueZ ; `bluetoothctl` est
 // lancé le temps d'un appairage demandé ici, avec son propre agent dans la même session que `pair` : BlueZ utilise cet agent sans
 // toucher à l'agent par défaut. Chaque demande (code à confirmer, PIN à saisir…) est montrée dans le panneau ; jamais d'acceptation
 // automatique. Les messages de `bluetoothctl` 5.x reconnus sont regroupés dans `onAgentLine`.
-// Repris de blueman (ta demande du 2026-10-26, ARCHITECTURE § 10.2.1) : notifications de connexion avec la batterie, reconnexion
+// Repris de blueman (ta demande du 2026-10-26, ARCHITECTURE § 7.7) : notifications de connexion avec la batterie, reconnexion
 // automatique toutes les 60 s, profil audio des casques (`pw-dump` / `wpctl`) ; alerte de batterie faible (GNOME).
 Singleton {
     id: root
