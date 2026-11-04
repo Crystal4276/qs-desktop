@@ -4,7 +4,7 @@ import QtQuick
 import Quickshell
 
 // Actions de session du panneau de réglages (remplacent le power menu Rofi) : verrouiller, se déconnecter,
-// redémarrer, éteindre — sans confirmation, comme Rofi. Plus la capture d'écran et « garder l'écran allumé ».
+// redémarrer, éteindre — sans confirmation, comme Rofi ; mise en veille depuis l'écran de verrouillage et l'écran de connexion. Plus la capture d'écran et « garder l'écran allumé ».
 Singleton {
     id: root
 
@@ -38,6 +38,11 @@ Singleton {
 
     function poweroff(): void {
         Quickshell.execDetached(["systemctl", "poweroff"]);
+    }
+
+    // Écran de verrouillage et écran de connexion (modules/lock/PowerRow.qml).
+    function suspend(): void {
+        Quickshell.execDetached(["systemctl", "suspend"]);
     }
 
     // Outil de capture natif (Screenshot.qml), en mode zone comme ta touche Impr. ; ouvert après un court délai : le panneau qui

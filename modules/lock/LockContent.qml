@@ -8,7 +8,7 @@ import qs.modules.wallpaper
 
 // Contenu d'un écran verrouillé (design refait, ARCHITECTURE § 7.12) : fond d'écran de l'écran, flouté et assombri ; horloge et
 // date ; sur l'écran principal (`primary`), initiale et nom de l'utilisateur, champ du mot de passe (points), message (vérification,
-// erreur, majuscules verrouillées). L'état vient de LockScreen.qml.
+// erreur, majuscules verrouillées), boutons éteindre / redémarrer / veille (`showPower`). L'état vient de LockScreen.qml.
 Item {
     id: root
 
@@ -19,6 +19,7 @@ Item {
     property bool error: false
     property bool capsLock: false
     property string user: ""
+    property bool showPower: false   // éteindre, redémarrer, veille (PowerRow)
 
     SystemClock {
         id: clock
@@ -158,6 +159,11 @@ Item {
             font.family: Theme.font.text
             font.pixelSize: Theme.lock.messageSize
             color: root.error ? Theme.lock.error : root.capsLock ? Theme.lock.warning : Theme.lock.message
+        }
+
+        PowerRow {
+            visible: root.primary && root.showPower
+            Layout.alignment: Qt.AlignHCenter
         }
     }
 }

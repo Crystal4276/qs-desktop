@@ -134,12 +134,14 @@ de la config (fondu des panneaux gardé) ; changement d'espace sans fondu ; `fad
 ## 11. Écran de verrouillage
 
 Design propre (pas celui de swaylock) : `Theme.lock` — fond de l'écran flouté et assombri, horloge et date, initiale, nom et champ
-sur l'écran principal, palette et polices de la charte.
+sur l'écran principal, palette et polices de la charte. Sous le champ, boutons ronds éteindre / redémarrer / veille (style du champ,
+bordure `green` au survol ; validés le 2026-11-04). Le même design sert d'écran de connexion (§ 9 d'`ARCHITECTURE.md`).
 
 ## 12. Images et icônes
 
-- Fichiers (`assets/`, `Theme.image`) : logo Arch vert et `mantle` (bouton du menu), 4 icônes de session (verrouiller, se
-  déconnecter, redémarrer, éteindre ; SVG avec dégradés et flou), `tailscale.svg` (BSD-3).
+- Fichiers (`assets/`, `Theme.image`) : logo Arch vert et `mantle` (bouton du menu), 5 icônes de session (verrouiller, se
+  déconnecter, redémarrer, éteindre ; SVG avec dégradés et flou ; veille : croissant au trait `teal` → `sapphire`, dessiné le
+  2026-11-04 à la suite des quatre), `tailscale.svg` (BSD-3).
 - Glyphes : `Theme.icon` (code et police de chaque glyphe ; planche : `docs/reference/glyphs.png`).
 - Icônes de thème : noms **Papirus-Dark** (ceux de nm-applet, blueman, udiskie pour les modules qui les remplacent ; variante
   `16x16@2x/panel` pour le tray, choisie comme GTK : `services/Icons.qml`), icônes `hicolor` des applications (NordVPN, Steam, web apps).
