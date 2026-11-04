@@ -59,12 +59,11 @@ Scope {
     }
     // Saisie en cours ; à l'appui sur Entrée, elle passe dans `pending` (envoyée à PAM) et le champ se vide : la frappe
     // continue pendant la vérification, pour l'essai suivant (comme swaylock).
-    property string password: ""
+    property alias password: entry.text
     property string pending: ""
     property bool checking: false
     property bool error: false
     property string message: ""
-    property bool capsLock: false
     // Messages de PAM pendant la vérification (ex. faillock : compte bloqué après trop d'échecs), montrés si elle échoue.
     property string pamText: ""
     // Écran du champ : l'écran principal ; à défaut (aucun écran détecté), celui qui était focalisé au verrouillage.
@@ -77,10 +76,9 @@ Scope {
     function lock(): void {
         if (locked)
             return;
-        password = "";
+        entry.reset();
         error = false;
         message = "";
-        capsLock = false;   // deviné à la frappe : l'état du dernier déverrouillage ne vaut plus
         lockedScreen = Compositor.focusedOutput;
         // Session.lockActive : les popups à clavier et l'outil de capture se ferment d'eux-mêmes (ils prendraient le clavier de
         // l'écran de verrouillage), en gardant ce qui était en cours ; puis les menus du tray.
@@ -109,24 +107,13 @@ Scope {
         message = text;
     }
 
-    function key(event: var): void {
-        const k = event.key;
-        // Verrouillage majuscules : déduit d'une lettre tapée (majuscule sans Maj, ou minuscule avec Maj).
-        if (event.text.length === 1 && event.text.toLowerCase() !== event.text.toUpperCase()) {
-            const shift = (event.modifiers & Qt.ShiftModifier) !== 0;
-            capsLock = (event.text === event.text.toUpperCase()) !== shift;
-        }
-        if (k === Qt.Key_Return || k === Qt.Key_Enter)
-            submit();   // ignoré pendant une vérification
-        else if (k === Qt.Key_Escape)
-            password = "";
-        else if (k === Qt.Key_Backspace)
-            password = (event.modifiers & Qt.ControlModifier) ? "" : password.slice(0, -1);
-        else if (event.text !== "" && event.text.charCodeAt(0) >= 32 && event.text.charCodeAt(0) !== 127) {   // Suppr. : U+007F
-            password += event.text;
-            if (!checking) {   // « Checking… » reste affiché
-                error = false;
-                message = "";
+    PasswordEntry {
+        id: entry
+        onSubmitted: root.submit()   // ignoré pendant une vérification
+        onTyped: {
+            if (!root.checking) {   // « Checking… » reste affiché
+                root.error = false;
+                root.message = "";
             }
         }
     }
@@ -241,11 +228,11 @@ Scope {
                 length: root.password.length
                 message: root.message
                 error: root.error
-                capsLock: root.capsLock
+                capsLock: entry.capsLock
                 user: Quickshell.env("USER") ?? ""
                 focus: true
                 Keys.onPressed: event => {
-                    root.key(event);
+                    entry.key(event);
                     event.accepted = true;
                 }
                 Component.onCompleted: forceActiveFocus()
