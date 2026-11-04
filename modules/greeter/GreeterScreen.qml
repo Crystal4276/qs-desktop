@@ -25,6 +25,13 @@ Scope {
         onTyped: Greeter.clearMessage()
     }
 
+    Connections {
+        target: Greeter
+        function onUserSwitched() {
+            entry.reset();
+        }
+    }
+
     function key(event: var): void {
         if (event.key === Qt.Key_Up || event.key === Qt.Key_Down) {
             if (!Greeter.checking)

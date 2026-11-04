@@ -72,6 +72,9 @@ selon le matériel, GPU AMD / Intel réels, verrouillage avant la mise en veille
 `Brightness`, `BatteryModule`, `Backlight` jamais revus sur du vrai matériel.
 Écran de connexion sur un laptop hybride Intel + Nvidia (pilote propriétaire) : `sway` refuse de démarrer sans `--unsupported-gpu`,
 `sway-vulkan.desktop` n'est installé que si Nvidia est la seule carte : session Sway à prévoir (config machine `greeter.defaultSession`).
+Disposition du clavier : aucune n'est réglée dans le dépôt (`us` par défaut, comme ici) ; si le laptop en règle une (`input * xkb_layout …`),
+la mettre aussi dans le Sway de l'écran de connexion (`dotfiles/greetd/sway.conf` ou un fichier machine inclus par `scripts/greeter.sh`),
+sinon le mot de passe y serait tapé avec une autre disposition.
 
 ## Décisions en attente
 

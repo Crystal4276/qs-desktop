@@ -9,4 +9,5 @@ tailscale       # onglet Tailscale du panneau réseau (état, appareils, nœud d
 zerotier-one    # onglet ZeroTier du panneau réseau (zerotier-cli -j ; jeton copié dans ~/.zeroTierOneAuthToken, install.sh phase 12 ; sans lui, interfaces zt* lues par `ip`, iproute2 dans arch-pacman.txt) ; masqué si absent
 chromium        # web apps (WhatsApp, Discord, Word, Excel, PowerPoint, Notion) : navigateur ; liens ouverts dans son profil principal (dotfiles/webapps/)
 python          # dotfiles/webapps/open-link : hôte natif de l'extension des web apps
-xorg-xinit      # startx : sessions X11 proposées par l'écran de connexion (scripts/greeter-session.sh) ; avec xorg-server ; sans lui, ne choisir que des sessions Wayland
+xorg-xinit      # startx : sessions X11 proposées par l'écran de connexion (scripts/greeter-session.sh) ; sans lui, elles sont masquées
+xorg-server     # serveur X des sessions X11 de l'écran de connexion (avec xorg-xinit)

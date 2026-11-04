@@ -40,6 +40,9 @@ Singleton {
     // Écran de connexion (services/Greeter.qml) : `defaultSession`, session proposée tant que l'utilisateur n'en a choisi aucune,
     // « wayland/<fichier .desktop sans extension> » ou « x11/… ».
     readonly property var greeter: Object.assign({ defaultSession: "wayland/sway" }, config.greeter ?? {})
+    // Dossier système de l'écran de connexion (état du greeter, fonds exportés par le bureau ; scripts/greeter-setup.sh, même chemin
+    // dans scripts/greeter.sh). QS_GREETER_DIR : banc.
+    readonly property string greeterDir: Quickshell.env("QS_GREETER_DIR") ?? "/var/lib/qs-desktop"
     readonly property var doNotDisturb: Object.assign({ schedule: true, from: "21:00", to: "07:00", muteApps: [] }, config.doNotDisturb ?? {})
 
     // Heure "HH:MM" ("9:5" accepté) → minutes depuis minuit ; -1 si elle est mal formée (veilleuse, « ne pas déranger »).

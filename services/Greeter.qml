@@ -7,7 +7,8 @@ import Quickshell.Services.Greetd
 import qs.config
 
 // Écran de connexion (greeter.qml, modules/greeter ; ARCHITECTURE § 9) : utilisateurs, sessions, dernier choix, dialogue avec greetd.
-//  - utilisateurs : comptes de /etc/passwd (UID 1000 à 59999, sans shell nologin / false) ; le dernier connecté d'abord ;
+//  - utilisateurs : comptes de /etc/passwd (UID 1000 à 59999, sans shell nologin / false), dans l'ordre du fichier ; affiché au
+//    départ : le dernier connecté ;
 //  - sessions : fichiers .desktop de `wayland-sessions` puis `xsessions` (XDG_DATA_DIRS ; X11 seulement si `startx` est là), sans
 //    ceux dont `TryExec` manque ;
 //    la dernière de l'utilisateur, sinon `greeter.defaultSession` de la config machine (« wayland/sway »), sinon la première ;
@@ -19,7 +20,7 @@ import qs.config
 Singleton {
     id: root
 
-    readonly property string dir: Quickshell.env("QS_GREETER_DIR") ?? "/var/lib/qs-desktop"
+    readonly property string dir: Settings.greeterDir
 
     // --- Utilisateurs ---
     readonly property var users: {
@@ -36,6 +37,9 @@ Singleton {
         if (users.length > 1 && !checking)
             userIndex = (userIndex + 1) % users.length;
     }
+
+    // Autre compte : message (erreur, PAM) et saisie (GreeterScreen) du précédent effacés.
+    signal userSwitched
 
     // --- Sessions : [{ key: "wayland/<id>" | "x11/<id>", id, name, exec, desktopNames, x11 }] ---
     property var sessions: []
@@ -63,6 +67,9 @@ Singleton {
     onUserChanged: {
         pickSession();
         listWallpapers();
+        error = false;
+        message = "";
+        userSwitched();
     }
 
     function parseSessions(text: string): void {
@@ -169,10 +176,15 @@ Singleton {
     }
 
     // Après la lecture de l'état et de /etc/passwd (tous deux bloquants), dans n'importe quel ordre : dernier compte, sa session.
+    // (onUserChanged s'en charge si le compte change)
     Component.onCompleted: {
-        userIndex = Math.max(users.indexOf(state.user ?? ""), 0);
-        pickSession();
-        listWallpapers();
+        const i = Math.max(users.indexOf(state.user ?? ""), 0);
+        if (i !== userIndex) {
+            userIndex = i;
+        } else {
+            pickSession();
+            listWallpapers();
+        }
     }
 
     Process {
@@ -191,7 +203,8 @@ Singleton {
 
     // Vrai si la vérification a commencé (le champ peut être vidé) ; Entrée pendant une vérification : ignorée, frappe gardée.
     function submit(password: string): bool {
-        if (checking || password === "" || user === "")
+        // Inactive : après un refus, Quickshell annule lui-même la session ; pas de nouvelle demande avant la réponse de greetd.
+        if (checking || password === "" || user === "" || Greetd.state !== GreetdState.Inactive)
             return false;
         if (!Greetd.available) {
             fail("greetd is not running");
