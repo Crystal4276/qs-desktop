@@ -1,0 +1,488 @@
+# Architecture
+
+État actuel du bureau (Quickshell 0.3.2, Sway 1.12, Hyprland 0.57 en config Lua). Le pourquoi détaillé des décisions, avec
+leur historique : `docs/archive/ARCHITECTURE.md`. Méthode de travail, bancs et pièges : `docs/DEVELOPMENT.md`.
+
+## 1. Structure
+
+Celle de `CLAUDE.md`, plus :
+
+- `assets/` : images (logo Arch, icônes de session) et polices embarquées (§ 8.3), référencées par chemin relatif au dépôt.
+- `dotfiles/sway/`, `dotfiles/hypr/` : configs des compositeurs, liées en `~/.config/sway` et `~/.config/hypr` (retour arrière :
+  `docs/ROLLBACK.md`). Partie commune (`config`, `hyprland.lua` + `lua/`) et partie machine (`hosts/<hostname>.conf` inclus par
+  `include hosts/$(cat /etc/hostname).conf` ; `hosts/<hostname>.lua` chargé par `lua/host.lua`) : écrans par description, règles
+  qui les visent, matériel. Fichier absent : ignoré. Données privées (adresses, identifiants, montages) : jamais dans le dépôt, dans
+  `~/.config/qs-desktop.local/` (`sway.conf`, inclus par la config Sway ; absent : ignoré).
+- `dotfiles/wireplumber/` : règle dont dépend la coupure des sons pendant « ne pas déranger » (§ 4, `doNotDisturb.muteApps`).
+- `dotfiles/webapps/` : extension Chromium `open-links/` et son hôte natif `open-link`, lanceurs des web apps (`applications/`),
+  manifeste de l'hôte (`qs_desktop.open_link.json`) ; développés par `install.sh` (procédure : `deps/README.md`, « Web apps ») (§ 7.10).
+- `scripts/desktop.sh` : lancé par l'autostart des deux compositeurs (§ 8.2) ; `scripts/ipc.sh` : `qs ipc call` des raccourcis vers
+  l'instance de la session, désignée par son PID (`docs/DEVELOPMENT.md`).
+- Le dépôt est désigné par le lien de la config Quickshell (`~/.config/quickshell/desktop`), jamais par un chemin personnel.
+- `shell.qml` : `//@ pragma IconTheme Papirus-Dark` (§ 8.1), `//@ pragma ShellId desktop` (même identifiant pour `qs ipc` et les
+  dossiers d'état, que la config soit lancée par `-p` ou par `-c`). Imports `qs.config`, `qs.services`, `qs.modules.*`, sans `qmldir`.
+
+## 2. Compositeur
+
+`services/Compositor.qml` (singleton) choisit son backend au démarrage :
+
+| | Sway | Hyprland |
+|---|---|---|
+| Détection | `SWAYSOCK` | `HYPRLAND_INSTANCE_SIGNATURE` |
+| Module | `Quickshell.I3` (`I3.workspaces`, `I3.monitors`, `I3.dispatch()`, `I3IpcListener`) | `Quickshell.Hyprland` (`Hyprland.workspaces`, `.monitors`, `.dispatch()`, `.usingLua`) |
+
+Interface commune : `workspaces` (num, nom, écran, focalisé, visible, urgent, vide), `outputs` (nom, description, x, y, taille
+logique, scale, focalisé), `focusedOutput`, et les actions (`focusWorkspace`, `moveWorkspace`, `createWorkspace`,
+`moveWindowToWorkspace`, `setPower`, `showAppWindow`, `focusNextActivation`, `exit`…).
+
+- **Hyprland en config Lua uniquement** : `hyprctl keyword` n'existe plus, `dispatch` attend une expression Lua
+  (`hl.dsp.focus({ workspace = 4 })`). Avec une config classique (`Hyprland.usingLua` faux), aucune action n'est envoyée (journal).
+- **Sway** : l'état de `Quickshell.I3` se périme (espace affiché par un écran jamais mis à jour par un déplacement d'espace, faux
+  événements « focus ») : `Compositor` relit `get_workspaces` après chaque événement d'espace et lit focus et visibilité dans l'objet
+  IPC de chaque espace. Sorties : seulement celles que `get_outputs` dit `active: true`.
+- Ni titre de la fenêtre active ni mode (Sway) / submap (Hyprland) : aucun widget ne les lit (à rétablir avec le widget qui en aura
+  besoin, `BACKLOG.md`).
+- Commandes de placement écrites dans le journal (`Compositor: placement des espaces : …`).
+
+## 3. Écrans dynamiques
+
+Deux problèmes, deux mécanismes, **un seul** par problème.
+
+### 3.1 Configuration des sorties → le compositeur, écrans identifiés par description
+
+Chaque compositeur configure ses sorties nativement, par **description** d'écran (marque modèle numéro de série), jamais par
+connecteur, dans la partie machine de sa config (§ 1). Le reste de la config est commun.
+
+| | Sway 1.12 | Hyprland 0.57 (Lua) |
+|---|---|---|
+| Identification | `output "LG Electronics 27GN950 207NTLEFY824" …` | `hl.monitor({ output = "desc:…", … })` |
+| Mode, position, échelle | `mode`, `pos`, `scale` | `mode`, `position`, `scale` |
+| HDR, profondeur | `hdr on/off/toggle`, `render_bit_depth 10` | `cm` (`"hdr"`), `bitdepth` |
+| VRR | `adaptive_sync on/off` | `misc.vrr` (le champ `vrr` de `hl.monitor` est sans effet) |
+| Désactiver | `disable` | `disabled = true` |
+| Écran inconnu | placé à droite, mode préféré | règle de repli `output = ""`, `preferred`, `auto`, échelle `auto` |
+| Capot du laptop | `bindswitch --locked lid:on output <desc> disable` / `lid:off … enable` | `hl.bind("switch:on:Lid Switch", …)` → `hl.monitor({ …, disabled = true })` |
+
+Pas de Kanshi : il ne transporte ni HDR ni profondeur de couleur (deux sources pour un même écran), le `hyprctl reload` du réveil
+écraserait sa configuration, et ses profils conditionnels ne répondent à aucun besoin actuel (réévaluation : `BACKLOG.md`).
+Prix : les réglages d'écran d'une machine sont écrits une fois par compositeur, côte à côte dans `dotfiles/*/hosts/`.
+
+HDR et VRR à l'exécution (`services/Displays.qml`, `$mod+d` = `qs ipc call display toggleHdr`, bascules du panneau de réglages) :
+seulement sur les écrans compatibles (Sway `features.hdr` / `features.adaptive_sync` ; Hyprland `hardwareDetails`), sans nom en
+dur. Hyprland : la règle posée vise l'écran par la même clé que la config (`desc:…`) et elle est **complète** (mode, position,
+échelle, rotation relus sur l'écran), sinon l'écran perd échelle et position ; règles reposées sur `configreloaded` (le `reload`
+du réveil les efface) ; arrêt du HDR = retour au mode d'avant (préréglage, 10 bits, blanc SDR à 203 nits).
+
+### 3.2 Répartition des espaces de travail → `services/Outputs.qml`
+
+Quickshell tourne déjà, connaît le compositeur, et la barre a besoin de la même répartition : un seul calcul pour Sway et Hyprland.
+Aucune ligne `workspace N output …` dans les configs (sous Sway, la première attribution d'un espace l'emporte et ne pourrait plus
+être corrigée). Si Quickshell ne tourne pas, les compositeurs déplacent d'eux-mêmes les espaces d'un écran disparu.
+
+1. Source de vérité : sorties **actives** du compositeur. Hyprland : `FALLBACK` et un moniteur pas encore relu ne comptent pas.
+2. Anti-rebond : recalcul 500 ms après le **dernier** changement d'écrans ou de config machine.
+3. Répartition imposée par la config machine pour exactement cet ensemble de descriptions, sinon règle générale (§ 3.3).
+4. Application en **une seule commande** au compositeur (Hyprland : une fonction Lua dans un seul `hyprctl dispatch`) : chaque
+   espace mal placé rejoint l'écran de son bloc ; chaque écran affiche ensuite, parmi ses candidats (recréés s'ils sont vides) :
+   l'espace qu'on y a choisi depuis le dernier placement ; sinon la vue de cette configuration d'écrans si elle a déjà existé (un
+   écran éteint puis rallumé retrouve sa vue) ; sinon celle d'avant le changement ; sinon le premier espace existant de son bloc,
+   sinon le premier de son bloc. Puis l'espace focalisé **avant** le changement est refocalisé.
+   Mémoire de vue par configuration (`layoutKey`), relevée 300 ms après chaque changement d'espaces et à chaque placement ;
+   Hyprland : suspendue dès `monitoradded` / `monitorremoved` (`Compositor.outputsChanging`), car Hyprland ramène les espaces
+   d'un écran rallumé avant la relecture des moniteurs.
+5. **Espace créé hors de son écran** (fenêtre envoyée vers un espace inexistant, commande native) : 100 ms plus tard, déplacé sur
+   son écran ; focalisé, il le reste, et son écran de départ reprend l'espace qu'il affichait. **Bouche-trou** (écran vidé de son
+   seul espace, Sway en crée un au premier numéro libre) : jamais déplacé (boucle sinon) ; l'écran affiche le premier espace de son
+   bloc qui n'est pas ailleurs, le bouche-trou vide disparaît.
+6. Un espace déplacé à la main reste où il est jusqu'au prochain changement d'écrans.
+
+Raccourcis : `$mod+N` et `$mod+Ctrl+N` → `scripts/ipc.sh outputs focus|moveWindow N` (~45 ms de plus ; commande native si
+Quickshell ne répond pas) : un espace inexistant naît directement sur l'écran de son bloc (Sway : `focus output X; workspace number N` ;
+Hyprland : créé sur l'écran focalisé puis déplacé, dans la même requête, sinon `follow_mouse` reprend le focus).
+
+**Début de session** : `scripts/desktop.sh` passe `QS_DESKTOP_HOME=<secondes de /proc/uptime>` au premier lancement ; `Outputs` le
+lit à sa création (une fois par processus, dans la minute) : chaque écran affiche le premier espace de son bloc (1 / 4 / 7), focus
+sur l'écran principal, pour toutes les répartitions des 10 s suivantes, sauf si l'utilisateur change d'espace entre-temps.
+`qs ipc call outputs home` reste pour les tests.
+
+### 3.3 Règle générale
+
+- Ordre des écrans : **écran principal d'abord**, puis les autres de gauche à droite (x, puis y).
+- Écran principal : celui de la config machine (`primaryOutput`), sinon le plus grand en surface logique (égalité : le plus à gauche).
+  Sans compositeur reconnu : le premier écran.
+- Blocs : `floor(9 / n)` chacun, le reste (+1) aux premiers écrans dans cet ordre ; blocs contigus.
+
+| Écrans | Résultat |
+|---|---|
+| 1 | 1-9 |
+| 2 | principal 1-5, autre 6-9 |
+| 3 | principal 1-3, gauche 4-6, droite 7-9 (ce desktop : DP-2 = 1-3, DP-1 = 4-6, DP-3 = 7-9) |
+| 4 | principal 1-3, puis 4-5, 6-7, 8-9 de gauche à droite |
+| 5 | 1-2, 3-4, 5-6, 7-8, 9 |
+
+### 3.4 Tests
+
+`scripts/test-outputs.sh [sway|hyprland]` : session isolée (Sway headless ; Hyprland imbriqué dans la session Hyprland), sa propre
+instance Quickshell sur ce dépôt, trois écrans comme le desktop, fenêtres `zenity` sur les espaces 1, 2, 4–9. Scénarios : ajout
+d'écrans, désactivation / réactivation, débranchement, 2 puis 1 écran, aucun écran actif, écran principal et focalisé éteint puis
+rallumé, fenêtre envoyée vers un espace inexistant (avec et sans focus), `$mod+N` / `$mod+Ctrl+N` depuis un autre écran, bouche-trou,
+début de session. Contrôles : répartition recalculée indépendamment (jq), espaces sur le bon écran, focus et vue conservés, aucune
+fenêtre perdue, nombre de commandes de placement borné.
+Limites : les écrans virtuels portent tous la description « Unknown Unknown Unknown » (la répartition imposée par description se
+teste sur les vrais écrans) ; un écran virtuel créé pendant la veille hérite de `power off`.
+
+## 4. Config par machine
+
+`hosts/default.json` + `hosts/<hostname>.json` (hostname lu dans `/proc/sys/kernel/hostname`). `config/Settings.qml` charge
+`default.json` puis superpose le fichier de la machine **au premier niveau** (une clé remplace entièrement celle de `default.json`).
+Relu à chaud (`FileView.watchChanges`).
+
+Tout ce qui se détecte n'y figure pas : batterie (`UPower`, batterie de laptop seulement — l'alimentation USB-C `ucsi-source-psy`
+de ce desktop n'en est pas une), rétroéclairage (`/sys/class/backlight`), GPU (§ 7.16), interface réseau, `checkupdates`.
+
+`hosts/terrier.json` (ce desktop ; `terminal`, `mediaPlayer`, `notificationsOutput`, `nightLight` viennent de `default.json`) :
+
+```json
+{
+  "updateCommand": "paru -Syu",
+  "wallpaper": { "kind": "triptych", "path": "triptych/green-storm" },
+  "doNotDisturb": { "muteApps": ["discord", "whatsapp"] },
+  "primaryOutput": "Dell Inc. Dell AW3418DW #ASPFPBQwWjbd",
+  "bars": {
+    "primary":   { "left": [["menu"], ["workspaces"], ["mpris", "volume", "slider"]],
+                   "right": [["updates"], ["gpu", "cpu", "memory"], ["clockDate"], ["tray", "settings"]] },
+    "secondary": { "left": [["workspaces"], ["volume", "slider"]], "right": [["gpu", "cpu", "memory"], ["clock"]] },
+    "LG Electronics 27GN950 207NTHMFY841": { "left": [["workspaces"], ["volume", "slider"]], "right": [["network"], ["clock"]] }
+  }
+}
+```
+
+- `primaryOutput` : écran principal, par description. `workspaceLayouts` (facultatif, absent ici : la règle générale tombe juste) :
+  liste de répartitions imposées, chacune `{ "<description>": [1, 2, 3], … }`, appliquée quand l'ensemble des écrans actifs est
+  exactement celui-là.
+
+- `bars` : l'écran principal reçoit `primary` ; les autres, leur entrée par description, sinon `secondary` (un écran inconnu a
+  toujours une barre ; un écran qui a sa propre entrée mais devient principal garde tray et réglages). Chaque côté est une liste de
+  **pilules**, chaque pilule une liste de modules. Modules : `menu`, `workspaces`, `mpris`, `volume`, `slider`, `updates`, `gpu`,
+  `cpu`, `memory`, `clock`, `clockDate`, `network`, `tray`, `settings`, `battery`, `backlight`. Module sans donnée ou sans matériel :
+  masqué ; pilule entièrement masquée : retirée. Sans écran décrit au bout de 10 s : disposition par défaut.
+- `terminal` : préfixe qui lance une commande dans un terminal **et attend sa fin** (liste : chaque terminal a sa syntaxe).
+- `mediaPlayer` : lecteur préféré (nom D-Bus après `org.mpris.MediaPlayer2.`) : suivi s'il joue, sinon un lecteur qui joue, sinon lui ;
+  un lecteur arrêté n'est plus suivi.
+- `updateCommand` : absente → `paru`, sinon `yay`, sinon `sudo pacman -Syu`.
+- `nightLight` : `{ "from": "20:00", "to": "06:00", "temperature": 3239 }`.
+- `doNotDisturb` : horaire de départ `{ "schedule": true, "from": "21:00", "to": "07:00" }`, ensuite réglé depuis le panneau (état local).
+- `doNotDisturb.muteApps` : applications qui jouent elles-mêmes le son de leurs notifications, coupées pendant « ne pas déranger », par
+  `application.id` du flux (web apps : `env PULSE_PROP_OVERRIDE=application.id=whatsapp chromium …` dans leur lanceur) ou par
+  binaire ; ici `["discord", "whatsapp"]`. Va avec `dotfiles/wireplumber/wireplumber.conf.d/50-dnd-no-restore.conf` (WirePlumber ne
+  retient ni volume ni coupure de ces flux).
+- `idle` : `timeout` (300 s par défaut), `lockBeforeSleep` (par défaut : machine avec batterie).
+- `wallpaper`, `wallpapersDir` : fond par défaut et dossier des fonds (§ 7.11).
+- Les icônes d'espaces de travail font partie de la charte → `Theme.qml`, pas de la config machine.
+
+## 5. Thème
+
+`config/Theme.qml` porte toutes les valeurs (palette Catppuccin Mocha statique, aucun générateur), `docs/THEME.md` les règles et
+les usages. Aucune couleur, police ou taille hors de `Theme.qml`.
+
+## 6. Services
+
+Singletons de `services/`. Les widgets ne lisent que les services ; aucun `Process` dans l'UI.
+
+| Service | Rôle | Source |
+|---|---|---|
+| `Compositor` | interface commune Sway / Hyprland (§ 2) | `Quickshell.I3` / `Quickshell.Hyprland` |
+| `Outputs` | écrans actifs, principal, répartition des espaces (§ 3) | `Compositor`, `Settings` |
+| `Displays` | HDR et VRR | `Compositor` |
+| `Audio` | sortie et entrées, volumes, coupure « ne pas déranger » | `Quickshell.Services.Pipewire` ; `pw-dump`, `wpctl` (profils Bluetooth) |
+| `Media` | lecteur suivi par le module média et les touches | `Quickshell.Services.Mpris` |
+| `SystemStats` | CPU, mémoire (5 s) | `/proc` (`FileView`) |
+| `Gpu` | utilisation et température (5 s) | `nvidia-smi` ou sysfs (§ 7.16) |
+| `Monitor` | statistiques détaillées, panneau ouvert seulement | `/proc`, `/sys`, `nvidia-smi`, `df` |
+| `Network` | débit, connexions NetworkManager | `/proc/net`, `Quickshell.Networking`, `nmcli` (détails) |
+| `Tailscale`, `ZeroTier` | onglets du panneau réseau | `tailscale`, `zerotier-cli` ; `Poller`, `CliRunner` |
+| `Vpn` | NordVPN | `nordvpn` (une seule file de commandes) |
+| `Bluez` | Bluetooth | `Quickshell.Bluetooth` ; `bluetoothctl` (appairage) |
+| `Disks` | disques amovibles | `busctl`, `gdbus monitor`, `udisksctl` |
+| `Notifs` | serveur de notifications | `Quickshell.Services.Notifications` |
+| `Updates` | mises à jour en attente | `checkupdates` |
+| `Battery`, `Brightness` | laptop | `UPower` ; `/sys/class/backlight` + `brightnessctl` |
+| `Profiles` | profils d'énergie | `PowerProfiles` (power-profiles-daemon) |
+| `Rfkill` | mode avion | `rfkill` |
+| `NightLight` | veilleuse | `gammastep` (jamais deux à la fois) |
+| `Idle` | veille des écrans | `IdleMonitor`, `systemd-inhibit`, `gdbus monitor` (`PrepareForSleep`) |
+| `Polkit` | agent polkit | `Quickshell.Services.Polkit` |
+| `Session` | verrouiller, déconnexion, redémarrage, extinction | `Compositor`, `systemctl` |
+| `Screenshot` | outil de capture | `ScreencopyView`, `Toplevel`, `wl-copy` |
+| `Wallpapers` | fonds d'écran | `FileView`, cache |
+| `Apps` | applications (lanceur, menu), historique, favoris | `DesktopEntries` + filtres `find`/`awk` |
+| `Places` | dossiers XDG, fichiers récents | `xdg-user-dir`, `recently-used.xbel`, `xdg-open` |
+| `Icons` | icônes du tray et des types MIME, choisies comme GTK | thème Papirus-Dark |
+| `Launch` | lancement d'applications sans l'environnement propre au processus (`qs-env.sh`) | `Quickshell.execDetached` |
+| `WidthTexts` | largeurs fixes des modules, mesurées une fois pour toutes les barres | — |
+
+Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `nordvpn`, `tailscale`, `zerotier-cli`, `busctl` / `gdbus` /
+`udisksctl` (pas d'accès D-Bus générique en QML), `bluetoothctl` (pas d'agent d'appairage dans Quickshell), `nmcli` (détails),
+`notify-send`, `wl-copy` (le presse-papiers de Quickshell ne gère que du texte, et seulement avec un appui récent), `xdg-open`,
+`brightnessctl`, `gammastep`, `rfkill`, `pavucontrol` et `nm-connection-editor` (boutons « avancé »).
+
+## 7. Composants
+
+### 7.1 Barre et popups
+
+- Une barre par écran actif (`Variants { model: Quickshell.screens }`), créée et détruite à chaud, disposition de la config machine
+  (§ 4). Au démarrage, le contenu attend que chaque écran affiche son fond (au plus 3 s) ; pas au rechargement à chaud.
+- Aucun tooltip dans la barre ; les modules du tray et l'engrenage ont un **aperçu au survol** (carte, 150 ms), épinglé au clic.
+- **Popups** : surfaces Overlay à clavier exclusif (`modules/bar/OverlayPopup.qml`, base du lanceur, du menu, du panneau de
+  réglages, des cartes du tray, de polkit) — un popup Wayland « grab » ouvert depuis une barre ne reçoit jamais le clavier sous Sway.
+  Fermeture : Échap, appui à côté (non transmis à ce qui est dessous), sur une barre, sur un autre écran (`OutsideClick.qml`, surfaces
+  transparentes créées après l'affichage). Un seul popup à la fois (`BarState.closePopups`). Un appui sur le bouton d'un popup ouvert
+  le ferme. Écran ou bouton disparu : popup fermé. Pendant le verrouillage, aucun `OverlayPopup` ne s'ouvre.
+- Menu d'applications et panneau de réglages : **un seul exemplaire**, placé sous le bouton qui l'ouvre ; le raccourci le ferme s'il
+  est ouvert, sinon l'ouvre sous le bouton de l'écran focalisé (`BarState.toggle`, `toggleFromShortcut`). Créés par
+  `modules/menus/Panels.qml`, qui inscrit leurs `LazyLoader` dans `BarState` (pas d'import circulaire). Panneaux du tray créés d'avance.
+- **Menus des applications du tray** : cartes (`AppMenuPanel.qml`) — titre = nom de l'application, entrées dbusmenu en lignes,
+  sous-menus en sections ; clics gauche et droit ouvrent la carte. Steam : après une entrée autre qu'un jeu ou « Exit Steam », sa
+  fenêtre et son espace sont affichés (`Compositor.showAppWindow` ; Sway : `mouse_warping none` le temps de ce focus).
+  L'icône d'une application remplacée par un module natif (nm-applet, blueman, udiskie, NordVPN) est masquée si le module existe.
+- **OSD** (`modules/osd/`) : volume, micro, luminosité, déclenché par `qs ipc`.
+
+### 7.2 Notifications
+
+- `services/Notifs.qml`, comportement de Dunst 1.13 : délais (celui de l'application, sinon 10 s ; jamais pour une critique),
+  suspendus sous le pointeur ; tri urgence puis arrivée ; doublons « (N) » ; étiquettes de pile (`x-dunst-stack-tag`,
+  `x-canonical-private-synchronous`) ; remplacement par identifiant ; indicateurs `(A)` `(U)` ; âge au-delà de 60 s ; markup Pango
+  traduit pour Qt. Capacités annoncées : celles de Dunst.
+- Écran : `notificationsOutput` (`primary` ou description), l'écran principal à défaut.
+- Souris : gauche ferme ; milieu lance l'action `default` (ou l'unique action, ou ouvre l'unique lien) ; droit ferme tout ; boutons
+  pour les actions nommées. Ouvrir une notification affiche l'espace et la fenêtre de l'application (`focusNextActivation` : Quickshell
+  ne transmet pas de jeton d'activation, la fenêtre n'est que marquée urgente).
+- Icônes en fichier temporaire (Chromium) copiées à la réception dans `<cacheDir>/notification-icons/` (vidé au démarrage).
+- Centre de notifications (cloche du tray) : 20 dernières fermées, carte média ; « ne pas déranger » (clic droit sur la cloche) :
+  seules les critiques s'affichent, sons des `muteApps` coupés ; horaire réglable.
+- Historique et « ne pas déranger » conservés au rechargement (`PersistentProperties`), pas au redémarrage.
+- IPC `notifications` : `close`, `closeAll`, `historyPop`, `count`.
+
+### 7.3 Lanceur (`modules/launcher/`)
+
+- Comportement de `rofi -show drun` (Rofi 2.0) : `DesktopEntries.applications` + filtres que Quickshell n'applique pas (`OnlyShowIn` /
+  `NotShowIn` selon `XDG_CURRENT_DESKTOP`, `TryExec` introuvable, `Exec` absent).
+- Ordre : historique (le plus lancé d'abord, 25 entrées, `launcher.json` dans l'état local), puis par nom. Recherche : tous les mots,
+  sans casse, dans nom, nom générique, `Exec`, catégories, mots-clés, commentaire ; « -mot » exclut.
+- Lancement dans `Settings.terminal` si `Terminal=true`. Texte sans résultat ou Ctrl+Entrée : commande `sh -c` ; Maj+Entrée sans
+  résultat, Ctrl+Maj+Entrée : dans un terminal.
+- Surface couvrant la zone utile de l'écran focalisé ; clavier de Rofi (Entrée, Ctrl+J/M, Haut/Bas, Ctrl+P/N, Tab, Pages, Début/Fin,
+  Ctrl+Haut/Bas = textes précédents, Maj+Suppr = retirer de l'historique, édition Emacs, Échap) ; souris : clic sélectionne, double clic
+  lance. Hauteur bornée à l'écran. IPC `launcher toggle|open|close`.
+
+### 7.4 Menu d'applications (`modules/menus/AppMenu.qml`, bouton Arch)
+
+- Disposition du menu Cinnamon, style de nwg-menu ; code propre, catégories tirées des `.desktop`.
+- Colonne de gauche : dossier personnel et dossiers XDG, favoris (clic droit sur une application ; `app-menu.json`), verrouiller,
+  se déconnecter, redémarrer, éteindre (sans confirmation). Colonne 270 px au plus.
+- Catégories au survol : « All Applications », catégories freedesktop non vides (première déclarée dans l'ordre Administration,
+  Preferences, Programming, Games, Graphics, Sound & Video, Internet, Office, Education, Science, Accessories ; sinon « Other »),
+  « Recent Files » (`recently-used.xbel`, lu à l'affichage).
+- Visée : un pointeur qui file vers la liste ne change pas de catégorie en traversant les autres (30 ms d'arrêt) ; le survol ne vole
+  pas la sélection clavier si la souris n'a pas bougé.
+- Recherche en bas (même filtre que le lanceur) ; le survol ne l'efface jamais. Clavier : Haut/Bas, Pages, Gauche = catégories,
+  Droite / Entrée = retour, Échap. Hauteur bornée à l'écran (chaque colonne défile).
+- Fermeture automatique : pointeur dehors 2 s (pas pendant une recherche, ni s'il n'est jamais entré). IPC `menu toggle`.
+
+### 7.5 Panneau de réglages (engrenage, `$mod+Escape`)
+
+- Remplace le power menu. Modèle : réglages rapides de GNOME.
+- Ligne du haut : batterie (laptop), capture d'écran, verrouiller / se déconnecter / redémarrer / éteindre (pas de veille, pas de
+  confirmation). Curseurs : sortie son (flèche → choix de la sortie), luminosité (laptop). Bouton du sélecteur de fond.
+- Bascules : profil d'énergie (trois boutons), ne pas déranger (clic droit : horaire), garder l'écran allumé (`IdleInhibitor`), VRR et
+  HDR (écrans compatibles), veilleuse (`gammastep`, fondu de ~4 s), mode avion (dès qu'il y a une radio).
+- Aperçu au survol de l'engrenage. Réseau, Bluetooth, NordVPN, disques, cloche restent dans le tray (pas de doublon). IPC `settings toggle`.
+
+### 7.6 Réseau (tray)
+
+- Deux icônes : **réseau** (filaire et réseaux privés ; visible si un câble est branché, sans Wi-Fi, ou avec Tailscale / ZeroTier) et
+  **Wi-Fi**. Connexion limitée signalée (`Networking.connectivity`).
+- Wi-Fi (`WifiPanel.qml`) : `Quickshell.Networking` (interrupteur, réseaux, mot de passe, oubli), réseau courant déplié, niveaux de
+  signal GNOME (20 / 40 / 50 / 80 %), glyphe animé dessiné en QML (`WifiIcon.qml`). Détails absents de l'API (bande, canal, débit,
+  IPv4) : `nmcli`, toutes les 5 s panneau ouvert.
+- Panneau réseau : onglets Wired (détails `nmcli`, graphe du trafic) / Tailscale (`status --json`, `debug prefs` ; actions grâce à
+  `--operator=$USER`, à proposer par `install.sh`) / ZeroTier (`zerotier-cli -j` avec le jeton copié dans `~/.zeroTierOneAuthToken`,
+  à proposer par `install.sh` ; sinon interfaces `zt*` en lecture seule). Relus toutes les 5 s onglet affiché ; 60 s sinon, sans câble.
+- Édition complète des connexions : `nm-connection-editor`. Copies : `wl-copy`.
+
+### 7.7 Bluetooth (tray)
+
+- `Quickshell.Bluetooth` pour lister, connecter, oublier. Quickshell n'a **pas d'agent d'appairage** (`org.bluez.Agent1`) : pendant
+  un appairage seulement, `bluetoothctl` est lancé comme agent (`agent KeyboardDisplay`, sans `default-agent`) ; ses demandes
+  (`[agent] Confirm passkey`, `Enter PIN code`) sont affichées dans le panneau, **jamais acceptées automatiquement**. Seules les lignes
+  `[agent] …` et les résultats de `pair` en début de ligne sont lus (un nom d'appareil pourrait imiter une question).
+- Lignes : état, type, batterie ; détails dépliables (adresse copiable, renommage, reconnexion automatique) ; ordre figé panneau ouvert.
+- Notifications de connexion / déconnexion (« Connected 80% » quand la batterie arrive) ; batterie faible à 30 % puis 15 %, réarmée
+  au-dessus de 40 %.
+- Reconnexion automatique des appareils choisis (`bluetooth.json`, état local) : démarrage, allumage, apparition, toutes les 60 s.
+- Profil audio d'un casque : `pw-dump` / `wpctl set-profile` (non exposé par Pipewire dans Quickshell).
+- Veille suspendue tant qu'une manette est connectée. Icône animée pendant les actions.
+
+### 7.8 Disques amovibles (tray, remplace udiskie)
+
+- État : `busctl --system --json=short call org.freedesktop.UDisks2 … GetManagedObjects` ; branchements : `gdbus monitor --system`
+  (sans droits) ; actions : `udisksctl mount | unmount | power-off | unlock` (phrase de passe passée en fichier de clé sur l'entrée
+  standard).
+- Montage automatique et notifications comme udiskie ; volumes système (`HintSystem`, `HintIgnore`) ignorés.
+- Icône visible seulement avec un disque branché ; disque LUKS branché : le panneau s'ouvre avec le champ prêt (pas au démarrage).
+
+### 7.9 NordVPN (tray)
+
+- Commande `nordvpn` (pas d'API ni de flux d'événements) : `status` (lignes `Clé: valeur`) lu périodiquement et après chaque action ;
+  **une seule file** pour toutes les commandes (une lecture suit chaque action et voit son effet).
+- Panneau : onglets Recent (historique local `vpn.json`, pays et ville) / All countries, recherche ; l'interrupteur reconnecte à la
+  dernière entrée. IPC `vpn connect [pays]` (vide : dernier pays) / `vpn disconnect` (`$mod+u` / `$mod+i`).
+- Module masqué si `nordvpn` est absent ou le compte non connecté. **Jamais d'action réelle en test** (`docs/DEVELOPMENT.md`).
+
+### 7.10 Web apps
+
+- WhatsApp, Discord, Word, Excel, PowerPoint, Notion : `chromium --app … --user-data-dir=<profil isolé> --load-extension=…/open-links`.
+- Un lien ouvert dans un nouvel onglet ou une nouvelle fenêtre part dans le profil Chromium principal (onglet ajouté, navigateur
+  démarré s'il ne tourne pas), sauf s'il reste dans les domaines de l'app (liste `SITES` de l'extension : Microsoft 365, Notion) ; les
+  popups (OAuth) restent dans la web app. L'hôte `open-link` appelle `qs ipc call compositor focusNextWindowOf chromium` avant
+  Chromium : la fenêtre qui reçoit le lien et son espace sont affichés.
+- Règles d'espace : Discord (deux `app_id` : `…@me-Default` et `…@me_<salon>-Default`) et WhatsApp sur l'espace 5.
+
+### 7.11 Fond d'écran (`modules/wallpaper/`, `services/Wallpapers.qml`)
+
+- Une surface par écran sur la couche Background, sans zone d'entrée (un clic va au compositeur, comme `swaybg`). Image simple :
+  couvre l'écran, décodée à sa taille. Panorama : rectangle englobant tous les écrans, chaque écran en montre sa part. Triptyque :
+  gauche / centre / droite à 3 écrans, sinon le centre partout. Panorama sur un seul écran : image simple. L'ancien fond reste
+  affiché pendant le décodage du nouveau.
+- Choix : état local `wallpaper.json` (un fond pour tous, ou une image par écran, clé = description). Rien de choisi : `wallpaper` de
+  la config machine, sinon aucune image. Dossier : `wallpapersDir`, sinon « Wallpapers » dans le dossier Images XDG.
+- Sélecteur (`PickerWindow.qml`, `qs ipc call wallpaper-picker toggle`) : onglets Images / Panoramas / Triptychs, vignettes en cache
+  (`wallpaper-thumbs/`), appliqué au clic, rangée « All screens » / un écran.
+- **Copie à la taille de l'écran** (démarrage plus rapide) : chaque fond simple affiché est enregistré en BMP tel qu'affiché dans
+  `~/.cache/quickshell/by-shell/desktop/wallpaper-screens/` (3 s après l'affichage ; 28 ms au lieu de 125–165 ms ; sans perte). Seules
+  restent les copies des fonds choisis ou affichés ; une copie sans entrée n'est effacée qu'après un jour (une autre instance peut
+  partager le cache) ; original modifié : copie refaite ; copie absente : original relu. Panorama sur plusieurs écrans : pas de copie.
+  Les deux dossiers de cache peuvent être supprimés sans risque.
+- IPC de test : `wallpaper state`, `wallpaper set <kind> <chemin>`.
+
+### 7.12 Verrouillage (`modules/lock/`)
+
+- `WlSessionLock` (ext-session-lock) + `PamContext` (config `login`). Fond de chaque écran flouté et assombri, horloge, date ;
+  initiale, nom et champ sur l'écran principal ; saisie prise quel que soit l'écran qui a le clavier ; majuscules verrouillées
+  déduites des lettres tapées ; Entrée valide, Échap efface, Ctrl+Retour arrière efface tout ; messages de PAM (faillock).
+- Verrouiller : panneau de réglages, menu d'applications, `qs ipc call lock lock`, veille. **Aucun déverrouillage par IPC.**
+- Verrou refusé ou perdu (autre client ext-session-lock) : `locked` repasse à faux. Un « 1 » resté dans l'état n'est lu qu'une fois
+  par processus.
+- **Sûreté** : si Quickshell s'arrête verrouillé, le compositeur garde la session verrouillée. Reprise depuis un autre TTY :
+  `WAYLAND_DISPLAY=wayland-1 qs -c desktop &` puis `qs ipc call lock lock` ; la nouvelle instance reprend le verrou.
+
+### 7.13 Veille des écrans (`services/Idle.qml`)
+
+- `IdleMonitor` (inhibitions du compositeur, « Keep Screen On », vidéos Wayland respectées) : après `idle.timeout`, écrans éteints
+  (`Compositor.setPower` : Sway `output * power off` ; Hyprland `hl.dsp.dpms({ action = … })`), tous rallumés d'un coup à la reprise
+  (un rallumage par écran refait un modeset sous Sway). Quickshell relancé écrans éteints : rallumés 2 s après le démarrage.
+- Verrouillage avant la veille du système (`idle.lockBeforeSleep`) : verrou « delay » de logind (`systemd-inhibit` sous
+  `setpriv --pdeathsig`), `PrepareForSleep` suivi par `gdbus monitor`. Hyprland : `PrepareForSleep` suivi aussi pour le `reload` du réveil.
+- Animation `fadeDpms` coupée dans la config Hyprland (rallumage lent sinon). IPC de test : `idle state`.
+
+### 7.14 Agent polkit (`services/Polkit.qml`, `modules/polkit/`)
+
+- `PolkitAgent` ; fenêtre `OverlayPopup` centrée sur l'écran focalisé : icône, message (texte brut), champ, erreur, Cancel /
+  Authenticate. Échap, clic à côté ou sur une barre : annulent (pas un clic sur un autre écran).
+- Identité affichée seulement si ce n'est pas l'utilisateur ; pas de choix d'identité (relancer la session PAM est risqué en 0.3.2).
+- Fermée sans l'utilisateur (écran retiré, verrouillage) : demande gardée, rouverte. Jamais affichée pendant le verrouillage.
+- Enregistrement raté : agent recréé (5 s, puis de plus en plus rarement, 5 min au plus).
+- Limite de Quickshell 0.3.2 : une demande arrivée pendant une autre la remplace ; la première est annulée une fois l'agent libre.
+  Chaque annulation compte comme un échec pour faillock.
+
+### 7.15 Outil de capture (`modules/screenshot/`, `Print`)
+
+- Modèle de l'outil de GNOME : image figée de chaque écran (`ScreencopyView` jusqu'à la première image), voile et cadre ; capture dès
+  le choix fait — zone tracée, écran cliqué, fenêtre cliquée (rectangles donnés par le compositeur, empilement réel, espace spécial
+  d'Hyprland compris). Entrée / Espace : écran présélectionné ; Échap ferme.
+- Découpe à la résolution réelle (`grabToImage` corrigé de l'échelle), enregistrée dans `Images/screenshot/AAAA-MM-JJ-HHMMSS.png` et
+  copiée (`wl-copy`). Fermé au verrouillage. IPC `screenshot area|screen|window` ; test : `select x y w h`, `capture`, `isActive`.
+- `ScreencopyView` ne reçoit aucune image en rendu logiciel : l'outil ne se teste que sur de vrais écrans.
+
+### 7.16 GPU et statistiques système
+
+- Module GPU : cartes `/sys/class/drm/card*/device/vendor` (`0x10de` NVIDIA, `0x1002` AMD, `0x8086` Intel ; plusieurs : `boot_vga=1`).
+  Affiche l'**utilisation** : `nvidia-smi --query-gpu=utilization.gpu` (NVIDIA, aucun capteur hwmon), `device/gpu_busy_percent` (AMD) ;
+  Intel n'expose pas d'utilisation → module masqué. Un échec de `nvidia-smi` ne masque pas le module définitivement.
+- Panneau de statistiques (`modules/monitor/`, ouvert par CPU, mémoire, GPU, `qs ipc call monitor toggle`) : relevés chaque seconde
+  panneau ouvert ; CPU (total, température coretemp / k10temp / zenpower, cœurs), mémoire et swap, réseau, GPU (NVIDIA : charge, VRAM,
+  température, consommation, ventilateur, fréquence, VRAM par processus via `nvidia-smi pmon` ; AMD : sysfs), disques (`df`),
+  processus (charge comme top, tri, recherche), arrêt de ses propres processus avec confirmation (SIGTERM / SIGKILL).
+
+### 7.17 Calendrier (horloge)
+
+Carte comme les autres (`CalendarPanel.qml` sur `Panel.qml`) : aperçu du mois au survol de l'horloge ; un clic l'épingle (flèches,
+molette, ←/→ ; clic sur le titre : mois en cours) ; fermeture : Échap, clic sur l'horloge ou à côté, pointeur dehors 2 s ; 10 px de
+marge au bord de l'écran. Limite : après un clic dans le calendrier, Échap et ←/→ ne répondent plus (pas d'API pour rendre le clavier
+à la barre). Événements Thunderbird : `BACKLOG.md`.
+
+## 8. Choix structurants
+
+### 8.1 Quickshell hérite de qt6ct
+
+`QT_QPA_PLATFORMTHEME=qt6ct` (`/etc/environment`) s'applique à Quickshell : style, police par défaut, thème d'icônes `breeze` (non
+installé). Parades : `Theme.qml` nomme toujours famille **et** taille ; `//@ pragma IconTheme Papirus-Dark` (indispensable : sans lui,
+seules les icônes de `hicolor` s'affichent) ; aucun contrôle Qt Quick Controls stylé par la plateforme.
+
+### 8.2 Un seul processus pour tout le bureau
+
+Barre, notifications, verrouillage, polkit, agent Bluetooth et veille vivent dans le même `qs`. `scripts/desktop.sh`, lancé par
+l'`exec` de Sway et le `hyprland.start` d'Hyprland, le relance s'il s'arrête tant que le compositeur répond (abandon et message après
+5 arrêts en une minute). Pas de service systemd : l'environnement systemd est commun aux sessions Sway et Hyprland (un `SWAYSOCK`
+resté d'une session Sway tromperait `Compositor`), et rien ne lierait le service à la vie du compositeur. `$mod+Ctrl+W` =
+`desktop.sh restart` (une relance voulue ne compte pas parmi les arrêts). Variables du processus : `scripts/qs-env.sh`, jamais
+transmises aux applications lancées (`services/Launch.qml`). Fenêtre « config rechargée » de Quickshell gardée.
+
+### 8.3 Polices embarquées
+
+`Symbols Nerd Font Mono`, `HackNerdFont-Regular`, Font Awesome 7 Free / Brands et Font Awesome 4.7 sont versionnées dans
+`assets/fonts/` (licences MIT, Bitstream Vera, SIL OFL : `assets/fonts/README.md`) et copiées par `install.sh` dans
+`~/.local/share/fonts` : non empaquetées partout, et les icônes des modules texte viennent de ces polices de repli. Inter et Noto Sans
+Mono restent des paquets. `install.sh` vérifie avec `fc-list` chaque police de `THEME.md`.
+
+### 8.4 Polices Microsoft
+
+Dépôt privé séparé `Crystal4276/fonts-ms` (polices propriétaires, jamais dans `qs-desktop`), cloné en option par `install.sh` dans
+`~/.local/share/fonts/MS_Fonts`. Le bureau n'en dépend pas (`noto-fonts-cjk` en repli). Alternative : AUR `ttf-ms-win11-auto`.
+
+## 9. Écran de connexion (phase 11)
+
+- **greetd remplace SDDM** ; greeter **Quickshell indépendant** en QML (`Quickshell.Services.Greetd`), apparence reprise du thème SDDM
+  `catppuccin-mocha-green` (`docs/reference/sddm-catppuccin-preview.png` ; thème installé : `/usr/share/sddm/themes/catppuccin-mocha-green/`,
+  fond `backgrounds/wall.png`, Noto Sans 9, horloge, icônes power / reboot / sleep). Le thème SDDM n'est ni modifié ni réutilisé.
+- Compositeur du greeter (utilisateur `greeter`) : proposition **Sway** (déjà installé, marche sur Nvidia :
+  `WLR_RENDERER=vulkan sway --unsupported-gpu`), config minimale qui lance `qs` puis quitte ; `cage` serait un paquet de plus, non testé.
+- Fichiers système (`sudo`, avec accord) : `/etc/greetd/config.toml` ; config Quickshell du greeter et polices lisibles par
+  `greeter` (le dossier personnel ne l'est pas) ; `/etc/pam.d/greetd` avec les lignes `pam_gnome_keyring.so` de `/etc/pam.d/sddm` ;
+  `systemctl disable sddm` puis `enable greetd`.
+- Sessions : `/usr/share/wayland-sessions/` (dont `sway-vulkan.desktop`). Session Sway Nvidia : `WLR_RENDERER=vulkan sway --unsupported-gpu`.
+- Retour arrière : `disable greetd`, `enable sddm` (SDDM gardé jusqu'à validation) ; `greetd-agreety` en secours console.
+- Dépendances `greetd`, `greetd-agreety` (`extra`) dans `deps/` ; installées à la main sur ce desktop au début de la phase. La mise en
+  place est documentée et versionnée pour que `install.sh` (phase 12) l'automatise, avec sauvegarde et `--uninstall`.
+
+## 10. Couverture de l'API Quickshell
+
+Revue complète des types (documentation 0.3.0, `qmltypes` de 0.3.2, code source) ; à tenir à jour.
+
+| Module | Utilisé | Écarté (raison) |
+|---|---|---|
+| `Quickshell` | `ShellRoot`, `Singleton`, `Variants`, `PanelWindow`, `Region`, `PopupAnchor`, `SystemClock`, `QsMenuOpener`, `DesktopEntries`, `LazyLoader`, `ScriptModel`, `PersistentProperties` (JSON en texte : un tableau JS ne passe pas d'un moteur à l'autre), `RetainableLock`, `execDetached`, `cachePath`, `statePath`, `clipboardText` | `QsMenuAnchor` (menus dessinés), `ColorQuantizer` (couleurs inventées), `ElapsedTimer` ; `EasingCurve` au besoin (animations : `BACKLOG.md`) |
+| `Quickshell.Io` | `Process`, `FileView`, `SplitParser`, `StdioCollector`, `IpcHandler`, `JsonAdapter` (`vpn.json`) | `Socket*`, `DataStream*` (raccourcis par `IpcHandler`) |
+| `Quickshell.I3`, `Quickshell.Hyprland` | tout le nécessaire à `Compositor` | `HyprlandFocusGrab` (`OutsideClick` commun aux deux), `GlobalShortcut` (raccourcis par `qs ipc`) |
+| `Quickshell.WindowManager` | — | en réserve : `ext-workspace` n'indique ni focus ni état vide, ne crée pas d'espace |
+| `Quickshell.Wayland` | `WlrLayershell`, `WlSessionLock`, `IdleMonitor`, `IdleInhibitor`, `ScreencopyView`, `ToplevelManager`, `Toplevel` | `ShortcutInhibitor` (le verrou bloque déjà), `BackgroundEffect` (flou hors charte, absent de Sway) |
+| `Quickshell.Widgets` | `IconImage`, `ClippingRectangle` | — |
+| `Quickshell.DBusMenu`, `.Services.SystemTray` | menus et icônes du tray | — |
+| `Quickshell.Bluetooth`, `.Networking` | Bluetooth, réseau, Wi-Fi | `NMSettings` non utilisé à ce jour |
+| `Quickshell.Services.Mpris`, `.Notifications`, `.UPower` (+ `PowerProfiles`), `.Polkit`, `.Pam` | tous | — |
+| `Quickshell.Services.Pipewire` | `Pipewire`, `PwNode`, `PwNodeAudio`, `PwObjectTracker`, `PwNodePeakMonitor` | `PwLink*` (pas de routage audio) |
+| `Quickshell.Services.Greetd` | prévu : greeter (phase 11) | — |
+| `Quickshell.X11` | — | sans objet sous Wayland |
+
+Écartés aussi : réponse directe dans les notifications (Chromium ne la propose pas), historique du presse-papiers (`clipboardText`
+lisible seulement avec le focus), disposition des écrans à la `wdisplays` (pas d'API de configuration des sorties).
