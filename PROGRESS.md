@@ -35,6 +35,8 @@ Retour arrière de la bascule : `docs/ROLLBACK.md`.
 
 **Écran de connexion** (phase 11, après `scripts/greeter-setup.sh install`, puis `enable` et redémarrage) :
 - l'écran s'affiche sur les trois écrans, champ sur le Dell, fond = le tien flouté (exporté par le bureau dans `/var/lib/qs-desktop/crystal/`) ;
+- au démarrage à froid, l'écran de connexion apparaît du premier coup (pilote Nvidia hors initramfs : si greetd démarre avant lui, Sway
+  partirait sans `--unsupported-gpu` ; à voir dans `journalctl -b -u greetd`) ;
 - connexion Sway (Vulkan + NVIDIA) puis Hyprland : la session démarre comme avec SDDM (barres, autostarts, `desktop.sh`) ;
 - trousseau déverrouillé : Chromium et `secret-tool search` sans demande de mot de passe ;
 - session « Windows 10 (X11) » (`startx`, `/bin/vm`) ; déconnexion → retour à l'écran de connexion ;
