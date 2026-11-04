@@ -211,8 +211,10 @@ sleep 0.5
 # Qt et du pilote) sont les tiens, en lien, pour ne pas tout reconstruire.
 cache="${XDG_CACHE_HOME:-$HOME/.cache}"
 mkdir -p "$work/cache/quickshell"
-for d in "$cache"/*; do [[ "${d##*/}" == quickshell ]] || ln -s "$d" "$work/cache/"; done
-for d in "$cache"/quickshell/*; do [[ "${d##*/}" == by-shell || "${d##*/}" == crashes ]] || ln -s "$d" "$work/cache/quickshell/"; done
+for d in "$cache"/* "$cache"/quickshell/*; do
+    [[ -e "$d" && "${d##*/}" != quickshell && "${d##*/}" != by-shell && "${d##*/}" != crashes ]] || continue   # glob vide : ignoré
+    if [[ "$d" == "$cache"/quickshell/* ]]; then ln -s "$d" "$work/cache/quickshell/"; else ln -s "$d" "$work/cache/"; fi
+done
 (cd "$repo" && exec setsid env "${session_env[@]}" WAYLAND_DISPLAY="$wayland" \
     QS_TEST=1 XDG_STATE_HOME="$work/state" XDG_CACHE_HOME="$work/cache" GIO_USE_VFS=local GVFS_DISABLE_FUSE=1 \
     dbus-run-session -- qs -p "$repo" >"$work/qs.log" 2>&1) &

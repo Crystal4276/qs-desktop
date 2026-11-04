@@ -445,7 +445,7 @@ Singleton {
     // Tout signal d'UDisks2 (ajout, retrait, montage…) déclenche une relecture, sauf ceux des tâches (« jobs », relus par leurs
     // effets). Relancé s'il s'arrête ; ses lignes d'en-tête (« Monitoring signals… ») relisent tout à chaque démarrage : c'est la
     // première lecture, faite une fois l'écoute en place (aucun changement perdu entre les deux ; une lecture de plus au
-    // chargement faisait doublon). Arrêté ou pas démarré (gdbus absent) : lu quand même.
+    // chargement faisait doublon). Pas démarré (gdbus absent) : lu quand même, une fois.
     Process {
         id: monitor
         // Arrêté avec Quickshell (`qs kill`, fin de session) : sinon il lui survit (vu : un par relance de dev).
@@ -461,7 +461,8 @@ Singleton {
         onRunningChanged: {
             if (!running) {
                 restartMonitor.start();
-                root.scheduleRefresh();
+                if (!root.loaded)   // jamais lu (gdbus absent) : une lecture, puis `retry` si elle échoue
+                    root.scheduleRefresh();
             }
         }
     }

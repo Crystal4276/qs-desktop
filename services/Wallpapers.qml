@@ -156,25 +156,18 @@ Singleton {
         saved.set(file.slice(thumbDir.length + 1), true);
     }
 
-    // Copie de chaque fond affiché, à la taille exacte de son écran, en BMP : décodée en 28 ms au lieu de 125 à 165 ms pour tes
-    // PNG (8,5 et 12,9 Mo), sans perte (JPEG de `saveToFile` : qualité 75, écart visible). Écrite par WallpaperView, telle
-    // qu'affichée, une fois le fond décodé depuis l'original et gardé 3 s (pas à chaque essai dans l'utilitaire), puis lue aux
-    // lancements suivants (pas aussitôt : l'image affichée est la même). Connue par l'état local (`screenCache` : lisible dès le
-    // démarrage, sans attendre la lecture du dossier), avec la date de l'original ; celle d'une image changée depuis (date
-    // différente, plus ancienne comprise : `cp -p`) ou disparue est effacée à la lecture du dossier. Seules restent celles des fonds
-    // affichés (environ 25 Mo par écran 4K). Objets simples, pas de Set ni de WeakMap (plantage de Qt avec ce dernier).
+    // Copie de chaque fond affiché, à la taille de son écran, en BMP (sans perte, décodée 4 à 6 fois plus vite que tes PNG ;
+    // docs/WALLPAPERS.md). Écrite par WallpaperView après 3 s sur le même fond, connue par l'état local (`screenCache`) avec la date
+    // de l'original ; vérifiée à la lecture du dossier (checkCopies). Objets simples : pas de WeakMap (plantage de Qt).
     readonly property string screenDir: Quickshell.cachePath("wallpaper-screens")
     readonly property var screenSaving: ({})   // copies en cours d'écriture (nom de fichier)
-    readonly property var writtenNow: ({})     // copies écrites par ce processus : l'original reste affiché
 
     function screenName(path: string, size: size): string {
-        return `${Qt.md5(path)}-${size.width}x${size.height}.bmp`;
+        return `${Qt.md5(`${dir}/${path}`)}-${size.width}x${size.height}.bmp`;
     }
 
-    // La copie est lue à la place de l'original (WallpaperView : `fromCopy`, sans comparer d'URL, encodées différemment).
     function usesCopy(path: string, size: size): bool {
-        const name = screenName(path, size);
-        return !!state.screenCache?.[name] && !writtenNow[name];
+        return !!state.screenCache?.[screenName(path, size)];
     }
 
     function screenSource(path: string, size: size): string {
@@ -196,7 +189,6 @@ Singleton {
         delete screenSaving[name];
         if (!ok)
             return;
-        writtenNow[name] = true;
         const shownPaths = Compositor.outputs.map(o => forOutput(o, Compositor.outputs)?.path).filter(p => p);
         // Date de l'original : inconnue si le dossier n'est pas encore lu, relevée alors à sa lecture.
         const entries = Object.assign({}, state.screenCache ?? {}, { [name]: { path: path, stamp: stamps[path] ?? null, written: Date.now() / 1000 } });
@@ -215,6 +207,33 @@ Singleton {
         delete entries[name];
         state.screenCache = entries;
     }
+
+    // Copies vérifiées une fois le dossier ET l'état lus (sinon toutes passeraient pour inconnues) : gardées si le fichier existe, que
+    // son nom suit la clé actuelle (dossier des fonds changé : écartée) et que l'original n'a pas changé (même date ; inconnue à
+    // l'écriture : plus ancien que la copie), ou si elles viennent d'être écrites ; les autres oubliées, et tout fichier sans entrée
+    // effacé (écriture ratée, état perdu), sauf une copie en cours.
+    property var screenFiles: null   // copies trouvées à la dernière lecture du dossier : { fichier: date }
+
+    function checkCopies(): void {
+        const files = screenFiles;
+        if (!stateRead || files === null)
+            return;
+        screenFiles = null;
+        const entries = {};
+        for (const [name, entry] of Object.entries(state.screenCache ?? {})) {
+            const stamp = stamps[entry.path];
+            const size = name.match(/-(\d+)x(\d+)\.bmp$/);
+            const current = size !== null && name === screenName(entry.path, Qt.size(Number(size[1]), Number(size[2])));
+            const fresh = current && files[name] !== undefined && stamp !== undefined
+                && (entry.stamp ? entry.stamp === stamp : Number(stamp) <= files[name]);
+            if (fresh || entry.written >= scanStarted)
+                entries[name] = Object.assign({}, entry, { stamp: entry.stamp || stamp || null });
+        }
+        removeFiles(Object.keys(files).filter(n => !entries[n] && !screenSaving[n]).map(n => `${screenDir}/${n}`));
+        if (JSON.stringify(entries) !== JSON.stringify(state.screenCache ?? {}))
+            state.screenCache = entries;
+    }
+    onStateReadChanged: checkCopies()
 
     function removeFiles(files: var): void {
         if (files.length === 0)
@@ -325,25 +344,10 @@ Singleton {
                     root.removeFiles(stale.map(f => `${root.thumbDir}/${f}`));
                     stale.forEach(f => delete thumbs[f]);
                 }
-                // Copies d'écran : gardées si le fichier existe et que l'image n'a pas changé depuis, ou si elles viennent d'être écrites ;
-                // les autres sont oubliées, et tout fichier sans entrée effacé (écriture ratée, état perdu), sauf une copie en cours
-                // d'écriture ; pas si le dossier n'a pas pu être lu. Les instances de test ont leur propre cache (test-outputs.sh).
-                if (used.size > 0) {
-                    const entries = {};
-                    for (const [name, entry] of Object.entries(state.screenCache ?? {})) {
-                        const stamp = stamps[entry.path];
-                        // Date de l'original à l'écriture : identique exigée ; inconnue alors : original plus ancien que la copie.
-                        const fresh = screens[name] !== undefined && stamp !== undefined
-                            && (entry.stamp ? entry.stamp === stamp : Number(stamp) <= screens[name]);
-                        if (fresh || entry.written >= root.scanStarted)
-                            entries[name] = Object.assign({}, entry, { stamp: entry.stamp || stamp || null });
-                    }
-                    root.removeFiles(Object.keys(screens).filter(n => !entries[n] && !root.screenSaving[n]).map(n => `${root.screenDir}/${n}`));
-                    if (JSON.stringify(entries) !== JSON.stringify(state.screenCache ?? {}))
-                        state.screenCache = entries;
-                }
                 // Dates et vignettes avant la bibliothèque : les vignettes recréées partent directement du cache.
                 root.stamps = stamps;
+                root.screenFiles = used.size > 0 ? screens : null;   // dossier illisible : copies pas vérifiées
+                root.checkCopies();
                 root.thumbs = thumbs;
                 root.saved.clear();
                 root.library = lib;
