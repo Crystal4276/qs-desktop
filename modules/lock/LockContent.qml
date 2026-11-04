@@ -301,8 +301,6 @@ Item {
             }
         }
 
-        // Désactivée tant que la liste des sessions, qui la couvre, est ouverte : un clic sur une ligne (TapHandler, prise passive)
-        // atteignait aussi le bouton dessous (mise en veille, vue sur banc).
         PowerRow {
             visible: root.primary && root.showPower
             Layout.alignment: Qt.AlignHCenter

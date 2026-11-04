@@ -103,6 +103,7 @@ do_install() {
 }
 
 do_enable() {
+    [[ -d "$dest" && -d "$var" ]] || { echo "Écran de connexion pas installé : $0 install d'abord." >&2; exit 1; }
     local link=/etc/systemd/system/display-manager.service current=""
     [[ -L "$link" ]] && current="$(basename "$(readlink -f "$link")")"   # absent : aucun gestionnaire (ex. connexion en console)
     if [[ "$current" == greetd.service ]]; then

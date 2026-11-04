@@ -486,7 +486,8 @@ Dépôt privé séparé `Crystal4276/fonts-ms` (polices propriétaires, jamais d
   SDDM ; shell non POSIX : `/bin/sh` de connexion), puis `Exec` ; X11 : `startx` sur le terminal virtuel de la session (`xorg-xinit` ;
   sessions X11 masquées sans lui), le script lui-même comme client (`startx` recoupe les arguments aux espaces). Profil lu une seule
   fois (`source_profile = false` côté greetd). Sway Nvidia : session `sway-vulkan.desktop` (`env WLR_RENDERER=vulkan sway
-  --unsupported-gpu`), versionnée dans `dotfiles/greetd/`, installée dans `/usr/local/share/wayland-sessions/` sur une machine Nvidia.
+  --unsupported-gpu`), versionnée dans `dotfiles/greetd/` (avec `DesktopNames=sway;wlroots`, absent de la version faite pour SDDM : portails), installée dans
+  `/usr/local/share/wayland-sessions/` si Nvidia est la seule carte graphique.
 - **PAM** : `/etc/pam.d/greetd` (celui du paquet + `pam_gnome_keyring.so` en `auth`, `password`, `session auto_start`, comme
   `/etc/pam.d/sddm`) ; `/etc/pam.d/greetd-greeter` pour la session du greeter lui-même (comme `sddm-greeter` : sans lui, greetd
   reprend `greetd` et lancerait le trousseau pour `greeter`).

@@ -43,6 +43,11 @@ Singleton {
     // Dossier système de l'écran de connexion (état du greeter, fonds exportés par le bureau ; scripts/greeter-setup.sh, même chemin
     // dans scripts/greeter.sh). QS_GREETER_DIR : banc.
     readonly property string greeterDir: Quickshell.env("QS_GREETER_DIR") || "/var/lib/qs-desktop"
+
+    // Fond de l'écran `description` exporté par le bureau de `user` pour l'écran de connexion (Wallpapers.greeterFile, Greeter.wallpaper).
+    function greeterWallpaper(user: string, description: string): string {
+        return `${greeterDir}/${user}/${Qt.md5(description)}.jpg`;
+    }
     readonly property var doNotDisturb: Object.assign({ schedule: true, from: "21:00", to: "07:00", muteApps: [] }, config.doNotDisturb ?? {})
 
     // Heure "HH:MM" ("9:5" accepté) → minutes depuis minuit ; -1 si elle est mal formée (veilleuse, « ne pas déranger »).
