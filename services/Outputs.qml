@@ -213,6 +213,8 @@ Singleton {
     // dès la création, une fois par processus (pas aux rechargements à chaud), et dans la minute du lancement seulement (premier
     // chargement en erreur, réparé plus tard : pas de retour aux premiers espaces en pleine session). /proc/uptime, pas l'heure :
     // insensible à un réglage de l'horloge au démarrage.
+    readonly property real launchedAt: Number(Quickshell.env("QS_DESKTOP_HOME")) || 0
+
     PersistentProperties {
         reloadableId: "outputs"
 
@@ -222,16 +224,15 @@ Singleton {
             if (homeChecked)
                 return;
             homeChecked = true;
-            const launched = Number(Quickshell.env("QS_DESKTOP_HOME"));
             const now = Number(uptime.text().split(" ")[0]);
-            if (launched > 0 && now - launched >= 0 && now - launched < 60)
+            if (root.launchedAt > 0 && now - root.launchedAt >= 0 && now - root.launchedAt < 60)
                 root.home();
         }
     }
 
     FileView {
         id: uptime
-        path: Number(Quickshell.env("QS_DESKTOP_HOME")) > 0 ? "/proc/uptime" : ""
+        path: root.launchedAt > 0 ? "/proc/uptime" : ""
         blockLoading: true
     }
 
@@ -365,8 +366,9 @@ Singleton {
         return blocks[name] ?? [];
     }
 
+    // Aucun écran décrit (compositeur muet ou inconnu) : le premier, pour garder tray, menu et réglages quelque part.
     function isPrimary(name: string): bool {
-        return primary?.name === name;
+        return primary ? primary.name === name : Quickshell.screens[0]?.name === name;
     }
 
     // Écran où ouvrir une fenêtre (lanceur, sélecteur de fonds, polkit, moniteur) : l'écran focalisé, sinon l'écran principal

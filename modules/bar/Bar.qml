@@ -28,11 +28,8 @@ Variants {
             if (output)
                 described = true;
         }
-        // Aucun écran principal connu (repli sans compositeur) : le premier, pour garder tray, menu et réglages quelque part.
-        readonly property bool primary: Outputs.isPrimary(modelData?.name ?? "")
-            || (Outputs.primary === null && Quickshell.screens[0]?.name === modelData?.name)
         readonly property string wantedLayout: output || (fallbackDue && !described)
-            ? JSON.stringify(Settings.barFor(output?.description ?? "", primary)) : ""
+            ? JSON.stringify(Settings.barFor(output?.description ?? "", Outputs.isPrimary(modelData?.name ?? ""))) : ""
         property string appliedLayout: ""
         readonly property var layout: appliedLayout !== "" ? JSON.parse(appliedLayout) : ({ left: [], right: [] })
 
