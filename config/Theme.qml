@@ -329,6 +329,8 @@ Singleton {
         readonly property url logout: Quickshell.shellPath("assets/logout.svg")
         readonly property url restart: Quickshell.shellPath("assets/restart.svg")
         readonly property url shutdown: Quickshell.shellPath("assets/shutdown.svg")
+        // Veille (phase 11) : croissant au trait, dégradé teal → sapphire, à la suite des quatre autres.
+        readonly property url suspend: Quickshell.shellPath("assets/suspend.svg")
         // Logo officiel (dépôt tailscale/tailscale, client/systray/tailscale.svg) : carte de l'onglet Tailscale.
         readonly property url tailscale: Quickshell.shellPath("assets/tailscale.svg")
     }
@@ -574,6 +576,10 @@ Singleton {
         readonly property color warning: root.color.yellow   // verrouillage majuscules
         readonly property int spacing: 24
         readonly property int gap: 64                          // entre la date et l'utilisateur
+        // Éteindre, redémarrer, veille (PowerRow, verrouillage et écran de connexion) : boutons ronds de la hauteur du champ,
+        // images de la charte à la taille du panneau de réglages.
+        readonly property int powerSize: fieldHeight
+        readonly property int powerImageSize: root.quickSettings.imageSize
     }
 
     // Polices embarquées (assets/fonts, ARCHITECTURE § 8.3) chargées depuis le dépôt : prioritaires sur une copie système

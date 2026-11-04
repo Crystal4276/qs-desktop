@@ -230,6 +230,7 @@ Scope {
                 error: root.error
                 capsLock: entry.capsLock
                 user: Quickshell.env("USER") ?? ""
+                showPower: true
                 focus: true
                 Keys.onPressed: event => {
                     entry.key(event);
