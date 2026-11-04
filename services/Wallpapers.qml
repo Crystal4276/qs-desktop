@@ -194,10 +194,10 @@ Singleton {
         return paths;
     }
 
-    // Copies des fonds qui ne sont plus choisis : retirées de `entries`, fichiers effacés. Dossier pas encore lu (parties des
-    // triptyques inconnues) : rien n'est retiré, ce sera fait plus tard.
+    // Copies des fonds qui ne sont plus choisis : retirées de `entries`, fichiers effacés. Pas avant la lecture du dossier (parties
+    // des triptyques inconnues) ni avant que tous les écrans soient décrits (fonds affichés inconnus) : fait plus tard.
     function dropUnchosen(entries: var): void {
-        if (!libraryRead)
+        if (!libraryRead || Quickshell.screens.length === 0 || !Quickshell.screens.every(s => Compositor.output(s.name) !== null))
             return;
         const keep = chosenPaths();
         const unused = Object.keys(entries).filter(n => !keep.includes(entries[n].path));
@@ -205,14 +205,17 @@ Singleton {
         removeFiles(unused.map(n => `${screenDir}/${n}`));
     }
 
+    // Liste des copies remplacée : celles des fonds plus choisis retirées, écrite dans l'état seulement si elle a changé.
+    function setCopies(entries: var): void {
+        dropUnchosen(entries);
+        if (JSON.stringify(entries) !== JSON.stringify(state.screenCache ?? {}))
+            state.screenCache = entries;
+    }
+
     // Choix changé (fond déjà copié, panorama : aucune copie écrite ensuite) : copies des anciens fonds retirées aussitôt.
     function pruneCopies(): void {
-        if (!stateRead)
-            return;
-        const entries = Object.assign({}, state.screenCache ?? {});
-        dropUnchosen(entries);
-        if (Object.keys(entries).length !== Object.keys(state.screenCache ?? {}).length)
-            state.screenCache = entries;
+        if (stateRead)
+            setCopies(Object.assign({}, state.screenCache ?? {}));
     }
     onSelectionChanged: pruneCopies()
     onOverridesChanged: pruneCopies()
@@ -225,9 +228,7 @@ Singleton {
             return;
         // Date de l'original : inconnue si le dossier n'est pas encore lu, relevée alors à sa lecture.
         writtenSinceScan[name] = true;
-        const entries = Object.assign({}, state.screenCache ?? {}, { [name]: { path: path, stamp: stamps[path] ?? null } });
-        dropUnchosen(entries);
-        state.screenCache = entries;
+        setCopies(Object.assign({}, state.screenCache ?? {}, { [name]: { path: path, stamp: stamps[path] ?? null } }));
     }
 
     // Copie illisible (effacée à la main, disque) : oubliée, l'original est relu (et une nouvelle copie écrite).
@@ -237,7 +238,7 @@ Singleton {
             return;
         const entries = Object.assign({}, state.screenCache);
         delete entries[name];
-        state.screenCache = entries;
+        setCopies(entries);
     }
 
     // Copies vérifiées une fois le dossier ET l'état lus (sinon toutes passeraient pour inconnues) : gardées si le fichier existe, que
@@ -262,9 +263,7 @@ Singleton {
                 entries[name] = Object.assign({}, entry, { stamp: entry.stamp || stamp || null });
         }
         removeFiles(Object.keys(files).filter(n => !entries[n] && !screenSaving[n]).map(n => `${screenDir}/${n}`));
-        dropUnchosen(entries);
-        if (JSON.stringify(entries) !== JSON.stringify(state.screenCache ?? {}))
-            state.screenCache = entries;
+        setCopies(entries);
     }
     onStateReadChanged: checkCopies()
 
