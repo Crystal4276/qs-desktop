@@ -18,10 +18,12 @@ Variants {
 
         // Disposition (modules de chaque pilule) : une nouvelle recrée tous les modules (~50 ms). Appliquée une fois l'écran connu,
         // au tour suivant de la boucle (écrans d'une même réponse ensemble), et seulement si son contenu a changé.
-        // Écran que le compositeur ne décrit pas (miroir, compositeur inconnu) : disposition par défaut, une fois les écrans lus.
+        // Écran que le compositeur ne décrit pas (miroir, compositeur inconnu) : disposition par défaut, s'il ne l'est toujours pas 2 s
+        // après les autres (un écran branché est décrit un peu après son apparition : pas de barre provisoire à reconstruire).
         readonly property bool outputsKnown: Compositor.outputs.length > 0 || Compositor.type === ""
-        readonly property string wantedLayout: output || outputsKnown
-            ? JSON.stringify(Settings.barFor(output?.description ?? "", Outputs.isPrimary(modelData?.name ?? ""))) : ""
+        property bool fallbackDue: false
+        readonly property string wantedLayout: output ? JSON.stringify(Settings.barFor(output.description, Outputs.isPrimary(modelData?.name ?? "")))
+            : fallbackDue ? JSON.stringify(Settings.barFor("", Outputs.isPrimary(modelData?.name ?? ""))) : ""
         property string appliedLayout: ""
         readonly property var layout: appliedLayout !== "" ? JSON.parse(appliedLayout) : ({ left: [], right: [] })
 
@@ -29,6 +31,12 @@ Variants {
         // écran débranché : pas d'écriture sur une barre disparue).
         onWantedLayoutChanged: layoutTimer.restart()
         Component.onCompleted: layoutTimer.restart()   // écran déjà connu à la création : aucun « changed » pour la valeur initiale
+
+        Timer {
+            interval: 2000
+            running: !bar.output && bar.outputsKnown && !bar.fallbackDue
+            onTriggered: bar.fallbackDue = true
+        }
 
         Timer {
             id: layoutTimer

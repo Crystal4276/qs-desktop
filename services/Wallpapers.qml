@@ -260,17 +260,17 @@ Singleton {
     // Démarrage : les barres attendent que chaque écran affiche son fond (Bar.qml), pour apparaître en même temps ; au plus 3 s
     // (fond illisible, compositeur lent). Une fois pour toutes : gardé au rechargement à chaud.
     property alias startupShown: persist.startupShown
-    property var shownScreens: []   // écrans dont le fond est affiché (Background.qml)
+    property var shownScreens: []   // écrans dont le fond est affiché, ou qui n'en ont aucun (Background.qml)
 
     function markShown(name: string): void {
         if (!shownScreens.includes(name))
             shownScreens = [...shownScreens, name];
     }
 
-    // Écran sans image (aucun fond, ou partie de triptyque introuvable : source vide, fenêtre jamais affichée) : rien à attendre.
-    // Après le démarrage : plus calculé (`startupShown` en tête).
-    readonly property bool allShown: !startupShown && ready && Compositor.outputs.length > 0
-        && Compositor.outputs.every(o => !forOutput(o, Compositor.outputs)?.source || shownScreens.includes(o.name))
+    // Tous les écrans, pas seulement ceux déjà décrits par le compositeur : chacun affiche son fond ou signale n'en avoir aucun
+    // (Background.qml). Après le démarrage : plus calculé (`startupShown` en tête).
+    readonly property bool allShown: !startupShown && ready && Quickshell.screens.length > 0
+        && Quickshell.screens.every(s => shownScreens.includes(s.name))
     onAllShownChanged: {
         if (allShown)
             startupShown = true;

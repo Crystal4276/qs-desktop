@@ -209,9 +209,10 @@ Singleton {
     // bloc (5, Discord) plutôt que le premier. Finie plus tôt si l'utilisateur change d'espace entre-temps (snapshot).
     property bool homeRequested: false
 
-    // Premier lancement de la session (scripts/desktop.sh : QS_DESKTOP_HOME=<heure du lancement>) : demandée dès la création, une
-    // fois par processus (pas aux rechargements à chaud, même environnement), et dans la minute du lancement seulement (premier
-    // chargement en erreur, réparé plus tard : pas de retour aux premiers espaces en pleine session).
+    // Premier lancement de la session (scripts/desktop.sh : QS_DESKTOP_HOME=<secondes depuis le démarrage de la machine>) : demandée
+    // dès la création, une fois par processus (pas aux rechargements à chaud), et dans la minute du lancement seulement (premier
+    // chargement en erreur, réparé plus tard : pas de retour aux premiers espaces en pleine session). /proc/uptime, pas l'heure :
+    // insensible à un réglage de l'horloge au démarrage.
     PersistentProperties {
         reloadableId: "outputs"
 
@@ -222,9 +223,16 @@ Singleton {
                 return;
             homeChecked = true;
             const launched = Number(Quickshell.env("QS_DESKTOP_HOME"));
-            if (launched > 0 && Date.now() / 1000 - launched < 60)
+            const now = Number(uptime.text().split(" ")[0]);
+            if (launched > 0 && now - launched >= 0 && now - launched < 60)
                 root.home();
         }
+    }
+
+    FileView {
+        id: uptime
+        path: "/proc/uptime"
+        blockLoading: true
     }
 
     function home(): void {
