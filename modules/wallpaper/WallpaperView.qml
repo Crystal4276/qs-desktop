@@ -46,7 +46,7 @@ Item {
         onStatusChanged: {
             saveDelay.stop();
             if (status === Image.Error && path !== "" && fromCopy) {
-                Wallpapers.screenFailed(path, sourceSize);
+                Wallpapers.screenFailed(copyName);
                 return;
             }
             if (status === Image.Ready || status === Image.Error)
@@ -63,11 +63,12 @@ Item {
             id: saveDelay
             interval: 3000
             onTriggered: {
-                const file = Wallpapers.screenFile(image.path, image.sourceSize);
+                const name = image.copyName;
+                const file = Wallpapers.screenFile(name);
                 const path = image.path;
-                if (file !== "" && !image.grabToImage(result => Wallpapers.screenWritten(file, path, result.saveToFile(file)),
+                if (file !== "" && !image.grabToImage(result => Wallpapers.screenWritten(name, path, result.saveToFile(file)),
                         Qt.size(image.width, image.height)))
-                    Wallpapers.screenWritten(file, path, false);
+                    Wallpapers.screenWritten(name, path, false);
             }
         }
     }

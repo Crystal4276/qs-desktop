@@ -73,7 +73,7 @@ Singleton {
         if (s.kind === "panorama")
             return outputs.length > 1 ? { kind: "panorama", source: url(s.path) } : { kind: "image", source: url(s.path), path: s.path };
         if (s.kind === "triptych") {
-            const t = library.triptych.find(t => t.path === s.path);
+            const t = triptych(s.path);
             if (!t)
                 return null;
             // Trois écrans : gauche, centre, droite selon leur position ; sinon le centre partout.
@@ -174,13 +174,16 @@ Singleton {
         return Icons.fileUrl(`${screenDir}/${name}`);
     }
 
-    // Fichier où écrire la copie de `path` ("" : déjà en cache ou en cours d'écriture).
-    function screenFile(path: string, size: size): string {
-        const name = screenName(path, size);
+    // Fichier où écrire la copie `name` ("" : déjà en cache ou en cours d'écriture).
+    function screenFile(name: string): string {
         if (state.screenCache?.[name] || screenSaving[name])
             return "";
         screenSaving[name] = true;
         return `${screenDir}/${name}`;
+    }
+
+    function triptych(path: string): var {
+        return library.triptych.find(t => t.path === path) ?? null;
     }
 
     // Fonds choisis (par écran, et pour tous : `selection`, celui de la config machine si rien n'est choisi) et fonds affichés (repli
@@ -188,7 +191,7 @@ Singleton {
     function chosenPaths(): var {
         const paths = [...Object.values(overrides), ...Compositor.outputs.map(o => forOutput(o, Compositor.outputs)?.path).filter(p => p)];
         if (selection?.kind === "triptych")
-            paths.push(...Object.values(library.triptych.find(t => t.path === selection.path)?.parts ?? {}));
+            paths.push(...Object.values(triptych(selection.path)?.parts ?? {}));
         else if (selection?.kind === "simple")
             paths.push(selection.path);
         return paths;
@@ -221,8 +224,7 @@ Singleton {
     onOverridesChanged: pruneCopies()
 
     // Copie écrite (`ok`) ou échouée. Les copies des fonds qui ne sont plus choisis sont effacées.
-    function screenWritten(file: string, path: string, ok: bool): void {
-        const name = file.slice(screenDir.length + 1);
+    function screenWritten(name: string, path: string, ok: bool): void {
         delete screenSaving[name];
         if (!ok)
             return;
@@ -232,20 +234,19 @@ Singleton {
     }
 
     // Copie illisible (effacée à la main, disque) : oubliée, l'original est relu (et une nouvelle copie écrite).
-    function screenFailed(path: string, size: size): void {
-        const name = screenName(path, size);
+    function screenFailed(name: string): void {
         if (!state.screenCache?.[name])
             return;
         const entries = Object.assign({}, state.screenCache);
         delete entries[name];
         setCopies(entries);
-        refresh();   // dossier des copies effacé : recréé par la lecture (mkdir), sinon aucune copie ne s'écrirait plus
+        Quickshell.execDetached(["mkdir", "-p", screenDir]);   // dossier des copies effacé : sinon aucune ne s'écrirait plus
     }
 
     // Copies vérifiées une fois le dossier ET l'état lus (sinon toutes passeraient pour inconnues) : gardées si le fichier existe, que
     // son nom suit la clé actuelle (dossier des fonds changé : écartée) et que l'original n'a pas changé (même date ; inconnue à
-    // l'écriture : plus ancien que la copie), ou si elles viennent d'être écrites ; les autres oubliées, et tout fichier sans entrée
-    // effacé (écriture ratée, état perdu), sauf une copie en cours.
+    // l'écriture : plus ancien que la copie), ou si elles viennent d'être écrites ; les autres oubliées. Fichier sans entrée (écriture
+    // ratée, état perdu) : effacé au bout d'un jour, pas avant (une autre instance au même cache, avec un autre état, peut l'avoir écrit).
     property var screenFiles: null   // copies trouvées à la dernière lecture du dossier : { fichier: date }
 
     function checkCopies(): void {
@@ -263,7 +264,8 @@ Singleton {
             if (fresh || writtenSinceScan[name])
                 entries[name] = Object.assign({}, entry, { stamp: entry.stamp || stamp || null });
         }
-        setCopies(entries, Object.keys(files).filter(n => !entries[n] && !screenSaving[n]));
+        const dayAgo = Date.now() / 1000 - 86400;
+        setCopies(entries, Object.keys(files).filter(n => !entries[n] && !screenSaving[n] && files[n] < dayAgo));
     }
     onStateReadChanged: checkCopies()
 
@@ -282,7 +284,7 @@ Singleton {
     property var shownScreens: ({})   // source affichée par écran, "" : aucune image (Background.qml)
 
     function markShown(name: string, source: string): void {
-        if (shownScreens[name] !== source)
+        if (!startupShown && shownScreens[name] !== source)
             shownScreens = Object.assign({}, shownScreens, { [name]: source });
     }
 
