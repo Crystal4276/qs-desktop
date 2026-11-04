@@ -34,21 +34,32 @@ Item {
         retainWhileLoading: true
         cache: false
 
-        // Décodé depuis l'original : copie enregistrée telle qu'affichée (grabToImage prend une taille logique, multipliée par
-        // l'échelle de l'écran), relue ensuite à sa place.
+        readonly property bool fromCopy: source.toString().startsWith(Icons.fileUrl(Wallpapers.screenDir))
+
         onStatusChanged: {
-            if (status === Image.Error && path !== "" && source.toString().startsWith(Icons.fileUrl(Wallpapers.screenDir))) {
+            saveDelay.stop();
+            if (status === Image.Error && path !== "" && fromCopy) {
                 Wallpapers.screenFailed(path, sourceSize);
                 return;
             }
             if (status === Image.Ready || status === Image.Error)
                 root.displayed();
-            if (status !== Image.Ready || path === "")
-                return;
-            const file = Wallpapers.screenFile(path, sourceSize);
-            const p = path;
-            if (file !== "" && !grabToImage(result => Wallpapers.screenWritten(file, p, result.saveToFile(file)), Qt.size(width, height)))
-                Wallpapers.screenWritten(file, p, false);
+            if (status === Image.Ready && path !== "" && !fromCopy)
+                saveDelay.restart();
+        }
+
+        // Décodé depuis l'original et gardé 3 s (pas à chaque essai dans l'utilitaire : 25 Mo écrits par écran 4K) : copie
+        // enregistrée telle qu'affichée (grabToImage prend une taille logique, multipliée par l'échelle de l'écran).
+        Timer {
+            id: saveDelay
+            interval: 3000
+            onTriggered: {
+                const file = Wallpapers.screenFile(image.path, image.sourceSize);
+                const path = image.path;
+                if (file !== "" && !image.grabToImage(result => Wallpapers.screenWritten(file, path, result.saveToFile(file)),
+                        Qt.size(image.width, image.height)))
+                    Wallpapers.screenWritten(file, path, false);
+            }
         }
     }
 

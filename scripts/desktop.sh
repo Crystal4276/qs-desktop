@@ -85,7 +85,7 @@ watch() {
         # Vue de départ : demandée au premier lancement seulement, par l'environnement (services/Outputs.qml la lit à sa création,
         # avant la première répartition). Avant : `qs ipc` toutes les 0,2 s jusqu'à la réponse de l'instance, un processus Qt par
         # essai (20 ms), et une seconde répartition si la demande arrivait après la première.
-        env ${home:+QS_DESKTOP_HOME=1} qs -c desktop >"$log" 2>&1 9>&- &
+        env -u QS_DESKTOP_HOME ${home:+QS_DESKTOP_HOME=1} qs -c desktop >"$log" 2>&1 9>&- &
         pid=$!
         echo "$pid" >"$pidfile"
         home=""

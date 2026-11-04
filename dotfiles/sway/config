@@ -191,9 +191,9 @@
 # System settings
     exec_always "gsettings set org.gnome.desktop.interface cursor-size 48"
     seat seat0 xcursor_theme catppuccin-mocha-green-cursors 48
-    # Les autres (WAYLAND_DISPLAY, DISPLAY, XDG_CURRENT_DESKTOP, SWAYSOCK) : /etc/sway/config.d/50-systemd-user.conf, inclus en fin
-    # de fichier.
-    exec systemctl --user import-environment I3SOCK XCURSOR_SIZE XCURSOR_THEME
+    # Avant les applications (les `exec` partent dans l'ordre ; /etc/sway/config.d, inclus en fin de fichier, passe après elles et
+    # peut manquer sur une autre distribution).
+    exec systemctl --user import-environment WAYLAND_DISPLAY DISPLAY XDG_CURRENT_DESKTOP SWAYSOCK I3SOCK XCURSOR_SIZE XCURSOR_THEME
     # Numlock on
     input * xkb_numlock enabled
 
