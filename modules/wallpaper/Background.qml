@@ -56,7 +56,8 @@ Variants {
         }
 
         // Copie du fond affiché pour l'écran de connexion (Wallpapers.greeterFile), 3 s après qu'il est prêt, comme les copies
-        // à la taille de l'écran (pas à chaque essai dans l'utilitaire). grabToImage prend une taille logique.
+        // à la taille de l'écran (pas à chaque essai dans l'utilitaire). À demi-taille : l'écran de connexion la floute (rayon
+        // Theme.lock.blur), et l'encodage JPEG, sur le fil de l'interface, coûte 4 fois moins. grabToImage prend une taille logique.
         Connections {
             target: Wallpapers
             function onGreeterReady() {
@@ -72,7 +73,7 @@ Variants {
                 const description = window.output?.description ?? "";
                 const file = key !== "" ? Wallpapers.greeterFile(description, key) : "";
                 if (file !== "" && !view.grabToImage(result => Wallpapers.greeterWritten(description, key, result.saveToFile(file)),
-                        Qt.size(view.width, view.height)))
+                        Qt.size(Math.ceil(view.width / 2), Math.ceil(view.height / 2))))
                     Wallpapers.greeterWritten(description, key, false);
             }
         }

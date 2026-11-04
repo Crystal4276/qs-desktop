@@ -288,8 +288,11 @@ Singleton {
     readonly property var greeterSaved: ({})   // description → fond écrit (« nature:source:taille »)
 
     // Dossier présent et inscriptible, vérifié au démarrage puis à chaque export refusé : sans écran de connexion (laptop, avant
-    // greeter-setup.sh), aucun rendu pour rien ; dossier créé ensuite : pris au fond affiché suivant.
+    // greeter-setup.sh), aucun rendu pour rien. Dossier apparu après un refus (`greeterMissing`) : exports relancés aussitôt
+    // (greeterReady). Écriture ratée, dossier pourtant là (disque plein…) : retentée au fond affiché suivant seulement, sans boucle.
     property bool greeterWritable: false
+    property bool greeterMissing: false
+    signal greeterReady
 
     Process {
         id: greeterCheck
@@ -297,11 +300,14 @@ Singleton {
         running: root.greeterDir !== ""
         onExited: code => {
             root.greeterWritable = code === 0;
-            if (root.greeterWritable)
-                root.greeterReady();   // exports refusés en attendant : relancés (Background.qml)
+            if (!root.greeterWritable) {
+                root.greeterMissing = true;
+            } else if (root.greeterMissing) {
+                root.greeterMissing = false;
+                root.greeterReady();   // exports refusés en attendant le dossier : relancés (Background.qml)
+            }
         }
     }
-    signal greeterReady
 
     // Fichier où écrire le fond `key` de l'écran `description` ("" : déjà écrit, ou pas de dossier). Même nom côté greeter
     // (services/Greeter.qml). Retenu seulement une fois écrit (greeterWritten) : un échec est retenté au prochain affichage.
