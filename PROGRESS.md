@@ -2405,6 +2405,12 @@ Corrigés :
 - **gardés** : `checkupdates` au démarrage (le différer ferait sauter les pilules en pleine session), lectures Tailscale/ZeroTier (icône du tray), `pkill` de l'autostart Sway (instance restée d'une session précédente) ;
 - **à tester à la main** : prochain démarrage d'Hyprland et de Sway (espaces 1 / 4 / 7, une seule répartition dans le journal de `desktop.sh log`).
 
+**Série de revues de code sur le travail du 2026-11-04** (`f3b1683..HEAD`, ta demande « jusqu'à ce qu'il n'y ait plus que des problèmes négligeables ») : 14 passes de `/code-review high`, puis vérification complète d'un démarrage.
+- **Méthode** : chaque correction préparée et testée sur une copie du dépôt (Hyprland imbriqué et Sway headless, état et cache isolés), puis copiée d'un seul coup dans le dépôt ; après chaque déploiement, ton instance vérifiée (vivante, 3 barres et 3 fonds, captures) ; `test-outputs.sh` 0 échec, 0 plantage, 0 `TypeError` sous Sway et Hyprland à chaque passe ;
+- **corrigé, entre autres** : copies de fonds effacées si la lecture du dossier précédait celle de l'état ; copie périmée gardée (original remplacé avec une date plus ancienne) ; copies de fonds abandonnés jamais effacées, orphelines, ou effacées pour un écran éteint ; barres affichées avant les fonds (image provisoire, écran pas encore décrit, ordre de notification de QML) ; barre vide ou disposition provisoire au rebranchement ; vue de départ fragile (héritée, ou jugée à l'heure système) ; relectures `nordvpn status` et UDisks2 en trop ; largeurs mesurées deux fois ; boucle de liaison sur `allShown`, visible seulement à un démarrage complet ;
+- **gardé, jugé négligeable** (raisons dans les messages de commit et ici) : espaces au-delà de 9 ; copie écrite pour un fond plus petit que l'écran (place disque seulement) ; barres retenues 3 s au démarrage avec un écran en miroir, un panorama illisible ou un compositeur inconnu ; double construction possible de la barre si tes écrans étaient décrits l'un après l'autre au démarrage (jamais observé : ils arrivent ensemble) ;
+- **passe 14** : « aucun défaut significatif » ; ses quatre remarques mineures sont appliquées. Démarrage complet du banc et de ton bureau : aucun avertissement nouveau.
+
 ## Prochaine étape
 
 **Phase 10 : bascule faite, revue en boucle terminée (8 passes), en attente de ta validation ; phase 11 (portabilité) ensuite.**
