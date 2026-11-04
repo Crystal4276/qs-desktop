@@ -15,7 +15,22 @@ Variants {
         required property ShellScreen modelData
 
         readonly property var output: Compositor.output(modelData?.name ?? "")
-        readonly property var layout: Settings.barFor(output?.description ?? "", Outputs.isPrimary(modelData?.name ?? ""))
+
+        // Disposition (modules de chaque pilule). Un nouvel objet recrée tous les modules de la barre (~50 ms par barre) : au
+        // démarrage, cela arrivait à la lecture de la config machine puis à chaque écran annoncé par le compositeur (un seul écran
+        // connu passe pour le principal), et retardait d'autant tout le reste, fonds d'écran compris (profil QML du 2026-11-04).
+        // Appliquée une fois l'écran connu, au tour suivant de la boucle d'événements (les écrans d'une même réponse ensemble), et
+        // seulement si elle a changé.
+        readonly property string wantedLayout: output ? JSON.stringify(Settings.barFor(output.description, Outputs.isPrimary(modelData?.name ?? ""))) : ""
+        property string appliedLayout: ""
+        readonly property var layout: appliedLayout !== "" ? JSON.parse(appliedLayout) : ({ left: [], right: [] })
+
+        // Écran disparu un instant : disposition gardée. Fonction propre à chaque appel (`Qt.callLater` regroupe les appels d'une
+        // même fonction) ; sans effet si rien n'a changé.
+        onWantedLayoutChanged: Qt.callLater(() => {
+            if (bar.wantedLayout !== "")
+                bar.appliedLayout = bar.wantedLayout;
+        })
 
         screen: modelData
         WlrLayershell.namespace: "quickshell-bar"
