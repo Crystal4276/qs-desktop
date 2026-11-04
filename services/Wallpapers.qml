@@ -278,6 +278,24 @@ Singleton {
     }
 
     // Choix enregistré et dossier lus : forOutput donne le fond définitif.
+    // Fond de chaque écran pour l'écran de connexion (modules/greeter, utilisateur `greeter`, qui ne lit pas ton dossier personnel) :
+    // dossier système créé par scripts/greeter-setup.sh (absent : l'écriture échoue sans bruit), une image par écran nommée
+    // d'après sa description, récrite quand le fond affiché change (Background.qml). Banc (QS_TEST) : seulement dans QS_GREETER_DIR.
+    readonly property string greeterDir: {
+        const user = Quickshell.env("USER") ?? "";
+        return Quickshell.env("QS_GREETER_DIR") ?? (Quickshell.env("QS_TEST") || user === "" ? "" : `/var/lib/qs-desktop/${user}`);
+    }
+    readonly property var greeterSaved: ({})   // description → fond écrit (« nature:source:taille »)
+
+    // Fichier où écrire le fond `key` de l'écran `description` ("" : déjà écrit, ou pas de dossier). Même nom côté greeter
+    // (services/Greeter.qml).
+    function greeterFile(description: string, key: string): string {
+        if (greeterDir === "" || description === "" || greeterSaved[description] === key)
+            return "";
+        greeterSaved[description] = key;
+        return `${greeterDir}/${Qt.md5(description)}.jpg`;
+    }
+
     readonly property bool ready: stateRead && libraryRead
 
     // Démarrage : les barres attendent que chaque écran affiche son fond (Bar.qml), pour apparaître en même temps ; au plus 3 s
