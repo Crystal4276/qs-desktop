@@ -82,18 +82,13 @@ watch() {
     # 1,1 s après desktop.sh, et le fond d'écran d'autant plus tard.
     while :; do
         [[ -s "$log" ]] && mv -f "$log" "$log.1"   # journal de l'instance précédente (raison d'un arrêt) gardé
-        qs -c desktop >"$log" 2>&1 9>&- &
+        # Vue de départ : demandée au premier lancement seulement, par l'environnement (services/Outputs.qml la lit à sa création,
+        # avant la première répartition). Avant : `qs ipc` toutes les 0,2 s jusqu'à la réponse de l'instance, un processus Qt par
+        # essai (20 ms), et une seconde répartition si la demande arrivait après la première.
+        env ${home:+QS_DESKTOP_HOME=1} qs -c desktop >"$log" 2>&1 9>&- &
         pid=$!
         echo "$pid" >"$pidfile"
-        if [[ -n "$home" ]]; then
-            # Tant que l'instance vit (2 min au plus) : un démarrage à froid peut dépasser 10 s.
-            for _ in $(seq 1 600); do
-                timeout 2 qs ipc --pid "$pid" call outputs home >/dev/null 2>&1 && break
-                kill -0 "$pid" 2>/dev/null || break
-                sleep 0.2
-            done
-            home=""
-        fi
+        home=""
         wait "$pid"
         alive || break
         now=$(date +%s)

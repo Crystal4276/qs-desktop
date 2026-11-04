@@ -92,11 +92,39 @@ Départ 547 Mo → 50 ouvertures du lanceur 625 → 50 des réglages 656 → 100
 Pas de conclusion sur une fuite : la hausse peut venir du premier chargement de chaque élément, et aucun plateau n'a été mesuré. Relevé fait avec `OutsideClick` absent.
 Le verrouillage coûte ~170 Mo sur ce banc (flou du fond en rendu logiciel), à mesurer sur le vrai GPU. Pas encore relevé : la pente sur plusieurs heures de l'instance réelle.
 
+## Démarrage (audit du 2026-11-04)
+
+Banc Hyprland imbriqué, 3 écrans virtuels à la taille des tiens, temps depuis le lancement de `qs` :
+
+| Étape | Temps |
+|---|---|
+| Quickshell seul (config vide) | ~85 ms |
+| Config chargée (compilation et création) | ~300 ms |
+| Écrans décrits par le compositeur | ~590 ms (Hyprland répond en 3 ms : c'est Quickshell qui est occupé) |
+| Fonds et barres affichés | ~850 ms |
+
+- **Barres** : chaque nouvelle disposition recréait tous les modules (~50 ms par barre) ; au démarrage, à la lecture de la config machine
+  puis à chaque écran annoncé. Une seule construction par barre désormais (`Bar.qml`) : écrans lus ~150 ms plus tôt.
+- **Fonds** : copie à la taille de l'écran (`docs/WALLPAPERS.md`), barres affichées avec les fonds.
+- **Doublons retirés** : filtre des applications calculé deux fois (`Apps`), lecture d'UDisks2 deux fois (`Disks`), `nordvpn status` relu à la
+  première lecture des interfaces (`Vpn`), largeurs des valeurs mesurées par chaque horloge et deux fois chacune (1 440 heures ; cache
+  partagé dans `WidthTexts`), sondage `qs ipc` toutes les 0,2 s pour la vue de départ (variable d'environnement, une seule répartition).
+  Processus lancés pendant les premières secondes : 153 → 123.
+- **Sans levier** : la compilation du QML à chaque lancement (Quickshell charge par `qs:@/…`, que le cache disque de Qt ne prend pas :
+  `qmlcache` vide, `QML_FORCE_DISK_CACHE` sans effet) ; un contexte OpenGL par fenêtre (40 à 75 ms de premier affichage chacune).
+  Essayés sans gain : Vulkan (plus lent), cache de pipelines (déjà actif par défaut), fenêtres à la demande retirées du démarrage (~30 ms
+  de chargement, rien sur l'affichage), barres créées après les écrans (coût déplacé). Seul levier mesuré : boucle `basic`, ~250 ms de
+  moins, écartée (voir plus haut).
+- **Gardés** : `checkupdates` au démarrage (le différer ferait apparaître la pilule des mises à jour en pleine session, avec un saut
+  des pilules voisines) ; lectures Tailscale et ZeroTier (icône du tray).
+- **Piège** : `WeakMap` en JavaScript QML fait planter Qt 6 (`QV4::Value::sameValueZero`, bureau arrêté 5 min le 2026-11-04).
+
 ## Méthode
 
 - `scripts/perf.sh snap | idle | ab` : mémoire, VRAM, CPU, réveils ; `ab` relance avec des variables. `PERF_NO_ENV=1` lance sans `qs-env.sh`.
 - `qs -p . --debug 3768 --waitfordebug` puis `/usr/lib/qt6/bin/qmlprofiler --interactive --attach localhost --port 3768` : commandes `r`, `o <fichier>`, `q` (rien n'est écrit si on l'interrompt).
 - Banc isolé : exporter `I3SOCK` comme `SWAYSOCK` (`scripts/test-outputs.sh`), sinon l'instance parle au vrai Sway ; clics par un pointeur virtuel Wayland, `seat - cursor press` n'atteint pas les surfaces Qt ; et une fenêtre focalisée ne suffit pas à reproduire tout ce que fait le bureau réel : vérifier les ouvertures sur le vrai.
 - `heaptrack -o <fichier> qs -p .` puis `heaptrack_print -f <fichier>.zst` : installé pour la mesure, pas une dépendance du bureau. **Il ouvre son interface à la fin et bloque tant qu'elle reste ouverte.**
+- Démarrage : battement QML de 10 ms qui journalise les trous (boucle d'événements bloquée), `QT_LOGGING_RULES="qt.scenegraph.time.renderloop=true"` (premier affichage de chaque fenêtre), `strace -f -e trace=execve` (processus lancés) ; sur un banc, jamais sur le dépôt (chaque sauvegarde recharge le bureau).
 - `perf` (7.3.1 sur noyau 7.2.14) refuse d'ouvrir tout événement sur cette machine, même `perf record -- sleep` : non résolu, profil CPU natif non obtenu.
 - Non mesuré : frappe dans le lanceur (pas de moyen sûr d'injecter des touches).

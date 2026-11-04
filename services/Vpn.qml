@@ -361,8 +361,15 @@ Singleton {
         repeat: true
         onTriggered: root.refresh()
     }
-    readonly property bool tunnelUp: /\bnord/.test(Network.interfaceNames)
+    // Inconnu (null) avant la première lecture des interfaces : cette lecture n'est pas un changement, le statut est déjà lu au
+    // démarrage (sinon deux `nordvpn status` de plus en 3 s, trace du 2026-11-04).
+    readonly property var tunnelUp: Network.interfaceNames === "" ? null : /\bnord/.test(Network.interfaceNames)
+    property var tunnelWas: null
     onTunnelUpChanged: {
+        const first = tunnelWas === null;
+        tunnelWas = tunnelUp;
+        if (first)
+            return;
         refresh();
         interfaceFollowUp.restart();
     }

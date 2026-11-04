@@ -32,7 +32,13 @@ Singleton {
     // changements d'affilée) ; liées directement, les tris, les catégories et le menu étaient recalculés à chaque fois (~1 s de
     // blocage à la première ouverture, mesuré le 2026-10-21).
     property var desktopApps: []
-    Component.onCompleted: readApps()
+    // Filtres : calculés quand DesktopEntries a lu les applications (signal ci-dessous), ou tout de suite si c'est déjà fait. Au
+    // démarrage, la liste est encore vide ici : un premier calcul immédiat était refait 0,4 s plus tard (trace du 2026-11-04).
+    Component.onCompleted: {
+        readApps();
+        if (desktopApps.length > 0)
+            filters.running = true;
+    }
     Connections {
         target: DesktopEntries.applications
         function onValuesChanged() {
@@ -214,7 +220,6 @@ Singleton {
     // l'aurait fait pour TryExec : revue de code).
     Process {
         id: filters
-        running: true
         command: ["sh", "-c", `for d in "$@"; do [ -d "$d/applications" ] && find -L "$d/applications" -type f -name '*.desktop'; done | awk '
             BEGIN { n = split(ENVIRON["XDG_CURRENT_DESKTOP"], desk, ":") }
             {

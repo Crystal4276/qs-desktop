@@ -1,5 +1,6 @@
 import QtQuick
 import qs.config
+import qs.services
 
 // Module texte de la barre : icône en Hack Nerd Font collée à du texte Inter (THEME.md § 2), dans une seule ligne.
 // Utilisé par les mises à jour, le GPU, le CPU, la mémoire, le réseau et l'horloge.
@@ -80,20 +81,8 @@ Item {
                 readonly property rect ink: metrics.tightBoundingRect(text)
                 width: Math.ceil(Math.max(implicitWidth, leftPadding + ink.x + ink.width, leftPadding + reserved))
 
-                // Largeur du plus large texte de `segment[2]`, remesurée seulement si la liste ou la police change.
-                property var measuredValues: null
-                property real reserved: 0
-
-                function measure(): void {
-                    const values = segment[2] ?? null;
-                    if (values === measuredValues)
-                        return;
-                    measuredValues = values;
-                    reserved = values ? values.reduce((widest, s) => Math.max(widest, metrics.advanceWidth(s)), 0) : 0;
-                }
-
-                onSegmentChanged: measure()
-                Component.onCompleted: measure()
+                // Largeur du plus large texte de `segment[2]` (mesurée une fois par liste et par police, pour toutes les barres).
+                readonly property real reserved: WidthTexts.widest(segment[2] ?? null, font)
 
                 // Valeurs à largeur réservée : alignées à droite ; icônes : à gauche, leur débord tombe dans la largeur ajoutée.
                 horizontalAlignment: segment[2] ? Text.AlignRight : Text.AlignLeft
@@ -106,10 +95,6 @@ Item {
                 FontMetrics {
                     id: metrics
                     font: label.font
-                    onFontChanged: {
-                        label.measuredValues = null;
-                        label.measure();
-                    }
                 }
             }
         }
