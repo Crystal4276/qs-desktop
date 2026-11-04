@@ -25,12 +25,18 @@ Variants {
         property string appliedLayout: ""
         readonly property var layout: appliedLayout !== "" ? JSON.parse(appliedLayout) : ({ left: [], right: [] })
 
-        // Écran disparu un instant : disposition gardée. Fonction propre à chaque appel (`Qt.callLater` regroupe les appels d'une
-        // même fonction) ; sans effet si rien n'a changé.
-        onWantedLayoutChanged: Qt.callLater(() => {
-            if (bar.wantedLayout !== "")
-                bar.appliedLayout = bar.wantedLayout;
-        })
+        // Écran disparu un instant : disposition gardée ; sans effet si rien n'a changé. Minuteur de la barre (détruit avec elle,
+        // écran débranché : pas d'écriture sur une barre disparue).
+        onWantedLayoutChanged: layoutTimer.restart()
+
+        Timer {
+            id: layoutTimer
+            interval: 0
+            onTriggered: {
+                if (bar.wantedLayout !== "")
+                    bar.appliedLayout = bar.wantedLayout;
+            }
+        }
 
         screen: modelData
         WlrLayershell.namespace: "quickshell-bar"

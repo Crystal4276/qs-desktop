@@ -34,7 +34,7 @@ Item {
         retainWhileLoading: true
         cache: false
 
-        readonly property bool fromCopy: source.toString().startsWith(Icons.fileUrl(Wallpapers.screenDir))
+        readonly property bool fromCopy: path !== "" && Wallpapers.usesCopy(path, sourceSize)
 
         onStatusChanged: {
             saveDelay.stop();
