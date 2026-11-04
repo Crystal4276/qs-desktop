@@ -26,13 +26,14 @@ Singleton {
         return path === "" || dir === "" ? "" : Icons.fileUrl(`${dir}/${path}`);
     }
 
-    // Ce qu'affiche une sortie (Compositor.outputs) : { kind: "image", source } ou { kind: "panorama", source }, ou null.
+    // Ce qu'affiche une sortie (Compositor.outputs) : { kind: "image", source, path } ou { kind: "panorama", source }, ou null.
+    // `path` : chemin dans le dossier, clé de la copie à la taille de l'écran (screenSource).
     function forOutput(output: var, outputs: var): var {
         if (!output || dir === "" || !stateRead)
             return null;
         const own = overrides[output.description];
         if (own && (!libraryRead || library.simple.includes(own)))
-            return { kind: "image", source: url(own) };
+            return { kind: "image", source: url(own), path: own };
         // Choix enregistré disparu du dossier (fichier supprimé ou renommé) : fond de la config machine.
         return pick(selection, output, outputs)
             ?? (libraryRead && selection !== Settings.wallpaper ? pick(Settings.wallpaper, output, outputs) : null);
@@ -70,7 +71,7 @@ Singleton {
         if (libraryRead && s.kind !== "triptych" && !(library[s.kind] ?? []).includes(s.path))
             return null;
         if (s.kind === "panorama")
-            return outputs.length > 1 ? { kind: "panorama", source: url(s.path) } : { kind: "image", source: url(s.path) };
+            return outputs.length > 1 ? { kind: "panorama", source: url(s.path) } : { kind: "image", source: url(s.path), path: s.path };
         if (s.kind === "triptych") {
             const t = library.triptych.find(t => t.path === s.path);
             if (!t)
@@ -78,9 +79,10 @@ Singleton {
             // Trois écrans : gauche, centre, droite selon leur position ; sinon le centre partout.
             const sorted = [...outputs].sort((a, b) => a.x - b.x);
             const part = outputs.length === 3 ? ["left", "center", "right"][sorted.findIndex(o => o.name === output.name)] : "center";
-            return { kind: "image", source: url(t.parts[part] ?? t.parts.center ?? "") };
+            const path = t.parts[part] ?? t.parts.center ?? "";
+            return { kind: "image", source: url(path), path: path };
         }
-        return { kind: "image", source: url(s.path) };
+        return { kind: "image", source: url(s.path), path: s.path };
     }
 
     // Choix pour tous les écrans (efface les choix par écran) ; image simple pour un seul écran.
@@ -101,6 +103,7 @@ Singleton {
     // a pu changer). `libraryRead` : une lecture complète faite, les choix absents du dossier peuvent être écartés.
     property bool scanAgain: false
     property bool libraryRead: false
+    property real scanStarted: 0   // copies d'écran écrites depuis : pas encore vues par la lecture en cours, gardées
 
     function refresh(): void {
         if (dir === "")
@@ -110,8 +113,10 @@ Singleton {
             return;
         }
         // Commande fixée ici : liée par une liaison, elle pourrait ne pas encore suivre un dossier qui vient de changer.
-        // Lignes `w<tab>date<tab>chemin` (images, triées par chemin) puis `t<tab>fichier` (vignettes en cache).
-        scan.command = ["sh", "-c", `mkdir -p "$1"; (cd "$0" 2>/dev/null && find -L simple panorama triptych -type f \\( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \\) -printf 'w\\t%T@\\t%p\\n' 2>/dev/null | sort -t "$(printf '\\t')" -k3); find "$1" -maxdepth 1 -name '*.png' -printf 't\\t%f\\n' 2>/dev/null; exit 0`, dir, thumbDir];
+        // Lignes `w<tab>date<tab>chemin` (images, triées par chemin), `t<tab>fichier` (vignettes en cache), puis
+        // `c<tab>date<tab>fichier` (copies à la taille des écrans).
+        scan.command = ["sh", "-c", `mkdir -p "$1" "$2"; (cd "$0" 2>/dev/null && find -L simple panorama triptych -type f \\( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \\) -printf 'w\\t%T@\\t%p\\n' 2>/dev/null | sort -t "$(printf '\\t')" -k3); find "$1" -maxdepth 1 -name '*.png' -printf 't\\t%f\\n' 2>/dev/null; find "$2" -maxdepth 1 -name '*.bmp' -printf 'c\\t%T@\\t%f\\n' 2>/dev/null; exit 0`, dir, thumbDir, screenDir];
+        scanStarted = Date.now() / 1000;
         scan.running = true;
     }
 
@@ -151,6 +156,94 @@ Singleton {
         saved.set(file.slice(thumbDir.length + 1), true);
     }
 
+    // Copie de chaque fond affiché, à la taille exacte de son écran, en BMP : décodée en 28 ms au lieu de 125 à 165 ms pour tes
+    // PNG (8,5 et 12,9 Mo), sans perte (JPEG de `saveToFile` : qualité 75, écart visible). Écrite par WallpaperView, telle
+    // qu'affichée, la première fois que le fond est décodé depuis l'original. Connue par l'état local (`screenCache` : lisible
+    // dès le démarrage, sans attendre la lecture du dossier) ; celle d'une image modifiée depuis, ou disparue, est effacée à la
+    // lecture du dossier. Seules restent celles des fonds affichés (environ 25 Mo par écran 4K).
+    readonly property string screenDir: Quickshell.cachePath("wallpaper-screens")
+    readonly property var screenSaving: new Set()   // copies en cours d'écriture (nom de fichier)
+
+    function screenName(path: string, size: size): string {
+        return `${Qt.md5(path)}-${size.width}x${size.height}.bmp`;
+    }
+
+    function screenSource(path: string, size: size): string {
+        const name = screenName(path, size);
+        return state.screenCache?.[name] ? Icons.fileUrl(`${screenDir}/${name}`) : url(path);
+    }
+
+    // Fichier où écrire la copie de `path` ("" : déjà en cache ou en cours d'écriture).
+    function screenFile(path: string, size: size): string {
+        const name = screenName(path, size);
+        if (state.screenCache?.[name] || screenSaving.has(name))
+            return "";
+        screenSaving.add(name);
+        return `${screenDir}/${name}`;
+    }
+
+    // Copie écrite (`ok`) ou échouée. Les copies de fonds qu'aucun écran actif n'affiche plus sont effacées.
+    function screenWritten(file: string, path: string, ok: bool): void {
+        const name = file.slice(screenDir.length + 1);
+        screenSaving.delete(name);
+        if (!ok)
+            return;
+        const shownPaths = Compositor.outputs.map(o => forOutput(o, Compositor.outputs)?.path).filter(p => p);
+        const entries = Object.assign({}, state.screenCache ?? {}, { [name]: { path: path, written: Date.now() / 1000 } });
+        const unused = Object.keys(entries).filter(n => !shownPaths.includes(entries[n].path));
+        unused.forEach(n => delete entries[n]);
+        removeFiles(unused.map(n => `${screenDir}/${n}`));
+        state.screenCache = entries;
+    }
+
+    // Copie illisible (effacée à la main, disque) : oubliée, l'original est relu (et une nouvelle copie écrite).
+    function screenFailed(path: string, size: size): void {
+        const name = screenName(path, size);
+        if (!state.screenCache?.[name])
+            return;
+        const entries = Object.assign({}, state.screenCache);
+        delete entries[name];
+        state.screenCache = entries;
+    }
+
+    function removeFiles(files: var): void {
+        if (files.length === 0)
+            return;
+        Quickshell.execDetached(["rm", "-f", "--", ...files]);
+    }
+
+    // Choix enregistré et dossier lus : forOutput donne le fond définitif.
+    readonly property bool ready: stateRead && libraryRead
+
+    // Démarrage : les barres attendent que chaque écran affiche son fond (Bar.qml), pour apparaître en même temps ; au plus 3 s
+    // (fond illisible, compositeur lent). Une fois pour toutes : gardé au rechargement à chaud.
+    property alias startupShown: persist.startupShown
+    property var shownScreens: []   // écrans dont le fond est affiché (Background.qml)
+
+    function markShown(name: string): void {
+        if (!shownScreens.includes(name))
+            shownScreens = [...shownScreens, name];
+    }
+
+    readonly property bool allShown: ready && Compositor.outputs.length > 0
+        && Compositor.outputs.every(o => forOutput(o, Compositor.outputs) === null || shownScreens.includes(o.name))
+    onAllShownChanged: {
+        if (allShown)
+            startupShown = true;
+    }
+
+    PersistentProperties {
+        id: persist
+        reloadableId: "wallpapers"
+        property bool startupShown: false
+    }
+
+    Timer {
+        interval: 3000
+        running: !root.startupShown
+        onTriggered: root.startupShown = true
+    }
+
     onDirChanged: refresh()
     Component.onCompleted: refresh()
 
@@ -182,6 +275,7 @@ Singleton {
             id: state
             property var selection: null
             property var overrides: ({})
+            property var screenCache: ({})   // copies à la taille des écrans : { fichier: { path, written } }
         }
     }
 
@@ -191,11 +285,13 @@ Singleton {
             onStreamFinished: {
                 const lib = { simple: [], panorama: [], triptych: [] };
                 const triptychs = {};
-                const stamps = {}, thumbs = {};
+                const stamps = {}, thumbs = {}, screens = {};
                 for (const line of text.split("\n")) {
                     const fields = line.split("\t");
                     if (fields[0] === "t" && fields.length === 2)
                         thumbs[fields[1]] = true;
+                    if (fields[0] === "c" && fields.length === 3)
+                        screens[fields[2]] = Number(fields[1]);
                     if (fields[0] !== "w" || fields.length !== 3)
                         continue;
                     const path = fields[2];
@@ -217,6 +313,21 @@ Singleton {
                     prune.command = ["rm", "-f", "--", ...stale.map(f => `${root.thumbDir}/${f}`)];
                     prune.running = true;
                     stale.forEach(f => delete thumbs[f]);
+                }
+                // Copies d'écran : gardées si le fichier existe et que l'image n'a pas changé depuis, ou si elles viennent d'être écrites ;
+                // les autres sont oubliées et effacées (pas si le dossier n'a pas pu être lu). Seulement celles de l'état local : une
+                // instance de test (autre état) n'efface jamais celles du bureau.
+                if (used.size > 0) {
+                    const entries = {};
+                    for (const [name, entry] of Object.entries(state.screenCache ?? {})) {
+                        const fresh = screens[name] !== undefined && stamps[entry.path] !== undefined && Number(stamps[entry.path]) <= screens[name];
+                        if (fresh || entry.written >= root.scanStarted)
+                            entries[name] = entry;
+                    }
+                    root.removeFiles(Object.keys(state.screenCache ?? {}).filter(n => !entries[n] && screens[n] !== undefined)
+                        .map(n => `${root.screenDir}/${n}`));
+                    if (JSON.stringify(entries) !== JSON.stringify(state.screenCache ?? {}))
+                        state.screenCache = entries;
                 }
                 // Dates et vignettes avant la bibliothèque : les vignettes recréées partent directement du cache.
                 root.stamps = stamps;
