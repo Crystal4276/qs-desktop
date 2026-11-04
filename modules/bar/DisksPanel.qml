@@ -4,7 +4,7 @@ import Quickshell
 import qs.config
 import qs.services
 
-// Panneau des disques amovibles (remplace le menu d'udiskie, ARCHITECTURE R7) : par disque, ses volumes (monter, démonter,
+// Panneau des disques amovibles (remplace le menu d'udiskie, ARCHITECTURE § 7.8) : par disque, ses volumes (monter, démonter,
 // ouvrir, déverrouiller avec phrase de passe, verrouiller) et l'éjection. Montage automatique et notifications : Disks.qml.
 Panel {
     id: root

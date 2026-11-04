@@ -4,7 +4,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 
-// HDR et VRR des écrans compatibles (bascules du panneau de réglages, ARCHITECTURE § 10.1.4).
+// HDR et VRR des écrans compatibles (bascules du panneau de réglages, ARCHITECTURE § 7.5).
 // Une bascule agit sur tous les écrans compatibles à la fois, comme ton `$mod+d` (DP-1 et DP-3) ; elle est « activée » quand
 // tous le sont. Écran non compatible : ignoré ; aucun écran compatible : bascule masquée.
 Singleton {

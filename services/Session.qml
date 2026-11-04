@@ -3,7 +3,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 
-// Actions de session du panneau de réglages (remplacent le power menu Rofi, SCRIPTS.md) : verrouiller, se déconnecter,
+// Actions de session du panneau de réglages (remplacent le power menu Rofi) : verrouiller, se déconnecter,
 // redémarrer, éteindre — sans confirmation, comme Rofi. Plus la capture d'écran et « garder l'écran allumé ».
 Singleton {
     id: root

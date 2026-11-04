@@ -6,7 +6,7 @@ import qs.config
 import qs.services
 import qs.modules.bar
 
-// Panneau de statistiques système (remplace btop et nvtop, ARCHITECTURE § 11.5 ; ton choix du 2026-10-19 : panneau surgissant) :
+// Panneau de statistiques système (remplace btop et nvtop, ARCHITECTURE § 7.16 ; ton choix du 2026-10-19 : panneau surgissant) :
 // processeur (total, température, cœurs), mémoire et swap, GPU (charge, mémoire vidéo, température, consommation, ventilateur,
 // fréquence), disques, réseau ; processus triables (nom, PID, utilisateur, CPU, mémoire, mémoire vidéo), recherche, arrêt de tes
 // processus avec confirmation (SIGTERM, puis « Force » : SIGKILL). Mesures relevées seulement panneau ouvert (Monitor.users).

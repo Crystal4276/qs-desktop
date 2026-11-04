@@ -6,7 +6,7 @@ import qs.config
 import qs.services
 import qs.modules.wallpaper
 
-// Contenu d'un écran verrouillé (design refait, ARCHITECTURE § 10.1 R2) : fond d'écran de l'écran, flouté et assombri ; horloge et
+// Contenu d'un écran verrouillé (design refait, ARCHITECTURE § 7.12) : fond d'écran de l'écran, flouté et assombri ; horloge et
 // date ; sur l'écran principal (`primary`), initiale et nom de l'utilisateur, champ du mot de passe (points), message (vérification,
 // erreur, majuscules verrouillées). L'état vient de LockScreen.qml.
 Item {

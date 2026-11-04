@@ -7,7 +7,7 @@ import qs.config
 import qs.services
 import qs.modules.bar
 
-// Utilitaire de changement de fond (docs/WALLPAPERS.md, proposition 4) : vignettes du dossier des fonds, par onglet — images simples,
+// Utilitaire de changement de fond (ARCHITECTURE § 7.11) : vignettes du dossier des fonds, par onglet — images simples,
 // panoramas (plusieurs écrans), triptyques (trois écrans). Un clic ou Entrée applique le fond tout de suite ; la fenêtre reste
 // ouverte pour comparer. Image simple : pour tous les écrans ou un seul (rangée du haut). Échap ou un clic à côté ferme.
 OverlayPopup {

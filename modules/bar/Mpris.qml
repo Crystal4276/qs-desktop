@@ -2,7 +2,7 @@ import QtQuick
 import qs.config
 import qs.services
 
-// Lecture en cours (INVENTORY.md § 1, `mpris`) : `{player_icon} {status_icon} {dynamic}`, identique en lecture, pause et arrêt ;
+// Lecture en cours (Waybar `mpris`) : `{player_icon} {status_icon} {dynamic}`, identique en lecture, pause et arrêt ;
 // icône d'état seulement en pause. Lecteur absent → masqué.
 // Clic gauche : lecture / pause ; milieu : précédent ; droit : suivant ; molette : lecteur suivant / précédent (Media.qml).
 Item {

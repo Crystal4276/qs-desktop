@@ -5,7 +5,7 @@ import Quickshell
 import Quickshell.Io
 import qs.config
 
-// Fonds d'écran (docs/WALLPAPERS.md, ARCHITECTURE § 10.1 R1). Dossier : `wallpapersDir` de la config machine, sinon « Wallpapers »
+// Fonds d'écran (ARCHITECTURE § 7.11). Dossier : `wallpapersDir` de la config machine, sinon « Wallpapers »
 // dans le dossier Images XDG, rangé en `simple/`, `panorama/` (image à étaler sur plusieurs écrans) et `triptych/<nom>/{left,center,
 // right}.<ext>`. Choix mémorisé dans l'état local (pas dans le dépôt) : un fond pour tous les écrans, plus une image simple par écran
 // si on en a choisi une pour lui. Rien de choisi : celui de la config machine (`wallpaper`), sinon aucune image.
@@ -157,7 +157,7 @@ Singleton {
     }
 
     // Copie de chaque fond affiché, à la taille de son écran, en BMP (sans perte, décodée 4 à 6 fois plus vite que tes PNG ;
-    // docs/WALLPAPERS.md). Écrite par WallpaperView après 3 s sur le même fond, connue par l'état local (`screenCache`) avec la date
+    // docs/ARCHITECTURE.md § 7.11). Écrite par WallpaperView après 3 s sur le même fond, connue par l'état local (`screenCache`) avec la date
     // de l'original ; vérifiée à la lecture du dossier (checkCopies). Objets simples : pas de WeakMap (plantage de Qt).
     readonly property string screenDir: Quickshell.cachePath("wallpaper-screens")
     readonly property var screenSaving: ({})   // copies en cours d'écriture (nom de fichier)

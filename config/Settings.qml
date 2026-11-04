@@ -24,7 +24,7 @@ Singleton {
     readonly property string updateCommand: config.updateCommand ?? ""
     // Lecteur suivi par le module `mpris` : nom D-Bus après `org.mpris.MediaPlayer2.` (option `player` de Waybar).
     readonly property string mediaPlayer: config.mediaPlayer ?? ""
-    // Fonds d'écran (docs/WALLPAPERS.md) : dossier (vide : « Wallpapers » dans le dossier Images XDG) et choix de départ, tant que
+    // Fonds d'écran (ARCHITECTURE § 7.11) : dossier (vide : « Wallpapers » dans le dossier Images XDG) et choix de départ, tant que
     // rien n'a été choisi dans l'utilitaire : { kind: "simple" | "panorama" | "triptych", path: chemin relatif au dossier }.
     readonly property string wallpapersDir: config.wallpapersDir ?? ""
     readonly property var wallpaper: config.wallpaper ?? null

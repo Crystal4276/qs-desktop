@@ -4,7 +4,7 @@ import Quickshell
 import qs.config
 import qs.services
 
-// Panneau NordVPN (ARCHITECTURE § 11.4) : interrupteur (dernière entrée des récents / déconnexion), détails de la connexion,
+// Panneau NordVPN (ARCHITECTURE § 7.9) : interrupteur (dernière entrée des récents / déconnexion), détails de la connexion,
 // pause, choix d'un pays puis éventuellement d'une ville. Refonte du 2026-10-20 (ta demande) : onglets Recent / All countries ;
 // la recherche (focus à l'ouverture) affiche tous les pays filtrés, débuts de nom puis débuts de mot d'abord ; Entrée connecte
 // au premier résultat, Échap efface la recherche puis ferme.

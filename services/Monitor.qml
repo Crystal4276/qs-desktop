@@ -4,7 +4,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 
-// Statistiques système détaillées (ARCHITECTURE § 11.5 « moniteur système », panneau modules/monitor/) : relevées seulement tant que
+// Statistiques système détaillées (ARCHITECTURE § 7.16 « moniteur système », panneau modules/monitor/) : relevées seulement tant que
 // le panneau est ouvert (`users`) : processeur et mémoire chaque seconde, processus et GPU toutes les 2,6 s (`update_ms` de ton btop : une liste plus
 // rapide saute trop pour qu'on y choisisse une ligne). Processeur (total, par cœur, température), mémoire et swap, GPU (comme nvtop :
 // charge, mémoire vidéo, température, consommation, ventilateur, fréquence ; processus qui l'utilisent), disques, processus (charge

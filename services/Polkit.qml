@@ -4,7 +4,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Services.Polkit
 
-// Agent polkit (remplace polkit-gnome, ARCHITECTURE § 10.1.9) : enregistrement auprès de polkit et demande en cours ; fenêtre :
+// Agent polkit (remplace polkit-gnome, ARCHITECTURE § 7.14) : enregistrement auprès de polkit et demande en cours ; fenêtre :
 // modules/polkit/PolkitDialog.qml. Un seul agent par session : tant que polkit-gnome tourne (avant la bascule), c'est lui qui
 // garde la place.
 Singleton {
@@ -49,7 +49,7 @@ Singleton {
     }
 
     // Quickshell 0.3.2 : une demande arrivée pendant une autre la remplace ; la première est annulée une fois l'agent libre (pas
-    // avant : sa fin terminerait aussi l'autre). Limites : ARCHITECTURE § 10.1.9.
+    // avant : sa fin terminerait aussi l'autre). Limites : ARCHITECTURE § 7.14.
     property var displaced: []
     property AuthFlow lastFlow: null
 

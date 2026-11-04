@@ -46,7 +46,7 @@ pavucontrol             # clic droit sur le volume
 # --- Système ---
 upower                  # batterie (Quickshell.Services.UPower), utile sur laptop
 networkmanager          # réseau (Quickshell.Networking s'appuie sur NetworkManager)
-nm-connection-editor    # édition des connexions, ouverte depuis le panneau réseau (repli, ARCHITECTURE R5)
+nm-connection-editor    # édition des connexions, ouverte depuis le panneau réseau (repli, ARCHITECTURE § 7.6)
 bluez                   # Bluetooth (Quickshell.Bluetooth s'appuie sur BlueZ)
 bluez-utils             # bluetoothctl : agent d'appairage piloté par Quickshell (ARCHITECTURE § 7.7)
 udisks2                 # disques amovibles (busctl / gdbus / udisksctl, ARCHITECTURE § 7.8)
@@ -58,7 +58,7 @@ libnotify               # notify-send (sortie audio suivante, connexions et batt
 
 # --- Captures et outils de dev ---
 grim                    # captures des outils de dev (scripts/shot.sh) ; touche Impr. : outil natif
-slurp                   # choix de l'écran partagé (xdg-desktop-portal-wlr, ARCHITECTURE § 10) ; plus utilisé par la touche Impr.
+slurp                   # choix de l'écran partagé (xdg-desktop-portal-wlr) ; plus utilisé par la touche Impr.
 iproute2                # `ip -j addr` : interfaces ZeroTier sans jeton (panneau réseau) ; dans `base`
 wl-clipboard            # presse-papiers : captures (outil natif), IP / noms copiés depuis le panneau réseau
 imagemagick             # scripts/crop.sh

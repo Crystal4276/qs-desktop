@@ -7,7 +7,7 @@ import qs.config
 import qs.services
 import qs.modules.bar
 
-// Fenêtre du lanceur : thème `launcher.rasi` (THEME.md § 5) et comportement de Rofi 2.0.0 (code lu, ARCHITECTURE § 10.1.3).
+// Fenêtre du lanceur : thème `launcher.rasi` (THEME.md § 5) et comportement de Rofi 2.0.0 (code lu, ARCHITECTURE § 7.3).
 // Surface de la couche Overlay qui couvre la zone utile de l'écran focalisé (hors barres) : le cadre y est centré comme Rofi,
 // le clavier lui est réservé, un clic à côté du cadre, sur une barre ou sur un autre écran le ferme (`click-to-exit`).
 // Clavier : Entrée lance (sans résultat : le texte comme commande ; Maj+Entrée : dans un terminal), Ctrl+Entrée lance le texte,

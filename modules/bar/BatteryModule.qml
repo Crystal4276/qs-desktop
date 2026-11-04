@@ -2,7 +2,7 @@ import QtQuick
 import qs.config
 import qs.services
 
-// Batterie (INVENTORY.md § 1, `battery`, pour le laptop) : 12 paliers (seuils de getIcon de Waybar), icône de charge
+// Batterie (Waybar `battery`, pour le laptop) : 12 paliers (seuils de getIcon de Waybar), icône de charge
 // en charge ; vert, rouge sous 30 % hors charge. Masquée sans batterie de portable.
 // Taille : celle du texte GTK par défaut (aucune taille dans style.css, THEME.md § 3).
 Item {

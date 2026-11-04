@@ -1,7 +1,7 @@
 import QtQuick
 import qs.config
 
-// Bouton des réglages, à la place du bouton power (INVENTORY.md § 1, `custom/powermenu` : padding 10 px sauf à gauche, 28 px) :
+// Bouton des réglages, à la place du bouton power (Waybar `custom/powermenu` : padding 10 px sauf à gauche, 28 px) :
 // engrenage `U+F013` couleur `text` (ton choix du 2026-10-16). Un appui ouvre ou ferme le panneau de réglages (un seul pour
 // toutes les barres : BarState) ; `qs ipc call settings toggle` passe par le bouton de l'écran focalisé.
 // Survol : aperçu du panneau après un court arrêt, comme les icônes du tray (PreviewArea.qml ; ta demande du 2026-10-26).

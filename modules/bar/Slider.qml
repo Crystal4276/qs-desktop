@@ -3,7 +3,7 @@ import Quickshell
 import qs.config
 import qs.services
 
-// Curseur de volume de la barre (INVENTORY.md § 1, `pulseaudio/slider`), sortie par défaut ; clic droit : panneau audio
+// Curseur de volume de la barre (Waybar `pulseaudio/slider`), sortie par défaut ; clic droit : panneau audio
 // (pavucontrol dans Waybar ; ton choix du 2026-10-16).
 VolumeSlider {
     id: root

@@ -3,7 +3,7 @@ import Quickshell
 import qs.config
 import qs.services
 
-// Espaces de travail de l'écran de la barre (INVENTORY.md § 1, THEME.md § 3).
+// Espaces de travail de l'écran de la barre (THEME.md § 3).
 // Boutons : exactement les numéros du bloc de cet écran (services/Outputs.qml), qu'ils existent ou non, pas la position
 // instantanée des espaces (un espace créé ailleurs puis déplacé faisait sauter les pilules). Écart à Waybar : BACKLOG.md.
 Item {

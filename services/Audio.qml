@@ -6,7 +6,7 @@ import Quickshell.Io
 import Quickshell.Services.Pipewire
 import qs.config
 
-// Sortie audio par défaut (INVENTORY.md § 1, modules `pulseaudio` et `pulseaudio/slider`).
+// Sortie audio par défaut (modules Waybar `pulseaudio` et `pulseaudio/slider`).
 // Volume en échelle « cubique », comme pavucontrol, wpctl et Waybar.
 Singleton {
     id: root
@@ -41,7 +41,7 @@ Singleton {
     // « Ne pas déranger » : coupe les sons de notification des applications de `doNotDisturb.muteApps`, repérées par
     // l'`application.id` donné à leur lancement (web apps : `env PULSE_PROP_OVERRIDE=application.id=whatsapp …`) ou par leur
     // binaire (application Discord), sauf les appels de l'application Discord ; rétablis à la fin. Un son en cours au début
-    // n'est pas touché ; rétabli à la main pendant « ne pas déranger » : laissé (PROGRESS.md, 2026-10-27).
+    // n'est pas touché ; rétabli à la main pendant « ne pas déranger » : laissé (décision du 2026-10-27).
     readonly property bool hushed: Notifs.doNotDisturb
     readonly property var hushApps: (Array.isArray(Settings.doNotDisturb.muteApps) ? Settings.doNotDisturb.muteApps : [])
         .map(a => String(a).toLowerCase())
@@ -218,7 +218,7 @@ Singleton {
             sink.audio.muted = !sink.audio.muted;
     }
 
-    // Sortie suivante, en boucle ; volume réglé à 60 % et notification (remplace audio-toggle.sh, SCRIPTS.md).
+    // Sortie suivante, en boucle ; volume réglé à 60 % et notification (remplace audio-toggle.sh).
     function cycleSink(): void {
         const list = sinks;
         if (list.length === 0) {

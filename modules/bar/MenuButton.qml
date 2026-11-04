@@ -1,7 +1,7 @@
 import QtQuick
 import qs.config
 
-// Bouton Arch (INVENTORY.md § 1, `custom/menu`) : logo vert sur `mantle` ; survol (ou menu ouvert) : logo `mantle` sur fond vert.
+// Bouton Arch (Waybar `custom/menu`) : logo vert sur `mantle` ; survol (ou menu ouvert) : logo `mantle` sur fond vert.
 // Largeur min. 40 px + padding horizontal 10 px ; logo 38 px de large. Aucune transition.
 // Un appui ouvre ou ferme le menu d'applications (modules/menus/AppMenu.qml, un seul pour toutes les barres : BarState) ;
 // `qs ipc call menu toggle` passe par le bouton de l'écran focalisé.

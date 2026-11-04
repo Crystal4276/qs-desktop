@@ -4,7 +4,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Services.UPower
 
-// Batterie du laptop (INVENTORY.md § 1, module `battery`, défini dans Waybar mais placé dans aucune barre).
+// Batterie du laptop (module Waybar `battery`, défini dans Waybar mais placé dans aucune barre).
 // Présente seulement si UPower voit une batterie d'ordinateur portable (une alimentation USB-C ou une souris ne comptent pas).
 Singleton {
     id: root

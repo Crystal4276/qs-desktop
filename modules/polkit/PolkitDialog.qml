@@ -8,7 +8,7 @@ import qs.config
 import qs.services
 import qs.modules.bar
 
-// Fenêtre de l'agent polkit (services/Polkit.qml ; ARCHITECTURE § 10.1 R4) : style des panneaux, centrée sur l'écran focalisé,
+// Fenêtre de l'agent polkit (services/Polkit.qml ; ARCHITECTURE § 7.14) : style des panneaux, centrée sur l'écran focalisé,
 // au clavier exclusif — icône et message de l'application, invite et champ (masqué si polkit le demande), message
 // d'erreur, Cancel / Authenticate. Entrée valide, Échap annule.
 Scope {

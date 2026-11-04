@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Bureau Quickshell de la session : config `desktop` (~/.config/quickshell/desktop → ce dépôt), lancée par l'autostart de Sway et
-# d'Hyprland (dotfiles/). Un seul processus porte tout le bureau (ARCHITECTURE.md § 11.2) : s'il s'arrête, il est relancé tant que
+# d'Hyprland (dotfiles/). Un seul processus porte tout le bureau (ARCHITECTURE.md § 8.2) : s'il s'arrête, il est relancé tant que
 # la session dure ; 5 arrêts en une minute : abandon, avec un message du compositeur.
 # Usage : desktop.sh           autostart : lance l'instance, chaque écran affiche le premier espace de son bloc (1 / 4 / 7), surveille
 #         desktop.sh restart   relance la surveillance et l'instance depuis l'environnement de l'appelant ($mod+Ctrl+W,

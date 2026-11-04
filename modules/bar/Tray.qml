@@ -5,7 +5,7 @@ import Quickshell.Widgets
 import qs.config
 import qs.services
 
-// Zone de notification (INVENTORY.md § 1, `tray`) : icônes 32 px espacées de 5 px, padding horizontal 6 px ;
+// Zone de notification (Waybar `tray`) : icônes 32 px espacées de 5 px, padding horizontal 6 px ;
 // éléments « passifs » masqués (défaut de Waybar). Ordre : celui d'enregistrement des applications.
 // Applications : gauche ou droit → menu, présenté en carte (AppMenuPanel.qml), ou ContextMenu de l'application ; milieu →
 // SecondaryActivate ; molette → Scroll(∓1), verticale ou horizontale (comme Waybar, sni/item.cpp).

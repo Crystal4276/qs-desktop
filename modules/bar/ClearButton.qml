@@ -2,7 +2,7 @@ import QtQuick
 import qs.config
 
 // Croix d'un champ de recherche (ta demande du 2026-10-20) : visible si `field` n'est pas vide ; un clic l'efface et lui
-// rend le focus. Glyphe « fermer » de l'outil de capture (THEME.md § 7 ter) ; couleur secondaire du champ, couleur du texte
+// rend le focus. Glyphe « fermer » de l'outil de capture (THEME.md § 7) ; couleur secondaire du champ, couleur du texte
 // au survol. Taille : celle que fixe le champ.
 Text {
     id: root

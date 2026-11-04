@@ -3,7 +3,7 @@ import Quickshell
 import qs.config
 import qs.services
 
-// Horloge (INVENTORY.md § 1) : `U+E385␣HH:mm`, et sur la barre principale, 10 px puis `U+F274␣ddd-dd` (une espace après
+// Horloge (Waybar) : `U+E385␣HH:mm`, et sur la barre principale, 10 px puis `U+F274␣ddd-dd` (une espace après
 // l'icône et un padding de module avant le calendrier, comme les pilules système et réseau : ta demande du 2026-10-20).
 // Texte en Inter ; horloge en Hack Nerd Font, calendrier en Font Awesome 7 (THEME.md § 2).
 // Largeur fixe et minimale (ta demande du 2026-10-20) : l'heure et la date prennent la largeur de la plus large de leurs valeurs.

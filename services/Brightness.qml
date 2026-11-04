@@ -4,7 +4,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 
-// Rétroéclairage de l'écran interne (INVENTORY.md § 1, module `backlight`, défini dans Waybar mais placé dans aucune barre).
+// Rétroéclairage de l'écran interne (module Waybar `backlight`, défini dans Waybar mais placé dans aucune barre).
 // Premier périphérique de /sys/class/backlight (Waybar : `intel_backlight` écrit en dur). Absent → `available` faux.
 // Lecture : sysfs, relu chaque seconde ; écriture : `brightnessctl` (sysfs n'est pas inscriptible sans droits).
 // QS_SYSFS_ROOT (tests seulement) : racine remplaçant /sys.

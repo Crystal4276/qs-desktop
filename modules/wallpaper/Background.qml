@@ -3,7 +3,7 @@ import Quickshell
 import Quickshell.Wayland
 import qs.services
 
-// Fond d'écran natif (remplace swaybg, ARCHITECTURE § 10.1 R1) : une surface par écran sur la couche Background, sous les barres,
+// Fond d'écran natif (remplace swaybg, ARCHITECTURE § 7.11) : une surface par écran sur la couche Background, sous les barres,
 // sans zone d'entrée (comme swaybg : un clic sur le fond va au compositeur, qui focalise l'espace de travail). Rendu : WallpaperView.
 Variants {
     model: Quickshell.screens

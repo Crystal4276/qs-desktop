@@ -4,7 +4,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 
-// Outil de capture natif (ARCHITECTURE § 10.1 R8, modèle de l'outil de GNOME ; fenêtres : modules/screenshot/) : image figée de chaque
+// Outil de capture natif (ARCHITECTURE § 7.15, modèle de l'outil de GNOME ; fenêtres : modules/screenshot/) : image figée de chaque
 // écran (ScreencopyView), puis zone, écran ou fenêtre ; enregistrée comme ta touche Impr. (`Images/screenshot/AAAA-MM-JJ-HHMMSS.png`)
 // et copiée dans le presse-papiers. Fenêtres : rectangles donnés par le compositeur (Toplevel ne fournit pas leur position).
 Singleton {
@@ -69,7 +69,7 @@ Singleton {
     }
 
     // Curseur logiciel (Sway sur Nvidia) hors des images figées : les surfaces de l'outil demandent un curseur vide, la capture
-    // commence peu après l'entrée du pointeur ; un déplacement nul la provoque sous un pointeur immobile (PROGRESS.md, 2026-10-26).
+    // commence peu après l'entrée du pointeur ; un déplacement nul la provoque sous un pointeur immobile (constaté le 2026-10-26).
     property int nudges: 0
 
     function surfaceCreated(): void {

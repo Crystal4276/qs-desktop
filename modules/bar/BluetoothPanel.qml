@@ -5,7 +5,7 @@ import Quickshell.Bluetooth
 import qs.config
 import qs.services
 
-// Panneau Bluetooth (remplace blueman, ARCHITECTURE R6) : interrupteur, appareils appairés (BluetoothDeviceItem.qml : connecter,
+// Panneau Bluetooth (remplace blueman, ARCHITECTURE § 7.7) : interrupteur, appareils appairés (BluetoothDeviceItem.qml : connecter,
 // déconnecter, oublier, batterie, détails dépliables), appareils à proximité (recherche tant que le panneau est ouvert) et
 // appairage avec confirmation (Bluez.qml).
 Panel {

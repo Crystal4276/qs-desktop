@@ -5,9 +5,9 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Networking
 
-// Réseau : débit (module `network`) et connexions NetworkManager (module natif du tray, remplace nm-applet ; ARCHITECTURE R5).
+// Réseau : débit (module `network`) et connexions NetworkManager (module natif du tray, remplace nm-applet ; ARCHITECTURE § 7.6).
 //
-// Débit (INVENTORY.md § 1, module `network`), toutes les 2,5 s (5 s dans Waybar ; ta demande du 2026-10-20).
+// Débit (module Waybar `network`), toutes les 2,5 s (5 s dans Waybar ; ta demande du 2026-10-20).
 // Interface : celle de la route par défaut (/proc/net/route), au lieu du nom écrit en dur dans Waybar (`eno2`).
 // Octets de /proc/net/dev, différence divisée par l'intervalle nominal (network.cpp de Waybar 0.15).
 Singleton {
@@ -408,7 +408,7 @@ Singleton {
             Quickshell.execDetached(["wl-copy", "--", text]);
     }
 
-    // Édition des connexions : `nm-connection-editor` (repli, ARCHITECTURE R5).
+    // Édition des connexions : `nm-connection-editor` (repli, ARCHITECTURE § 7.6).
     function openEditor(): void {
         Launch.exec(["nm-connection-editor"]);
     }

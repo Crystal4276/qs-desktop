@@ -2,7 +2,7 @@ import QtQuick
 import qs.config
 import qs.services
 
-// Icône de volume (INVENTORY.md § 1, `pulseaudio`) : 3 paliers (seuils 33 et 66 %, getIcon de Waybar), muet `U+F466` (sans l'espace
+// Icône de volume (Waybar `pulseaudio`) : 3 paliers (seuils 33 et 66 %, getIcon de Waybar), muet `U+F466` (sans l'espace
 // de Waybar, qui élargissait la pilule à l'état muet : ta demande du 2026-11-02).
 // Clic gauche : muet ; milieu : sortie suivante ; droit : panneau audio (pavucontrol dans Waybar ; ton choix du 2026-10-16) ;
 // molette : ±5 % (plafond 100 %).
