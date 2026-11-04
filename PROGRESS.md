@@ -2377,6 +2377,13 @@ Corrigés :
 - `test-outputs.sh` : 0 échec sous Hyprland et sous Sway. Captures avant/après (régime normal) identiques ;
 - **à tester à la main** : un vrai démarrage d'Hyprland, `Super+N` vers un espace sans fenêtre, une connexion Sway.
 
+**Constat : le fond d'écran met du temps à apparaître au démarrage** (Hyprland, 2026-11-04) :
+- **chronologie relevée** (heures de démarrage des processus, démarrage d'Hyprland de 07:43) : Hyprland à T0, programmes du démarrage (`desktop.sh`, Spotify…) à T0 + 1,2 s, `qs` seulement à T0 + 2,3 s. `desktop.sh` passait 1,1 s avant de lancer `qs` : son premier `hyprctl version` (test « session vivante ») attend qu'Hyprland ait fini sa mise en route (185 ms mesurés sur un Hyprland imbriqué) ;
+- **correction** (`scripts/desktop.sh`) : `qs` est lancé tout de suite ; la session n'est vérifiée qu'après un arrêt de l'instance, pour décider d'une relance. Sorties de la boucle inchangées. Vérifié : relance par `dev.sh`, relance automatique après un `kill`, un seul superviseur ;
+- **dans Quickshell** (mesures temporaires, relances de ton instance, retirées ensuite) : barres à +0,25 s, fonds affichés 0,6 à 0,8 s plus tard. Attente des écrans décrits par Hyprland (~400 ms, le fond est choisi par description d'écran), création des fenêtres, puis décodage de tes images une par une (335 ms pour les trois : deux PNG de 8,5 et 12,9 Mo, une JPEG) ;
+- **essayé puis retiré** : fond mémorisé par connecteur, affiché avant que les écrans soient décrits (`ShellScreen` n'a ni marque ni numéro de série, tes deux LG sont indiscernables). Gain mesuré 80 à 170 ms seulement : pas justifié (règle « simplicité ») ;
+- **à vérifier au prochain démarrage d'Hyprland** : le fond doit arriver environ une seconde plus tôt. Relevé possible : `ps -o lstart= -p $(pgrep -x Hyprland)` et `scripts/desktop.sh pid`.
+
 ## Prochaine étape
 
 **Phase 10 : bascule faite, revue en boucle terminée (8 passes), en attente de ta validation ; phase 11 (portabilité) ensuite.**
