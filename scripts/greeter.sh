@@ -26,13 +26,7 @@ outputs="$repo/dotfiles/sway/hosts/$(cat /proc/sys/kernel/hostname).outputs.conf
 set --
 if [ -d /sys/module/nvidia ]; then
     set -- --unsupported-gpu
-    nvidia_only=1
-    for driver in /sys/class/drm/card?/device/driver; do
-        case "$(readlink -f "$driver")" in
-            */nvidia) ;;
-            *) nvidia_only= ;;
-        esac
-    done
-    [ -n "$nvidia_only" ] && export WLR_RENDERER="${WLR_RENDERER:-vulkan}"   # déjà fixé (banc) : gardé
+    . "$repo/scripts/qs-env.sh"   # qs_nvidia_only
+    qs_nvidia_only && export WLR_RENDERER="${WLR_RENDERER:-vulkan}"   # déjà fixé (banc) : gardé
 fi
 exec sway "$@" -c "$config"

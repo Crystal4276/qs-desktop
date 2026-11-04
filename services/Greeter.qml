@@ -7,7 +7,7 @@ import Quickshell.Services.Greetd
 import qs.config
 
 // Écran de connexion (greeter.qml, modules/greeter ; ARCHITECTURE § 9) : utilisateurs, sessions, dernier choix, dialogue avec greetd.
-//  - utilisateurs : comptes de /etc/passwd (UID 1000 à 59999, shell de connexion) ; le dernier connecté d'abord ;
+//  - utilisateurs : comptes de /etc/passwd (UID 1000 à 59999, sans shell nologin / false) ; le dernier connecté d'abord ;
 //  - sessions : fichiers .desktop de `wayland-sessions` puis `xsessions` (XDG_DATA_DIRS ; X11 seulement si `startx` est là), sans
 //    ceux dont `TryExec` manque ;
 //    la dernière de l'utilisateur, sinon `greeter.defaultSession` de la config machine (« wayland/sway »), sinon la première ;
@@ -25,7 +25,7 @@ Singleton {
         const shells = /(nologin|false)$/;
         return passwd.text().split("\n").map(l => l.split(":")).filter(f => {
             const uid = Number(f[2]);
-            return f.length >= 7 && uid >= 1000 && uid < 60000 && f[6] !== "" && !shells.test(f[6]);
+            return f.length >= 7 && uid >= 1000 && uid < 60000 && !shells.test(f[6]);   // shell vide : /bin/sh
         }).map(f => f[0]);
     }
     property int userIndex: 0
@@ -193,6 +193,10 @@ Singleton {
             fail("greetd is not running");
             return;
         }
+        if (!session) {
+            fail("No session");
+            return;
+        }
         pending = password;
         checking = true;
         error = false;
@@ -201,7 +205,6 @@ Singleton {
         Greetd.createSession(user);
     }
 
-    // Échec signalé par greetd (authFailure, error) : Quickshell a déjà refermé la session de son côté.
     function fail(text: string): void {
         checking = false;
         pending = "";
@@ -218,7 +221,8 @@ Singleton {
 
     function launch(): void {
         const s = session;
-        if (!s) {
+        if (!s) {   // liste vidée entre-temps : session authentifiée refermée
+            Greetd.cancelSession();
             fail("No session");
             return;
         }
@@ -257,8 +261,11 @@ Singleton {
             root.launch();
         }
 
+        // Erreur de greetd (pas un refus) : Quickshell garde la session, refermée ici pour permettre un nouvel essai.
         function onError(error: string): void {
             console.warn(`Greeter: greetd: ${error}`);
+            if (Greetd.state !== GreetdState.Inactive)
+                Greetd.cancelSession();
             root.fail(error !== "" ? error : "Authentication error");
         }
     }

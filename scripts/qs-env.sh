@@ -11,17 +11,23 @@ export MALLOC_CONF="${MALLOC_CONF-narenas:2}"
 export QSG_ATLAS_WIDTH="${QSG_ATLAS_WIDTH-1024}"
 export QSG_ATLAS_HEIGHT="${QSG_ATLAS_HEIGHT-1024}"
 
+# Vrai si toutes les cartes graphiques (au moins une) sont Nvidia. Aussi pour le Sway de l'écran de connexion (scripts/greeter.sh).
+qs_nvidia_only() {
+    qs_card=
+    for qs_driver in /sys/class/drm/card?/device/driver; do
+        case "$(readlink -f "$qs_driver")" in
+            */nvidia) qs_card=1 ;;
+            *) unset qs_card qs_driver; return 1 ;;
+        esac
+    done
+    unset qs_driver
+    [ -n "$qs_card" ] && unset qs_card
+}
+
 # Nvidia seule carte de la machine : ne charge pas aussi Mesa et LLVM, inutilisés (-34 Mo). Jamais à côté d'une autre carte (laptop
 # hybride) : le compositeur peut tourner dessus, et Quickshell n'aurait plus le bon pilote.
 nvidia_egl=/usr/share/glvnd/egl_vendor.d/10_nvidia.json
-nvidia_only=
-for driver in /sys/class/drm/card?/device/driver; do
-    case "$(readlink -f "$driver")" in
-        */nvidia) nvidia_only=1 ;;
-        *) nvidia_only=; break ;;
-    esac
-done
-if [ -n "$nvidia_only" ] && [ -e "$nvidia_egl" ]; then
+if qs_nvidia_only && [ -e "$nvidia_egl" ]; then
     export __EGL_VENDOR_LIBRARY_FILENAMES="${__EGL_VENDOR_LIBRARY_FILENAMES-$nvidia_egl}"
 fi
-unset nvidia_egl nvidia_only driver
+unset nvidia_egl

@@ -277,7 +277,6 @@ Singleton {
         Quickshell.execDetached(["rm", "-f", "--", ...files]);
     }
 
-    // Choix enregistré et dossier lus : forOutput donne le fond définitif.
     // Fond de chaque écran pour l'écran de connexion (modules/greeter, utilisateur `greeter`, qui ne lit pas ton dossier personnel) :
     // dossier système créé par scripts/greeter-setup.sh (absent : l'écriture échoue sans bruit), une image par écran nommée
     // d'après sa description, récrite quand le fond affiché change (Background.qml). Banc (QS_TEST) : seulement sous QS_GREETER_DIR.
@@ -301,6 +300,7 @@ Singleton {
             greeterSaved[description] = key;
     }
 
+    // Choix enregistré et dossier lus : forOutput donne le fond définitif.
     readonly property bool ready: stateRead && libraryRead
 
     // Démarrage : les barres attendent que chaque écran affiche son fond (Bar.qml), pour apparaître en même temps ; au plus 3 s

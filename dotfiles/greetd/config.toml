@@ -2,6 +2,10 @@
 # Écran de connexion Quickshell (docs/ARCHITECTURE.md § 9) : Sway minimal lancé par scripts/greeter.sh sous l'utilisateur `greeter`,
 # depuis la copie système du dépôt. PAM : /etc/pam.d/greetd (sessions), /etc/pam.d/greetd-greeter (l'écran de connexion lui-même).
 
+[general]
+# Profil lu par scripts/greeter-session.sh (shell de connexion de l'utilisateur), pas une seconde fois par greetd.
+source_profile = false
+
 [terminal]
 vt = 1
 

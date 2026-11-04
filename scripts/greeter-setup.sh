@@ -116,6 +116,7 @@ uninstall() {
     else
         echo "! aucun ancien gestionnaire de connexion noté : connexion en console au prochain démarrage"
     fi
+    local missing=""
     if [[ -f "$backups" ]]; then
         while read -r target backup; do
             if [[ "$backup" == - ]]; then
@@ -124,10 +125,16 @@ uninstall() {
                 run mv -f "$backup" "$target"
             else
                 echo "! sauvegarde $backup introuvable : $target laissé tel quel"
+                missing=1
             fi
         done <"$backups"
     fi
-    run rm -rf "$dest" "$var"
+    run rm -rf "$dest"
+    if [[ -n "$missing" ]]; then
+        echo "! $var gardé : registre des sauvegardes ($backups) et ancien gestionnaire ($previous_dm)"
+    else
+        run rm -rf "$var"
+    fi
 }
 
 [[ "${1:-}" == --dry-run ]] && { dry=1; shift; }
