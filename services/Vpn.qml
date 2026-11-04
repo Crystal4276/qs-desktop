@@ -361,41 +361,39 @@ Singleton {
         repeat: true
         onTriggered: root.refresh()
     }
-    // Inconnu (null) avant la première lecture des interfaces, qui n'est pas un changement (statut déjà lu au démarrage). Tunnel
-    // déjà là (`nordvpn c` lancé avec la session) : relu 3 s plus tard si la connexion n'est toujours pas annoncée.
+    // Tunnel NordVPN présent : null avant la première lecture des interfaces. Comparé à la dernière valeur vue (une propriété `var`
+    // signale aussi une valeur identique). Première valeur vue : pas un changement (statut lu à la création) ; tunnel déjà là
+    // (`nordvpn c` lancé avec la session) : relu 3 s plus tard si la connexion n'est toujours pas annoncée.
     readonly property var tunnelUp: Network.interfaceNames === "" ? null : /\bnord/.test(Network.interfaceNames)
-    property bool tunnelSeen: false
-    onTunnelUpChanged: {
-        if (tunnelUp === null)
+    property var tunnelLast: null
+    property bool followUpIfNotConnected: false
+
+    function noteTunnel(): void {
+        if (tunnelUp === null || tunnelUp === tunnelLast)
             return;
-        const first = !tunnelSeen;
-        tunnelSeen = true;
-        if (first) {
-            if (tunnelUp)
-                startupFollowUp.restart();
+        const first = tunnelLast === null;
+        tunnelLast = tunnelUp;
+        if (first && !tunnelUp)
             return;
-        }
-        refresh();
+        if (!first)
+            refresh();
+        followUpIfNotConnected = first;
         interfaceFollowUp.restart();
     }
+    onTunnelUpChanged: noteTunnel()
+
     // Interface changée alors que le démon annonce encore l'ancien état : relu une fois de plus, sans attendre les 30 s.
     Timer {
         id: interfaceFollowUp
         interval: 3000
-        onTriggered: root.refresh()
-    }
-    // Tunnel déjà là à la première lecture : relu seulement si le statut du démarrage n'annonce toujours pas la connexion.
-    Timer {
-        id: startupFollowUp
-        interval: 3000
         onTriggered: {
-            if (!root.connected)
+            if (!(root.followUpIfNotConnected && root.connected))
                 root.refresh();
         }
     }
     Component.onCompleted: {
-        tunnelSeen = tunnelUp !== null;   // interfaces déjà lues (Network créé avant) : pas de première lecture à venir
         refresh();
+        noteTunnel();   // interfaces déjà lues (Network créé avant) : pas de changement à venir
     }
 
     // Connexion arrêtée qui ne rend pas la main (SIGINT ignoré) : arrêt forcé.
