@@ -493,9 +493,10 @@ Dépôt privé séparé `Crystal4276/fonts-ms` (polices propriétaires, jamais d
   reprend `greetd` et lancerait le trousseau pour `greeter`).
 - **Fichiers lisibles par `greeter`** (le dossier personnel ne l'est pas) : copie du dépôt dans `/usr/local/share/qs-desktop` (version
   committée, `git archive`) ; `/var/lib/qs-desktop/greeter/` (état, caches : `greeter` n'a pas de dossier personnel) ;
-  `/var/lib/qs-desktop/<utilisateur>/` (fonds exportés par le bureau ; 750, groupe `greeter`). Chemin : `Settings.greeterDir`.
+  `/var/lib/qs-desktop/<utilisateur>/` (fonds exportés par le bureau ; 750, groupe `greeter`, ACL par défaut `g:greeter:r` : lisibles quel que soit l'umask). Chemin : `Settings.greeterDir`.
 - **Mise en place** : `scripts/greeter-setup.sh [--dry-run] install|enable|uninstall` (sudo par commande, sauvegardes
-  `*.bak-<date>` notées dans `/var/lib/qs-desktop/backups`, ancien gestionnaire noté dans `previous-dm`). `install` ne touche à aucun
+  dans `/var/lib/qs-desktop/backup/` — pas à côté : une copie dans `/etc/pam.d` serait un service PAM —, notées dans
+  `/var/lib/qs-desktop/backups`, ancien gestionnaire noté dans `previous-dm`). `install` ne touche à aucun
   service et se relance après chaque changement du greeter ; `enable` : greetd au prochain démarrage. Repris par `install.sh` (phase 12).
 - **Retour arrière** : `docs/ROLLBACK.md` ; SDDM reste installé jusqu'à ta décision.
 

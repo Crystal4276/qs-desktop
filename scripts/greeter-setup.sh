@@ -47,6 +47,11 @@ record() {
     run sh -c "echo '$1 $2' >> '$backups'"
 }
 
+# Sauvegarde d'un fichier système, hors de son dossier (une copie dans /etc/pam.d serait un service PAM de plus).
+backup_of() {
+    echo "$var/backup/$(echo "${1#/}" | tr / _).bak-$stamp"
+}
+
 # Fichier `$1` de la version committée (extraite dans $tree par install) vers `$2`.
 install_file() {
     local src="$tree/$1" target="$2"
@@ -55,15 +60,15 @@ install_file() {
         # Déjà là sans être noté (registre perdu, copie à la main) : sauvegardé tel quel, pour qu'uninstall le remette au lieu de
         # le supprimer (il peut appartenir à un paquet).
         if [[ -z "$(recorded "$target")" ]]; then
-            run cp -a "$target" "$target.bak-$stamp"
-            record "$target" "$target.bak-$stamp"
+            run cp -a "$target" "$(backup_of "$target")"
+            record "$target" "$(backup_of "$target")"
         fi
         return
     fi
     if [[ -z "$(recorded "$target")" ]]; then
         if [[ -e "$target" ]]; then
-            run cp -a "$target" "$target.bak-$stamp"
-            record "$target" "$target.bak-$stamp"
+            run cp -a "$target" "$(backup_of "$target")"
+            record "$target" "$(backup_of "$target")"
         else
             record "$target" -
         fi
@@ -79,7 +84,10 @@ do_install() {
     # Dossiers d'état : greeter (dernier choix, caches), fond d'écran exporté par le bureau de l'utilisateur (lisible par greeter).
     run install -d -m 755 -o root -g root "$var"
     run install -d -m 700 -o greeter -g greeter "$var/greeter"
-    run install -d -m 750 -o "$user" -g greeter "$var/$user"   # fonds : lisibles par greeter seul (groupe)
+    run install -d -m 755 -o root -g root "$var/backup"
+    # Fonds exportés : lisibles par greeter seul, quel que soit l'umask de la session (ACL par défaut du dossier).
+    run install -d -m 750 -o "$user" -g greeter "$var/$user"
+    run setfacl -m g:greeter:rx -d -m g:greeter:r "$var/$user"
 
     # Version committée, extraite à part : copie du dépôt lisible par greeter (ton dossier personnel ne l'est pas), remplacée d'un
     # bloc, et source des fichiers système.
