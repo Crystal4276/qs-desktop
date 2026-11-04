@@ -26,12 +26,21 @@
 | 8b | Fond d'écran, verrouillage, veille, polkit, capture, statistiques | faite (2026-10-19) |
 | 9 | Parité Hyprland | faite (2026-11-03) |
 | 10 | Bascule (configs dans `dotfiles/`, lancement par `scripts/desktop.sh`) | faite (2026-11-03), revues et audit du démarrage le 2026-11-04 ; en attente de tes tests de connexion ci-dessous |
-| 11 | Écran de connexion (greetd + greeter Quickshell) | **prochaine** |
+| 11 | Écran de connexion (greetd + greeter Quickshell au design du verrouillage) | **en cours** : code, fichiers système et docs faits et testés sur banc (2026-11-04) ; mise en place système et vraie connexion en attente de ton accord |
 | 12 | Portabilité (`install.sh`, `deps/`, laptop) | à faire |
 
 Retour arrière de la bascule : `docs/ROLLBACK.md`.
 
 ## À tester à la main
+
+**Écran de connexion** (phase 11, après `scripts/greeter-setup.sh install`, puis `enable` et redémarrage) :
+- l'écran s'affiche sur les trois écrans, champ sur le Dell, fond = le tien flouté (exporté par le bureau dans `/var/lib/qs-desktop/crystal/`) ;
+- connexion Sway (Vulkan + NVIDIA) puis Hyprland : la session démarre comme avec SDDM (barres, autostarts, `desktop.sh`) ;
+- trousseau déverrouillé : Chromium et `secret-tool search` sans demande de mot de passe ;
+- session « Windows 10 (X11) » (`startx`, `/bin/vm`) ; déconnexion → retour à l'écran de connexion ;
+- mauvais mot de passe (message, champ rouge), dernière session retenue au démarrage suivant ;
+- éteindre / redémarrer / veille depuis l'écran de connexion **et** depuis le verrouillage (panneau de réglages → verrouiller, puis la lune) ;
+- retour arrière vers SDDM essayé une fois (`docs/ROLLBACK.md`).
 
 **Prochaine connexion Sway** (pas rejouée depuis la bascule) :
 - démarrage par `desktop.sh`, sans Waybar ni Dunst ; écrans sur 1 / 4 / 7, focus au centre ; une seule répartition dans `scripts/dev.sh log` ;
@@ -73,12 +82,15 @@ selon le matériel, GPU AMD / Intel réels, verrouillage avant la mise en veille
 
 ## Connu, non résolu
 
+- Écran de connexion : après un mauvais mot de passe, le journal de Quickshell montre « Received unexpected greetd response » (Quickshell
+  0.3 annule lui-même la session et ne s'attend pas à la réponse de greetd) : sans effet (`DEVELOPMENT.md`, pièges).
+
 - Avertissement `services/Bluez.qml[31:5]` « Unable to assign [undefined] to bool » au démarrage : sans effet connu.
 - Calendrier : après un clic dans le calendrier, Échap et ←/→ ne répondent plus (pas d'API pour rendre le clavier à la barre ;
   limite écrite dans `CalendarPopup.qml`).
 
 ## Prochaine étape
 
-**Phase 11 — écran de connexion** : greetd remplace SDDM, greeter Quickshell indépendant (apparence de
-`docs/reference/sddm-catppuccin-preview.png`), session Sway Nvidia, déverrouillage de `gnome-keyring` par PAM. À concevoir ensemble ;
-rien sur les fichiers système sans ton accord ; tu installes greetd toi-même au début de la phase.
+**Phase 11 — écran de connexion** : fait jusqu'à la mise en place système (`ARCHITECTURE.md` § 9). Reste, avec ton accord :
+`scripts/greeter-setup.sh install` (sudo ; `--dry-run` pour voir), essai réel, `enable`, redémarrage, tests ci-dessus. Verrouillage :
+rangée éteindre / redémarrer / veille déjà en place sur le bureau.

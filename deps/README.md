@@ -49,7 +49,8 @@ Thème d'icônes des applications (tray, lanceur, menu d'applications, notificat
 | Notifications | — (natif) | `libnotify` (tests `notify-send`) | Inter | — |
 | Lanceur | — (natif, `DesktopEntries`) | terminal pour les applis `Terminal=true` | Inter, Symbols Nerd Font Mono | — |
 | Menu d'applications (modèle Cinnamon, remplace nwg-menu) | — (natif, `DesktopEntries`) ; `xdg-user-dirs` (dossiers), `xdg-utils` (ouvrir dossiers et fichiers) | — | Inter, Symbols Nerd Font Mono | icônes de session `assets/*.svg` |
-| Verrouillage | — (natif, `WlSessionLock` + `PamContext`, `pam` installé avec `quickshell`) | — | Inter | — |
+| Verrouillage | — (natif, `WlSessionLock` + `PamContext`, `pam` installé avec `quickshell`) ; `systemd` (éteindre, redémarrer, veille) | — | Inter | `assets/{shutdown,restart,suspend}.svg` |
+| Écran de connexion (greetd, `ARCHITECTURE.md` § 9) | `greetd` (natif, `Services.Greetd`), `sway` (compositeur du greeter), `git` + `tar` (copie système par `scripts/greeter-setup.sh`), `sudo` (mise en place) | `greetd-agreety` (secours console) ; `xorg-xinit` + `xorg-server` (sessions X11, par `startx`) ; `gnome-keyring` (trousseau déverrouillé par PAM) | Inter, Symbols Nerd Font Mono | `greeter.qml`, `dotfiles/greetd/`, `scripts/greeter*.sh` |
 | Fond d'écran + utilitaire | — (natif) | `xdg-user-dirs` (dossier Images) ; dépôt privé des fonds cloné dans `~/Pictures/Wallpapers` | Inter, Symbols Nerd Font Mono | — |
 | Veille des écrans | natif (`IdleMonitor` + commande DPMS au compositeur) ; `systemd` (`systemd-inhibit`), `glib2` (`gdbus` : mise en veille du système) | — | — | — |
 | Agent polkit | — (natif, `PolkitAgent` ; `polkit` installé avec `quickshell`) | — | Inter | — |
@@ -72,6 +73,9 @@ Les applications personnelles lancées au démarrage (Steam, Spotify, Thunderbir
 |---|---|---|
 | `scripts/desktop.sh [restart\|stop\|log]` | lance le bureau depuis l'autostart de Sway / Hyprland, le relance s'il s'arrête | `qs`, `flock`, `setsid` (`util-linux`), `swaymsg` / `swaynag` (`sway`), `hyprctl` |
 | `scripts/ipc.sh <cible> <fonction> …` | `qs ipc call` vers le bureau de la session (raccourcis) | `qs` |
+| `scripts/greeter.sh [shell]` | écran de connexion : Sway minimal puis Quickshell (lancé par greetd) | `sway`, `swaymsg`, `qs` |
+| `scripts/greeter-session.sh` | session choisie : shell de connexion puis `Exec` ; X11 par `startx` | `sh`, `startx` (`xorg-xinit`, sessions X11) |
+| `scripts/greeter-setup.sh [--dry-run] install\|enable\|uninstall` | mise en place système de l'écran de connexion | `sudo`, `git`, `tar`, `install` / `cmp` (`coreutils`, `diffutils`), `systemctl`, `getent` |
 
 ### Web apps et « ne pas déranger »
 
@@ -116,8 +120,8 @@ Ce que `install.sh` (phase 12) devra installer, activer ou vérifier — relevé
 | Thème d'icônes `Papirus-Dark` | icônes d'applications | paquet | paquet + `//@ pragma IconTheme Papirus-Dark` dans `shell.qml` (indispensable : le thème `breeze` de qt6ct n'est pas installé ici, `ARCHITECTURE.md` § 8.1) |
 | Curseur, thème GTK | apparence des applications | AUR | paquets AUR + `gtk-3.0/settings.ini` et `gtk-4.0/settings.ini` (ici incohérents : `prefer-dark` 1 et 0) |
 | Dépôt `wallpapers` | fonds d'écran | `~/Pictures/Wallpapers` | `git clone git@github.com:Crystal4276/wallpapers.git "$(xdg-user-dir PICTURES)/Wallpapers"` (dépôt privé : clé SSH GitHub nécessaire) ; facultatif |
-| Commande de session Sway sur Nvidia | `WLR_RENDERER=vulkan sway --unsupported-gpu` | fichier `sway-vulkan.desktop` créé à la main pour SDDM | fournie par la config du greeter Quickshell (phase 11), selon la présence d'un GPU Nvidia |
-| Gestionnaire de connexion | greetd + greeter Quickshell (phase 11, `ARCHITECTURE.md` § 9) | SDDM activé (`sddm.service`), PAM `/etc/pam.d/sddm` avec `pam_gnome_keyring.so` | paquets `greetd` + `greetd-agreety`, `/etc/greetd/config.toml`, `/etc/pam.d/greetd` (lignes du trousseau), `systemctl disable sddm` / `enable greetd` — fichiers système, avec ton accord |
+| Commande de session Sway sur Nvidia | `WLR_RENDERER=vulkan sway --unsupported-gpu` | fichier `/usr/share/wayland-sessions/sway-vulkan.desktop` créé à la main pour SDDM, repris par l'écran de connexion | à générer par `install.sh` (phase 12) si un GPU Nvidia est présent ; le Sway du greeter le détecte seul (`scripts/greeter.sh`) |
+| Gestionnaire de connexion | greetd + greeter Quickshell (phase 11, `ARCHITECTURE.md` § 9) | SDDM activé (`sddm.service`), PAM `/etc/pam.d/sddm` avec `pam_gnome_keyring.so` | paquets `greetd` (+ `greetd-agreety`), puis `scripts/greeter-setup.sh install` (copie dans `/usr/local/share/qs-desktop`, `/etc/greetd/config.toml`, `/etc/pam.d/greetd` avec le trousseau, `/etc/pam.d/greetd-greeter`, `/var/lib/qs-desktop/`) et `enable` (ancien gestionnaire désactivé) — `sudo`, avec ton accord |
 | `QT_QPA_PLATFORMTHEME=qt6ct` | thème des applications Qt (Kvantum `KvArcDark`, icônes `breeze`) | dans `/etc/environment` | à reproduire (fichier système, `sudo`) ; Quickshell en hérite (`ARCHITECTURE.md` § 8.1) |
 | Réglages dconf | apparence des applications GTK | dconf | `gsettings set org.gnome.desktop.interface …` par `install.sh` (liste ci-dessous) |
 | Polices CJK | titres et notifications en japonais/chinois/coréen | polices MS copiées à la main | `noto-fonts-cjk` (repli du bureau) |
@@ -132,7 +136,7 @@ Réglages dconf de cette machine (`org.gnome.desktop.interface`) : `gtk-theme` `
 les compositeurs), `clock-format` `24h`.
 
 Autres constats pour un nouveau PC :
-- trousseau `gnome-keyring` déverrouillé par PAM à la connexion (aujourd'hui SDDM, demain greetd) ;
+- trousseau `gnome-keyring` déverrouillé par PAM à la connexion (greetd : `dotfiles/greetd/pam-greetd`) ;
 - `logind` par défaut (bouton power = extinction ; capot = mise en veille) ;
 - polices de repli : `noto-fonts-cjk` (japonais, chinois, coréen ; ici les polices Microsoft le font), `noto-fonts-emoji` ;
 - partage d'écran sous Sway : `xdg-desktop-portal-wlr` choisit l'écran avec `slurp` ;
@@ -194,6 +198,8 @@ Correspondances attendues, **non encore vérifiées** (phase 12).
 | qt6-svg | qt6-qtsvg | qt6-svg-plugins | |
 | sway | sway | sway | |
 | hyprland | hyprland | hyprland (Debian ≥ 13) | |
+| greetd, greetd-agreety | greetd (agreety inclus) | greetd (agreety inclus) | utilisateur du greeter : `greeter` sur Arch, `_greetd` sur Debian (`default_session.user` à adapter) |
+| xorg-xinit (optionnel) | xorg-x11-xinit | xinit | sessions X11 de l'écran de connexion |
 | *(polices d'icônes : Symbols Nerd Font Mono, Hack Nerd Font, Font Awesome 7, FontAwesome 4.7)* | — | — | fournies par le dépôt (`assets/fonts/`), aucun paquet nécessaire |
 | inter-font | rsms-inter-fonts | fonts-inter | |
 | noto-fonts | google-noto-sans-mono-fonts | fonts-noto-mono | |

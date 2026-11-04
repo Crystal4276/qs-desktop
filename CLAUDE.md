@@ -135,8 +135,8 @@ PROGRESS.md, BACKLOG.md
 ## Protocole de vérification
 
 1. Banc d'essai d'abord, démarrage complet sans nouvel avertissement ; puis le bureau réel.
-2. Captures du composant (`scripts/shot.sh`) comparées à la charte (`THEME.md`, `Theme.qml`) et, pour un écran de connexion, à
-   `docs/reference/sddm-catppuccin-preview.png`.
+2. Captures du composant (`scripts/shot.sh`) comparées à la charte (`THEME.md`, `Theme.qml`) et, pour l'écran de connexion, à
+   l'écran de verrouillage.
 3. Tests fonctionnels scriptés quand c'est possible (`qs ipc`, `notify-send`, `wpctl`, `test-outputs.sh`…).
 4. Ce qui ne se teste pas automatiquement (clics réels, câble, capot, vraie session de connexion) : listé dans `PROGRESS.md` pour que
    je le teste à la main.
@@ -151,9 +151,9 @@ disques, NordVPN · 6 notifications · 7 lanceur · 8 menus et scripts · 8b fon
 9 parité Hyprland · 10 bascule (retour arrière : `docs/ROLLBACK.md`).
 
 **Phase 11 — Écran de connexion.** SDDM ne sera plus utilisé : **greetd** le remplace, avec un greeter **Quickshell indépendant**
-(module `Greetd`, en QML ; `ARCHITECTURE.md` § 9), qui reprend seulement l'apparence du thème SDDM actuel `catppuccin-mocha-green`
-(référence : `docs/reference/sddm-catppuccin-preview.png`). Doit lancer la session Sway Nvidia (`WLR_RENDERER=vulkan sway
---unsupported-gpu`) et déverrouiller `gnome-keyring` (PAM). À concevoir ensemble ; touche aux fichiers système, donc
+(module `Greetd`, en QML ; `ARCHITECTURE.md` § 9) qui reprend **le design de l'écran de verrouillage**, augmenté des fonctions de SDDM
+(choix de la session Wayland ou X11, éteindre, redémarrer, veille ; décision du 2026-11-04, le thème SDDM n'est plus la référence).
+Doit lancer la session Sway Nvidia (`WLR_RENDERER=vulkan sway --unsupported-gpu`) et déverrouiller `gnome-keyring` (PAM). À concevoir ensemble ; touche aux fichiers système, donc
 rien sans mon accord explicite. Dépendances (greetd…) listées dans `deps/` ; sur ce desktop, je les installe moi-même au début de la
 phase. Fichiers et procédure de mise en place versionnés et documentés, pour que `install.sh` les reprenne en phase 12 ; retour
 arrière vers SDDM documenté.
