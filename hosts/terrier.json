@@ -3,6 +3,7 @@
   "wallpaper": { "kind": "triptych", "path": "triptych/green-storm" },
   "doNotDisturb": { "muteApps": ["discord", "whatsapp"] },
   "primaryOutput": "Dell Inc. Dell AW3418DW #ASPFPBQwWjbd",
+  "greeter": { "defaultSession": "wayland/sway-vulkan" },
   "bars": {
     "primary": {
       "left": [["menu"], ["workspaces"], ["mpris", "volume", "slider"]],

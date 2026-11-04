@@ -13,20 +13,7 @@ import qs.config
 Singleton {
     id: root
 
-    // Principal : celui de la config machine s'il est actif, sinon le plus grand en surface logique (égalité : le plus à gauche).
-    readonly property var primary: {
-        const outs = Compositor.outputs;
-        // Pas de principal configuré ("" par défaut) : ne surtout pas élire un écran qui ne donne ni marque ni modèle.
-        const configured = Settings.primaryOutput !== "" ? outs.find(o => o.description === Settings.primaryOutput) : null;
-        if (configured)
-            return configured;
-        return outs.reduce((best, o) => {
-            if (!best)
-                return o;
-            const area = o.width * o.height, bestArea = best.width * best.height;
-            return area > bestArea || (area === bestArea && o.x < best.x) ? o : best;
-        }, null);
-    }
+    readonly property var primary: Settings.primaryOf(Compositor.outputs)
 
     // Principal d'abord, puis les autres de gauche à droite (x, puis y).
     readonly property var ordered: {

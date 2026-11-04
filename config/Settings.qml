@@ -37,6 +37,9 @@ Singleton {
     // ensuite réglées depuis le panneau de réglages et gardées dans un fichier d'état.
     // `muteApps` : applications coupées pendant « ne pas déranger » (services/Audio.qml), par `application.id` donné au lancement
     // ou par binaire ; à reprendre dans la règle dotfiles/wireplumber/.
+    // Écran de connexion (services/Greeter.qml) : `defaultSession`, session proposée tant que l'utilisateur n'en a choisi aucune,
+    // « wayland/<fichier .desktop sans extension> » ou « x11/… ».
+    readonly property var greeter: Object.assign({ defaultSession: "wayland/sway" }, config.greeter ?? {})
     readonly property var doNotDisturb: Object.assign({ schedule: true, from: "21:00", to: "07:00", muteApps: [] }, config.doNotDisturb ?? {})
 
     // Heure "HH:MM" ("9:5" accepté) → minutes depuis minuit ; -1 si elle est mal formée (veilleuse, « ne pas déranger »).
@@ -56,6 +59,21 @@ Singleton {
     // Renvoie { left: [[module, …], …], right: […] }.
     function barFor(description: string, primary: bool): var {
         return (primary ? bars.primary : null) ?? bars[description] ?? bars.secondary ?? ({ left: [], right: [] });
+    }
+
+    // Écran principal parmi les sorties actives (Compositor.outputs) : celui de la config machine s'il est actif, sinon le plus
+    // grand en surface logique (égalité : le plus à gauche). Bureau : Outputs.primary ; écran de connexion : modules/greeter.
+    function primaryOf(outs: var): var {
+        // Pas de principal configuré ("" par défaut) : ne surtout pas élire un écran qui ne donne ni marque ni modèle.
+        const configured = primaryOutput !== "" ? outs.find(o => o.description === primaryOutput) : null;
+        if (configured)
+            return configured;
+        return outs.reduce((best, o) => {
+            if (!best)
+                return o;
+            const area = o.width * o.height, bestArea = best.width * best.height;
+            return area > bestArea || (area === bestArea && o.x < best.x) ? o : best;
+        }, null);
     }
 
     function parse(file: FileView): var {
