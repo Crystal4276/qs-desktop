@@ -18,7 +18,10 @@ Variants {
 
         // Disposition (modules de chaque pilule) : une nouvelle recrée tous les modules (~50 ms). Appliquée une fois l'écran connu,
         // au tour suivant de la boucle (écrans d'une même réponse ensemble), et seulement si son contenu a changé.
-        readonly property string wantedLayout: output ? JSON.stringify(Settings.barFor(output.description, Outputs.isPrimary(modelData?.name ?? ""))) : ""
+        // Écran que le compositeur ne décrit pas (miroir, compositeur inconnu) : disposition par défaut, une fois les écrans lus.
+        readonly property bool outputsKnown: Compositor.outputs.length > 0 || Compositor.type === ""
+        readonly property string wantedLayout: output || outputsKnown
+            ? JSON.stringify(Settings.barFor(output?.description ?? "", Outputs.isPrimary(modelData?.name ?? ""))) : ""
         property string appliedLayout: ""
         readonly property var layout: appliedLayout !== "" ? JSON.parse(appliedLayout) : ({ left: [], right: [] })
 

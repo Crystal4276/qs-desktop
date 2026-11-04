@@ -183,17 +183,29 @@ Singleton {
         return `${screenDir}/${name}`;
     }
 
-    // Copie écrite (`ok`) ou échouée. Les copies de fonds qu'aucun écran actif n'affiche plus sont effacées.
+    // Fonds choisis (par écran, pour tous, config machine) : leurs copies restent, écran éteint ou capot fermé compris.
+    function chosenPaths(): var {
+        const paths = Object.values(overrides);
+        for (const s of [selection, Settings.wallpaper]) {
+            if (s?.kind === "triptych")
+                paths.push(...Object.values(library.triptych.find(t => t.path === s.path)?.parts ?? {}));
+            else if (s?.path)
+                paths.push(s.path);
+        }
+        return paths;
+    }
+
+    // Copie écrite (`ok`) ou échouée. Les copies des fonds qui ne sont plus choisis sont effacées.
     function screenWritten(file: string, path: string, ok: bool): void {
         const name = file.slice(screenDir.length + 1);
         delete screenSaving[name];
         if (!ok)
             return;
-        const shownPaths = Compositor.outputs.map(o => forOutput(o, Compositor.outputs)?.path).filter(p => p);
+        const keep = chosenPaths();
         // Date de l'original : inconnue si le dossier n'est pas encore lu, relevée alors à sa lecture.
         writtenSinceScan[name] = true;
         const entries = Object.assign({}, state.screenCache ?? {}, { [name]: { path: path, stamp: stamps[path] ?? null } });
-        const unused = Object.keys(entries).filter(n => !shownPaths.includes(entries[n].path));
+        const unused = Object.keys(entries).filter(n => !keep.includes(entries[n].path));
         unused.forEach(n => delete entries[n]);
         removeFiles(unused.map(n => `${screenDir}/${n}`));
         state.screenCache = entries;
