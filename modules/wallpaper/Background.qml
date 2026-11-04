@@ -44,10 +44,28 @@ Variants {
         mask: Region {}
 
         WallpaperView {
+            id: view
+
             anchors.fill: parent
             output: window.output
             shown: window.shown
-            onDisplayed: Wallpapers.markShown(window.modelData?.name ?? "", window.shown ? `${window.shown.kind}:${window.shown.source}` : "")
+            onDisplayed: {
+                Wallpapers.markShown(window.modelData?.name ?? "", window.shown ? `${window.shown.kind}:${window.shown.source}` : "");
+                greeterDelay.restart();
+            }
+        }
+
+        // Copie du fond affiché pour l'écran de connexion (Wallpapers.greeterFile), 3 s après qu'il est prêt, comme les copies
+        // à la taille de l'écran (pas à chaque essai dans l'utilitaire). grabToImage prend une taille logique.
+        Timer {
+            id: greeterDelay
+            interval: 3000
+            onTriggered: {
+                const key = window.shown ? `${window.shown.kind}:${window.shown.source}:${view.width}x${view.height}` : "";
+                const file = key !== "" ? Wallpapers.greeterFile(window.output?.description ?? "", key) : "";
+                if (file !== "")
+                    view.grabToImage(result => result.saveToFile(file), Qt.size(view.width, view.height));
+            }
         }
     }
 }
