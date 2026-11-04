@@ -345,7 +345,7 @@ Singleton {
             root.apply();
         }
 
-        // Début de session : premier espace du bloc de chaque écran (scripts/desktop.sh).
+        // Début de session : premier espace du bloc de chaque écran (tests ; desktop.sh passe QS_DESKTOP_HOME).
         function home(): void {
             root.home();
         }
