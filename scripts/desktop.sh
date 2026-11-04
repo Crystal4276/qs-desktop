@@ -77,7 +77,10 @@ watch() {
     # Verrouillage de la session, repris par une instance relancée (modules/lock/LockScreen.qml).
     export QS_LOCK_STATE="$runtime/qs-desktop.$session.locked"
     local home="${1:-}" starts=() now t pid
-    while alive; do
+    # Session vérifiée seulement après un arrêt de l'instance (`alive || break`), pas avant le premier lancement : au démarrage
+    # d'Hyprland, `hyprctl` attend qu'il ait fini sa mise en route (185 ms sur un Hyprland imbriqué) ; le 2026-11-04, qs partait
+    # 1,1 s après desktop.sh, et le fond d'écran d'autant plus tard.
+    while :; do
         [[ -s "$log" ]] && mv -f "$log" "$log.1"   # journal de l'instance précédente (raison d'un arrêt) gardé
         qs -c desktop >"$log" 2>&1 9>&- &
         pid=$!
