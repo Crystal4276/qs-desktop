@@ -99,7 +99,8 @@ Singleton {
                 key: key,
                 id: id,
                 name: (entry.Name ?? id) + (x11 ? " (X11)" : ""),
-                exec: entry.Exec.replace(/ ?%[fFuUdDnNickvm]/g, ""),   // codes de champ : sans objet pour une session
+                // Codes de champ : sans objet pour une session ; `%%` : un `%`.
+                exec: entry.Exec.replace(/%[fFuUdDnNickvm]/g, "").replace(/%%/g, "%"),
                 desktopNames: (entry.DesktopNames ?? "").split(";").filter(n => n !== "").join(":"),
                 x11: x11
             });
