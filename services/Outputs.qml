@@ -231,7 +231,7 @@ Singleton {
 
     FileView {
         id: uptime
-        path: "/proc/uptime"
+        path: Number(Quickshell.env("QS_DESKTOP_HOME")) > 0 ? "/proc/uptime" : ""
         blockLoading: true
     }
 
