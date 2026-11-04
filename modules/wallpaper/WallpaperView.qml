@@ -14,6 +14,11 @@ Item {
     // Fond affiché (image prête, ou illisible : rien ne viendra) ; Background.qml le signale au service (barres au démarrage).
     signal displayed
 
+    function reportStatus(status: int): void {
+        if (status === Image.Ready || status === Image.Error)
+            displayed();
+    }
+
     // Échelle réelle de la sortie (1,5), pas `Screen.devicePixelRatio`, entier arrondi au-dessus (2) sous Wayland : l'image serait
     // décodée en 5120×2880 pour un écran 3840×2160 (59 Mo au lieu de 33, mesuré avec heaptrack).
     readonly property real pixelRatio: output?.scale ?? 1
@@ -49,8 +54,7 @@ Item {
                 Wallpapers.screenFailed(copyName);
                 return;
             }
-            if (status === Image.Ready || status === Image.Error)
-                root.displayed();
+            root.reportStatus(status);
             if (status === Image.Ready && path !== "" && !fromCopy) {
                 keptName = copyName;
                 saveDelay.restart();
@@ -125,10 +129,7 @@ Item {
             asynchronous: true
             retainWhileLoading: true
             cache: false
-            onStatusChanged: {
-                if (status === Image.Ready || status === Image.Error)
-                    root.displayed();
-            }
+            onStatusChanged: root.reportStatus(status)
             x: panorama.fx + panorama.lx
             y: panorama.fy + panorama.ly
             width: panorama.lw

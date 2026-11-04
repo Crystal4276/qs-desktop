@@ -220,14 +220,16 @@ Singleton {
         if (stateRead)
             setCopies(Object.assign({}, state.screenCache ?? {}));
     }
-    onSelectionChanged: pruneCopies()
-    onOverridesChanged: pruneCopies()
+    onSelectionChanged: Qt.callLater(pruneCopies)   // « pour tous les écrans » change les deux : un seul passage
+    onOverridesChanged: Qt.callLater(pruneCopies)
 
     // Copie écrite (`ok`) ou échouée. Les copies des fonds qui ne sont plus choisis sont effacées.
     function screenWritten(name: string, path: string, ok: bool): void {
         delete screenSaving[name];
-        if (!ok)
+        if (!ok) {
+            Quickshell.execDetached(["mkdir", "-p", screenDir]);   // dossier effacé : la copie suivante pourra s'écrire
             return;
+        }
         // Date de l'original : inconnue si le dossier n'est pas encore lu, relevée alors à sa lecture.
         writtenSinceScan[name] = true;
         setCopies(Object.assign({}, state.screenCache ?? {}, { [name]: { path: path, stamp: stamps[path] ?? null } }));
@@ -281,7 +283,7 @@ Singleton {
     // Démarrage : les barres attendent que chaque écran affiche son fond (Bar.qml), pour apparaître en même temps ; au plus 3 s
     // (fond illisible, compositeur lent). Une fois pour toutes : gardé au rechargement à chaud.
     property alias startupShown: persist.startupShown
-    property var shownScreens: ({})   // source affichée par écran, "" : aucune image (Background.qml)
+    property var shownScreens: ({})   // « nature:source » affichée par écran, "" : aucune image (Background.qml)
 
     function markShown(name: string, source: string): void {
         if (!startupShown && shownScreens[name] !== source)
@@ -289,11 +291,13 @@ Singleton {
     }
 
     // Tous les écrans, pas seulement ceux déjà décrits par le compositeur, chacun avec son fond définitif (choix lus) : une image
-    // provisoire (partie de triptyque avant l'arrivée des autres écrans, choix disparu du dossier) ne compte pas. Après le
-    // démarrage : plus calculé (`startupShown` en tête).
-    readonly property bool allShown: !startupShown && ready && Quickshell.screens.length > 0 && Quickshell.screens.every(s => {
+    // provisoire (partie de triptyque avant l'arrivée des autres écrans, choix disparu du dossier) ne compte pas. Ne dépend pas de
+    // `startupShown`, qu'il fait passer à vrai (boucle de liaison) ; après le démarrage, recalculé seulement aux changements d'écrans
+    // ou de choix, et sans effet.
+    readonly property bool allShown: ready && Quickshell.screens.length > 0 && Quickshell.screens.every(s => {
         const o = Compositor.output(s.name);
-        return o !== null && shownScreens[s.name] === (forOutput(o, Compositor.outputs)?.source ?? "");
+        const shown = forOutput(o, Compositor.outputs);
+        return o !== null && shownScreens[s.name] === (shown?.source ? `${shown.kind}:${shown.source}` : "");
     })
     onAllShownChanged: {
         if (allShown)

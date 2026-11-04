@@ -47,7 +47,7 @@ Variants {
             anchors.fill: parent
             output: window.output
             shown: window.shown
-            onDisplayed: Wallpapers.markShown(window.modelData?.name ?? "", window.shown?.source ?? "")
+            onDisplayed: Wallpapers.markShown(window.modelData?.name ?? "", window.shown ? `${window.shown.kind}:${window.shown.source}` : "")
         }
     }
 }
