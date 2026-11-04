@@ -19,7 +19,8 @@ Variants {
         // Disposition (modules de chaque pilule) : une nouvelle recrée tous les modules (~50 ms). Appliquée une fois l'écran connu,
         // au tour suivant de la boucle (écrans d'une même réponse ensemble), et seulement si son contenu a changé.
         // Écran que le compositeur ne décrit pas (miroir, compositeur inconnu) : disposition par défaut, s'il ne l'est toujours pas 2 s
-        // après les autres (un écran branché est décrit un peu après son apparition : pas de barre provisoire à reconstruire).
+        // après les autres (un écran branché est décrit un peu après son apparition : pas de barre provisoire à reconstruire), ou 10 s
+        // sans aucun écran décrit (IPC du compositeur muette : barre quand même utilisable).
         readonly property bool outputsKnown: Compositor.outputs.length > 0 || Compositor.type === ""
         property bool fallbackDue: false
         property bool described: false   // décrit au moins une fois : un retrait passager garde la disposition, sans repli
@@ -35,11 +36,15 @@ Variants {
         // Écran disparu un instant : disposition gardée ; sans effet si rien n'a changé. Minuteur de la barre (détruit avec elle,
         // écran débranché : pas d'écriture sur une barre disparue).
         onWantedLayoutChanged: layoutTimer.restart()
-        Component.onCompleted: layoutTimer.restart()   // écran déjà connu à la création : aucun « changed » pour la valeur initiale
+        // Écran déjà connu à la création : aucun « changed » pour la valeur initiale.
+        Component.onCompleted: {
+            described = output !== null;
+            layoutTimer.restart();
+        }
 
         Timer {
-            interval: 2000
-            running: !bar.output && !bar.described && bar.outputsKnown && !bar.fallbackDue
+            interval: bar.outputsKnown ? 2000 : 10000
+            running: !bar.output && !bar.described && !bar.fallbackDue
             onTriggered: bar.fallbackDue = true
         }
 
