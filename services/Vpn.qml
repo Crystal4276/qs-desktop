@@ -361,14 +361,17 @@ Singleton {
         repeat: true
         onTriggered: root.refresh()
     }
-    // Inconnu (null) avant la première lecture des interfaces : cette lecture n'est pas un changement, le statut est déjà lu au
-    // démarrage (sinon deux `nordvpn status` de plus en 3 s, trace du 2026-11-04).
+    // Inconnu (null) avant la première lecture des interfaces. Cette lecture n'est pas un changement : le statut est déjà lu au
+    // démarrage (sinon deux `nordvpn status` de plus en 3 s, trace du 2026-11-04), sauf si le tunnel est déjà là alors que le
+    // démon n'annonçait pas encore la connexion (`nordvpn c` lancé avec la session).
     readonly property var tunnelUp: Network.interfaceNames === "" ? null : /\bnord/.test(Network.interfaceNames)
-    property var tunnelWas: null
+    property bool tunnelSeen: false
     onTunnelUpChanged: {
-        const first = tunnelWas === null;
-        tunnelWas = tunnelUp;
-        if (first)
+        if (tunnelUp === null)
+            return;
+        const first = !tunnelSeen;
+        tunnelSeen = true;
+        if (first && !(tunnelUp && state !== "Connected"))
             return;
         refresh();
         interfaceFollowUp.restart();

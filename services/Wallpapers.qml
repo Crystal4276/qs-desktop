@@ -158,11 +158,14 @@ Singleton {
 
     // Copie de chaque fond affiché, à la taille exacte de son écran, en BMP : décodée en 28 ms au lieu de 125 à 165 ms pour tes
     // PNG (8,5 et 12,9 Mo), sans perte (JPEG de `saveToFile` : qualité 75, écart visible). Écrite par WallpaperView, telle
-    // qu'affichée, la première fois que le fond est décodé depuis l'original. Connue par l'état local (`screenCache` : lisible
-    // dès le démarrage, sans attendre la lecture du dossier) ; celle d'une image modifiée depuis, ou disparue, est effacée à la
-    // lecture du dossier. Seules restent celles des fonds affichés (environ 25 Mo par écran 4K).
+    // qu'affichée, une fois le fond décodé depuis l'original et gardé 3 s (pas à chaque essai dans l'utilitaire), puis lue aux
+    // lancements suivants (pas aussitôt : l'image affichée est la même). Connue par l'état local (`screenCache` : lisible dès le
+    // démarrage, sans attendre la lecture du dossier), avec la date de l'original ; celle d'une image changée depuis (date
+    // différente, plus ancienne comprise : `cp -p`) ou disparue est effacée à la lecture du dossier. Seules restent celles des fonds
+    // affichés (environ 25 Mo par écran 4K). Objets simples, pas de Set ni de WeakMap (plantage de Qt avec ce dernier).
     readonly property string screenDir: Quickshell.cachePath("wallpaper-screens")
-    readonly property var screenSaving: new Set()   // copies en cours d'écriture (nom de fichier)
+    readonly property var screenSaving: ({})   // copies en cours d'écriture (nom de fichier)
+    readonly property var writtenNow: ({})     // copies écrites par ce processus : l'original reste affiché
 
     function screenName(path: string, size: size): string {
         return `${Qt.md5(path)}-${size.width}x${size.height}.bmp`;
@@ -170,26 +173,28 @@ Singleton {
 
     function screenSource(path: string, size: size): string {
         const name = screenName(path, size);
-        return state.screenCache?.[name] ? Icons.fileUrl(`${screenDir}/${name}`) : url(path);
+        return state.screenCache?.[name] && !writtenNow[name] ? Icons.fileUrl(`${screenDir}/${name}`) : url(path);
     }
 
     // Fichier où écrire la copie de `path` ("" : déjà en cache ou en cours d'écriture).
     function screenFile(path: string, size: size): string {
         const name = screenName(path, size);
-        if (state.screenCache?.[name] || screenSaving.has(name))
+        if (state.screenCache?.[name] || screenSaving[name])
             return "";
-        screenSaving.add(name);
+        screenSaving[name] = true;
         return `${screenDir}/${name}`;
     }
 
     // Copie écrite (`ok`) ou échouée. Les copies de fonds qu'aucun écran actif n'affiche plus sont effacées.
     function screenWritten(file: string, path: string, ok: bool): void {
         const name = file.slice(screenDir.length + 1);
-        screenSaving.delete(name);
+        delete screenSaving[name];
         if (!ok)
             return;
+        writtenNow[name] = true;
         const shownPaths = Compositor.outputs.map(o => forOutput(o, Compositor.outputs)?.path).filter(p => p);
-        const entries = Object.assign({}, state.screenCache ?? {}, { [name]: { path: path, written: Date.now() / 1000 } });
+        // Date de l'original : inconnue si le dossier n'est pas encore lu, relevée alors à sa lecture.
+        const entries = Object.assign({}, state.screenCache ?? {}, { [name]: { path: path, stamp: stamps[path] ?? null, written: Date.now() / 1000 } });
         const unused = Object.keys(entries).filter(n => !shownPaths.includes(entries[n].path));
         unused.forEach(n => delete entries[n]);
         removeFiles(unused.map(n => `${screenDir}/${n}`));
@@ -225,8 +230,9 @@ Singleton {
             shownScreens = [...shownScreens, name];
     }
 
+    // Écran sans image (aucun fond, ou partie de triptyque introuvable : source vide, fenêtre jamais affichée) : rien à attendre.
     readonly property bool allShown: ready && Compositor.outputs.length > 0
-        && Compositor.outputs.every(o => forOutput(o, Compositor.outputs) === null || shownScreens.includes(o.name))
+        && Compositor.outputs.every(o => !forOutput(o, Compositor.outputs)?.source || shownScreens.includes(o.name))
     onAllShownChanged: {
         if (allShown)
             startupShown = true;
@@ -320,9 +326,12 @@ Singleton {
                 if (used.size > 0) {
                     const entries = {};
                     for (const [name, entry] of Object.entries(state.screenCache ?? {})) {
-                        const fresh = screens[name] !== undefined && stamps[entry.path] !== undefined && Number(stamps[entry.path]) <= screens[name];
+                        const stamp = stamps[entry.path];
+                        // Date de l'original à l'écriture : identique exigée ; inconnue alors : original plus ancien que la copie.
+                        const fresh = screens[name] !== undefined && stamp !== undefined
+                            && (entry.stamp ? entry.stamp === stamp : Number(stamp) <= screens[name]);
                         if (fresh || entry.written >= root.scanStarted)
-                            entries[name] = entry;
+                            entries[name] = Object.assign({}, entry, { stamp: entry.stamp || stamp || null });
                     }
                     root.removeFiles(Object.keys(state.screenCache ?? {}).filter(n => !entries[n] && screens[n] !== undefined)
                         .map(n => `${root.screenDir}/${n}`));
