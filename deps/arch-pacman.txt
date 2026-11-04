@@ -25,8 +25,9 @@ power-profiles-daemon   # profils d'énergie (économie / équilibré / performa
 
 # --- Écran de connexion (phase 11, ARCHITECTURE § 9 ; remplace SDDM) ---
 # Installés par install.sh comme le reste ; inactifs tant que le service greetd n'est pas activé (étape système d'install.sh).
-greetd                  # gestionnaire de connexion ; lance le greeter Quickshell (module Greetd)
-greetd-agreety          # greeter console : fournit `greetd-greeter` (requis par greetd) et sert de secours
+greetd                  # gestionnaire de connexion ; lance l'écran de connexion Quickshell (scripts/greeter.sh, Services.Greetd)
+greetd-agreety          # greeter console de secours (/etc/greetd/config.toml : command = "agreety --cmd sway", docs/ROLLBACK.md)
+# Copie système du dépôt par scripts/greeter-setup.sh : git (outil de développement, déjà là), tar (base).
 
 # --- Polices et thèmes ---
 # Polices d'icônes (Symbols Nerd Font Mono, Hack Nerd Font, Font Awesome 7 Free/Brands, FontAwesome 4.7) :

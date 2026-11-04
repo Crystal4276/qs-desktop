@@ -1,4 +1,4 @@
-# Retour arrière de la bascule (phase 10, 2026-11-03)
+# Retour arrière de la bascule (phase 10, 2026-11-03) et de l'écran de connexion (phase 11)
 
 Ce que la bascule a changé sur cette machine, et comment revenir à l'ancien bureau (Waybar, Dunst, Rofi, swaybg, swayidle /
 hypridle, polkit-gnome, nm-applet, blueman, udiskie). Aucun paquet n'a été désinstallé.
@@ -57,3 +57,33 @@ HYPRLAND_INSTANCE_SIGNATURE=$(hyprctl instances -j | jq -r '.[0].instance') ~/qs
 ```
 
 En dernier recours : `loginctl terminate-user $USER` (ferme la session, applications comprises).
+
+## Écran de connexion (phase 11)
+
+`scripts/greeter-setup.sh install` copie le dépôt dans `/usr/local/share/qs-desktop`, crée `/var/lib/qs-desktop/` et remplace
+`/etc/greetd/config.toml` et `/etc/pam.d/greetd` (originaux sauvegardés en `*.bak-<date>`, notés dans `/var/lib/qs-desktop/backups`),
+plus `/etc/pam.d/greetd-greeter` (nouveau). `enable` désactive l'ancien gestionnaire (noté dans `/var/lib/qs-desktop/previous-dm`,
+ici `sddm.service`) et active greetd. **SDDM n'est pas désinstallé.**
+
+### Revenir à SDDM
+
+Depuis un terminal de la session, ou un TTY (`Ctrl+Alt+F2`, connexion en texte) si l'écran de connexion ne marche pas :
+
+```sh
+~/qs-desktop/scripts/greeter-setup.sh uninstall   # greetd désactivé, SDDM réactivé, fichiers d'origine remis, copie retirée
+sudo reboot
+```
+
+À la main, sans le script : `sudo systemctl disable greetd && sudo systemctl enable sddm && sudo reboot`.
+
+### Secours sans quitter greetd
+
+Si le greeter Quickshell ne s'affiche pas (écran noir, retour en boucle), passer greetd sur son greeter console, depuis un TTY :
+
+```sh
+sudo sed -i 's|^command = .*|command = "agreety --cmd \\"env WLR_RENDERER=vulkan sway --unsupported-gpu\\""|' /etc/greetd/config.toml
+sudo systemctl restart greetd
+```
+
+Journal de l'écran de connexion : `journalctl -b -u greetd` (greetd, PAM) ; Quickshell du greeter :
+`/run/user/$(id -u greeter)/quickshell/` pendant qu'il tourne, `/var/lib/qs-desktop/greeter/` (caches, état).

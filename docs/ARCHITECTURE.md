@@ -13,6 +13,11 @@ Celle de `CLAUDE.md`, plus :
   `include hosts/$(cat /etc/hostname).conf` ; `hosts/<hostname>.lua` chargé par `lua/host.lua`) : écrans par description, règles
   qui les visent, matériel. Fichier absent : ignoré. Données privées (adresses, identifiants, montages) : jamais dans le dépôt, dans
   `~/.config/qs-desktop.local/` (`sway.conf`, inclus par la config Sway ; absent : ignoré).
+- `dotfiles/greetd/` : fichiers système de l'écran de connexion (config greetd, PAM, Sway du greeter), installés par
+  `scripts/greeter-setup.sh` (§ 9). Les écrans d'une machine sont à part (`dotfiles/sway/hosts/<hostname>.outputs.conf`), inclus par la
+  session et par le greeter.
+- `greeter.qml` : point d'entrée de l'écran de connexion (`//@ pragma ShellId greeter`), à côté de `shell.qml` : mêmes `qs.config`,
+  `qs.services`, `qs.modules.*` (§ 9).
 - `dotfiles/wireplumber/` : règle dont dépend la coupure des sons pendant « ne pas déranger » (§ 4, `doNotDisturb.muteApps`).
 - `dotfiles/webapps/` : extension Chromium `open-links/` et son hôte natif `open-link`, lanceurs des web apps (`applications/`),
   manifeste de l'hôte (`qs_desktop.open_link.json`) ; développés par `install.sh` (procédure : `deps/README.md`, « Web apps ») (§ 7.10).
@@ -148,6 +153,7 @@ de ce desktop n'en est pas une), rétroéclairage (`/sys/class/backlight`), GPU 
   "wallpaper": { "kind": "triptych", "path": "triptych/green-storm" },
   "doNotDisturb": { "muteApps": ["discord", "whatsapp"] },
   "primaryOutput": "Dell Inc. Dell AW3418DW #ASPFPBQwWjbd",
+  "greeter": { "defaultSession": "wayland/sway-vulkan" },
   "bars": {
     "primary":   { "left": [["menu"], ["workspaces"], ["mpris", "volume", "slider"]],
                    "right": [["updates"], ["gpu", "cpu", "memory"], ["clockDate"], ["tray", "settings"]] },
@@ -178,6 +184,8 @@ de ce desktop n'en est pas une), rétroéclairage (`/sys/class/backlight`), GPU 
   retient ni volume ni coupure de ces flux).
 - `idle` : `timeout` (300 s par défaut), `lockBeforeSleep` (par défaut : machine avec batterie).
 - `wallpaper`, `wallpapersDir` : fond par défaut et dossier des fonds (§ 7.11).
+- `greeter.defaultSession` : session proposée par l'écran de connexion tant que l'utilisateur n'en a choisi aucune,
+  `wayland/<fichier .desktop sans extension>` ou `x11/…` ; `wayland/sway` par défaut, `wayland/sway-vulkan` ici (§ 9).
 - Les icônes d'espaces de travail font partie de la charte → `Theme.qml`, pas de la config machine.
 
 ## 5. Thème
@@ -363,13 +371,18 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
   restent les copies des fonds choisis ou affichés ; une copie sans entrée n'est effacée qu'après un jour (une autre instance peut
   partager le cache) ; original modifié : copie refaite ; copie absente : original relu. Panorama sur plusieurs écrans : pas de copie.
   Les deux dossiers de cache peuvent être supprimés sans risque.
+- **Copie pour l'écran de connexion** : 3 s après l'affichage, le rendu de chaque écran (image, panorama, triptyque) est enregistré en
+  JPEG dans `/var/lib/qs-desktop/<utilisateur>/<md5(description)>.jpg`, lisible par l'utilisateur `greeter` (§ 9). Dossier créé par
+  `scripts/greeter-setup.sh` ; absent : rien n'est écrit. Banc : seulement sous `QS_GREETER_DIR`.
 - IPC de test : `wallpaper state`, `wallpaper set <kind> <chemin>`.
 
 ### 7.12 Verrouillage (`modules/lock/`)
 
 - `WlSessionLock` (ext-session-lock) + `PamContext` (config `login`). Fond de chaque écran flouté et assombri, horloge, date ;
   initiale, nom et champ sur l'écran principal ; saisie prise quel que soit l'écran qui a le clavier ; majuscules verrouillées
-  déduites des lettres tapées ; Entrée valide, Échap efface, Ctrl+Retour arrière efface tout ; messages de PAM (faillock).
+  déduites des lettres tapées ; Entrée valide, Échap efface, Ctrl+Retour arrière efface tout (`PasswordEntry.qml`, commun avec
+  l'écran de connexion) ; messages de PAM (faillock). Sous le champ : éteindre, redémarrer, veille (`PowerRow.qml`, sans confirmation).
+- Vue (`LockContent.qml`) partagée avec l'écran de connexion (§ 9), qui y ajoute la pastille de session et son propre fond.
 - Verrouiller : panneau de réglages, menu d'applications, `qs ipc call lock lock`, veille. **Aucun déverrouillage par IPC.**
 - Verrou refusé ou perdu (autre client ext-session-lock) : `locked` repasse à faux. Un « 1 » resté dans l'état n'est lu qu'une fois
   par processus.
@@ -452,18 +465,35 @@ Dépôt privé séparé `Crystal4276/fonts-ms` (polices propriétaires, jamais d
 
 ## 9. Écran de connexion (phase 11)
 
-- **greetd remplace SDDM** ; greeter **Quickshell indépendant** en QML (`Quickshell.Services.Greetd`), apparence reprise du thème SDDM
-  `catppuccin-mocha-green` (`docs/reference/sddm-catppuccin-preview.png` ; thème installé : `/usr/share/sddm/themes/catppuccin-mocha-green/`,
-  fond `backgrounds/wall.png`, Noto Sans 9, horloge, icônes power / reboot / sleep). Le thème SDDM n'est ni modifié ni réutilisé.
-- Compositeur du greeter (utilisateur `greeter`) : proposition **Sway** (déjà installé, marche sur Nvidia :
-  `WLR_RENDERER=vulkan sway --unsupported-gpu`), config minimale qui lance `qs` puis quitte ; `cage` serait un paquet de plus, non testé.
-- Fichiers système (`sudo`, avec accord) : `/etc/greetd/config.toml` ; config Quickshell du greeter et polices lisibles par
-  `greeter` (le dossier personnel ne l'est pas) ; `/etc/pam.d/greetd` avec les lignes `pam_gnome_keyring.so` de `/etc/pam.d/sddm` ;
-  `systemctl disable sddm` puis `enable greetd`.
-- Sessions : `/usr/share/wayland-sessions/` (dont `sway-vulkan.desktop`). Session Sway Nvidia : `WLR_RENDERER=vulkan sway --unsupported-gpu`.
-- Retour arrière : `disable greetd`, `enable sddm` (SDDM gardé jusqu'à validation) ; `greetd-agreety` en secours console.
-- Dépendances `greetd`, `greetd-agreety` (`extra`) dans `deps/` ; installées à la main sur ce desktop au début de la phase. La mise en
-  place est documentée et versionnée pour que `install.sh` (phase 12) l'automatise, avec sauvegarde et `--uninstall`.
+**greetd** remplace SDDM ; l'écran de connexion est le **design de l'écran de verrouillage** (§ 7.12) augmenté des fonctions de SDDM
+(choix décidé le 2026-11-04, à la place du thème SDDM `catppuccin-mocha-green`, gardé seulement comme référence dans
+`docs/reference/`).
+
+- **Chaîne** : greetd (VT 1, `/etc/greetd/config.toml`) lance `scripts/greeter.sh` sous l'utilisateur `greeter` → Sway minimal
+  (`dotfiles/greetd/sway.conf` + écrans de la machine `dotfiles/sway/hosts/<hostname>.outputs.conf` ; Nvidia : `--unsupported-gpu`, et
+  rendu Vulkan si c'est la seule carte) → `qs -p greeter.qml` → session choisie lancée par greetd, Quickshell s'arrête, Sway aussi.
+- **Écran** (`modules/greeter/Greeter.qml`, `LockContent.qml`) : une surface par écran (couche Overlay), clavier à l'écran principal
+  (`Settings.primaryOf`, sans `Outputs` qui placerait des espaces de travail). Fond flouté : la copie du bureau (§ 7.11), sinon uni.
+  Sur l'écran principal : horloge, date, initiale et nom (clic : compte suivant s'il y en a plusieurs), champ, message, **pastille de
+  session** (clic : liste au style des panneaux ; ↑/↓ : précédente, suivante), éteindre / redémarrer / veille.
+- **Service** (`services/Greeter.qml`) : comptes de `/etc/passwd` (UID 1000–59999, shell de connexion) ; sessions des fichiers
+  `.desktop` de `wayland-sessions` puis `xsessions` (`XDG_DATA_DIRS`), sans ceux dont `TryExec` manque, X11 suffixées « (X11) » ; dernier
+  compte et dernière session par compte dans `/var/lib/qs-desktop/greeter/state.json`, sinon `greeter.defaultSession` (§ 4).
+  Connexion : `Greetd.createSession` → mot de passe → `launch` de `scripts/greeter-session.sh wayland|x11 <Exec>` avec
+  `XDG_SESSION_TYPE`, `XDG_SESSION_DESKTOP`, `XDG_CURRENT_DESKTOP` (`DesktopNames`).
+- **Lancement de la session** (`scripts/greeter-session.sh`, sous l'utilisateur) : shell de connexion de l'utilisateur (profil lu, comme
+  SDDM), puis `Exec` ; X11 : `startx` sur le terminal virtuel de la session (`xorg-xinit`). Sway Nvidia : session `sway-vulkan.desktop`
+  (`env WLR_RENDERER=vulkan sway --unsupported-gpu`), créée à la main pour SDDM (à générer par `install.sh`, phase 12).
+- **PAM** : `/etc/pam.d/greetd` (celui du paquet + `pam_gnome_keyring.so` en `auth`, `password`, `session auto_start`, comme
+  `/etc/pam.d/sddm`) ; `/etc/pam.d/greetd-greeter` pour la session du greeter lui-même (comme `sddm-greeter` : sans lui, greetd
+  reprend `greetd` et lancerait le trousseau pour `greeter`).
+- **Fichiers lisibles par `greeter`** (le dossier personnel ne l'est pas) : copie du dépôt dans `/usr/local/share/qs-desktop` (version
+  committée, `git archive`) ; `/var/lib/qs-desktop/greeter/` (état, caches : `greeter` n'a pas de dossier personnel) ;
+  `/var/lib/qs-desktop/<utilisateur>/` (fonds exportés par le bureau).
+- **Mise en place** : `scripts/greeter-setup.sh [--dry-run] install|enable|uninstall` (sudo par commande, sauvegardes
+  `*.bak-<date>` notées dans `/var/lib/qs-desktop/backups`, ancien gestionnaire noté dans `previous-dm`). `install` ne touche à aucun
+  service et se relance après chaque changement du greeter ; `enable` : greetd au prochain démarrage. Repris par `install.sh` (phase 12).
+- **Retour arrière** : `docs/ROLLBACK.md` ; SDDM reste installé jusqu'à ta décision.
 
 ## 10. Couverture de l'API Quickshell
 
@@ -481,7 +511,7 @@ Revue complète des types (documentation 0.3.0, `qmltypes` de 0.3.2, code source
 | `Quickshell.Bluetooth`, `.Networking` | Bluetooth, réseau, Wi-Fi | `NMSettings` non utilisé à ce jour |
 | `Quickshell.Services.Mpris`, `.Notifications`, `.UPower` (+ `PowerProfiles`), `.Polkit`, `.Pam` | tous | — |
 | `Quickshell.Services.Pipewire` | `Pipewire`, `PwNode`, `PwNodeAudio`, `PwObjectTracker`, `PwNodePeakMonitor` | `PwLink*` (pas de routage audio) |
-| `Quickshell.Services.Greetd` | prévu : greeter (phase 11) | — |
+| `Quickshell.Services.Greetd` | `Greetd`, `GreetdState` (écran de connexion, § 9) | — |
 | `Quickshell.X11` | — | sans objet sous Wayland |
 
 Écartés aussi : réponse directe dans les notifications (Chromium ne la propose pas), historique du presse-papiers (`clipboardText`

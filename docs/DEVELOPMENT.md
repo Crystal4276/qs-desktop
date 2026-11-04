@@ -51,8 +51,18 @@ Construits dans le scratchpad de session (perdus au redémarrage). Reprendre le 
 `xdg_wm_base` v5) : une fenêtre s'ouvre le temps du test. Régler le banc comme la vraie config, en particulier `cursor.no_warps` ;
 déplacer le pointeur comme un vrai geste (sinon `follow_mouse` rend le focus au dernier écran visé : échecs aléatoires).
 
+**Écran de connexion** — sur le Sway headless, `qs -p <copie>/greeter.qml` avec `GREETD_SOCK` (faux greetd) et `QS_GREETER_DIR`
+(dossier d'état et fonds exportés, au lieu de `/var/lib/qs-desktop`) ; le bureau du banc exporte ses fonds sous `QS_GREETER_DIR` aussi.
+`fakegreet` n'est pas dans le paquet Arch : faux greetd en Python (protocole de `greetd-ipc(7)` : longueur u32 native + JSON ;
+`create_session` → `auth_message` secret, réponse « good » → `success`, sinon `auth_error` ; `start_session` journalisé, rien n'est
+lancé). Chaîne complète : `scripts/greeter.sh` avec `WLR_BACKENDS=headless WLR_RENDERER=pixman` et
+`__EGL_VENDOR_LIBRARY_FILENAMES=…/50_mesa.json` (sinon `qs-env.sh` impose l'EGL Nvidia, sans contexte sur un Sway logiciel). **Toujours
+neutraliser `systemctl` de `services/Session.qml` dans la copie** (boutons éteindre / redémarrer / veille de l'écran de connexion et du
+verrouillage).
+
 **Entrées et applications factices** (outils hors dépôt, à recréer) :
-- clics et frappe : client Wayland `zwlr_virtual_pointer_v1` + `zwp_virtual_keyboard_v1` (pywayland) ; `swaymsg seat - cursor press`
+- clics et frappe : client Wayland `zwlr_virtual_pointer_v1` + `zwp_virtual_keyboard_v1` (pywayland ; liaisons générées par
+  `python -m pywayland.scanner` depuis les XML de wlr-protocols, clavier `xkbcli compile-keymap`) ; `swaymsg seat - cursor press`
   n'atteint pas les surfaces Qt. Avec plusieurs écrans, les coordonnées absolues portent sur toute la disposition ; sans périphérique
   de pointage, Sway n'envoie aucun événement de pointeur ; garder le client vivant (sinon le survol tombe) ;
 - tray : StatusNotifierItem en Python + `Dbusmenu` ;
@@ -94,6 +104,9 @@ déplacer le pointeur comme un vrai geste (sinon `follow_mouse` rend le focus au
   `~/.cache/quickshell/crashes/`, sans gravité.
 - Le cache disque QML de Qt ne prend pas les chemins `qs:@/` : tout est recompilé à chaque lancement.
 - `Hyprland.usingLua` faux : le backend Hyprland n'envoie aucune action (seule la config Lua est prise en charge).
+- `Greetd` : après un refus (`auth_error`), Quickshell annule lui-même la session puis journalise « Received unexpected greetd response
+  success » (réponse de greetd à cette annulation) : sans effet. Ne pas rappeler `cancelSession()` après `authFailure`.
+- `Greetd.launch(…, true)` arrête Quickshell aussitôt la session acceptée : enregistrer l'état (dernier choix) **avant**.
 
 **Hyprland 0.57 (config Lua)**
 - `hyprctl keyword` n'existe plus ; `hyprctl dispatch` attend une expression Lua (`hl.dsp.focus({ workspace = 4 })`).
