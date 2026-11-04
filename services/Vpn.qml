@@ -362,7 +362,7 @@ Singleton {
         onTriggered: root.refresh()
     }
     // Inconnu (null) avant la première lecture des interfaces, qui n'est pas un changement (statut déjà lu au démarrage). Tunnel
-    // déjà là sans connexion annoncée (`nordvpn c` lancé avec la session) : relu une fois, 3 s plus tard.
+    // déjà là (`nordvpn c` lancé avec la session) : relu 3 s plus tard si la connexion n'est toujours pas annoncée.
     readonly property var tunnelUp: Network.interfaceNames === "" ? null : /\bnord/.test(Network.interfaceNames)
     property bool tunnelSeen: false
     onTunnelUpChanged: {
@@ -371,8 +371,8 @@ Singleton {
         const first = !tunnelSeen;
         tunnelSeen = true;
         if (first) {
-            if (tunnelUp && state !== "Connected")
-                interfaceFollowUp.restart();
+            if (tunnelUp)
+                startupFollowUp.restart();
             return;
         }
         refresh();
@@ -383,6 +383,15 @@ Singleton {
         id: interfaceFollowUp
         interval: 3000
         onTriggered: root.refresh()
+    }
+    // Tunnel déjà là à la première lecture : relu seulement si le statut du démarrage n'annonce toujours pas la connexion.
+    Timer {
+        id: startupFollowUp
+        interval: 3000
+        onTriggered: {
+            if (!root.connected)
+                root.refresh();
+        }
     }
     Component.onCompleted: refresh()
 
