@@ -64,9 +64,9 @@ Variants {
                 const key = window.shown ? `${window.shown.kind}:${window.shown.source}:${view.width}x${view.height}` : "";
                 const description = window.output?.description ?? "";
                 const file = key !== "" ? Wallpapers.greeterFile(description, key) : "";
-                if (file !== "")
-                    view.grabToImage(result => Wallpapers.greeterWritten(description, key, result.saveToFile(file)),
-                        Qt.size(view.width, view.height));
+                if (file !== "" && !view.grabToImage(result => Wallpapers.greeterWritten(description, key, result.saveToFile(file)),
+                        Qt.size(view.width, view.height)))
+                    Wallpapers.greeterWritten(description, key, false);
             }
         }
     }

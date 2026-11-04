@@ -139,13 +139,6 @@ Singleton {
         printErrors: false
         blockLoading: true
         blockWrites: true   // écrit avant Greetd.launch(), qui arrête Quickshell
-        onLoaded: {
-            try {
-                root.state = JSON.parse(text()) ?? {};
-            } catch (e) {
-                root.state = {};
-            }
-        }
     }
 
     function saveState(): void {
@@ -178,6 +171,11 @@ Singleton {
     // Après la lecture de l'état et de /etc/passwd (tous deux bloquants), dans n'importe quel ordre : dernier compte, sa session.
     // (onUserChanged s'en charge si le compte change)
     Component.onCompleted: {
+        try {
+            state = JSON.parse(stateFile.text() || "{}") ?? {};   // lecture bloquante : pas d'attente du signal `loaded`
+        } catch (e) {
+            state = {};
+        }
         const i = Math.max(users.indexOf(state.user ?? ""), 0);
         if (i !== userIndex) {
             userIndex = i;
