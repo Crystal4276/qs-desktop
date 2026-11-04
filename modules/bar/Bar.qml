@@ -25,6 +25,7 @@ Variants {
         // Écran disparu un instant : disposition gardée ; sans effet si rien n'a changé. Minuteur de la barre (détruit avec elle,
         // écran débranché : pas d'écriture sur une barre disparue).
         onWantedLayoutChanged: layoutTimer.restart()
+        Component.onCompleted: layoutTimer.restart()   // écran déjà connu à la création : aucun « changed » pour la valeur initiale
 
         Timer {
             id: layoutTimer

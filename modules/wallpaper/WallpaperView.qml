@@ -29,6 +29,7 @@ Item {
         // depuis l'original (`keptName` : même image, pas relue quand la copie est écrite). Pas de source avant la taille finale :
         // sinon une première lecture à la taille du fichier (sourceSize nulle), puis une autre.
         property string keptName: ""
+        onPathChanged: keptName = ""   // autre fond : sa copie, si elle existe, est lue
         readonly property string copyName: path !== "" ? Wallpapers.screenName(path, sourceSize) : ""
         readonly property bool fromCopy: copyName !== "" && copyName !== keptName && Wallpapers.usesCopy(path, sourceSize)
         source: visible && width > 0 && height > 0 ? (fromCopy ? Wallpapers.screenSource(path, sourceSize) : root.shown?.source ?? "") : ""

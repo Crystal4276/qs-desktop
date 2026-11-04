@@ -103,7 +103,7 @@ Singleton {
     // a pu changer). `libraryRead` : une lecture complète faite, les choix absents du dossier peuvent être écartés.
     property bool scanAgain: false
     property bool libraryRead: false
-    property real scanStarted: 0   // copies d'écran écrites depuis : pas encore vues par la lecture en cours, gardées
+    property var writtenSinceScan: ({})   // copies écrites depuis le début de la lecture en cours : pas encore vues par elle, gardées
 
     function refresh(): void {
         if (dir === "")
@@ -116,7 +116,7 @@ Singleton {
         // Lignes `w<tab>date<tab>chemin` (images, triées par chemin), `t<tab>fichier` (vignettes en cache), puis
         // `c<tab>date<tab>fichier` (copies à la taille des écrans).
         scan.command = ["sh", "-c", `mkdir -p "$1" "$2"; (cd "$0" 2>/dev/null && find -L simple panorama triptych -type f \\( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \\) -printf 'w\\t%T@\\t%p\\n' 2>/dev/null | sort -t "$(printf '\\t')" -k3); find "$1" -maxdepth 1 -name '*.png' -printf 't\\t%f\\n' 2>/dev/null; find "$2" -maxdepth 1 -name '*.bmp' -printf 'c\\t%T@\\t%f\\n' 2>/dev/null; exit 0`, dir, thumbDir, screenDir];
-        scanStarted = Date.now() / 1000;
+        writtenSinceScan = {};
         scan.running = true;
     }
 
@@ -191,7 +191,8 @@ Singleton {
             return;
         const shownPaths = Compositor.outputs.map(o => forOutput(o, Compositor.outputs)?.path).filter(p => p);
         // Date de l'original : inconnue si le dossier n'est pas encore lu, relevée alors à sa lecture.
-        const entries = Object.assign({}, state.screenCache ?? {}, { [name]: { path: path, stamp: stamps[path] ?? null, written: Date.now() / 1000 } });
+        writtenSinceScan[name] = true;
+        const entries = Object.assign({}, state.screenCache ?? {}, { [name]: { path: path, stamp: stamps[path] ?? null } });
         const unused = Object.keys(entries).filter(n => !shownPaths.includes(entries[n].path));
         unused.forEach(n => delete entries[n]);
         removeFiles(unused.map(n => `${screenDir}/${n}`));
@@ -226,7 +227,7 @@ Singleton {
             const current = size !== null && name === screenName(entry.path, Qt.size(Number(size[1]), Number(size[2])));
             const fresh = current && files[name] !== undefined && stamp !== undefined
                 && (entry.stamp ? entry.stamp === stamp : Number(stamp) <= files[name]);
-            if (fresh || entry.written >= scanStarted)
+            if (fresh || writtenSinceScan[name])
                 entries[name] = Object.assign({}, entry, { stamp: entry.stamp || stamp || null });
         }
         removeFiles(Object.keys(files).filter(n => !entries[n] && !screenSaving[n]).map(n => `${screenDir}/${n}`));
@@ -306,7 +307,7 @@ Singleton {
             id: state
             property var selection: null
             property var overrides: ({})
-            property var screenCache: ({})   // copies à la taille des écrans : { fichier: { path, written } }
+            property var screenCache: ({})   // copies à la taille des écrans : { fichier: { path, stamp } }
         }
     }
 
