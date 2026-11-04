@@ -196,18 +196,18 @@ Singleton {
 
     // Copies des fonds qui ne sont plus choisis : retirées de `entries`, fichiers effacés. Pas avant la lecture du dossier (parties
     // des triptyques inconnues) ni avant que tous les écrans soient décrits (fonds affichés inconnus) : fait plus tard.
-    function dropUnchosen(entries: var): void {
+    function dropUnchosen(entries: var): var {
         if (!libraryRead || Quickshell.screens.length === 0 || !Quickshell.screens.every(s => Compositor.output(s.name) !== null))
-            return;
+            return [];
         const keep = chosenPaths();
         const unused = Object.keys(entries).filter(n => !keep.includes(entries[n].path));
         unused.forEach(n => delete entries[n]);
-        removeFiles(unused.map(n => `${screenDir}/${n}`));
+        return unused;
     }
 
     // Liste des copies remplacée : celles des fonds plus choisis retirées, écrite dans l'état seulement si elle a changé.
-    function setCopies(entries: var): void {
-        dropUnchosen(entries);
+    function setCopies(entries: var, orphans: var): void {
+        removeFiles([...dropUnchosen(entries), ...(orphans ?? [])].map(n => `${screenDir}/${n}`));
         if (JSON.stringify(entries) !== JSON.stringify(state.screenCache ?? {}))
             state.screenCache = entries;
     }
@@ -239,6 +239,7 @@ Singleton {
         const entries = Object.assign({}, state.screenCache);
         delete entries[name];
         setCopies(entries);
+        refresh();   // dossier des copies effacé : recréé par la lecture (mkdir), sinon aucune copie ne s'écrirait plus
     }
 
     // Copies vérifiées une fois le dossier ET l'état lus (sinon toutes passeraient pour inconnues) : gardées si le fichier existe, que
@@ -262,8 +263,7 @@ Singleton {
             if (fresh || writtenSinceScan[name])
                 entries[name] = Object.assign({}, entry, { stamp: entry.stamp || stamp || null });
         }
-        removeFiles(Object.keys(files).filter(n => !entries[n] && !screenSaving[n]).map(n => `${screenDir}/${n}`));
-        setCopies(entries);
+        setCopies(entries, Object.keys(files).filter(n => !entries[n] && !screenSaving[n]));
     }
     onStateReadChanged: checkCopies()
 
@@ -279,17 +279,20 @@ Singleton {
     // Démarrage : les barres attendent que chaque écran affiche son fond (Bar.qml), pour apparaître en même temps ; au plus 3 s
     // (fond illisible, compositeur lent). Une fois pour toutes : gardé au rechargement à chaud.
     property alias startupShown: persist.startupShown
-    property var shownScreens: []   // écrans dont le fond est affiché, ou qui n'en ont aucun (Background.qml)
+    property var shownScreens: ({})   // source affichée par écran, "" : aucune image (Background.qml)
 
-    function markShown(name: string): void {
-        if (!shownScreens.includes(name))
-            shownScreens = [...shownScreens, name];
+    function markShown(name: string, source: string): void {
+        if (shownScreens[name] !== source)
+            shownScreens = Object.assign({}, shownScreens, { [name]: source });
     }
 
-    // Tous les écrans, pas seulement ceux déjà décrits par le compositeur : chacun affiche son fond ou signale n'en avoir aucun
-    // (Background.qml). Après le démarrage : plus calculé (`startupShown` en tête).
-    readonly property bool allShown: !startupShown && ready && Quickshell.screens.length > 0
-        && Quickshell.screens.every(s => shownScreens.includes(s.name))
+    // Tous les écrans, pas seulement ceux déjà décrits par le compositeur, chacun avec son fond définitif (choix lus) : une image
+    // provisoire (partie de triptyque avant l'arrivée des autres écrans, choix disparu du dossier) ne compte pas. Après le
+    // démarrage : plus calculé (`startupShown` en tête).
+    readonly property bool allShown: !startupShown && ready && Quickshell.screens.length > 0 && Quickshell.screens.every(s => {
+        const o = Compositor.output(s.name);
+        return o !== null && shownScreens[s.name] === (forOutput(o, Compositor.outputs)?.source ?? "");
+    })
     onAllShownChanged: {
         if (allShown)
             startupShown = true;

@@ -28,7 +28,7 @@ Variants {
             interval: 0
             onTriggered: {
                 if (window.nothingToShow)
-                    Wallpapers.markShown(window.modelData?.name ?? "");
+                    Wallpapers.markShown(window.modelData?.name ?? "", "");
             }
         }
         WlrLayershell.layer: WlrLayer.Background
@@ -47,7 +47,7 @@ Variants {
             anchors.fill: parent
             output: window.output
             shown: window.shown
-            onDisplayed: Wallpapers.markShown(window.modelData?.name ?? "")
+            onDisplayed: Wallpapers.markShown(window.modelData?.name ?? "", window.shown?.source ?? "")
         }
     }
 }
