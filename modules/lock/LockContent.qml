@@ -8,7 +8,8 @@ import qs.modules.wallpaper
 
 // Contenu d'un écran verrouillé (design refait, ARCHITECTURE § 7.12) : fond d'écran de l'écran, flouté et assombri ; horloge et
 // date ; sur l'écran principal (`primary`), initiale et nom de l'utilisateur, champ du mot de passe (points), message (vérification,
-// erreur, majuscules verrouillées), boutons éteindre / redémarrer / veille (`showPower`). L'état vient de LockScreen.qml.
+// erreur, majuscules verrouillées), boutons éteindre / redémarrer / veille (`showPower`). L'état vient de LockScreen.qml, ou de
+// modules/greeter pour l'écran de connexion : fond exporté par le bureau (`background`), choix de la session (`sessions`).
 Item {
     id: root
 
@@ -20,6 +21,15 @@ Item {
     property bool capsLock: false
     property string user: ""
     property bool showPower: false   // éteindre, redémarrer, veille (PowerRow)
+    // Écran de connexion : image du fond (sinon celui du bureau, Wallpapers), noms des sessions et session choisie (vide : pas de
+    // choix), liste ouverte.
+    property string background: ""
+    property var sessions: []
+    property int sessionIndex: 0
+    property bool sessionsOpen: false
+    signal sessionsToggled
+    signal sessionChosen(int index)
+    signal userClicked
 
     SystemClock {
         id: clock
@@ -32,16 +42,35 @@ Item {
         color: Theme.color.crust
     }
 
-    // Fond flouté (effet de calque sur le rendu du fond d'écran).
-    WallpaperView {
+    // Fond flouté (effet de calque sur le rendu du fond d'écran). Écran de connexion : l'image exportée, sans lire Wallpapers.
+    Loader {
         anchors.fill: parent
-        output: root.output
-        shown: Wallpapers.forOutput(root.output, Compositor.outputs)
+        sourceComponent: root.background !== "" ? exported : desktop
         layer.enabled: true
         layer.effect: MultiEffect {
             blurEnabled: true
             blur: 1
             blurMax: Theme.lock.blur
+        }
+    }
+
+    Component {
+        id: desktop
+
+        WallpaperView {
+            output: root.output
+            shown: Wallpapers.forOutput(root.output, Compositor.outputs)
+        }
+    }
+
+    Component {
+        id: exported
+
+        Image {
+            source: root.background
+            fillMode: Image.PreserveAspectCrop
+            asynchronous: true
+            cache: false
         }
     }
 
@@ -101,6 +130,10 @@ Item {
             font.family: Theme.font.text
             font.pixelSize: Theme.lock.userSize
             color: Theme.lock.user
+
+            TapHandler {
+                onTapped: root.userClicked()
+            }
         }
 
         // Champ du mot de passe : un point par caractère, texte d'invite vide.
@@ -159,6 +192,105 @@ Item {
             font.family: Theme.font.text
             font.pixelSize: Theme.lock.messageSize
             color: root.error ? Theme.lock.error : root.capsLock ? Theme.lock.warning : Theme.lock.message
+        }
+
+        // Session à ouvrir : pastille au style du champ ; clic : liste juste dessous (par-dessus la rangée), ↑/↓ : voisines.
+        Rectangle {
+            id: pill
+
+            visible: root.primary && root.sessions.length > 0
+            z: 1
+            Layout.alignment: Qt.AlignHCenter
+            implicitWidth: Theme.lock.fieldWidth
+            implicitHeight: Theme.lock.sessionHeight
+            radius: height / 2
+            color: Theme.lock.field
+            border.width: Theme.panel.border
+            border.color: pillHover.hovered || root.sessionsOpen ? Theme.lock.fieldFocus : Theme.lock.fieldBorder
+
+            Row {
+                anchors.centerIn: parent
+                spacing: Theme.panel.spacing
+
+                Text {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: root.sessions[root.sessionIndex] ?? ""
+                    font.family: Theme.font.text
+                    font.pixelSize: Theme.lock.messageSize
+                    color: Theme.lock.user
+                }
+
+                Text {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: Theme.icon.expanded
+                    font.family: Theme.font.icons
+                    font.pixelSize: Theme.lock.messageSize
+                    color: Theme.lock.message
+                }
+            }
+
+            HoverHandler {
+                id: pillHover
+            }
+
+            TapHandler {
+                onTapped: root.sessionsToggled()
+            }
+
+            // Liste des sessions : style des panneaux de la barre.
+            Rectangle {
+                visible: root.sessionsOpen
+                anchors.top: parent.bottom
+                anchors.topMargin: Theme.panel.gap
+                anchors.horizontalCenter: parent.horizontalCenter
+                width: parent.width
+                height: list.implicitHeight + 2 * Theme.panel.padding
+                radius: Theme.panel.radius
+                color: Theme.panel.background
+                border.width: Theme.panel.border
+                border.color: Theme.panel.borderColor
+
+                Column {
+                    id: list
+
+                    anchors.fill: parent
+                    anchors.margins: Theme.panel.padding
+
+                    Repeater {
+                        model: root.sessions
+
+                        Rectangle {
+                            required property string modelData
+                            required property int index
+
+                            width: list.width
+                            height: label.implicitHeight + 2 * Theme.panel.rowPadding
+                            radius: Theme.panel.rowRadius
+                            color: rowHover.hovered || index === root.sessionIndex ? Theme.panel.rowHover : "transparent"
+
+                            Text {
+                                id: label
+                                anchors.verticalCenter: parent.verticalCenter
+                                x: Theme.panel.rowPadding
+                                width: parent.width - 2 * Theme.panel.rowPadding
+                                elide: Text.ElideRight
+                                text: parent.modelData
+                                font.family: Theme.font.text
+                                font.pixelSize: Theme.lock.messageSize
+                                color: parent.index === root.sessionIndex ? Theme.panel.accent : Theme.panel.text
+                            }
+
+                            HoverHandler {
+                                id: rowHover
+                            }
+
+                            TapHandler {
+                                onTapped: root.sessionChosen(parent.index)
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         PowerRow {

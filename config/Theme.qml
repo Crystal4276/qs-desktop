@@ -580,6 +580,9 @@ Singleton {
         // images de la charte à la taille du panneau de réglages.
         readonly property int powerSize: fieldHeight
         readonly property int powerImageSize: root.quickSettings.imageSize
+        // Pastille de la session (écran de connexion) : largeur du champ, moins haute (marges des lignes de panneau) ; sa liste
+        // reprend le style des panneaux de la barre (Theme.panel).
+        readonly property int sessionHeight: fieldHeight - 2 * root.panel.rowPadding
     }
 
     // Polices embarquées (assets/fonts, ARCHITECTURE § 8.3) chargées depuis le dépôt : prioritaires sur une copie système
