@@ -8,6 +8,8 @@ qt6-svg                 # rendu des icônes et images SVG dans Quickshell
 # (listes d'icônes, filtres des applications du lanceur ; `ps` du panneau de statistiques), util-linux (`rfkill` : mode avion du
 # panneau de réglages ; `kill` du panneau de statistiques ; `setpriv` : processus longs arrêtés avec Quickshell ; `setsid` : scripts/test-outputs.sh, scripts/desktop.sh ; `flock` : scripts/desktop.sh), systemd (`systemctl reboot|poweroff` du panneau de réglages,
 # `systemd-inhibit` de la veille, `busctl` des disques).
+python                  # service D-Bus d’inhibition vidéo (scripts/idle-inhibit.py)
+python-gobject          # Gio / GLib : service D-Bus et socket du suivi de veille
 glib2                   # gdbus : disques amovibles, mise en veille du système (services/Idle.qml) ; gsettings : reconnexion Bluetooth reprise de blueman
 
 # --- Compositeurs et sorties ---

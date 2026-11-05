@@ -55,7 +55,7 @@ Thème d'icônes des applications (tray, lanceur, menu d'applications, notificat
 | Verrouillage | — (natif, `WlSessionLock` + `PamContext`, `pam` installé avec `quickshell`) ; `systemd` (éteindre, redémarrer, veille) | — | Inter | `assets/{shutdown,restart,suspend}.svg` |
 | Écran de connexion (greetd, `ARCHITECTURE.md` § 9) | `greetd` (natif, `Services.Greetd`), `sway` (compositeur du greeter), `git` + `tar` (copie système par `scripts/greeter-setup.sh`), `sudo` (mise en place) | `greetd-agreety` (secours console) ; `xorg-xinit` + `xorg-server` (sessions X11, par `startx`) ; `gnome-keyring` (trousseau déverrouillé par PAM) | Inter, Symbols Nerd Font Mono | `greeter.qml`, `dotfiles/greetd/`, `scripts/greeter*.sh` |
 | Fond d'écran + utilitaire | — (natif) | `xdg-user-dirs` (dossier Images) ; dépôt privé des fonds cloné dans `~/Pictures/Wallpapers` | Inter, Symbols Nerd Font Mono | — |
-| Veille des écrans | natif (`IdleMonitor` + commande DPMS au compositeur) ; `systemd` (`systemd-inhibit`), `glib2` (`gdbus` : mise en veille du système) | — | — | — |
+| Veille des écrans | natif (`IdleMonitor` + commande DPMS au compositeur) ; `python`, `python-gobject` (service D-Bus ScreenSaver) ; `systemd` (`systemd-inhibit`), `glib2` (`gdbus` : mise en veille du système) | — | — | — |
 | Agent polkit | — (natif, `PolkitAgent` ; `polkit` installé avec `quickshell`) | — | Inter | — |
 | Réseau (tray) | `networkmanager` (natif, `Networking` ; `nmcli` pour les détails filaires), `wl-clipboard` (copies) | `nm-connection-editor` pour l'édition des connexions ; onglets `tailscale` (actions : `tailscale set --operator=$USER`) et `zerotier-one` (jeton copié dans `~/.zeroTierOneAuthToken`), masqués si absents | icônes Papirus-Dark (`nm-*`, `network-vpn`, `zerotier-gui`, `computer`, `smartphone`) | — |
 | Wi-Fi (tray) | `networkmanager` (natif ; `nmcli` pour bande, canal, débit, adresse) | — | glyphe dessiné (géométrie Papirus) | — |
@@ -170,7 +170,7 @@ Autres constats pour un nouveau PC :
 
 Commandes dont `install.sh` vérifiera la présence après installation :
 `qs`, `checkupdates`, `fakeroot`, `bluetoothctl`, `udisksctl`, `gdbus`, `busctl`, `grim`, `slurp`, `wl-copy`, `pavucontrol`
-(+ optionnels : `nvidia-smi`, `brightnessctl`, `paru`/`yay`, `nm-connection-editor`, `chromium` et `python3` pour les web apps).
+(+ optionnels : `nvidia-smi`, `brightnessctl`, `paru`/`yay`, `nm-connection-editor`, `chromium` pour les web apps).
 
 ### Web apps : ce que fait `install.sh`
 
@@ -181,7 +181,7 @@ s'il y en a. `WEBAPPS` = dossier
 `dotfiles/webapps` du dépôt (chemin absolu), `PROFILES` = `~/.local/share/ice/profiles` (dossier de `webapp-manager`, gardé :
 les profils et sessions déjà connectées de cette machine sont repris tels quels).
 
-1. Paquets : `chromium`, `python` (`deps/optional.txt`), `wireplumber`, `papirus-icon-theme` (icônes `whatsapp`, `discord`,
+1. Paquets : `chromium` (`deps/optional.txt`), `python` (`deps/arch-pacman.txt`), `wireplumber`, `papirus-icon-theme` (icônes `whatsapp`, `discord`,
    `notion`, `solstice-microsoft-365-{word,excel,powerpoint}`).
 2. Règle WirePlumber, seulement si `doNotDisturb.muteApps` de la machine n'est pas vide (sinon elle ne sert à rien et les web
    apps perdent la mémoire de leur volume) : lien `~/.config/wireplumber/wireplumber.conf.d/50-dnd-no-restore.conf` →
@@ -235,7 +235,8 @@ Correspondances attendues, **non encore vérifiées** (phase 12).
 | pipewire / wireplumber / pipewire-pulse | idem (`pipewire-pulseaudio`) | idem | |
 | pavucontrol | idem | idem | |
 | chromium | chromium | chromium | web apps (optionnel) |
-| python | python3 | python3 | hôte natif des web apps (optionnel) |
+| python | python3 | python3 | inhibition vidéo D-Bus ; hôte natif des web apps |
+| python-gobject | python3-gobject | python3-gi | Gio / GLib du service d’inhibition vidéo |
 | upower | upower | upower | |
 | networkmanager | NetworkManager | network-manager | |
 | bluez / bluez-utils | bluez | bluez (contient `bluetoothctl`) | |

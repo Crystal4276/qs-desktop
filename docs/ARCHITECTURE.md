@@ -399,6 +399,18 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
 - `IdleMonitor` (inhibitions du compositeur, « Keep Screen On », vidéos Wayland respectées) : après `idle.timeout`, écrans éteints
   (`Compositor.setPower` : Sway `output * power off` ; Hyprland `hl.dsp.dpms({ action = … })`), tous rallumés d'un coup à la reprise
   (un rallumage par écran refait un modeset sous Sway). Quickshell relancé écrans éteints : rallumés 2 s après le démarrage.
+- Inhibitions D-Bus : `scripts/idle-inhibit.py` (Python/Gio) publie `org.freedesktop.ScreenSaver`, objets
+  `/org/freedesktop/ScreenSaver` et `/ScreenSaver`, méthodes `Inhibit(ss) → u`, `UnInhibit(u)`. Cookies propres à leur appelant,
+  libérés à sa déconnexion ; aucun nom existant remplacé. Chromium demande cette inhibition pendant la lecture vidéo,
+  y compris sans focus ; plein écran et Picture-in-Picture ne bloquent plus à eux seuls la veille sous Sway.
+- `desktop.sh` garde ce service en dehors du moteur QML : cookies conservés au rechargement et à la relance automatique du shell,
+  arrêt avec la surveillance, cinq tentatives au plus. Socket privé `QS_IDLE_SOCKET` dans le runtime de la session,
+  état JSON par ligne `{ready:true,count:N}` à la connexion puis aux changements. `Idle` désactive son suivi tant que N > 0,
+  puis redémarre le délai ; déconnexion du socket → compteur nul et reconnexion chaque seconde. `idle state` expose
+  `dbusReady` et `dbusInhibitors`. Journal séparé `qs-idle.<session>.log`. Après une relance **manuelle** complète du bureau,
+  ou un plantage du service lui-même, les cookies D-Bus sont perdus : pause/reprise pour renouveler une lecture déjà en cours.
+- Test du contrat sans compositeur : `python scripts/test-idle-inhibit.py` (bus privé). Les demandes de suspension manuelle
+  et les inhibiteurs Wayland restent indépendants ; aucune déduction depuis MPRIS, aucune inhibition audio ajoutée.
 - Verrouillage avant la veille du système (`idle.lockBeforeSleep`) : verrou « delay » de logind (`systemd-inhibit` sous
   `setpriv --pdeathsig`), `PrepareForSleep` suivi par `gdbus monitor`. Hyprland : `PrepareForSleep` suivi aussi pour le `reload` du réveil.
 - Animation `fadeDpms` coupée dans la config Hyprland (rallumage lent sinon). IPC de test : `idle state`.

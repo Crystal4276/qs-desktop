@@ -12,8 +12,7 @@ import qs.config
 // (IdleInhibitor des barres), manette Bluetooth connectée (même inhibiteur), vidéos des applications Wayland.
 // Verrouillage avant la mise en veille du système (laptop par défaut) : verrou « delay » de logind, relâché une fois l'écran verrouillé.
 // Au réveil sous Hyprland : `hyprctl reload` (after_sleep_cmd de ton hypridle : la disposition des écrans ne survit pas à la veille).
-// Non repris : les inhibitions D-Bus (org.freedesktop.ScreenSaver, `ignore_dbus_inhibit = false` de hypridle), faute de pouvoir
-// publier un service D-Bus en QML ; les applications Wayland passent par le protocole idle-inhibit, respecté.
+// Inhibitions D-Bus : scripts/idle-inhibit.py, conservées hors du moteur QML par desktop.sh.
 Singleton {
     id: root
 
@@ -26,8 +25,43 @@ Singleton {
 
         function state(): string {
             return JSON.stringify({ enabled: monitor.enabled, timeout: monitor.timeout, idle: monitor.isIdle,
-                lockBeforeSleep: root.lockBeforeSleep });
+                lockBeforeSleep: root.lockBeforeSleep, dbusReady: root.dbusReady, dbusInhibitors: root.dbusInhibitors });
         }
+    }
+
+    property bool dbusReady: false
+    property int dbusInhibitors: 0
+    readonly property string bridgePath: Quickshell.env("QS_IDLE_SOCKET") || ""
+
+    Socket {
+        id: bridge
+        path: root.bridgePath
+        connected: root.bridgePath !== ""
+        parser: SplitParser {
+            onRead: line => {
+                try {
+                    const state = JSON.parse(line);
+                    if (state.ready === true && Number.isInteger(state.count) && state.count >= 0) {
+                        root.dbusReady = true;
+                        root.dbusInhibitors = state.count;
+                    }
+                } catch (error) { console.warn("Idle bridge: invalid state", error); }
+            }
+        }
+        onConnectedChanged: {
+            if (!connected) {
+                root.dbusReady = false;
+                root.dbusInhibitors = 0;
+            }
+        }
+        onError: error => console.warn("Idle bridge unavailable:", error)
+    }
+
+    Timer {
+        interval: 1000
+        repeat: true
+        running: root.bridgePath !== "" && !bridge.connected
+        onTriggered: bridge.connected = true
     }
 
     // Délai lu dans la config machine après la création : le suivi est relancé pour qu'il en tienne compte.
@@ -35,7 +69,7 @@ Singleton {
 
     IdleMonitor {
         id: monitor
-        enabled: root.settings.timeout > 0 && !root.restarting
+        enabled: root.settings.timeout > 0 && !root.restarting && root.dbusInhibitors === 0
         timeout: root.settings.timeout
         respectInhibitors: true
         onIsIdleChanged: isIdle ? root.screensOff() : root.screensOn()
