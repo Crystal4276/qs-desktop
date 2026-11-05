@@ -50,6 +50,28 @@ Retour arrière de la bascule : `docs/ROLLBACK.md`.
   Bureau réel vivant (PID 1673). Reste à tester à la main : démarrage à froid (éclairage dès l'écran de connexion), puis connexions,
   déconnexions et reconnexions Sway et Hyprland, sans extinction des LED. Le démarrage réel à froid n'a pas été simulé.
 
+## Maintenance — focus à l’ouverture de fichiers Hyprland (2026-11-05)
+
+- Cause confirmée sur Hyprland 0.57.1 : `misc.focus_on_activate = false` refuse le focus demandé par les applications ;
+  la règle Sway qui affiche l’espace 7 pour « Add Torrents » manquait sous Hyprland. Les trois options de focus de Deluge
+  sont déjà activées ; aucun changement de sa configuration utilisateur.
+- Selon ton choix : exception native `focus_on_activate` pour les classes exactes `deluge`, `geany`, `chromium` seulement.
+  Règle du dialogue `Add Torrents.*` vers `7` sans `silent`, après la règle générale `7 silent`. Les web apps Chromium ne
+  correspondent pas ; le réglage global, le curseur sans déplacement automatique et les affectations de démarrage sont conservés.
+- Vérification sur copie : `luac -p`, `Hyprland --verify-config` valides ; bancs de répartition Sway et Hyprland : **0 échec**.
+  Banc de focus imbriqué à deux écrans, chargé avec les vrais fichiers input/windowrules : l’ancien code reproduit le dialogue
+  non focalisé ; correctif validé à la création et réouverture du dialogue GTK Wayland, espace 7 masqué sur l’autre écran.
+  Requêtes XWayland : les trois classes sélectionnées affichent leur espace et leur fenêtre ; application témoin et web app
+  Discord ignorées. Démarrage Deluge silencieux conservé, aucune erreur de configuration. Avertissements GTK/accessibilité et
+  XKB du banc seulement. Sway headless : sa règle existante affiche bien l’espace 7 et focalise le dialogue dans l’arbre.
+- Application réelle : configuration rechargée sans erreur ; ouverture d’un `.torrent` factice dans le vrai Deluge → dialogue
+  actif sur l’espace 7, curseur immobile. Dialogue fermé **sans ajout de torrent ni téléchargement** ; espaces affichés et focus
+  initiaux restaurés. Bureau réel vivant (PID 14536), instances de banc arrêtées.
+- Reste à vérifier à la main : ouvertures depuis le navigateur/gestionnaire de fichiers (torrent, texte Geany, lien Chromium),
+  clics de notifications et liens des web apps, puis nouvelle connexion. Les requêtes des trois applications peuvent donner le
+  focus même sans ouverture de fichier ; un jeton Wayland invalide ou absent reste refusé par le compositeur (le dialogue Deluge
+  est couvert par sa règle dédiée).
+
 ## Maintenance — déplacements entre écrans Hyprland (2026-11-05)
 
 - Cause : `$mod+←` / `$mod+→` utilisaient `-1` / `+1`, qui parcourent la liste interne des écrans. Dans la session observée :
