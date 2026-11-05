@@ -401,7 +401,8 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
   (un rallumage par écran refait un modeset sous Sway). Quickshell relancé écrans éteints : rallumés 2 s après le démarrage.
 - Inhibitions D-Bus : `scripts/idle-inhibit.py` (Python/Gio) publie `org.freedesktop.ScreenSaver`, objets
   `/org/freedesktop/ScreenSaver` et `/ScreenSaver`, méthodes `Inhibit(ss) → u`, `UnInhibit(u)`. Cookies propres à leur appelant,
-  libérés à sa déconnexion ; méthodes enregistrées avant la publication du nom, aucun nom existant remplacé. Chromium demande cette inhibition pendant la lecture vidéo,
+  libérés à sa déconnexion ; identifiants uint32 non nuls tirés au hasard, sans collision parmi les demandes actives,
+  pour éviter la réutilisation déterministe des cookies retenus après un plantage. Méthodes enregistrées avant la publication du nom, aucun nom existant remplacé. Chromium demande cette inhibition pendant la lecture vidéo,
   y compris sans focus ; plein écran et Picture-in-Picture ne bloquent plus à eux seuls la veille sous Sway.
 - `desktop.sh` garde ce service en dehors du moteur QML : cookies conservés au rechargement et à la relance automatique du shell,
   arrêt avec la surveillance (TERM, puis KILL après 1 s au plus si bloqué), cinq tentatives au plus. Socket privé `QS_IDLE_SOCKET` dans le runtime de la session,

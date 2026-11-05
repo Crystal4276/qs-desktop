@@ -73,6 +73,16 @@ Retour arrière de la bascule : `docs/ROLLBACK.md`.
   relance du pont après SIGKILL, arrêt du pont figé et réutilisation du verrou. Contrat initial, syntaxe Python / Bash et diff : OK.
   Préparation et tests sur copie ; application au service réel différée à la fin des passes de revue.
 
+### Revue de code de la veille — passe 2 (2026-11-05)
+
+- **P2 — cookie ancien libérant une nouvelle vidéo après un plantage du pont** : même appelant D-Bus conservé, première
+  vidéo → cookie 1 ; pont tué, nouvelle vidéo → cookie 1 aussi ; libération de l'ancienne vidéo → compteur 0 à tort.
+  Reproduit avant correction. Cookies uint32 non nuls aléatoires, unicité contrôlée parmi les demandes actives : test passant,
+  sans réutilisation systématique après relance. Le nouveau test échoue sur le code de la passe 1.
+- Contrôles complémentaires : 250 reconnexions de frontend, 250 déconnexions d'appelants et 30 appelants simultanés : compteur
+  final nul, descripteurs stables (10 → 10). Aucune fuite ni cookie restant observé. Tests persistants des deux passes : OK.
+  Sway complet sur copie avec Chromium jetable : fenêtre, perte de focus, plein écran, pause, fin, PiP et rechargement : OK.
+
 ## Maintenance — curseur homogène (2026-11-05)
 
 - Cause du flash rose violacé : `XCURSOR_THEME` vert, mais `HYPRCURSOR_THEME` absent. La bibliothèque Hyprcursor prend alors le
