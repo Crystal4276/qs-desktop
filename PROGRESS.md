@@ -62,6 +62,17 @@ Retour arrière de la bascule : `docs/ROLLBACK.md`.
 - Reste à tester à la main : lecture de plus de 5 minutes (y compris sans focus), pause de plus de 5 minutes,
   Picture-in-Picture, bouton « garder l’écran allumé », manette et nouvelle connexion Sway. Aucune action NordVPN ni suspension réelle pendant les tests.
 
+### Revue de code de la veille — passe 1 (2026-11-05)
+
+- **P1 — arrêt du pont bloquant la relance du bureau** : reproduit avec le service figé (SIGSTOP), un faux Quickshell et un bus
+  privé. L'attente sans limite conservait le verrou du superviseur ; `restart` supprimait l'ancien shell mais ne pouvait pas
+  lancer le nouveau. Correction : TERM, attente bornée à 1 s, KILL si nécessaire, puis nettoyage. Même test : relance réussie.
+- **P2 — nom D-Bus publié avant ses méthodes** : pause d'ordonnancement simulée avant l'enregistrement ; demande immédiate →
+  `UnknownMethod` sur l'ancien code. Enregistrement des deux chemins et du suivi des appelants avant `RequestName` : test passant.
+- Tests persistants étendus : disponibilité immédiate, conservation des cookies pendant une relance automatique du shell,
+  relance du pont après SIGKILL, arrêt du pont figé et réutilisation du verrou. Contrat initial, syntaxe Python / Bash et diff : OK.
+  Préparation et tests sur copie ; application au service réel différée à la fin des passes de revue.
+
 ## Maintenance — curseur homogène (2026-11-05)
 
 - Cause du flash rose violacé : `XCURSOR_THEME` vert, mais `HYPRCURSOR_THEME` absent. La bibliothèque Hyprcursor prend alors le
