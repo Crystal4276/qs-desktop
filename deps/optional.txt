@@ -10,6 +10,5 @@ nordvpn-bin     # (AUR) module NordVPN (connexion, pays, pause) ; masqué si abs
 tailscale       # onglet Tailscale du panneau réseau (état, appareils, nœud de sortie, options) ; masqué si absent. Actions : `sudo tailscale set --operator=$USER` une fois (install.sh, phase 11)
 zerotier-one    # onglet ZeroTier du panneau réseau (zerotier-cli -j ; jeton copié dans ~/.zeroTierOneAuthToken, install.sh phase 12 ; sans lui, interfaces zt* lues par `ip`, iproute2 dans arch-pacman.txt) ; masqué si absent
 chromium        # web apps (WhatsApp, Discord, Word, Excel, PowerPoint, Notion) : navigateur ; liens ouverts dans son profil principal (dotfiles/webapps/)
-python          # dotfiles/webapps/open-link : hôte natif de l'extension des web apps
 xorg-xinit      # startx : sessions X11 proposées par l'écran de connexion (scripts/greeter-session.sh) ; sans lui, elles sont masquées
 xorg-server     # serveur X des sessions X11 de l'écran de connexion (avec xorg-xinit)

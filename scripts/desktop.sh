@@ -68,6 +68,13 @@ supervisor() {
     [[ -n "$pid" ]] && grep -qa "desktop.sh" "/proc/$pid/cmdline" 2>/dev/null && echo "$pid"
 }
 
+# Processus indépendant du moteur QML : les cookies survivent aux rechargements et plantages du shell.
+start_idle_bridge() {
+    setpriv --pdeathsig TERM python3 "$repo/scripts/idle-inhibit.py" "$QS_IDLE_SOCKET" \
+        >>"$runtime/qs-idle.$session.log" 2>&1 9>&- &
+    bridge_pid=$!
+}
+
 # watch [home]
 watch() {
     exec 9>>"$lock"   # sans vider le fichier : il porte le PID d'une surveillance peut-être en cours
@@ -76,6 +83,11 @@ watch() {
     prepare
     # Verrouillage de la session, repris par une instance relancée (modules/lock/LockScreen.qml).
     export QS_LOCK_STATE="$runtime/qs-desktop.$session.locked"
+    export QS_IDLE_SOCKET="$runtime/qs-idle.$session.sock"
+    start_idle_bridge
+    local bridge_attempts=1 finished
+    trap '[[ -z "$bridge_pid" ]] || { kill "$bridge_pid" 2>/dev/null; wait "$bridge_pid" 2>/dev/null; }; rm -f -- "$QS_IDLE_SOCKET"; true' EXIT
+    trap 'exit 0' TERM INT
     local home="${1:-}" starts=() now t pid
     # Session vérifiée seulement après un arrêt de l'instance (`alive || break`), pas avant le premier lancement : au démarrage
     # d'Hyprland, `hyprctl` attend qu'il ait fini sa mise en route (185 ms sur un Hyprland imbriqué) ; le 2026-11-04, qs partait
@@ -89,7 +101,23 @@ watch() {
         pid=$!
         echo "$pid" >"$pidfile"
         home=""
-        wait "$pid"
+        while kill -0 "$pid" 2>/dev/null; do
+            if [[ -n "$bridge_pid" ]]; then
+                wait -n -p finished "$pid" "$bridge_pid"
+                if [[ "${finished:-}" == "$bridge_pid" ]]; then
+                    bridge_pid=""
+                    if (( bridge_attempts < 5 )); then
+                        sleep 1
+                        start_idle_bridge
+                        bridge_attempts=$((bridge_attempts + 1))
+                    else
+                        echo "Idle bridge failed 5 times; see $runtime/qs-idle.$session.log" >>"$log"
+                    fi
+                fi
+            else
+                wait "$pid"
+            fi
+        done
         alive || break
         now=$(date +%s)
         local recent=()

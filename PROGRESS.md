@@ -31,6 +31,37 @@
 
 Retour arrière de la bascule : `docs/ROLLBACK.md`.
 
+## Maintenance — veille pendant les vidéos Chromium (2026-11-05)
+
+- Diagnostic : règles Chromium plein écran / Picture-in-Picture présentes seulement sous Sway ; aucun service
+  `org.freedesktop.ScreenSaver` depuis le remplacement de hypridle. Hyprland réel : Chromium plein écran visible,
+  `inhibitingIdle: false`. Banc Sway avant correction : inhibition plein écran effective même sans lecture.
+- Choix retenu : suivre la lecture vidéo, en fenêtre, plein écran et Picture-in-Picture, libérer en pause / à la fin.
+  Service Python/Gio `scripts/idle-inhibit.py`, protocole D-Bus standard, cookies par appelant et libération à la déconnexion.
+  Aucun propriétaire D-Bus remplacé. Socket privé vers `Idle.qml` ; compteur positif → suivi désactivé, libération → nouveau délai.
+  Règles Chromium de Sway retirées ; règles Firefox / jeux et inhibiteurs Wayland conservés.
+- Cycle de vie : service porté par `desktop.sh`, indépendant du moteur QML ; rechargement et relance automatique de Quickshell
+  conservent les cookies. Service relancé après plantage (5 tentatives au plus), arrêté avec sa surveillance. Déconnexion du pont :
+  aucun blocage persistant de veille. Une relance complète manuelle ou un plantage du service perd les cookies existants :
+  pause/reprise de la vidéo nécessaire. Dépendances Python / PyGObject déclarées, déjà présentes ; aucune installation.
+- Tests sur copies et bus privés : contrat D-Bus (plusieurs cookies, propriété des cookies, déconnexion, rejeu à la connexion,
+  collision de nom, chemin historique, nettoyage) ; superviseur factice (plantage du service, relance, TERM, sortie normale) : OK.
+  Bureaux complets Sway headless / Hyprland imbriqué, Chromium jetable + vidéos locales : lecture en fenêtre / plein écran / PiP,
+  pause, fin, fermeture, rechargement QML et reconnexion du pont : OK. Délai de test 3 s, aucun délai réel modifié.
+  Les bancs ont produit les avertissements connus des entrées desktop, PipeWire absent du runtime privé et portails privés,
+  ainsi que les avertissements de déconnexion volontaire du pont. Pas d'erreur QML du correctif.
+- Limite distincte observée : audio seul sous Hyprland, compteur D-Bus nul mais Chromium 156 maintient un inhibiteur Wayland
+  (`inhibitingIdle: true`). Aucun contournement qui ignorerait les inhibiteurs natifs. Sway autorise la veille avec l'audio du banc.
+- Application réelle : relance sans erreur, bureau PID 62470 vivant ; `idle state` : pont prêt, délai 300 s conservé.
+  Demande D-Bus de contrôle sur la vraie session : compteur 1 et suivi désactivé, puis déconnexion → compteur 0 et suivi actif.
+  Trois barres et trois fonds vérifiés dans les couches ; capture `.shots/idle-fix.png`. Une seule instance Hyprland,
+  aucune instance de banc restante. Tests de syntaxe Python / Bash et `git diff --check` : OK.
+  Complément Hyprland : lecture toujours inhibée avec une autre application ouverte au premier plan : OK.
+  Le test d'une surface Wayland synthétique n'a pas activé l'inhibiteur attendu : contrôle non concluant, aucun changement
+  de cette logique existante ; bouton « garder l'écran allumé » et manette restent à vérifier à la main.
+- Reste à tester à la main : lecture de plus de 5 minutes (y compris sans focus), pause de plus de 5 minutes,
+  Picture-in-Picture, bouton « garder l’écran allumé », manette et nouvelle connexion Sway. Aucune action NordVPN ni suspension réelle pendant les tests.
+
 ## Maintenance — curseur homogène (2026-11-05)
 
 - Cause du flash rose violacé : `XCURSOR_THEME` vert, mais `HYPRCURSOR_THEME` absent. La bibliothèque Hyprcursor prend alors le
