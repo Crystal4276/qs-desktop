@@ -31,6 +31,25 @@
 
 Retour arrière de la bascule : `docs/ROLLBACK.md`.
 
+## Maintenance — OpenRGB (2026-11-05)
+
+- `openrgb -p purple` trouve bien le profil JSON ; le problème est son contenu migré : clavier Ornata à 6 modes au lieu des
+  9 actuels, carte mère à 12 au lieu de 7. OpenRGB ignore alors le mode mais peut appliquer les couleurs noires en mode Direct.
+  Les chemins `hidraw` variables ne sont pas la cause (ignorés par la correspondance).
+- Profil régénéré depuis les six contrôleurs réels, effets choisis par nom, vitesses et luminosités conservées. Copie utilisateur
+  remplacée après sauvegarde `purple.json.before-qs-20261105-211451`. **Éclairage rétabli, confirmé par toi.**
+- Serveur temporaire testé, puis relancé sans options de couleur : `service_startup_profile: purple` chargé automatiquement après
+  détection en ~2 s. Instances temporaires arrêtées ; aucune action sur NordVPN ni sur le compositeur.
+- Mise en place : `scripts/openrgb-setup.sh`, surcharge du service du paquet, procédure et retour arrière dans `docs/OPENRGB.md`.
+  Tests isolés : simulation sans écriture, validation avant écriture, installation répétée, activation séparée, refus d'un service
+  actif, restauration fichiers/état d'activation initial : OK. `bash -n`, `systemd-analyze verify`, `git diff --check` : OK.
+  Configurations : `luac -p`, `sway -C`, `Hyprland --verify-config` : valides, sans lancement des autostarts.
+- Installation système faite par toi après accord sudo. Service du paquet activé et en marche, surcharge chargée, une seule instance
+  matérielle (root), écoute `127.0.0.1:6742`, profil chargé en 1,8 s après lancement. Autostarts OpenRGB Sway/Hyprland retirés.
+  Lecture SDK sans détection : les six contrôleurs sont bien en `Spectrum Cycle` (RAM, clavier, souris) / `Color Cycle` (carte mère).
+  Bureau réel vivant (PID 1673). Reste à tester à la main : démarrage à froid (éclairage dès l'écran de connexion), puis connexions,
+  déconnexions et reconnexions Sway et Hyprland, sans extinction des LED. Le démarrage réel à froid n'a pas été simulé.
+
 ## Maintenance — déplacements entre écrans Hyprland (2026-11-05)
 
 - Cause : `$mod+←` / `$mod+→` utilisaient `-1` / `+1`, qui parcourent la liste interne des écrans. Dans la session observée :
@@ -69,7 +88,7 @@ Retour arrière de la bascule : `docs/ROLLBACK.md`.
 **Prochain redémarrage d'Hyprland** :
 - veilleuse sur les trois écrans, y compris après `$mod+Ctrl+W` (bloquée d'ici là par un bogue d'Hyprland sur le gamma) ;
 - curseur Catppuccin vert (nom corrigé, effectif à la connexion) ;
-- espaces 1 / 4 / 7 au démarrage ; web apps Discord et WhatsApp sur l'espace 5 ; OpenRGB.
+- espaces 1 / 4 / 7 au démarrage ; web apps Discord et WhatsApp sur l'espace 5 ; OpenRGB (service système, voir maintenance ci-dessus).
 
 **Quand l'occasion se présente** :
 - notification Discord : clic → la web app Discord et son espace s'affichent ;
