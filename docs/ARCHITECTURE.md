@@ -484,6 +484,9 @@ Dépôt privé séparé `Crystal4276/fonts-ms` (polices propriétaires, jamais d
 - **Service** (`services/Greeter.qml`) : comptes de `/etc/passwd` (UID 1000–59999, shell de connexion) ; sessions des fichiers
   `.desktop` de `wayland-sessions` puis `xsessions` (`XDG_DATA_DIRS`), sans ceux dont `TryExec` manque, X11 suffixées « (X11) » ; dernier
   compte et dernière session par compte dans `/var/lib/qs-desktop/greeter/state.json`, sinon `greeter.defaultSession` (§ 4).
+  Une seule variante par bureau connu : GNOME standard, Hyprland standard, Qtile Wayland ; Sway selon `greeter.defaultSession`
+  (sinon standard). Variante préférée absente : première disponible dans l'ordre de préférence ; sessions inconnues conservées.
+  Les anciens choix mémorisés des variantes regroupées sont réassociés à la variante retenue sans changer le format d'état.
   Connexion : `Greetd.createSession` → mot de passe → `launch` de `scripts/greeter-session.sh wayland|x11` avec `XDG_SESSION_TYPE`,
   `XDG_SESSION_DESKTOP`, `XDG_CURRENT_DESKTOP` (`DesktopNames`) et `GREETER_SESSION_EXEC` (= `Exec`) : greetd recolle la commande avec
   des espaces pour `sh -c`, `Exec` ne peut donc pas y figurer tel quel.

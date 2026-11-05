@@ -10,7 +10,7 @@ import qs.config
 //  - utilisateurs : comptes de /etc/passwd (UID 1000 à 59999, sans shell nologin / false), dans l'ordre du fichier ; affiché au
 //    départ : le dernier connecté ;
 //  - sessions : fichiers .desktop de `wayland-sessions` puis `xsessions` (XDG_DATA_DIRS ; X11 seulement si `startx` est là), sans
-//    ceux dont `TryExec` manque ;
+//    ceux dont `TryExec` manque ; une variante par bureau connu (standard / Wayland, Sway selon la config machine) ;
 //    la dernière de l'utilisateur, sinon `greeter.defaultSession` de la config machine (« wayland/sway »), sinon la première ;
 //  - connexion : greetd demande le mot de passe (PAM, /etc/pam.d/greetd), puis lance la session par scripts/greeter-session.sh
 //    (`Exec` dans GREETER_SESSION_EXEC)
@@ -41,7 +41,7 @@ Singleton {
     // Autre compte : message (erreur, PAM) et saisie (GreeterScreen) du précédent effacés.
     signal userSwitched
 
-    // --- Sessions : [{ key: "wayland/<id>" | "x11/<id>", id, name, exec, desktopNames, x11 }] ---
+    // --- Sessions : [{ key: "wayland/<id>" | "x11/<id>", id, name, exec, desktopNames, x11, aliases }] ---
     property var sessions: []
     property int sessionIndex: 0
     readonly property var session: sessions[sessionIndex] ?? null
@@ -55,7 +55,7 @@ Singleton {
     function pickSession(): void {
         const wanted = [state.sessions?.[user], Settings.greeter.defaultSession];
         for (const key of wanted) {
-            const i = sessions.findIndex(s => s.key === key);
+            const i = sessions.findIndex(s => s.key === key || s.aliases.includes(key));
             if (i >= 0) {
                 sessionIndex = i;
                 return;
@@ -70,6 +70,33 @@ Singleton {
         error = false;
         message = "";
         userSwitched();
+    }
+
+    // Familles explicites : ne pas fusionner des sessions inconnues à partir de leur seul nom affiché.
+    // Sway suit la config machine ; les autres préfèrent le lancement standard et Wayland.
+    function compactSessions(list: var): var {
+        const sway = ["wayland/sway", "wayland/sway-vulkan"];
+        if (sway.includes(Settings.greeter.defaultSession)) {
+            sway.splice(sway.indexOf(Settings.greeter.defaultSession), 1);
+            sway.unshift(Settings.greeter.defaultSession);
+        }
+        const groups = [
+            sway,
+            ["wayland/hyprland", "wayland/hyprland-uwsm"],
+            ["wayland/gnome", "wayland/gnome-classic", "x11/gnome", "x11/gnome-classic"],
+            ["wayland/qtile-wayland", "wayland/qtile-generic", "x11/qtile", "x11/qtile-generic"]
+        ];
+        const result = [];
+        const seen = [];
+        for (const entry of list) {
+            const group = groups.find(g => g.includes(entry.key)) ?? [entry.key];
+            if (seen.includes(group[0]))
+                continue;
+            seen.push(group[0]);
+            const preferred = group.map(key => list.find(s => s.key === key)).find(s => s !== undefined);
+            result.push(Object.assign({}, preferred, { aliases: group }));
+        }
+        return result;
     }
 
     function parseSessions(text: string): void {
@@ -105,7 +132,7 @@ Singleton {
                 x11: x11
             });
         }
-        sessions = list;
+        sessions = compactSessions(list);
         pickSession();
     }
 
