@@ -128,7 +128,9 @@ Palette côté Hyprland : `dotfiles/hypr/lua/palette.lua`.
 
 ## 10. Animations
 
-Aucune animation propre à la barre, aux notifications ou aux menus. Sous Hyprland, les couches héritent des animations `layers*`
+Aucune animation propre à la barre, aux notifications ou aux menus. Le champ password du greeter et du verrouillage pulse
+au survol (bordure normale ↔ verte, cycle `Theme.lock.fieldPulseDuration`, repris du Wi-Fi : 1,2 s), puis reste vert après clic
+ou saisie ; clic ailleurs ou nouvel affichage : retour au repos. Les erreurs restent rouges. Sous Hyprland, les couches héritent des animations `layers*`
 de la config (fondu des panneaux gardé) ; changement d'espace sans fondu ; `fadeDpms` coupé. Idées : `BACKLOG.md`.
 
 ## 11. Écran de verrouillage

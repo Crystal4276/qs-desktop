@@ -28,6 +28,22 @@ Item {
     property var sessions: []
     property int sessionIndex: 0
     property bool sessionsOpen: false
+    // État visuel seulement : la saisie clavier reste disponible sans clic.
+    property bool passwordActive: false
+    onLengthChanged: { if (length > 0) passwordActive = true; }
+    onUserChanged: passwordActive = false
+    onPrimaryChanged: passwordActive = false
+
+    // Prise passive : les menus et boutons conservent leurs propres clics.
+    TapHandler {
+        onPressedChanged: {
+            if (pressed) {
+                const p = passwordField.mapFromItem(root, point.position.x, point.position.y);
+                root.passwordActive = root.primary && passwordField.contains(p);
+            }
+        }
+    }
+
     signal sessionsToggled
     signal sessionChosen(int index)
     signal userClicked
@@ -139,6 +155,9 @@ Item {
 
         // Champ du mot de passe : un point par caractère, texte d'invite vide.
         Rectangle {
+            id: passwordField
+            property real pulseOpacity: 0
+
             visible: root.primary
             Layout.alignment: Qt.AlignHCenter
             implicitWidth: Theme.lock.fieldWidth
@@ -146,7 +165,42 @@ Item {
             radius: height / 2
             color: Theme.lock.field
             border.width: Theme.panel.border
-            border.color: root.error ? Theme.lock.fieldError : root.length > 0 ? Theme.lock.fieldFocus : Theme.lock.fieldBorder
+            border.color: root.error ? Theme.lock.fieldError : Theme.lock.fieldBorder
+
+            HoverHandler {
+                id: passwordHover
+                cursorShape: Qt.IBeamCursor
+            }
+
+            Rectangle {
+                anchors.fill: parent
+                radius: parent.radius
+                color: "transparent"
+                border.width: Theme.panel.border
+                border.color: Theme.lock.fieldFocus
+                opacity: root.error ? 0 : root.passwordActive ? 1 : passwordHover.hovered ? passwordField.pulseOpacity : 0
+            }
+
+            SequentialAnimation {
+                running: root.primary && passwordHover.hovered && !root.passwordActive && !root.error
+                loops: Animation.Infinite
+                NumberAnimation {
+                    target: passwordField
+                    property: "pulseOpacity"
+                    from: 0
+                    to: 1
+                    duration: Theme.lock.fieldPulseDuration / 2
+                    easing.type: Easing.InOutSine
+                }
+                NumberAnimation {
+                    target: passwordField
+                    property: "pulseOpacity"
+                    from: 1
+                    to: 0
+                    duration: Theme.lock.fieldPulseDuration / 2
+                    easing.type: Easing.InOutSine
+                }
+            }
 
             Text {
                 anchors.centerIn: parent

@@ -566,6 +566,7 @@ Singleton {
         readonly property color fieldBorder: root.color.overlay0
         readonly property color fieldFocus: root.color.green
         readonly property color fieldError: root.color.red
+        readonly property int fieldPulseDuration: root.wifi.connectingDuration
         readonly property int fieldFontSize: 20
         readonly property color dot: root.color.text
         readonly property int dotSize: 10

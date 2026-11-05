@@ -64,6 +64,22 @@ Retour arrière de la bascule : `docs/ROLLBACK.md`.
   (PID 1673), bancs arrêtés.
 - Reste à vérifier à la main : touches physiques Super+← / Super+→ et nouvelle connexion Hyprland.
 
+## Greeter — champ interactif et sessions (2026-11-05)
+
+- Greeter et verrouillage : bordure verte pulsée au survol (cycle 1,2 s du thème), fixe après clic ou frappe ; clic ailleurs,
+  changement de compte ou nouvel affichage : retour au repos. Le clic reste facultatif ; l'erreur rouge est prioritaire.
+- Sessions regroupées par bureau connu, sans toucher aux paquets ni aux fichiers système : ici Sway Vulkan + NVIDIA, GNOME,
+  Hyprland standard, Qtile Wayland, Openbox et Windows 10. Priorité XDG et métadonnées conservées, variante absente : repli dans
+  sa famille ; bureaux inconnus conservés. Un ancien choix mémorisé est réassocié à sa variante retenue.
+- Vérification sur copie : `qmllint` sans avertissement ; banc Sway headless + QtTest : **29 assertions**, saisie sans clic,
+  survol, clic hors champ et sélecteur, erreur, changement de compte, six sessions réelles, ancien choix Qtile X11, variantes
+  absentes, session inconnue, priorité XDG, entrées masquées / sans commande. Démarrage complet du greeter et capture : OK,
+  aucune erreur QML ; avertissements des portails du bus isolé seulement. Aucune authentification ni action système réelle.
+  Après application : bureau réel PID 1673 vivant, trois barres et trois fonds présents, captures des barres vérifiées ;
+  seul l’avertissement Bluez connu au rechargement. Banc et instances de test arrêtés.
+- Reste à valider à la main : rythme de la pulsation sur le vrai verrouillage et le greeter après actualisation de sa copie système
+  (`scripts/greeter-setup.sh install`, sudo soumis à accord). Cette actualisation système n'a pas été exécutée.
+
 ## À tester à la main
 
 **Écran de connexion** (phase 11, après `scripts/greeter-setup.sh install`, puis `enable` et redémarrage) :
