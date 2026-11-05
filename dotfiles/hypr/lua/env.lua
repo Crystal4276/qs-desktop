@@ -6,6 +6,8 @@
 
 hl.env("XCURSOR_SIZE", "48")
 hl.env("XCURSOR_THEME", "catppuccin-mocha-green-cursors")   -- nom installé (minuscules), comme sous Sway
+-- Hyprcursor choisit sinon le premier thème disponible avant le setcursor de l'autostart.
+hl.env("HYPRCURSOR_THEME", "catppuccin-mocha-green-cursors")
 hl.env("HYPRCURSOR_SIZE", "48")
 
 hl.env("XDG_CURRENT_DESKTOP", "Hyprland")
