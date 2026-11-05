@@ -75,6 +75,20 @@ start_idle_bridge() {
     bridge_pid=$!
 }
 
+# Un service figé ne doit pas retenir le verrou et empêcher la relance du bureau.
+stop_idle_bridge() {
+    if [[ -n "$bridge_pid" ]]; then
+        kill "$bridge_pid" 2>/dev/null
+        for _ in {1..20}; do
+            kill -0 "$bridge_pid" 2>/dev/null || break
+            sleep 0.05
+        done
+        kill -0 "$bridge_pid" 2>/dev/null && kill -KILL "$bridge_pid" 2>/dev/null
+        wait "$bridge_pid" 2>/dev/null
+    fi
+    rm -f -- "$QS_IDLE_SOCKET"
+}
+
 # watch [home]
 watch() {
     exec 9>>"$lock"   # sans vider le fichier : il porte le PID d'une surveillance peut-être en cours
@@ -86,7 +100,7 @@ watch() {
     export QS_IDLE_SOCKET="$runtime/qs-idle.$session.sock"
     start_idle_bridge
     local bridge_attempts=1 finished
-    trap '[[ -z "$bridge_pid" ]] || { kill "$bridge_pid" 2>/dev/null; wait "$bridge_pid" 2>/dev/null; }; rm -f -- "$QS_IDLE_SOCKET"; true' EXIT
+    trap stop_idle_bridge EXIT
     trap 'exit 0' TERM INT
     local home="${1:-}" starts=() now t pid
     # Session vérifiée seulement après un arrêt de l'instance (`alive || break`), pas avant le premier lancement : au démarrage

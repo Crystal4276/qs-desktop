@@ -4,12 +4,144 @@ import json
 import os
 from pathlib import Path
 import socket
+import shutil
+import signal
 import subprocess
 import sys
 import tempfile
 import time
 
 from gi.repository import Gio, GLib
+
+
+def test_startup(helper, directory):
+    # A scheduler pause before object registration must not expose a half-ready service.
+    fixture = directory / 'slow-start.py'
+    fixture.write_text("""import runpy, sys, time
+from gi.repository import Gio
+register = Gio.DBusConnection.register_object
+def slow_register(self, *args):
+    time.sleep(.2)
+    return register(self, *args)
+Gio.DBusConnection.register_object = slow_register
+sys.argv = sys.argv[1:]
+runpy.run_path(sys.argv[0], run_name='__main__')
+""")
+    process = subprocess.Popen([sys.executable, str(fixture), str(helper), str(directory / 'startup.sock')])
+    client = Gio.bus_get_sync(Gio.BusType.SESSION, None)
+    try:
+        deadline = time.monotonic() + 5
+        while time.monotonic() < deadline:
+            owned = client.call_sync('org.freedesktop.DBus', '/org/freedesktop/DBus',
+                'org.freedesktop.DBus', 'NameHasOwner', GLib.Variant('(s)', ('org.freedesktop.ScreenSaver',)),
+                None, Gio.DBusCallFlags.NONE, 1000, None).unpack()[0]
+            if owned:
+                break
+            time.sleep(.005)
+        assert owned, 'startup did not publish the service'
+        cookie = client.call_sync('org.freedesktop.ScreenSaver', '/org/freedesktop/ScreenSaver',
+            'org.freedesktop.ScreenSaver', 'Inhibit', GLib.Variant('(ss)', ('test', 'startup')),
+            None, Gio.DBusCallFlags.NONE, 2000, None).unpack()[0]
+        assert cookie != 0
+    finally:
+        process.terminate()
+        process.wait(timeout=5)
+    print('PASS: service callable immediately when its name becomes available')
+
+
+def test_supervisor(directory):
+    runtime = directory / 'runtime'
+    runtime.mkdir(mode=0o700)
+    binaries = directory / 'bin'
+    binaries.mkdir()
+    # The PID guard checks the executable name: use a private Bash copy called qs.
+    shutil.copy2(shutil.which('bash'), binaries / 'qs')
+    startup = directory / 'bash-startup'
+    startup.write_text("desktop() { while :; do sleep .2; done; }\n")
+    compositor = binaries / 'hyprctl'
+    compositor.write_text('#!/bin/sh\nexit 0\n')
+    compositor.chmod(0o755)
+    env = dict(os.environ, PATH=str(binaries) + ':' + os.environ['PATH'],
+        BASH_ENV=str(startup), XDG_RUNTIME_DIR=str(runtime),
+        HYPRLAND_INSTANCE_SIGNATURE='test-idle', PERF_NO_ENV='1')
+    env.pop('SWAYSOCK', None)
+    script = str(Path(__file__).with_name('desktop.sh'))
+    pidfile = runtime / 'qs-desktop.test-idle.pid'
+    socket_path = runtime / 'qs-idle.test-idle.sock'
+
+    def until(predicate):
+        deadline = time.monotonic() + 5
+        while time.monotonic() < deadline:
+            try:
+                value = predicate()
+                if value:
+                    return value
+            except (OSError, ValueError, GLib.Error):
+                pass
+            time.sleep(.02)
+        raise AssertionError('supervisor condition timed out')
+
+    client = Gio.bus_get_sync(Gio.BusType.SESSION, None)
+    with (directory / 'supervisor.log').open('w') as log:
+        supervisor = subprocess.Popen([script, 'watch'], env=env, stdout=log, stderr=log,
+            start_new_session=True)
+        try:
+            until(socket_path.exists)
+            helper_pid = until(lambda: client.call_sync('org.freedesktop.DBus', '/org/freedesktop/DBus',
+                'org.freedesktop.DBus', 'GetConnectionUnixProcessID',
+                GLib.Variant('(s)', ('org.freedesktop.ScreenSaver',)), None,
+                Gio.DBusCallFlags.NONE, 1000, None).unpack()[0])
+            first_pid = until(lambda: int(pidfile.read_text()))
+            cookie = client.call_sync('org.freedesktop.ScreenSaver', '/org/freedesktop/ScreenSaver',
+                'org.freedesktop.ScreenSaver', 'Inhibit', GLib.Variant('(ss)', ('test', 'restart')),
+                None, Gio.DBusCallFlags.NONE, 1000, None).unpack()[0]
+            os.kill(first_pid, signal.SIGTERM)
+            until(lambda: int(pidfile.read_text()) != first_pid)
+            with socket.socket(socket.AF_UNIX) as replay:
+                replay.settimeout(2)
+                replay.connect(str(socket_path))
+                assert json.loads(replay.makefile('r').readline())['count'] == 1
+            client.call_sync('org.freedesktop.ScreenSaver', '/org/freedesktop/ScreenSaver',
+                'org.freedesktop.ScreenSaver', 'UnInhibit', GLib.Variant('(u)', (cookie,)),
+                None, Gio.DBusCallFlags.NONE, 1000, None)
+            previous_helper = helper_pid
+            os.kill(helper_pid, signal.SIGKILL)
+            def replacement():
+                pid = client.call_sync('org.freedesktop.DBus', '/org/freedesktop/DBus',
+                    'org.freedesktop.DBus', 'GetConnectionUnixProcessID',
+                    GLib.Variant('(s)', ('org.freedesktop.ScreenSaver',)), None,
+                    Gio.DBusCallFlags.NONE, 1000, None).unpack()[0]
+                return pid if pid != previous_helper else None
+            helper_pid = until(replacement)
+            os.kill(helper_pid, signal.SIGSTOP)
+            stopped = subprocess.run([script, 'stop'], env=env, stdout=log, stderr=log, timeout=5)
+            assert stopped.returncode == 0
+            supervisor.wait(timeout=2)
+            assert not socket_path.exists() and not pidfile.exists()
+            assert not Path(f'/proc/{helper_pid}').exists()
+            # A stopped service must not retain the supervisor lock.
+            restarted = subprocess.Popen([script, 'watch'], env=env, stdout=log, stderr=log,
+                start_new_session=True)
+            try:
+                until(socket_path.exists)
+                until(pidfile.exists)
+                assert restarted.poll() is None
+            finally:
+                subprocess.run([script, 'stop'], env=env, stdout=log, stderr=log, timeout=5)
+                restarted.wait(timeout=2)
+                # Include the fake shell's short-lived sleep children in cleanup.
+                try:
+                    os.killpg(restarted.pid, signal.SIGTERM)
+                except ProcessLookupError:
+                    pass
+        finally:
+            subprocess.run([script, 'stop'], env=env, stdout=log, stderr=log, timeout=5)
+            try:
+                os.killpg(supervisor.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            supervisor.wait(timeout=2)
+    print('PASS: automatic shell restart preserves cookies; crashed helper restarts; frozen helper cannot block stop or relaunch')
 
 
 def test():
@@ -62,6 +194,8 @@ def test():
             process.terminate()
             process.wait(timeout=5)
         assert not Path(path).exists()
+        test_startup(helper, Path(directory))
+        test_supervisor(Path(directory))
     print('PASS: cookies, caller ownership, replay, name collision, disconnect, legacy path, cleanup')
 
 

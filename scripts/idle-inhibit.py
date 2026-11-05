@@ -29,18 +29,19 @@ class Bridge:
         self.clients = {}
         self.loop = GLib.MainLoop()
         self.bus = Gio.bus_get_sync(Gio.BusType.SESSION, None)
-        # DO_NOT_QUEUE: never replace another desktop's service.
-        result = self.bus.call_sync("org.freedesktop.DBus", "/org/freedesktop/DBus",
-            "org.freedesktop.DBus", "RequestName", GLib.Variant("(su)", (NAME, 4)),
-            GLib.VariantType.new("(u)"), Gio.DBusCallFlags.NONE, -1, None)
-        if result.unpack()[0] != 1:
-            raise RuntimeError(f"{NAME} already owned; not replacing it")
         interface = Gio.DBusNodeInfo.new_for_xml(XML).interfaces[0]
         for object_path in ("/org/freedesktop/ScreenSaver", "/ScreenSaver"):
             self.bus.register_object(object_path, interface, self.method, None, None)
         self.bus.signal_subscribe("org.freedesktop.DBus", "org.freedesktop.DBus",
             "NameOwnerChanged", "/org/freedesktop/DBus", None, Gio.DBusSignalFlags.NONE,
             self.owner_changed)
+        # Publish only after methods and caller-disconnect tracking are installed.
+        # DO_NOT_QUEUE: never replace another desktop's service.
+        result = self.bus.call_sync("org.freedesktop.DBus", "/org/freedesktop/DBus",
+            "org.freedesktop.DBus", "RequestName", GLib.Variant("(su)", (NAME, 4)),
+            GLib.VariantType.new("(u)"), Gio.DBusCallFlags.NONE, -1, None)
+        if result.unpack()[0] != 1:
+            raise RuntimeError(f"{NAME} already owned; not replacing it")
         self.bus.connect("closed", lambda *_: self.loop.quit())
         # Only after acquiring the bus name is a stale session socket safe to remove.
         if os.path.exists(path):
