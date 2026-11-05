@@ -1,7 +1,7 @@
 -- Règles de fenêtres.
 --
 -- L'ORDRE COMPTE : les règles sont évaluées de haut en bas. Il reproduit
--- exactement celui de hyprland.conf.
+-- celui de hyprland.conf, avec les corrections de parité Sway ci-dessous.
 --
 -- Structure : les critères vont dans `match`, les effets sont des clés soeurs.
 -- Les 39 lignes hyprlang se replient ici en 23 règles, parce que la conversion
@@ -35,6 +35,25 @@ hl.window_rule({ name = "deluge-ws7",     match = { class = "^(deluge)$" },    w
 -- Thunderbird est passé à un app-id natif Wayland ; valeur confirmée sur la
 -- session en cours.
 hl.window_rule({ name = "thunderbird-ws8", match = { class = "^(org\\.mozilla\\.Thunderbird)$" }, workspace = "8 silent" })
+
+------------------------------------------------------------------------------
+-- Ouverture de fichiers dans une application déjà lancée.
+------------------------------------------------------------------------------
+
+-- Exceptions au focus_on_activate global : les autres applications restent inchangées.
+hl.window_rule({
+   name = "file-open-focus",
+   match = { class = "^(deluge|geany|chromium)$" },
+   focus_on_activate = true,
+})
+
+-- Comme sous Sway : le dialogue d'ajout affiche l'espace de Deluge, même si
+-- GTK ne transmet pas de jeton d'activation. Après « 7 silent » pour le remplacer.
+hl.window_rule({
+   name = "deluge-add-torrents",
+   match = { class = "^(deluge)$", title = "^Add Torrents.*$" },
+   workspace = "7",
+})
 
 ------------------------------------------------------------------------------
 -- Fenêtres flottantes et centrées
