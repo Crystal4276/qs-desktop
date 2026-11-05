@@ -31,6 +31,20 @@
 
 Retour arrière de la bascule : `docs/ROLLBACK.md`.
 
+## Maintenance — déplacements entre écrans Hyprland (2026-11-05)
+
+- Cause : `$mod+←` / `$mod+→` utilisaient `-1` / `+1`, qui parcourent la liste interne des écrans. Dans la session observée :
+  DP-1, DP-3, DP-2, malgré les positions correctes 0 / 6000 / 2560. Les positions par numéro de série sont déjà déterministes.
+- Correction : voisins géométriques `hl.get_monitor("l")` / `hl.get_monitor("r")`, déplacement avec suivi du focus ; sans voisin ou
+  fenêtre active, aucune action. Aucun bouclage aux extrémités ; répartition des espaces et réglages des écrans conservés.
+- Vérification sur copie : `luac -p`, `Hyprland --verify-config` : configuration valide ; `scripts/test-outputs.sh sway` et
+  `hyprland` : **0 échec** chacun. Complément temporaire au banc Hyprland 0.57.1 : chargement de `lua/binds` seul (sans autostart),
+  capture et exécution des vrais callbacks ; ordre physique inversé par rapport à la création, déplacements dans les deux sens,
+  extrémités, espace vide, écran unique et désactivation/réactivation : **0 échec**, aucune fenêtre perdue, aucune erreur de config.
+- Application réelle : rechargement sans erreur de configuration, géométrie des trois écrans identique avant/après ; bureau vivant
+  (PID 1673), bancs arrêtés.
+- Reste à vérifier à la main : touches physiques Super+← / Super+→ et nouvelle connexion Hyprland.
+
 ## À tester à la main
 
 **Écran de connexion** (phase 11, après `scripts/greeter-setup.sh install`, puis `enable` et redémarrage) :

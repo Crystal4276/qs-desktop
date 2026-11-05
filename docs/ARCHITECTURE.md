@@ -72,6 +72,10 @@ Pas de Kanshi : il ne transporte ni HDR ni profondeur de couleur (deux sources p
 écraserait sa configuration, et ses profils conditionnels ne répondent à aucun besoin actuel (réévaluation : `BACKLOG.md`).
 Prix : les réglages d'écran d'une machine sont écrits une fois par compositeur, côte à côte dans `dotfiles/*/hosts/`.
 
+Raccourcis Hyprland `$mod+←` / `$mod+→` : voisin géométrique (`hl.get_monitor("l"|"r")`), puis déplacement avec suivi
+du focus. Sans voisin ou fenêtre active : aucune action. Ne pas utiliser `+1` / `-1` : ils parcourent l'ordre interne des
+écrans, qui peut différer de leur position même avec des identifiants numériques croissants de gauche à droite.
+
 HDR et VRR à l'exécution (`services/Displays.qml`, `$mod+d` = `qs ipc call display toggleHdr`, bascules du panneau de réglages) :
 seulement sur les écrans compatibles (Sway `features.hdr` / `features.adaptive_sync` ; Hyprland `hardwareDetails`), sans nom en
 dur. Hyprland : la règle posée vise l'écran par la même clé que la config (`desc:…`) et elle est **complète** (mode, position,
