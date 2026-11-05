@@ -27,6 +27,6 @@ return {
    -- Matériel de cette machine.
    autostart = {
       "openrazer-daemon",
-      "openrgb -p purple",
+      -- RGB : service système openrgb.service (docs/OPENRGB.md), indépendant de la session.
    },
 }

@@ -13,6 +13,9 @@ hypridle, polkit-gnome, nm-applet, blueman, udiskie). Aucun paquet n'a été dé
 Les deux sauvegardes sont les dossiers d'origine, intacts (y compris leur `.git` et les changements non commités du 2026-11-03 :
 web apps, `openrgb -p purple`).
 
+Depuis le correctif OpenRGB du 2026-11-05, le bureau actuel utilise le service système ([OPENRGB.md](OPENRGB.md)). Si les anciennes
+configs sont restaurées avec ce service encore actif, retirer leurs lancements OpenRGB pour garder une seule instance matérielle.
+
 ## Revenir à l'ancien bureau
 
 Depuis un terminal, ou un TTY (`Ctrl+Alt+F3`) si la session ne démarre plus :

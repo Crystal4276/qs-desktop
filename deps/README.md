@@ -10,6 +10,9 @@ Règle : chaque composant ajouté au dépôt met à jour **dans le même commit*
 
 ## Par module
 
+RGB (optionnel) : `openrgb` fournit le service système et les règles matérielles ; `python` valide et prépare les réglages dans
+`scripts/openrgb-setup.sh`. Mise en place, migration du profil et retour arrière : [OPENRGB.md](../docs/OPENRGB.md).
+
 Chaque commande a été rattachée à son paquet sur cette machine avec `pacman -Qo`.
 
 « Natif » = fait par Quickshell lui-même, sans programme externe. Le paquet `quickshell` installe déjà Qt 6, `qt6-svg`,
