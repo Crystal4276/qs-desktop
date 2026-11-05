@@ -144,6 +144,55 @@ def test_supervisor(directory):
     print('PASS: automatic shell restart preserves cookies; crashed helper restarts; frozen helper cannot block stop or relaunch')
 
 
+def test_old_cookie(helper, directory):
+    path = str(directory / 'generation.sock')
+    client = Gio.bus_get_sync(Gio.BusType.SESSION, None)
+
+    def call(method, variant):
+        return client.call_sync('org.freedesktop.ScreenSaver', '/org/freedesktop/ScreenSaver',
+            'org.freedesktop.ScreenSaver', method, variant, None, Gio.DBusCallFlags.NONE, 2000, None).unpack()
+
+    def snapshot():
+        with socket.socket(socket.AF_UNIX) as stream:
+            stream.settimeout(1)
+            stream.connect(path)
+            with stream.makefile('r') as reader:
+                return json.loads(reader.readline())['count']
+
+    def launch():
+        process = subprocess.Popen([sys.executable, str(helper), path])
+        try:
+            deadline = time.monotonic() + 5
+            while time.monotonic() < deadline:
+                try:
+                    assert snapshot() == 0
+                    return process
+                except OSError:
+                    time.sleep(.01)
+            raise AssertionError('bridge restart timed out')
+        except BaseException:
+            process.terminate()
+            process.wait(timeout=5)
+            raise
+
+    process = launch()
+    try:
+        old = call('Inhibit', GLib.Variant('(ss)', ('test', 'old tab')))[0]
+        process.kill()
+        process.wait(timeout=5)
+        process = launch()
+        new = call('Inhibit', GLib.Variant('(ss)', ('test', 'new tab')))[0]
+        assert old != new, 'a retained cookie was reused after restart'
+        call('UnInhibit', GLib.Variant('(u)', (old,)))
+        assert snapshot() == 1, 'old tab released the new tab inhibitor'
+        call('UnInhibit', GLib.Variant('(u)', (new,)))
+        assert snapshot() == 0
+    finally:
+        process.terminate()
+        process.wait(timeout=5)
+    print('PASS: releasing a retained cookie after daemon restart does not release the new video')
+
+
 def test():
     def connect():
         return Gio.DBusConnection.new_for_address_sync(os.environ['DBUS_SESSION_BUS_ADDRESS'],
@@ -196,6 +245,7 @@ def test():
         assert not Path(path).exists()
         test_startup(helper, Path(directory))
         test_supervisor(Path(directory))
+        test_old_cookie(helper, Path(directory))
     print('PASS: cookies, caller ownership, replay, name collision, disconnect, legacy path, cleanup')
 
 

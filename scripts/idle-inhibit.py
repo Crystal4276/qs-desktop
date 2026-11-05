@@ -3,6 +3,7 @@
 import json
 import os
 import signal
+import secrets
 import socket
 import sys
 
@@ -25,7 +26,6 @@ class Bridge:
     def __init__(self, path):
         self.path = path
         self.cookies = {}
-        self.next_cookie = 0
         self.clients = {}
         self.loop = GLib.MainLoop()
         self.bus = Gio.bus_get_sync(Gio.BusType.SESSION, None)
@@ -87,12 +87,13 @@ class Bridge:
 
     def method(self, connection, sender, path, interface, method, params, invocation):
         if method == "Inhibit":
-            self.next_cookie = self.next_cookie % 0xffffffff + 1
-            while self.next_cookie in self.cookies:
-                self.next_cookie = self.next_cookie % 0xffffffff + 1
-            self.cookies[self.next_cookie] = sender
+            # Browsers can retain old cookies across a daemon restart. Do not restart at 1.
+            cookie = secrets.randbelow(0xffffffff) + 1
+            while cookie in self.cookies:
+                cookie = secrets.randbelow(0xffffffff) + 1
+            self.cookies[cookie] = sender
             self.publish()
-            invocation.return_value(GLib.Variant("(u)", (self.next_cookie,)))
+            invocation.return_value(GLib.Variant("(u)", (cookie,)))
         else:
             cookie = params.unpack()[0]
             if self.cookies.get(cookie) == sender:
