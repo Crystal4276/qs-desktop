@@ -31,6 +31,26 @@
 
 Retour arrière de la bascule : `docs/ROLLBACK.md`.
 
+## Maintenance — curseur homogène (2026-11-05)
+
+- Cause du flash rose violacé : `XCURSOR_THEME` vert, mais `HYPRCURSOR_THEME` absent. La bibliothèque Hyprcursor prend alors le
+  premier thème disponible (ici `catppuccin-mocha-mauve-cursors`), avant le `hyprctl setcursor` vert de l'autostart.
+- `HYPRCURSOR_THEME` vert ajouté à `dotfiles/hypr/lua/env.lua`, taille 48 conservée. Autostart et réglages Sway/greeter déjà verts
+  conservés. Selon ton choix « tout le compte » : GTK 2/3, XSettings et héritage du thème utilisateur `default` alignés sur le
+  vert, taille 48 ; GTK 4, dconf et Xresources déjà conformes. Autres préférences et fichiers système inchangés.
+- Sauvegardes des quatre fichiers utilisateur modifiés : suffixe `.bak-20261105-220039`, à côté de chaque original. Procédure
+  reproductible pour la phase 12 dans `deps/README.md` ; pas de nouveau paquet, pas de suppression des anciens thèmes.
+- Vérification : syntaxe Lua et `Hyprland --verify-config` sur copie valides ; banc Hyprland imbriqué A/B, bus et runtime privés,
+  sans autostart ni `setcursor` : ancien fichier → mauve, nouveau → vert dès l'initialisation, aucune erreur de configuration.
+  Bancs arrêtés ; avertissements DRM/logind de la tentative de backend et XKB seulement. Le premier essai du banc avait un chemin
+  de socket trop long et un bind de test incorrect : corrigés avant le passage A/B concluant.
+- GTK 3/4 : thème et taille effectifs vérifiés sous Wayland et XWayland ; XCursor `default` et vert : pixels et hotspot identiques
+  en taille 48. Clients Qt Wayland/X11 : variables XCursor vert/48 vérifiées ; pas de validation visuelle dans les applications.
+  Avertissement accessibilité GTK du test uniquement. Seconde application des modifications utilisateur : aucun changement.
+  Après application : bureau réel PID 14536 vivant, une seule instance Hyprland, aucune erreur de configuration.
+- Reste à tester à la main : nouvelle connexion Hyprland sans flash rose/mauve et survol des applications usuelles (GTK/Qt/X11),
+  puis connexion Sway. Aucune déconnexion de la session réelle n'a été provoquée, aucune action NordVPN.
+
 ## Maintenance — OpenRGB (2026-11-05)
 
 - `openrgb -p purple` trouve bien le profil JSON ; le problème est son contenu migré : clavier Ornata à 6 modes au lieu des
@@ -125,7 +145,7 @@ Retour arrière de la bascule : `docs/ROLLBACK.md`.
 
 **Prochain redémarrage d'Hyprland** :
 - veilleuse sur les trois écrans, y compris après `$mod+Ctrl+W` (bloquée d'ici là par un bogue d'Hyprland sur le gamma) ;
-- curseur Catppuccin vert (nom corrigé, effectif à la connexion) ;
+- curseur Catppuccin vert dès la première image, sans flash rose/mauve (voir maintenance du curseur ci-dessus) ;
 - espaces 1 / 4 / 7 au démarrage ; web apps Discord et WhatsApp sur l'espace 5 ; OpenRGB (service système, voir maintenance ci-dessus).
 
 **Quand l'occasion se présente** :

@@ -135,8 +135,31 @@ Ce que `install.sh` (phase 12) devra installer, activer ou vérifier — relevé
 
 Réglages dconf de cette machine (`org.gnome.desktop.interface`) : `gtk-theme` `catppuccin-mocha-green-standard+default`,
 `icon-theme` `Papirus-Dark`, `font-name` `Inter Light 12`, `document-font-name` `Inter Light 13`, `monospace-font-name`
-`Source Code Pro 12`, `text-scaling-factor` `1.25`, `color-scheme` `prefer-dark`, `cursor-size` `48` (thème du curseur fixé par
-les compositeurs), `clock-format` `24h`.
+`Source Code Pro 12`, `text-scaling-factor` `1.25`, `color-scheme` `prefer-dark`, `cursor-theme` `catppuccin-mocha-green-cursors`,
+`cursor-size` `48`, `clock-format` `24h`.
+
+### Curseur : mise en cohérence du compte
+
+Thème commun : `catppuccin-mocha-green-cursors`, taille `48` (`docs/THEME.md`). Le paquet fournit les formats XCursor et
+Hyprcursor. Hyprland doit fixer **les deux** variables `XCURSOR_THEME` et `HYPRCURSOR_THEME` dans `lua/env.lua`, ainsi que leurs
+tailles : sans `HYPRCURSOR_THEME`, Hyprcursor prend le premier thème installé qu'il trouve (ici le mauve), avant que le
+`hyprctl setcursor` de l'autostart impose le vert. Sway et le greeter fixent déjà le thème avec `seat … xcursor_theme`.
+
+Procédure à reprendre par `install.sh` (phase 12), sans remplacer les autres préférences d'apparence : sauvegarder chaque fichier
+modifié avec un suffixe `.bak-<date>`, puis mettre à jour uniquement les clés suivantes (ajouter les clés absentes) :
+
+| Réglage utilisateur | Clés et valeurs |
+|---|---|
+| `~/.config/gtk-3.0/settings.ini` et `~/.config/gtk-4.0/settings.ini`, section `[Settings]` | `gtk-cursor-theme-name=catppuccin-mocha-green-cursors`, `gtk-cursor-theme-size=48` |
+| `~/.gtkrc-2.0` | `gtk-cursor-theme-name="catppuccin-mocha-green-cursors"`, `gtk-cursor-theme-size=48` |
+| `~/.config/xsettingsd/xsettingsd.conf` | `Gtk/CursorThemeName "catppuccin-mocha-green-cursors"`, `Gtk/CursorThemeSize 48` |
+| `~/.icons/default/index.theme`, section `[Icon Theme]` | `Inherits=catppuccin-mocha-green-cursors`, `Size=48` |
+| `org.gnome.desktop.interface` (GSettings) | `cursor-theme` : `catppuccin-mocha-green-cursors` ; `cursor-size` : `48` |
+| `~/.Xresources` | `Xcursor.theme: catppuccin-mocha-green-cursors`, `Xcursor.size: 48` |
+
+Ne pas modifier les fichiers déjà conformes. Les exports de nwg-look doivent garder ce même thème ; les anciens thèmes et les
+fichiers système n'ont pas besoin d'être supprimés ou changés. Une nouvelle connexion valide le thème initial du compositeur ;
+les applications déjà ouvertes peuvent garder leur curseur jusqu'à leur prochain lancement.
 
 Autres constats pour un nouveau PC :
 - trousseau `gnome-keyring` déverrouillé par PAM à la connexion (greetd : `dotfiles/greetd/pam-greetd`) ;
