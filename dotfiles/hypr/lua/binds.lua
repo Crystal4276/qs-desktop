@@ -84,9 +84,16 @@ hl.bind(mod .. " + quoteleft", function()
    hl.config({ general = { layout = courant == "master" and "dwindle" or "master" } })
 end)
 
--- Déplacement de la fenêtre active vers l'écran voisin.
-hl.bind(mod .. " + right", hl.dsp.window.move({ monitor = "+1" }))
-hl.bind(mod .. " + left", hl.dsp.window.move({ monitor = "-1" }))
+-- Voisin géométrique : +1 / -1 suivent l'ordre interne des écrans, pas leur position.
+-- Sans voisin (extrémité, écran unique) ou fenêtre active : rien à déplacer.
+for key, direction in pairs({ left = "l", right = "r" }) do
+   hl.bind(mod .. " + " .. key, function()
+      local monitor = hl.get_monitor(direction)
+      if monitor and hl.get_active_window() then
+         hl.dispatch(hl.dsp.window.move({ monitor = monitor, follow = true }))
+      end
+   end)
+end
 
 -- Déplacement de la fenêtre active dans la disposition.
 hl.bind(mod .. " + CTRL + left", hl.dsp.window.move({ direction = "left" }))
