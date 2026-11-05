@@ -83,6 +83,21 @@ Retour arrière de la bascule : `docs/ROLLBACK.md`.
   final nul, descripteurs stables (10 → 10). Aucune fuite ni cookie restant observé. Tests persistants des deux passes : OK.
   Sway complet sur copie avec Chromium jetable : fenêtre, perte de focus, plein écran, pause, fin, PiP et rechargement : OK.
 
+### Revue de code de la veille — passe 3 et validation finale (2026-11-05)
+
+- Relecture des fichiers complets après les deux corrections : aucun autre constat significatif. Vérifications des erreurs de
+  démarrage, bornes des cookies uint32, ownership / déconnexions, reconnexion du frontend, garde PID et nettoyage du superviseur.
+- Suite persistante complète : OK, dont contre-épreuves des trois bugs sur les versions précédentes. Syntaxe Python / Bash,
+  `git diff --check` : OK. Bancs complets Sway et Hyprland avec Chromium local jetable : lecture en fenêtre, autre application
+  au premier plan, plein écran, pause, fin, Picture-in-Picture, rechargement QML et reconnexion du pont : OK.
+  Audio seul : aucune demande d'inhibition D-Bus ajoutée ; réserve sur l'inhibiteur natif Hyprland ci-dessus conservée.
+- Application réelle des deux passes après une seule relance : aucune erreur de démarrage, PID 71424 vivant, délai 300 s conservé,
+  pont prêt. Demande de contrôle acquise puis libérée : compteur 1 / suivi désactivé, puis 0 / suivi actif. Trois barres et trois
+  fonds présents dans les couches, capture `.shots/idle-review.png` et bandeau `.shots/idle-review-bars.png` vérifiés.
+  Aucune instance de banc restante ; une seule instance Hyprland. Aucune action NordVPN ni suspension réelle.
+- Restent les tests manuels de durée réelle / nouvelle connexion / manette listés plus haut. Si une vidéo était déjà en lecture
+  pendant la relance complète, pause/reprise pour renouveler sa demande D-Bus.
+
 ## Maintenance — curseur homogène (2026-11-05)
 
 - Cause du flash rose violacé : `XCURSOR_THEME` vert, mais `HYPRCURSOR_THEME` absent. La bibliothèque Hyprcursor prend alors le
