@@ -414,15 +414,7 @@ OverlayPopup {
             Layout.fillWidth: true
             spacing: Theme.panel.spacing
 
-            PanelField {
-                id: search
-                placeholder: root.applicationView ? "Search applications" : "Search processes"
-                search: true
-                onTextChanged: Qt.callLater(root.refreeze)   // après la mise à jour de `sorted`
-                Keys.onEscapePressed: root.close()
-            }
-
-            // Compact two-position pill, beside the search field.
+            // Compact two-position pill, fixed to the left of the search field.
             Rectangle {
                 implicitWidth: modeButtons.implicitWidth + 2 * Theme.panel.spacing / 2
                 implicitHeight: modeButtons.implicitHeight + 2 * Theme.panel.spacing / 2
@@ -480,6 +472,14 @@ OverlayPopup {
                         }
                     }
                 }
+            }
+
+            PanelField {
+                id: search
+                placeholder: root.applicationView ? "Search applications" : "Search processes"
+                search: true
+                onTextChanged: Qt.callLater(root.refreeze)   // après la mise à jour de `sorted`
+                Keys.onEscapePressed: root.close()
             }
 
             // Processus choisi (les tiens seulement) : arrêter, forcer ; confirmation avant l'envoi du signal.
