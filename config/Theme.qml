@@ -522,7 +522,7 @@ Singleton {
     }
 
     // Panneau de statistiques système (nouveau, phase 8b ; remplace btop et nvtop) : style des panneaux ; jauges aux couleurs des modules
-    // du thème (processeur `teal`, mémoire `green`, GPU `mauve`, disques `peach`), piste `surface0`. Largeur, hauteur des jauges et nombre
+    // du thème (processeur `teal`, mémoire `green`, GPU `sky`, disques `blue`), piste `surface0`. Largeur, hauteur des jauges et nombre
     // de lignes de processus : validés pour une première version (2026-10-19).
     readonly property QtObject monitor: QtObject {
         readonly property int width: 1100
@@ -530,8 +530,8 @@ Singleton {
         readonly property color track: root.panel.button
         readonly property color cpu: root.module.cpu
         readonly property color memory: root.module.memory
-        readonly property color gpu: root.color.mauve
-        readonly property color disk: root.color.peach
+        readonly property color gpu: root.color.sky
+        readonly property color disk: root.color.blue
         readonly property int coreColumns: 4
         readonly property int toggleDuration: root.wifi.levelDuration  // same short transition as signal gauges
         readonly property int processRows: 14
