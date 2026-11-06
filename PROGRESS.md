@@ -33,7 +33,7 @@ Retour arrière de la bascule : `docs/ROLLBACK.md`.
 
 ## Maintenance — moniteur applications et couleurs (2026-11-06)
 
-- Jauges CPU teal, mémoire green, GPU mauve, disques peach ; une seule teinte par carte, valeurs de Theme.
+- Jauges CPU teal, mémoire green, GPU sky, disques blue ; une seule teinte par carte, valeurs de Theme.
 - Vue Applications à chaque ouverture, y compris les applications identifiables en arrière-plan ; ressources additionnées,
   nombre de processus. Bascule compacte à gauche de la recherche, pastille verte et icônes application / processeur,
   navigation clavier ; les grands onglets de la première proposition ont été remplacés selon ta demande.
@@ -59,6 +59,8 @@ Retour arrière de la bascule : `docs/ROLLBACK.md`.
 - Finition demandée : infobulle supprimée ; glyphes Applications/Processes centrés sur leur dessin réel (tightBoundingRect),
   pour corriger le décalage optique de l’icône CPU. Deux positions inspectées sur captures du banc Sway ; tests QML existants,
   y compris clic global et animation, passants. Aucun changement de comportement ni arrêt d’application.
+- Palette ajustée à ta demande : GPU bleu ciel (`sky`), disques bleu (`blue`), CPU/mémoire conservés. Jauges uniformes par carte.
+  Capture et démarrage complet sur copie Sway vérifiés, tests QML passants ; thème réel rechargé.
 - Reste à vérifier à la main : clic physique sur la bascule et confirmations, confort de lecture sur les écrans habituels.
 
 ## Maintenance — portails captifs Wi-Fi (2026-11-06)
