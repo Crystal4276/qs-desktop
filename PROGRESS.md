@@ -31,6 +31,33 @@
 
 Retour arrière de la bascule : `docs/ROLLBACK.md`.
 
+## Maintenance — portails captifs Wi-Fi (2026-11-06)
+
+- Audit : la détection native et le libellé existaient ; aucune ouverture de portail. Reprise du principe d'Omarchy : sonde
+  NetworkManager, bouton explicite, adresse HTTP fixe et nouvelle vérification pendant l'identification. Navigateur par défaut
+  retenu avec toi ; configuration système alignée pour la portabilité, activation après validation des fichiers préparés.
+- Carte : bouton « Open Captive Portal » seulement pour le réseau Wi-Fi connecté concerné. Le panneau libère son clavier avant
+  `Launch.exec(["xdg-open", …])`. Aucun lancement automatique, aucun changement VPN. Le service ignore les résultats périmés si
+  les sondes sont désactivées ; vérifie à la connexion / ouverture épinglée et toutes les 10 s pendant portail / accès limité,
+  même panneau fermé, une seule minuterie pour toutes les barres. Internet rétabli ou radio coupée : minuterie arrêtée.
+- Configuration versionnée : `dotfiles/NetworkManager/conf.d/90-qs-desktop-connectivity.conf`, même adresse HTTP que la carte,
+  `response=` vide (204). `scripts/network-setup.sh` : simulation, installation idempotente, sauvegarde/restauration et relecture
+  `nmcli general reload conf` seulement ; mode `--root` sans sudo ni effet système pour les tests. Documentation et dépendances
+  mises à jour dans `docs/NETWORK.md` et `deps/` ; reprise prévue par `install.sh` en phase 12. Aucun paquet installé.
+- Tests persistants `scripts/test-network.py` : simulation sans écriture, répétition, sauvegarde initiale conservée, permissions,
+  restauration avec/sans ancien fichier, conservation des éditions locales, sauvegarde incomplète et égalité des URI : OK.
+  Code QML courant sur copies, backend et lancements factices : portail / complet / limité, clic via le vrai gestionnaire de
+  `WifiPanel`, commande navigateur, vérifications panneau fermé, sondes désactivées, radio coupée, route Ethernet, reconnexion,
+  aperçu / panneau épinglé et plusieurs panneaux : OK sous Sway headless et Hyprland imbriqué. Minuterie accélérée dans la copie
+  de test seulement. Le clic physique et les touches du bouton restent à vérifier à la main.
+- Démarrage complet de la copie sous les deux compositeurs : aucune erreur QML du changement. Avertissements habituels des
+  portails / entrées desktop et PipeWire indisponible dans le runtime privé. Capture de carte vérifiée sous Sway :
+  `.shots/wifi-captive-portal.png`. Capture Hyprland non concluante (échec du screencopy imbriqué) ; tests fonctionnels passants.
+  Syntaxe Bash/Python et `git diff --check` : OK. Bancs arrêtés ; application réelle rechargée sans erreur, PID 1753 vivant,
+  trois barres et trois fonds présents. Aucun fichier système modifié ni action NordVPN.
+- **Reste :** activation système après accord (`scripts/network-setup.sh --dry-run install`, puis `install`, sudo), puis essai sur
+  un vrai réseau d'hôtel / aéroport : ouverture du formulaire, validation, retour automatique à « Connected » et navigation.
+
 ## Maintenance — veille pendant les vidéos Chromium (2026-11-05)
 
 - Diagnostic : règles Chromium plein écran / Picture-in-Picture présentes seulement sous Sway ; aucun service

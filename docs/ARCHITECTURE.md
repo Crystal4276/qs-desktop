@@ -316,7 +316,9 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
   **Wi-Fi**. Connexion limitée signalée (`Networking.connectivity`).
 - Wi-Fi (`WifiPanel.qml`) : `Quickshell.Networking` (interrupteur, réseaux, mot de passe, oubli), réseau courant déplié, niveaux de
   signal GNOME (20 / 40 / 50 / 80 %), glyphe animé dessiné en QML (`WifiIcon.qml`). Détails absents de l'API (bande, canal, débit,
-  IPv4) : `nmcli`, toutes les 5 s panneau ouvert.
+  IPv4) : `nmcli`, toutes les 5 s panneau ouvert. Portail captif : bouton vers le navigateur par défaut ; sonde native relancée
+  toutes les 10 s pendant un accès limité, même panneau fermé. Sonde et navigateur partagent une adresse HTTP ; configuration
+  système reproductible et retour arrière : `docs/NETWORK.md`. Sondes désactivées : résultats périmés ignorés.
 - Panneau réseau : onglets Wired (détails `nmcli`, graphe du trafic) / Tailscale (`status --json`, `debug prefs` ; actions grâce à
   `--operator=$USER`, à proposer par `install.sh`) / ZeroTier (`zerotier-cli -j` avec le jeton copié dans `~/.zeroTierOneAuthToken`,
   à proposer par `install.sh` ; sinon interfaces `zt*` en lecture seule). Relus toutes les 5 s onglet affiché ; 60 s sinon, sans câble.
