@@ -414,62 +414,93 @@ OverlayPopup {
             Layout.fillWidth: true
             spacing: Theme.panel.spacing
 
-            // Compact two-position pill, fixed to the left of the search field.
+            // One hit area: clicking either side always flips the view.
             Rectangle {
-                implicitWidth: modeButtons.implicitWidth + 2 * Theme.panel.spacing / 2
-                implicitHeight: modeButtons.implicitHeight + 2 * Theme.panel.spacing / 2
+                id: viewToggle
+                objectName: "monitor-view-toggle"
+                readonly property real inset: Theme.panel.spacing / 2
+                implicitWidth: 2 * Theme.mediaCard.buttonSize + 2 * inset
+                implicitHeight: Theme.mediaCard.buttonSize + 2 * inset
                 radius: height / 2
                 color: Theme.panel.background
                 border.width: Theme.panel.border
-                border.color: Theme.panel.borderColor
+                border.color: activeFocus ? Theme.panel.focusRing : Theme.panel.borderColor
+                activeFocusOnTab: true
+                Accessible.name: "Applications / Processes"
+                Accessible.role: Accessible.CheckBox
+                Accessible.checkable: true
+                Accessible.checked: root.applicationView
+                Accessible.onToggleAction: flip(null)
+                Keys.onReturnPressed: event => flip(event)
+                Keys.onEnterPressed: event => flip(event)
+                Keys.onSpacePressed: event => flip(event)
+
+                function flip(event: KeyEvent): void {
+                    if (!event?.isAutoRepeat)
+                        root.changeView(root.applicationView ? "processes" : "applications");
+                }
+
+                Rectangle {
+                    x: viewToggle.inset + (root.applicationView ? 0 : Theme.mediaCard.buttonSize)
+                    y: viewToggle.inset
+                    width: Theme.mediaCard.buttonSize
+                    height: width
+                    radius: width / 2
+                    color: Theme.quickSettings.checked
+                    Behavior on x {
+                        enabled: root.visible
+                        NumberAnimation {
+                            duration: Theme.monitor.toggleDuration
+                            easing.type: Easing.OutCubic
+                        }
+                    }
+                }
 
                 Row {
-                    id: modeButtons
                     anchors.centerIn: parent
-
                     Repeater {
                         model: [
-                            { key: "applications", label: "Applications", glyph: Theme.icon.captureWindow, font: Theme.font.icons },
-                            { key: "processes", label: "Processes", glyph: Theme.icon.cpu, font: Theme.font.inlineIcons }
+                            { key: "applications", glyph: Theme.icon.captureWindow, font: Theme.font.icons },
+                            { key: "processes", glyph: Theme.icon.cpu, font: Theme.font.inlineIcons }
                         ]
-                        GlyphButton {
-                            id: modeButton
+                        Text {
                             required property var modelData
-                            readonly property bool selected: root.view === modelData.key
-                            glyph: ""
-                            color: selected ? Theme.quickSettings.checked : modeHover.hovered ? Theme.panel.button : "transparent"
-                            Accessible.name: modelData.label
-                            Accessible.role: Accessible.Button
-                            onClicked: root.changeView(modelData.key)
-                            Text {
-                                anchors.centerIn: parent
-                                text: modeButton.modelData.glyph
-                                font.family: modeButton.modelData.font
-                                font.pixelSize: Theme.mediaCard.glyphSize
-                                color: modeButton.selected ? Theme.quickSettings.checkedText : Theme.panel.secondaryText
-                            }
-                            HoverHandler { id: modeHover }
-                            Rectangle {
-                                visible: modeHover.hovered || modeButton.activeFocus
-                                anchors.bottom: parent.top
-                                anchors.horizontalCenter: parent.horizontalCenter
-                                anchors.bottomMargin: Theme.panel.spacing
-                                width: modeLabel.implicitWidth + 2 * Theme.panel.buttonPaddingH
-                                height: modeLabel.implicitHeight + 2 * Theme.panel.buttonPaddingV
-                                radius: Theme.panel.rowRadius
-                                color: Theme.panel.background
-                                border.width: Theme.panel.border
-                                border.color: Theme.panel.borderColor
-                                Text {
-                                    id: modeLabel
-                                    anchors.centerIn: parent
-                                    text: modeButton.modelData.label
-                                    color: Theme.panel.text
-                                    font.family: Theme.font.text
-                                    font.pixelSize: Theme.panel.smallFontSize
-                                }
-                            }
+                            width: Theme.mediaCard.buttonSize
+                            height: width
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                            text: modelData.glyph
+                            font.family: modelData.font
+                            font.pixelSize: Theme.mediaCard.glyphSize
+                            color: root.view === modelData.key ? Theme.quickSettings.checkedText : Theme.panel.secondaryText
                         }
+                    }
+                }
+
+                MouseArea {
+                    objectName: "monitor-view-toggle-hit"
+                    anchors.fill: parent
+                    onClicked: viewToggle.flip(null)
+                }
+                HoverHandler { id: toggleHover }
+                Rectangle {
+                    visible: toggleHover.hovered || viewToggle.activeFocus
+                    anchors.bottom: parent.top
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    anchors.bottomMargin: Theme.panel.spacing
+                    width: toggleLabel.implicitWidth + 2 * Theme.panel.buttonPaddingH
+                    height: toggleLabel.implicitHeight + 2 * Theme.panel.buttonPaddingV
+                    radius: Theme.panel.rowRadius
+                    color: Theme.panel.background
+                    border.width: Theme.panel.border
+                    border.color: Theme.panel.borderColor
+                    Text {
+                        id: toggleLabel
+                        anchors.centerIn: parent
+                        text: root.applicationView ? "Show processes" : "Show applications"
+                        color: Theme.panel.text
+                        font.family: Theme.font.text
+                        font.pixelSize: Theme.panel.smallFontSize
                     }
                 }
             }

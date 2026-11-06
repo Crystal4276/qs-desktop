@@ -51,6 +51,11 @@ Retour arrière de la bascule : `docs/ROLLBACK.md`.
   erreur du changement ; capture recadrée `.shots/monitor-applications-panel.png`. Tous les bancs arrêtés.
 - Ajustement demandé ensuite : bascule déplacée avant le champ de recherche, à gauche, pour fixer sa position lorsque les
   actions de sélection apparaissent. Rendu et tests QML sur copie Sway headless : OK ; bureau réel rechargé et vivant.
+- Comportement du toggle ajusté : une seule zone de clic sur toute la pilule, clic à gauche/droite ou sur les marges →
+  inversion systématique de la vue ; un seul arrêt de tabulation, Entrée/Espace et action d’accessibilité. Pastille coulissante,
+  transition OutCubic de 250 ms reprise du thème ; retour à Applications à l’ouverture sans animation parasite.
+  Tests du vrai gestionnaire de clic (clics répétés) sous Sway/Hyprland : OK ; position intermédiaire et finale de l’animation
+  vérifiées par minuteries QML sur Sway. Aucune application arrêtée, aucune action NordVPN.
 - Reste à vérifier à la main : clic physique sur la bascule et confirmations, confort de lecture sur les écrans habituels.
 
 ## Maintenance — portails captifs Wi-Fi (2026-11-06)
