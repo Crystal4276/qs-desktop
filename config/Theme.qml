@@ -533,6 +533,7 @@ Singleton {
         readonly property color gpu: root.color.mauve
         readonly property color disk: root.color.peach
         readonly property int coreColumns: 4
+        readonly property int toggleDuration: root.wifi.levelDuration  // same short transition as signal gauges
         readonly property int processRows: 14
         readonly property color selected: root.panel.rowHover
     }

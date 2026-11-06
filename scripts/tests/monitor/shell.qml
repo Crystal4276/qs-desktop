@@ -4,7 +4,18 @@ import Quickshell.Io
 import qs.services
 import qs.modules.monitor
 ShellRoot {
+    id: root
+    property var animatedKnob: null
+    property real initialKnobX: 0
     MonitorPanel { id: panel }
+    function find(item, name) {
+        if (item.objectName === name) return item;
+        for (const child of item.children ?? []) {
+            const found = find(child, name);
+            if (found) return found;
+        }
+        return null;
+    }
     function check(ok, message) { if (!ok) throw new Error(message); }
     Timer {
         interval: 500
@@ -37,6 +48,13 @@ ShellRoot {
                 panel.changeView("processes");
                 panel.toggle(null);
                 check(panel.applicationView, "applications on every opening");
+                const control = find(panel.frameItem, "monitor-view-toggle");
+                const hit = find(control, "monitor-view-toggle-hit");
+                check(hit.width === control.width && hit.height === control.height, "whole pill is clickable");
+                hit.clicked(null);
+                check(!panel.applicationView, "click switches to processes");
+                hit.clicked(null);
+                check(panel.applicationView, "same hit area switches back to applications");
                 panel.close();
                 panel.select("chat");
                 Monitor.applicationGroups = [];
@@ -45,6 +63,42 @@ ShellRoot {
                     console.log("MONITOR_TEST_PASS");
                 });
             } catch (error) { console.error("MONITOR_TEST_FAIL", error); }
+        }
+    }
+    Timer {
+        interval: 1000
+        running: true
+        onTriggered: {
+            panel.toggle(null);
+            Qt.callLater(() => {
+                const control = find(panel.frameItem, "monitor-view-toggle");
+                root.animatedKnob = control.children[0];
+                root.initialKnobX = root.animatedKnob.x;
+                find(control, "monitor-view-toggle-hit").clicked(null);
+                animationMiddle.start();
+                animationEnd.start();
+            });
+        }
+    }
+    Timer {
+        id: animationMiddle
+        interval: 80
+        onTriggered: {
+            const offset = root.animatedKnob.x - root.initialKnobX;
+            if (!(offset > 0 && offset < root.animatedKnob.width))
+                console.error("MONITOR_TEST_FAIL: animation must interpolate between positions", offset);
+        }
+    }
+    Timer {
+        id: animationEnd
+        interval: 400
+        onTriggered: {
+            const offset = root.animatedKnob.x - root.initialKnobX;
+            if (Math.abs(offset - root.animatedKnob.width) > 0.1)
+                console.error("MONITOR_TEST_FAIL: animation must reach the process position", offset);
+            else
+                console.log("MONITOR_ANIMATION_PASS");
+            panel.close();
         }
     }
 }
