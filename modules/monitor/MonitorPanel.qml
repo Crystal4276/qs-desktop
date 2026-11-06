@@ -1,20 +1,39 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
-import Quickshell.Wayland
 import qs.config
 import qs.services
 import qs.modules.bar
 
-// Panneau de statistiques système (remplace btop et nvtop, ARCHITECTURE § 7.16 ; ton choix du 2026-10-19 : panneau surgissant) :
+// Panneau de statistiques système (remplace btop et nvtop, ARCHITECTURE § 7.16 ; fenêtre flottante centrée) :
 // processeur (total, température, cœurs), mémoire et swap, GPU (charge, mémoire vidéo, température, consommation, ventilateur,
 // fréquence), disques, réseau ; processus triables (nom, PID, utilisateur, CPU, mémoire, mémoire vidéo), recherche, arrêt de tes
 // processus avec confirmation (SIGTERM, puis « Force » : SIGKILL). Mesures relevées seulement panneau ouvert (Monitor.users).
 // Un processus choisi fige l'ordre de la liste (les valeurs continuent de changer, les nouveaux processus s'ajoutent en bas) jusqu'à
 // ce qu'on le désélectionne (nouveau clic) ou qu'il s'arrête. Tri ou recherche changés : liste refigée et ramenée sur lui ; sélection
 // levée s'il ne correspond plus à la recherche (pas d'arrêt d'un processus qu'on ne voit plus).
-OverlayPopup {
+FloatingWindow {
     id: root
+
+    visible: false
+    title: Compositor.monitorWindowTitle
+    color: Theme.panel.background
+    readonly property alias frameItem: frame
+    readonly property int availableHeight: Math.max(1, (screen?.height ?? Theme.monitor.width)
+        - Theme.bar.exclusiveZone - 2 * Theme.panel.gap)
+    implicitWidth: Math.min(Theme.monitor.width, (screen?.width ?? Theme.monitor.width) - 2 * Theme.bar.marginSide)
+    implicitHeight: frame.height
+    minimumSize: Qt.size(implicitWidth, implicitHeight)
+    maximumSize: minimumSize
+
+    function close(): void { visible = false; }
+    onClosed: visible = false
+    onImplicitHeightChanged: if (visible) Compositor.resizeMonitorWindow()
+    onImplicitWidthChanged: if (visible) Compositor.resizeMonitorWindow()
+    Connections {
+        target: Session
+        function onLockActiveChanged() { if (Session.lockActive) root.close(); }
+    }
 
     property string sortKey: "cpu"
     property bool descending: true
@@ -92,14 +111,20 @@ OverlayPopup {
 
     // `from` : rangée de modules de la pilule cliquée, qui referme le panneau et donne l'écran ; null (raccourci) : écran focalisé.
     function toggle(from: Item): void {
-        if (!beginOpen(from))
+        if (visible) {
+            close();
             return;
-        screen = from ? from.QsWindow.window.screen : Outputs.focusedScreen();
+        }
+        if (Session.lockActive)
+            return;
+        BarState.closePopups([]);
+        screen = (from ? from.QsWindow.window?.screen : null) ?? Outputs.focusedScreen();
         view = "applications";
         Monitor.stopError = "";
         search.text = "";
         select("");
         list.positionViewAtBeginning();
+        Compositor.prepareMonitorWindow(screen?.name ?? "");
         visible = true;
         search.focusInput();
     }
@@ -149,12 +174,19 @@ OverlayPopup {
         refreeze();
     }
 
-    WlrLayershell.namespace: "quickshell-monitor"
-    frameItem: frame
-
-    onVisibleChanged: Monitor.users += visible ? 1 : -1
+    // Some backends repeat visibleChanged without changing the value.
+    property bool samplingActive: false
+    function syncSampling(): void {
+        if (samplingActive === visible)
+            return;
+        samplingActive = visible;
+        Monitor.users += samplingActive ? 1 : -1;
+        if (!samplingActive) Compositor.forgetMonitorWindow();
+    }
+    onVisibleChanged: syncSampling()
+    Component.onCompleted: syncSampling()
     Component.onDestruction: {
-        if (visible)
+        if (samplingActive)
             Monitor.users--;
     }
 
@@ -247,10 +279,11 @@ OverlayPopup {
     PanelFrame {
         id: frame
 
-        x: Math.round((parent.width - width) / 2)
-        y: Math.round((parent.height - height) / 2)
-        width: Math.min(Theme.monitor.width, parent.width - 2 * Theme.bar.marginSide)
-        maxHeight: parent.height - 2 * Theme.panel.gap
+        // The compositor owns the floating window's border and corner shape.
+        radius: 0
+        border.width: 0
+        width: root.implicitWidth
+        maxHeight: root.availableHeight
         onCloseRequested: root.close()
 
         RowLayout {

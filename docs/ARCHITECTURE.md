@@ -442,8 +442,13 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
 - Module GPU : cartes `/sys/class/drm/card*/device/vendor` (`0x10de` NVIDIA, `0x1002` AMD, `0x8086` Intel ; plusieurs : `boot_vga=1`).
   Affiche l'**utilisation** : `nvidia-smi --query-gpu=utilization.gpu` (NVIDIA, aucun capteur hwmon), `device/gpu_busy_percent` (AMD) ;
   Intel n'expose pas d'utilisation → module masqué. Un échec de `nvidia-smi` ne masque pas le module définitivement.
-- Panneau de statistiques (`modules/monitor/`, ouvert par CPU, mémoire, GPU, `qs ipc call monitor toggle`) : relevés chaque seconde
-  panneau ouvert ; CPU (total, température coretemp / k10temp / zenpower, cœurs), mémoire et swap, réseau, GPU (NVIDIA : charge, VRAM,
+- Moniteur de statistiques (`modules/monitor/`, ouvert par CPU, mémoire, GPU, `qs ipc call monitor toggle`) : fenêtre native
+  `FloatingWindow`, fermable par Super+Q et Échap, clic extérieur sans fermeture. Le compositeur gère bordures et coins
+  (pas d’arrondis QML sur le cadre). Taille du contenu bornée par l’écran ; même écran d’ouverture et centrage dans la zone utile.
+  `Compositor` vise seulement le PID Quickshell courant + titre `System Monitor — Quickshell`, puis l’identifiant natif exact :
+  Sway via événement de fenêtre, Hyprland via attente bornée de la liste native. Recentrage après changement de dimensions,
+  sans reprendre le focus ; aucun changement de raccourci ni règle globale de fenêtres. Fermeture au verrouillage.
+  Relevés chaque seconde panneau ouvert ; CPU (total, température coretemp / k10temp / zenpower, cœurs), mémoire et swap, réseau, GPU (NVIDIA : charge, VRAM,
   température, consommation, ventilateur, fréquence, VRAM par processus via `nvidia-smi pmon` ; AMD : sysfs), disques (`df`),
   processus (charge comme top, tri, recherche), arrêt de ses propres processus avec confirmation (SIGTERM / SIGKILL).
 - Vue par défaut à chaque ouverture : Applications, y compris les applications identifiables en arrière-plan ; bascule compacte
@@ -459,7 +464,11 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
   donc les pages partagées peuvent être comptées plusieurs fois. Processus non attribuables : vue Processes.
 - Tests : `python scripts/test-monitor.py` ; ajouter `--chromium` pour trois profils headless jetables et les vrais signaux.
   Fixture QML `scripts/tests/monitor/shell.qml` à copier à la racine de la copie de test, puis lancer sur banc isolé :
-  `MONITOR_TEST_PASS` vérifie sommes, tris, sélection, transitions et retour par défaut à Applications.
+  `MONITOR_TEST_PASS` vérifie sommes, tris, sélection, transitions, retour par défaut à Applications et compteur de visibilité.
+  Pour le test natif, copier `scripts/tests/monitor/window-shell.qml` à la racine de la copie et le lancer sur banc QS_TEST=1,
+  puis `python scripts/tests/monitor/window-check.py <PID_QS> sway|hyprland` avec le même environnement. Sway : démarrer avec
+  un écran HEADLESS-1 de 1600x1200, le test ajoute HEADLESS-2. Vérifie flottement, focus, fermeture native sans cible (action
+  de Super+Q), fenêtre jetable derrière conservée, réouverture et relevés arrêtés. Le script refuse une instance hors QS_TEST.
 
 ### 7.17 Calendrier (horloge)
 
@@ -543,7 +552,7 @@ Revue complète des types (documentation 0.3.0, `qmltypes` de 0.3.2, code source
 
 | Module | Utilisé | Écarté (raison) |
 |---|---|---|
-| `Quickshell` | `ShellRoot`, `Singleton`, `Variants`, `PanelWindow`, `Region`, `PopupAnchor`, `SystemClock`, `QsMenuOpener`, `DesktopEntries`, `LazyLoader`, `ScriptModel`, `PersistentProperties` (JSON en texte : un tableau JS ne passe pas d'un moteur à l'autre), `RetainableLock`, `execDetached`, `cachePath`, `statePath`, `clipboardText` | `QsMenuAnchor` (menus dessinés), `ColorQuantizer` (couleurs inventées), `ElapsedTimer` ; `EasingCurve` au besoin (animations : `BACKLOG.md`) |
+| `Quickshell` | `ShellRoot`, `Singleton`, `Variants`, `PanelWindow`, `FloatingWindow`, `Region`, `PopupAnchor`, `SystemClock`, `QsMenuOpener`, `DesktopEntries`, `LazyLoader`, `ScriptModel`, `PersistentProperties` (JSON en texte : un tableau JS ne passe pas d'un moteur à l'autre), `RetainableLock`, `execDetached`, `cachePath`, `statePath`, `clipboardText` | `QsMenuAnchor` (menus dessinés), `ColorQuantizer` (couleurs inventées), `ElapsedTimer` ; `EasingCurve` au besoin (animations : `BACKLOG.md`) |
 | `Quickshell.Io` | `Process`, `FileView`, `SplitParser`, `StdioCollector`, `IpcHandler`, `JsonAdapter` (`vpn.json`) | `Socket*`, `DataStream*` (raccourcis par `IpcHandler`) |
 | `Quickshell.I3`, `Quickshell.Hyprland` | tout le nécessaire à `Compositor` | `HyprlandFocusGrab` (`OutsideClick` commun aux deux), `GlobalShortcut` (raccourcis par `qs ipc`) |
 | `Quickshell.WindowManager` | — | en réserve : `ext-workspace` n'indique ni focus ni état vide, ne crée pas d'espace |

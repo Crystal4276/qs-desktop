@@ -465,6 +465,79 @@ Singleton {
         }
     }
 
+    // Only this process's monitor window is placed; ordinary windows are never targeted.
+    readonly property string monitorWindowTitle: "System Monitor — Quickshell"
+    property string monitorOutput: ""
+    property int monitorSwayId: -1
+    property string monitorHyprAddress: ""
+    property real monitorPlacementDeadline: 0
+
+    function prepareMonitorWindow(output: string): void {
+        monitorSwayId = -1;
+        monitorHyprAddress = "";
+        monitorOutput = output;
+        monitorPlacementDeadline = Date.now() + 2000;
+    }
+
+    function cancelMonitorPlacement(): void { monitorPlacementDeadline = 0; }
+
+    function forgetMonitorWindow(): void {
+        cancelMonitorPlacement();
+        monitorSwayId = -1;
+        monitorHyprAddress = "";
+        monitorRecenter.stop();
+    }
+
+    function resizeMonitorWindow(): void { monitorRecenter.restart(); }
+    Timer {
+        id: monitorRecenter
+        interval: 50
+        onTriggered: {
+            if (root.isSway && root.monitorSwayId >= 0)
+                I3.dispatch(`[con_id=${root.monitorSwayId}] move position center`);
+            else if (root.isHyprland && root.monitorHyprAddress !== "")
+                root.hyprlandBatch([`hl.dsp.window.center({ window = "address:0x${root.monitorHyprAddress}" })`]);
+        }
+    }
+
+    function placeSwayMonitor(container: var): void {
+        if (Date.now() > monitorPlacementDeadline || container?.pid !== Quickshell.processId
+            || container?.name !== monitorWindowTitle)
+            return;
+        const target = `[con_id=${container.id}]`;
+        const output = outputs.some(o => o.name === monitorOutput) ? monitorOutput : "";
+        monitorPlacementDeadline = 0;
+        monitorSwayId = container.id;
+        I3.dispatch(`${target} floating enable; `
+            + (output ? `${target} move container to output ${luaString(output)}; ` : "")
+            + `${target} move position center; ${target} focus`);
+    }
+
+    Timer {
+        interval: 50
+        repeat: true
+        running: root.isHyprland && root.monitorPlacementDeadline > 0
+        onTriggered: {
+            if (Date.now() > root.monitorPlacementDeadline) {
+                root.cancelMonitorPlacement();
+                return;
+            }
+            const window = Hyprland.toplevels.values.find(t => t.title === root.monitorWindowTitle
+                && t.lastIpcObject.pid === Quickshell.processId && t.address !== "");
+            if (!window) {
+                Hyprland.refreshToplevels();
+                return;
+            }
+            const target = `window = "address:0x${window.address}"`;
+            const output = root.outputs.some(o => o.name === root.monitorOutput) ? root.monitorOutput : "";
+            root.monitorHyprAddress = window.address;
+            root.cancelMonitorPlacement();
+            root.hyprlandBatch([`hl.dsp.window.float({ action = "set", ${target} })`,
+                ...(output ? [`hl.dsp.window.move({ monitor = ${root.luaString(output)}, ${target} })`] : []),
+                `hl.dsp.window.center({ ${target} })`, `hl.dsp.focus({ ${target} })`]);
+        }
+    }
+
     // --- Backend Sway : événements que Quickshell.I3 ne suit pas lui-même ---
 
     function refreshWorkspaces(): void {
@@ -483,7 +556,7 @@ Singleton {
         onIpcEvent: event => {
             // Changement de titre (fréquent : navigateur) : utile seulement si une activation est attendue, pas analysé sinon ; de focus
             // (à chaque fenêtre survolée) : aucun usage.
-            if (event.type === "window" && Date.now() > root.activationDeadline && /^\s*\{\s*"change"\s*:\s*"(title|focus)"/.test(event.data))
+            if (event.type === "window" && Date.now() > root.monitorPlacementDeadline && Date.now() > root.activationDeadline && /^\s*\{\s*"change"\s*:\s*"(title|focus)"/.test(event.data))
                 return;
             const data = JSON.parse(event.data);
             // Fenêtre déjà urgente avant le clic : Sway n'envoie pas de nouvel « urgent » ; Chromium change alors d'onglet, donc
@@ -499,6 +572,8 @@ Singleton {
                 Qt.callLater(root.refreshWorkspaces);
                 return;
             }
+            if (["new", "title"].includes(data.change))
+                root.placeSwayMonitor(data.container);
             // Ouverture, fermeture, déplacement : l'état vide des espaces change, I3 ne le relit pas de lui-même.
             if (["new", "close", "move", "floating"].includes(data.change))
                 Qt.callLater(root.refreshWorkspaces);

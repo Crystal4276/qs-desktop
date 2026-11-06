@@ -48,6 +48,10 @@ ShellRoot {
                 panel.changeView("processes");
                 panel.toggle(null);
                 check(panel.applicationView, "applications on every opening");
+                check(Monitor.users === 1, "one visible monitor samples once");
+                panel.visibleChanged();
+                panel.visibleChanged();
+                check(Monitor.users === 1, "repeated visibility notifications do not duplicate sampling");
                 const control = find(panel.frameItem, "monitor-view-toggle");
                 const hit = find(control, "monitor-view-toggle-hit");
                 check(hit.width === control.width && hit.height === control.height, "whole pill is clickable");
@@ -56,6 +60,7 @@ ShellRoot {
                 hit.clicked(null);
                 check(panel.applicationView, "same hit area switches back to applications");
                 panel.close();
+                check(Monitor.users === 0, "closing the window stops sampling");
                 panel.select("chat");
                 Monitor.applicationGroups = [];
                 Qt.callLater(() => {
