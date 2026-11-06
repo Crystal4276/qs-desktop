@@ -463,16 +463,26 @@ OverlayPopup {
                             { key: "applications", glyph: Theme.icon.captureWindow, font: Theme.font.icons },
                             { key: "processes", glyph: Theme.icon.cpu, font: Theme.font.inlineIcons }
                         ]
-                        Text {
+                        Item {
+                            id: modeCell
                             required property var modelData
                             width: Theme.mediaCard.buttonSize
                             height: width
-                            horizontalAlignment: Text.AlignHCenter
-                            verticalAlignment: Text.AlignVCenter
-                            text: modelData.glyph
-                            font.family: modelData.font
-                            font.pixelSize: Theme.mediaCard.glyphSize
-                            color: root.view === modelData.key ? Theme.quickSettings.checkedText : Theme.panel.secondaryText
+
+                            TextMetrics {
+                                id: glyphMetrics
+                                text: modeCell.modelData.glyph
+                                font.family: modeCell.modelData.font
+                                font.pixelSize: Theme.mediaCard.glyphSize
+                            }
+                            Text {
+                                // Center the visible glyph, rather than the font's advance and line box.
+                                x: (parent.width - glyphMetrics.tightBoundingRect.width) / 2 - glyphMetrics.tightBoundingRect.x
+                                y: (parent.height - glyphMetrics.tightBoundingRect.height) / 2 - glyphMetrics.tightBoundingRect.y - baselineOffset
+                                text: modeCell.modelData.glyph
+                                font: glyphMetrics.font
+                                color: root.view === modeCell.modelData.key ? Theme.quickSettings.checkedText : Theme.panel.secondaryText
+                            }
                         }
                     }
                 }
@@ -482,27 +492,7 @@ OverlayPopup {
                     anchors.fill: parent
                     onClicked: viewToggle.flip(null)
                 }
-                HoverHandler { id: toggleHover }
-                Rectangle {
-                    visible: toggleHover.hovered || viewToggle.activeFocus
-                    anchors.bottom: parent.top
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    anchors.bottomMargin: Theme.panel.spacing
-                    width: toggleLabel.implicitWidth + 2 * Theme.panel.buttonPaddingH
-                    height: toggleLabel.implicitHeight + 2 * Theme.panel.buttonPaddingV
-                    radius: Theme.panel.rowRadius
-                    color: Theme.panel.background
-                    border.width: Theme.panel.border
-                    border.color: Theme.panel.borderColor
-                    Text {
-                        id: toggleLabel
-                        anchors.centerIn: parent
-                        text: root.applicationView ? "Show processes" : "Show applications"
-                        color: Theme.panel.text
-                        font.family: Theme.font.text
-                        font.pixelSize: Theme.panel.smallFontSize
-                    }
-                }
+
             }
 
             PanelField {

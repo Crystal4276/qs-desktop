@@ -36,7 +36,7 @@ Retour arrière de la bascule : `docs/ROLLBACK.md`.
 - Jauges CPU teal, mémoire green, GPU mauve, disques peach ; une seule teinte par carte, valeurs de Theme.
 - Vue Applications à chaque ouverture, y compris les applications identifiables en arrière-plan ; ressources additionnées,
   nombre de processus. Bascule compacte à gauche de la recherche, pastille verte et icônes application / processeur,
-  infobulles et navigation clavier ; les grands onglets de la première proposition ont été remplacés selon ta demande.
+  navigation clavier ; les grands onglets de la première proposition ont été remplacés selon ta demande.
 - Identité desktop + arguments / profils Chromium et PID des fenêtres (Hyprland natif, IPC Sway). Instances regroupées,
   applications indépendantes séparées dans l’arbre, orphelins suivis. Chromium, Discord et WhatsApp distincts, y compris
   leurs rapports de plantage ; Steam et Terminal identifiés via leurs fenêtres. Hôte partagé : arrêt groupé désactivé.
@@ -56,6 +56,9 @@ Retour arrière de la bascule : `docs/ROLLBACK.md`.
   transition OutCubic de 250 ms reprise du thème ; retour à Applications à l’ouverture sans animation parasite.
   Tests du vrai gestionnaire de clic (clics répétés) sous Sway/Hyprland : OK ; position intermédiaire et finale de l’animation
   vérifiées par minuteries QML sur Sway. Aucune application arrêtée, aucune action NordVPN.
+- Finition demandée : infobulle supprimée ; glyphes Applications/Processes centrés sur leur dessin réel (tightBoundingRect),
+  pour corriger le décalage optique de l’icône CPU. Deux positions inspectées sur captures du banc Sway ; tests QML existants,
+  y compris clic global et animation, passants. Aucun changement de comportement ni arrêt d’application.
 - Reste à vérifier à la main : clic physique sur la bascule et confirmations, confort de lecture sur les écrans habituels.
 
 ## Maintenance — portails captifs Wi-Fi (2026-11-06)
