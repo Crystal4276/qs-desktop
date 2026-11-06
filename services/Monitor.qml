@@ -3,6 +3,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import Quickshell.Hyprland
 
 // Statistiques système détaillées (ARCHITECTURE § 7.16 « moniteur système », panneau modules/monitor/) : relevées seulement tant que
 // le panneau est ouvert (`users`) : processeur et mémoire chaque seconde, processus et GPU toutes les 2,6 s (`update_ms` de ton btop : une liste plus
@@ -42,15 +43,68 @@ Singleton {
 
     // --- Processus ---
     property var processes: []         // [{ pid, name, user, cpu (%), memory (octets), gpu (Mio) }]
-    property var previousTimes: ({})   // pid → temps CPU (tics)
+    property var applicationGroups: []
+    property var membership: ({})
+    property string stopError: ""
+    property var stopRequest: null
+    readonly property var catalog: DesktopEntries.applications.values.map(e => ({ id: e.id, name: e.name, startupClass: e.startupClass, command: Array.from(e.command) }))
+    readonly property var applications: applicationGroups.map(g => {
+        const members = processes.filter(p => g.members.includes(p.key));
+        return { key: g.id, id: g.id, name: g.name, count: members.length, user: me,
+            cpu: members.reduce((n, p) => n + p.cpu, 0), memory: members.reduce((n, p) => n + p.memory, 0),
+            gpu: members.reduce((n, p) => n + p.gpu, 0), members: g.members, roots: g.roots, blocked: g.blocked };
+    }).filter(g => g.count > 0)
+    property var previousTimes: ({})   // PID + start time → CPU ticks
     property real previousTotal: 0     // tics de tous les cœurs
     readonly property string me: Quickshell.env("USER") ?? ""
 
     // Arrêt d'un de tes processus : SIGTERM (`force` : SIGKILL). Pas d'élévation de droits. Relevé peu après : le processus quitte
     // la liste s'il est vraiment parti ; s'il survit (SIGTERM ignoré), il reste choisi, prêt à être forcé.
+    function requestData(): var {
+        return { entries: catalog, previous: membership, windows: Compositor.isHyprland
+            ? Hyprland.toplevels.values.map(t => ({ pid: t.lastIpcObject.pid ?? -1,
+                appId: t.wayland?.appId || t.lastIpcObject.class || "" })).filter(w => w.pid > 0 && w.appId !== "") : [] };
+    }
+
     function stop(pid: int, force: bool): void {
-        Quickshell.execDetached(["kill", force ? "-KILL" : "-TERM", String(pid)]);
-        secondSample.restart();
+        const p = processes.find(p => p.pid === pid);
+        if (p) stopProcess(p.key, force);
+    }
+
+    function stopProcess(key: string, force: bool): void {
+        const p = processes.find(p => p.key === key);
+        if (!p || p.user !== me)
+            return;
+        executeStop({ members: [key], roots: [key], force: force });
+    }
+
+    function stopApplication(id: string, force: bool, confirmed: var): void {
+        if (confirmed?.id !== id)
+            return;
+        executeStop({ application: id, members: confirmed.members, roots: confirmed.roots, force: force });
+    }
+
+    function executeStop(request: var): void {
+        if (stopper.running)
+            return;
+        stopError = "";
+        stopRequest = Object.assign(requestData(), request, { action: "stop" });
+        stopper.running = true;
+    }
+
+    Process {
+        id: stopper
+        command: ["python", Quickshell.shellPath("scripts/monitor-processes.py")]
+        stdinEnabled: true
+        onStarted: { write(JSON.stringify(root.stopRequest)); stdinEnabled = false; }
+        onRunningChanged: if (!running) stdinEnabled = true
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try { root.stopError = JSON.parse(text).errors.join("; "); }
+                catch (e) { root.stopError = "Unable to stop the selected application or process"; }
+                secondSample.restart();
+            }
+        }
     }
 
     // Panneau fermé : relevés précédents oubliés, sinon le premier % CPU à la réouverture serait une moyenne sur toute la fermeture.
@@ -81,8 +135,10 @@ Singleton {
         repeat: true
         triggeredOnStart: true
         onTriggered: {
-            if (!processList.running)
+            if (!processList.running) {
+                if (Compositor.isHyprland) Hyprland.refreshToplevels();
                 processList.running = true;
+            }
         }
     }
 
@@ -175,57 +231,39 @@ Singleton {
         }
     }
 
-    // Processus : temps CPU (/proc/PID/stat), mémoire résidente et utilisateurs (ps), total des cœurs (/proc/stat), en un seul
-    // passage. `user:64` : nom complet (8 caractères par défaut, au-delà tronqué ou remplacé par l'UID). `$$` : ce shell, que la
-    // liste ne montre pas (une ligne de plus à chaque relevé, déjà partie au suivant).
+    // One snapshot supplies raw CPU times and stable application membership.
     Process {
         id: processList
-        command: ["sh", "-c", 'echo $$; head -1 /proc/stat; echo ---; cat /proc/[0-9]*/stat 2>/dev/null; echo ---; ps -eo pid=,rss=,user:64=']
+        command: ["python", Quickshell.shellPath("scripts/monitor-processes.py")]
+        stdinEnabled: true
+        onStarted: { write(JSON.stringify(root.requestData())); stdinEnabled = false; }
+        onRunningChanged: if (!running) stdinEnabled = true
         stdout: StdioCollector {
             onStreamFinished: {
                 if (!root.active)
                     return;
-                const [head, stats, users] = text.split("\n---\n");
-                const [self, stat] = head.split("\n");
-                const total = (stat ?? "").trim().split(/\s+/).slice(1).map(Number).reduce((a, b) => a + b, 0);
-                const owner = {}, rss = {};
-                for (const line of (users ?? "").split("\n")) {
-                    const m = line.trim().match(/^(\d+)\s+(\d+)\s+(\S+)/);
-                    if (m) {
-                        rss[m[1]] = Number(m[2]);   // Kio : pas de taille de page supposée
-                        owner[m[1]] = m[3];
-                    }
-                }
-                const elapsed = total - root.previousTotal;
-                const coresCount = Math.max(1, root.cores.length);
-                const times = {};
-                const list = [];
-                for (const line of (stats ?? "").split("\n")) {
-                    const open = line.indexOf("("), close = line.lastIndexOf(")");
-                    if (open < 0 || close < 0)
-                        continue;
-                    const pid = line.slice(0, open).trim();
-                    if (pid === self)
-                        continue;
-                    const rest = line.slice(close + 2).split(" ");
-                    if (rest[0] === "Z")   // zombie : déjà terminé, plus rien à arrêter
-                        continue;
-                    const time = Number(rest[11]) + Number(rest[12]);
-                    times[pid] = time;
-                    const before = root.previousTimes[pid];
-                    list.push({
-                        pid: Number(pid),
-                        name: line.slice(open + 1, close),
-                        user: owner[pid] ?? "",
-                        cpu: before !== undefined && elapsed > 0 ? Math.round(1000 * (time - before) / (elapsed / coresCount)) / 10 : 0,
-                        memory: (rss[pid] ?? 0) * 1024,
-                        gpu: root.gpuProcesses[pid] ?? 0
-                    });
-                }
+                let data;
+                try { data = JSON.parse(text); }
+                catch (e) { console.warn("Monitor: invalid process snapshot", e); return; }
+                const elapsed = data.total - root.previousTotal;
+                const count = Math.max(1, root.cores.length);
+                const times = {}, membership = {};
+                const list = data.processes.map(p => {
+                    const before = root.previousTimes[p.key];
+                    times[p.key] = p.ticks;
+                    return Object.assign(p, { cpu: before !== undefined && elapsed > 0
+                        ? Math.max(0, Math.round(1000 * (p.ticks - before) / (elapsed / count)) / 10) : 0,
+                        gpu: root.gpuProcesses[p.pid] ?? 0 });
+                });
+                for (const g of data.applications)
+                    for (const key of g.members)
+                        membership[key] = { id: g.id, name: g.name };
                 const first = root.previousTotal === 0;
                 root.previousTimes = times;
-                root.previousTotal = total;
+                root.previousTotal = data.total;
+                root.membership = membership;
                 root.processes = list;
+                root.applicationGroups = data.applications;
                 root.sampleGpu();
                 if (first)
                     secondSample.start();

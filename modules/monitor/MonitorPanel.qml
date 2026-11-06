@@ -18,52 +18,57 @@ OverlayPopup {
 
     property string sortKey: "cpu"
     property bool descending: true
-    property int selectedPid: -1
+    property string view: "applications"
+    readonly property bool applicationView: view === "applications"
+    readonly property var sourceRows: applicationView ? Monitor.applications : Monitor.processes
+    property string selectedKey: ""
+    property var confirmedApplication: null
     property string confirm: ""      // "", "end" ou "force" : confirmation en cours pour le processus choisi
 
-    // Ordre des PID figé tant qu'un processus est choisi (null : liste triée en direct).
+    // Ordre des identités figé tant qu'un processus est choisi (null : liste triée en direct).
     property var frozen: null
 
     readonly property var sorted: {
         const q = search.text.toLowerCase();
-        const list = Monitor.processes.filter(p => q === "" || p.name.toLowerCase().includes(q) || String(p.pid).startsWith(q)
+        const list = sourceRows.filter(p => q === "" || p.name.toLowerCase().includes(q) || String(applicationView ? p.count : p.pid).startsWith(q)
             || p.user.toLowerCase().includes(q));
-        const k = sortKey, d = descending ? -1 : 1;
-        // Départage par PID : le tri du moteur n'est pas stable, les lignes à égalité s'échangeraient à chaque relevé.
-        return list.sort((a, b) => (typeof a[k] === "string" ? a[k].localeCompare(b[k]) : a[k] - b[k]) * d || a.pid - b.pid);
+        const k = applicationView && sortKey === "pid" ? "count" : sortKey, d = descending ? -1 : 1;
+        // Départage par identité : le tri du moteur n'est pas stable, les lignes à égalité s'échangeraient à chaque relevé.
+        return list.sort((a, b) => (typeof a[k] === "string" ? a[k].localeCompare(b[k]) : a[k] - b[k]) * d || a.key.localeCompare(b.key));
     }
-    // PID des lignes, modèle de la liste : avec des objets et objectProp, ScriptModel garde l'ancien objet d'une ligne qui change
+    // Identités des lignes, modèle de la liste : avec des objets et objectProp, ScriptModel garde l'ancien objet d'une ligne qui change
     // de rang (vérifié sur Quickshell 0.3.2), et ses valeurs resteraient périmées.
     readonly property var rows: {
-        const pids = sorted.map(p => p.pid);
+        const pids = sorted.map(p => p.key);
         if (!frozen)
             return pids;
         const found = new Set(pids), known = new Set(frozen);
         return frozen.filter(pid => found.has(pid)).concat(pids.filter(pid => !known.has(pid)));
     }
-    readonly property var processByPid: {
+    readonly property var rowByKey: {
         const byPid = {};
-        for (const p of Monitor.processes)
-            byPid[p.pid] = p;
+        for (const p of sourceRows)
+            byPid[p.key] = p;
         return byPid;
     }
-    readonly property var selectedProcess: processByPid[selectedPid] ?? null
+    readonly property var selectedProcess: rowByKey[selectedKey] ?? null
 
-    // Processus choisi arrêté : sélection levée, la liste reprend son tri (après coup : changer selectedPid ici, pendant
+    // Processus choisi arrêté : sélection levée, la liste reprend son tri (après coup : changer selectedKey ici, pendant
     // l'évaluation de selectedProcess, ferait une boucle de liaison).
     onSelectedProcessChanged: {
-        if (selectedPid >= 0 && !selectedProcess)
+        if (selectedKey !== "" && !selectedProcess)
             Qt.callLater(() => {
-                if (selectedPid >= 0 && !selectedProcess)
-                    select(-1);
+                if (selectedKey !== "" && !selectedProcess)
+                    select("");
             });
     }
 
-    function select(pid: int): void {
-        selectedPid = pid;
+    function select(pid: string): void {
+        selectedKey = pid;
         confirm = "";
+        confirmedApplication = null;
         // D'un processus à un autre : même ordre, la ligne cliquée reste sous le pointeur.
-        if (pid < 0)
+        if (pid === "")
             frozen = null;
         else if (!frozen)
             frozen = rows;
@@ -71,13 +76,13 @@ OverlayPopup {
 
     // Tri ou recherche changés : nouvel ordre, figé de nouveau si un processus est choisi ; vue ramenée sur lui, sinon en haut.
     function refreeze(): void {
-        if (selectedPid >= 0) {
-            const found = sorted.some(p => p.pid === selectedPid);
+        if (selectedKey !== "") {
+            const found = sorted.some(p => p.key === selectedKey);
             frozen = null;
-            select(found ? selectedPid : -1);
+            select(found ? selectedKey : "");
         }
         Qt.callLater(() => {
-            const i = selectedPid >= 0 ? rows.indexOf(selectedPid) : -1;
+            const i = selectedKey !== "" ? rows.indexOf(selectedKey) : -1;
             if (i >= 0)
                 list.positionViewAtIndex(i, ListView.Contain);
             else
@@ -90,11 +95,22 @@ OverlayPopup {
         if (!beginOpen(from))
             return;
         screen = from ? from.QsWindow.window.screen : Outputs.focusedScreen();
+        view = "applications";
+        Monitor.stopError = "";
         search.text = "";
-        select(-1);
+        select("");
         list.positionViewAtBeginning();
         visible = true;
         search.focusInput();
+    }
+
+    function changeView(key: string): void {
+        select("");
+        if (sortKey === "pid") sortKey = "cpu";
+        search.text = "";
+        view = key;
+        Monitor.stopError = "";
+        list.positionViewAtBeginning();
     }
 
     // Largeur commune d'une colonne de textes (jauges de même longueur).
@@ -382,6 +398,17 @@ OverlayPopup {
             }
         }
 
+
+        Text {
+            visible: Monitor.stopError !== ""
+            Layout.fillWidth: true
+            wrapMode: Text.Wrap
+            text: Monitor.stopError
+            color: Theme.panel.warning
+            font.family: Theme.font.text
+            font.pixelSize: Theme.panel.smallFontSize
+        }
+
         // --- Processus ---
         RowLayout {
             Layout.fillWidth: true
@@ -389,17 +416,77 @@ OverlayPopup {
 
             PanelField {
                 id: search
-                placeholder: "Search processes"
+                placeholder: root.applicationView ? "Search applications" : "Search processes"
                 search: true
                 onTextChanged: Qt.callLater(root.refreeze)   // après la mise à jour de `sorted`
                 Keys.onEscapePressed: root.close()
             }
 
+            // Compact two-position pill, beside the search field.
+            Rectangle {
+                implicitWidth: modeButtons.implicitWidth + 2 * Theme.panel.spacing / 2
+                implicitHeight: modeButtons.implicitHeight + 2 * Theme.panel.spacing / 2
+                radius: height / 2
+                color: Theme.panel.background
+                border.width: Theme.panel.border
+                border.color: Theme.panel.borderColor
+
+                Row {
+                    id: modeButtons
+                    anchors.centerIn: parent
+
+                    Repeater {
+                        model: [
+                            { key: "applications", label: "Applications", glyph: Theme.icon.captureWindow, font: Theme.font.icons },
+                            { key: "processes", label: "Processes", glyph: Theme.icon.cpu, font: Theme.font.inlineIcons }
+                        ]
+                        GlyphButton {
+                            id: modeButton
+                            required property var modelData
+                            readonly property bool selected: root.view === modelData.key
+                            glyph: ""
+                            color: selected ? Theme.quickSettings.checked : modeHover.hovered ? Theme.panel.button : "transparent"
+                            Accessible.name: modelData.label
+                            Accessible.role: Accessible.Button
+                            onClicked: root.changeView(modelData.key)
+                            Text {
+                                anchors.centerIn: parent
+                                text: modeButton.modelData.glyph
+                                font.family: modeButton.modelData.font
+                                font.pixelSize: Theme.mediaCard.glyphSize
+                                color: modeButton.selected ? Theme.quickSettings.checkedText : Theme.panel.secondaryText
+                            }
+                            HoverHandler { id: modeHover }
+                            Rectangle {
+                                visible: modeHover.hovered || modeButton.activeFocus
+                                anchors.bottom: parent.top
+                                anchors.horizontalCenter: parent.horizontalCenter
+                                anchors.bottomMargin: Theme.panel.spacing
+                                width: modeLabel.implicitWidth + 2 * Theme.panel.buttonPaddingH
+                                height: modeLabel.implicitHeight + 2 * Theme.panel.buttonPaddingV
+                                radius: Theme.panel.rowRadius
+                                color: Theme.panel.background
+                                border.width: Theme.panel.border
+                                border.color: Theme.panel.borderColor
+                                Text {
+                                    id: modeLabel
+                                    anchors.centerIn: parent
+                                    text: modeButton.modelData.label
+                                    color: Theme.panel.text
+                                    font.family: Theme.font.text
+                                    font.pixelSize: Theme.panel.smallFontSize
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             // Processus choisi (les tiens seulement) : arrêter, forcer ; confirmation avant l'envoi du signal.
             Text {
                 visible: root.confirm !== "" && root.selectedProcess !== null
-                text: root.confirm === "force" ? `Force quit ${root.selectedProcess?.name} (${root.selectedPid})?`
-                    : `End ${root.selectedProcess?.name} (${root.selectedPid})?`
+                text: root.confirm === "force" ? `Force quit ${root.selectedProcess?.name} (${root.applicationView ? `${root.confirmedApplication?.members.length ?? 0} processes` : root.selectedProcess?.pid})?`
+                    : `End ${root.selectedProcess?.name} (${root.applicationView ? `${root.confirmedApplication?.members.length ?? 0} processes` : root.selectedProcess?.pid})?`
                 font.family: Theme.font.text
                 font.pixelSize: Theme.panel.smallFontSize
                 color: Theme.panel.warning
@@ -416,22 +503,37 @@ OverlayPopup {
                 text: "Confirm"
                 checked: true
                 onClicked: {
-                    Monitor.stop(root.selectedPid, root.confirm === "force");
+                    if (root.applicationView)
+                        Monitor.stopApplication(root.selectedKey, root.confirm === "force", root.confirmedApplication);
+                    else
+                        Monitor.stopProcess(root.selectedKey, root.confirm === "force");
                     root.confirm = "";
                 }
             }
 
             PanelButton {
                 visible: root.confirm === "" && root.selectedProcess !== null && root.selectedProcess.user === Monitor.me
-                text: "End process"
-                onClicked: root.confirm = "end"
+                enabled: !root.selectedProcess?.blocked
+                text: root.applicationView ? "End application" : "End process"
+                onClicked: { root.confirmedApplication = root.selectedProcess; root.confirm = "end"; }
             }
 
             PanelButton {
                 visible: root.confirm === "" && root.selectedProcess !== null && root.selectedProcess.user === Monitor.me
+                enabled: !root.selectedProcess?.blocked
                 text: "Force quit"
-                onClicked: root.confirm = "force"
+                onClicked: { root.confirmedApplication = root.selectedProcess; root.confirm = "force"; }
             }
+        }
+
+        Text {
+            visible: root.applicationView && (root.selectedProcess?.blocked ?? false)
+            Layout.fillWidth: true
+            wrapMode: Text.Wrap
+            text: "This process hosts multiple applications. Use Processes to inspect it."
+            color: Theme.panel.warning
+            font.family: Theme.font.text
+            font.pixelSize: Theme.panel.smallFontSize
         }
 
         // En-têtes : clic = tri (de nouveau : sens inverse).
@@ -443,7 +545,7 @@ OverlayPopup {
             Repeater {
                 model: [
                     { key: "name", name: "Name", fill: true },
-                    { key: "pid", name: "PID" },
+                    { key: "pid", name: root.applicationView ? "Processes" : "PID" },
                     { key: "user", name: "User" },
                     { key: "cpu", name: "CPU" },
                     { key: "memory", name: "Memory" },
@@ -494,15 +596,15 @@ OverlayPopup {
             delegate: Rectangle {
                 id: row
 
-                required property int modelData    // PID
+                required property string modelData    // Stable row identity
                 // Absent le temps qu'une ligne soit retirée du modèle.
-                readonly property var process: root.processByPid[modelData] ?? null
-                readonly property var cells: process ? [process.name, String(process.pid), process.user, `${process.cpu.toFixed(1)} %`,
+                readonly property var process: root.rowByKey[modelData] ?? null
+                readonly property var cells: process ? [process.name, String(root.applicationView ? process.count : process.pid), process.user, `${process.cpu.toFixed(1)} %`,
                     root.bytes(process.memory), process.gpu > 0 ? `${process.gpu} MiB` : ""] : ["", "", "", "", "", ""]
                 width: list.width
                 height: measure.implicitHeight + Theme.panel.rowPadding
                 radius: Theme.panel.rowRadius / 2
-                color: root.selectedPid === modelData ? Theme.monitor.selected : "transparent"
+                color: root.selectedKey === modelData ? Theme.monitor.selected : "transparent"
 
                 RowLayout {
                     anchors.fill: parent
@@ -528,7 +630,7 @@ OverlayPopup {
 
                 MouseArea {
                     anchors.fill: parent
-                    onClicked: root.select(root.selectedPid === row.modelData ? -1 : row.modelData)
+                    onClicked: root.select(root.selectedKey === row.modelData ? "" : row.modelData)
                 }
             }
         }
