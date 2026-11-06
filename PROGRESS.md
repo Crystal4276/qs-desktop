@@ -75,6 +75,16 @@ Retour arrière de la bascule : `docs/ROLLBACK.md`.
   Aucun changement de rendu ni de fichier QML de production ; avertissements du banc privé connus seulement. Aucun appel sudo,
   rechargement réseau ou changement VPN pendant cette revue. Correction appliquée au dépôt ; configuration système active conservée.
 
+### Revue des portails captifs — passe 2 et arrêt (2026-11-06)
+
+- Nouvelle revue high de tous les fichiers complets et de leurs appelants, après correction : aucun P1/P2 restant étayé.
+  Relecture du bouton, des transitions réseau, du lancement du navigateur, des échecs, du verrou et du retour arrière.
+- Complément sur fichiers temporaires : 24 opérations concurrentes mêlant installation et désinstallation, puis retour arrière
+  final ; contenu et permissions d'origine conservés. Les tests persistants système et QML ainsi que le démarrage complet de
+  la passe 1 restent passants. Aucun fichier QML de production modifié par les revues.
+- Arrêt de la série après cette passe sans problème significatif. Aucun changement de configuration système, aucune action
+  NordVPN ; seul le script du dépôt et ses tests ont été corrigés. Le test sur un véritable portail reste à faire.
+
 ## Maintenance — veille pendant les vidéos Chromium (2026-11-05)
 
 - Diagnostic : règles Chromium plein écran / Picture-in-Picture présentes seulement sous Sway ; aucun service
