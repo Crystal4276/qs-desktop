@@ -9,6 +9,8 @@ import os
 from pathlib import Path
 import re
 import shutil
+import shlex
+import signal
 import subprocess
 import tempfile
 import time
@@ -20,6 +22,15 @@ CONF = Path('etc/NetworkManager/conf.d/90-qs-desktop-connectivity.conf')
 
 def run(*args, **kwargs):
     return subprocess.run(args, check=True, text=True, capture_output=True, timeout=10, **kwargs).stdout.strip()
+
+
+def stop_group(proc):
+    try: os.killpg(proc.pid, signal.SIGTERM)
+    except ProcessLookupError: pass
+    try: proc.communicate(timeout=5)
+    except subprocess.TimeoutExpired:
+        os.killpg(proc.pid, signal.SIGKILL)
+        proc.communicate()
 
 
 def installation_test(work):
@@ -63,6 +74,60 @@ def installation_test(work):
     print('PASS installation: dry-run, idempotence, backup, restore, local edits, partial state, shared URL')
 
 
+def concurrent_installation_test(work):
+    # Hold the first install just before it creates its backup, then start a second invocation.
+    # The old script lets both enter this section and the second overwrites the original backup.
+    for existing in (True, False):
+        sync = work / ('race-existing' if existing else 'race-new')
+        system = sync / 'system'
+        bindir = sync / 'bin'
+        bindir.mkdir(parents=True)
+        target = system / CONF
+        target.parent.mkdir(parents=True)
+        original = b'original-settings\n'
+        if existing: target.write_bytes(original)
+        real_install = shlex.quote(shutil.which('install'))
+        real_flock = shlex.quote(shutil.which('flock'))
+        (bindir / 'install').write_text('''#!/bin/bash
+if [[ $1 == -d && ${@: -1} == */network-setup ]]; then
+    touch "$SYNC/$SIDE.wait"
+    while [[ ! -f $SYNC/$SIDE.go ]]; do sleep 0.01; done
+fi
+exec ''' + real_install + ' "$@"\n')
+        (bindir / 'flock').write_text('#!/bin/bash\ntouch "$SYNC/$SIDE.lockwait"\nexec ' + real_flock + ' "$@"\n')
+        for stub in bindir.iterdir(): stub.chmod(0o755)
+        processes = []
+        def start(side):
+            proc = subprocess.Popen([str(SETUP), '--root', str(system), 'install'], stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE, text=True, start_new_session=True,
+                                    env=dict(os.environ, SYNC=str(sync), SIDE=side,
+                                             PATH=str(bindir) + ':' + os.environ['PATH']))
+            processes.append(proc)
+            return proc
+        def await_marker(*names):
+            deadline = time.monotonic() + 5
+            while time.monotonic() < deadline:
+                if any((sync / name).exists() for name in names): return
+                time.sleep(0.01)
+            raise AssertionError('No synchronization marker: ' + str(names))
+        try:
+            first = start('a'); await_marker('a.wait')
+            second = start('b'); await_marker('b.wait', 'b.lockwait')
+            (sync / 'a.go').touch()
+            output = first.communicate(timeout=5)
+            assert first.returncode == 0, output
+            (sync / 'b.go').touch()
+            output = second.communicate(timeout=5)
+            assert second.returncode == 0, output
+            run(str(SETUP), '--root', str(system), 'uninstall')
+            if existing: assert target.read_bytes() == original, 'concurrent installs overwrote the original backup'
+            else: assert not target.exists(), 'concurrent installs saved the managed file as the original'
+        finally:
+            for proc in processes:
+                stop_group(proc)
+    print('PASS concurrent installs: original restored / new file removed')
+
+
 def qml_test(work):
     stage = work / 'shell'
     # Actual code, with only the native backend and external effects substituted.
@@ -86,7 +151,8 @@ def qml_test(work):
                GIO_USE_VFS='local', GVFS_DISABLE_FUSE='1', PATH=str(bindir) + ':' + os.environ['PATH'])
     log = work / 'qml.log'
     with log.open('w') as output:
-        proc = subprocess.Popen(['qs', '-p', str(stage)], env=env, stdout=output, stderr=subprocess.STDOUT)
+        proc = subprocess.Popen(['qs', '-p', str(stage)], env=env, stdout=output, stderr=subprocess.STDOUT,
+                                start_new_session=True)
         try:
             def ipc(method, *args):
                 return run('qs', 'ipc', '--pid', str(proc.pid), 'call', 'test', method, *args)
@@ -161,9 +227,7 @@ def qml_test(work):
             else:
                 print('Capture indisponible : banc sans rendu ou fenêtre masquée.')
         finally:
-            proc.terminate()
-            try: proc.wait(timeout=5)
-            except subprocess.TimeoutExpired: proc.kill(); proc.wait()
+            stop_group(proc)
 
 
 if __name__ == '__main__':
@@ -175,6 +239,7 @@ if __name__ == '__main__':
     with tempfile.TemporaryDirectory(prefix='qs-network-test-') as tmp:
         work = Path(tmp)
         installation_test(work)
+        concurrent_installation_test(work)
         try:
             if not args.setup_only: qml_test(work)
         finally:

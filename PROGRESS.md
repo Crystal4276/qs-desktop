@@ -62,6 +62,19 @@ Retour arrière de la bascule : `docs/ROLLBACK.md`.
 - **Reste :** essai sur un vrai réseau d'hôtel / aéroport : ouverture du formulaire, clic physique / clavier, validation, retour
   automatique à « Connected » et navigation.
 
+### Revue des portails captifs — passe 1 (2026-11-06)
+
+- **P2 — sauvegarde écrasée par deux installations simultanées** : deux scripts peuvent tous deux constater l'absence du
+  registre, notamment pendant la première authentification sudo. Le second sauvegarde alors le fichier déjà installé à la
+  place de l'original. Reproduit avec de vrais fichiers temporaires et un ordonnancement contrôlé ; le nouveau test échoue
+  sur l'ancien script. Revue high des fichiers entiers : même constat, aucun autre P1/P2 étayé.
+- Correction : verrou `flock` stable hors du registre, acquis avant de l'inspecter et conservé pendant toute installation ou
+  désinstallation. Deux tests persistants contrôlent la concurrence avec et sans ancien fichier. Nettoyage des tests par groupe
+  de processus, y compris après échec. Dépendances et procédure documentées.
+- Vérifications sur copie : suite système et QML complète, démarrage complet Sway headless, syntaxe Bash et diff : OK.
+  Aucun changement de rendu ni de fichier QML de production ; avertissements du banc privé connus seulement. Aucun appel sudo,
+  rechargement réseau ou changement VPN pendant cette revue. Correction appliquée au dépôt ; configuration système active conservée.
+
 ## Maintenance — veille pendant les vidéos Chromium (2026-11-05)
 
 - Diagnostic : règles Chromium plein écran / Picture-in-Picture présentes seulement sous Sway ; aucun service
