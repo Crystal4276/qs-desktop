@@ -54,9 +54,13 @@ Retour arrière de la bascule : `docs/ROLLBACK.md`.
   portails / entrées desktop et PipeWire indisponible dans le runtime privé. Capture de carte vérifiée sous Sway :
   `.shots/wifi-captive-portal.png`. Capture Hyprland non concluante (échec du screencopy imbriqué) ; tests fonctionnels passants.
   Syntaxe Bash/Python et `git diff --check` : OK. Bancs arrêtés ; application réelle rechargée sans erreur, PID 1753 vivant,
-  trois barres et trois fonds présents. Aucun fichier système modifié ni action NordVPN.
-- **Reste :** activation système après accord (`scripts/network-setup.sh --dry-run install`, puis `install`, sudo), puis essai sur
-  un vrai réseau d'hôtel / aéroport : ouverture du formulaire, validation, retour automatique à « Connected » et navigation.
+  trois barres et trois fonds présents. Aucune action NordVPN.
+- Activation système autorisée puis effectuée (2026-11-06) : `scripts/network-setup.sh install`, authentification sudo dans un
+  terminal local. Fichier installé identique au dépôt, root:root / 644 ; aucun ancien fichier à sauvegarder, registre de retour
+  arrière présent. Relecture de configuration réussie, URI effective `http://ping.omacom.io/nm-check.txt`, sondes activées ;
+  `nmcli networking connectivity check` → `full`. Bureau réel PID 1753 toujours vivant ; aucun redémarrage réseau ni action VPN.
+- **Reste :** essai sur un vrai réseau d'hôtel / aéroport : ouverture du formulaire, clic physique / clavier, validation, retour
+  automatique à « Connected » et navigation.
 
 ## Maintenance — veille pendant les vidéos Chromium (2026-11-05)
 
