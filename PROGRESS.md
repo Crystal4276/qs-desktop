@@ -31,6 +31,28 @@
 
 Retour arrière de la bascule : `docs/ROLLBACK.md`.
 
+## Maintenance — moniteur en fenêtre classique (2026-11-06)
+
+- À ta demande, MonitorPanel passe de la surcouche OverlayPopup à une FloatingWindow native. Même contenu et dimensions,
+  centrée dans la zone utile de l’écran de la barre cliquée ou de l’écran focalisé pour le raccourci. Coins et bordures gérés
+  par Sway/Hyprland : cadre QML rectangulaire sans bordure, aucune règle de décoration imposée au compositeur.
+- Ouverture ciblée via Compositor (PID courant + titre, puis identifiant natif), flottement/centrage/focus ; recentrage après
+  chargement des cartes et changement de taille sans reprise de focus. Échap et bouton de barre conservés ; clic extérieur
+  laisse la fenêtre ouverte. Pas d’inscription parmi les popups ni de surfaces d’interception. Fermeture au verrouillage.
+- Compteur de relevés rendu idempotent : Hyprland émet parfois plusieurs visibleChanged avec la même valeur. Tests QML
+  persistants couvrant ces notifications répétées, fermeture et retour du compteur à zéro ; recherche, tri et animation : OK.
+- Bancs sur copie : démarrages complets Sway headless et Hyprland imbriqué sans erreur du changement. Fenêtre reconnue flottante
+  et focalisée ; deux fermetures/réouvertures via l’action native de Super+Q, fenêtre jetable derrière et processus Quickshell
+  conservés, relevés arrêtés : OK sur les deux. Ouverture depuis un second écran virtuel alors que le premier est focalisé : OK
+  sous Sway. Fixture et script persistants scripts/tests/monitor/window-{shell.qml,check.py}, réservés à QS_TEST=1.
+- Application réelle : bureau rechargé, PID 1753 vivant ; Hyprland confirme une fenêtre native flottante et focalisée,
+  1100x912 logiques. Fermeture ciblée du seul moniteur puis focus initial restauré. Captures vérifiées :
+  `.shots/monitor-floating-sway.png` (coins carrés, bordure du compositeur) et `.shots/monitor-floating-hyprland.png`
+  (coins et bordure Hyprland). Tous les bancs arrêtés.
+- Avertissements connus des entrées desktop, portails et textinput du banc seulement. Aucun processus utilisateur arrêté,
+  aucune action NordVPN. Reste à vérifier à la main : vrais clics et Super+Q sur les écrans habituels, déplacement par le raccourci
+  du compositeur. Les tests automatisés emploient exactement l’action du raccourci, pas un événement de touche physique.
+
 ## Maintenance — moniteur applications et couleurs (2026-11-06)
 
 - Jauges CPU teal, mémoire green, GPU sky, disques blue ; une seule teinte par carte, valeurs de Theme.
