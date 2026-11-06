@@ -35,7 +35,7 @@ Retour arrière de la bascule : `docs/ROLLBACK.md`.
 
 - Jauges CPU teal, mémoire green, GPU mauve, disques peach ; une seule teinte par carte, valeurs de Theme.
 - Vue Applications à chaque ouverture, y compris les applications identifiables en arrière-plan ; ressources additionnées,
-  nombre de processus. Bascule compacte à droite de la recherche, pastille verte et icônes application / processeur,
+  nombre de processus. Bascule compacte à gauche de la recherche, pastille verte et icônes application / processeur,
   infobulles et navigation clavier ; les grands onglets de la première proposition ont été remplacés selon ta demande.
 - Identité desktop + arguments / profils Chromium et PID des fenêtres (Hyprland natif, IPC Sway). Instances regroupées,
   applications indépendantes séparées dans l’arbre, orphelins suivis. Chromium, Discord et WhatsApp distincts, y compris
@@ -49,6 +49,8 @@ Retour arrière de la bascule : `docs/ROLLBACK.md`.
   Capture du toggle compact vérifiée sur Sway. Aucune application réelle arrêtée, aucune action NordVPN.
 - Application réelle rechargée : PID 1753 vivant, trois barres et trois fonds présents. Panneau ouvert puis refermé sans
   erreur du changement ; capture recadrée `.shots/monitor-applications-panel.png`. Tous les bancs arrêtés.
+- Ajustement demandé ensuite : bascule déplacée avant le champ de recherche, à gauche, pour fixer sa position lorsque les
+  actions de sélection apparaissent. Rendu et tests QML sur copie Sway headless : OK ; bureau réel rechargé et vivant.
 - Reste à vérifier à la main : clic physique sur la bascule et confirmations, confort de lecture sur les écrans habituels.
 
 ## Maintenance — portails captifs Wi-Fi (2026-11-06)

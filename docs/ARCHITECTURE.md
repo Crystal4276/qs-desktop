@@ -447,7 +447,7 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
   température, consommation, ventilateur, fréquence, VRAM par processus via `nvidia-smi pmon` ; AMD : sysfs), disques (`df`),
   processus (charge comme top, tri, recherche), arrêt de ses propres processus avec confirmation (SIGTERM / SIGKILL).
 - Vue par défaut à chaque ouverture : Applications, y compris les applications identifiables en arrière-plan ; bascule compacte
-  à droite de la recherche vers Processes. CPU/RSS/VRAM additionnés par application et nombre de processus à la place du PID.
+  à gauche de la recherche vers Processes. CPU/RSS/VRAM additionnés par application et nombre de processus à la place du PID.
   `Monitor.applications`, `stopApplication(id, force, confirmation)` ; `stopProcess(key, force)` garde l’identité choisie,
   `stop(pid, force)` conservé pour les appelants existants.
 - `scripts/monitor-processes.py` : catalogue natif DesktopEntries transmis sur stdin JSON, relevé `/proc` (PID + starttime),
