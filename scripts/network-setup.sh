@@ -35,6 +35,17 @@ if [[ -z $root ]]; then
     [[ $EUID -ne 0 ]] || fail 'À lancer sans sudo : le script appelle sudo pour les opérations système.'
     command -v nmcli >/dev/null || fail 'NetworkManager (nmcli) est requis.'
 fi
+# Le verrou reste hors du dossier supprimé par uninstall : deux lancements ne doivent jamais remplacer la sauvegarde initiale.
+# Lecture seule du descripteur : le fichier système appartient à root, mais flock reste utilisable sans privilèges.
+lock="$root/var/lib/qs-desktop/network-setup.lock"
+if ! "$dry"; then
+    [[ ! -L $lock ]] || fail 'Lien symbolique sur le verrou : vérifier avant installation.'
+    run mkdir -p "$root/var/lib/qs-desktop"
+    run touch "$lock"
+    run chmod 644 "$lock"
+    exec {lock_fd}< "$lock"
+    flock -x "$lock_fd"
+fi
 [[ ! -L $target && ! -L $state ]] || fail 'Lien symbolique sur la destination ou la sauvegarde : vérifier avant installation.'
 case "$action" in
     install)

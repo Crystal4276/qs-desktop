@@ -80,7 +80,7 @@ Les applications personnelles lancées au démarrage (Steam, Spotify, Thunderbir
 | `scripts/greeter-session.sh` | session choisie : shell de connexion puis `Exec` ; X11 par `startx` | `sh`, `startx` (`xorg-xinit`, sessions X11) |
 | `scripts/greeter-setup.sh [--dry-run] install\|enable\|uninstall` | mise en place système de l'écran de connexion | `sudo`, `git`, `tar`, `install` / `cmp` (`coreutils`, `diffutils`), `systemctl`, `getent`, `setfacl` (`acl`, paquet de base) |
 
-Portails captifs : `scripts/network-setup.sh [--dry-run] install|uninstall` (`sudo`, `nmcli`, `coreutils`, `diffutils`).
+Portails captifs : `scripts/network-setup.sh [--dry-run] install|uninstall` (`sudo`, `nmcli`, `coreutils`, `diffutils`, `flock` de `util-linux`).
 Configuration et sauvegarde système, à reprendre par `install.sh` en phase 12 : [NETWORK.md](../docs/NETWORK.md).
 
 ### Web apps et « ne pas déranger »

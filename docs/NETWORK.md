@@ -26,6 +26,8 @@ scripts/network-setup.sh install
 Le script utilise `sudo`, sauvegarde le fichier existant dans `/var/lib/qs-desktop/network-setup`, installe le fichier et appelle
 `nmcli general reload conf`. Il ne redémarre pas le service et ne recharge ni les profils de connexion ni le DNS. Une seconde
 installation conserve la sauvegarde d'origine. Si le rechargement est refusé, corriger l'autorisation et relancer l'installation.
+Un verrou sérialise installation et désinstallation avant toute lecture de la sauvegarde ; deux lancements simultanés ne
+peuvent pas remplacer l'original. Le fichier vide `/var/lib/qs-desktop/network-setup.lock` est conservé après désinstallation.
 Une configuration de priorité supérieure ou une désactivation des sondes par l'utilisateur peut toujours prévaloir.
 
 Retour arrière :
@@ -57,6 +59,8 @@ Le test copie le code courant, remplace le backend et les lancements par des obj
 la détection, le vrai gestionnaire du bouton dans `WifiPanel`, la commande du navigateur, la reprise de connectivité, les sondes
 désactivées, la radio coupée, le changement de route, la reconnexion, aperçu / panneau épinglé et plusieurs panneaux. Journaux
 et capture sont gardés avec `--keep` (destination nouvelle). Les sondes système et connexions réelles ne sont pas sollicitées.
+Les tests d'installation couvrent aussi deux lancements simultanés, avec et sans fichier initial. Les processus de test sont
+arrêtés avec leurs enfants, même si une assertion échoue.
 
 Reste à vérifier sur un réseau réel d'hôtel ou d'aéroport : redirection, acceptation des conditions, disparition de l'avertissement
 et navigation. Un VPN ou le mode HTTPS strict du navigateur peut empêcher l'accès au formulaire ; ces réglages restent à la main.
