@@ -118,7 +118,8 @@ Singleton {
 
     // Connecté sans accès à Internet (vérification de connectivité de NetworkManager ; ajout du 2026-10-16, nm-applet ne le
     // signalait pas) : portail captif, accès limité ou aucun. « Unknown » (vérification désactivée) compte comme un accès complet.
-    readonly property int connectivity: Networking.connectivity
+    readonly property bool connectivityChecksEnabled: managed && Networking.canCheckConnectivity && Networking.connectivityCheckEnabled
+    readonly property int connectivity: connectivityChecksEnabled ? Networking.connectivity : NetworkConnectivity.Unknown
     readonly property bool limited: (wiredConnected || connectedWifi !== null)
         && [NetworkConnectivity.None, NetworkConnectivity.Portal, NetworkConnectivity.Limited].includes(connectivity)
 
@@ -145,6 +146,35 @@ Singleton {
     // porte ou s'il est seul connecté (route sur un VPN : tun0, wg0…), sinon le filaire.
     readonly property bool wifiCarriesRoute: wifi !== null && interfaceName === wifi.name
     readonly property bool wifiLimited: limited && connectedWifi !== null && (wifiCarriesRoute || !wiredConnected)
+    readonly property bool wifiCaptivePortal: wifiUsable && wifiLimited && connectivity === NetworkConnectivity.Portal
+    // Même entrée HTTP que la sonde NetworkManager (dotfiles/NetworkManager) : le navigateur suit la redirection du portail.
+    readonly property string captivePortalUrl: "http://ping.omacom.io/nm-check.txt"
+
+    function checkConnectivity(): void {
+        if (connectivityChecksEnabled && (connectedWifi !== null || wiredConnected))
+            Networking.checkConnectivity();
+    }
+
+    // Appelé seulement après un clic ; ne jamais lancer une URL fournie par le réseau ni modifier un VPN.
+    function openCaptivePortal(network: var): void {
+        if (wifiCaptivePortal && network === connectedWifi)
+            Launch.exec(["xdg-open", captivePortalUrl]);
+    }
+
+    onConnectivityChecksEnabledChanged: Qt.callLater(checkConnectivity)
+    onWifiScanningChanged: {
+        if (wifiScanning)
+            Qt.callLater(checkConnectivity);
+    }
+
+    // Unique pour toutes les barres ; continue pendant l'identification, panneau fermé. Au repos, NetworkManager s'en charge.
+    Timer {
+        interval: 10000
+        repeat: true
+        running: root.wifiUsable && root.wifiLimited
+            && [NetworkConnectivity.Portal, NetworkConnectivity.Limited].includes(root.connectivity)
+        onTriggered: root.checkConnectivity()
+    }
     // Libellé des cartes (filaire, Wi-Fi) quand l'accès est limité.
     readonly property string limitedText: connectivity === NetworkConnectivity.Portal ? "Sign-in required: captive portal"
         : "Connected without Internet access"
@@ -160,6 +190,7 @@ Singleton {
         if (connectedWifi === lastConnectedWifi)
             return;
         lastConnectedWifi = connectedWifi;
+        Qt.callLater(checkConnectivity);
         wifiBitrate = "";
         wifiAddress = "";
         if (wifiPanelOpen && connectedWifi)

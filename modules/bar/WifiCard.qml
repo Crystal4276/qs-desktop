@@ -11,6 +11,7 @@ PanelCard {
 
     property var network: null   // Quickshell.Networking WifiNetwork
     signal cancelled   // connexion annulée par l'utilisateur (le panneau ne la surveille plus)
+    signal portalRequested(var network)
 
     readonly property bool connected: network?.connected ?? false
     readonly property real strength: network?.signalStrength ?? 0
@@ -53,6 +54,14 @@ PanelCard {
                 }
             }
         }
+    }
+
+    PanelButton {
+        visible: root.connected && root.network === Network.connectedWifi && Network.wifiCaptivePortal
+        Layout.fillWidth: true
+        text: "Open Captive Portal"
+        textColor: Theme.panel.warning
+        onClicked: root.portalRequested(root.network)
     }
 
     // Jauge du signal : creux et hauteur du curseur de volume, remplissage à la couleur de la qualité.

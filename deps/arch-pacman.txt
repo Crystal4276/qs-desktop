@@ -4,6 +4,8 @@
 # --- Shell ---
 quickshell              # le shell lui-même (barre, notifications, lanceur, menus)
 qt6-svg                 # rendu des icônes et images SVG dans Quickshell
+diffutils               # cmp : installation idempotente des configurations système (greeter, sonde réseau)
+sudo                    # scripts de mise en place système, après accord explicite
 # Outils supposés présents (paquet `base` d'Arch, à installer ailleurs) : sh, coreutils, sed, grep, gawk, findutils, procps-ng
 # (listes d'icônes, filtres des applications du lanceur ; `ps` du panneau de statistiques), util-linux (`rfkill` : mode avion du
 # panneau de réglages ; `kill` du panneau de statistiques ; `setpriv` : processus longs arrêtés avec Quickshell ; `setsid` : scripts/test-outputs.sh, scripts/desktop.sh ; `flock` : scripts/desktop.sh), systemd (`systemctl reboot|poweroff` du panneau de réglages,
@@ -53,7 +55,7 @@ nm-connection-editor    # édition des connexions, ouverte depuis le panneau ré
 bluez                   # Bluetooth (Quickshell.Bluetooth s'appuie sur BlueZ)
 bluez-utils             # bluetoothctl : agent d'appairage piloté par Quickshell (ARCHITECTURE § 7.7)
 udisks2                 # disques amovibles (busctl / gdbus / udisksctl, ARCHITECTURE § 7.8)
-xdg-utils               # xdg-open : « Open » d'un disque monté, dossiers et fichiers récents du menu d'applications
+xdg-utils               # xdg-open : disques, dossiers, fichiers récents, portail captif Wi-Fi
 pacman-contrib          # checkupdates (module mises à jour)
 fakeroot                # requis par checkupdates (non déclaré par pacman-contrib)
 gnome-terminal          # terminal lancé par les modules (configurable par machine)

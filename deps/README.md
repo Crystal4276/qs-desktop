@@ -58,7 +58,7 @@ Thème d'icônes des applications (tray, lanceur, menu d'applications, notificat
 | Veille des écrans | natif (`IdleMonitor` + commande DPMS au compositeur) ; `python`, `python-gobject` (service D-Bus ScreenSaver) ; `systemd` (`systemd-inhibit`), `glib2` (`gdbus` : mise en veille du système) | — | — | — |
 | Agent polkit | — (natif, `PolkitAgent` ; `polkit` installé avec `quickshell`) | — | Inter | — |
 | Réseau (tray) | `networkmanager` (natif, `Networking` ; `nmcli` pour les détails filaires), `wl-clipboard` (copies) | `nm-connection-editor` pour l'édition des connexions ; onglets `tailscale` (actions : `tailscale set --operator=$USER`) et `zerotier-one` (jeton copié dans `~/.zeroTierOneAuthToken`), masqués si absents | icônes Papirus-Dark (`nm-*`, `network-vpn`, `zerotier-gui`, `computer`, `smartphone`) | — |
-| Wi-Fi (tray) | `networkmanager` (natif ; `nmcli` pour bande, canal, débit, adresse) | — | glyphe dessiné (géométrie Papirus) | — |
+| Wi-Fi (tray) | `networkmanager` (natif ; `nmcli` pour bande, canal, débit, adresse), `xdg-utils` (portail captif dans le navigateur par défaut) | — | glyphe dessiné (géométrie Papirus) | — |
 | Bluetooth (tray) | `bluez` (natif, `Bluetooth`), `bluez-utils` (agent d'appairage) | — | icônes Papirus-Dark (`blueman-tray*`) | — |
 | Disques amovibles (tray) | `udisks2`, `glib2` (`gdbus`), `systemd` (`busctl`), `xdg-utils` (ouvrir), `libnotify` (notifications), `util-linux` (`setpriv`) | — | icônes Papirus-Dark | — |
 | NordVPN (tray) | — | `nordvpn-bin` (AUR) + service `nordvpnd` + compte connecté (sinon module masqué) ; icônes `nordvpn-tray-*` du paquet | — | historique des pays : `~/.local/state/quickshell/by-shell/desktop/vpn.json` |
@@ -79,6 +79,9 @@ Les applications personnelles lancées au démarrage (Steam, Spotify, Thunderbir
 | `scripts/greeter.sh [shell]` | écran de connexion : Sway minimal puis Quickshell (lancé par greetd) | `sway`, `swaymsg`, `qs` |
 | `scripts/greeter-session.sh` | session choisie : shell de connexion puis `Exec` ; X11 par `startx` | `sh`, `startx` (`xorg-xinit`, sessions X11) |
 | `scripts/greeter-setup.sh [--dry-run] install\|enable\|uninstall` | mise en place système de l'écran de connexion | `sudo`, `git`, `tar`, `install` / `cmp` (`coreutils`, `diffutils`), `systemctl`, `getent`, `setfacl` (`acl`, paquet de base) |
+
+Portails captifs : `scripts/network-setup.sh [--dry-run] install|uninstall` (`sudo`, `nmcli`, `coreutils`, `diffutils`).
+Configuration et sauvegarde système, à reprendre par `install.sh` en phase 12 : [NETWORK.md](../docs/NETWORK.md).
 
 ### Web apps et « ne pas déranger »
 
