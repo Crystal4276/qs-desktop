@@ -446,6 +446,20 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
   panneau ouvert ; CPU (total, température coretemp / k10temp / zenpower, cœurs), mémoire et swap, réseau, GPU (NVIDIA : charge, VRAM,
   température, consommation, ventilateur, fréquence, VRAM par processus via `nvidia-smi pmon` ; AMD : sysfs), disques (`df`),
   processus (charge comme top, tri, recherche), arrêt de ses propres processus avec confirmation (SIGTERM / SIGKILL).
+- Vue par défaut à chaque ouverture : Applications, y compris les applications identifiables en arrière-plan ; bascule compacte
+  à droite de la recherche vers Processes. CPU/RSS/VRAM additionnés par application et nombre de processus à la place du PID.
+  `Monitor.applications`, `stopApplication(id, force, confirmation)` ; `stopProcess(key, force)` garde l’identité choisie,
+  `stop(pid, force)` conservé pour les appelants existants.
+- `scripts/monitor-processes.py` : catalogue natif DesktopEntries transmis sur stdin JSON, relevé `/proc` (PID + starttime),
+  fenêtres Hyprland natives / arbre IPC Sway pour les lanceurs indirects. Les applications reconnues forment des frontières dans
+  l’arbre ; appartenance des orphelins conservée. Chromium : profils des lanceurs avant le nom d’exécutable, rapports de plantage
+  rattachés par profil ; une webapp inconnue reste séparée par profil. Plusieurs app_id sur un même hôte : arrêt groupé désactivé.
+- Confirmation : instances figées, descendants actuels de ces instances inclus ; nouvelles instances indépendantes exclues.
+  UID et starttime revérifiés, signaux par pidfd, erreurs affichées ; aucun droit supplémentaire. Mémoire = somme des RSS,
+  donc les pages partagées peuvent être comptées plusieurs fois. Processus non attribuables : vue Processes.
+- Tests : `python scripts/test-monitor.py` ; ajouter `--chromium` pour trois profils headless jetables et les vrais signaux.
+  Fixture QML `scripts/tests/monitor/shell.qml` à copier à la racine de la copie de test, puis lancer sur banc isolé :
+  `MONITOR_TEST_PASS` vérifie sommes, tris, sélection, transitions et retour par défaut à Applications.
 
 ### 7.17 Calendrier (horloge)
 

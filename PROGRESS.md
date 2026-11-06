@@ -31,6 +31,26 @@
 
 Retour arrière de la bascule : `docs/ROLLBACK.md`.
 
+## Maintenance — moniteur applications et couleurs (2026-11-06)
+
+- Jauges CPU teal, mémoire green, GPU mauve, disques peach ; une seule teinte par carte, valeurs de Theme.
+- Vue Applications à chaque ouverture, y compris les applications identifiables en arrière-plan ; ressources additionnées,
+  nombre de processus. Bascule compacte à droite de la recherche, pastille verte et icônes application / processeur,
+  infobulles et navigation clavier ; les grands onglets de la première proposition ont été remplacés selon ta demande.
+- Identité desktop + arguments / profils Chromium et PID des fenêtres (Hyprland natif, IPC Sway). Instances regroupées,
+  applications indépendantes séparées dans l’arbre, orphelins suivis. Chromium, Discord et WhatsApp distincts, y compris
+  leurs rapports de plantage ; Steam et Terminal identifiés via leurs fenêtres. Hôte partagé : arrêt groupé désactivé.
+- Arrêt avec confirmation, SIGTERM / SIGKILL ; instances confirmées conservées, nouveaux descendants inclus, nouvelles
+  instances indépendantes exclues. UID et starttime contrôlés avec pidfd ; erreurs visibles. API stop(pid, force) conservée.
+- Tests sur copie : 10 tests Python passants, dont trois vrais Chromium headless à profils temporaires : TERM navigateur,
+  KILL première webapp, seconde webapp toujours vivante ; aucun membre des groupes arrêtés encore vivant. Tests QML sur
+  Sway headless et Hyprland imbriqué : sommes, tri, gel de sélection, bascule, disparition et ouverture par défaut : OK.
+  Démarrages complets sans nouvel avertissement du changement ; avertissements connus desktop entries / portails du banc.
+  Capture du toggle compact vérifiée sur Sway. Aucune application réelle arrêtée, aucune action NordVPN.
+- Application réelle rechargée : PID 1753 vivant, trois barres et trois fonds présents. Panneau ouvert puis refermé sans
+  erreur du changement ; capture recadrée `.shots/monitor-applications-panel.png`. Tous les bancs arrêtés.
+- Reste à vérifier à la main : clic physique sur la bascule et confirmations, confort de lecture sur les écrans habituels.
+
 ## Maintenance — portails captifs Wi-Fi (2026-11-06)
 
 - Audit : la détection native et le libellé existaient ; aucune ouverture de portail. Reprise du principe d'Omarchy : sonde

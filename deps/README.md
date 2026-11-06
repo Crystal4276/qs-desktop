@@ -238,7 +238,7 @@ Correspondances attendues, **non encore vérifiées** (phase 12).
 | pipewire / wireplumber / pipewire-pulse | idem (`pipewire-pulseaudio`) | idem | |
 | pavucontrol | idem | idem | |
 | chromium | chromium | chromium | web apps (optionnel) |
-| python | python3 | python3 | inhibition vidéo D-Bus ; hôte natif des web apps |
+| python | python3 | python3 | inhibition vidéo D-Bus ; moniteur (pidfd : Python ≥ 3.9, Linux ≥ 5.3) ; hôte natif des web apps |
 | python-gobject | python3-gobject | python3-gi | Gio / GLib du service d’inhibition vidéo |
 | upower | upower | upower | |
 | networkmanager | NetworkManager | network-manager | |
