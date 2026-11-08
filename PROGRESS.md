@@ -31,6 +31,30 @@
 
 Retour arrière de la bascule : `docs/ROLLBACK.md`.
 
+## Maintenance — diagnostic Thunderbird après reconnexion (2026-11-08)
+
+- Blocage utilisateur **non reproduit** sur quatre essais à profil vide (deux Sway headless, deux Hyprland imbriqués) :
+  arrêt normal en environ 1,2 s. Logind actif : `KillUserProcesses=false`, ancienne session abandonnée avec Deluge ;
+  aucun ancien Thunderbird au moment de l'inspection. Sorties du Thunderbird réel vers `/dev/null`, aucun rapport de plantage.
+  Une instance restée verrouillée après logout est une hypothèse, pas une cause interne démontrée.
+- À ta demande, instrumentation ciblée : Hyprland garde son délai de 4 s puis lance `thunderbird-diagnostic.py run`.
+  Capture préalable des processus du même UID, identité noyau, cgroups / sessions logind, affichages, threads et verrous ;
+  sorties et code de sortie conservés. Aucun arrêt ni relancement automatique d'une instance existante ; Sway inchangé.
+- Captures privées sous `$XDG_STATE_HOME/qs-desktop/thunderbird-diagnostic` (repli `~/.local/state`) : dossiers 700, fichiers 600,
+  cinq derniers enregistrements par type, plus les anciens encore actifs. Arguments, comptes et mails non lus / non copiés dans
+  les métadonnées. Les sorties applicatives peuvent contenir des informations privées : contrôler avant partage.
+  Diagnostic indisponible : lancement normal préservé. Python et loginctl déjà présents, dépendances documentées.
+- Sept tests persistants passants : sorties / code / arguments, permissions et rotation, journal actif conservé,
+  repli sans diagnostic, erreur d'écriture des métadonnées, processus survivant **simulé** avec vrai verrou, logind absent.
+  Vrai Thunderbird jetable sous Hyprland et bus privé : fenêtre ouverte après délai, capture manuelle, fermeture du compositeur,
+  sortie 0 et message de fermeture propre capturés. Aucun mail réel lu, aucune action VPN, tous les groupes de test arrêtés.
+  Syntaxe Lua et callback autostart testés sans exécuter ses commandes ; chemin avec espaces / apostrophe vérifié.
+- Après intégration : aucune erreur de configuration Hyprland, bureau PID 7098 et Thunderbird PID 7091 vivants ;
+  une seule instance Hyprland et aucun banc restant. Aucun fichier QML ni configuration système modifié.
+- Activation automatique à la **prochaine connexion Hyprland**. Lors du prochain blocage, avant de tuer Thunderbird :
+  `python3 ~/.config/quickshell/desktop/scripts/thunderbird-diagnostic.py snapshot` ; conserver le dossier affiché.
+  Reste : capture d'un vrai incident pour identifier l'instance qui détient le verrou et la raison de sa survie.
+
 ## Maintenance — bordures au changement de workspace Hyprland (2026-11-08)
 
 - Diagnostic reproduit : le focus arrive immédiatement, mais la couleur de bordure interpole depuis son état inactif.

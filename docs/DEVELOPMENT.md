@@ -91,6 +91,36 @@ verrouillage).
 - `python scripts/test-sleep.py` : vrai service Idle sur plateforme Qt offscreen, bus privé, services QML et commandes logind factices ;
   confirmation tardive du verrouillage, libération volontaire, réveil et relance des processus. Aucune suspension ni authentification.
 
+## Diagnostic Thunderbird après reconnexion
+
+Hyprland conserve le délai de 4 s et lance Thunderbird via `scripts/thunderbird-diagnostic.py run`.
+Le script ne ferme ni ne relance automatiquement une instance existante. Sway garde son démarrage actuel.
+L'instrumentation automatique prend effet à la prochaine connexion Hyprland ; inutile de fermer le Thunderbird courant.
+
+Si « already running, but is not responding » revient, **avant de tuer le processus**, exécuter :
+
+```sh
+python3 ~/.config/quickshell/desktop/scripts/thunderbird-diagnostic.py snapshot
+```
+
+La commande affiche le dossier de capture. Les traces sont sous
+`${XDG_STATE_HOME:-~/.local/state}/qs-desktop/thunderbird-diagnostic/` : dossiers 700, fichiers 600.
+Conservation : cinq derniers enregistrements par type (lancement / capture), plus les enregistrements encore actifs
+s'ils sont plus anciens ; rotation au prochain enregistrement du même type.
+
+- `before.json` : heure, environnement d'affichage limité à une liste autorisée, processus Thunderbird du même UID,
+  PID / date de démarrage noyau, cgroups, état logind, threads / points d'attente et verrous détenus.
+- `launch.json`, `output.log`, `exit.json` : PID lancé, sorties standard / erreur et code de sortie. Une interruption du
+  collecteur peut laisser `exit.json` absent. Aucun argument de lancement n'est copié dans les métadonnées.
+- L'appartenance à une session vient des cgroups ; `XDG_SESSION_ID` hérité est enregistré séparément et ne suffit pas à la prouver.
+  Aucun contenu de mail ni réglage de compte n'est lu, aucune trace protocolaire réseau n'est activée. Les sorties émises par
+  Thunderbird peuvent néanmoins contenir des informations privées : examiner les journaux avant de les partager.
+- Une défaillance du diagnostic initial laisse Thunderbird démarrer normalement ; logind absent / inaccessible est indiqué.
+
+Test : `python3 scripts/test-thunderbird-diagnostic.py` (profils et commandes factices, permissions, rotation, repli,
+processus survivant simulé avec vrai verrou, collecte sans arrêt). Ce scénario simulé ne reproduit pas le bug utilisateur.
+Le diagnostic initial n'a pas reproduit le blocage sur quatre essais à profil vide (deux Sway, deux Hyprland).
+
 ## Pièges connus
 
 **Moteur JavaScript de Qt 6 / QML**
