@@ -31,6 +31,26 @@
 
 Retour arrière de la bascule : `docs/ROLLBACK.md`.
 
+## Maintenance — lancement Chromium (2026-11-08)
+
+- Adaptation ciblée d'Omarchy #13530 : commande transmise au profil principal déjà ouvert, sinon lancement normal.
+  Super+A / Super+C sous Sway et Hyprland, entrée Chromium du lanceur/menu Quickshell seulement. Les web apps à profils séparés
+  et les associations HTTP/HTTPS restent inchangées. Aucun préchargement ; accélération vidéo conservée selon ton choix.
+- Deux séries indépendantes de 24 ouvertures par méthode : 104,4 → 86,0 ms puis 116,8 → 105,2 ms ; médianes globales
+  109,5 → 87,0 ms (−22,4 ms, −20,5 %). Gain variable ; seuil d'adoption évalué sur les 48 essais réunis. Navigateur arrêté :
+  772,8 → 763,9 ms sur 12 essais par méthode, pas de régression médiane mesurable. Méthode et limites dans `docs/PERFORMANCE.md`.
+- Profil, état, cache et bus D-Bus jetables ; fenêtres fermées entre essais, groupes de test arrêtés et focus restauré.
+  Aucun profil réel copié ou modifié, aucune action NordVPN ni modification système, aucun paquet installé.
+- Tests sur faux sockets : message exact (dont aucun argument), profils/env alternatifs, flags inconnus, message trop long,
+  ACK incorrect ou tardif, socket absent/périmé et repli préservant arguments/répertoire/code de sortie : OK.
+  Vrai Chromium jetable sous Hyprland : ouverture sans argument, nouvelle fenêtre, navigation privée, URL réutilisée et focus : OK.
+- Démarrages complets sur copie Sway headless / Hyprland imbriqué et vraie entrée Chromium de `Apps.launch` avec navigateur
+  factice : OK. Syntaxe Bash/Lua : OK ; seuls les avertissements habituels du runtime privé restent présents.
+- Application réelle : QML rechargé, raccourcis Hyprland rechargés sans erreur, bureau PID 7098 vivant ; une seule instance
+  Hyprland, aucun banc actif. Aucun changement visuel.
+- Reste à confirmer à la main : Super+A / Super+C et lancement depuis le menu sur tes écrans habituels, notamment à la prochaine
+  connexion Sway ; ressenti sur ton profil quotidien. Les temps du banc concernent une fenêtre mappée, sans chargement de page.
+
 ## Maintenance — diagnostic Thunderbird après reconnexion (2026-11-08)
 
 - **Suivi obligatoire (BACKLOG.md)** : résoudre le vrai blocage, puis retirer les scripts de diagnostic / tests dédiés,
