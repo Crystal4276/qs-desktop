@@ -93,6 +93,10 @@ verrouillage).
 
 ## Diagnostic Thunderbird après reconnexion
 
+**Instrumentation temporaire, réservée à cette investigation.** Après résolution et validation du blocage, retirer
+le collecteur, son test et son branchement Hyprland (suivi : `BACKLOG.md`). Ne pas l'intégrer à l'installateur final
+ni à ses vérifications de dépendances ; contrôler son retrait avant de finaliser la phase 12.
+
 Hyprland conserve le délai de 4 s et lance Thunderbird via `scripts/thunderbird-diagnostic.py run`.
 Le script ne ferme ni ne relance automatiquement une instance existante. Sway garde son démarrage actuel.
 L'instrumentation automatique prend effet à la prochaine connexion Hyprland ; inutile de fermer le Thunderbird courant.
