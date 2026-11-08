@@ -60,12 +60,16 @@ bureau. **À garder identique à `qs-env.sh`.** Sans ce fichier, `qs` fonctionne
 
 ## Lancement de Chromium — optimisation retirée (2026-11-08)
 
-**Retirée après régression réelle de placement.** Les demandes de lancement accumulaient des fenêtres sur le workspace 1,
-notamment derrière une fenêtre plein écran, au lieu d'apparaître là où elles étaient demandées. Le lancement natif `chromium`
-est rétabli pour les raccourcis et pour le lanceur/menu. Aucun profil, aucune fenêtre utilisateur ni accélération vidéo modifiés.
-Les tests précédents ne couvraient pas les ouvertures depuis plusieurs workspaces/écrans avec une fenêtre plein écran.
-Le gain de vitesse n'est donc pas une validation fonctionnelle de cette adaptation. Avant toute nouvelle tentative, reproduire
-et comparer le placement natif et direct sur plusieurs workspaces et moniteurs, y compris avec plein écran et activation.
+**Retirée après signalement d'un mauvais placement ; causalité non établie.** Le diagnostic ultérieur reproduit les
+ouvertures 7/8 → écran central avec le lancement natif : ce sont les règles `ws7-to-center` / `ws8-to-center` du fichier machine
+(introduites dans `2ee959d`) qui imposent cette destination. Sans elles, le banc place les fenêtres sur 1/7/8 comme demandé ;
+la règle du commit de focus `19b33de` ne change pas cette contre-épreuve. Sur la vraie session, la commande native donne
+1 → 1, 7 → 1, 8 → 1. Sur 1 avec une fenêtre plein écran, une nouvelle fenêtre reste sur 1 derrière le plein écran
+(`misc.on_focus_under_fullscreen = 0`) : c'est un effet distinct du placement sur un autre moniteur.
+
+Le lancement natif reste rétabli pour les raccourcis et pour le lanceur/menu. Les premiers tests ne couvraient pas tous ces
+scénarios. Avant toute nouvelle tentative, comparer le placement natif et direct sur plusieurs workspaces et moniteurs,
+y compris avec plein écran et activation ; le gain de vitesse ne valide pas ces comportements.
 
 Optimisation adaptée de [Omarchy #13530](https://github.com/omacom/omarchy/pull/13530) : transmettre directement la commande au
 `SingletonSocket` du profil principal quand Chromium tourne déjà, plutôt que démarrer un second processus qui transmet puis sort.
