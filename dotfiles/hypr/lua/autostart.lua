@@ -34,7 +34,7 @@ hl.on("hyprland.start", function()
 
    -- Ces deux-là attendent que le compositeur soit posé avant de démarrer.
    hl.exec_cmd("sleep 4 && steam")
-   hl.exec_cmd("sleep 4 && thunderbird")
+   hl.exec_cmd("sleep 4 && " .. prog.thunderbird)
    -- Discord et WhatsApp : web apps, comme sous Sway.
    hl.exec_cmd("gtk-launch WebApp-DiscordWeb2996")
    hl.exec_cmd("gtk-launch WebApp-Whatsapp8699")
