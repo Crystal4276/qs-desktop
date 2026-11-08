@@ -52,16 +52,27 @@ Retour arrière de la bascule : `docs/ROLLBACK.md`.
   Le lanceur vérifie désormais l'origine auprès du suivi ; les autres sources ne sont pas redirigées. Hôte des web apps
   revenu à son mécanisme de focus précédent. Aucune nouvelle association de fichiers ni changement de lecteur par défaut.
 - Tests de politique (13 cas) : publication avant mapping Hyprland, lecteur existant déplacé dès la demande, origines et PID, nouvelle fenêtre et lecteur existant, documents arbitraires, fenêtre manuelle,
-  réutilisation de PID, requêtes expirées et non-persistance des URI. Tests de routage navigateur et installation : 8 cas.
+  réutilisation de PID, requêtes expirées et non-persistance des URI. Tests de routage navigateur et installation : 9 cas ; transmission Chromium : 4 cas.
 - Bus privés et vrais lecteurs : trois origines contrôlées, vidéo/document/autre contenu, même fichier ouvert manuellement,
   lecteur réutilisé ; Sway et Hyprland. Vrai `deluge.common.open_file` → `xdg-open` → Celluloid avec vidéo locale de test,
   puis Celluloid déjà ouvert sur le secondaire : validés sur Hyprland. Enfant Steam lancé directement, sans GIO : validé.
   Tous les groupes de test arrêtés ; aucun mail, torrent, jeu ou document utilisateur ouvert/modifié, aucune action VPN.
 - Activation réelle : hook Hyprland rechargé sans erreur, suivi PID enfant du bureau ; écran principal validé contre les sorties
   actives pour ne jamais conserver un diagnostic IPC de démarrage comme nom d'écran. Test d'une fenêtre factice issue de Deluge
-  depuis 7 → écran principal ; Chromium manuel sur 7 et 8 → leurs espaces. Fenêtres de test fermées, focus, espaces visibles
+  depuis 7 → écran principal ; Chromium rapide manuel sur 7 et 8 → leurs espaces. Fenêtres de test fermées, focus, espaces visibles
   et pointeur restaurés ; bureau PID 7098 conservé. Répartition des écrans : Sway et Hyprland, 0 échec.
 - Reste à confirmer à la main : vrais clics depuis les trois applications, lecteurs habituels et prochaine connexion Sway.
+
+## Maintenance — Chromium rapide rétabli après correction (2026-11-08)
+
+- Lanceur SingletonSocket d'Omarchy rétabli pour Super+A / Super+C et le lanceur Quickshell ; entrée desktop surchargée sans
+  argument comprise. Transmission native avec ACK ; repli sur Chromium normal si profil/flags incompatibles, socket absent
+  ou socat indisponible. Aucun préchargement, décodage vidéo matériel conservé.
+- Dernière série isolée, règle d'origine et hook natif actifs, ordre ABBA, 8 échauffements + 24 mesures par méthode : médiane
+  104,1 → 74,9 ms, gain 29,2 ms (28,0 %). Seuil convenu 15 ms / 10 % de nouveau atteint. Mesure jusqu'au mapping, pas au pixel.
+- Vérification combinée : 6/7/8 manuels correctement conservés avec le lanceur rapide ; vrais liens HTTP locaux depuis une
+  origine Thunderbird contrôlée → fenêtre centrale créée puis réutilisée ; vrai Celluloid nouveau/réutilisé et enfant Steam.
+- Démarrage complet Quickshell des deux compositeurs : OK, avertissements habituels du bus privé seulement.
 
 ## Maintenance — liens externes au centre, lancements manuels libres (2026-11-08)
 

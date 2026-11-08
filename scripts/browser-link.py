@@ -121,7 +121,10 @@ def selected_origin(urls):
 
 
 def main(args):
-    if not args or not all(u.lower().startswith(('http://', 'https://')) for u in args):
+    if not args:
+        fast=str(REPO/'scripts/chromium-launch.sh')
+        os.execv(fast,[fast,'chromium'])
+    if not all(u.lower().startswith(('http://', 'https://')) for u in args):
         os.execvp('chromium', ['chromium', *(['--', *args] if args else [])])
     if not selected_origin(args):
         os.execvp('chromium', ['chromium', '--', *args])
