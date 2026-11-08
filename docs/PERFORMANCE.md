@@ -58,7 +58,14 @@ bureau. **À garder identique à `qs-env.sh`.** Sans ce fichier, `qs` fonctionne
 - `perf` refuse tout événement sur cette machine (non résolu). Frappe dans le lanceur non mesurée.
 
 
-## Lancement de Chromium (2026-11-08)
+## Lancement de Chromium — optimisation retirée (2026-11-08)
+
+**Retirée après régression réelle de placement.** Les demandes de lancement accumulaient des fenêtres sur le workspace 1,
+notamment derrière une fenêtre plein écran, au lieu d'apparaître là où elles étaient demandées. Le lancement natif `chromium`
+est rétabli pour les raccourcis et pour le lanceur/menu. Aucun profil, aucune fenêtre utilisateur ni accélération vidéo modifiés.
+Les tests précédents ne couvraient pas les ouvertures depuis plusieurs workspaces/écrans avec une fenêtre plein écran.
+Le gain de vitesse n'est donc pas une validation fonctionnelle de cette adaptation. Avant toute nouvelle tentative, reproduire
+et comparer le placement natif et direct sur plusieurs workspaces et moniteurs, y compris avec plein écran et activation.
 
 Optimisation adaptée de [Omarchy #13530](https://github.com/omacom/omarchy/pull/13530) : transmettre directement la commande au
 `SingletonSocket` du profil principal quand Chromium tourne déjà, plutôt que démarrer un second processus qui transmet puis sort.
@@ -77,21 +84,12 @@ Chaque fenêtre est fermée et sa disparition vérifiée avant l'essai suivant. 
 | Navigateur arrêté, profil réutilisé | 772,8 ms | 763,9 ms | 12 |
 
 Huit ouvertures d'échauffement exclues par série ; ordre ABBA entrelacé. Gain global : **22,4 ms (20,5 %)**, mais variable :
-18,4 ms sur la première série, 11,7 ms sur la seconde. Adoption selon le seuil convenu de 15 ms et 10 % sur la médiane globale ;
+18,4 ms sur la première série, 11,7 ms sur la seconde. Adoption initiale selon le seuil convenu de 15 ms et 10 % sur la médiane globale ;
 aucune régression médiane du démarrage supérieure à 10 ms. Pas de promesse de gain à chaque ouverture.
 
 Trace préalable : initialisation GPU ~588 ms, dont ~447 ms avant sandbox. Contre-épreuve jetable sans décodage vidéo matériel :
 806 → 389 ms (trois essais par méthode). Elle indique un coût lié au décodage matériel ; ce n'est pas un réglage retenu.
 **Décodage matériel conservé, aucun préchargement à la connexion.**
 
-`scripts/chromium-launch.sh <commande Chromium> [arguments…]` sert Super+A / Super+C sous les deux compositeurs et l'entrée
-Chromium du lanceur/menu Quickshell. Le chemin résolu doit désigner le lanceur système ; les alias Arch `/usr/bin` et `/usr/sbin`
-sont reconnus par identité de fichier. Socket du même utilisateur, flags de processus connus seulement, ACK exact requis.
-Commande d'origine exécutée en repli : instance absente, socket périmé, `socat` absent, absence d'ACK après 2 s, wrapper,
-profil de données alternatif, flags inconnus, jeton d'activation ou message trop long. Arguments et répertoire courant préservés.
-Les web apps à profils séparés et les gestionnaires HTTP/HTTPS restent sur leur chemin actuel.
-
-Vérification : `python3 scripts/test-chromium-launch.py` (nécessite Chromium et `socat`) utilise de faux sockets privés et un wrapper
-factice, jamais le navigateur quotidien : octets du message, espaces/Unicode, absence d'arguments, profils, flags inconnus,
-jetons d'activation, socket absent/périmé, ACK incorrect/tardif et repli avec code de sortie et répertoire conservés.
-Les séries de mesure et le prototype restent dans le scratchpad de session, hors installateur et dépendances de production.
+Le lanceur expérimental, son test dédié et la dépendance optionnelle `socat` ont été retirés. Les résultats ci-dessus sont
+conservés comme diagnostic historique, pas comme description d'une optimisation active. Aucun préchargement de remplacement.

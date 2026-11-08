@@ -12,4 +12,3 @@ zerotier-one    # onglet ZeroTier du panneau réseau (zerotier-cli -j ; jeton co
 chromium        # web apps (WhatsApp, Discord, Word, Excel, PowerPoint, Notion) : navigateur ; liens ouverts dans son profil principal (dotfiles/webapps/)
 xorg-xinit      # startx : sessions X11 proposées par l'écran de connexion (scripts/greeter-session.sh) ; sans lui, elles sont masquées
 xorg-server     # serveur X des sessions X11 de l'écran de connexion (avec xorg-xinit)
-socat           # transmission au Chromium déjà lancé ; absent : lancement normal (scripts/chromium-launch.sh)

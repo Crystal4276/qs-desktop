@@ -31,25 +31,20 @@
 
 Retour arrière de la bascule : `docs/ROLLBACK.md`.
 
-## Maintenance — lancement Chromium (2026-11-08)
+## Maintenance — lancement Chromium : retour au lancement natif (2026-11-08)
 
-- Adaptation ciblée d'Omarchy #13530 : commande transmise au profil principal déjà ouvert, sinon lancement normal.
-  Super+A / Super+C sous Sway et Hyprland, entrée Chromium du lanceur/menu Quickshell seulement. Les web apps à profils séparés
-  et les associations HTTP/HTTPS restent inchangées. Aucun préchargement ; accélération vidéo conservée selon ton choix.
-- Deux séries indépendantes de 24 ouvertures par méthode : 104,4 → 86,0 ms puis 116,8 → 105,2 ms ; médianes globales
-  109,5 → 87,0 ms (−22,4 ms, −20,5 %). Gain variable ; seuil d'adoption évalué sur les 48 essais réunis. Navigateur arrêté :
-  772,8 → 763,9 ms sur 12 essais par méthode, pas de régression médiane mesurable. Méthode et limites dans `docs/PERFORMANCE.md`.
-- Profil, état, cache et bus D-Bus jetables ; fenêtres fermées entre essais, groupes de test arrêtés et focus restauré.
-  Aucun profil réel copié ou modifié, aucune action NordVPN ni modification système, aucun paquet installé.
-- Tests sur faux sockets : message exact (dont aucun argument), profils/env alternatifs, flags inconnus, message trop long,
-  ACK incorrect ou tardif, socket absent/périmé et repli préservant arguments/répertoire/code de sortie : OK.
-  Vrai Chromium jetable sous Hyprland : ouverture sans argument, nouvelle fenêtre, navigation privée, URL réutilisée et focus : OK.
-- Démarrages complets sur copie Sway headless / Hyprland imbriqué et vraie entrée Chromium de `Apps.launch` avec navigateur
-  factice : OK. Syntaxe Bash/Lua : OK ; seuls les avertissements habituels du runtime privé restent présents.
-- Application réelle : QML rechargé, raccourcis Hyprland rechargés sans erreur, bureau PID 7098 vivant ; une seule instance
-  Hyprland, aucun banc actif. Aucun changement visuel.
-- Reste à confirmer à la main : Super+A / Super+C et lancement depuis le menu sur tes écrans habituels, notamment à la prochaine
-  connexion Sway ; ressenti sur ton profil quotidien. Les temps du banc concernent une fenêtre mappée, sans chargement de page.
+- Optimisation Omarchy déployée puis retirée après ton signalement : demandes depuis les workspaces 1, 7 et 8 apparemment sans
+  résultat. Inspection réelle : de nombreuses fenêtres Chromium sur le workspace 1, qui contient une fenêtre plein écran.
+  Tu confirmes ensuite un problème de placement sur un autre workspace : la demande atteint Chromium ; aucun plantage établi.
+- Rétablissement des appels `chromium` d'origine pour Super+A / Super+C sous Sway et Hyprland et de `Apps.launch` natif.
+  Lanceur expérimental, test dédié et dépendance optionnelle `socat` retirés. Aucune fenêtre réelle fermée ou déplacée,
+  aucun profil modifié, aucun changement de décodage vidéo ni préchargement.
+- Résultats de performance conservés dans `docs/PERFORMANCE.md` avec mention du retrait : le gain global de 22,4 ms ne valide
+  pas la gestion des workspaces. Les tests précédents, sur un seul workspace, n'avaient pas couvert cette régression.
+- Retour arrière appliqué : raccourcis Hyprland rechargés sans erreur, QML rechargé avec succès, bureau PID 7098 conservé ;
+  trois barres et trois fonds vérifiés. Les fichiers de lancement sont identiques à ceux d’avant l’optimisation.
+- Avant toute nouvelle tentative : contre-épreuve native/directe sur plusieurs workspaces et écrans avec plein écran,
+  contrôle de l'activation et du placement. Aucune nouvelle optimisation en place.
 
 ## Maintenance — diagnostic Thunderbird après reconnexion (2026-11-08)
 
