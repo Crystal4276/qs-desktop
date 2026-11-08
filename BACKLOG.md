@@ -2,6 +2,17 @@
 
 Idées et défauts connus hors du programme des phases. Rien ici n'est implémenté sans accord.
 
+## À terminer — diagnostic temporaire Thunderbird
+
+- [ ] Capturer un vrai blocage après logout / login sous Hyprland, identifier sa cause, puis corriger et valider la résolution.
+  Le problème reste ouvert : les essais sur profil vide ne l'ont pas reproduit. Procédure de capture :
+  `docs/DEVELOPMENT.md`, « Diagnostic Thunderbird après reconnexion ».
+- [ ] **Après résolution, retirer l'instrumentation temporaire** : `scripts/thunderbird-diagnostic.py`, son test dédié,
+  le branchement dans l'autostart / les programmes Hyprland et ses mentions dans les dépendances et la documentation active.
+  Conserver le correctif validé et le constat dans le journal d'avancement ; préserver les journaux privés utilisateur.
+- [ ] **Avant de finaliser la phase 12**, vérifier que l'instrumentation de diagnostic n'est ni incluse, ni déployée,
+  ni activée par `install.sh`. Elle sert uniquement à cette investigation et ne fait pas partie du bureau à installer.
+
 ## Fonctions
 
 - Titre de la fenêtre active / mode Sway dans la barre (retirés de `Compositor` faute de widget : à rétablir avec lui).

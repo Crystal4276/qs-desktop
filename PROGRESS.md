@@ -33,6 +33,10 @@ Retour arrière de la bascule : `docs/ROLLBACK.md`.
 
 ## Maintenance — diagnostic Thunderbird après reconnexion (2026-11-08)
 
+- **Suivi obligatoire (BACKLOG.md)** : résoudre le vrai blocage, puis retirer les scripts de diagnostic / tests dédiés,
+  le branchement Hyprland et les références actives. Instrumentation **temporaire**, à exclure de l'installateur final ;
+  contrôle requis avant finalisation de la phase 12. Le correctif reste à établir et à valider.
+
 - Blocage utilisateur **non reproduit** sur quatre essais à profil vide (deux Sway headless, deux Hyprland imbriqués) :
   arrêt normal en environ 1,2 s. Logind actif : `KillUserProcesses=false`, ancienne session abandonnée avec Deluge ;
   aucun ancien Thunderbird au moment de l'inspection. Sorties du Thunderbird réel vers `/dev/null`, aucun rapport de plantage.
