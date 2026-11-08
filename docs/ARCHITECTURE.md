@@ -105,6 +105,15 @@ Aucune ligne `workspace N output …` dans les configs (sous Sway, la première 
    bloc qui n'est pas ailleurs, le bouche-trou vide disparaît.
 6. Un espace déplacé à la main reste où il est jusqu'au prochain changement d'écrans.
 
+**Vérification Hyprland (Quickshell 0.3.2)** : une réponse initiale arrivée après une création peut supprimer ce nouvel espace
+du modèle natif ; `refreshWorkspaces()` ne recrée pas les éléments manquants. Avant une répartition et après une rafale de
+créations, `Compositor` lit `hyprctl -j workspaces` (délai maximal 2 s, trois tentatives espacées de 500 ms en cas d'échec).
+La lecture complète seulement les espaces absents ou sans écran du modèle natif ; les autres conservent leurs données natives.
+Un événement structurel pendant la lecture invalide sa réponse et impose une nouvelle lecture. Les créations restent en attente
+pendant cette vérification et la stabilisation des écrans ; après déplacement, fenêtres et moniteurs natifs sont rafraîchis.
+Aucune scrutation au repos, aucun délai supplémentaire dans les lancements automatiques. Test de régression :
+`python3 scripts/test-workspace-startup.py` (Quickshell réel, sockets Hyprland et commande de lecture factices, bus privé).
+
 Raccourcis : `$mod+N` et `$mod+Ctrl+N` → `scripts/ipc.sh outputs focus|moveWindow N` (~45 ms de plus ; commande native si
 Quickshell ne répond pas) : un espace inexistant naît directement sur l'écran de son bloc (Sway : `focus output X; workspace number N` ;
 Hyprland : créé sur l'écran focalisé puis déplacé, dans la même requête, sinon `follow_mouse` reprend le focus).

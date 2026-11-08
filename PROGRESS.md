@@ -31,6 +31,26 @@
 
 Retour arrière de la bascule : `docs/ROLLBACK.md`.
 
+## Maintenance — workspace Spotify sur le mauvais écran au démarrage (2026-11-08)
+
+- Incident capturé après logout/relogin : Spotify bien sur 6, mais workspace 6 rattaché au centre ; répartition calculée correcte
+  (4–6 à gauche). Aucun déplacement du 6 dans les traces de placement initiales ; redécouvert nativement au premier clic.
+- Course Quickshell 0.3.2 reproduite sur sockets privés : création du 6 pendant la lecture initiale, puis réponse antérieure
+  sans le 6 qui le retire du modèle. Les rafraîchissements ordinaires ne recréent pas les espaces absents. Même test avec
+  l'ancien code : échec attendu (aucun déplacement du 6) ; code corrigé : un seul déplacement vers la gauche.
+- Avant placement Hyprland, lecture directe bornée de ses espaces ; complète seulement les données natives absentes/incomplètes.
+  Événement structurel pendant une lecture : réponse invalidée puis relue. Créations conservées pendant la stabilisation et
+  la vérification. Trois tentatives au plus sur échec IPC ; pas de scrutation au repos ni de délai ajouté aux applications.
+- Test persistant `python3 scripts/test-workspace-startup.py` : course initiale, réponse retardée, deux échecs puis succès,
+  échec permanent borné, destruction pendant la lecture, créations simultanées et déplacement manuel conservé : OK.
+- Suites `test-outputs.sh sway` / `hyprland` sur copie figée : 0 échec (22 / 23 placements), focus et vues conservés.
+  Premiers passages invalidés par un rechargement de la copie pendant le test, puis entièrement relancés sur copie figée.
+  Démarrages complets des deux backends : OK, avertissements habituels des portails/bus privés et PipeWire privé absent seulement.
+- Activation réelle : rechargement réussi, PID bureau 464800 conservé ; Spotify PID 464781 inchangé, 6 → DP-1, centre → 1.
+  Bascules 6/1 validées ; trois barres et trois fonds, aucune instance/banc restant. Capture `.shots/spotify-workspace6-left.png`.
+  Aucun réglage système ni action VPN. Dépendances déjà présentes (`hyprctl`, `timeout`) documentées.
+- Reste à confirmer : prochaine vraie connexion/reconnexion, sans devoir cliquer sur 6 pour corriger son écran.
+
 ## Maintenance — ouvertures par origine Deluge / Thunderbird / Steam (2026-11-08)
 
 - Besoin corrigé : tout contenu ouvert par ces trois applications doit afficher sa destination sur l'écran principal,
