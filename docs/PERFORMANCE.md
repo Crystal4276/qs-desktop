@@ -58,18 +58,7 @@ bureau. **À garder identique à `qs-env.sh`.** Sans ce fichier, `qs` fonctionne
 - `perf` refuse tout événement sur cette machine (non résolu). Frappe dans le lanceur non mesurée.
 
 
-## Lancement de Chromium — optimisation retirée (2026-11-08)
-
-**Retirée après signalement d'un mauvais placement ; causalité non établie.** Le diagnostic ultérieur reproduit les
-ouvertures 7/8 → écran central avec le lancement natif : ce sont les règles `ws7-to-center` / `ws8-to-center` du fichier machine
-(introduites dans `2ee959d`) qui imposent cette destination. Sans elles, le banc place les fenêtres sur 1/7/8 comme demandé ;
-la règle du commit de focus `19b33de` ne change pas cette contre-épreuve. Sur la vraie session, la commande native donne
-1 → 1, 7 → 1, 8 → 1. Sur 1 avec une fenêtre plein écran, une nouvelle fenêtre reste sur 1 derrière le plein écran
-(`misc.on_focus_under_fullscreen = 0`) : c'est un effet distinct du placement sur un autre moniteur.
-
-Le lancement natif reste rétabli pour les raccourcis et pour le lanceur/menu. Les premiers tests ne couvraient pas tous ces
-scénarios. Avant toute nouvelle tentative, comparer le placement natif et direct sur plusieurs workspaces et moniteurs,
-y compris avec plein écran et activation ; le gain de vitesse ne valide pas ces comportements.
+## Lancement de Chromium (2026-11-08)
 
 Optimisation adaptée de [Omarchy #13530](https://github.com/omacom/omarchy/pull/13530) : transmettre directement la commande au
 `SingletonSocket` du profil principal quand Chromium tourne déjà, plutôt que démarrer un second processus qui transmet puis sort.
@@ -86,14 +75,30 @@ Chaque fenêtre est fermée et sa disparition vérifiée avant l'essai suivant. 
 | Nouvelle fenêtre, série 2 | 116,8 ms | 105,2 ms | 24 |
 | Médiane des deux séries réunies | 109,5 ms | 87,0 ms | 48 |
 | Navigateur arrêté, profil réutilisé | 772,8 ms | 763,9 ms | 12 |
+| Règle d’origine finale active (nouvelle série) | 104,1 ms | 74,9 ms | 24 |
 
 Huit ouvertures d'échauffement exclues par série ; ordre ABBA entrelacé. Gain global : **22,4 ms (20,5 %)**, mais variable :
-18,4 ms sur la première série, 11,7 ms sur la seconde. Adoption initiale selon le seuil convenu de 15 ms et 10 % sur la médiane globale ;
+18,4 ms sur la première série, 11,7 ms sur la seconde. Adoption selon le seuil convenu de 15 ms et 10 % sur la médiane globale ;
 aucune régression médiane du démarrage supérieure à 10 ms. Pas de promesse de gain à chaque ouverture.
 
 Trace préalable : initialisation GPU ~588 ms, dont ~447 ms avant sandbox. Contre-épreuve jetable sans décodage vidéo matériel :
 806 → 389 ms (trois essais par méthode). Elle indique un coût lié au décodage matériel ; ce n'est pas un réglage retenu.
 **Décodage matériel conservé, aucun préchargement à la connexion.**
 
-Le lanceur expérimental, son test dédié et la dépendance optionnelle `socat` ont été retirés. Les résultats ci-dessus sont
-conservés comme diagnostic historique, pas comme description d'une optimisation active. Aucun préchargement de remplacement.
+`scripts/chromium-launch.sh <commande Chromium> [arguments…]` sert Super+A / Super+C sous les deux compositeurs et l'entrée
+Chromium du lanceur/menu Quickshell. Le chemin résolu doit désigner le lanceur système ; les alias Arch `/usr/bin` et `/usr/sbin`
+sont reconnus par identité de fichier. Socket du même utilisateur, flags de processus connus seulement, ACK exact requis.
+Commande d'origine exécutée en repli : instance absente, socket périmé, `socat` absent, absence d'ACK après 2 s, wrapper,
+profil de données alternatif, flags inconnus, jeton d'activation ou message trop long. Arguments et répertoire courant préservés.
+La surcharge desktop `browser-link.py` utilise aussi ce lanceur pour une ouverture manuelle sans argument.
+Les web apps à profils séparés et les gestionnaires HTTP/HTTPS restent sur leur chemin actuel.
+
+Vérification : `python3 scripts/test-chromium-launch.py` (nécessite Chromium et `socat`) utilise de faux sockets privés et un wrapper
+factice, jamais le navigateur quotidien : octets du message, espaces/Unicode, absence d'arguments, profils, flags inconnus,
+jetons d'activation, socket absent/périmé, ACK incorrect/tardif et repli avec code de sortie et répertoire conservés.
+Les séries de mesure et le prototype restent dans le scratchpad de session, hors installateur et dépendances de production.
+
+Après correction du placement par origine : nouvelle série ABBA, huit ouvertures d'échauffement, 24 par méthode, suivi GIO
+et hook Lua actifs. Médianes 104,1 → 74,9 ms : **29,2 ms (28,0 %)**. Le gain satisfait à nouveau le seuil ; accélération rétablie.
+Contre-épreuves sur la même version : Chromium manuel reste sur 6/7/8, liens source créés/réutilisés au centre, vrai Celluloid
+placé dans le mapping natif. L'accélération ne choisit pas le workspace et ne désactive pas le décodage matériel.

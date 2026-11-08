@@ -46,11 +46,18 @@ class Routing(unittest.TestCase):
         self.assertEqual(actions, [('CENTER', None), ['chromium', '--new-window', '--', 'https://example.test']])
 
     def test_manual_and_local_file_launch_do_not_route(self):
-        for args in [[], ['/tmp/a file.html'], ['file:///tmp/page.html']]:
+        for args in [['/tmp/a file.html'], ['file:///tmp/page.html']]:
             with patch.object(b.os, 'execvp', side_effect=SystemExit), patch.object(b, 'query') as query:
                 with self.assertRaises(SystemExit): b.main(args)
                 b.os.execvp.assert_called_once_with('chromium', ['chromium', *(['--', *args] if args else [])])
                 query.assert_not_called()
+
+    def test_manual_without_arguments_uses_fast_native_launcher(self):
+        with patch.object(b.os,'execv',side_effect=SystemExit),patch.object(b,'selected_origin') as origin:
+            with self.assertRaises(SystemExit):b.main([])
+            fast=str(b.REPO/'scripts/chromium-launch.sh')
+            b.os.execv.assert_called_once_with(fast,[fast,'chromium'])
+            origin.assert_not_called()
 
     def test_native_fallback_if_shell_unavailable(self):
         with patch.object(b, 'selected_origin', return_value=True), patch.object(b.subprocess, 'check_output', side_effect=OSError), patch.object(b.os, 'execvp', side_effect=SystemExit):

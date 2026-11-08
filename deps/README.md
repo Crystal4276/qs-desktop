@@ -93,6 +93,7 @@ Web apps du dépôt : WhatsApp, Discord, Word, Excel, PowerPoint, Notion (`dotfi
 | Sons coupés pendant « ne pas déranger » | natif (`Services.Pipewire`, `services/Audio.qml`) ; flux repérés par `application.id` (web apps) ou binaire (application Discord) | `wireplumber` | règle `dotfiles/wireplumber/wireplumber.conf.d/50-dnd-no-restore.conf` ; liste `doNotDisturb.muteApps` de `hosts/<machine>.json` |
 | Web apps WhatsApp et Discord | `chromium --app` dans un profil isolé ; `PULSE_PROP_OVERRIDE=application.id=…` dans le lanceur (coupure de nuit) | `chromium` | modèles de lanceurs `dotfiles/webapps/applications/*.desktop` |
 | Web apps Word, Excel, PowerPoint, Notion | `chromium --app` dans un profil isolé (pas de coupure de nuit : pas de sons de notification) | `chromium` | modèles de lanceurs `dotfiles/webapps/applications/*.desktop` |
+| Lancement Chromium à chaud | transmission au navigateur existant ; repli natif | `socat` (optionnel) | `scripts/chromium-launch.sh`, raccourcis et lanceur |
 | Contenu ouvert depuis Deluge / Thunderbird / Steam | origine du lancement → fenêtre de destination sur l'écran principal, lecteur déjà ouvert compris | `python`, `python-gobject`, `quickshell`, `swaymsg` ou `hyprctl` | `scripts/open-origin.py` ; HTTP Chromium : `browser-link.py` + surcharge desktop |
 
 `webapp-manager` n'est **pas** une dépendance : les lanceurs de ces web apps viennent du dépôt. Ne pas les modifier avec
