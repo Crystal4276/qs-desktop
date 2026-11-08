@@ -25,8 +25,8 @@
     # Apps
     bindsym $mod+Return exec $term
     bindsym $mod+w exec $ipc launcher toggle
-    bindsym $mod+a exec $qs/scripts/chromium-launch.sh chromium
-    bindsym $mod+c exec $qs/scripts/chromium-launch.sh chromium https://claude.ai
+    bindsym $mod+a exec chromium
+    bindsym $mod+c exec chromium https://claude.ai
     bindsym $mod+x exec geany
     bindsym $mod+e exec nemo
 
