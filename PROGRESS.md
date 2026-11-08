@@ -31,6 +31,18 @@
 
 Retour arrière de la bascule : `docs/ROLLBACK.md`.
 
+## Maintenance — bordures au changement de workspace Hyprland (2026-11-08)
+
+- Diagnostic reproduit : le focus arrive immédiatement, mais la couleur de bordure interpole depuis son état inactif.
+  Comparaison visuelle A/B sur banc : désactiver l'animation `border` donne directement la couleur active.
+- Selon ton choix : animation `border` désactivée pour toutes les prises de focus, y compris au survol. Focus mémorisé,
+  focus au survol, autres animations et configuration Sway conservés ; aucun changement QML ni dépendance ajoutée.
+- Copie isolée : syntaxe Lua et configuration complète valides ; restauration du focus mémorisé vérifiée. Les nouvelles
+  captures imbriquées ont bloqué (screencopy) et le survol simulé n'a pas conclu ; captures A/B du diagnostic conservées
+  dans `/tmp/hf-knk6nh5j/`. Reste à confirmer à la main : bascules de workspace et vrai survol entre deux fenêtres.
+- Application réelle : configuration rechargée sans erreur, animation `border` effectivement désactivée ; bureau PID 7098
+  vivant, trois barres et trois fonds présents, une seule instance Hyprland et tous les bancs arrêtés. Aucun changement VPN.
+
 ## Maintenance — corrections ciblées de robustesse (2026-11-08)
 
 - Retrait du greeter : suppression globale de `/var/lib/qs-desktop` remplacée par le nettoyage de son propre état/cache et de
