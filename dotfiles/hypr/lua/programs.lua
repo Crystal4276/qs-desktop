@@ -11,6 +11,7 @@ return {
 
    -- Bureau Quickshell : lancement et surveillance, appels IPC vers l'instance de cette session.
    desktop     = desktop .. "/scripts/desktop.sh",
+   chromium    = "bash '" .. (desktop .. "/scripts/chromium-launch.sh"):gsub("'", "'\\''") .. "' chromium",
    ipc         = desktop .. "/scripts/ipc.sh",
    -- Traces privées pour le prochain blocage à la reconnexion (sans arrêt automatique).
    thunderbird = "python3 '" .. (desktop .. "/scripts/thunderbird-diagnostic.py"):gsub("'", "'\\''") .. "' run",

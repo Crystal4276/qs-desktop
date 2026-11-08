@@ -150,7 +150,10 @@ Singleton {
     }
 
     function launch(entry: DesktopEntry): void {
-        const context = { command: entry.runInTerminal ? [...Settings.terminal, ...entry.command] : entry.command, environment: Launch.environment };
+        // Seule l'entrée Chromium ordinaire : les profils isolés des web apps restent indépendants.
+        const command = entry.id === "chromium" && !entry.runInTerminal
+            ? [Quickshell.shellPath("scripts/chromium-launch.sh"), ...entry.command] : entry.command;
+        const context = { command: entry.runInTerminal ? [...Settings.terminal, ...command] : command, environment: Launch.environment };
         if (entry.workingDirectory !== "")
             context.workingDirectory = entry.workingDirectory;
         Quickshell.execDetached(context);

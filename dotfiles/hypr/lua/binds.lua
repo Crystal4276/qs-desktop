@@ -27,8 +27,8 @@ end
 ------------------------------------------------------------------------------
 
 hl.bind(mod .. " + X", hl.dsp.exec_cmd("geany"))
-hl.bind(mod .. " + A", hl.dsp.exec_cmd("chromium"))
-hl.bind(mod .. " + C", hl.dsp.exec_cmd("chromium https://claude.ai"))
+hl.bind(mod .. " + A", hl.dsp.exec_cmd(prog.chromium))
+hl.bind(mod .. " + C", hl.dsp.exec_cmd(prog.chromium .. " https://claude.ai"))
 hl.bind(mod .. " + E", hl.dsp.exec_cmd(prog.fileManager))
 hl.bind(mod .. " + RETURN", hl.dsp.exec_cmd(prog.terminal))
 hl.bind(mod .. " + W", ipc("launcher toggle"))
