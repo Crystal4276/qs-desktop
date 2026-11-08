@@ -107,6 +107,7 @@ Singleton {
     // Verrou « delay » : logind attend sa libération (quelques secondes au plus) avant de mettre en veille. Relâché le temps d'une
     // veille (`holding` faux), repris au réveil.
     property bool holding: true
+    property bool preparingSleep: false
 
     Process {
         id: inhibitor
@@ -115,8 +116,18 @@ Singleton {
             "--why=Lock the screen before sleep", "sleep", "infinity"]   // pdeathsig : verrou relâché si Quickshell plante
     }
 
+    // Réessai espacé si le processus meurt, jamais après une libération volontaire.
+    // Qt.binding conserve le lien avec holding après la relance.
+    Timer {
+        interval: 5000
+        repeat: true
+        running: root.lockBeforeSleep && root.holding && !inhibitor.running
+        onTriggered: inhibitor.running = Qt.binding(() => root.lockBeforeSleep && root.holding)
+    }
+
     // Annonces de logind : PrepareForSleep(true) avant la veille, (false) au réveil.
     Process {
+        id: sleepEvents
         running: root.lockBeforeSleep || Compositor.isHyprland
         command: ["setpriv", "--pdeathsig", "TERM", "gdbus", "monitor", "--system", "--dest", "org.freedesktop.login1", "--object-path", "/org/freedesktop/login1"]
         stdout: SplitParser {
@@ -126,13 +137,14 @@ Singleton {
                 if (line.includes("(true,)")) {
                     if (!root.lockBeforeSleep)
                         return;
+                    root.preparingSleep = true;
                     if (Session.locked) {
                         root.holding = false;   // déjà verrouillé : rien à attendre
                     } else {
                         Session.lock();
-                        release.restart();
                     }
                 } else {
+                    root.preparingSleep = false;
                     root.holding = true;   // réveil : nouveau verrou pour la prochaine veille
                     if (Compositor.isHyprland)
                         Quickshell.execDetached(["hyprctl", "reload"]);
@@ -141,20 +153,21 @@ Singleton {
         }
     }
 
-    // Verrou relâché dès que l'écran est verrouillé (au plus 2 s : la veille ne doit pas être bloquée).
     Timer {
-        id: release
-        interval: 2000
-        onTriggered: root.holding = false
+        interval: 5000
+        repeat: true
+        running: (root.lockBeforeSleep || Compositor.isHyprland) && !sleepEvents.running
+        onTriggered: sleepEvents.running = Qt.binding(() => root.lockBeforeSleep || Compositor.isHyprland)
     }
+
+    // Attendre la confirmation : logind borne déjà le délai (InhibitDelayMaxSec).
+    // Un échec de verrouillage ne doit pas raccourcir cette attente à deux secondes.
 
     Connections {
         target: Session
         function onLockedChanged() {
-            if (Session.locked && release.running) {
-                release.stop();
+            if (Session.locked && root.preparingSleep)
                 root.holding = false;
-            }
         }
     }
 }

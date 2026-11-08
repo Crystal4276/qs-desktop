@@ -84,6 +84,13 @@ verrouillage).
 | `crop.sh <image> <géométrie>` | recadrage ImageMagick |
 | `perf.sh snap\|idle\|ab` | mesures mémoire / CPU (`docs/PERFORMANCE.md`) |
 
+## Tests ciblés de robustesse
+
+- `python scripts/test-greeter-cleanup.py` : retrait du greeter sur fichiers temporaires et commandes sudo/systemctl factices ;
+  sauvegardes réseau/OpenRGB, fonds utilisateur, service actif, sauvegarde manquante et répétition.
+- `python scripts/test-sleep.py` : vrai service Idle sur plateforme Qt offscreen, bus privé, services QML et commandes logind factices ;
+  confirmation tardive du verrouillage, libération volontaire, réveil et relance des processus. Aucune suspension ni authentification.
+
 ## Pièges connus
 
 **Moteur JavaScript de Qt 6 / QML**

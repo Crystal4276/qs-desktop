@@ -82,7 +82,9 @@ sudo reboot
 
 Tant que greetd tourne (y compris depuis un TTY, écran de connexion cassé), `uninstall` ne fait que rebasculer les services : greetd
 garde sa config en mémoire et relancerait l'écran de connexion à la déconnexion. Après le redémarrage (SDDM revenu), la seconde
-exécution remet les fichiers d'origine et retire la copie.
+exécution remet les fichiers d'origine et retire la copie. Le nettoyage retire uniquement l’état/cache du greeter et ses
+registres une fois les sauvegardes restaurées ; `/var/lib/qs-desktop` est conservé, avec les sauvegardes réseau/OpenRGB et
+les fonds exportés des utilisateurs. Une sauvegarde manquante conserve le registre nécessaire à une nouvelle tentative.
 
 À la main, sans le script : `sudo systemctl disable greetd && sudo systemctl enable sddm && sudo reboot`.
 

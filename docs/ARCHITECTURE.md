@@ -415,7 +415,10 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
 - Test du contrat sans compositeur : `python scripts/test-idle-inhibit.py` (bus privé). Les demandes de suspension manuelle
   et les inhibiteurs Wayland restent indépendants ; aucune déduction depuis MPRIS, aucune inhibition audio ajoutée.
 - Verrouillage avant la veille du système (`idle.lockBeforeSleep`) : verrou « delay » de logind (`systemd-inhibit` sous
-  `setpriv --pdeathsig`), `PrepareForSleep` suivi par `gdbus monitor`. Hyprland : `PrepareForSleep` suivi aussi pour le `reload` du réveil.
+  `setpriv --pdeathsig`), `PrepareForSleep` suivi par `gdbus monitor`. Libération après confirmation du verrouillage par le compositeur,
+  sans échéance QML de 2 s : logind plafonne déjà l’attente (`InhibitDelayMaxSec`). Au réveil, inhibition réarmée. Les deux processus
+  sont relancés après 5 s s’ils s’arrêtent alors qu’ils sont attendus, jamais après une libération volontaire. Hyprland :
+  `PrepareForSleep` suivi aussi pour le `reload` du réveil. Cette attente ne garantit pas le verrouillage si le shell est figé ou si le verrou est refusé.
 - Animation `fadeDpms` coupée dans la config Hyprland (rallumage lent sinon). IPC de test : `idle state`.
 
 ### 7.14 Agent polkit (`services/Polkit.qml`, `modules/polkit/`)

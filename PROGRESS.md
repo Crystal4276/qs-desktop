@@ -31,6 +31,24 @@
 
 Retour arrière de la bascule : `docs/ROLLBACK.md`.
 
+## Maintenance — corrections ciblées de robustesse (2026-11-08)
+
+- Retrait du greeter : suppression globale de `/var/lib/qs-desktop` remplacée par le nettoyage de son propre état/cache et de
+  ses registres après restauration. Sauvegardes réseau/OpenRGB, verrou réseau, fonds utilisateur et fichiers étrangers conservés.
+  Service greetd actif : nettoyage différé comme avant ; sauvegarde manquante : registre et ancien gestionnaire conservés.
+- Veille : inhibition libérée à la confirmation du verrouillage, sans échéance QML de 2 s ; logind garde son plafond
+  `InhibitDelayMaxSec`. Écoute des événements et inhibiteur relancés après 5 s s’ils s’arrêtent alors qu’ils sont attendus ;
+  libération volontaire respectée même après une relance, réarmement au réveil. Aucun nouveau service ou paquet.
+- Tests persistants : `python scripts/test-greeter-cleanup.py` et `python scripts/test-sleep.py`, fichiers temporaires,
+  bus privé et commandes système factices. Confirmation retardée, veille/réveil simulés, arrêt des deux processus,
+  reprise puis nouvelle libération volontaire : OK. Les deux tests échouent sur l’ancien code pour les défauts attendus.
+  Suite existante `test-idle-inhibit.py` : OK. Démarrages complets sur copie Sway headless / Hyprland imbriqué : OK,
+  avertissements habituels des entrées desktop / portails et PipeWire absent du runtime privé seulement.
+- Application réelle : rechargement réussi, PID 7098 conservé, trois barres et trois fonds présents ; avertissements Bluez
+  déjà connus uniquement. Tous les bancs arrêtés.
+- Aucune suspension, authentification, action NordVPN ni modification de configuration système. Greeter non installé/activé.
+  Reste à vérifier à la main sur laptop : vraie suspension/réveil avec verrouillage (phase 12) ; vraie connexion greeter (phase 11).
+
 ## Maintenance — moniteur en fenêtre classique (2026-11-06)
 
 - À ta demande, MonitorPanel passe de la surcouche OverlayPopup à une FloatingWindow native. Même contenu et dimensions,
