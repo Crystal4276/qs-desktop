@@ -31,6 +31,25 @@
 
 Retour arrière de la bascule : `docs/ROLLBACK.md`.
 
+## Maintenance — diagnostic du placement Chromium (2026-11-08)
+
+- Attribution initiale à l'optimisation trop rapide : le mauvais placement depuis 7/8 se reproduit avec la commande native,
+  optimisation déjà retirée. Aucun lien causal établi entre le lanceur rapide et ces symptômes.
+- Source confirmée : `ws7-to-center` / `ws8-to-center` dans `dotfiles/hypr/hosts/terrier.lua`, introduites le 2026-11-03
+  (`2ee959d`). Toute nouvelle fenêtre sur 7/8 est envoyée sur le moniteur central sauf Deluge/Thunderbird respectivement ;
+  elle rejoint son espace actuellement visible (1 pendant les essais). Ce comportement correspond à l'ancienne configuration.
+- Contre-épreuve sur trois écrans jetables, pointeur placé sur l'écran demandé : sans ces règles, ouvertures natives sur 1/7/8
+  correctement placées ; avec elles, 7/8 → 1. Même résultat avec `file-open-focus` activée, désactivée, puis réactivée.
+  Le commit `19b33de` (focus des applications à l'ouverture de fichiers) n'est donc pas nécessaire au problème reproduit.
+  Le plus récent `b30f990` change seulement l'animation de la couleur des bordures.
+- Tests autorisés sur la session réelle : `chromium` et `chromium --new-window about:blank` depuis 1/7/8, avec pointeur au
+  centre du bon écran. Résultats identiques : 1 → 1, 7 → 1, 8 → 1. Puis deux fenêtres vides sur 1, la première en plein écran :
+  la seconde est créée sur 1 mais reste derrière la première ; `misc.on_focus_under_fullscreen = 0` conserve le plein écran.
+  Un mauvais placement depuis 1, hors plein écran, n'a pas été reproduit.
+- Fenêtres de test identifiées puis fermées, état initial des espaces/focus/pointeur restauré ; aucun profil ni fenêtre
+  utilisateur déplacé ou fermé, aucun réglage de profil modifié, aucune action VPN. Tous les bancs arrêtés, bureau PID 7098 vivant. Pas de changement des règles actives.
+- Décision demandée : conserver le renvoi de Chromium depuis 7/8 ou l'exclure de ces deux règles. L'optimisation reste retirée.
+
 ## Maintenance — lancement Chromium : retour au lancement natif (2026-11-08)
 
 - Optimisation Omarchy déployée puis retirée après ton signalement : demandes depuis les workspaces 1, 7 et 8 apparemment sans
@@ -40,7 +59,7 @@ Retour arrière de la bascule : `docs/ROLLBACK.md`.
   Lanceur expérimental, test dédié et dépendance optionnelle `socat` retirés. Aucune fenêtre réelle fermée ou déplacée,
   aucun profil modifié, aucun changement de décodage vidéo ni préchargement.
 - Résultats de performance conservés dans `docs/PERFORMANCE.md` avec mention du retrait : le gain global de 22,4 ms ne valide
-  pas la gestion des workspaces. Les tests précédents, sur un seul workspace, n'avaient pas couvert cette régression.
+  pas la gestion des workspaces. Les tests précédents, sur un seul workspace, ne permettaient pas d'établir la cause du symptôme.
 - Retour arrière appliqué : raccourcis Hyprland rechargés sans erreur, QML rechargé avec succès, bureau PID 7098 conservé ;
   trois barres et trois fonds vérifiés. Les fichiers de lancement sont identiques à ceux d’avant l’optimisation.
 - Avant toute nouvelle tentative : contre-épreuve native/directe sur plusieurs workspaces et écrans avec plein écran,
