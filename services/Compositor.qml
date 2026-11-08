@@ -18,6 +18,18 @@ Singleton {
     readonly property bool isSway: type === "sway"
     readonly property bool isHyprland: type === "hyprland"
 
+    Process {
+        id: externalOpens
+        command: ["python3", Quickshell.shellPath("scripts/open-origin.py")]
+        running: (root.isSway || root.isHyprland) && Quickshell.env("QS_TEST") !== "1"
+        onRunningChanged: if (!running) externalOpensRetry.restart()
+    }
+    Timer {
+        id: externalOpensRetry
+        interval: 5000
+        onTriggered: if ((root.isSway || root.isHyprland) && Quickshell.env("QS_TEST") !== "1") externalOpens.running = true
+    }
+
     // Sorties actives : { name, description, x, y, width, height, scale, powered, hdrCapable, hdr, vrrCapable, vrr }
     // x, y, width, height en px logiques. description = « marque modèle numéro de série ». powered : faux si éteinte par la veille.
     readonly property var outputs: {

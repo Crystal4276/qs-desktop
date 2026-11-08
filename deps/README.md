@@ -93,7 +93,7 @@ Web apps du dépôt : WhatsApp, Discord, Word, Excel, PowerPoint, Notion (`dotfi
 | Sons coupés pendant « ne pas déranger » | natif (`Services.Pipewire`, `services/Audio.qml`) ; flux repérés par `application.id` (web apps) ou binaire (application Discord) | `wireplumber` | règle `dotfiles/wireplumber/wireplumber.conf.d/50-dnd-no-restore.conf` ; liste `doNotDisturb.muteApps` de `hosts/<machine>.json` |
 | Web apps WhatsApp et Discord | `chromium --app` dans un profil isolé ; `PULSE_PROP_OVERRIDE=application.id=…` dans le lanceur (coupure de nuit) | `chromium` | modèles de lanceurs `dotfiles/webapps/applications/*.desktop` |
 | Web apps Word, Excel, PowerPoint, Notion | `chromium --app` dans un profil isolé (pas de coupure de nuit : pas de sons de notification) | `chromium` | modèles de lanceurs `dotfiles/webapps/applications/*.desktop` |
-| Liens HTTP/HTTPS externes (Thunderbird, Deluge, Steam, web apps…) | fenêtre Chromium sur l'écran principal réutilisée, sinon créée ; lancements manuels sur l'espace demandé | `chromium` (optionnel), `python`, `quickshell`, `swaymsg` ou `hyprctl` (compositeur installé) | `scripts/browser-link.py`, surcharge utilisateur `chromium.desktop` générée par `scripts/browser-links-setup.py` |
+| Contenu ouvert depuis Deluge / Thunderbird / Steam | origine du lancement → fenêtre de destination sur l'écran principal, lecteur déjà ouvert compris | `python`, `python-gobject`, `quickshell`, `swaymsg` ou `hyprctl` | `scripts/open-origin.py` ; HTTP Chromium : `browser-link.py` + surcharge desktop |
 
 `webapp-manager` n'est **pas** une dépendance : les lanceurs de ces web apps viennent du dépôt. Ne pas les modifier avec
 lui (il réécrit la ligne `Exec` et ferait sauter `PULSE_PROP_OVERRIDE` et `--load-extension`) ; modifier le modèle du dépôt.
@@ -267,21 +267,30 @@ Correspondances attendues, **non encore vérifiées** (phase 12).
 | util-linux (`rfkill`, `setpriv`) | util-linux (tire util-linux-core) | rfkill, util-linux | |
 
 
-### Liens externes dans Chromium
+### Contenu ouvert depuis Deluge, Thunderbird et Steam
 
-Sur Sway et Hyprland : `python3 scripts/browser-links-setup.py --dry-run install`, puis `install` (sans sudo).
-Le script génère `~/.local/share/applications/chromium.desktop` depuis le lanceur système, conserve son identité, ses traductions
-et ses actions, et remplace seulement l'Exec principal. Les associations MIME restent sur `chromium.desktop` ; aucun changement
-de navigateur par défaut, aucun paquet supplémentaire. Sans URL, la surcharge lance Chromium normalement. Les URL `file:` et
-les fichiers HTML locaux suivent aussi le lancement normal ; seuls les liens HTTP/HTTPS déclenchent le routage.
+La règle dépend de l'application d'origine, pas du workspace, du type de fichier ou du navigateur. Sous Hyprland,
+`dotfiles/hypr/lua/openorigin.lua` décide le placement dans le mapping natif, avant le rendu ; aucune animation de transfert
+entre écrans. Les lecteurs déjà ouverts sont placés dès la demande. Sous Sway, le suivi passe par les événements IPC après
+création : la destination est la même, mais le placement avant premier rendu n'est pas garanti. Le processus
+`scripts/open-origin.py`, tenu par `Compositor`, suit les ouvertures natives GIO/D-Bus et les nouvelles fenêtres de programmes
+lancés directement par ces applications. Une vidéo, un document, un dossier ou une autre fenêtre de destination est envoyé
+sur l'écran principal, y compris lorsque le lecteur est déjà lancé. Les propres fenêtres de Deluge/Thunderbird/Steam gardent
+leurs affectations ; les lancements manuels et les autres applications ne déclenchent pas cette politique.
 
-L'écran principal est celui de `Settings.primaryOf`, demandé à Quickshell par `outputs primaryName` : config machine, puis
-détection habituelle si l'écran manque. Une fenêtre du profil principal déjà sur cet écran est focalisée avant de transmettre
-les liens à Chromium ; sinon une nouvelle fenêtre y est demandée. Les fenêtres manuelles des autres écrans ne sont pas déplacées.
-Les liens issus des web apps utilisent le même script après nettoyage de leur environnement. Un navigateur configuré en dur
-par une application, contournant le lanceur desktop, contourne aussi ce routage.
+Les URI et chemins ne sont ni journalisés ni enregistrés : le contexte de requête reste brièvement en mémoire ; PID et date
+de création du processus contrôlés. Le signal GIO de lancement, les méthodes d'ouverture GApplication, `CommandLine` des
+applications GTK, FileManager1 et les ouvertures via portail/MPRIS sont pris en charge. Le suivi utilise `python-gobject`
+(déjà requis pour l'inhibition vidéo), `swaymsg`/`hyprctl` selon le compositeur et l'IPC Quickshell `outputs primaryName`.
+Il n'effectue aucune action réseau et ne modifie aucune association de fichiers ou réglage de lecteur.
 
-Retour arrière : `python3 scripts/browser-links-setup.py uninstall`. Ancienne surcharge et permissions conservées dans
-`$XDG_STATE_HOME/qs-desktop/browser-links` (repli `~/.local/state`, dossier 700) ; refus si le lanceur a été édité après installation.
-Une surcharge préexistante avec une commande personnalisée est préservée et l'installation refusée. Installer de nouveau après
-une mise à jour du paquet permet de reprendre son fichier desktop ; ce script sera repris par `install.sh` en phase 12.
+Pour le cas particulier des liens HTTP/HTTPS venant de ces sources, ton choix est conservé : réutiliser une fenêtre Chromium
+sur l'écran principal, sinon en créer une. `browser-link.py` vérifie l'origine auprès du suivi de session ; les autres sources,
+les fichiers locaux et le lancement sans URL passent par Chromium natif. Les liens des web apps conservent leur ancien chemin
+de focus. Les anciennes règles globales de renvoi des workspaces 7/8 sont retirées.
+
+La surcharge utilisateur Chromium s'installe sans sudo par `python3 scripts/browser-links-setup.py install` (simulation :
+`--dry-run install`). Seule l'Exec principale du fichier `chromium.desktop` du paquet est remplacée ; identité, traductions,
+actions et associations MIME conservées. Installation idempotente, retrait par `uninstall`, sauvegarde d'une ancienne surcharge
+native dans `$XDG_STATE_HOME/qs-desktop/browser-links` (repli `~/.local/state`, dossier 700). Les commandes personnalisées et les
+éditions ultérieures sont préservées. Ce script sera repris par `install.sh` en phase 12.

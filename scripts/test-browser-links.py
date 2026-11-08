@@ -53,7 +53,12 @@ class Routing(unittest.TestCase):
                 query.assert_not_called()
 
     def test_native_fallback_if_shell_unavailable(self):
-        with patch.object(b.subprocess, 'check_output', side_effect=OSError), patch.object(b.os, 'execvp', side_effect=SystemExit):
+        with patch.object(b, 'selected_origin', return_value=True), patch.object(b.subprocess, 'check_output', side_effect=OSError), patch.object(b.os, 'execvp', side_effect=SystemExit):
+            with self.assertRaises(SystemExit): b.main(['https://example.test'])
+            b.os.execvp.assert_called_once_with('chromium', ['chromium', '--', 'https://example.test'])
+
+    def test_other_source_http_keeps_native_behavior(self):
+        with patch.object(b, 'selected_origin', return_value=False), patch.object(b.os, 'execvp', side_effect=SystemExit):
             with self.assertRaises(SystemExit): b.main(['https://example.test'])
             b.os.execvp.assert_called_once_with('chromium', ['chromium', '--', 'https://example.test'])
 

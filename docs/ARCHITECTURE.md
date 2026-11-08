@@ -358,8 +358,8 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
 - WhatsApp, Discord, Word, Excel, PowerPoint, Notion : `chromium --app … --user-data-dir=<profil isolé> --load-extension=…/open-links`.
 - Un lien ouvert dans un nouvel onglet ou une nouvelle fenêtre part dans le profil Chromium principal (onglet ajouté, navigateur
   démarré s'il ne tourne pas), sauf s'il reste dans les domaines de l'app (liste `SITES` de l'extension : Microsoft 365, Notion) ; les
-  popups (OAuth) restent dans la web app. L'hôte `open-link` appelle `scripts/browser-link.py` après nettoyage de l'environnement : une fenêtre du profil principal
-  sur l'écran central reçoit le lien, ou une fenêtre y est créée si elle manque.
+  popups (OAuth) restent dans la web app. L'hôte `open-link` appelle `qs ipc call compositor focusNextWindowOf chromium` avant Chromium, après nettoyage de l'environnement :
+  la fenêtre qui reçoit le lien et son espace sont affichés.
 - Règles d'espace : Discord (deux `app_id` : `…@me-Default` et `…@me_<salon>-Default`) et WhatsApp sur l'espace 5.
 
 ### 7.11 Fond d'écran (`modules/wallpaper/`, `services/Wallpapers.qml`)
@@ -572,12 +572,23 @@ Revue complète des types (documentation 0.3.0, `qmltypes` de 0.3.2, code source
 lisible seulement avec le focus), disposition des écrans à la `wdisplays` (pas d'API de configuration des sorties).
 
 
-### Liens HTTP/HTTPS externes et lancements manuels
+### Contenu ouvert par application d'origine
 
-`scripts/browser-link.py` distingue les URL des lancements sans argument. La surcharge utilisateur du fichier `chromium.desktop`
-(est générée depuis le paquet par `browser-links-setup.py`) utilise ce point d'entrée ; les associations MIME et l'identité du
-navigateur restent inchangées. Les raccourcis manuels conservent `chromium` et les anciennes règles globales de renvoi des espaces
-7/8 ont été retirées des deux configurations machine. L'IPC `outputs primaryName` expose uniquement le nom de l'écran principal.
-Le script utilise les IPC natifs de Sway/Hyprland, réutilise une fenêtre du profil principal sur cet écran ou y ouvre une fenêtre,
-et sérialise les liens pour éviter deux créations simultanées. Une fois la commande transmise, aucune relance du même lien.
-Sans Quickshell ou en cas d'échec de préparation, repli sur l'ouverture native du lien. Les web apps appellent ce même script.
+Le processus `scripts/open-origin.py` appartient à `Compositor` : démarrage en session, reprise après 5 s s'il s'arrête, arrêt
+et nettoyage du socket au rechargement ; un verrou assure une seule instance. Désactivé sur les bancs généraux `QS_TEST=1`.
+La politique suit les origines Deluge / Thunderbird / Steam par identité de processus et les chemins natifs GIO, GApplication,
+GTK CommandLine, FileManager1, portail et MPRIS. Les programmes enfants directs sont aussi suivis à la création de leur fenêtre.
+Sous Hyprland, `lua/openorigin.lua` intervient synchroniquement dans `window.open`, à la fin du mapping mais avant le rendu.
+Le suivi publie atomiquement les identités PID/démarrage et l'écran principal dans `$XDG_RUNTIME_DIR/qs-open-origin.state`
+(mode 600, supprimé à l'arrêt). Requêtes limitées à 5 s ; l'ascendance native couvre les enfants directs. Les nouveaux clients
+sont placés par ce hook uniquement, sans rattrapage IPC après affichage ; l'animation de transfert est temporairement suspendue
+puis la règle configurée restaurée. Un lecteur existant est placé dès sa demande D-Bus, sans attendre le titre ou le contenu.
+Sway conserve le suivi IPC après création : placement fonctionnel identique, sans garantie avant le premier rendu.
+Le contenu ouvert est placé sur `Outputs.primary` et affiché, même avec un lecteur déjà ouvert. Une fenêtre de destination
+est ciblée, les fenêtres manuelles sans requête correspondante ne sont pas déplacées ; aucun renvoi global de workspace.
+Aucun chemin ni URI n'est écrit dans les logs ou l'état ; les requêtes et empreintes sont éphémères en mémoire.
+
+`outputs primaryName` expose le nom de sortie détecté/configuré. Pour HTTP/HTTPS, la surcharge utilisateur de `chromium.desktop`
+conserve l'identité du navigateur et utilise `browser-link.py` : l'origine est vérifiée auprès du suivi ; pour les trois sources,
+réutiliser une fenêtre Chromium centrale, sinon en créer une. Les autres sources et les lancements sans URL restent natifs.
+Les web apps conservent leur hôte `open-link` et le focus de la fenêtre qui reçoit leur lien.
