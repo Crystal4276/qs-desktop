@@ -15,10 +15,7 @@ hl.monitor({ output = lgRight, mode = "3840x2160@60",  position = "6000x0", scal
 -- Curseur au démarrage sur l'écran central (sélecteur d'écran : `desc:` accepté).
 hl.config({ cursor = { default_monitor = dell } })
 
--- Fenêtres ouvertes sur les espaces 7 et 8 (écran de droite) renvoyées sur l'écran central, sauf Deluge et Thunderbird
--- (comme sous Sway).
-hl.window_rule({ name = "ws7-to-center", match = { workspace = "7", class = "negative:^(deluge)$" }, monitor = dell })
-hl.window_rule({ name = "ws8-to-center", match = { workspace = "8", class = "negative:^(org\\.mozilla\\.Thunderbird)$" }, monitor = dell })
+-- Les liens externes passent par scripts/browser-link.py ; aucun renvoi global des fenêtres.
 
 -- Décodage vidéo matériel NVIDIA (VA-API, backend direct) : propre au GPU de cette machine (RTX 2080).
 hl.env("NVD_BACKEND", "direct")

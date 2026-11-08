@@ -328,6 +328,11 @@ Singleton {
             return JSON.stringify(root.blocks);
         }
 
+        // Destination des liens externes, calculée avec la même détection que les barres.
+        function primaryName(): string {
+            return root.primary?.name ?? "";
+        }
+
         // Réapplique la répartition tout de suite.
         function apply(): void {
             root.apply();
