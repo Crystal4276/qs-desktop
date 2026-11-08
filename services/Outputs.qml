@@ -141,7 +141,7 @@ Singleton {
     Connections {
         target: Compositor
         function onWorkspaceCreated(number, output) {
-            if (root.homes[number] === undefined || root.homes[number] === output)
+            if (number < 1 || number > root.workspaceCount)
                 return;
             root.pendingCreated = [...root.pendingCreated, number];
             created.restart();
@@ -151,43 +151,69 @@ Singleton {
     Timer {
         id: created
         interval: 100
-        onTriggered: {
-            const numbers = root.pendingCreated;
-            root.pendingCreated = [];
+        onTriggered: root.correctCreated(false)
+    }
+
+    property bool placementVerification: false
+    Connections {
+        target: Compositor
+        function onWorkspaceSnapshotReady(success) {
+            if (!success)
+                return; // pending requests survive; a subsequent event can retry
             if (settle.running)
-                return;   // la répartition complète va passer
-            const workspaces = Compositor.workspaces;
-            const focused = workspaces.find(w => w.focused);
-            for (const n of new Set(numbers)) {
-                const w = workspaces.find(w => w.number === n);
-                if (!w || w.output === root.homes[n])
-                    continue;
-                if (w.focused) {
-                    // L'écran de départ reprend l'espace qu'il affichait (Sway l'a détruit s'il était vide), s'il n'est pas ailleurs.
-                    const before = root.visibleByLayout[root.currentLayout]?.visible?.[w.output];
-                    if (before !== undefined && before !== n && root.homes[before] === w.output
-                            && !workspaces.some(x => x.number === before && x.output !== w.output))
-                        Compositor.placeWorkspaces([{ number: n, output: root.homes[n] }], [{ number: before, output: w.output }], n);
-                    else
-                        Compositor.moveFocusedWorkspace(root.homes[n]);
-                    continue;
-                }
-                // Seul espace de son écran (`visible` n'est pas encore à jour pour un espace qui vient de naître) : l'écran affiche
-                // ensuite le premier espace de son bloc qui n'est pas ailleurs (sans bloc : rien n'est fait). Vide, c'est un
-                // bouche-trou : il n'est pas déplacé et disparaît dès qu'il est masqué.
-                const alone = !workspaces.some(x => x.number !== n && x.output === w.output);
-                const own = alone ? root.blockFor(w.output).find(k => !workspaces.some(x => x.number === k && x.output !== w.output)) : undefined;
-                const moves = alone && w.empty ? [] : [{ number: n, output: root.homes[n] }];
-                const show = own !== undefined ? [{ number: own, output: w.output }] : [];
-                // Sway affiche l'espace qu'il vient de déplacer : l'écran d'arrivée reprend celui qu'il montrait.
-                const shown = workspaces.find(x => x.visible && x.output === root.homes[n]);
-                if (moves.length > 0 && shown)
-                    show.push({ number: shown.number, output: root.homes[n] });
-                if (moves.length > 0 || show.length > 0)
-                    Compositor.placeWorkspaces(moves, show, focused ? focused.number : 0);
+                return;
+            if (root.placementVerification) {
+                root.placementVerification = false;
+                root.apply(true);
+            } else {
+                root.correctCreated(true);
             }
         }
     }
+
+    function correctCreated(verified: bool): void {
+        if (settle.running)
+            return; // apply() consumes them after verification
+        if (pendingCreated.length === 0)
+            return;
+        if (Compositor.isHyprland && !verified) {
+            Compositor.requestWorkspaceSnapshot();
+            return;
+        }
+        const numbers = pendingCreated;
+        pendingCreated = [];
+        const workspaces = Compositor.workspaces;
+        const focused = workspaces.find(w => w.focused);
+        for (const n of new Set(numbers)) {
+            const w = workspaces.find(w => w.number === n);
+            if (!w || !root.homes[n] || w.output === root.homes[n])
+                continue;
+            if (w.focused) {
+                // L'écran de départ reprend l'espace qu'il affichait (Sway l'a détruit s'il était vide), s'il n'est pas ailleurs.
+                const before = root.visibleByLayout[root.currentLayout]?.visible?.[w.output];
+                if (before !== undefined && before !== n && root.homes[before] === w.output
+                        && !workspaces.some(x => x.number === before && x.output !== w.output))
+                    Compositor.placeWorkspaces([{ number: n, output: root.homes[n] }], [{ number: before, output: w.output }], n);
+                else
+                    Compositor.moveFocusedWorkspace(root.homes[n]);
+                continue;
+            }
+            // Seul espace de son écran (`visible` n'est pas encore à jour pour un espace qui vient de naître) : l'écran affiche
+            // ensuite le premier espace de son bloc qui n'est pas ailleurs (sans bloc : rien n'est fait). Vide, c'est un
+            // bouche-trou : il n'est pas déplacé et disparaît dès qu'il est masqué.
+            const alone = !workspaces.some(x => x.number !== n && x.output === w.output);
+            const own = alone ? root.blockFor(w.output).find(k => !workspaces.some(x => x.number === k && x.output !== w.output)) : undefined;
+            const moves = alone && w.empty ? [] : [{ number: n, output: root.homes[n] }];
+            const show = own !== undefined ? [{ number: own, output: w.output }] : [];
+            // Sway affiche l'espace qu'il vient de déplacer : l'écran d'arrivée reprend celui qu'il montrait.
+            const shown = workspaces.find(x => x.visible && x.output === root.homes[n]);
+            if (moves.length > 0 && shown)
+                show.push({ number: shown.number, output: root.homes[n] });
+            if (moves.length > 0 || show.length > 0)
+                Compositor.placeWorkspaces(moves, show, focused ? focused.number : 0);
+        }
+    }
+
 
     // Début de session (scripts/desktop.sh, une seule fois par session) : chaque écran affiche le premier espace de son bloc
     // (1 / 4 / 7 ici), focus sur l'écran principal. Demandé avant la première répartition : fait par elle. Vaut pour toutes
@@ -237,7 +263,13 @@ Singleton {
     }
 
     // Place tous les espaces 1–9 sur l'écran de leur bloc, sans perdre l'espace visible de chaque écran ni le focus.
-    function apply(): void {
+    function apply(verified: bool): void {
+        if (Compositor.isHyprland && !verified) {
+            placementVerification = true;
+            Compositor.requestWorkspaceSnapshot();
+            return;
+        }
+        pendingCreated = [];
         const outs = Compositor.outputs;
         if (outs.length === 0)
             return;

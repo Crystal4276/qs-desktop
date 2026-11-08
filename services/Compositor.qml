@@ -88,8 +88,8 @@ Singleton {
                 urgent: w.urgent,
                 empty: (w.lastIpcObject.focus ?? []).length === 0
             }));
-        if (isHyprland)
-            return Hyprland.workspaces.values.filter(w => w.id > 0).map(w => ({
+        if (isHyprland) {
+            const native = Hyprland.workspaces.values.filter(w => w.id > 0).map(w => ({
                 number: w.id,
                 name: w.name,
                 output: w.monitor?.name ?? "",
@@ -98,7 +98,68 @@ Singleton {
                 urgent: w.urgent,
                 empty: w.toplevels.values.length === 0
             }));
+            // QS 0.3.2 can discard a workspace created during its initial query.
+            // Ordinary refreshWorkspaces() cannot recreate it. Supplement only missing/incomplete records.
+            const missing = workspaceSnapshot.filter(w => !native.some(n => n.number === w.id && n.output !== ""));
+            return native.filter(n => !missing.some(w => w.id === n.number)).concat(missing.map(w => ({
+                number: w.id, name: w.name, output: w.monitor,
+                focused: Hyprland.focusedWorkspace?.id === w.id,
+                visible: Hyprland.monitors.values.some(m => m.activeWorkspace?.id === w.id),
+                urgent: false, empty: w.windows === 0
+            })));
+        }
         return [];
+    }
+
+    // Bounded, event-driven verification before placement, never polling at idle.
+    property var workspaceSnapshot: []
+    property bool snapshotDirty: false
+    property int snapshotAttempts: 0
+    signal workspaceSnapshotReady(bool success)
+
+    function requestWorkspaceSnapshot(): void {
+        if (workspaceQuery.running) {
+            snapshotDirty = true;
+            return;
+        }
+        snapshotRetry.stop();
+        snapshotAttempts = 0;
+        workspaceQuery.running = true;
+    }
+
+    Process {
+        id: workspaceQuery
+        command: ["timeout", "2", "hyprctl", "-j", "workspaces"]
+        stdout: StdioCollector { id: workspaceReply }
+        onExited: (code, status) => {
+            if (root.snapshotDirty) {
+                root.snapshotDirty = false;
+                workspaceQuery.running = true;
+                return;
+            }
+            let rows;
+            try {
+                rows = JSON.parse(workspaceReply.text);
+                if (code !== 0 || !Array.isArray(rows) || !rows.every(w => Number.isInteger(w.id)
+                        && typeof w.name === "string" && typeof w.monitor === "string" && Number.isInteger(w.windows)))
+                    throw new Error("invalid workspace snapshot");
+            } catch (e) {
+                if (++root.snapshotAttempts < 3) {
+                    snapshotRetry.restart();
+                    return;
+                }
+                console.warn("Compositor: workspace verification failed after three attempts");
+                root.workspaceSnapshotReady(false);
+                return;
+            }
+            root.workspaceSnapshot = rows.filter(w => w.id > 0);
+            root.workspaceSnapshotReady(true);
+        }
+    }
+    Timer {
+        id: snapshotRetry
+        interval: 500
+        onTriggered: workspaceQuery.running = true
     }
 
     // Jamais `I3.focusedMonitor` : Quickshell 0.3.2 ne le remet pas à zéro quand l'écran focalisé disparaît sans événement « focus »
@@ -597,6 +658,19 @@ Singleton {
     Connections {
         target: root.isHyprland ? Hyprland : null
         function onRawEvent(event) {
+            // A response issued before a structural event must not be published afterwards.
+            if (["createworkspacev2", "destroyworkspacev2", "moveworkspacev2", "monitoradded", "monitorremoved", "configreloaded"].includes(event.name)) {
+                if (workspaceQuery.running || snapshotRetry.running)
+                    root.snapshotDirty = true;
+                if (event.name === "destroyworkspacev2") {
+                    const id = parseInt(event.data);
+                    root.workspaceSnapshot = root.workspaceSnapshot.filter(w => w.id !== id);
+                }
+            }
+            // Keep fallback occupancy fresh if an otherwise correctly placed workspace is still absent natively.
+            if (["openwindow", "closewindow", "movewindowv2"].includes(event.name)
+                    && root.workspaceSnapshot.some(w => !Hyprland.workspaces.values.some(n => n.id === w.id && n.monitor)))
+                root.requestWorkspaceSnapshot();
             if (event.name === "createworkspacev2") {
                 // « ID,NOM » ; l'écran n'est connu qu'après relecture : "" laisse Outputs vérifier 100 ms plus tard.
                 const id = parseInt(event.data);
@@ -605,6 +679,8 @@ Singleton {
             }
             // Comme sous Sway : un espace déplacé ne met pas à jour l'espace affiché par chaque écran (Quickshell 0.3.2, code lu).
             else if (event.name === "moveworkspacev2") {
+                if (root.workspaceSnapshot.some(w => w.id === parseInt(event.data)))
+                    Hyprland.refreshToplevels();
                 Hyprland.refreshMonitors();
                 monitorReread.restart();
             } else if (["monitoradded", "monitorremoved"].includes(event.name)) {
