@@ -69,7 +69,8 @@ hl.curve("quick",          { type = "bezier", points = { { 0.15, 0 },    { 0.1, 
 -- Animations. Remplace `animation = feuille, actif, vitesse, courbe, style`.
 -- « default » est une courbe intégrée, à ne pas redéfinir.
 hl.animation({ leaf = "global",        enabled = true, speed = 10,   bezier = "default" })
-hl.animation({ leaf = "border",        enabled = true, speed = 5.39, bezier = "easeOutQuint" })
+-- Bordure immédiate au changement de focus : espace de travail comme survol.
+hl.animation({ leaf = "border",        enabled = false })
 hl.animation({ leaf = "windows",       enabled = true, speed = 4.79, bezier = "easeOutQuint" })
 hl.animation({ leaf = "windowsIn",     enabled = true, speed = 4.1,  bezier = "easeOutQuint", style = "popin 87%" })
 hl.animation({ leaf = "windowsOut",    enabled = true, speed = 1.49, bezier = "linear",       style = "popin 87%" })
