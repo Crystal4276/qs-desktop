@@ -93,7 +93,7 @@ Web apps du dépôt : WhatsApp, Discord, Word, Excel, PowerPoint, Notion (`dotfi
 | Sons coupés pendant « ne pas déranger » | natif (`Services.Pipewire`, `services/Audio.qml`) ; flux repérés par `application.id` (web apps) ou binaire (application Discord) | `wireplumber` | règle `dotfiles/wireplumber/wireplumber.conf.d/50-dnd-no-restore.conf` ; liste `doNotDisturb.muteApps` de `hosts/<machine>.json` |
 | Web apps WhatsApp et Discord | `chromium --app` dans un profil isolé ; `PULSE_PROP_OVERRIDE=application.id=…` dans le lanceur (coupure de nuit) | `chromium` | modèles de lanceurs `dotfiles/webapps/applications/*.desktop` |
 | Web apps Word, Excel, PowerPoint, Notion | `chromium --app` dans un profil isolé (pas de coupure de nuit : pas de sons de notification) | `chromium` | modèles de lanceurs `dotfiles/webapps/applications/*.desktop` |
-| Liens des web apps ouverts dans le profil Chromium principal (sauf liens vers les domaines de l'app : Microsoft 365, Notion) | extension chargée par le lanceur (`--load-extension`) + hôte natif, qui fait afficher par Quickshell l'espace de travail du navigateur (`qs ipc call compositor focusNextWindowOf chromium`) | `chromium`, `python`, `quickshell` | `dotfiles/webapps/open-links/`, `dotfiles/webapps/open-link`, manifeste `dotfiles/webapps/qs_desktop.open_link.json` |
+| Liens HTTP/HTTPS externes (Thunderbird, Deluge, Steam, web apps…) | fenêtre Chromium sur l'écran principal réutilisée, sinon créée ; lancements manuels sur l'espace demandé | `chromium` (optionnel), `python`, `quickshell`, `swaymsg` ou `hyprctl` (compositeur installé) | `scripts/browser-link.py`, surcharge utilisateur `chromium.desktop` générée par `scripts/browser-links-setup.py` |
 
 `webapp-manager` n'est **pas** une dépendance : les lanceurs de ces web apps viennent du dépôt. Ne pas les modifier avec
 lui (il réécrit la ligne `Exec` et ferait sauter `PULSE_PROP_OVERRIDE` et `--load-extension`) ; modifier le modèle du dépôt.
@@ -265,3 +265,23 @@ Correspondances attendues, **non encore vérifiées** (phase 12).
 | power-profiles-daemon | power-profiles-daemon (ou `tuned-ppd` sur Fedora ≥ 41, même interface D-Bus) | power-profiles-daemon | |
 | xdg-user-dirs | xdg-user-dirs | xdg-user-dirs | |
 | util-linux (`rfkill`, `setpriv`) | util-linux (tire util-linux-core) | rfkill, util-linux | |
+
+
+### Liens externes dans Chromium
+
+Sur Sway et Hyprland : `python3 scripts/browser-links-setup.py --dry-run install`, puis `install` (sans sudo).
+Le script génère `~/.local/share/applications/chromium.desktop` depuis le lanceur système, conserve son identité, ses traductions
+et ses actions, et remplace seulement l'Exec principal. Les associations MIME restent sur `chromium.desktop` ; aucun changement
+de navigateur par défaut, aucun paquet supplémentaire. Sans URL, la surcharge lance Chromium normalement. Les URL `file:` et
+les fichiers HTML locaux suivent aussi le lancement normal ; seuls les liens HTTP/HTTPS déclenchent le routage.
+
+L'écran principal est celui de `Settings.primaryOf`, demandé à Quickshell par `outputs primaryName` : config machine, puis
+détection habituelle si l'écran manque. Une fenêtre du profil principal déjà sur cet écran est focalisée avant de transmettre
+les liens à Chromium ; sinon une nouvelle fenêtre y est demandée. Les fenêtres manuelles des autres écrans ne sont pas déplacées.
+Les liens issus des web apps utilisent le même script après nettoyage de leur environnement. Un navigateur configuré en dur
+par une application, contournant le lanceur desktop, contourne aussi ce routage.
+
+Retour arrière : `python3 scripts/browser-links-setup.py uninstall`. Ancienne surcharge et permissions conservées dans
+`$XDG_STATE_HOME/qs-desktop/browser-links` (repli `~/.local/state`, dossier 700) ; refus si le lanceur a été édité après installation.
+Une surcharge préexistante avec une commande personnalisée est préservée et l'installation refusée. Installer de nouveau après
+une mise à jour du paquet permet de reprendre son fichier desktop ; ce script sera repris par `install.sh` en phase 12.

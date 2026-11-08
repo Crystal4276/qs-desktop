@@ -358,8 +358,8 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
 - WhatsApp, Discord, Word, Excel, PowerPoint, Notion : `chromium --app … --user-data-dir=<profil isolé> --load-extension=…/open-links`.
 - Un lien ouvert dans un nouvel onglet ou une nouvelle fenêtre part dans le profil Chromium principal (onglet ajouté, navigateur
   démarré s'il ne tourne pas), sauf s'il reste dans les domaines de l'app (liste `SITES` de l'extension : Microsoft 365, Notion) ; les
-  popups (OAuth) restent dans la web app. L'hôte `open-link` appelle `qs ipc call compositor focusNextWindowOf chromium` avant
-  Chromium : la fenêtre qui reçoit le lien et son espace sont affichés.
+  popups (OAuth) restent dans la web app. L'hôte `open-link` appelle `scripts/browser-link.py` après nettoyage de l'environnement : une fenêtre du profil principal
+  sur l'écran central reçoit le lien, ou une fenêtre y est créée si elle manque.
 - Règles d'espace : Discord (deux `app_id` : `…@me-Default` et `…@me_<salon>-Default`) et WhatsApp sur l'espace 5.
 
 ### 7.11 Fond d'écran (`modules/wallpaper/`, `services/Wallpapers.qml`)
@@ -570,3 +570,14 @@ Revue complète des types (documentation 0.3.0, `qmltypes` de 0.3.2, code source
 
 Écartés aussi : réponse directe dans les notifications (Chromium ne la propose pas), historique du presse-papiers (`clipboardText`
 lisible seulement avec le focus), disposition des écrans à la `wdisplays` (pas d'API de configuration des sorties).
+
+
+### Liens HTTP/HTTPS externes et lancements manuels
+
+`scripts/browser-link.py` distingue les URL des lancements sans argument. La surcharge utilisateur du fichier `chromium.desktop`
+(est générée depuis le paquet par `browser-links-setup.py`) utilise ce point d'entrée ; les associations MIME et l'identité du
+navigateur restent inchangées. Les raccourcis manuels conservent `chromium` et les anciennes règles globales de renvoi des espaces
+7/8 ont été retirées des deux configurations machine. L'IPC `outputs primaryName` expose uniquement le nom de l'écran principal.
+Le script utilise les IPC natifs de Sway/Hyprland, réutilise une fenêtre du profil principal sur cet écran ou y ouvre une fenêtre,
+et sérialise les liens pour éviter deux créations simultanées. Une fois la commande transmise, aucune relance du même lien.
+Sans Quickshell ou en cas d'échec de préparation, repli sur l'ouverture native du lien. Les web apps appellent ce même script.

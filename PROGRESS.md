@@ -31,6 +31,36 @@
 
 Retour arrière de la bascule : `docs/ROLLBACK.md`.
 
+## Maintenance — liens externes au centre, lancements manuels libres (2026-11-08)
+
+- Intention clarifiée : les liens HTTP/HTTPS depuis Thunderbird, Deluge, Steam et les autres applications doivent afficher
+  une fenêtre Chromium sur l'écran principal ; réutiliser une fenêtre centrale existante, sinon en créer une. Un lancement
+  manuel doit rester sur son workspace, y compris 6/7/8. Le cas 1 est éclairci : fenêtres masquées par le plein écran.
+- Anciennes règles globales de renvoi de 7/8 retirées des fichiers machine Sway et Hyprland. Aucun changement des raccourcis
+  manuels ni de `file-open-focus`. `Outputs` expose son écran principal via l'IPC en lecture seule `primaryName`.
+- `scripts/browser-link.py` traite seulement les URL HTTP/HTTPS : fenêtre du profil principal déjà sur l'écran principal
+  choisie selon le focus, activation puis transmission native ; sinon nouvelle fenêtre. Les fenêtres des autres écrans et
+  les profils isolés ne sont pas déplacés. Sans URL ou avec un fichier local : lancement Chromium normal. Repli natif si le
+  bureau ne répond pas ; pas de réémission après livraison, liens sérialisés pour éviter les créations simultanées.
+- `browser-links-setup.py` génère la surcharge utilisateur `chromium.desktop` depuis le paquet : seule l'Exec principale
+  change, identité MIME, traductions et actions conservées. Installation idempotente sans sudo, simulation et retrait ;
+  sauvegarde d'une ancienne surcharge native, refus de commande personnalisée ou d'édition ultérieure. Aucun paquet ajouté.
+  L'hôte natif des web apps utilise le même chemin après nettoyage de son environnement. Procédure dans `deps/README.md`.
+- Tests persistants de sélection/réutilisation, création, fichiers locaux, repli, ordre Sway, installation répétée,
+  simulation, restauration et préservation des éditions : OK. Bancs Chromium réels sur pages HTTP locales, profils jetables :
+  création/réutilisation centrale, ouvertures manuelles 6/7/8, aucun déplacement des fenêtres manuelles, navigateur arrêté : OK
+  sous Hyprland ; création/réutilisation, fenêtre manuelle sur l'autre écran et navigateur arrêté : OK sous Sway headless.
+- Démarrages complets Quickshell et nouvelle requête IPC : OK sur les deux compositeurs (avertissements habituels du bus privé
+  uniquement). `scripts/test-outputs.sh sway` et `hyprland` : 0 échec, état du banc restauré et groupes arrêtés.
+- Lecture et lancement du vrai fichier desktop par GIO, avec commandes factices : sans URL → natif, URL → routage, chemin
+  avec espaces et caractères URL spéciaux préservés, aucune livraison en double : OK.
+- Activation réelle : surcharge utilisateur installée et validée, associations HTTP/HTTPS conservées sur `chromium.desktop`,
+  écran principal IPC = DP-2 ; configuration Hyprland rechargée sans erreur, bureau PID 7098 conservé.
+  Fenêtres manuelles vérifiées sur 6 et 7 ; contrôle 8 rendu non ambigu par un titre unique et un lancement atomique : fenêtre
+  sur 8, écran de droite, pointeur au bon endroit. Fenêtres de test fermées, espaces/focus/pointeur initiaux restaurés.
+- Reste à confirmer à la main : vrais clics de liens Thunderbird / Deluge / Steam et des web apps, et prochaine connexion Sway.
+  Une application configurée pour appeler directement un binaire de navigateur contourne le lanceur desktop.
+
 ## Maintenance — diagnostic du placement Chromium (2026-11-08)
 
 - Attribution initiale à l'optimisation trop rapide : le mauvais placement depuis 7/8 se reproduit avec la commande native,

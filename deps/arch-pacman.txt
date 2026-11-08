@@ -55,7 +55,7 @@ nm-connection-editor    # édition des connexions, ouverte depuis le panneau ré
 bluez                   # Bluetooth (Quickshell.Bluetooth s'appuie sur BlueZ)
 bluez-utils             # bluetoothctl : agent d'appairage piloté par Quickshell (ARCHITECTURE § 7.7)
 udisks2                 # disques amovibles (busctl / gdbus / udisksctl, ARCHITECTURE § 7.8)
-xdg-utils               # xdg-open : disques, dossiers, fichiers récents, portail captif Wi-Fi
+xdg-utils               # xdg-open (liens HTTP/HTTPS via le lanceur desktop Chromium) : disques, dossiers, fichiers récents, portail captif Wi-Fi
 pacman-contrib          # checkupdates (module mises à jour)
 fakeroot                # requis par checkupdates (non déclaré par pacman-contrib)
 gnome-terminal          # terminal lancé par les modules (configurable par machine)
