@@ -164,7 +164,13 @@ do_uninstall() {
         run sh -c "printf '%s' '$left' > '$backups'"
         echo "! $var gardé : registre des sauvegardes non restaurées ($backups) et ancien gestionnaire ($previous_dm)"
     else
-        run rm -rf "$var"
+        # Le parent contient aussi les sauvegardes réseau / OpenRGB et les fonds des utilisateurs.
+        run rm -rf "$var/greeter"
+        run rm -f "$backups" "$previous_dm"
+        # Les fichiers restaurés ont quitté backup/ ; ne retirer ce dossier que s'il est vide.
+        if [[ -d "$var/backup" ]] && [[ -z "$(ls -A "$var/backup")" ]]; then
+            run rmdir "$var/backup"
+        fi
     fi
 }
 
