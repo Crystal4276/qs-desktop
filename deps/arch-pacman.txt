@@ -11,7 +11,7 @@ sudo                    # scripts de mise en place système, après accord expli
 # panneau de réglages ; `kill` du panneau de statistiques ; `setpriv` : processus longs arrêtés avec Quickshell ; `setsid` : scripts/test-outputs.sh, scripts/desktop.sh ; `flock` : scripts/desktop.sh, scripts/network-setup.sh), systemd (`systemctl reboot|poweroff` du panneau de réglages,
 # `systemd-inhibit` de la veille, `busctl` des disques, `loginctl` du diagnostic Thunderbird).
 python                  # diagnostic Thunderbird ; inhibition vidéo ; relevés et arrêt sécurisé des applications (scripts/monitor-processes.py)
-python-gobject          # Gio / GLib : service D-Bus et socket du suivi de veille
+python-gobject          # Gio / GLib : inhibition vidéo et suivi des ouvertures depuis Deluge / Thunderbird / Steam
 glib2                   # gdbus : disques amovibles, mise en veille du système (services/Idle.qml) ; gsettings : reconnexion Bluetooth reprise de blueman
 
 # --- Compositeurs et sorties ---

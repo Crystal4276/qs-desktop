@@ -31,6 +31,38 @@
 
 Retour arrière de la bascule : `docs/ROLLBACK.md`.
 
+## Maintenance — ouvertures par origine Deluge / Thunderbird / Steam (2026-11-08)
+
+- Besoin corrigé : tout contenu ouvert par ces trois applications doit afficher sa destination sur l'écran principal,
+  vidéos, documents et dossiers compris ; la règle ne dépend ni de Chromium, ni d'une extension, ni du workspace source.
+  Les lancements manuels restent sur leur espace. Les propres fenêtres des trois applications gardent leurs affectations.
+- `open-origin.py`, processus géré par `Compositor`, suit les lancements GIO et les demandes natives GApplication/GTK CommandLine,
+  FileManager1, portails et MPRIS ; les fenêtres des enfants directs sont suivies aussi. PID + identité noyau vérifiés ;
+  contexte éphémère en mémoire, aucun chemin/URI journalisé ou persisté. Fenêtre cible affichée sur `Outputs.primary`,
+  lecteur déjà ouvert compris. Pas de scrutation périodique au repos ; suivi seulement pendant une ouverture.
+- Correction du transfert visible signalé avec Celluloid : sous Hyprland, `lua/openorigin.lua` s'exécute dans le traitement
+  natif de mapping (`window.open`), avant que le compositeur reprenne le rendu. Destination connue via l'identité PID/démarrage
+  publiée dans le runtime, ou ascendance native ; aucune correction asynchrone des nouvelles fenêtres. Animation de transfert
+  neutralisée pendant 100 ms puis réglages configurés restaurés. Lecteur réutilisé : placement dès la demande d'ouverture,
+  sans attendre le changement de titre. Les règles de workspace explicites sont conservées si leur écran est déjà le principal.
+- Contrôle sur banc Hyprland, animations activées : callback de vérification exécuté dans le même mapping après la règle ;
+  nouvelle fenêtre GTK, vrai Celluloid et enfant Steam déjà sur CENTER. Pas de déplacement tardif servant de filet de sécurité.
+  Sway conserve le suivi IPC après création : destination vérifiée, mais pas de garantie avant premier rendu sur ce backend.
+- HTTP depuis ces sources : préférence précédente conservée (fenêtre Chromium centrale réutilisée, sinon nouvelle fenêtre).
+  Le lanceur vérifie désormais l'origine auprès du suivi ; les autres sources ne sont pas redirigées. Hôte des web apps
+  revenu à son mécanisme de focus précédent. Aucune nouvelle association de fichiers ni changement de lecteur par défaut.
+- Tests de politique (13 cas) : publication avant mapping Hyprland, lecteur existant déplacé dès la demande, origines et PID, nouvelle fenêtre et lecteur existant, documents arbitraires, fenêtre manuelle,
+  réutilisation de PID, requêtes expirées et non-persistance des URI. Tests de routage navigateur et installation : 8 cas.
+- Bus privés et vrais lecteurs : trois origines contrôlées, vidéo/document/autre contenu, même fichier ouvert manuellement,
+  lecteur réutilisé ; Sway et Hyprland. Vrai `deluge.common.open_file` → `xdg-open` → Celluloid avec vidéo locale de test,
+  puis Celluloid déjà ouvert sur le secondaire : validés sur Hyprland. Enfant Steam lancé directement, sans GIO : validé.
+  Tous les groupes de test arrêtés ; aucun mail, torrent, jeu ou document utilisateur ouvert/modifié, aucune action VPN.
+- Activation réelle : hook Hyprland rechargé sans erreur, suivi PID enfant du bureau ; écran principal validé contre les sorties
+  actives pour ne jamais conserver un diagnostic IPC de démarrage comme nom d'écran. Test d'une fenêtre factice issue de Deluge
+  depuis 7 → écran principal ; Chromium manuel sur 7 et 8 → leurs espaces. Fenêtres de test fermées, focus, espaces visibles
+  et pointeur restaurés ; bureau PID 7098 conservé. Répartition des écrans : Sway et Hyprland, 0 échec.
+- Reste à confirmer à la main : vrais clics depuis les trois applications, lecteurs habituels et prochaine connexion Sway.
+
 ## Maintenance — liens externes au centre, lancements manuels libres (2026-11-08)
 
 - Intention clarifiée : les liens HTTP/HTTPS depuis Thunderbird, Deluge, Steam et les autres applications doivent afficher

@@ -16,5 +16,6 @@ require("lua/monitors")
 require("lua/looknfeel")
 require("lua/input")
 require("lua/windowrules") -- clés d'effet non typées : plus fort risque d'erreur d'exécution
+require("lua/openorigin") -- placement du contenu externe avant le premier rendu
 require("lua/host")        -- après les règles communes : celles de la machine s'y ajoutent
 require("lua/autostart")   -- dernier : le plus à effets de bord

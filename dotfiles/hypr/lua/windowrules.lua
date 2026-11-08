@@ -117,7 +117,7 @@ hl.window_rule({
    tile      = true,
 })
 
--- Renvoi des espaces 7 et 8 vers l'écran central : propre à la machine (hosts/<hostname>.lua).
+-- Contenu externe : placement par origine dans lua/openorigin.lua, jamais par workspace source.
 
 ------------------------------------------------------------------------------
 -- Gamescope

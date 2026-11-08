@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import shlex
+import socket
 import subprocess
 import sys
 import time
@@ -108,9 +109,22 @@ def open_links(urls, backend, primary, launch=None):
         time.sleep(.05)
 
 
+def selected_origin(urls):
+    try:
+        path=Path(os.environ['XDG_RUNTIME_DIR'])/'qs-open-origin.sock'
+        with socket.socket(socket.AF_UNIX) as client:
+            client.settimeout(.3);client.connect(str(path))
+            client.sendall(json.dumps({'pid':os.getpid(),'uris':urls}).encode())
+            return json.loads(client.recv(64)) is True
+    except (OSError,ValueError,KeyError):
+        return False
+
+
 def main(args):
     if not args or not all(u.lower().startswith(('http://', 'https://')) for u in args):
         os.execvp('chromium', ['chromium', *(['--', *args] if args else [])])
+    if not selected_origin(args):
+        os.execvp('chromium', ['chromium', '--', *args])
     delivered = []
     def launch(command):
         env = {k: v for k, v in os.environ.items() if k not in ('XDG_ACTIVATION_TOKEN', 'DESKTOP_STARTUP_ID', 'HL_INITIAL_WORKSPACE_TOKEN')}
