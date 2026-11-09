@@ -375,6 +375,15 @@ FloatingWindow {
                     tint: Theme.monitor.gpu
                 }
 
+                Text {
+                    objectName: "gpu-load-unavailable"
+                    visible: (Monitor.gpu?.load ?? -1) < 0
+                    text: "Load unavailable"
+                    font.family: Theme.font.text
+                    font.pixelSize: Theme.panel.smallFontSize
+                    color: Theme.panel.secondaryText
+                }
+
                 Gauge {
                     visible: (Monitor.gpu?.memTotal ?? -1) > 0 && (Monitor.gpu?.memUsed ?? -1) >= 0
                     label: "VRAM"

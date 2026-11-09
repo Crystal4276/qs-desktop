@@ -86,7 +86,7 @@ ShellRoot {
             smi.write_text('#!/bin/sh\ncase "$1" in\n--query-gpu=temperature.gpu,utilization.gpu) echo "45, 35";;\n--query-gpu=name,*) echo "Test NVIDIA, 35, 10, 100, 45, 20, 30, 800";;\npmon) echo "# no clients";;\nesac\n')
             smi.chmod(0o755)
             env['PATH'] = str(bindir) + ':' + env['PATH']
-            for vendor, ident, clock, load, temperature in [('intel','0x8086',0,-1,-1), ('amd','0x1002',600,32,-1), ('nvidia','0x10de',800,35,45)]:
+            for vendor, ident, clock, load, temperature in [('intel','0x8086',1300,-1,-1), ('amd','0x1002',600,32,-1), ('nvidia','0x10de',800,35,45)]:
                 (device/'vendor').write_text(ident)
                 if vendor == 'amd':
                     (device/'gpu_busy_percent').write_text('32')
@@ -101,7 +101,11 @@ ShellRoot {
                 with logpath.open('w') as output:
                     shell = subprocess.Popen(['qs','-p',str(root)],env=env,stdout=output,stderr=subprocess.STDOUT)
                     try:
-                        time.sleep(2)
+                        time.sleep(1.6)
+                        if vendor == 'intel':
+                            # Change frequency between two expensive GPU samples.
+                            (card/'gt_act_freq_mhz').write_text('1300')
+                        time.sleep(.4)
                         subprocess.run(['grim',str(work/(vendor+'.png'))],env=env,check=True,timeout=5)
                         shell.wait(timeout=10)
                     finally:
