@@ -540,6 +540,34 @@ step_webapps() {
     fi
 }
 
+# Fonds d'écran : dépôt privé à part (images hors du dépôt du bureau), cloné dans le dossier lu par services/Wallpapers.qml.
+# QS_WALLPAPERS_REPO : autre dépôt (« compte/nom » GitHub, adresse git ou chemin), pour les tests.
+step_wallpapers() {
+    local src="${QS_WALLPAPERS_REPO:-Crystal4276/wallpapers}" dir
+    dir="$(xdg-user-dir PICTURES 2>/dev/null || echo "$HOME/Pictures")/Wallpapers"
+    if [[ -d "$dir/.git" ]]; then
+        if [[ -n "$(git -C "$dir" status --porcelain 2>/dev/null)" ]]; then
+            echo "= $dir (modifications locales : pas de mise à jour)"
+        elif [[ -n "$dry" ]]; then
+            echo "+ git -C $dir pull --ff-only"
+        else
+            git -C "$dir" pull -q --ff-only 2>/dev/null && echo "= $dir à jour" || echo "! $dir : mise à jour impossible (réseau ou accès GitHub), gardé tel quel"
+        fi
+        return
+    fi
+    if [[ -e "$dir" ]]; then echo "= $dir existe déjà (pas un clone : gardé tel quel)"; return; fi
+    ask "Cloner tes fonds d'écran ($src, environ 300 Mo) dans $dir ?" || { echo "- fonds d'écran non clonés : aucun fond affiché"; return; }
+    run mkdir -p "$(dirname "$dir")"
+    [[ -n "$dry" ]] && { echo "+ clone de $src dans $dir"; return; }
+    if [[ "$src" == */*/* || "$src" == /* || "$src" == *:* ]]; then
+        git clone -q "$src" "$dir"
+    elif command -v gh >/dev/null && gh auth status >/dev/null 2>&1; then
+        gh repo clone "$src" "$dir" -- -q
+    else
+        git clone -q "git@github.com:$src.git" "$dir"
+    fi || echo "! clonage de $src impossible (dépôt privé : gh auth login, ou clé SSH GitHub) ; relancer install.sh ensuite"
+}
+
 # --- 5. Config machine -------------------------------------------------------------------------------------------------
 
 step_host() {
@@ -662,6 +690,8 @@ fi
 step_configs
 step_theme
 step_settings
+section "Fonds d'écran"
+step_wallpapers
 step_host
 [[ -n "$system" ]] && is_arch && step_system
 step_check
