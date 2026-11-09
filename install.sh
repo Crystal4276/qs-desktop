@@ -96,6 +96,14 @@ backup_once() {     # genre cible mv|cp
     record "$kind" "$target" "$backup"
 }
 
+# Empreinte d'un fichier tel qu'install.sh l'a écrit : le retrait sait si une application l'a modifié depuis.
+written_mark() { echo "$state/written/$(printf '%s' "$1" | sha256sum | cut -c1-16)"; }
+written() {
+    [[ -n "$dry" || ! -f "$1" ]] && return 0
+    mkdir -p "$state/written"
+    sha256sum < "$1" > "$(written_mark "$1")"
+}
+
 # Lien `dest` → `src` (chemin du dépôt). Un fichier ou dossier déjà là est sauvegardé (déplacé) avant.
 link() {        # src (chemin du dépôt, ou absolu) dest
     local src="$1" dest="$2"
@@ -122,6 +130,7 @@ seed() {        # src dest
     record seed "$2" -
     run mkdir -p "$(dirname "$2")"
     run cp "$repo/$1" "$2"
+    written "$2"
 }
 
 # Clés d'un fichier INI (ou `clé = valeur` sans section) : seules ces clés changent, le reste du fichier est gardé.
@@ -179,6 +188,7 @@ EOF
     [[ -n "$dry" ]] && return
     mkdir -p "$(dirname "$file")"
     printf '%s\n' "$changes" > "$file"
+    written "$file"
 }
 
 # Bloc ajouté à la fin d'un fichier (ex. ~/.bashrc), repéré par sa première ligne ; le reste du fichier n'est pas touché.
@@ -194,9 +204,20 @@ pkg_list() {    # fichiers de deps/ → noms de paquets
     for f in "$@"; do grep -v '^\s*#' "$repo/deps/$f" | cut -d'#' -f1 | xargs -r -n1; done
 }
 
-gpu_vendors() { # cartes graphiques présentes : nvidia intel amd
-    command -v lspci >/dev/null || return 0
-    lspci -nn | grep -E 'VGA|3D|Display' | grep -oE '\[(10de|8086|1002):' | sort -u | sed 's/\[10de:/nvidia/; s/\[8086:/intel/; s/\[1002:/amd/'
+gpu_vendors() { # cartes graphiques présentes : nvidia intel amd, lues par lspci (pciutils, installé avant par step_packages)
+    if command -v lspci >/dev/null; then
+        lspci -nn | grep -E 'VGA|3D|Display' | grep -oE '\[(10de|8086|1002):' | sort -u \
+            | sed 's/\[10de:/nvidia/; s/\[8086:/intel/; s/\[1002:/amd/'
+        return
+    fi
+    # Simulation sur une machine sans pciutils : mêmes informations lues dans sysfs (classe PCI 03 : affichage).
+    local d
+    for d in /sys/bus/pci/devices/*; do
+        [[ "$(cat "$d/class" 2>/dev/null)" == 0x03* ]] || continue
+        case "$(cat "$d/vendor" 2>/dev/null)" in
+            0x10de) echo nvidia ;; 0x8086) echo intel ;; 0x1002) echo amd ;;
+        esac
+    done | sort -u
 }
 
 # --- 1. Paquets --------------------------------------------------------------------------------------------------------
@@ -226,6 +247,11 @@ step_packages() {
         echo "! [multilib] inactif : profil jeux non installé (relancer install.sh et accepter multilib)"; games=no
     fi
     [[ "$games" == yes ]] && mapfile -t -O "${#want[@]}" want < <(pkg_list games.txt)
+    # lspci d'abord : il choisit les paquets de la carte graphique de ce même passage.
+    if ! command -v lspci >/dev/null; then
+        printf '+ sudo pacman -S --needed %spciutils\n' "${yes:+--noconfirm }"
+        [[ -n "$dry" ]] || sudo pacman -S --needed ${yes:+--noconfirm} pciutils
+    fi
     mapfile -t vendors < <(gpu_vendors)
     for v in "${vendors[@]}"; do
         mapfile -t -O "${#want[@]}" want < <(awk -v v="$v" -v g="$games" '!/^#/ && NF >= 2 && ($1 == v || (g == "yes" && $1 == v "-jeux")) { print $2 }' "$repo/deps/gpu.txt")
@@ -328,9 +354,11 @@ fetch() {       # nom → affiche le dossier extrait
     local name="$1" sha url file dir
     read -r sha url < <(awk -v n="$name" '$1 == n { print $2, $3 }' "$repo/deps/themes.txt")
     [[ -n "$url" ]] || { echo "! $name absent de deps/themes.txt" >&2; return 1; }
-    # Simulation : téléchargement dans un dossier temporaire, le cache n'est pas rempli.
+    # Simulation : archive déjà vérifiée du cache lue telle quelle ; sinon téléchargement dans un dossier temporaire.
     local store="$cache"
-    [[ -n "$dry" ]] && store="$dry_cache"
+    if [[ -n "$dry" ]] && ! echo "$sha  $cache/$name-${sha:0:12}.${url##*.}" | sha256sum -c --status 2>/dev/null; then
+        store="$dry_cache"
+    fi
     file="$store/$name-${sha:0:12}.${url##*.}"
     if [[ ! -f "$file" ]] || ! echo "$sha  $file" | sha256sum -c --status; then
         mkdir -p "$store"
@@ -368,6 +396,7 @@ put_file() {    # source cible : fichier du thème, l'ancien sauvegardé
     if [[ -e "$2" ]]; then backup_once edit "$2" cp; elif ! recorded "$2"; then record seed "$2" -; fi
     run mkdir -p "$(dirname "$2")"
     run cp "$1" "$2"
+    written "$2"
 }
 
 # Dossiers Catppuccin lavande (ton choix : comme sur le desktop de référence) sans toucher au thème du système : surcouche Papirus dans le compte (mêmes noms de dossiers, les autres icônes
@@ -398,29 +427,43 @@ papirus_overlay() {     # dossier src/ de catppuccin/papirus-folders
     [[ -n "$dry" ]] || gtk-update-icon-cache -q -f -t "$top/Papirus" 2>/dev/null || true
 }
 
+# Dossiers du thème déjà installés depuis cette archive (marque = son empreinte) : rien à télécharger ni à extraire.
+theme_current() {   # nom-de-l'archive dossier…
+    local sha d
+    sha="$(awk -v n="$1" '$1 == n { print $2 }' "$repo/deps/themes.txt")"; shift
+    for d in "$@"; do [[ "$(cat "$d/.qs-desktop" 2>/dev/null)" == "$sha" ]] || return 1; done
+    for d in "$@"; do echo "= $d"; done
+}
+
 step_theme() {
     section "3. Thème (Catppuccin Mocha, accent green)"
     local d v theme=catppuccin-mocha-green-standard+default cursor=catppuccin-mocha-green-cursors
     command -v curl >/dev/null && command -v unzip >/dev/null || { echo "! curl ou unzip absent : thème non installé"; return; }
 
-    if d="$(fetch gtk)"; then
+    if theme_current gtk "$data/themes/$theme"; then :
+    elif d="$(fetch gtk)"; then
         for v in "" -hdpi -xhdpi; do [[ -d "$d/$theme$v" ]] && put_dir "$d/$theme$v" "$data/themes/$theme$v" gtk; done
         rm -rf "$d"
-        # GTK 4 / libadwaita n'a pas de thème : feuilles du thème liées dans ~/.config/gtk-4.0.
+    fi
+    # GTK 4 / libadwaita n'a pas de thème : feuilles du thème liées dans ~/.config/gtk-4.0.
+    if [[ -d "$data/themes/$theme/gtk-4.0" || -n "$dry" ]]; then
         for f in gtk.css gtk-dark.css assets; do link "$data/themes/$theme/gtk-4.0/$f" "$config/gtk-4.0/$f"; done
     fi
 
-    if d="$(fetch cursors)"; then
+    if theme_current cursors "$data/icons/$cursor"; then :
+    elif d="$(fetch cursors)"; then
         put_dir "$d/$cursor" "$data/icons/$cursor" cursors
         rm -rf "$d"
     fi
 
-    if d="$(fetch kvantum)"; then
+    if theme_current kvantum "$config/Kvantum/catppuccin-mocha-green"; then :
+    elif d="$(fetch kvantum)"; then
         put_dir "$d"/kvantum-*/themes/catppuccin-mocha-green "$config/Kvantum/catppuccin-mocha-green" kvantum
         rm -rf "$d"
     fi
 
-    if d="$(fetch papirus-folders)"; then
+    if theme_current papirus-folders "$data/icons/Papirus" "$data/icons/Papirus-Dark"; then :
+    elif d="$(fetch papirus-folders)"; then
         papirus_overlay "$(echo "$d"/papirus-folders-*/src)"
         rm -rf "$d"
     fi
@@ -464,21 +507,40 @@ step_settings() {
     fi
 
     # Applications par défaut.
+    # Types encore à régler, en une lecture de ~/.config/mimeapps.list (au lieu d'un xdg-mime par type).
     local mimeapps="$config/mimeapps.list" app types
     while read -r app types; do
-        [[ -z "$app" || "$app" == \#* ]] && continue
         if [[ ! -f "/usr/share/applications/$app" && ! -f "$data/applications/$app" ]]; then
             echo "- $app absent : ses types ne changent pas"; continue
         fi
-        local todo=() t
-        for t in $types; do [[ "$(xdg-mime query default "$t" 2>/dev/null)" == "$app" ]] || todo+=("$t"); done
-        if [[ ${#todo[@]} -eq 0 ]]; then echo "= $app par défaut"; continue; fi
+        if [[ -z "$types" ]]; then echo "= $app par défaut"; continue; fi
         if [[ -e "$mimeapps" ]]; then backup_once edit "$mimeapps" cp; elif ! recorded "$mimeapps"; then record seed "$mimeapps" -; fi
-        run xdg-mime default "$app" "${todo[@]}"
-    done < "$repo/dotfiles/mime/defaults.list"
+        # shellcheck disable=SC2086
+        run xdg-mime default "$app" $types
+        written "$mimeapps"
+    done < <(python3 -I - "$repo/dotfiles/mime/defaults.list" "$mimeapps" <<'PY'
+import configparser, sys
+cur = configparser.RawConfigParser(strict=False, interpolation=None, delimiters=("=",))
+cur.optionxform = str
+try:
+    cur.read(sys.argv[2], encoding="utf-8")
+except (configparser.Error, UnicodeDecodeError):
+    pass
+have = dict(cur.items("Default Applications")) if cur.has_section("Default Applications") else {}
+for line in open(sys.argv[1], encoding="utf-8"):
+    if not line.strip() or line.startswith("#"):
+        continue
+    app, *types = line.split()
+    print(app, *[t for t in types if have.get(t, "").split(";")[0] != app])
+PY
+)
 
     # Geany : son fichier de réglages est réécrit par l'application ; seules les clés du thème et des polices changent.
-    ini_set "$config/geany/geany.conf" geany color_scheme catppuccin-mocha.conf editor_font "Inter 16" tagbar_font "Symbols Nerd Font Mono 9"
+    if running_here '(^|/)geany( |$)'; then
+        echo "! Geany est ouvert : le fermer puis relancer install.sh pour son thème et ses polices"
+    else
+        ini_set "$config/geany/geany.conf" geany color_scheme catppuccin-mocha.conf editor_font "Inter 16" tagbar_font "Symbols Nerd Font Mono 9"
+    fi
 
     deluge_no_tray
     chromium_gtk_themes
@@ -580,6 +642,7 @@ write_setting() {   # fichier contenu description [keep : déjà noté au regist
     elif ! recorded "$1"; then record seed "$1" -; fi
     printf '+ %s : %s\n' "$1" "$3"
     [[ -n "$dry" ]] || { mkdir -p "$(dirname "$1")"; printf '%s' "$2" > "$1"; }
+    written "$1"
 }
 
 # Web apps (deps/README.md, « Web apps ») : lanceurs et manifestes de l'hôte natif développés depuis dotfiles/webapps.
@@ -597,7 +660,7 @@ step_webapps() {
         if [[ -f "$out" ]] && [[ "$(cat "$out")" == "$content" ]]; then echo "= $out"; continue; fi
         backup_once edit "$out" cp
         printf '+ %s (modèle %s)\n' "$out" "$name"
-        [[ -n "$dry" ]] || { mkdir -p "$data/applications"; printf '%s\n' "$content" > "$out"; }
+        [[ -n "$dry" ]] || { mkdir -p "$data/applications"; printf '%s\n' "$content" > "$out"; written "$out"; }
     done
     local profile manifest json
     json="$(python3 -I -c 'import json,sys; print(json.dumps(sys.argv[1])[1:-1])' "$webapps")"
@@ -607,12 +670,13 @@ step_webapps() {
         if [[ -f "$manifest" ]] && [[ "$(cat "$manifest")" == "$content" ]]; then echo "= $manifest"; continue; fi
         backup_once edit "$manifest" cp
         printf '+ %s\n' "$manifest"
-        [[ -n "$dry" ]] || { mkdir -p "$(dirname "$manifest")"; printf '%s\n' "$content" > "$manifest"; }
+        [[ -n "$dry" ]] || { mkdir -p "$(dirname "$manifest")"; printf '%s\n' "$content" > "$manifest"; written "$manifest"; }
     done
     [[ -x "$webapps/open-link" ]] || run chmod +x "$webapps/open-link"
     if [[ -z "$dry" ]] && command -v update-desktop-database >/dev/null; then
         [[ -e "$data/applications/mimeinfo.cache" ]] || recorded "$data/applications/mimeinfo.cache" || record seed "$data/applications/mimeinfo.cache" -
         update-desktop-database "$data/applications" 2>/dev/null || true
+        written "$data/applications/mimeinfo.cache"
     fi
 }
 
@@ -625,6 +689,7 @@ step_wallpapers() {
         recorded "$config/user-dirs.dirs" || record seed "$config/user-dirs.dirs" -
         [[ -e "$config/user-dirs.locale" ]] || recorded "$config/user-dirs.locale" || record seed "$config/user-dirs.locale" -
         run xdg-user-dirs-update
+        written "$config/user-dirs.dirs"; written "$config/user-dirs.locale"
     fi
     pictures="$(xdg-user-dir PICTURES 2>/dev/null || true)"
     [[ -z "$pictures" || "$pictures" == "$HOME" ]] && pictures="$HOME/Pictures"
@@ -708,6 +773,15 @@ step_system() {
 
 # --- Retrait -----------------------------------------------------------------------------------------------------------
 
+# Avant de retirer ou remettre un fichier de réglages : s'il a changé depuis la dernière écriture d'install.sh (une application
+# y a enregistré tes réglages), sa version actuelle est gardée à côté (<fichier>.uninstall-<date>).
+keep_current() {    # cible sauvegarde|-
+    [[ -f "$1" && ! -L "$1" && -s "$1" ]] || return 0
+    [[ "$2" != - && -f "$2" ]] && cmp -s "$1" "$2" && return 0
+    [[ "$(cat "$(written_mark "$1")" 2>/dev/null)" == "$(sha256sum < "$1")" ]] && return 0
+    run cp -p "$1" "$1.uninstall-$stamp"
+}
+
 do_uninstall() {
     section "Retrait des configs du compte"
     if [[ -f "$registry" ]]; then
@@ -715,6 +789,7 @@ do_uninstall() {
         while IFS=$'\t' read -r kind target backup <&3; do
             case "$kind" in
                 edit)
+                    keep_current "$target" "$backup"
                     if [[ "$backup" == - ]]; then run rm -f "$target"
                     elif [[ -e "$backup" ]]; then run cp "$backup" "$target"; run rm -f "$backup"
                     else echo "! sauvegarde $backup introuvable : $target laissé tel quel"; fi ;;
@@ -741,6 +816,7 @@ EOF
                     if [[ "$kind" == link && -e "$target" && ! -L "$target" && ! -f "$target/.qs-desktop" ]]; then
                         echo "! $target n'est plus le lien installé : gardé tel quel"; continue
                     fi
+                    [[ "$kind" == seed ]] && keep_current "$target" "$backup"
                     if [[ "$backup" == - ]]; then run rm -rf "$target"
                     elif [[ -e "$backup" || -L "$backup" ]]; then run rm -rf "$target"; run mv "$backup" "$target"
                     else echo "! sauvegarde $backup introuvable : $target laissé tel quel"; fi ;;
@@ -761,7 +837,7 @@ EOF
             esac
         done 3< <(tac "$registry")
         [[ -f "$state/dconf-old.ini" ]] && python3 -I "$repo/scripts/dconf-keys.py" ${dry:+--dry-run} restore "$state/dconf-old.ini"
-        run rm -f "$registry" "$state/dconf-old.ini"
+        run rm -rf "$registry" "$state/dconf-old.ini" "$state/written"
         [[ -L "$repo/dotfiles/mpv/host.conf" ]] && run rm -f "$repo/dotfiles/mpv/host.conf"
     else
         echo "= rien à retirer ($registry absent)"

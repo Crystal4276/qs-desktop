@@ -71,7 +71,10 @@ libnotify               # notify-send (sortie audio suivante, connexions et batt
 # --- Installation (install.sh) ---
 base-devel              # makepkg : construction de paru-bin (seul paquet AUR, installé par install.sh)
 unzip                   # archives des thèmes Catppuccin (deps/themes.txt) ; curl et tar viennent de `base`
-pciutils                # lspci : choix des paquets selon la carte graphique (deps/gpu.txt)
+pciutils                # lspci : choix des paquets selon la carte graphique (deps/gpu.txt), installé en premier par install.sh
+dconf                   # réglages GSettings du compte (dotfiles/dconf, scripts/dconf-keys.py)
+desktop-file-utils      # update-desktop-database : lanceurs des web apps
+gtk-update-icon-cache   # cache de la surcouche Papirus (dossiers Catppuccin)
 
 # --- Captures et outils de dev ---
 grim                    # captures des outils de dev (scripts/shot.sh) ; touche Impr. : outil natif
