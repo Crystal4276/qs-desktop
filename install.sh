@@ -85,7 +85,7 @@ backup_once() {     # genre cible mv|cp
     recorded "$target" && return
     if [[ -e "$target" || -L "$target" ]]; then
         backup="$target.bak-$stamp"
-        run "$how" -a "$target" "$backup" 2>/dev/null || run "$how" "$target" "$backup"
+        if [[ "$how" == cp ]]; then run cp -a "$target" "$backup"; else run mv "$target" "$backup"; fi
     fi
     record "$kind" "$target" "$backup"
 }
