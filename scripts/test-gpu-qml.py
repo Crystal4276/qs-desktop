@@ -42,13 +42,18 @@ ShellRoot {
         onTriggered: {
             if (Monitor.gpu?.clock !== Number(Quickshell.env("GPU_CLOCK")) || Monitor.gpu?.load !== Number(Quickshell.env("GPU_LOAD")) || Monitor.gpu?.temperature !== Number(Quickshell.env("GPU_TEMP")))
                 throw new Error("Intel GPU without temperature: " + JSON.stringify(Monitor.gpu));
+            if (vendor === "intel") {
+                const before = Monitor.lastIntelSample;
+                Monitor.sampleGpu();
+                if (Monitor.lastIntelSample !== before) throw new Error("Intel polling must be throttled");
+            }
             Monitor.processes = [
                 {key: "1:10", gpu: 2, gpuClients: {shared: 2}},
                 {key: "2:10", gpu: 2, gpuClients: {shared: 2}}
             ];
             if (Monitor.gpuMemory(Monitor.processes) !== 2) throw new Error("Duplicate client in application");
             panel.close();
-            if (Monitor.gpu !== null || Monitor.processes.some(p => p.gpu > 0)) throw new Error("Stale readings");
+            if (Monitor.gpu !== null || Monitor.lastIntelSample !== 0 || Monitor.processes.some(p => p.gpu > 0)) throw new Error("Stale readings");
             console.log("GPU_QML_PASS");
             Qt.quit();
         }

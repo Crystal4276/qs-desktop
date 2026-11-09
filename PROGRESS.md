@@ -248,3 +248,14 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
   pas d'erreur QML ; avertissements Qt textinput déjà présents avant le changement. Aucun paquet installé, aucun droit modifié.
 - Reste à vérifier à la main : tri par mémoire GPU et passage Applications / Processes selon ton usage ; AMD et NVIDIA réels
   à revalider sur les machines correspondantes. Bancs arrêtés.
+
+## Maintenance — coût des relevés GPU (2026-11-09)
+
+- À ta remarque sur les performances : mesures réelles sur trois passages, environ 140–163 ms CPU par collecte avant
+  optimisation (~6 % d'un cœur à 2,6 s). Filtrage des descripteurs par nœud `/dev/dri` avant toute lecture fdinfo,
+  parcours `os.scandir` : 84–100 ms CPU par passage, mêmes 18 clients retrouvés.
+- Intel : relevés espacés à environ 10 s (premier relevé immédiat à l'ouverture, délai réinitialisé à la fermeture).
+  Coût moyen du collecteur GPU ramené à environ 0,9 % d'un cœur lorsque le panneau reste ouvert ; aucun relevé périodique
+  GPU panneau fermé sur ce laptop. Les autres relevés du moniteur et le rythme NVIDIA / AMD sont inchangés.
+- Tests : `test-gpu.py` (8 cas, dont absence de lecture des fdinfo non GPU), `test-gpu-qml.py` (Intel / AMD / NVIDIA,
+  espacement Intel et réarmement à la fermeture) : OK. Même rendu ; bancs arrêtés.

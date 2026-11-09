@@ -469,7 +469,7 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
   température, consommation, ventilateur, fréquence, VRAM par processus via `nvidia-smi pmon` ; AMD : sysfs ; Intel : fréquence réelle
   `gt_act_freq_mhz`, y compris 0 MHz au repos). `Gpu.cardPath` identifie la carte indépendamment d'un capteur de température.
   `scripts/gpu-stats.py` lit sysfs et la mémoire résidente déclarée dans les `fdinfo` des processus lisibles, uniquement panneau
-  ouvert, sans privilège ni paquet supplémentaire. Identité PID + démarrage vérifiée ; filtre PCI et déduplication par client DRM
+  ouvert, sans privilège ni paquet supplémentaire. Sur Intel, relevés espacés à environ 10 s ; seuls les descripteurs DRM sont lus. Identité PID + démarrage vérifiée ; filtre PCI et déduplication par client DRM
   dans chaque processus et application. La mémoire Intel est de la RAM partagée ; des allocations peuvent appartenir à plusieurs
   applications. Aucun total physique ni pourcentage de charge n'est déduit de ces compteurs. Les champs absents sont masqués.
   Disques (`df`),

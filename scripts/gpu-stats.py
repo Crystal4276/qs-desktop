@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Read available DRM/sysfs metrics. No perf counters or inferred utilization."""
 import json
+import os
 from pathlib import Path
 import re
 import sys
@@ -41,9 +42,13 @@ def process_memory(card, processes, proc=Path('/proc')):
             if identity() != process['key']:
                 continue
             clients = {}
-            for fd in (path / 'fdinfo').iterdir():
+            for fd in os.scandir(path / 'fd'):
                 try:
-                    fields = dict(line.split(':', 1) for line in fd.read_text().splitlines() if ':' in line)
+                    # Most descriptors are sockets/files. Only DRM nodes carry GPU metrics.
+                    if not os.readlink(fd.path).startswith('/dev/dri/'):
+                        continue
+                    info = path / 'fdinfo' / fd.name
+                    fields = dict(line.split(':', 1) for line in info.read_text().splitlines() if ':' in line)
                     fields = {k: v.strip() for k, v in fields.items()}
                     if fields.get('drm-pdev') != device or 'drm-client-id' not in fields:
                         continue

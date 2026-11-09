@@ -102,3 +102,11 @@ Après correction du placement par origine : nouvelle série ABBA, huit ouvertur
 et hook Lua actifs. Médianes 104,1 → 74,9 ms : **29,2 ms (28,0 %)**. Le gain satisfait à nouveau le seuil ; accélération rétablie.
 Contre-épreuves sur la même version : Chromium manuel reste sur 6/7/8, liens source créés/réutilisés au centre, vrai Celluloid
 placé dans le mapping natif. L'accélération ne choisit pas le workspace et ne désactive pas le décodage matériel.
+
+## Collecteur GPU Intel — laptop (2026-11-09)
+
+Trois passages réels, environ 364 processus et 18 clients DRM : avant filtrage, 140–163 ms CPU par collecte ; après
+filtrage des descripteurs `/dev/dri` avec `os.scandir`, 84–100 ms CPU, données conservées. Les relevés Intel
+(fréquence et mémoire résidente déclarée) sont espacés à environ 10 s, uniquement panneau ouvert : environ 0,9 %
+d'un cœur en moyenne pour ce collecteur, contre environ 6 % au rythme initial de 2,6 s. Ce chiffre ne comprend
+pas les autres relevés du moniteur. Panneau fermé : aucune collecte GPU périodique sur ce laptop sans hwmon ni charge sysfs.
