@@ -8,7 +8,7 @@ lui-même ; ce qui n'existe qu'en AUR (Claude Code, NordVPN, Plex, RustDesk) est
   multimédia minimal, Wine, virtualisation, Samba).
 - `games.txt` : profil optionnel « jeux » (`install.sh --with jeux`) ; Steam vient du dépôt `multilib`, activé par `install.sh`.
 - `gpu.txt` : paquets selon la carte graphique détectée (VA-API, `nvidia-smi`, Vulkan 32 bits des jeux).
-- `arch-aur.txt` : thème GTK et curseur Catppuccin (en cours de remplacement par les archives officielles Catppuccin).
+- `themes.txt` : thème Catppuccin (GTK, curseur, Kvantum, dossiers Papirus, Geany) : archives officielles, empreintes SHA-256.
 - `optional.txt` : selon le matériel ou les modules utilisés.
 - Fichiers fournis par le dépôt lui-même (polices, images, feuilles de style) : colonne « Fichiers du dépôt » ci-dessous.
 
@@ -74,7 +74,7 @@ Thème d'icônes des applications (tray, lanceur, menu d'applications, notificat
 
 ### Hors barre (configs compositeur)
 
-Thème GTK et curseur (AUR). Tout le reste (fond, veille, verrouillage, polkit, applets réseau/Bluetooth/disques, captures) est fait par
+Thème GTK, curseur, Kvantum : archives Catppuccin (`deps/themes.txt`). Tout le reste (fond, veille, verrouillage, polkit, applets réseau/Bluetooth/disques, captures) est fait par
 Quickshell : `swaybg`, `swayidle`, `hypridle`, `swaylock`, `polkit-gnome`, `blueman`, `udiskie`, `hyprshot`, `waybar`, `dunst`, `rofi`
 ne sont pas des dépendances (Dunst, s'il est installé, doit être masqué : `systemctl --user mask dunst.service`).
 Les applications personnelles lancées au démarrage (Steam, Spotify, Thunderbird, NordVPN…) ne sont **pas** des dépendances du bureau.
@@ -133,11 +133,11 @@ Ce que `install.sh` (phase 12) devra installer, activer ou vérifier — relevé
 | `polkit` | agent polkit natif, montage des disques sans mot de passe | actif (statique) | rien |
 | Services utilisateur `pipewire.socket`, `pipewire-pulse.socket`, `wireplumber` | audio | activés | `systemctl --user enable --now …` |
 | Fichier PAM du verrouillage | `WlSessionLock` + `PamContext` vérifient le mot de passe | configuration `login` de `/etc/pam.d` (présente partout) | rien : un fichier propre au dépôt ne marche pas (`include` se résout dans son propre dossier) ; rien n'est écrit dans `/etc` |
-| Polices d'icônes (Symbols Nerd Font Mono, Hack Nerd Font, Font Awesome 7 Free / Brands, FontAwesome 4.7) | icônes de la barre (`THEME.md` § 2) | paquets (`ttf-nerd-fonts-symbols-mono`, `ttf-hack-nerd`, `otf-font-awesome`, `awesome-terminal-fonts`) | copiées depuis `assets/fonts/` dans `~/.local/share/fonts` + `fc-cache` ; aucun paquet nécessaire |
+| Polices d'icônes (Symbols Nerd Font Mono, Hack Nerd Font, Font Awesome 7 Free / Brands, FontAwesome 4.7) | icônes de la barre (`THEME.md` § 2) | paquets (`ttf-nerd-fonts-symbols-mono`, `ttf-hack-nerd`, `otf-font-awesome`, `awesome-terminal-fonts`) | paquets officiels (`deps/arch-pacman.txt`) ; Quickshell charge en plus ses copies de `assets/fonts/` (`FontLoader`) |
 | Images `assets/*.svg` | bouton Arch, icônes de session | dans le dépôt | rien (`THEME.md` § 12) |
 | Lien `~/.config/quickshell/desktop` → dépôt | lancement par `qs -c desktop` | existe | créé par `install.sh` |
 | Thème d'icônes `Papirus-Dark` | icônes d'applications | paquet | paquet + `//@ pragma IconTheme Papirus-Dark` dans `shell.qml` (indispensable : le thème `breeze` de qt6ct n'est pas installé ici, `ARCHITECTURE.md` § 8.1) |
-| Curseur, thème GTK | apparence des applications | AUR | paquets AUR + `gtk-3.0/settings.ini` et `gtk-4.0/settings.ini` (ici incohérents : `prefer-dark` 1 et 0) |
+| Curseur, thème GTK, Kvantum, dossiers Papirus | apparence des applications | paquets AUR (ancienne installation) | archives Catppuccin de `deps/themes.txt` dans le compte + réglages GTK / Qt / dconf, par `install.sh` (étape 3) |
 | Dépôt `wallpapers` | fonds d'écran | `~/Pictures/Wallpapers` | `git clone git@github.com:Crystal4276/wallpapers.git "$(xdg-user-dir PICTURES)/Wallpapers"` (dépôt privé : clé SSH GitHub nécessaire) ; facultatif |
 | Commande de session Sway sur Nvidia | `WLR_RENDERER=vulkan sway --unsupported-gpu` | fichier `/usr/share/wayland-sessions/sway-vulkan.desktop` créé à la main pour SDDM | versionné (`dotfiles/greetd/sway-vulkan.desktop`), installé dans `/usr/local/share/wayland-sessions/` par `scripts/greeter-setup.sh` si Nvidia est la seule carte graphique (laptop hybride : phase 12) ; le Sway du greeter le détecte seul (`scripts/greeter.sh`) |
 | Gestionnaire de connexion | greetd + greeter Quickshell (phase 11, `ARCHITECTURE.md` § 9) | SDDM activé (`sddm.service`), PAM `/etc/pam.d/sddm` avec `pam_gnome_keyring.so` | paquets `greetd` (+ `greetd-agreety`), puis `scripts/greeter-setup.sh install` (copie dans `/usr/local/share/qs-desktop`, `/etc/greetd/config.toml`, `/etc/pam.d/greetd` avec le trousseau, `/etc/pam.d/greetd-greeter`, `/var/lib/qs-desktop/`) et `enable` (ancien gestionnaire désactivé) — `sudo`, avec ton accord |

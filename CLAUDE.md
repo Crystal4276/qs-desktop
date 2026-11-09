@@ -4,13 +4,11 @@
 
 Ce dépôt est **la source unique de mon bureau** : une configuration Quickshell (QML) qui remplace Waybar, Dunst, Rofi, les applets
 du tray et les scripts dispersés, plus les configs Sway et Hyprland (`dotfiles/`). La parité avec l'ancien bureau, Sway et Hyprland,
-et la bascule sont faites (phases 0 à 10). Reste :
+la bascule, l'écran de connexion (greetd) et la portabilité (`install.sh`) sont faits (phases 0 à 12) ; restent les tests de la
+phase 12 sur le vrai laptop (`PROGRESS.md`). Sur une nouvelle machine : je clone le dépôt (public), je lance `install.sh`, et j'ai
+mon bureau, écran de connexion compris.
 
-1. **Phase 11 — écran de connexion** : greetd + greeter Quickshell.
-2. **Phase 12 — portabilité** : sur une nouvelle machine (ex. un laptop), je clone le dépôt, je lance `install.sh`, et j'ai mon
-   bureau, écran de connexion compris.
-
-Ensuite : maintenance et idées de `BACKLOG.md`, une à la fois, avec mon accord.
+Ensuite : affinage de l'interface (depuis le laptop), maintenance et idées de `BACKLOG.md`, une à la fois, avec mon accord.
 
 ## Documents
 
@@ -19,14 +17,17 @@ Ensuite : maintenance et idées de `BACKLOG.md`, une à la fois, avec mon accord
 - `docs/ARCHITECTURE.md` : architecture actuelle (compositeur, écrans dynamiques, config machine, services, composants, API Quickshell).
 - `docs/THEME.md` : règles de la charte ; `config/Theme.qml` porte les valeurs.
 - `docs/PERFORMANCE.md`, `docs/ROLLBACK.md`, `deps/README.md`, `BACKLOG.md`.
-- `docs/archive/` : historique figé des phases 0 à 10 (journal détaillé, inventaire de l'ancien bureau). **Ne l'ouvrir qu'en cas de
-  besoin** (retrouver le pourquoi d'une décision).
+- `README.md` : installation sur une nouvelle machine.
+- `docs/archive/` : historique figé (journal des phases 0 à 10, journal du 2026-11-05 au 2026-11-09 et des phases 11-12, inventaire de
+  l'ancien bureau). **Ne l'ouvrir qu'en cas de besoin** (retrouver le pourquoi d'une décision).
 
-## Machine de référence
+## Machines
 
-Arch Linux, i9-9900K, RTX 2080 (pilotes propriétaires) ; Sway (principal) et Hyprland (config Lua) ; trois écrans (ultrawide central
-3440x1440, deux 4K en scale 1.5) ; 9 espaces de travail 3 / 3 / 3. Détails et versions : `PROGRESS.md`. Cette machine est **la
-référence, pas une hypothèse codée en dur**.
+- **`terrier`**, desktop de référence : Arch Linux, i9-9900K, RTX 2080 (pilotes propriétaires) ; Sway (principal) et Hyprland (config
+  Lua) ; trois écrans (ultrawide central 3440x1440, deux 4K en scale 1.5) ; 9 espaces de travail 3 / 3 / 3.
+- **Laptop** : installé par `install.sh` ; le développement peut s'y faire, avec les mêmes règles (le bureau y tourne aussi depuis le dépôt).
+- Détails et versions : `PROGRESS.md`. Aucune machine n'est **une hypothèse codée en dur** : tout ce qui leur est propre va dans
+  `hosts/` et `dotfiles/*/hosts/`.
 
 ## Règles absolues
 
@@ -74,25 +75,21 @@ un rapport court + captures. Je valide, puis on passe à la suite.
 
 ### Dépendances (`deps/`)
 
-- `arch-pacman.txt` (dépôts officiels, un par ligne, commentaire = usage), `arch-aur.txt`, `optional.txt` (matériel ou module
-  optionnel), `README.md` (par module, prérequis d'un nouveau PC, correspondances Fedora et Debian/Ubuntu avec alternatives).
+- **Dépôts officiels d'abord** : pas de paquet AUR installé par `install.sh` (seule exception : `paru-bin`, qu'il construit) ; ce qui
+  n'existe qu'en AUR est documenté dans `README.md`. Pas d'import manuel quand un paquet officiel existe.
+- `arch-pacman.txt` (le bureau, un par ligne, commentaire = usage), `apps.txt` (applications de base), `games.txt` (profil
+  optionnel), `gpu.txt` (selon la carte détectée), `themes.txt` (archives Catppuccin officielles, empreintes SHA-256),
+  `optional.txt` (matériel ou module optionnel), `README.md` (par module, prérequis d'un nouveau PC). Autres distributions :
+  plus tard (`BACKLOG.md`).
 - Toute commande externe, police, thème d'icônes ou module Quickshell ajouté met à jour `deps/` **dans le même commit**.
 
-### `install.sh` (phase 12)
+### `install.sh`
 
-À la racine, **idempotent** :
-1. détecte la distribution ; sur Arch, propose d'installer `deps/` (`pacman -S --needed`, puis AUR via `paru` ou `yay` s'ils sont
-   présents) ; ailleurs, affiche la liste à partir de `deps/README.md` ;
-2. sauvegarde toute config existante avant de la remplacer (`~/.config/<x>.bak-<date>`) ;
-3. crée les liens (`~/.config/quickshell/desktop`, configs Sway / Hyprland, WirePlumber, scripts dans `~/.local/bin`), copie les
-   polices de `assets/fonts/`, génère les web apps (`deps/README.md`, « Web apps ») ;
-4. génère le fichier de config machine s'il n'existe pas pour ce hostname ;
-5. met en place les fichiers système, après confirmation (`sudo`) et avec sauvegarde : greetd + greeter Quickshell (config
-   greetd, PAM avec déverrouillage de `gnome-keyring`, service activé à la place de l'ancien gestionnaire), tels que documentés en phase 11 ;
-6. `--dry-run` : affiche tout sans rien modifier ;
-7. `--uninstall` : retire les liens et restaure les sauvegardes (y compris l'ancien gestionnaire de connexion).
-
-Si `podman` ou `docker` est disponible, tester `install.sh --dry-run` et la résolution des paquets dans un conteneur `archlinux` propre.
+À la racine, **idempotent** (relancé, il ne refait que ce qui manque), `--dry-run`, `--uninstall`, `--with jeux`, `--no-system`,
+`--yes` : paquets, liens des configs (sauvegardes `<x>.bak-<date>`), thème, réglages des applications, fonds d'écran, config machine,
+étape système (sudo, avec confirmation : greeter, sonde réseau, `scripts/system-setup.sh`). Détail : `README.md`.
+Tests : `python3 scripts/test-install.py` (dossier personnel jetable), puis VM Arch vierge (`docs/DEVELOPMENT.md`, « VM d'installation »).
+Toute nouvelle config d'application ou étape système passe par `install.sh` et son test.
 
 ## Structure du dépôt
 
@@ -108,8 +105,8 @@ scripts/                  # desktop.sh, ipc.sh, dev.sh, qs-env.sh, test-outputs.
 dotfiles/                 # sway/, hypr/ (+ hosts/), wireplumber/, webapps/
 deps/                     # listes de dépendances
 docs/                     # ARCHITECTURE, THEME, DEVELOPMENT, PERFORMANCE, ROLLBACK, reference/, archive/
-install.sh                # phase 12
-README.md                 # installation sur une nouvelle machine (phase 12)
+install.sh                # installation d'une machine (README.md)
+README.md                 # installation sur une nouvelle machine
 PROGRESS.md, BACKLOG.md
 ```
 
@@ -150,18 +147,11 @@ Faites : 0 audit · 1 squelette · 2 espaces et horloge · 3 écrans dynamiques 
 disques, NordVPN · 6 notifications · 7 lanceur · 8 menus et scripts · 8b fond, verrouillage, veille, polkit, capture, statistiques ·
 9 parité Hyprland · 10 bascule (retour arrière : `docs/ROLLBACK.md`).
 
-**Phase 11 — Écran de connexion.** SDDM ne sera plus utilisé : **greetd** le remplace, avec un greeter **Quickshell indépendant**
-(module `Greetd`, en QML ; `ARCHITECTURE.md` § 9) qui reprend **le design de l'écran de verrouillage**, augmenté des fonctions de SDDM
-(choix de la session Wayland ou X11, éteindre, redémarrer, veille ; décision du 2026-11-04, le thème SDDM n'est plus la référence).
-Doit lancer la session Sway Nvidia (`WLR_RENDERER=vulkan sway --unsupported-gpu`) et déverrouiller `gnome-keyring` (PAM). À concevoir ensemble ; touche aux fichiers système, donc
-rien sans mon accord explicite. Dépendances (greetd…) listées dans `deps/` ; sur ce desktop, je les installe moi-même au début de la
-phase. Fichiers et procédure de mise en place versionnés et documentés, pour que `install.sh` les reprenne en phase 12 ; retour
-arrière vers SDDM documenté.
+Faites aussi : 11 écran de connexion (greetd + greeter Quickshell au design du verrouillage ; `ARCHITECTURE.md` § 9) ·
+12 portabilité (`install.sh`, `deps/`, `README.md`, VM ; restent les tests sur le vrai laptop, `PROGRESS.md`).
 
-**Phase 12 — Portabilité.** `install.sh` complet (`--dry-run`, `--uninstall`, étape système du greeter), finalisation de `deps/`
-(correspondances Fedora/Debian vérifiées), `README.md` d'installation, test dans un conteneur Arch si possible, config machine par
-défaut pour un laptop à écran unique. Vérifier qu'aucun chemin ou nom d'écran personnel ne reste en dur
-(`grep -rn "/home/\|DP-2"` hors `hosts/` et `docs/`). Tests laptop : `PROGRESS.md`.
+Après : pas de nouvelle phase ; chaque évolution (affinage de l'interface, idée de `BACKLOG.md`) suit la même boucle : lire
+`PROGRESS.md` → faire → vérifier → mettre à jour `PROGRESS.md` → committer → s'arrêter pour validation.
 
 Suppression des anciens paquets seulement quand je le décide.
 

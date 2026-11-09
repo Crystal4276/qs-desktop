@@ -1,4 +1,0 @@
-# Paquets AUR (nécessitent paru ou yay).
-
-catppuccin-gtk-theme-mocha   # thème GTK des applications et des tooltips (charte : catppuccin-mocha-green)
-catppuccin-cursors-mocha     # curseur catppuccin-mocha-green-cursors, taille 48

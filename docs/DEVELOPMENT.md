@@ -91,6 +91,31 @@ verrouillage).
 - `python scripts/test-sleep.py` : vrai service Idle sur plateforme Qt offscreen, bus privé, services QML et commandes logind factices ;
   confirmation tardive du verrouillage, libération volontaire, réveil et relance des processus. Aucune suspension ni authentification.
 
+## VM d'installation (`install.sh` sur une machine neuve)
+
+Image officielle Arch « basic » (`geo.mirror.pkgbuild.com/images/latest/`, empreinte `.SHA256` vérifiée ; compte `arch` / `arch`,
+sshd actif, sudo sans mot de passe) gardée dans `~/.cache/qs-desktop-vm/` ; chaque essai sur un disque overlay jetable, QEMU lancé
+en utilisateur (libvirt non touché) :
+
+```sh
+D=~/.cache/qs-desktop-vm; qemu-img create -f qcow2 -b $D/Arch-Linux-x86_64-basic-<date>.qcow2 -F qcow2 $D/test.qcow2
+qemu-system-x86_64 -enable-kvm -cpu host -m 8192 -smp 6 -drive file=$D/test.qcow2,if=virtio \
+  -nic user,model=virtio-net-pci,hostfwd=tcp:127.0.0.1:2222-:22 -device virtio-vga,xres=1920,yres=1080 \
+  -display none -vnc 127.0.0.1:15 -qmp unix:<dossier>/qmp.sock,server,nowait -daemonize
+```
+
+- SSH sans `sshpass` : `SSH_ASKPASS` (script qui affiche `arch`) + `SSH_ASKPASS_REQUIRE=force`, `setsid -w ssh -p 2222 arch@127.0.0.1`.
+- Dépôt : `git bundle create … master` copié dans la VM puis cloné (version committée). Fixer un nom de machine
+  (`hostnamectl set-hostname`) avant, comme archinstall : sinon NetworkManager prend celui du DHCP.
+- Lancement : `./install.sh --yes --without jeux` en arrière-plan (`setsid`), code de sortie écrit dans un fichier ; ne pas
+  surveiller par `pgrep -f "<motif>"` (la commande de surveillance contient le motif) ; ne jamais `pkill -f` un mot présent dans sa
+  propre commande SSH.
+- Fonds d'écran : `QS_WALLPAPERS_REPO=<bundle du dépôt wallpapers>` évite tout accès GitHub depuis la VM.
+- Captures et clavier : socket QMP (`screendump` en PNG, `human-monitor-command` → `sendkey a r c h ret` pour l'écran de connexion).
+- Écran : `xres` / `yres` de `virtio-vga` = mode préféré, pris tel quel par Sway, Hyprland et le greeter. Rendu sans 3D (pixman).
+- Mémoire : 8 Go pour la VM ; `/tmp` est en RAM (bundles volumineux ailleurs) ; une seconde VM ouverte peut épuiser la mémoire.
+- Critères : premier passage code 0 ; second passage **0 ligne `+ `** ; redémarrage → greetd → session Sway ; `--uninstall`.
+
 ## Pièges connus
 
 **Moteur JavaScript de Qt 6 / QML**
