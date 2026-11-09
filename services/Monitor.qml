@@ -36,6 +36,7 @@ Singleton {
 
     // --- GPU ---
     property var gpu: null             // { name, load, memUsed, memTotal (Mio), temperature, power (W), fan (%), clock (MHz) }
+    property var intelProcessMemory: ({}) // current Intel frame, bound to PID + start time
     property real lastIntelSample: 0
     property var gpuProcesses: ({})    // pid → mémoire vidéo NVIDIA (Mio)
 
@@ -122,6 +123,7 @@ Singleton {
             previousTimes = {};
             previousTotal = 0;
             gpu = null;
+            intelProcessMemory = {};
             lastIntelSample = 0;
             gpuProcesses = {};
             processes = processes.map(p => Object.assign({}, p, {gpu: 0, gpuClients: {}}));
@@ -176,7 +178,7 @@ Singleton {
         if (!active || !Gpu.intelStats) return;
         gpu = Object.assign({}, Gpu.intelStats.gpu, {temperature: Gpu.temperature});
         processes = processes.map(p => {
-            const clients = Gpu.intelStats.clients[p.pid] ?? {};
+            const clients = intelProcessMemory[p.key] ?? {};
             return Object.assign({}, p, {gpuClients: clients, gpu: Object.values(clients).reduce((a, b) => a + b, 0)});
         });
     }
@@ -185,9 +187,18 @@ Singleton {
         target: Gpu
         function onIntelStatsChanged(): void {
             if (!root.active || Gpu.vendor !== "intel") return;
-            if (Gpu.intelStats) root.applyIntel();
+            if (Gpu.intelStats) {
+                const memory = {};
+                for (const p of root.processes) {
+                    const clients = Gpu.intelStats.clients[p.pid];
+                    if (clients) memory[p.key] = clients;
+                }
+                root.intelProcessMemory = memory;
+                root.applyIntel();
+            }
             else {
                 root.gpu = null;
+                root.intelProcessMemory = {};
                 root.lastIntelSample = 0;
                 root.processes = root.processes.map(p => Object.assign({}, p, {gpu: 0, gpuClients: {}}));
                 root.sampleGpu();

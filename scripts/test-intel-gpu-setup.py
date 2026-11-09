@@ -40,6 +40,11 @@ if [ "$1" = -r ]; then : > "$TEST_ROOT/cap"; else printf '%s' "$1" > "$TEST_ROOT
         run('--dry-run','uninstall');assert caps.read_text()=='cap_perfmon=ep'
         run('uninstall');assert caps.read_text()==initial and hook.read_text()=='# original hook\n'
         assert not (root/'state').exists();run('uninstall')
+        run('install')
+        caps.write_text('cap_sys_nice=ep')  # administrator changed the permission after installation
+        run('uninstall')
+        assert caps.read_text()=='cap_sys_nice=ep','Uninstall overwrote an administrator change'
+        assert hook.read_text()=='# original hook\n' and not (root/'state').exists()
     # Existing dependency selection must include the tool only for Intel.
     for vendor in ('intel','amd','nvidia'):
         selected=subprocess.check_output(['awk','-v',f'v={vendor}','!/^#/ && $1 == v {print $2}',str(repo/'deps/gpu.txt')],text=True).splitlines()
