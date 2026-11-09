@@ -6,3 +6,6 @@
 .qmlls.ini
 __pycache__/
 *.pyc
+
+# Choix machine du décodage mpv (install.sh)
+dotfiles/mpv/host.conf

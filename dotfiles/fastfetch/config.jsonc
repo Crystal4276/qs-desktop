@@ -1,0 +1,28 @@
+// Résumé système à l'ouverture du terminal : reprise fidèle de l'ancien thème neofetch (~/.config/neofetch/config.conf,
+// print_info + logo arch_small) : mêmes icônes Nerd Font, mêmes couleurs ANSI du terminal, même ordre.
+// Lien ~/.config/fastfetch → dotfiles/fastfetch (install.sh).
+{
+    "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+    "logo": {
+        // arch_small de neofetch : haut en couleur 1, bas en couleur 2, en gras
+        "type": "data",
+        "source": "$1      /\\\n     /  \\\n    /\\   \\\n$2   /      \\\n  /   ,,   \\\n /   |  |  -\\\n/_-''    ''-_\\",
+        "color": { "1": "1;31", "2": "1;32" },
+        "padding": { "left": 0, "right": 2, "top": 0 }
+    },
+    "display": {
+        "separator": ": ",
+        "color": { "keys": "1;35", "separator": "35", "output": "36" }
+    },
+    "modules": [
+        { "type": "custom", "format": "{#1;31} Sys-Info" },
+        { "type": "os", "key": " ├─  Distro ", "format": "{name}" },
+        { "type": "packages", "key": " ├─ 󰏖 Packages " },
+        { "type": "kernel", "key": " ├─  Kernel " },
+        { "type": "wm", "key": " ├─  DE/WM ", "format": "{pretty-name}" },
+        { "type": "cpu", "key": " ├─  CPU ", "format": "{name}" },
+        { "type": "gpu", "key": " ├─ 󰹑 GPU ", "hideType": "integrated", "format": "{vendor} {name}" },
+        { "type": "shell", "key": " └─  SHELL ", "format": "{pretty-name} {version}" },
+        { "type": "custom", "format": "{#1;31}  {#32} {#33} {#34} {#35} {#36} {#37} {#38;5;8}" }
+    ]
+}
