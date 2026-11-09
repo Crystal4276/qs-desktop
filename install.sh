@@ -578,7 +578,7 @@ PY
     fi
 
     deluge_no_tray
-    command -v chromium >/dev/null && chromium_gtk_themes
+    command -v chromium >/dev/null && chromium_profiles
     if command -v python3 >/dev/null; then step_webapps; else echo "- python3 absent (installé à l'étape 1) : web apps non générées"; fi
     if command -v chromium >/dev/null; then
         python3 "$repo/scripts/browser-links-setup.py" ${dry:+--dry-run} install \
@@ -619,14 +619,19 @@ webapp_profiles() {
     grep -ho -- '--user-data-dir=@PROFILES@/[^ "]*' "$repo"/dotfiles/webapps/applications/*.desktop | sed 's|.*/||' | sort -u
 }
 
-# Chromium suit le thème GTK du système, Catppuccin Mocha : réglage « Thème : GTK » (extensions.theme.system_theme = 1),
-# pour le profil principal comme sur le desktop de référence, et pour le profil isolé de chaque web app (toutes les
-# applications suivent le thème GTK). Un fichier absent est créé avec cette seule clé ; Chromium complète le reste.
-chromium_gtk_themes() {
-    local profile
-    chromium_gtk_theme "$config/chromium" Chromium
+# Réglages de chaque profil Chromium, le principal et celui de chaque web app, comme sur le desktop de référence :
+# - « Thème : GTK » (extensions.theme.system_theme = 1) : le thème GTK du système, Catppuccin Mocha ;
+# - « Utiliser la barre de titre et les bordures du système » (browser.custom_chrome_frame = false) : pas de boutons
+#   réduire / agrandir / fermer dessinés par Chromium (Sway ne trace qu'une bordure, Hyprland rien) ;
+# - web apps seulement : les extensions du navigateur (dotfiles/chromium/extensions.txt, déposées pour tous les profils par
+#   l'étape système) refusées comme si elles avaient été désinstallées (extensions.external_uninstalls).
+# Un fichier absent est créé avec ces seules clés ; Chromium complète le reste.
+chromium_profiles() {
+    local profile common='"extensions.theme.system_theme": 1, "browser.custom_chrome_frame": false' ids
+    ids="$(grep -oE '^[a-p]{32}' "$repo/dotfiles/chromium/extensions.txt" | sed 's/.*/"&"/' | paste -sd,)"
+    chromium_prefs "$config/chromium" Chromium "{$common}"
     for profile in $(webapp_profiles); do
-        chromium_gtk_theme "$data/ice/profiles/$profile" "web app ${profile%%[0-9]*}"
+        chromium_prefs "$data/ice/profiles/$profile" "web app ${profile%%[0-9]*}" "{$common, \"extensions.external_uninstalls\": [$ids]}"
     done
 }
 
@@ -639,35 +644,48 @@ chromium_open() {   # dossier de données (--user-data-dir)
     [[ "$(ps -o comm= -p "${lock##*-}" 2>/dev/null)" == chrom* ]]
 }
 
-chromium_gtk_theme() {  # dossier de données d'un profil, nom affiché
-    local file="$1/Default/Preferences" content
+chromium_prefs() {  # dossier de données d'un profil, nom affiché, clés voulues (JSON : « a.b.c »: valeur ; liste : ajoutée)
+    local file="$1/Default/Preferences" content key old
     command -v python3 >/dev/null || return 0
-    # Une lecture : 1re ligne = ancienne valeur (« unset » : absente, « nofile » : fichier absent), puis le contenu à écrire.
-    content="$(python3 -I - "$file" <<'PY'
+    # Une lecture : une ligne « clé<TAB>ancienne valeur » par clé à changer (JSON ; « unset » : absente, « nofile » : fichier
+    # absent), puis le contenu à écrire sur une seule ligne.
+    content="$(python3 -I - "$file" "$3" <<'PY'
 import json, sys
 try:
-    prefs = json.load(open(sys.argv[1], encoding="utf-8"))
-    old = None
+    prefs, nofile = json.load(open(sys.argv[1], encoding="utf-8")), False
 except FileNotFoundError:
-    prefs, old = {}, "nofile"
-theme = prefs.setdefault("extensions", {}).setdefault("theme", {})
-if theme.get("system_theme") == 1:
+    prefs, nofile = {}, True
+changed = []
+for key, value in json.loads(sys.argv[2]).items():
+    *parents, leaf = key.split(".")
+    node = prefs
+    for p in parents:
+        node = node.setdefault(p, {})
+    cur = node.get(leaf)
+    if isinstance(value, list) and isinstance(cur, list):
+        value = cur + [v for v in value if v not in cur]
+    if leaf in node and cur == value:
+        continue
+    changed.append(f"{key}\t{'nofile' if nofile else json.dumps(cur) if leaf in node else 'unset'}")
+    node[leaf] = value
+if not changed:
     print("same", end="")
 else:
-    old = old or ("unset" if theme.get("system_theme") is None else theme["system_theme"])
-    theme["system_theme"] = 1
-    print(old)
+    print("\n".join(changed))
     print(json.dumps(prefs, separators=(",", ":")), end="")
 PY
-)" || { echo "! $file illisible : thème de Chromium laissé tel quel"; return 0; }
-    if [[ "$content" == same ]]; then echo "= $file : thème GTK"; return; fi
+)" || { echo "! $file illisible : réglages de Chromium laissés tels quels"; return 0; }
+    if [[ "$content" == same ]]; then echo "= $file : thème GTK, barre de titre du système"; return; fi
     if chromium_open "$1"; then
-        later "$2 ouvert : le fermer puis relancer install.sh pour le thème GTK"; return
+        later "$2 ouvert : le fermer puis relancer install.sh pour ses réglages (thème GTK, barre de titre)"; return
     fi
-    # Tous les réglages du navigateur sont dans ce fichier : le registre ne garde que l'ancienne valeur de la clé, --uninstall ne
-    # remet qu'elle.
-    recorded "$file" || record chromium-theme "$file" "${content%%$'\n'*}"
-    write_setting "$file" "${content#*$'\n'}" "thème GTK (extensions.theme.system_theme 1)" keep
+    # Tous les réglages du navigateur sont dans ce fichier : le registre ne garde que l'ancienne valeur de chaque clé changée,
+    # --uninstall ne remet qu'elles. Ancien registre (« chromium-theme <fichier> ») : la clé du thème y est déjà notée.
+    while IFS=$'\t' read -r key old; do
+        recorded "$file#$key" || { [[ "$key" == extensions.theme.system_theme ]] && recorded "$file"; } \
+            || record chromium-pref "$file#$key" "$old"
+    done <<< "${content%$'\n'*}"
+    write_setting "$file" "${content##*$'\n'}" "thème GTK, barre de titre du système$([[ "$3" == *external_uninstalls* ]] && echo ", sans les extensions du navigateur")" keep
 }
 
 # Application ouverte avec ce même dossier personnel ? Sans HOME dans son environnement (lancée par le compositeur) :
@@ -862,6 +880,9 @@ step_system() {
     if ask "Samba, services (réseau, Bluetooth, énergie, VM), groupes et thème Qt du système ?" oui; then
         sub "$repo/scripts/system-setup.sh" ${dry:+--dry-run} install
     fi
+    if command -v chromium >/dev/null && ask "Extensions de Chromium (dotfiles/chromium/extensions.txt : Dark Reader, Stylus, nightTab…) ?" oui; then
+        sub "$repo/scripts/system-setup.sh" ${dry:+--dry-run} chromium-extensions
+    fi
     if ask "Sonde de connectivité NetworkManager (portails captifs Wi-Fi) ?" oui; then
         # Déjà installée : le script rechargerait NetworkManager pour rien.
         if cmp -s "$repo/dotfiles/NetworkManager/conf.d/90-qs-desktop-connectivity.conf" /etc/NetworkManager/conf.d/90-qs-desktop-connectivity.conf \
@@ -895,20 +916,30 @@ do_uninstall() {
                     if [[ "$backup" == - ]]; then run rm -f "$target"
                     elif [[ -e "$backup" ]]; then run cp "$backup" "$target"; run rm -f "$backup"
                     else echo "! sauvegarde $backup introuvable : $target laissé tel quel"; fi ;;
-                chromium-theme)
+                chromium-pref|chromium-theme)
+                    # « chromium-theme <fichier> » : ancien registre, clé du thème seule.
+                    local key=extensions.theme.system_theme
+                    [[ "$kind" == chromium-pref ]] && { key="${target##*#}"; target="${target%#*}"; }
                     # Profil ouvert : Chromium réécrirait le fichier en se fermant (clé remise quand même, signalé).
-                    chromium_open "${target%/Default/Preferences}" && echo "! Chromium ouvert ($target) : le fermer, sinon son thème GTK reste"
-                    printf '+ %s : thème Chromium remis (%s)\n' "$target" "$backup"
-                    [[ -n "$dry" || ! -f "$target" ]] || python3 -I - "$target" "$backup" <<'EOF' || echo "! $target illisible : thème Chromium laissé tel quel"
+                    chromium_open "${target%/Default/Preferences}" && echo "! Chromium ouvert ($target) : le fermer, sinon ses réglages restent"
+                    printf '+ %s : %s remis (%s)\n' "$target" "$key" "$backup"
+                    [[ -n "$dry" || ! -f "$target" ]] || python3 -I - "$target" "$key" "$backup" <<'EOF' || echo "! $target illisible : $key laissé tel quel"
 import json, os, sys
-path, old = sys.argv[1], sys.argv[2]
+path, key, old = sys.argv[1:]
 prefs = json.load(open(path, encoding="utf-8"))
-theme = prefs.setdefault("extensions", {}).setdefault("theme", {})
+*parents, leaf = key.split(".")
+nodes = [prefs]
+for p in parents:
+    nodes.append(nodes[-1].setdefault(p, {}))
 if old in ("unset", "nofile"):
-    theme.pop("system_theme", None)
+    nodes[-1].pop(leaf, None)
+    # Dossiers de clés laissés vides retirés (le fichier créé par install.sh redevient vide).
+    for parent, p in zip(reversed(nodes[:-1]), reversed(parents)):
+        if parent[p] == {}:
+            del parent[p]
 else:
-    theme["system_theme"] = int(old)
-if old == "nofile" and prefs == {"extensions": {"theme": {}}}:
+    nodes[-1][leaf] = json.loads(old)
+if old == "nofile" and prefs == {}:
     os.remove(path)
 else:
     with open(path, "w", encoding="utf-8") as f:
@@ -954,7 +985,7 @@ EOF
     if command -v chromium >/dev/null; then
         python3 "$repo/scripts/browser-links-setup.py" ${dry:+--dry-run} uninstall 2>/dev/null || echo "= liens Chromium : rien à retirer"
     fi
-    if [[ -n "$system" ]] && ask "Défaire aussi les étapes système (greeter → ancien gestionnaire, sonde réseau, Samba, services, groupes) ?"; then
+    if [[ -n "$system" ]] && ask "Défaire aussi les étapes système (greeter → ancien gestionnaire, sonde réseau, Samba, services, groupes, extensions Chromium) ?"; then
         sub "$repo/scripts/system-setup.sh" ${dry:+--dry-run} uninstall
         sub "$repo/scripts/network-setup.sh" ${dry:+--dry-run} uninstall
         sub "$repo/scripts/greeter-setup.sh" ${dry:+--dry-run} uninstall
@@ -983,7 +1014,8 @@ step_check() {
         printf '  - %s\n' "${pending[@]}"
     fi
     echo "Terminé. À faire soi-même (README.md) : mot de passe Samba (sudo smbpasswd -a ${USER:-$(id -un)}), première connexion des web apps,"
-    echo "thème Catppuccin dans Obsidian / Thunderbird, logiciels hors dépôts (Claude Code, NordVPN, Plex, RustDesk)."
+    echo "thème Catppuccin dans Obsidian / Thunderbird, logiciels hors dépôts (Claude Code, NordVPN, Plex, RustDesk),"
+    echo "réglages de nightTab (nouvel onglet de Chromium > roue dentée > Data > Import from file : $repo/dotfiles/chromium/nighttab.json)."
     echo "Nouveaux groupes et thème Qt : effectifs à la prochaine connexion."
 }
 

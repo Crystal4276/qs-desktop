@@ -66,6 +66,10 @@ def main():
         # Profil Chromium existant, autre thème et autres réglages.
         (home / ".config/chromium/Default").mkdir(parents=True)
         (home / ".config/chromium/Default/Preferences").write_text('{"browser":{"x":1},"extensions":{"theme":{"system_theme":0}}}')
+        # Web app déjà ouverte une fois : une extension externe refusée par l'utilisateur, à garder.
+        (home / ".local/share/ice/profiles/DiscordWeb2996/Default").mkdir(parents=True)
+        (home / ".local/share/ice/profiles/DiscordWeb2996/Default/Preferences").write_text(
+            '{"extensions":{"external_uninstalls":["' + "a" * 32 + '"]}}')
         (home / ".config/mpv").mkdir()
         (home / ".config/mpv/mpv.conf").write_text("volume=50\n")
         (home / ".bashrc").write_text("alias ll='ls -l'\n")
@@ -132,8 +136,16 @@ def main():
         check('"enable_system_tray": false' in deluge and deluge.startswith("{"), "Deluge : pas d'icône dans la barre")
         prefs = json.loads((cfg / "chromium/Default/Preferences").read_text())
         webapp = home / ".local/share/ice/profiles/Whatsapp8699/Default/Preferences"
-        check(prefs["extensions"]["theme"]["system_theme"] == 1 and prefs["browser"] == {"x": 1}
-              and '"system_theme":1' in webapp.read_text(), "Chromium et web apps : thème GTK, autres réglages gardés")
+        wprefs = json.loads(webapp.read_text())
+        ids = [l.split()[0] for l in (repo / "dotfiles/chromium/extensions.txt").read_text().splitlines() if l and l[0] != "#"]
+        check(prefs["extensions"]["theme"]["system_theme"] == 1 and prefs["browser"] == {"x": 1, "custom_chrome_frame": False}
+              and "external_uninstalls" not in prefs["extensions"]
+              and wprefs["extensions"]["theme"]["system_theme"] == 1 and wprefs["browser"]["custom_chrome_frame"] is False,
+              "Chromium et web apps : thème GTK, barre de titre du système, autres réglages gardés")
+        discord = json.loads((home / ".local/share/ice/profiles/DiscordWeb2996/Default/Preferences").read_text())
+        check(len(ids) == 9 and wprefs["extensions"]["external_uninstalls"] == ids
+              and discord["extensions"]["external_uninstalls"] == ["a" * 32] + ids,
+              "web apps : extensions du navigateur refusées, refus existant gardé")
         qt = home / ".config/qt6ct/qt6ct.conf"
         check(qt.is_symlink() and "style=kvantum" in (home / "dots/qt6ct/qt6ct.conf").read_text(),
               "config liée (stow) : lien gardé, réglage écrit à travers")
@@ -157,7 +169,7 @@ def main():
         check(not diff, f"retrait : dossier personnel comme avant {diff[:8]}")
         check(qt.is_symlink() and (home / "dots/qt6ct/qt6ct.conf").read_text() == "[Appearance]\nstyle=Fusion\n",
               "retrait : config liée (stow) remise, lien gardé")
-        check(not webapp.exists(), "retrait : profil de web app créé pour le thème retiré")
+        check(not webapp.exists(), "retrait : profil de web app créé pour ses réglages retiré")
         check("font-name='Cantarell 11'" in (tmp / "dconf.ini").read_text()
               and "accent-color" not in (tmp / "dconf.ini").read_text(), "retrait : dconf comme avant")
     finally:

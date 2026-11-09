@@ -25,9 +25,9 @@ Puis se déconnecter : l'écran de connexion greetd apparaît au prochain démar
 | 1. Paquets | active le dépôt `[multilib]`, installe `deps/arch-pacman.txt` (le bureau) et `deps/apps.txt` (applications de base), les paquets de la carte graphique (`deps/gpu.txt`), `brightnessctl` sur un laptop ; propose le profil jeux (`deps/games.txt`) ; construit `paru-bin`, seul paquet AUR |
 | 2. Configs du compte | liens vers le dépôt : `~/.config/quickshell/desktop`, `sway`, `hypr`, `fastfetch`, `mpv`, `starship.toml`, `chromium-flags.conf`, règle WirePlumber ; bloc ajouté à `~/.bashrc` (le reste n'est pas touché) |
 | 3. Thème | archives officielles Catppuccin (`deps/themes.txt`, empreintes vérifiées) : GTK 3/4, curseur, Kvantum (Qt), dossiers Papirus lavande, Geany ; mêmes polices et curseur partout |
-| 4. Réglages | GSettings (`dotfiles/dconf/`), applications par défaut (`dotfiles/mime/defaults.list`), web apps, liens HTTP vers Chromium |
+| 4. Réglages | GSettings (`dotfiles/dconf/`), applications par défaut (`dotfiles/mime/defaults.list`), web apps, liens HTTP vers Chromium ; profils Chromium (navigateur et web apps) en thème GTK, barre de titre du système (sans boutons réduire / agrandir / fermer) |
 | 5. Config machine | crée `hosts/<machine>.json` s'il manque (à committer) |
-| 6. Système (sudo) | écran de connexion greetd, sonde des portails captifs, Samba, services (réseau, Bluetooth, énergie, VM), groupes, thème Qt du système |
+| 6. Système (sudo) | écran de connexion greetd, sonde des portails captifs, Samba, services (réseau, Bluetooth, énergie, VM), groupes, thème Qt du système, extensions de Chromium (`dotfiles/chromium/extensions.txt`, installées depuis le Chrome Web Store au démarrage du navigateur ; pas dans les web apps) |
 
 Tout fichier existant est sauvegardé avant d'être remplacé (`<fichier>.bak-<date>` à côté de l'original ; fichiers système dans
 `/var/lib/qs-desktop/`).
@@ -44,7 +44,10 @@ Autre distribution qu'Arch : pas encore prévue (paquets à installer soi-même 
   clic droit dans Nemo → Partager.
 - Web apps (WhatsApp, Discord, Word, Excel, PowerPoint, Notion) : se connecter une fois dans chacune.
 - Thème des applications qui le rangent dans leur profil : Obsidian et Thunderbird (choisir Catppuccin Mocha dans leurs
-  réglages), Chromium suit le thème GTK (réglé par `install.sh` : thème GTK du profil principal).
+  réglages), Chromium suit le thème GTK (réglé par `install.sh` dans chaque profil).
+- nightTab (page Nouvel onglet de Chromium) : ses réglages (favoris, horloge, thème) vivent dans l'extension ; les importer une
+  fois depuis `dotfiles/chromium/nighttab.json` (nouvel onglet → roue dentée → Data → Import from file). Après un changement :
+  Data → Export data, puis remplacer le fichier du dépôt.
 - Fonds d'écran : `install.sh` propose de cloner le dépôt `Crystal4276/wallpapers` dans `~/Pictures/Wallpapers` (HTTPS, sans
   compte GitHub) et le met à jour aux passages suivants. Fond par défaut : `simple/wallhaven-j37lop.png` (celui de l'écran
   central de terrier, `hosts/default.json`) ; autre choix : utilitaire de fonds d'écran du bureau.

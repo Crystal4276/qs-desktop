@@ -19,7 +19,8 @@ Celle de `CLAUDE.md`, plus :
 - `greeter.qml` : point d'entrée de l'écran de connexion (`//@ pragma ShellId greeter`), à côté de `shell.qml` : mêmes `qs.config`,
   `qs.services`, `qs.modules.*` (§ 9).
 - Applications de tous les jours, installées par `install.sh` (`README.md`) : `dotfiles/fastfetch`, `starship`, `mpv` et `chromium`
-  (partie commune + `hosts/<machine>.conf` pour le décodage vidéo), `dconf` (clés GSettings, + `hosts/<machine>.ini`), `mime`
+  (partie commune + `hosts/<machine>.conf` pour le décodage vidéo ; extensions `extensions.txt`, réglages de nightTab
+  `nighttab.json`), `dconf` (clés GSettings, + `hosts/<machine>.ini`), `mime`
   (applications par défaut), `bash` (bloc ajouté au `~/.bashrc`), `viewnior`, `samba` (fichier système, `scripts/system-setup.sh`).
 - `dotfiles/wireplumber/` : règle dont dépend la coupure des sons pendant « ne pas déranger » (§ 4, `doNotDisturb.muteApps`).
 - `dotfiles/webapps/` : extension Chromium `open-links/` et son hôte natif `open-link`, lanceurs des web apps (`applications/`),

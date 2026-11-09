@@ -7,6 +7,9 @@
 #                                                 /etc/environment, groupes (libvirt, kvm, sambashare), services (réseau, Bluetooth,
 #                                                 profils d'énergie, Samba, libvirt), réseau « default » des VM démarré au boot
 #         system-setup.sh [--dry-run] cursor      curseur du thème copié pour l'écran de connexion (/usr/local/share/icons)
+#         system-setup.sh [--dry-run] chromium-extensions
+#                                                 extensions de Chromium (dotfiles/chromium/extensions.txt), installées depuis le
+#                                                 Chrome Web Store au démarrage du navigateur (/usr/share/chromium/extensions)
 #         system-setup.sh [--dry-run] uninstall   tout ce qui a été changé est remis comme avant (fichiers, groupes, services)
 #         --dry-run : affiche les commandes sans rien modifier.
 set -euo pipefail
@@ -195,6 +198,18 @@ do_cursor() {
 
 }
 
+# Extensions du navigateur (dotfiles/chromium/extensions.txt) : Chromium installe depuis le Chrome Web Store, à son démarrage,
+# chaque extension décrite dans /usr/share/chromium/extensions/<identifiant>.json (extensions externes ; sous Linux, activées
+# sans question). Valable pour tous les profils : install.sh les refuse dans ceux des web apps. Retirées par l'utilisateur :
+# jamais réinstallées ; fichier retiré (--uninstall) : extension désinstallée au démarrage suivant.
+do_chromium_extensions() {
+    local id
+    command -v chromium >/dev/null || { echo "- chromium absent : extensions ignorées"; return; }
+    for id in $(grep -oE '^[a-p]{32}' "$repo/dotfiles/chromium/extensions.txt"); do
+        install_file dotfiles/chromium/external-extension.json "/usr/share/chromium/extensions/$id.json"
+    done
+}
+
 do_uninstall() {
     [[ -f "$registry" ]] || { echo "= rien à défaire ($registry absent)"; return; }
     local kind target backup
@@ -221,6 +236,7 @@ case "${1:-}" in
     multilib) do_multilib ;;
     cursor) do_cursor ;;
     install) do_install ;;
+    chromium-extensions) do_chromium_extensions ;;
     uninstall) do_uninstall ;;
-    *) sed -n '5,13p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 2 ;;
+    *) sed -n '5,14p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 2 ;;
 esac
