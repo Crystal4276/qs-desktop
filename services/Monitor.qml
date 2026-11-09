@@ -36,7 +36,7 @@ Singleton {
 
     // --- GPU ---
     property var gpu: null             // { name, load, memUsed, memTotal (Mio), temperature, power (W), fan (%), clock (MHz) }
-    property var gpuProcesses: ({})    // pid → mémoire vidéo (Mio)
+    property var gpuProcesses: ({})    // pid → mémoire vidéo NVIDIA (Mio)
 
     // --- Disques ---
     property var disks: []             // [{ mount, size, used }] (octets)
@@ -48,11 +48,18 @@ Singleton {
     property string stopError: ""
     property var stopRequest: null
     readonly property var catalog: DesktopEntries.applications.values.map(e => ({ id: e.id, name: e.name, startupClass: e.startupClass, command: Array.from(e.command) }))
+    function gpuMemory(members): real {
+        const clients = {};
+        for (const p of members)
+            Object.assign(clients, p.gpuClients ?? {});
+        return Object.keys(clients).length ? Object.values(clients).reduce((n, v) => n + v, 0)
+            : members.reduce((n, p) => n + p.gpu, 0);
+    }
     readonly property var applications: applicationGroups.map(g => {
         const members = processes.filter(p => g.members.includes(p.key));
         return { key: g.id, id: g.id, name: g.name, count: members.length, user: me,
             cpu: members.reduce((n, p) => n + p.cpu, 0), memory: members.reduce((n, p) => n + p.memory, 0),
-            gpu: members.reduce((n, p) => n + p.gpu, 0), members: g.members, roots: g.roots, blocked: g.blocked };
+            gpu: gpuMemory(members), members: g.members, roots: g.roots, blocked: g.blocked };
     }).filter(g => g.count > 0)
     property var previousTimes: ({})   // PID + start time → CPU ticks
     property real previousTotal: 0     // tics de tous les cœurs
@@ -113,6 +120,9 @@ Singleton {
             previousCores = [];
             previousTimes = {};
             previousTotal = 0;
+            gpu = null;
+            gpuProcesses = {};
+            processes = processes.map(p => Object.assign({}, p, {gpu: 0, gpuClients: {}}));
         }
     }
 
@@ -144,7 +154,7 @@ Singleton {
 
     // GPU au rythme de la liste des processus, juste après elle : ces commandes n'y figurent pas.
     function sampleGpu(): void {
-        if (!gpuQuery.running && (Gpu.useSmi || Gpu.sensorPath !== ""))
+        if (!gpuQuery.running && (Gpu.useSmi || Gpu.cardPath !== ""))
             gpuQuery.running = true;
         if (!gpuProcessList.running && Gpu.vendor === "nvidia" && Gpu.useSmi)
             gpuProcessList.running = true;
@@ -248,12 +258,15 @@ Singleton {
                 const elapsed = data.total - root.previousTotal;
                 const count = Math.max(1, root.cores.length);
                 const times = {}, membership = {};
+                const previousGpu = {};
+                for (const old of root.processes) previousGpu[old.key] = old;
                 const list = data.processes.map(p => {
                     const before = root.previousTimes[p.key];
                     times[p.key] = p.ticks;
                     return Object.assign(p, { cpu: before !== undefined && elapsed > 0
                         ? Math.max(0, Math.round(1000 * (p.ticks - before) / (elapsed / count)) / 10) : 0,
-                        gpu: root.gpuProcesses[p.pid] ?? 0 });
+                        gpu: previousGpu[p.key]?.gpu ?? root.gpuProcesses[p.pid] ?? 0,
+                        gpuClients: previousGpu[p.key]?.gpuClients ?? {} });
                 });
                 for (const g of data.applications)
                     for (const key of g.members)
@@ -295,13 +308,20 @@ Singleton {
         }
     }
 
-    // GPU : nvidia-smi ; AMD : sysfs ; autres : température seule (service Gpu).
+    // GPU : NVIDIA conserve nvidia-smi ; autres cartes : mesures sysfs et mémoire DRM déclarée.
     Process {
         id: gpuQuery
         command: Gpu.vendor === "nvidia" && Gpu.useSmi
             ? ["nvidia-smi", "--query-gpu=name,utilization.gpu,memory.used,memory.total,temperature.gpu,power.draw,fan.speed,clocks.gr", "--format=csv,noheader,nounits"]
-            // Fichier absent (Intel, Nvidia sans nvidia-smi) : ligne « nom » sans valeur, mesure masquée.
-            : ["sh", "-c", 'd="$(dirname "$(dirname "$(dirname "$0")")")"; for f in gpu_busy_percent mem_info_vram_used mem_info_vram_total; do echo "$f $(cat "$d/$f" 2>/dev/null)"; done', Gpu.sensorPath]
+            : ["python", Quickshell.shellPath("scripts/gpu-stats.py"), Gpu.cardPath, Gpu.vendor]
+        stdinEnabled: !(Gpu.vendor === "nvidia" && Gpu.useSmi)
+        onStarted: {
+            if (stdinEnabled) {
+                write(JSON.stringify({ processes: root.processes.map(p => ({pid: p.pid, key: p.key})) }));
+                stdinEnabled = false;
+            }
+        }
+        onRunningChanged: if (!running) stdinEnabled = !(Gpu.vendor === "nvidia" && Gpu.useSmi)
         stdout: StdioCollector {
             onStreamFinished: {
                 if (!root.active)
@@ -316,16 +336,21 @@ Singleton {
                     root.gpu = { name: f[0] ?? "", load: num(f[1]), memUsed: num(f[2]), memTotal: num(f[3]), temperature: num(f[4]),
                         power: num(f[5]), fan: num(f[6]), clock: num(f[7]) };
                 } else {
-                    const v = {};
-                    for (const line of text.split("\n")) {
-                        const [name, value] = line.trim().split(" ");
-                        if (value !== undefined && value !== "" && !isNaN(Number(value)))
-                            v[name] = Number(value);
+                    try {
+                        const data = JSON.parse(text);
+                        root.gpu = data.gpu;
+                        root.gpuProcesses = {};
+                        root.processes = root.processes.map(p => {
+                            const clients = data.clients[p.key] ?? {};
+                            return Object.assign({}, p, { gpuClients: clients,
+                                gpu: Object.values(clients).reduce((n, v) => n + v, 0) });
+                        });
+                    } catch (error) {
+                        root.gpu = null;
+                        root.gpuProcesses = {};
+                        root.processes = root.processes.map(p => Object.assign({}, p, {gpu: 0, gpuClients: {}}));
+                        console.warn("Monitor: invalid GPU snapshot", error);
                     }
-                    const vram = v.mem_info_vram_used !== undefined && v.mem_info_vram_total !== undefined;
-                    root.gpu = { name: Gpu.vendor.toUpperCase(), load: v.gpu_busy_percent ?? -1,
-                        memUsed: vram ? v.mem_info_vram_used / 1048576 : -1, memTotal: vram ? v.mem_info_vram_total / 1048576 : -1,
-                        temperature: Gpu.temperature, power: -1, fan: -1, clock: -1 };
                 }
             }
         }
