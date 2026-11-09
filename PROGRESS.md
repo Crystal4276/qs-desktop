@@ -169,6 +169,23 @@ Ensuite (pas de phase 13) : maintenance et idées de `BACKLOG.md`, une à la foi
   propriétaire et mode relus (`root:root 440`). `sudo -k -n /usr/bin/pacman --version` réussit sans cache ;
   `sudo -k -n /usr/bin/true` exige toujours un mot de passe. Aucun paquet installé ou mis à jour. Bureau vivant (PID 4614).
 
+## Affinage laptop — barre adaptative (2026-11-09)
+
+- Musique : budget en pixels par écran, partagé entre artiste et titre, avec ellipses ; anciennes limites Waybar supprimées.
+  Les marges et écarts de 10 px sont réservés avant le texte, y compris à l’apparition des mises à jour et d’icônes du tray.
+- Petites largeurs : texte musical réduit, date masquée si nécessaire (heure gardée), puis statistiques GPU / CPU / mémoire.
+  Le volume, son curseur et les commandes du lecteur restent visibles ; retour automatique au profil complet.
+- Configuration par défaut : luminosité et batterie déplacées avant le tray dans la dernière pilule ; couleurs peach / teal.
+  Batterie toujours rouge à ≤ 30 % hors charge. Alertes existantes conservées : normale à 30 %, critique à 15 % ;
+  les urgences critiques passent le mode « Ne pas déranger » (`Notifs.silent`).
+- Validations sur copie isolée : `test-bar.py` passe (70 scénarios à 1280, 1480, 1600, 1920 et 3440 px, lecture/pause,
+  Unicode, champs absents, mises à jour 0/999, croissance du tray, matériel absent), sans avertissement QML.
+  `test-battery.py` passe (couleurs, seuils, urgence, déduplication et réarmement) avec source et commande simulées.
+- Captures du banc comparées à la charte ; fichiers appliqués ensemble. Session réelle Sway à 1920×1200 : rechargement réussi, puis démarrage
+  propre pour reprendre la disposition complète (PID 49124 vivant, icônes luminosité / batterie visibles). Capture : `.shots/bar-responsive-after.png`. Bancs arrêtés.
+- Reste : appréciation visuelle et vrais clics/molette sur la musique, le volume, le calendrier et le tray ; vrais seuils de
+  batterie et nouvelle largeur sur écran externe. Aucune action réelle VPN ou batterie pendant les essais.
+
 ## À tester à la main
 
 **Laptop** : laptop seul, + écrans externes, capot fermé, écran interne éteint, branchement à chaud avec fenêtres ouvertes ;

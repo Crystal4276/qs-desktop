@@ -2,7 +2,7 @@ import QtQuick
 import qs.config
 import qs.services
 
-// Rétroéclairage (Waybar `backlight`, pour le laptop) : 9 paliers (getIcon de Waybar), jaune.
+// Rétroéclairage (Waybar `backlight`, pour le laptop) : 9 paliers (getIcon de Waybar), pêche.
 // Molette : ±1 %. Masqué sans rétroéclairage. Taille : celle du texte GTK par défaut (THEME.md § 3).
 Item {
     readonly property bool shown: Brightness.available

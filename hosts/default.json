@@ -5,7 +5,7 @@
   "bars": {
     "primary": {
       "left": [["menu"], ["workspaces"], ["mpris", "volume", "slider"]],
-      "right": [["updates"], ["gpu", "cpu", "memory"], ["backlight", "battery"], ["clockDate"], ["tray", "settings"]]
+      "right": [["updates"], ["gpu", "cpu", "memory"], ["clockDate"], ["backlight", "battery", "tray", "settings"]]
     },
     "secondary": {
       "left": [["workspaces"], ["volume", "slider"]],

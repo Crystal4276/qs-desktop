@@ -13,11 +13,29 @@ InfoModule {
     id: root
 
     property bool showDate: false
+    property bool compact: false
+    readonly property real naturalContentWidth: fullMeasure.contentWidth
+    readonly property real compactContentWidth: hourMeasure.contentWidth
+
+    // Mesures indépendantes du profil affiché, avec les mêmes segments et paddings.
+    InfoModule {
+        id: fullMeasure
+        visible: false
+        trailing: root.trailing
+        segments: root.fullSegments
+    }
+    InfoModule {
+        id: hourMeasure
+        visible: false
+        trailing: root.trailing
+        segments: root.fullSegments.slice(0, 2)
+    }
 
     color: Theme.module.clock
     highlightOnHover: true
     held: calendar.pinned
-    segments: [
+    segments: compact ? fullSegments.slice(0, 2) : fullSegments
+    readonly property var fullSegments: [
         [Theme.font.inlineIcons, Theme.icon.clock],
         [Theme.font.text, " " + clock.date.toLocaleString(Qt.locale(), "HH:mm"), WidthTexts.times],
         ...(root.showDate ? [

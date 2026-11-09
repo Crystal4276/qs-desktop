@@ -38,6 +38,8 @@ Item {
 
     signal clicked
 
+    readonly property real contentWidth: row.implicitWidth
+
     implicitWidth: Math.max(minWidth, row.implicitWidth + horizontalPadding + rightPadding)
     implicitHeight: reference.implicitHeight + 2 * Theme.bar.modulePadding
 
