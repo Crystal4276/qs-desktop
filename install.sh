@@ -513,21 +513,28 @@ step_host() {
 
 # --- 6. Système (sudo) -------------------------------------------------------------------------------------------------
 
+# Script système : en simulation sur une machine neuve, ses prérequis (paquets de l'étape 1) peuvent manquer.
+sub() {
+    "$@" && return 0
+    [[ -n "$dry" ]] || return 1
+    echo "! ${1##*/} : simulation incomplète, prérequis installés à l'étape 1"
+}
+
 step_system() {
     section "6. Système (sudo, avec confirmation)"
     if ask "Écran de connexion greetd + greeter Quickshell (remplace le gestionnaire actuel) ?"; then
-        "$repo/scripts/greeter-setup.sh" ${dry:+--dry-run} install
+        sub "$repo/scripts/greeter-setup.sh" ${dry:+--dry-run} install
         if [[ -n "$dry" && ! -d /usr/local/share/qs-desktop ]]; then
             echo "+ scripts/greeter-setup.sh enable (après l'installation ci-dessus)"
         else
-            "$repo/scripts/greeter-setup.sh" ${dry:+--dry-run} enable
+            sub "$repo/scripts/greeter-setup.sh" ${dry:+--dry-run} enable
         fi
     fi
     if ask "Sonde de connectivité NetworkManager (portails captifs Wi-Fi) ?"; then
-        "$repo/scripts/network-setup.sh" ${dry:+--dry-run} install
+        sub "$repo/scripts/network-setup.sh" ${dry:+--dry-run} install
     fi
     if ask "Samba, services (réseau, Bluetooth, énergie, VM), groupes et thème Qt du système ?"; then
-        "$repo/scripts/system-setup.sh" ${dry:+--dry-run} install
+        sub "$repo/scripts/system-setup.sh" ${dry:+--dry-run} install
     fi
 }
 
