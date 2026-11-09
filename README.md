@@ -36,8 +36,8 @@ Tout fichier existant est sauvegardé avant d'être remplacé (`<fichier>.bak-<d
 Options : `--with jeux` / `--without jeux`, `--no-packages`, `--no-system`, `--yes` (aucune question), `--uninstall`
 (retire liens et copies, remet les sauvegardes et les réglages d'origine, étapes système comprises ; les paquets restent).
 
-Autre distribution qu'Arch : les paquets sont à installer soi-même (noms et correspondances : `deps/README.md`), puis
-`./install.sh --no-packages`.
+Autre distribution qu'Arch : pas encore prévue (paquets à installer soi-même d'après les listes Arch de `deps/`, puis
+`./install.sh --no-packages`).
 
 ## À faire soi-même ensuite
 
@@ -45,7 +45,7 @@ Autre distribution qu'Arch : les paquets sont à installer soi-même (noms et co
   clic droit dans Nemo → Partager.
 - Web apps (WhatsApp, Discord, Word, Excel, PowerPoint, Notion) : se connecter une fois dans chacune.
 - Thème des applications qui le rangent dans leur profil : Obsidian et Thunderbird (choisir Catppuccin Mocha dans leurs
-  réglages), Chromium (extension Catppuccin du Chrome Web Store).
+  réglages), Chromium suit le thème GTK (réglé par `install.sh` : thème GTK du profil principal).
 - Fonds d'écran : `install.sh` propose de cloner le dépôt privé `Crystal4276/wallpapers` dans `~/Pictures/Wallpapers` (connexion
   `gh` ou clé SSH GitHub) et le met à jour aux passages suivants. Fond par défaut : `simple/wallhaven-j37lop.png` (celui de l'écran
   central de terrier, `hosts/default.json`) ; autre choix : utilitaire de fonds d'écran du bureau.

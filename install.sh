@@ -62,8 +62,9 @@ run() {     # commande du compte
 ask() {     # $1 = question ; oui par défaut avec --yes
     [[ -n "$yes" ]] && return 0
     [[ -n "$dry" ]] && { echo "? $1 (simulation : oui)"; return 0; }
-    local answer
-    read -r -p "? $1 [o/N] " answer </dev/tty
+    local answer=""
+    # Aucun terminal (lancement automatique) : réponse « non ».
+    { read -r -p "? $1 [o/N] " answer </dev/tty; } 2>/dev/null || { echo "? $1 (pas de terminal : non)"; return 1; }
     [[ "$answer" == [oOyY]* ]]
 }
 
@@ -198,8 +199,8 @@ is_arch() { [[ -f /etc/arch-release ]] || grep -qsE '^ID(_LIKE)?=.*\barch\b' /et
 step_packages() {
     section "1. Paquets"
     if ! is_arch; then
-        echo "Distribution autre qu'Arch : paquets à installer soi-même, noms et correspondances dans deps/README.md"
-        echo "(« Correspondance avec d'autres distributions »). Suite de l'installation : configs du compte seulement."
+        echo "Distribution autre qu'Arch : paquets à installer soi-même (listes Arch de deps/, pas encore de correspondances"
+        echo "pour les autres distributions). Suite de l'installation : configs du compte seulement."
         return
     fi
     [[ -n "$system" ]] && "$repo/scripts/system-setup.sh" ${dry:+--dry-run} multilib
@@ -464,6 +465,7 @@ step_settings() {
     ini_set "$config/geany/geany.conf" geany color_scheme catppuccin-mocha.conf editor_font "Inter 16" tagbar_font "Symbols Nerd Font Mono 9"
 
     deluge_no_tray
+    chromium_gtk_themes
     if command -v python3 >/dev/null; then step_webapps; else echo "- python3 absent (installé à l'étape 1) : web apps non générées"; fi
     if command -v chromium >/dev/null; then
         python3 "$repo/scripts/browser-links-setup.py" ${dry:+--dry-run} install
@@ -492,18 +494,65 @@ else:
 PY
 )" || { echo "! $file illisible : icône de Deluge laissée telle quelle"; return 0; }
     if [[ "$content" == same ]]; then echo "= Deluge sans icône dans la barre"; return; fi
-    # Deluge ouvert avec ce même dossier personnel (interface GTK : deluge-gtk, ou deluge lancé par Python).
-    local pid home_of
-    for pid in $(pgrep -u "$EUID" -f '(^|/)deluge(-gtk)?( |$)'); do
-        home_of="$(tr '\0' '\n' < "/proc/$pid/environ" 2>/dev/null | grep '^HOME=' || true)"
-        # Sans HOME (lancé par le compositeur) : même compte, considéré comme ouvert.
-        if [[ -z "$home_of" || "$home_of" == "HOME=$HOME" ]]; then
-            echo "! Deluge est ouvert : le fermer puis relancer install.sh pour retirer son icône de la barre"; return
-        fi
+    if running_here '(^|/)deluge(-gtk)?( |$)'; then
+        echo "! Deluge est ouvert : le fermer puis relancer install.sh pour retirer son icône de la barre"; return
+    fi
+    write_setting "$file" "$content" "enable_system_tray false"
+}
+
+# Chromium suit le thème GTK du système, Catppuccin Mocha : réglage « Thème : GTK » (extensions.theme.system_theme = 1),
+# pour le profil principal comme sur le desktop de référence, et pour le profil isolé de chaque web app (toutes les
+# applications suivent le thème GTK). Un fichier absent est créé avec cette seule clé ; Chromium complète le reste.
+chromium_gtk_themes() {
+    local profile
+    chromium_gtk_theme "$config/chromium/Default/Preferences"
+    for profile in $(grep -ho -- '--user-data-dir=@PROFILES@/[^ "]*' "$repo"/dotfiles/webapps/applications/*.desktop | sed 's|.*/||' | sort -u); do
+        chromium_gtk_theme "$data/ice/profiles/$profile/Default/Preferences"
     done
-    if [[ -e "$file" ]]; then backup_once edit "$file" cp; elif ! recorded "$file"; then record seed "$file" -; fi
-    printf '+ %s : enable_system_tray false\n' "$file"
-    [[ -n "$dry" ]] || { mkdir -p "$(dirname "$file")"; printf '%s' "$content" > "$file"; }
+}
+
+chromium_gtk_theme() {  # fichier Preferences d'un profil
+    local file="$1" content
+    command -v python3 >/dev/null || return 0
+    content="$(python3 -I - "$file" <<'PY'
+import json, sys
+try:
+    prefs = json.load(open(sys.argv[1], encoding="utf-8"))
+except FileNotFoundError:
+    prefs = {}
+theme = prefs.setdefault("extensions", {}).setdefault("theme", {})
+if theme.get("system_theme") == 1:
+    print("same", end="")
+else:
+    theme["system_theme"] = 1
+    print(json.dumps(prefs, separators=(",", ":")), end="")
+PY
+)" || { echo "! $file illisible : thème de Chromium laissé tel quel"; return 0; }
+    if [[ "$content" == same ]]; then echo "= $file : thème GTK"; return; fi
+    if running_here '(^|/)chromium( |$)'; then
+        echo "! Chromium est ouvert : le fermer puis relancer install.sh pour qu'il suive le thème GTK"; return
+    fi
+    # Hors registre : tous les réglages du navigateur sont dans ce fichier, --uninstall n'y touche pas.
+    write_setting "$file" "$content" "thème GTK (extensions.theme.system_theme 1)" keep
+}
+
+# Application ouverte avec ce même dossier personnel ? Sans HOME dans son environnement (lancée par le compositeur) :
+# même compte, considérée comme ouverte, pour ne jamais écrire un réglage qu'elle réécrirait en se fermant.
+running_here() {    # motif pgrep -f
+    local pid home_of
+    for pid in $(pgrep -u "$EUID" -f "$1"); do
+        home_of="$(tr '\0' '\n' < "/proc/$pid/environ" 2>/dev/null | grep '^HOME=' || true)"
+        [[ -z "$home_of" || "$home_of" == "HOME=$HOME" ]] && return 0
+    done
+    return 1
+}
+
+write_setting() {   # fichier contenu description [keep : hors registre, gardé par --uninstall]
+    if [[ "${4:-}" == keep ]]; then :
+    elif [[ -e "$1" ]]; then backup_once edit "$1" cp
+    elif ! recorded "$1"; then record seed "$1" -; fi
+    printf '+ %s : %s\n' "$1" "$3"
+    [[ -n "$dry" ]] || { mkdir -p "$(dirname "$1")"; printf '%s' "$2" > "$1"; }
 }
 
 # Web apps (deps/README.md, « Web apps ») : lanceurs et manifestes de l'hôte natif développés depuis dotfiles/webapps.
@@ -545,7 +594,11 @@ step_webapps() {
 step_wallpapers() {
     local src="${QS_WALLPAPERS_REPO:-Crystal4276/wallpapers}" dir pictures
     # Machine neuve : les dossiers XDG (Images…) ne sont créés qu'à la première connexion ; xdg-user-dir renverrait alors $HOME.
-    if command -v xdg-user-dirs-update >/dev/null && [[ ! -f "$config/user-dirs.dirs" ]]; then run xdg-user-dirs-update; fi
+    if command -v xdg-user-dirs-update >/dev/null && [[ ! -f "$config/user-dirs.dirs" ]]; then
+        recorded "$config/user-dirs.dirs" || record seed "$config/user-dirs.dirs" -
+        [[ -e "$config/user-dirs.locale" ]] || recorded "$config/user-dirs.locale" || record seed "$config/user-dirs.locale" -
+        run xdg-user-dirs-update
+    fi
     pictures="$(xdg-user-dir PICTURES 2>/dev/null || true)"
     [[ -z "$pictures" || "$pictures" == "$HOME" ]] && pictures="$HOME/Pictures"
     dir="$pictures/Wallpapers"

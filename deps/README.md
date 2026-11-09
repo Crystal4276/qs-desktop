@@ -230,56 +230,7 @@ Sous Wayland, Chromium ignore `--class` : l'app_id d'une web app vient de son ad
 modèles : app_id relevé avec ces adresses). Changer l'adresse d'un modèle change son app_id, donc les règles d'espace des
 configs compositeur (Discord : `…@me-Default` et `…@me_<salon>-Default`, espace 5).
 
-## Correspondance avec d'autres distributions
-
-Correspondances attendues, **non encore vérifiées** (phase 12).
-
-| Arch | Fedora | Debian / Ubuntu | Remarque |
-|---|---|---|---|
-| quickshell | quickshell (COPR `errornointernet/quickshell`) | — | à compiler sur Debian/Ubuntu |
-| qt6-svg | qt6-qtsvg | qt6-svg-plugins | |
-| sway | sway | sway | |
-| hyprland | hyprland | hyprland (Debian ≥ 13) | |
-| greetd, greetd-agreety | greetd (agreety inclus) | greetd (agreety inclus) | utilisateur du greeter : `greeter` sur Arch, `_greetd` sur Debian (`default_session.user` à adapter) |
-| xorg-xinit (optionnel) | xorg-x11-xinit | xinit | sessions X11 de l'écran de connexion |
-| *(polices d'icônes : Symbols Nerd Font Mono, Hack Nerd Font, Font Awesome 7, FontAwesome 4.7)* | — | — | fournies par le dépôt (`assets/fonts/`), aucun paquet nécessaire |
-| inter-font | rsms-inter-fonts | fonts-inter | |
-| noto-fonts | google-noto-sans-mono-fonts | fonts-noto-mono | |
-| noto-fonts-cjk | google-noto-sans-cjk-fonts | fonts-noto-cjk | |
-| noto-fonts-emoji | google-noto-color-emoji-fonts | fonts-noto-color-emoji | |
-| papirus-icon-theme | papirus-icon-theme | papirus-icon-theme | |
-| pipewire / wireplumber / pipewire-pulse | idem (`pipewire-pulseaudio`) | idem | |
-| pavucontrol | idem | idem | |
-| chromium | chromium | chromium | web apps (optionnel) |
-| python | python3 | python3 | inhibition vidéo D-Bus ; moniteur (pidfd : Python ≥ 3.9, Linux ≥ 5.3) ; hôte natif des web apps |
-| python-gobject | python3-gobject | python3-gi | Gio / GLib du service d’inhibition vidéo |
-| upower | upower | upower | |
-| networkmanager | NetworkManager | network-manager | |
-| bluez / bluez-utils | bluez | bluez (contient `bluetoothctl`) | |
-| udisks2 | udisks2 | udisks2 | |
-| glib2 (`gdbus`) | glib2 | libglib2.0-bin | souvent déjà présent |
-| systemd (`busctl`) | systemd | systemd | toujours présent |
-| nm-connection-editor (optionnel) | nm-connection-editor | network-manager-gnome | |
-| tailscale (optionnel) | — (dépôt de l'éditeur : pkgs.tailscale.com) | — (dépôt de l'éditeur : pkgs.tailscale.com) | absent des dépôts officiels Fedora et Debian/Ubuntu |
-| iproute2 | iproute | iproute2 | toujours présent |
-| zerotier-one (optionnel) | — (dépôt de l'éditeur : install.zerotier.com) | — (dépôt de l'éditeur : install.zerotier.com) | absent des dépôts officiels Fedora et Debian/Ubuntu |
-| pacman-contrib + fakeroot | — | — | spécifique Arch : module mises à jour masqué |
-| gnome-terminal | idem | idem | |
-| libnotify | libnotify | libnotify-bin | |
-| grim / slurp / wl-clipboard / jq | idem | idem | |
-| zenity | zenity | zenity | tests uniquement |
-| imagemagick | ImageMagick | imagemagick | |
-| catppuccin-gtk-theme-mocha | — | — | depuis github.com/catppuccin/gtk |
-| catppuccin-cursors-mocha | — | — | depuis github.com/catppuccin/cursors |
-| nvidia-utils | xorg-x11-drv-nvidia (RPM Fusion) | nvidia-smi | optionnel |
-| brightnessctl | brightnessctl | brightnessctl | optionnel |
-| gammastep | gammastep | gammastep | |
-| power-profiles-daemon | power-profiles-daemon (ou `tuned-ppd` sur Fedora ≥ 41, même interface D-Bus) | power-profiles-daemon | |
-| xdg-user-dirs | xdg-user-dirs | xdg-user-dirs | |
-| util-linux (`rfkill`, `setpriv`) | util-linux (tire util-linux-core) | rfkill, util-linux | |
-
-
-### Contenu ouvert depuis Deluge, Thunderbird et Steam
+## Contenu ouvert depuis Deluge, Thunderbird et Steam
 
 La règle dépend de l'application d'origine, pas du workspace, du type de fichier ou du navigateur. Sous Hyprland,
 `dotfiles/hypr/lua/openorigin.lua` décide le placement dans le mapping natif, avant le rendu ; aucune animation de transfert

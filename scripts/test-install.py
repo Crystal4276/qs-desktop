@@ -122,6 +122,12 @@ def main():
         else:
             deluge = (cfg / "deluge/gtk3ui.conf").read_text()
             check('"enable_system_tray": false' in deluge and deluge.startswith("{"), "Deluge : pas d'icône dans la barre")
+        prefs = cfg / "chromium/Default/Preferences"
+        if subprocess.run(["pgrep", "-u", str(os.getuid()), "-f", "(^|/)chromium( |$)"], capture_output=True).returncode == 0:
+            check("Chromium est ouvert" in r.stdout and not prefs.exists(), "Chromium ouvert : réglage reporté, rien d'écrit")
+        else:
+            webapp = home / ".local/share/ice/profiles/Whatsapp8699/Default/Preferences"
+            check('"system_theme":1' in prefs.read_text() and '"system_theme":1' in webapp.read_text(), "Chromium et web apps : thème GTK")
         changes = [l for l in r.stdout.splitlines() if l.startswith("+ ")]
         check(r.returncode == 0 and not changes, f"second passage sans changement {changes[:5]}")
 
