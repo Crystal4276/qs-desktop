@@ -1,0 +1,91 @@
+#!/usr/bin/env python3
+"""Clés GSettings (dconf) du compte, pour install.sh.
+
+apply <réglages.ini> <anciennes.ini> <HOME> : écrit seulement les clés qui diffèrent ; l'ancienne valeur de chaque clé changée
+    est notée une seule fois dans <anciennes.ini> (« @unset » si elle n'était pas définie), pour `restore`.
+restore <anciennes.ini> : remet ces valeurs (et efface les clés qui n'existaient pas).
+--dry-run : affiche sans écrire. Format des .ini : sections = chemins dconf sans « / » initial, valeurs GVariant texte
+(comme `dconf dump`) ; @HOME@ remplacé par le dossier personnel.
+"""
+import configparser
+import subprocess
+import sys
+
+from gi.repository import GLib
+
+
+def read_ini(path):
+    ini = configparser.RawConfigParser(delimiters=("=",), comment_prefixes=("#",), interpolation=None, strict=False)
+    ini.optionxform = str
+    ini.read(path, encoding="utf-8")
+    return ini
+
+
+def same(a, b):
+    try:
+        return GLib.Variant.parse(None, a, None, None).equal(GLib.Variant.parse(None, b, None, None))
+    except GLib.Error:
+        return a.strip() == b.strip()
+
+
+def dconf(*args):
+    return subprocess.run(["dconf", *args], check=True, capture_output=True, text=True).stdout.strip()
+
+
+def act(dry, *args):
+    print("+ dconf " + " ".join(args))
+    if not dry:
+        dconf(*args)
+
+
+def apply(dry, settings, old_path, home):
+    wanted, old = read_ini(settings), read_ini(old_path)
+    changed = False
+    for section in wanted.sections():
+        for key, value in wanted.items(section):
+            value = value.replace("@HOME@", home)
+            path = f"/{section}/{key}"
+            current = dconf("read", path)
+            if current and same(current, value):
+                continue
+            if not old.has_section(section):
+                old.add_section(section)
+            if not old.has_option(section, key):
+                old.set(section, key, current or "@unset")
+            act(dry, "write", path, value)
+            changed = True
+    if not changed:
+        print(f"= dconf : {settings.rsplit('/', 2)[-2]}/{settings.rsplit('/', 1)[-1]} déjà appliqué")
+    elif not dry:
+        import os
+        os.makedirs(os.path.dirname(old_path), exist_ok=True)
+        with open(old_path, "w", encoding="utf-8") as f:
+            old.write(f)
+
+
+def restore(dry, old_path):
+    old = read_ini(old_path)
+    for section in old.sections():
+        for key, value in old.items(section):
+            path = f"/{section}/{key}"
+            if value == "@unset":
+                act(dry, "reset", path)
+            else:
+                act(dry, "write", path, value)
+
+
+def main(argv):
+    dry = argv[:1] == ["--dry-run"]
+    argv = argv[1:] if dry else argv
+    if argv[:1] == ["apply"] and len(argv) == 4:
+        apply(dry, *argv[1:])
+    elif argv[:1] == ["restore"] and len(argv) == 2:
+        restore(dry, argv[1])
+    else:
+        print(__doc__, file=sys.stderr)
+        return 2
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))
