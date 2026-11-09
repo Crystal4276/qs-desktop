@@ -214,6 +214,17 @@ step_packages() {
         mapfile -t -O "${#want[@]}" want < <(awk -v v="$v" -v g="$games" '!/^#/ && NF >= 2 && ($1 == v || (g == "yes" && $1 == v "-jeux")) { print $2 }' "$repo/deps/gpu.txt")
     done
     compgen -G '/sys/class/backlight/*' >/dev/null && want+=(brightnessctl)
+    # Laptop (batterie) : profils d'énergie du panneau de réglages ; pas sur un desktop.
+    compgen -G '/sys/class/power_supply/BAT*' >/dev/null && want+=(power-profiles-daemon)
+    # « a|b » (deps/apps.txt) : l'un ou l'autre suffit ; sinon le premier est installé.
+    local i alt choice
+    for i in "${!want[@]}"; do
+        [[ "${want[$i]}" == *"|"* ]] || continue
+        choice="${want[$i]%%|*}"
+        for alt in ${want[$i]//|/ }; do pacman -Q "$alt" >/dev/null 2>&1 && { choice=""; break; }; done
+        if [[ -n "$choice" ]]; then want[$i]="$choice"; else unset 'want[i]'; fi
+    done
+    want=("${want[@]}")
     echo "Cartes graphiques : ${vendors[*]:-aucune détectée}"
     local missing
     missing="$(pacman -T "${want[@]}" || true)"
@@ -342,21 +353,21 @@ put_file() {    # source cible : fichier du thème, l'ancien sauvegardé
     run cp "$1" "$2"
 }
 
-# Dossiers verts sans toucher au thème du système : surcouche Papirus dans le compte (mêmes noms de dossiers, les autres icônes
-# viennent toujours de /usr/share/icons/Papirus). Les noms génériques (folder.svg, user-home.svg…) pointent vers le vert.
+# Dossiers Catppuccin lavande (ton choix : comme sur le desktop de référence) sans toucher au thème du système : surcouche Papirus dans le compte (mêmes noms de dossiers, les autres icônes
+# viennent toujours de /usr/share/icons/Papirus). Les noms génériques (folder.svg, user-home.svg…) pointent vers $folders.
 papirus_overlay() {     # dossier src/ de catppuccin/papirus-folders
-    local src="$1" top="$data/icons" sys=/usr/share/icons/Papirus color size f t new
-    [[ -d "$sys" ]] || { echo "- Papirus absent (papirus-icon-theme) : dossiers verts ignorés"; return; }
+    local src="$1" top="$data/icons" sys=/usr/share/icons/Papirus folders=cat-mocha-lavender color size f t new
+    [[ -d "$sys" ]] || { echo "- Papirus absent (papirus-icon-theme) : couleur des dossiers ignorée"; return; }
     color="$(readlink "$sys/48x48/places/folder.svg")"; color="${color#folder-}"; color="${color%.svg}"
     local tree; tree="$(mktemp -d)"
     for size in 22x22 24x24 32x32 48x48 64x64; do
         mkdir -p "$tree/Papirus/$size/places"
-        cp "$src/$size/places/"*-cat-mocha-green* "$tree/Papirus/$size/places/"
+        cp "$src/$size/places/"*-"$folders"* "$tree/Papirus/$size/places/"
         for f in "$sys/$size/places/"*; do
             [[ -L "$f" ]] || continue
             t="$(readlink "$f")"
             [[ "$t" == *"-$color"* && "$t" != */* ]] || continue
-            new="${t/-$color/-cat-mocha-green}"
+            new="${t/-$color/-$folders}"
             [[ -e "$tree/Papirus/$size/places/$new" || -e "$sys/$size/places/$new" ]] && ln -sfn "$new" "$tree/Papirus/$size/places/$(basename "$f")"
         done
         ln -sfn "$size" "$tree/Papirus/$size@2x"
@@ -397,10 +408,6 @@ step_theme() {
         rm -rf "$d"
     fi
 
-    if d="$(fetch btop)"; then
-        put_file "$(echo "$d"/btop-*/themes/catppuccin_mocha.theme)" "$config/btop/themes/catppuccin_mocha.theme"
-        rm -rf "$d"
-    fi
     if d="$(fetch geany)"; then
         put_file "$(echo "$d"/geany-*/src/catppuccin-mocha.conf)" "$config/geany/colorschemes/catppuccin-mocha.conf"
         rm -rf "$d"
@@ -453,9 +460,8 @@ step_settings() {
         run xdg-mime default "$app" "${todo[@]}"
     done < "$repo/dotfiles/mime/defaults.list"
 
-    # Geany et btop : leur fichier de réglages est réécrit par l'application ; seules les clés du thème et des polices changent.
+    # Geany : son fichier de réglages est réécrit par l'application ; seules les clés du thème et des polices changent.
     ini_set "$config/geany/geany.conf" geany color_scheme catppuccin-mocha.conf editor_font "Inter 16" tagbar_font "Symbols Nerd Font Mono 9"
-    ini_set "$config/btop/btop.conf" "" color_theme '"catppuccin_mocha"' theme_background true truecolor true
 
     if command -v python3 >/dev/null; then step_webapps; else echo "- python3 absent (installé à l'étape 1) : web apps non générées"; fi
     if command -v chromium >/dev/null; then

@@ -6,5 +6,4 @@ gtk                c874ae7326a620ecd8f39cf480aa25284f560a9cff7fb5d8804dd856674a0
 cursors            376a59f36b190ecb6ee0bcbdf73c7f4f30a339f80d641a59f2b5f9b557ddc753  https://github.com/catppuccin/cursors/releases/download/v2.0.0/catppuccin-mocha-green-cursors.zip
 kvantum            f2bd573f8d7500c65fd69e1629b3bcf3eba3468124b81f1d12d54b2f5dda1a0c  https://github.com/catppuccin/kvantum/archive/71105d224fef95dd023691303477ce3eea487457.tar.gz
 papirus-folders    52105ae8a0b97ec6d6d9d3978f9ab7b4c274d9eb752e79c22fe30dc153cc2a5b  https://github.com/catppuccin/papirus-folders/archive/f83671d17ea67e335b34f8028a7e6d78bca735d7.tar.gz
-btop               9e5d3df71dce2de58d9d928b80f795aedecc115952b4a546a74b954fbc9fbb7c  https://github.com/catppuccin/btop/archive/f437574b600f1c6d932627050b15ff5153b58fa3.tar.gz
 geany              40d0cb55be330c22e61e7ddc6d2ad42fcd37c99570256badee27a8266ce8dc83  https://github.com/catppuccin/geany/archive/ab96041d6ec462b19e5d70c232e8a20bc738ca99.tar.gz

@@ -43,8 +43,8 @@ Retour arrière de la bascule : `docs/ROLLBACK.md`.
 - `install.sh` : `--dry-run`, `--uninstall`, `--with/--without jeux`, `--no-packages`, `--no-system`, `--yes` ; registre et
   sauvegardes `<x>.bak-<date>` ; étapes système via `greeter-setup.sh`, `network-setup.sh` et le nouveau `system-setup.sh`
   (multilib, Samba, services, groupes, `QT_QPA_PLATFORMTHEME`, curseur pour le greeter dans `/usr/local/share/icons`).
-  Thème : GTK 3/4, curseur, Kvantum, dossiers Papirus verts en surcouche dans le compte (aucun fichier de `/usr/share` touché),
-  btop, Geany ; Qt passe de KvArcDark + breeze à Kvantum Catppuccin + Papirus-Dark + Inter. `README.md` d'installation.
+  Thème : GTK 3/4, curseur, Kvantum, dossiers Papirus en surcouche (lavande, ton choix du 2026-11-09) dans le compte (aucun fichier de `/usr/share` touché),
+  Geany ; Qt passe de KvArcDark + breeze à Kvantum Catppuccin + Papirus-Dark + Inter. `README.md` d'installation.
 - Tests : `python3 scripts/test-install.py` (dossier personnel jetable, bus privé) : simulation sans écriture, installation,
   second passage sans aucun changement, retrait qui remet dossier personnel et dconf à l'identique : **0 échec**.
   GitHub a renvoyé des 504 sur l'archive du curseur pendant les essais : délais curl ajoutés, une archive indisponible
@@ -62,8 +62,10 @@ Retour arrière de la bascule : `docs/ROLLBACK.md`.
   ordre services → sonde réseau, copie du greeter et sonde sautées si à jour, simulation sur machine nue.
   Constats VM : NetworkManager prend le nom d'hôte du DHCP de QEMU (fichier `hosts/` à ce nom) ; premier lancement de
   Chromium (conditions d'utilisation) et de Spotify par l'autostart.
-- Changements visibles à valider avant l'application sur ce desktop : dossiers Papirus lavande → verts ; palette GNOME
-  Terminal ancienne Catppuccin → Mocha officielle ; thèmes btop / Geany à jour (cadres de btop un peu différents) ; Qt en
+- Retours du 2026-11-09 : dossiers lavande (comme ici), pas de btop (remplacé par le moniteur Quickshell), pas de
+  power-profiles-daemon sur un desktop, `spotify` (AUR) déjà là suffit, diagnostic Thunderbird retiré, terminal → fastfetch.
+  Encore à valider avant l'application sur ce desktop : palette GNOME
+  Terminal ancienne Catppuccin → Mocha officielle ; thème Geany à jour ; Qt en
   Catppuccin ; `smb.conf` sans la section imprimantes ; lanceurs des web apps ouverts sur leur accueil (`deps/README.md`).
 
 ## Maintenance — workspace Spotify sur le mauvais écran au démarrage (2026-11-08)
@@ -194,6 +196,9 @@ Retour arrière de la bascule : `docs/ROLLBACK.md`.
   contrôle de l'activation et du placement. Aucune nouvelle optimisation en place.
 
 ## Maintenance — diagnostic Thunderbird après reconnexion (2026-11-08)
+
+- **Retiré le 2026-11-09 à ta demande** (blocage jamais revu) : scripts, test, branchement Hyprland (retour à
+  `sleep 4 && thunderbird`), documentation. Traces déjà capturées laissées dans `~/.local/state/qs-desktop/thunderbird-diagnostic`.
 
 - **Suivi obligatoire (BACKLOG.md)** : résoudre le vrai blocage, puis retirer les scripts de diagnostic / tests dédiés,
   le branchement Hyprland et les références actives. Instrumentation **temporaire**, à exclure de l'installateur final ;
