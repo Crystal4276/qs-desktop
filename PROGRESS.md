@@ -70,6 +70,12 @@ Retour arrière de la bascule : `docs/ROLLBACK.md`.
   dépôt privé cloné par install.sh (bundle local en test, la VM n'a pas tes accès GitHub) dans `~/Pictures/Wallpapers` après
   création des dossiers XDG (premier essai : cloné dans `~/Wallpapers`, corrigé) ; mis à jour ensuite (« à jour »). Après
   connexion, fond par défaut = `simple/wallhaven-j37lop.png` (ton écran central), vérifié contre l'original.
+  Thème GTK pour toutes les applications (2026-11-09) : réglage « Thème : GTK » de Chromium posé par install.sh dans le
+  profil principal et les 6 profils de web apps (jamais écrit pendant que Chromium tourne, gardé par --uninstall) ; vérifié
+  en VM : barre d'onglets Mocha, boutons de fenêtre du thème GTK, comme ici. Correspondances Fedora/Debian retirées
+  (BACKLOG). Pas d'application d'install.sh sur ce desktop (inutile : il est la référence).
+  **Défaut vu en VM, à traiter avec le laptop** : sur un écran de 1280 px de large, la pilule volume + curseur (apparue avec
+  le son) chevauche la pilule CPU / mémoire de la barre principale.
   Constats VM : NetworkManager prend le nom d'hôte du DHCP de QEMU (fichier `hosts/` à ce nom) ; premier lancement de
   Chromium (conditions d'utilisation) et de Spotify par l'autostart.
 - Retours du 2026-11-09 : dossiers lavande (comme ici), pas de btop (remplacé par le moniteur Quickshell), pas de
@@ -569,7 +575,7 @@ Retour arrière de la bascule : `docs/ROLLBACK.md`.
 - VRR : juger l'effet à l'œil avant de l'activer (`BACKLOG.md`) ;
 - calendrier : Échap pointeur sur l'horloge (le clavier revient à la fenêtre) ; marge au bord droit sur DP-1 et DP-3.
 
-**Laptop** (phase 12) : laptop seul, + écrans externes, capot fermé, écran interne éteint, branchement à chaud avec fenêtres ouvertes ;
+**Laptop** (phase 12) : barre principale sur un écran étroit (chevauchement vu en VM à 1280 px), laptop seul, + écrans externes, capot fermé, écran interne éteint, branchement à chaud avec fenêtres ouvertes ;
 batterie (alertes 30 % et 15 %), rétroéclairage et OSD de luminosité, mode avion, Wi-Fi (mot de passe, portail captif), modules masqués
 selon le matériel, GPU AMD / Intel réels, verrouillage avant la mise en veille et réveil, menu et lanceur sur un petit écran ;
 `Brightness`, `BatteryModule`, `Backlight` jamais revus sur du vrai matériel.
