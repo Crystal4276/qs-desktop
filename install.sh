@@ -543,8 +543,12 @@ step_webapps() {
 # Fonds d'écran : dépôt privé à part (images hors du dépôt du bureau), cloné dans le dossier lu par services/Wallpapers.qml.
 # QS_WALLPAPERS_REPO : autre dépôt (« compte/nom » GitHub, adresse git ou chemin), pour les tests.
 step_wallpapers() {
-    local src="${QS_WALLPAPERS_REPO:-Crystal4276/wallpapers}" dir
-    dir="$(xdg-user-dir PICTURES 2>/dev/null || echo "$HOME/Pictures")/Wallpapers"
+    local src="${QS_WALLPAPERS_REPO:-Crystal4276/wallpapers}" dir pictures
+    # Machine neuve : les dossiers XDG (Images…) ne sont créés qu'à la première connexion ; xdg-user-dir renverrait alors $HOME.
+    if command -v xdg-user-dirs-update >/dev/null && [[ ! -f "$config/user-dirs.dirs" ]]; then run xdg-user-dirs-update; fi
+    pictures="$(xdg-user-dir PICTURES 2>/dev/null || true)"
+    [[ -z "$pictures" || "$pictures" == "$HOME" ]] && pictures="$HOME/Pictures"
+    dir="$pictures/Wallpapers"
     if [[ -d "$dir/.git" ]]; then
         if [[ -n "$(git -C "$dir" status --porcelain 2>/dev/null)" ]]; then
             echo "= $dir (modifications locales : pas de mise à jour)"
