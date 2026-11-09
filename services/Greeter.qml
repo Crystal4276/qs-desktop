@@ -180,9 +180,9 @@ Singleton {
         blockLoading: true
     }
 
-    // Fond de l'écran `description` exporté par le bureau de l'utilisateur affiché (même nom que Wallpapers.greeterFile) ; écran
-    // inconnu du bureau : le fond exporté d'un autre écran ; aucune session ouverte encore : `default.*`, fond de la config
-    // machine copié par install.sh ; rien de tout ça : fond uni.
+    // Fond de l'écran `description` exporté par le bureau de l'utilisateur affiché (même nom que Wallpapers.greeterFile) ; sinon
+    // (aucune session ouverte encore, écran inconnu du bureau) `default.*`, fond de la config machine copié par install.sh ;
+    // sinon fond uni.
     // Chemins complets : une liste en retard, lue pour le compte précédent, ne correspond jamais au compte affiché.
     property var wallpapers: []
 
@@ -190,7 +190,7 @@ Singleton {
         const own = Settings.greeterWallpaper(user, description);
         const mine = wallpapers.filter(p => p.startsWith(`${dir}/${user}/`));
         const path = description !== "" && mine.includes(own) ? own
-            : mine.find(p => /\/[0-9a-f]{32}\.jpg$/.test(p)) ?? mine.find(p => /\/default\.(jpg|png)$/.test(p)) ?? "";
+            : mine.find(p => /\/default\.(jpg|png)$/.test(p)) ?? "";
         return path !== "" ? `file://${path}` : "";
     }
 

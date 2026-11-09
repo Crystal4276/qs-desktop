@@ -308,7 +308,7 @@ host_file() {   # dossier-du-dépôt extension → hosts/<machine>.<ext> s'il ex
 # un chemin pointé (doNotDisturb.muteApps) descend dans les objets. Vide si absente.
 host_setting() {
     command -v python3 >/dev/null || return 0
-    python3 -I - "$1" "$repo/hosts/default.json" "$repo/hosts/$host.json" <<'EOF'
+    if python3 -I - "$1" "$repo/hosts/default.json" "$repo/hosts/$host.json" <<'EOF'
 import json, sys
 conf = {}
 for p in sys.argv[2:]:
@@ -322,6 +322,7 @@ if isinstance(v, (list, dict)):
 else:
     print("" if v is None else v)
 EOF
+    then :; else echo "! hosts/$host.json illisible (JSON invalide ?) : réglage $1 par défaut" >&2; fi
 }
 
 dnd_mutes() {   # la machine coupe-t-elle des applications la nuit ? (doNotDisturb.muteApps non vide)
@@ -435,7 +436,8 @@ papirus_overlay() {     # dossier src/ de catppuccin/papirus-folders
             t="$(readlink "$f")"
             [[ "$t" == *"-$color"* && "$t" != */* ]] || continue
             new="${t/-$color/-$folders}"
-            [[ -e "$tree/Papirus/$size/places/$new" || -e "$sys/$size/places/$new" ]] && ln -sfn "$new" "$tree/Papirus/$size/places/$(basename "$f")"
+            if [[ -e "$tree/Papirus/$size/places/$new" ]]; then ln -sfn "$new" "$tree/Papirus/$size/places/$(basename "$f")"
+            elif [[ -e "$sys/$size/places/$new" ]]; then ln -sfn "$sys/$size/places/$new" "$tree/Papirus/$size/places/$(basename "$f")"; fi
         done
         ln -sfn "$size" "$tree/Papirus/$size@2x"
         mkdir -p "$tree/Papirus-Dark"
@@ -574,7 +576,8 @@ PY
     command -v chromium >/dev/null && chromium_gtk_themes
     if command -v python3 >/dev/null; then step_webapps; else echo "- python3 absent (installé à l'étape 1) : web apps non générées"; fi
     if command -v chromium >/dev/null; then
-        python3 "$repo/scripts/browser-links-setup.py" ${dry:+--dry-run} install
+        python3 "$repo/scripts/browser-links-setup.py" ${dry:+--dry-run} install \
+            || later "liens Chromium (scripts/browser-links-setup.py) : non installés, voir le message ci-dessus"
     fi
 }
 
@@ -634,17 +637,21 @@ chromium_open() {   # dossier de données (--user-data-dir)
 chromium_gtk_theme() {  # dossier de données d'un profil, nom affiché
     local file="$1/Default/Preferences" content
     command -v python3 >/dev/null || return 0
+    # Une lecture : 1re ligne = ancienne valeur (« unset » : absente, « nofile » : fichier absent), puis le contenu à écrire.
     content="$(python3 -I - "$file" <<'PY'
 import json, sys
 try:
     prefs = json.load(open(sys.argv[1], encoding="utf-8"))
+    old = None
 except FileNotFoundError:
-    prefs = {}
+    prefs, old = {}, "nofile"
 theme = prefs.setdefault("extensions", {}).setdefault("theme", {})
 if theme.get("system_theme") == 1:
     print("same", end="")
 else:
+    old = old or ("unset" if theme.get("system_theme") is None else theme["system_theme"])
     theme["system_theme"] = 1
+    print(old)
     print(json.dumps(prefs, separators=(",", ":")), end="")
 PY
 )" || { echo "! $file illisible : thème de Chromium laissé tel quel"; return 0; }
@@ -652,18 +659,10 @@ PY
     if chromium_open "$1"; then
         later "$2 ouvert : le fermer puis relancer install.sh pour le thème GTK"; return
     fi
-    # Tous les réglages du navigateur sont dans ce fichier : le registre ne garde que l'ancienne valeur de la clé (« unset » :
-    # absente, « nofile » : fichier absent), --uninstall ne remet qu'elle.
-    if ! recorded "$file"; then
-        record chromium-theme "$file" "$(python3 -I -c '
-import json, sys
-try:
-    v = json.load(open(sys.argv[1], encoding="utf-8")).get("extensions", {}).get("theme", {}).get("system_theme")
-    print("unset" if v is None else v)
-except FileNotFoundError:
-    print("nofile")' "$file")"
-    fi
-    write_setting "$file" "$content" "thème GTK (extensions.theme.system_theme 1)" keep
+    # Tous les réglages du navigateur sont dans ce fichier : le registre ne garde que l'ancienne valeur de la clé, --uninstall ne
+    # remet qu'elle.
+    recorded "$file" || record chromium-theme "$file" "${content%%$'\n'*}"
+    write_setting "$file" "${content#*$'\n'}" "thème GTK (extensions.theme.system_theme 1)" keep
 }
 
 # Application ouverte avec ce même dossier personnel ? Sans HOME dans son environnement (lancée par le compositeur) :
@@ -952,6 +951,8 @@ EOF
         sub "$repo/scripts/system-setup.sh" ${dry:+--dry-run} uninstall
         sub "$repo/scripts/network-setup.sh" ${dry:+--dry-run} uninstall
         sub "$repo/scripts/greeter-setup.sh" ${dry:+--dry-run} uninstall
+        local own="/var/lib/qs-desktop/${USER:-$(id -un)}"
+        [[ -e "$own/default.png" || -e "$own/default.jpg" ]] && run rm -f "$own/default.png" "$own/default.jpg"
     fi
     echo "Paquets conservés (paru compris)."
 }
