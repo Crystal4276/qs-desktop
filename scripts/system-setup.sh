@@ -12,6 +12,7 @@
 #                                                 Chrome Web Store au démarrage du navigateur (/usr/share/chromium/extensions)
 #         system-setup.sh [--dry-run] uninstall   tout ce qui a été changé est remis comme avant (fichiers, groupes, services)
 #         --dry-run : affiche les commandes sans rien modifier.
+#         system-setup.sh [--dry-run] reflector   miroirs Arch rapides et récents, renouvelés chaque semaine
 set -euo pipefail
 
 repo="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
@@ -60,6 +61,57 @@ do_multilib() {
     backup_once "$conf"
     # La section commentée du fichier d'Arch : « #[multilib] » puis « #Include = … » sur la ligne suivante.
     run sed -i '/^#\[multilib\]/{s/^#//;n;s/^#//}' "$conf"
+}
+
+do_reflector() {
+    grep -qxE 'ID="?arch"?' /etc/os-release || { echo "- Reflector réservé à Arch Linux"; return; }
+    local conf=/etc/xdg/reflector/reflector.conf mirrors=/etc/pacman.d/mirrorlist
+    local ready="$state/reflector-ready" fingerprint saved existed changed=""
+    if [[ -z "$dry" ]] && ! command -v reflector >/dev/null; then
+        echo "! paquet reflector absent" >&2; return 1
+    fi
+    cmp -s "$repo/dotfiles/reflector/reflector.conf" "$conf" || changed=1
+    install_file dotfiles/reflector/reflector.conf "$conf"
+    fingerprint="$(sha256sum < "$repo/dotfiles/reflector/reflector.conf")"
+    if [[ -n "$changed" || "$(cat "$ready" 2>/dev/null)" != "$fingerprint" ]] || ! grep -q '^Server = https://' "$mirrors"; then
+        backup_once "$mirrors"
+        run rm -f "$ready"   # une tentative échouée doit être retentée même après une ancienne réussite
+        if [[ -n "$dry" ]]; then
+            run systemctl start reflector.service
+            echo "+ validation de $mirrors et enregistrement de l'initialisation"
+        else
+            # Copie du dernier état utilisable, distincte de la sauvegarde d'origine pour le retrait.
+            saved="$(mktemp)"
+            existed=""
+            if [[ -e "$mirrors" ]]; then
+                existed=1
+                if ! cp "$mirrors" "$saved"; then rm -f "$saved"; return 1; fi
+            else
+                run install -D -m 644 /dev/null "$mirrors"
+            fi
+            if run systemctl start reflector.service && grep -q '^Server = https://' "$mirrors"; then
+                run install -d -m 755 "$state"
+                printf '%s\n' "$fingerprint" | sudo tee "$ready" >/dev/null
+                rm -f "$saved"
+            else
+                if [[ -n "$existed" ]]; then run cp "$saved" "$mirrors"; else run rm -f "$mirrors"; fi
+                rm -f "$saved"
+                echo "! Reflector a échoué : liste précédente restaurée" >&2
+                return 1
+            fi
+        fi
+    else
+        echo "= miroirs initialisés ; renouvellement assuré par reflector.timer"
+    fi
+    # Activation et activité suivies séparément : retrait fidèle même si le timer était déjà activé mais arrêté.
+    if ! systemctl is-enabled --quiet reflector.timer; then
+        run systemctl enable reflector.timer
+        recorded timer-enable reflector.timer || record timer-enable reflector.timer
+    fi
+    if ! systemctl is-active --quiet reflector.timer; then
+        run systemctl start reflector.timer
+        recorded timer-start reflector.timer || record timer-start reflector.timer
+    fi
 }
 
 install_file() {    # $1 = fichier du dépôt, $2 = cible
@@ -225,18 +277,22 @@ do_uninstall() {
             group) run gpasswd -d "$user" "$target" || true ;;
             unit) run systemctl disable "$target" || true ;;
             unit-off) run systemctl enable "$target" || true ;;
+            timer-start) run systemctl stop "$target" || true ;;
+            timer-enable) run systemctl disable "$target" || true ;;
             net) run virsh -c qemu:///system net-autostart --disable "$target" || true ;;
         esac
     done 3< <(tac "$registry")
     run rm -f "$registry"
+    run rm -f "$state/reflector-ready"
 }
 
 [[ "${1:-}" == --dry-run ]] && { dry=1; shift; }
 case "${1:-}" in
     multilib) do_multilib ;;
+    reflector) do_reflector ;;
     cursor) do_cursor ;;
     install) do_install ;;
     chromium-extensions) do_chromium_extensions ;;
     uninstall) do_uninstall ;;
-    *) sed -n '5,14p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 2 ;;
+    *) sed -n '5,15p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 2 ;;
 esac

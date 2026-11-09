@@ -22,6 +22,7 @@ Puis se déconnecter : l'écran de connexion greetd apparaît au prochain démar
 
 | Étape | Ce qui est fait |
 |---|---|
+| Avant les paquets | propose Reflector : installe d'abord ce seul paquet avec les miroirs existants s'il manque, classe jusqu'à 20 miroirs HTTPS mondiaux synchronisés depuis moins de 12 h par débit, puis active le renouvellement hebdomadaire (`reflector.timer`) |
 | 1. Paquets | active le dépôt `[multilib]`, installe `deps/arch-pacman.txt` (le bureau) et `deps/apps.txt` (applications de base), les paquets de la carte graphique (`deps/gpu.txt`), `brightnessctl` sur un laptop ; propose le profil jeux (`deps/games.txt`) ; construit `paru-bin`, seul paquet AUR |
 | 2. Configs du compte | liens vers le dépôt : `~/.config/quickshell/desktop`, `sway`, `hypr`, `fastfetch`, `mpv`, `starship.toml`, `chromium-flags.conf`, règle WirePlumber ; bloc ajouté à `~/.bashrc` (le reste n'est pas touché) |
 | 3. Thème | archives officielles Catppuccin (`deps/themes.txt`, empreintes vérifiées) : GTK 3/4, curseur, Kvantum (Qt), dossiers Papirus lavande, Geany ; mêmes polices et curseur partout |
@@ -34,6 +35,12 @@ Tout fichier existant est sauvegardé avant d'être remplacé (`<fichier>.bak-<d
 
 Options : `--with jeux` / `--without jeux`, `--no-packages`, `--no-system`, `--yes` (aucune question), `--uninstall`
 (retire liens et copies, remet les sauvegardes et les réglages d'origine, étapes système comprises ; les paquets restent).
+
+Reflector est réservé à Arch Linux. `--no-system` ignore cette étape ; `--no-packages` peut configurer un Reflector déjà présent.
+Un échec conserve les miroirs précédents et laisse continuer l'installation ; le récapitulatif invite à relancer le script.
+Les relances ne retestent pas les miroirs après une initialisation réussie, sauf changement de configuration ou liste absente.
+Le timer renouvelle uniquement les miroirs, sans installer de mises à jour. Pour vérifier : `systemctl list-timers reflector.timer`
+et `journalctl -u reflector.service`. Le retrait système restaure la configuration, la liste initiale et l'état antérieur du timer.
 
 Autre distribution qu'Arch : pas encore prévue (paquets à installer soi-même d'après les listes Arch de `deps/`, puis
 `./install.sh --no-packages`).
