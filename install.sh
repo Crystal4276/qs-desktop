@@ -530,11 +530,11 @@ step_system() {
             sub "$repo/scripts/greeter-setup.sh" ${dry:+--dry-run} enable
         fi
     fi
-    if ask "Sonde de connectivité NetworkManager (portails captifs Wi-Fi) ?"; then
-        sub "$repo/scripts/network-setup.sh" ${dry:+--dry-run} install
-    fi
     if ask "Samba, services (réseau, Bluetooth, énergie, VM), groupes et thème Qt du système ?"; then
         sub "$repo/scripts/system-setup.sh" ${dry:+--dry-run} install
+    fi
+    if ask "Sonde de connectivité NetworkManager (portails captifs Wi-Fi) ?"; then
+        sub "$repo/scripts/network-setup.sh" ${dry:+--dry-run} install
     fi
 }
 
