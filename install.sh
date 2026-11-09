@@ -517,7 +517,11 @@ step_system() {
     section "6. Système (sudo, avec confirmation)"
     if ask "Écran de connexion greetd + greeter Quickshell (remplace le gestionnaire actuel) ?"; then
         "$repo/scripts/greeter-setup.sh" ${dry:+--dry-run} install
-        "$repo/scripts/greeter-setup.sh" ${dry:+--dry-run} enable
+        if [[ -n "$dry" && ! -d /usr/local/share/qs-desktop ]]; then
+            echo "+ scripts/greeter-setup.sh enable (après l'installation ci-dessus)"
+        else
+            "$repo/scripts/greeter-setup.sh" ${dry:+--dry-run} enable
+        fi
     fi
     if ask "Sonde de connectivité NetworkManager (portails captifs Wi-Fi) ?"; then
         "$repo/scripts/network-setup.sh" ${dry:+--dry-run} install
