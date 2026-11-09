@@ -1,0 +1,13 @@
+# Paquets selon la carte graphique, choisis par install.sh d'après `lspci` (pciutils).
+# Format : <carte> <paquet>  # usage. <carte> = nvidia | intel | amd ; suffixe -jeux = seulement avec le profil jeux.
+# Le pilote lui-même (nvidia-open, mesa) vient de l'installation d'Arch, pas d'install.sh.
+# Plusieurs cartes (laptop hybride) : les paquets de chaque carte présente.
+
+nvidia nvidia-utils             # nvidia-smi : module GPU de la barre (température, charge, mémoire)
+nvidia libva-nvidia-driver      # décodage vidéo matériel VA-API (Chromium, mpv) sur NVIDIA
+intel  intel-media-driver       # décodage vidéo matériel VA-API, Intel Broadwell et plus récents
+# amd : VA-API inclus dans mesa, rien à ajouter
+
+nvidia-jeux lib32-nvidia-utils  # Vulkan / OpenGL 32 bits (Steam, Proton)
+intel-jeux  lib32-vulkan-intel  # Vulkan 32 bits
+amd-jeux    lib32-vulkan-radeon # Vulkan 32 bits

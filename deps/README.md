@@ -1,7 +1,14 @@
 # Dépendances
 
-- `arch-pacman.txt` : dépôts officiels Arch.
-- `arch-aur.txt` : AUR (via `paru` ou `yay`).
+Règle (2026-11-09) : **dépôts officiels d'abord**. `install.sh` n'installe aucun paquet AUR, sauf `paru-bin` qu'il construit
+lui-même ; ce qui n'existe qu'en AUR (Claude Code, NordVPN, Plex, RustDesk) est seulement documenté dans `README.md`.
+
+- `arch-pacman.txt` : le bureau (dépôts officiels Arch).
+- `apps.txt` : applications de base, toujours installées (terminal, fichiers, navigateur, mail, documents, création,
+  multimédia minimal, Wine, virtualisation, Samba).
+- `games.txt` : profil optionnel « jeux » (`install.sh --with jeux`) ; Steam vient du dépôt `multilib`, activé par `install.sh`.
+- `gpu.txt` : paquets selon la carte graphique détectée (VA-API, `nvidia-smi`, Vulkan 32 bits des jeux).
+- `arch-aur.txt` : thème GTK et curseur Catppuccin (en cours de remplacement par les archives officielles Catppuccin).
 - `optional.txt` : selon le matériel ou les modules utilisés.
 - Fichiers fournis par le dépôt lui-même (polices, images, feuilles de style) : colonne « Fichiers du dépôt » ci-dessous.
 
