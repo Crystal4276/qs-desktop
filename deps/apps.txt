@@ -37,7 +37,7 @@ handbrake               # conversion vidéo
 # --- Multimédia (le strict nécessaire) ---
 celluloid               # lecteur vidéo ; amène mpv et ffmpeg (décodeurs). Vidéos et audio par défaut
 ffmpegthumbnailer       # miniatures des vidéos dans Nemo
-spotify-launcher        # Spotify (lanceur officiel des dépôts, à la place du paquet AUR)
+spotify-launcher|spotify   # Spotify : lanceur officiel des dépôts ; un paquet `spotify` déjà là (AUR) suffit
 # Décodage vidéo matériel : paquet VA-API choisi selon la carte graphique, voir deps/gpu.txt.
 
 # --- Windows et virtualisation ---
@@ -58,7 +58,6 @@ openai-codex            # Codex
 
 # --- Système ---
 gnome-keyring           # trousseau, déverrouillé à la connexion par PAM (greetd)
-btop                    # moniteur en terminal
 htop                    # moniteur en terminal
 man-db                  # pages de manuel
 nano                    # éditeur en terminal

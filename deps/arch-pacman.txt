@@ -24,8 +24,8 @@ gammastep               # veilleuse (Night Light) : écran plus chaud le soir, e
 xdg-user-dirs           # dossier Images des captures et des fonds d'écran, dossiers du menu d'applications (`xdg-user-dir`)
 
 # --- Énergie ---
-power-profiles-daemon   # profils d'énergie (économie / équilibré / performance) : 3 boutons de la fenêtre de réglages,
-                        # via UPower.PowerProfiles ; service système à activer (install.sh) ; fonctionne aussi sur le desktop (intel_pstate)
+# power-profiles-daemon : profils d'énergie (3 boutons de la fenêtre de réglages, masqués sans lui) ; installé par install.sh
+# seulement sur un laptop (batterie détectée), pas sur un desktop (deps/optional.txt)
 
 # --- Écran de connexion (phase 11, ARCHITECTURE § 9 ; remplace SDDM) ---
 # Installés par install.sh comme le reste ; inactifs tant que le service greetd n'est pas activé (étape système d'install.sh).

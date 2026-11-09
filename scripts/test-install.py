@@ -60,8 +60,6 @@ def main():
         (home / ".config/mpv").mkdir()
         (home / ".config/mpv/mpv.conf").write_text("volume=50\n")
         (home / ".bashrc").write_text("alias ll='ls -l'\n")
-        (home / ".config/btop").mkdir()
-        (home / ".config/btop/btop.conf").write_text('color_theme = "Default"\nshown_boxes = "cpu mem"\n')
         cache = pathlib.Path(os.environ.get("QS_TEST_CACHE", tmp / "cache"))
         env = {k: v for k, v in os.environ.items() if not k.startswith(("XDG_", "DBUS_", "SWAYSOCK", "I3SOCK", "HYPRLAND", "WAYLAND", "DISPLAY"))}
         env.update(HOME=str(home), XDG_RUNTIME_DIR=str(run), XDG_CACHE_HOME=str(cache), LANG="C.UTF-8")
@@ -102,15 +100,13 @@ def main():
         gtk3 = (cfg / "gtk-3.0/settings.ini").read_text()
         check("gtk-theme-name=catppuccin-mocha-green-standard+default" in gtk3 and "gtk-enable-animations=0" in gtk3,
               "gtk-3.0 : thème changé, autre réglage gardé")
-        check('color_theme = "catppuccin_mocha"' in (cfg / "btop/btop.conf").read_text()
-              and 'shown_boxes = "cpu mem"' in (cfg / "btop/btop.conf").read_text(), "btop : clé du thème seulement")
         check("# qs-desktop (install.sh)" in (home / ".bashrc").read_text() and "alias ll" in (home / ".bashrc").read_text(),
               ".bashrc : bloc ajouté, alias gardé")
         check((home / ".local/share/themes/catppuccin-mocha-green-standard+default/gtk-3.0").is_dir(), "thème GTK installé")
         check((home / ".local/share/icons/catppuccin-mocha-green-cursors/cursors").is_dir(), "curseur installé")
         check((cfg / "Kvantum/catppuccin-mocha-green/catppuccin-mocha-green.kvconfig").is_file(), "Kvantum installé")
         folder = home / ".local/share/icons/Papirus/48x48/places/folder.svg"
-        check(folder.is_symlink() and "cat-mocha-green" in os.readlink(folder), "Papirus : dossier vert")
+        check(folder.is_symlink() and "cat-mocha-lavender" in os.readlink(folder), "Papirus : dossiers lavande")
         dconf = (tmp / "dconf.ini").read_text()
         check("accent-color='green'" in dconf and "gtk-theme='catppuccin-mocha-green-standard+default'" in dconf, "dconf appliqué")
         mime = (cfg / "mimeapps.list").read_text() if (cfg / "mimeapps.list").exists() else ""
