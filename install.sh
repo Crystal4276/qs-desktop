@@ -59,12 +59,16 @@ run() {     # commande du compte
     [[ -n "$dry" ]] || "$@"
 }
 
-ask() {     # $1 = question ; oui par défaut avec --yes
+ask() {     # $1 = question, $2 = réponse à Entrée : oui | non (défaut non) ; oui avec --yes
+    local default="${2:-non}" answer=""
     [[ -n "$yes" ]] && return 0
     [[ -n "$dry" ]] && { echo "? $1 (simulation : oui)"; return 0; }
-    local answer=""
-    # Aucun terminal (lancement automatique) : réponse « non ».
-    { read -r -p "? $1 [o/N] " answer </dev/tty; } 2>/dev/null || { echo "? $1 (pas de terminal : non)"; return 1; }
+    # Aucun terminal (lancement automatique) : réponse « non », sans attendre.
+    if ! { : </dev/tty; } 2>/dev/null; then echo "? $1 (pas de terminal : non)"; return 1; fi
+    # Question écrite sur le terminal lui-même : visible même si la sortie du script est redirigée.
+    if [[ "$default" == oui ]]; then printf '? %s [O/n] ' "$1" >/dev/tty; else printf '? %s [o/N] ' "$1" >/dev/tty; fi
+    read -r answer </dev/tty || return 1
+    [[ -z "$answer" ]] && answer="$default"
     [[ "$answer" == [oOyY]* ]]
 }
 
@@ -613,7 +617,7 @@ step_wallpapers() {
         return
     fi
     if [[ -e "$dir" ]]; then echo "= $dir existe déjà (pas un clone : gardé tel quel)"; return; fi
-    ask "Cloner tes fonds d'écran ($src, environ 300 Mo) dans $dir ?" || { echo "- fonds d'écran non clonés : aucun fond affiché"; return; }
+    ask "Cloner tes fonds d'écran ($src, environ 300 Mo) dans $dir ?" oui || { echo "- fonds d'écran non clonés : aucun fond affiché"; return; }
     run mkdir -p "$(dirname "$dir")"
     [[ -n "$dry" ]] && { echo "+ clone de $src dans $dir"; return; }
     if [[ "$src" == */*/* || "$src" == /* || "$src" == *:* ]]; then
@@ -656,7 +660,7 @@ sub() {
 
 step_system() {
     section "6. Système (sudo, avec confirmation)"
-    if ask "Écran de connexion greetd + greeter Quickshell (remplace le gestionnaire actuel) ?"; then
+    if ask "Écran de connexion greetd + greeter Quickshell (remplace le gestionnaire actuel) ?" oui; then
         sub "$repo/scripts/greeter-setup.sh" ${dry:+--dry-run} install
         if [[ -n "$dry" && ! -d /usr/local/share/qs-desktop ]]; then
             echo "+ scripts/greeter-setup.sh enable (après l'installation ci-dessus)"
@@ -664,10 +668,10 @@ step_system() {
             sub "$repo/scripts/greeter-setup.sh" ${dry:+--dry-run} enable
         fi
     fi
-    if ask "Samba, services (réseau, Bluetooth, énergie, VM), groupes et thème Qt du système ?"; then
+    if ask "Samba, services (réseau, Bluetooth, énergie, VM), groupes et thème Qt du système ?" oui; then
         sub "$repo/scripts/system-setup.sh" ${dry:+--dry-run} install
     fi
-    if ask "Sonde de connectivité NetworkManager (portails captifs Wi-Fi) ?"; then
+    if ask "Sonde de connectivité NetworkManager (portails captifs Wi-Fi) ?" oui; then
         # Déjà installée : le script rechargerait NetworkManager pour rien.
         if cmp -s "$repo/dotfiles/NetworkManager/conf.d/90-qs-desktop-connectivity.conf" /etc/NetworkManager/conf.d/90-qs-desktop-connectivity.conf \
             && [[ -f /var/lib/qs-desktop/network-setup/ready ]]; then
