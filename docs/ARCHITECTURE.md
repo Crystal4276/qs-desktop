@@ -18,6 +18,9 @@ Celle de `CLAUDE.md`, plus :
   session et par le greeter.
 - `greeter.qml` : point d'entrée de l'écran de connexion (`//@ pragma ShellId greeter`), à côté de `shell.qml` : mêmes `qs.config`,
   `qs.services`, `qs.modules.*` (§ 9).
+- Applications de tous les jours, installées par `install.sh` (`README.md`) : `dotfiles/fastfetch`, `starship`, `mpv` et `chromium`
+  (partie commune + `hosts/<machine>.conf` pour le décodage vidéo), `dconf` (clés GSettings, + `hosts/<machine>.ini`), `mime`
+  (applications par défaut), `bash` (bloc ajouté au `~/.bashrc`), `viewnior`, `samba` (fichier système, `scripts/system-setup.sh`).
 - `dotfiles/wireplumber/` : règle dont dépend la coupure des sons pendant « ne pas déranger » (§ 4, `doNotDisturb.muteApps`).
 - `dotfiles/webapps/` : extension Chromium `open-links/` et son hôte natif `open-link`, lanceurs des web apps (`applications/`),
   manifeste de l'hôte (`qs_desktop.open_link.json`) ; développés par `install.sh` (procédure : `deps/README.md`, « Web apps ») (§ 7.10).
@@ -329,8 +332,8 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
   toutes les 10 s pendant un accès limité, même panneau fermé. Sonde et navigateur partagent une adresse HTTP ; configuration
   système reproductible et retour arrière : `docs/NETWORK.md`. Sondes désactivées : résultats périmés ignorés.
 - Panneau réseau : onglets Wired (détails `nmcli`, graphe du trafic) / Tailscale (`status --json`, `debug prefs` ; actions grâce à
-  `--operator=$USER`, à proposer par `install.sh`) / ZeroTier (`zerotier-cli -j` avec le jeton copié dans `~/.zeroTierOneAuthToken`,
-  à proposer par `install.sh` ; sinon interfaces `zt*` en lecture seule). Relus toutes les 5 s onglet affiché ; 60 s sinon, sans câble.
+  `--operator=$USER`, à faire à la main) / ZeroTier (`zerotier-cli -j` avec le jeton copié dans `~/.zeroTierOneAuthToken`,
+  à la main ; sinon interfaces `zt*` en lecture seule). Relus toutes les 5 s onglet affiché ; 60 s sinon, sans câble.
 - Édition complète des connexions : `nm-connection-editor`. Copies : `wl-copy`.
 
 ### 7.7 Bluetooth (tray)
@@ -509,9 +512,10 @@ transmises aux applications lancées (`services/Launch.qml`). Fenêtre « config
 ### 8.3 Polices embarquées
 
 `Symbols Nerd Font Mono`, `HackNerdFont-Regular`, Font Awesome 7 Free / Brands et Font Awesome 4.7 sont versionnées dans
-`assets/fonts/` (licences MIT, Bitstream Vera, SIL OFL : `assets/fonts/README.md`) et copiées par `install.sh` dans
-`~/.local/share/fonts` : non empaquetées partout, et les icônes des modules texte viennent de ces polices de repli. Inter et Noto Sans
-Mono restent des paquets. `install.sh` vérifie avec `fc-list` chaque police de `THEME.md`.
+`assets/fonts/` (licences MIT, Bitstream Vera, SIL OFL : `assets/fonts/README.md`) et chargées par Quickshell lui-même (`FontLoader`
+de `config/Theme.qml`) : version exacte pour la barre, quelle que soit la machine. Les applications et compositeurs utilisent les
+paquets officiels des mêmes polices (`deps/arch-pacman.txt`) ; rien n'est copié dans `~/.local/share/fonts`. `install.sh` vérifie
+avec `fc-list` les polices de `THEME.md`.
 
 ### 8.4 Polices Microsoft
 
