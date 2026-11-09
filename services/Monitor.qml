@@ -137,6 +137,7 @@ Singleton {
         onTriggered: {
             cpu.reload();
             mem.reload();
+            if (Gpu.vendor === "intel") intelClock.reload();
         }
     }
 
@@ -152,6 +153,23 @@ Singleton {
                 processList.running = true;
             }
         }
+    }
+
+    // One cheap native sysfs read per second; memory scans keep their slower cadence.
+    FileView {
+        id: intelClock
+        path: Gpu.vendor === "intel" && Gpu.cardPath !== "" ? Gpu.cardPath + "/gt_act_freq_mhz" : ""
+        printErrors: false
+        function updateClock(value: real): void {
+            if (root.active && Gpu.vendor === "intel" && root.gpu && root.gpu.clock !== value)
+                root.gpu = Object.assign({}, root.gpu, {clock: value});
+        }
+        onLoaded: {
+            const raw = text().trim();
+            const value = Number(raw);
+            updateClock(raw !== "" && isFinite(value) && value >= 0 ? value : -1);
+        }
+        onLoadFailed: updateClock(-1)
     }
 
     // GPU au rythme de la liste des processus, juste après elle : ces commandes n'y figurent pas.

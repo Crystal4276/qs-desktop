@@ -110,3 +110,6 @@ filtrage des descripteurs `/dev/dri` avec `os.scandir`, 84–100 ms CPU, donnée
 (fréquence et mémoire résidente déclarée) sont espacés à environ 10 s, uniquement panneau ouvert : environ 0,9 %
 d'un cœur en moyenne pour ce collecteur, contre environ 6 % au rythme initial de 2,6 s. Ce chiffre ne comprend
 pas les autres relevés du moniteur. Panneau fermé : aucune collecte GPU périodique sur ce laptop sans hwmon ni charge sysfs.
+
+Fréquence Intel (correctif suivant) : lecture native `FileView` par seconde, indépendante du parcours des processus et sans
+nouveau processus Python. L'intervalle d'environ 10 s ne concerne plus que les relevés détaillés de mémoire.

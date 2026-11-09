@@ -259,3 +259,19 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
   GPU panneau fermé sur ce laptop. Les autres relevés du moniteur et le rythme NVIDIA / AMD sont inchangés.
 - Tests : `test-gpu.py` (8 cas, dont absence de lecture des fdinfo non GPU), `test-gpu-qml.py` (Intel / AMD / NVIDIA,
   espacement Intel et réarmement à la fermeture) : OK. Même rendu ; bancs arrêtés.
+
+## Maintenance — fréquence réactive et charge Intel absente (2026-11-09)
+
+- Clarification : la charge GPU Intel n'a pas été implémentée ; la masquer dans le moniteur rendait ce manque ambigu.
+  La carte indique maintenant « Load unavailable » lorsqu'aucune charge n'est mesurée.
+- Fréquence : lecture native `FileView` chaque seconde panneau ouvert, distincte de la collecte mémoire (~10 s).
+  Aucun nouveau processus ni parcours `/proc` pour cette lecture ; 0 MHz reste valide lorsque le GT est au repos.
+- Test QML modifié : le fichier de fréquence simulé passe de 0 à 1300 MHz entre deux relevés mémoire ; le moniteur
+  doit suivre le changement avant 10 s. Intel / AMD / NVIDIA simulés : OK, sans avertissement QML de démarrage.
+- Charge réelle : `intel-gpu-tools` 2.6-1 disponible dans Extra, absent du laptop ; `perf_event_paranoid=2`.
+  Installation et autorisation ciblée du collecteur encore soumises à ton accord. Aucun changement système effectué.
+- Session réelle : après rechargement, IPC Quickshell bloqué (« Not ready to accept queries yet ») malgré le processus vivant.
+  Relance contrôlée par `desktop.sh restart` : IPC et ouverture du moniteur rétablis, nouveau PID 55946.
+  Capture `.shots/gpu-monitor-clock-fix.png`, fermeture et focus restaurés ; aucun avertissement QML au démarrage,
+  seulement les anciennes icônes NordVPN manquantes. Lecture directe sysfs au repos : 0 MHz réel, 1200 MHz demandé
+  (fréquences distinctes, aucune substitution). Bancs arrêtés.
