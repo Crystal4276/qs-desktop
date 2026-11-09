@@ -227,11 +227,15 @@ step_packages() {
     if command -v paru >/dev/null || command -v yay >/dev/null; then
         echo "= $(command -v paru || command -v yay)"
     else
-        local tmp
-        tmp="$(mktemp -d)"
-        run git clone --depth 1 https://aur.archlinux.org/paru-bin.git "$tmp/paru-bin"
-        (cd "$tmp/paru-bin" && run makepkg -si --noconfirm)
-        rm -rf "$tmp"
+        if [[ -n "$dry" ]]; then
+            echo "+ git clone --depth 1 https://aur.archlinux.org/paru-bin.git <dossier temporaire> && makepkg -si --noconfirm"
+        else
+            local tmp
+            tmp="$(mktemp -d)"
+            git clone --depth 1 https://aur.archlinux.org/paru-bin.git "$tmp/paru-bin"
+            (cd "$tmp/paru-bin" && makepkg -si --noconfirm)
+            rm -rf "$tmp"
+        fi
     fi
 }
 
