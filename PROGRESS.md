@@ -122,6 +122,14 @@ Ensuite (pas de phase 13) : maintenance et idées de `BACKLOG.md`, une à la foi
   chevauchement, volume et curseur de nouveau visibles. Contrôle visuel du panneau de réglages à l’échelle 1.
 - Reste à vérifier à la main : rendu dans une vraie session Sway (description de sortie et échelle), persistance après reconnexion.
 
+## Affinage laptop — rétroéclairage du clavier (2026-11-09)
+
+- Choix corrigé et appliqué : **toujours allumé sur secteur, extinction après 30 secondes sans activité sur batterie**.
+- Réglages natifs du BIOS, relus après écriture avec authentification administrateur ; détails et retour arrière dans
+  `hosts/laptop-bios.md` (sans identifiant ni modèle matériel). Pas de changement QML ni de service ajouté.
+- Le BIOS signale un redémarrage nécessaire. Reste : redémarrer, attendre plus de 30 s sans activité sur
+  secteur, puis débrancher et vérifier l'extinction à 30 s sur batterie, le rallumage à la frappe et au rebranchement.
+
 ## À tester à la main
 
 **Laptop** : laptop seul, + écrans externes, capot fermé, écran interne éteint, branchement à chaud avec fenêtres ouvertes ;

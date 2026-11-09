@@ -68,6 +68,8 @@ Ce qui ne se détecte pas va dans des fichiers par machine (nom : `cat /etc/host
 `dotfiles/mpv/hosts/<machine>.conf`, `dotfiles/chromium/hosts/<machine>.conf` (décodage vidéo),
 `dotfiles/dconf/hosts/<machine>.ini`. Données privées (adresses, montages) : `~/.config/qs-desktop.local/`, jamais dans le dépôt.
 
+Les réglages conservés directement dans le BIOS sont documentés dans les notes de `hosts/` lorsqu'elles existent.
+
 ## Documentation
 
 `docs/ARCHITECTURE.md` (fonctionnement), `docs/THEME.md` (charte), `docs/DEVELOPMENT.md` (développer sans casser son bureau),
