@@ -268,5 +268,5 @@ native dans `$XDG_STATE_HOME/qs-desktop/browser-links` (repli `~/.local/state`, 
 propose `scripts/system-setup.sh intel-gpu` : `pkexec` authentifie une transaction qui donne `cap_perfmon=ep` au seul
 `/usr/bin/intel_gpu_top`, sans changer `kernel.perf_event_paranoid` ni lancer Quickshell comme root. Le hook
 `/etc/pacman.d/hooks/90-qs-intel-gpu.hook` réapplique ce droit après une mise à jour du paquet. L'ancien droit et un éventuel
-hook préexistant sont sauvegardés dans `/var/lib/qs-desktop/intel-gpu`, restaurés au retrait système. Simulation et idempotence
+hook préexistant sont sauvegardés dans `/var/lib/qs-desktop/intel-gpu`, restaurés au retrait système ; une capacité modifiée par l’administrateur depuis l’installation est conservée. Simulation et idempotence
 respectées. Sans autorisation, température/fréquence/mémoire accessibles restent disponibles ; aucune charge n'est inventée.

@@ -301,3 +301,14 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
   Avertissements préexistants : icônes NordVPN et Qt textinput ; aucune action VPN. Bancs et sondes de mesure arrêtés.
 - Reste : charge vidéo/jeu et autres machines Intel à vérifier à l'usage, mise à jour réelle du paquet (hook testé sur données
   simulées, pas de réinstallation imposée). NVIDIA et AMD validés ici par simulation.
+
+## Revue du moniteur et de la collecte GPU — passe 1 (2026-11-09)
+
+- Deux défauts reproduits avant correction sur copie isolée : cache mémoire Intel indexé seulement par PID, réattribué à
+  un nouveau processus réutilisant le PID ; retrait des droits Intel qui écrasait un changement administrateur postérieur.
+- Correction : une trame Intel fraîche associe les clients aux identités PID + démarrage connues du moniteur ; les relevés
+  de processus suivants ne réattribuent plus cette mémoire à un PID recyclé. Réinitialisation à la fermeture et perte du flux.
+  Le retrait conserve une capacité modifiée depuis l'installation et retire normalement notre hook inchangé.
+- Contre-épreuves : nouveaux scénarios de `test-gpu-qml.py` et `test-intel-gpu-setup.py` échouent sur le code précédent,
+  passent après correction. Intel avec/sans PMU, AMD, NVIDIA, `test-monitor.py` et `test-gpu.py` : OK.
+  Aucun droit réel ni fichier système modifié par cette revue ; tests d'installation sur faux outils et fichiers jetables.

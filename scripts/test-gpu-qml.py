@@ -58,6 +58,17 @@ ShellRoot {
                 Monitor.sampleGpu();
                 if (Monitor.lastIntelSample !== before) throw new Error("Intel polling must be throttled");
             }
+            if (pmu) {
+                const original = Gpu.intelStats;
+                Monitor.processes = [{pid: 424242, key: "424242:10", gpu: 0}];
+                Gpu.intelStats = Object.assign({}, original, {clients: {"424242": {cached: 16}}});
+                if (Monitor.processes[0].gpu !== 16) throw new Error("Current client memory missing");
+                Monitor.processes = [{pid: 424242, key: "424242:20", gpu: 0}];
+                Monitor.applyIntel();
+                if (Monitor.processes[0].gpu !== 0) throw new Error("Cached Intel memory assigned to reused PID");
+                Gpu.intelStats = Object.assign({}, original, {clients: {"424242": {fresh: 32}}});
+                if (Monitor.processes[0].gpu !== 32) throw new Error("New frame must update the new process");
+            }
             Monitor.processes = [
                 {key: "1:10", gpu: 2, gpuClients: {shared: 2}},
                 {key: "2:10", gpu: 2, gpuClients: {shared: 2}}

@@ -32,7 +32,10 @@ if [[ "$action" == uninstall ]]; then
     if [[ -f "$hook" ]] && ! cmp -s "$source" "$hook"; then
         echo '! Intel GPU hook modified since installation; left in place' >&2; exit 1
     fi
-    if [[ -x "$binary" && -f "$state/caps" ]]; then restore_caps "$(cat "$state/caps")"; fi
+    if [[ -x "$binary" && -f "$state/caps" ]]; then
+        if [[ "$(caps)" == cap_perfmon=ep ]]; then restore_caps "$(cat "$state/caps")"
+        else echo '= Intel GPU capabilities changed since installation; current rights preserved'; fi
+    fi
     rm -f "$hook"
     [[ ! -f "$state/hook" ]] || cp -a "$state/hook" "$hook"
     rm -rf "$state"
