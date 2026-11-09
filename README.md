@@ -47,8 +47,8 @@ Autre distribution qu'Arch : les paquets sont à installer soi-même (noms et co
 - Thème des applications qui le rangent dans leur profil : Obsidian et Thunderbird (choisir Catppuccin Mocha dans leurs
   réglages), Chromium (extension Catppuccin du Chrome Web Store).
 - Fonds d'écran : `install.sh` propose de cloner le dépôt privé `Crystal4276/wallpapers` dans `~/Pictures/Wallpapers` (connexion
-  `gh` ou clé SSH GitHub) et le met à jour aux passages suivants. Fond par défaut : triptyque `green-storm` (son centre sur un
-  seul écran) ; autre choix : utilitaire de fonds d'écran du bureau.
+  `gh` ou clé SSH GitHub) et le met à jour aux passages suivants. Fond par défaut : `simple/wallhaven-j37lop.png` (celui de l'écran
+  central de terrier, `hosts/default.json`) ; autre choix : utilitaire de fonds d'écran du bureau.
 - Logiciels absents des dépôts officiels, avec `paru` (installé par `install.sh`) :
 
 | Logiciel | Commande | Remarque |
