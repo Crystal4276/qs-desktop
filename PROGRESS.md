@@ -76,6 +76,9 @@ Retour arrière de la bascule : `docs/ROLLBACK.md`.
   (BACKLOG). Pas d'application d'install.sh sur ce desktop (inutile : il est la référence).
   **Défaut vu en VM, à traiter avec le laptop** : sur un écran de 1280 px de large, la pilule volume + curseur (apparue avec
   le son) chevauche la pilule CPU / mémoire de la barre principale.
+  Dépôts publics (2026-11-09, à ta demande) : audit de tout l'historique de `qs-desktop` (509 commits, captures comprises)
+  sans secret ni donnée privée ; adresse e-mail des commits gardée (ton choix). `qs-desktop` et `wallpapers` passés en
+  public, accès HTTPS anonyme vérifié : clonage sans compte GitHub ni clé SSH sur une nouvelle machine.
   Constats VM : NetworkManager prend le nom d'hôte du DHCP de QEMU (fichier `hosts/` à ce nom) ; premier lancement de
   Chromium (conditions d'utilisation) et de Spotify par l'autostart.
 - Retours du 2026-11-09 : dossiers lavande (comme ici), pas de btop (remplacé par le moniteur Quickshell), pas de
