@@ -124,6 +124,8 @@ def main():
         check("video/mp4=io.github.celluloid_player.Celluloid.desktop" in mime or "Celluloid" not in mime and not shutil.which("celluloid"),
               "applications par défaut")
         check(any((home / ".local/share/applications").glob("WebApp-*.desktop")), "web apps générées")
+        gs = home / ".local/share/applications/gammastep-indicator.desktop"
+        check(gs.is_symlink() and "NoDisplay=true" in gs.read_text(), "lanceur : Gammastep Indicator masqué")
 
         r = install()
         deluge = (cfg / "deluge/gtk3ui.conf").read_text()

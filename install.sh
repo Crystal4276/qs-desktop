@@ -46,13 +46,13 @@ cache="${XDG_CACHE_HOME:-$HOME/.cache}/qs-desktop/downloads"
 registry="$state/registry"   # une ligne par changement : <genre> <cible> <sauvegarde|->, tabulations
 stamp="$(date +%Y%m%d-%H%M%S)"
 
-# Simulation : archives du thème téléchargées à part, effacées à la fin.
-dry_cache=""
-if [[ -n "$dry" ]]; then dry_cache="$(mktemp -d)"; trap 'rm -rf "$dry_cache"' EXIT; fi
-
 # --- Outils ------------------------------------------------------------------------------------------------------------
 
 section() { printf '\n== %s\n' "$*"; }
+
+# Réglage remis à plus tard (application ouverte…) : signalé tout de suite et rappelé à la fin.
+pending=()
+later() { echo "! $*"; pending+=("$*"); }
 
 run() {     # commande du compte
     printf '+ %s\n' "$*"
@@ -247,10 +247,12 @@ step_packages() {
     fi
     [[ "$games" == yes ]] && mapfile -t -O "${#want[@]}" want < <(pkg_list games.txt)
     # lspci d'abord : il choisit les paquets de la carte graphique de ce même passage.
+    # -Syu : base des paquets à jour (une base périmée ferait échouer le téléchargement), système mis à jour d'abord ; une fois.
+    local sync=-Syu
     if ! command -v lspci >/dev/null; then
-        # -Syu : base des paquets à jour (une base périmée ferait échouer le téléchargement), système mis à jour d'abord.
         printf '+ sudo pacman -Syu --needed %spciutils\n' "${yes:+--noconfirm }"
         [[ -n "$dry" ]] || sudo pacman -Syu --needed ${yes:+--noconfirm} pciutils
+        sync=-S
     fi
     mapfile -t vendors < <(gpu_vendors)
     for v in "${vendors[@]}"; do
@@ -275,8 +277,8 @@ step_packages() {
         echo "= tous les paquets sont installés (${#want[@]})"
     else
         echo "Paquets à installer : $(echo $missing)"
-        printf '+ sudo pacman -Syu --needed %s%s\n' "${yes:+--noconfirm }" "$(echo $missing)"
-        [[ -n "$dry" ]] || sudo pacman -Syu --needed ${yes:+--noconfirm} $missing
+        printf '+ sudo pacman %s --needed %s%s\n' "$sync" "${yes:+--noconfirm }" "$(echo $missing)"
+        [[ -n "$dry" ]] || sudo pacman "$sync" --needed ${yes:+--noconfirm} $missing
     fi
     # paru : seul paquet AUR, construit depuis aur.archlinux.org (binaire déjà compilé : paru-bin).
     if command -v paru >/dev/null || command -v yay >/dev/null; then
@@ -333,6 +335,8 @@ step_configs() {
     link dotfiles/hypr "$config/hypr"
     link dotfiles/fastfetch "$config/fastfetch"
     link dotfiles/starship/starship.toml "$config/starship.toml"
+    # Lanceur : entrée « Gammastep Indicator » masquée (veilleuse réglée par la barre).
+    link dotfiles/applications/gammastep-indicator.desktop "$data/applications/gammastep-indicator.desktop"
     link dotfiles/mpv "$config/mpv"
     # host.conf vit dans le dépôt (dotfiles/mpv est lié) : ignoré par git, choisi pour cette machine.
     local mpv_host
@@ -517,7 +521,8 @@ step_theme() {
 # --- 4. Réglages -------------------------------------------------------------------------------------------------------
 
 dconf_apply() { # fichier ini du dépôt ; anciennes valeurs gardées dans $state/dconf-old.ini pour --uninstall
-    python3 -I "$repo/scripts/dconf-keys.py" ${dry:+--dry-run} apply "$repo/$1" "$state/dconf-old.ini" "$HOME"
+    python3 -I "$repo/scripts/dconf-keys.py" ${dry:+--dry-run} apply "$repo/$1" "$state/dconf-old.ini" "$HOME" \
+        || echo "! dconf : $1 non appliqué (bus de session injoignable ?) ; relancer install.sh depuis la session"
 }
 
 step_settings() {
@@ -560,7 +565,7 @@ PY
 
     # Geany : son fichier de réglages est réécrit par l'application ; seules les clés du thème et des polices changent.
     if running_here '(^|/)geany( |$)'; then
-        echo "! Geany est ouvert : le fermer puis relancer install.sh pour son thème et ses polices"
+        later "Geany est ouvert : le fermer puis relancer install.sh pour son thème et ses polices"
     else
         ini_set "$config/geany/geany.conf" geany color_scheme catppuccin-mocha.conf editor_font "Inter 16" tagbar_font "Symbols Nerd Font Mono 9"
     fi
@@ -596,7 +601,7 @@ PY
 )" || { echo "! $file illisible : icône de Deluge laissée telle quelle"; return 0; }
     if [[ "$content" == same ]]; then echo "= Deluge sans icône dans la barre"; return; fi
     if running_here '(^|/)deluge(-gtk)?( |$)'; then
-        echo "! Deluge est ouvert : le fermer puis relancer install.sh pour retirer son icône de la barre"; return
+        later "Deluge est ouvert : le fermer puis relancer install.sh pour retirer son icône de la barre"; return
     fi
     write_setting "$file" "$content" "enable_system_tray false"
 }
@@ -611,14 +616,23 @@ webapp_profiles() {
 
 chromium_gtk_themes() {
     local profile
-    chromium_gtk_theme "$config/chromium/Default/Preferences"
+    chromium_gtk_theme "$config/chromium" Chromium
     for profile in $(webapp_profiles); do
-        chromium_gtk_theme "$data/ice/profiles/$profile/Default/Preferences"
+        chromium_gtk_theme "$data/ice/profiles/$profile" "web app ${profile%%[0-9]*}"
     done
 }
 
-chromium_gtk_theme() {  # fichier Preferences d'un profil
-    local file="$1" content
+# Profil Chromium ouvert ? Tant qu'il tourne, Chromium garde dans son dossier de données le lien SingletonLock → « machine-pid » :
+# seul ce profil compte (une web app ouverte n'empêche pas de régler le navigateur, et inversement).
+chromium_open() {   # dossier de données (--user-data-dir)
+    local lock
+    [[ -n "${QS_INSTALL_ASSUME_CLOSED:-}" ]] && return 1
+    lock="$(readlink "$1/SingletonLock" 2>/dev/null)" || return 1
+    [[ "$(ps -o comm= -p "${lock##*-}" 2>/dev/null)" == chrom* ]]
+}
+
+chromium_gtk_theme() {  # dossier de données d'un profil, nom affiché
+    local file="$1/Default/Preferences" content
     command -v python3 >/dev/null || return 0
     content="$(python3 -I - "$file" <<'PY'
 import json, sys
@@ -635,8 +649,8 @@ else:
 PY
 )" || { echo "! $file illisible : thème de Chromium laissé tel quel"; return 0; }
     if [[ "$content" == same ]]; then echo "= $file : thème GTK"; return; fi
-    if running_here '(^|/)chromium( |$)'; then
-        echo "! Chromium est ouvert : le fermer puis relancer install.sh pour qu'il suive le thème GTK"; return
+    if chromium_open "$1"; then
+        later "$2 ouvert : le fermer puis relancer install.sh pour le thème GTK"; return
     fi
     # Tous les réglages du navigateur sont dans ce fichier : le registre ne garde que l'ancienne valeur de la clé (« unset » :
     # absente, « nofile » : fichier absent), --uninstall ne remet qu'elle.
@@ -709,9 +723,9 @@ step_webapps() {
         [[ -n "$dry" ]] || { mkdir -p "$data/applications"; printf '%s\n' "$content" > "$out"; written "$out"; }
     done
     local profile manifest
+    content="$(fill_template "$webapps/qs_desktop.open_link.json" json "$profiles" "$webapps")"
     for profile in $(webapp_profiles); do
         manifest="$profiles/$profile/NativeMessagingHosts/qs_desktop.open_link.json"
-        content="$(fill_template "$webapps/qs_desktop.open_link.json" json "$profiles" "$webapps")"
         if [[ -f "$manifest" ]] && [[ "$(cat "$manifest")" == "$content" ]]; then echo "= $manifest"; continue; fi
         backup_once edit "$manifest" cp
         printf '+ %s\n' "$manifest"
@@ -727,8 +741,28 @@ step_webapps() {
 
 # Fonds d'écran : dépôt privé à part (images hors du dépôt du bureau), cloné dans le dossier lu par services/Wallpapers.qml.
 # QS_WALLPAPERS_REPO : autre dépôt (« compte/nom » GitHub, adresse git ou chemin), pour les tests.
+# Même dossier que services/Wallpapers.qml : wallpapersDir de la config machine, sinon « Wallpapers » dans Images (dossier XDG
+# s'il existe, sinon ~/Pictures, comme services/Places.qml).
+wallpapers_dir() {
+    local dir pictures dummy
+    dir="$(host_setting wallpapersDir)"
+    [[ -n "$dir" ]] && { echo "$dir"; return; }
+    if [[ -n "$dry" && ! -f "$config/user-dirs.dirs" ]] && command -v xdg-user-dirs-update >/dev/null; then
+        # Simulation sur un compte neuf : dossiers XDG que créerait xdg-user-dirs-update (sans rien créer).
+        dummy="$(mktemp)"
+        xdg-user-dirs-update --dummy-output "$dummy" 2>/dev/null || true
+        pictures="$(sed -n 's/^XDG_PICTURES_DIR="\$HOME\(.*\)"$/\1/p' "$dummy")"
+        rm -f "$dummy"
+        echo "$HOME${pictures:-/Pictures}/Wallpapers"
+        return
+    fi
+    pictures="$(xdg-user-dir PICTURES 2>/dev/null || true)"
+    [[ -n "$pictures" && -d "$pictures" ]] || pictures="$HOME/Pictures"
+    echo "$pictures/Wallpapers"
+}
+
 step_wallpapers() {
-    local src="${QS_WALLPAPERS_REPO:-Crystal4276/wallpapers}" dir pictures
+    local src="${QS_WALLPAPERS_REPO:-Crystal4276/wallpapers}" dir
     # Machine neuve : les dossiers XDG (Images…) ne sont créés qu'à la première connexion ; xdg-user-dir renverrait alors $HOME.
     if command -v xdg-user-dirs-update >/dev/null && [[ ! -f "$config/user-dirs.dirs" ]]; then
         recorded "$config/user-dirs.dirs" || record seed "$config/user-dirs.dirs" -
@@ -736,12 +770,7 @@ step_wallpapers() {
         run xdg-user-dirs-update
         written "$config/user-dirs.dirs"; written "$config/user-dirs.locale"
     fi
-    # Comme services/Places.qml : dossier Images XDG s'il existe, sinon ~/Pictures.
-    pictures="$(xdg-user-dir PICTURES 2>/dev/null || true)"
-    [[ -n "$pictures" && -d "$pictures" ]] || pictures="$HOME/Pictures"
-    # Même dossier que services/Wallpapers.qml : wallpapersDir de la config machine, sinon « Wallpapers » dans Images.
-    dir="$(host_setting wallpapersDir)"
-    [[ -n "$dir" ]] || dir="$pictures/Wallpapers"
+    dir="$(wallpapers_dir)"
     if [[ -d "$dir/.git" ]]; then
         if [[ -n "$(git -C "$dir" status --porcelain 2>/dev/null)" ]]; then
             echo "= $dir (modifications locales : pas de mise à jour)"
@@ -794,6 +823,24 @@ sub() {
     else echo "! ${1##*/} $* : échec (message ci-dessus) ; la suite continue, relancer install.sh après correction"; fi
 }
 
+# Fond de l'écran de connexion avant la première session : le bureau exporte ensuite le sien, écran par écran, à chaque
+# changement (services/Wallpapers.qml) ; d'ici là, le fond de la config machine (centre d'un triptyque) copié en
+# default.<ext> dans le dossier du compte lu par le greeter (services/Greeter.qml). Dossier à soi : pas de sudo.
+greeter_wallpaper() {
+    local dest="/var/lib/qs-desktop/${USER:-$(id -un)}" path src ext
+    path="$(host_setting wallpaper.path)"
+    src="$(wallpapers_dir)/$path"
+    [[ -n "$path" && -d "$src" ]] && src="$(find "$src" -maxdepth 1 -type f -iname '*center*' | sort | head -n 1)"
+    ext="${src##*.}"; ext="${ext,,}"; [[ "$ext" == jpeg ]] && ext=jpg
+    if [[ -z "$path" || ! -f "$src" || ( "$ext" != jpg && "$ext" != png ) ]]; then
+        echo "- fond de l'écran de connexion : celui du bureau, après la première session"; return
+    fi
+    if cmp -s "$src" "$dest/default.$ext"; then echo "= $dest/default.$ext"; return; fi
+    if [[ -z "$dry" && ! -w "$dest" ]]; then echo "- $dest absent : fond de l'écran de connexion après la première session"; return; fi
+    run rm -f "$dest/default.jpg" "$dest/default.png"
+    run cp "$src" "$dest/default.$ext"
+}
+
 step_system() {
     section "6. Système (sudo, avec confirmation)"
     if ask "Écran de connexion greetd + greeter Quickshell (remplace le gestionnaire actuel) ?" oui; then
@@ -804,6 +851,7 @@ step_system() {
         else
             sub "$repo/scripts/greeter-setup.sh" ${dry:+--dry-run} enable
         fi
+        greeter_wallpaper
     fi
     if ask "Samba, services (réseau, Bluetooth, énergie, VM), groupes et thème Qt du système ?" oui; then
         sub "$repo/scripts/system-setup.sh" ${dry:+--dry-run} install
@@ -842,6 +890,8 @@ do_uninstall() {
                     elif [[ -e "$backup" ]]; then run cp "$backup" "$target"; run rm -f "$backup"
                     else echo "! sauvegarde $backup introuvable : $target laissé tel quel"; fi ;;
                 chromium-theme)
+                    # Profil ouvert : Chromium réécrirait le fichier en se fermant (clé remise quand même, signalé).
+                    chromium_open "${target%/Default/Preferences}" && echo "! Chromium ouvert ($target) : le fermer, sinon son thème GTK reste"
                     printf '+ %s : thème Chromium remis (%s)\n' "$target" "$backup"
                     [[ -n "$dry" || ! -f "$target" ]] || python3 -I - "$target" "$backup" <<'EOF' || echo "! $target illisible : thème Chromium laissé tel quel"
 import json, os, sys
@@ -865,7 +915,9 @@ EOF
                         echo "! $target n'est plus le lien installé : gardé tel quel"; continue
                     fi
                     [[ "$kind" == seed ]] && keep_current "$target" "$backup"
-                    if [[ "$backup" == - ]]; then run rm -rf "$target"
+                    # Réglage écrit à travers un lien de l'utilisateur (stow) qui ne menait à rien : fichier créé retiré, lien gardé.
+                    if [[ "$kind" == seed && "$backup" == - && -L "$target" ]]; then run rm -f "$(readlink -f "$target")"
+                    elif [[ "$backup" == - ]]; then run rm -rf "$target"
                     elif [[ -e "$backup" || -L "$backup" ]]; then run rm -rf "$target"; run mv "$backup" "$target"
                     else echo "! sauvegarde $backup introuvable : $target laissé tel quel"; fi ;;
                 block)
@@ -884,7 +936,10 @@ EOF
                 unit-mask) run systemctl --user unmask "$target" || echo "! $target non démasqué (pas de session utilisateur) : systemctl --user unmask $target" ;;
             esac
         done 3< <(tac "$registry")
-        [[ -f "$state/dconf-old.ini" ]] && python3 -I "$repo/scripts/dconf-keys.py" ${dry:+--dry-run} restore "$state/dconf-old.ini"
+        if [[ -f "$state/dconf-old.ini" ]] && ! python3 -I "$repo/scripts/dconf-keys.py" ${dry:+--dry-run} restore "$state/dconf-old.ini"; then
+            run cp "$state/dconf-old.ini" "$HOME/qs-desktop-dconf-old.ini-$stamp"
+            echo "! dconf : anciennes valeurs non remises (bus de session injoignable ?), gardées dans ~/qs-desktop-dconf-old.ini-$stamp"
+        fi
         run rm -rf "$registry" "$state/dconf-old.ini" "$state/dconf-old.ini.written" "$state/written" "$state/theme-geany"
         [[ -L "$repo/dotfiles/mpv/host.conf" ]] && run rm -f "$repo/dotfiles/mpv/host.conf"
     else
@@ -894,9 +949,9 @@ EOF
         python3 "$repo/scripts/browser-links-setup.py" ${dry:+--dry-run} uninstall 2>/dev/null || echo "= liens Chromium : rien à retirer"
     fi
     if [[ -n "$system" ]] && ask "Défaire aussi les étapes système (greeter → ancien gestionnaire, sonde réseau, Samba, services, groupes) ?"; then
-        "$repo/scripts/system-setup.sh" ${dry:+--dry-run} uninstall
-        "$repo/scripts/network-setup.sh" ${dry:+--dry-run} uninstall
-        "$repo/scripts/greeter-setup.sh" ${dry:+--dry-run} uninstall
+        sub "$repo/scripts/system-setup.sh" ${dry:+--dry-run} uninstall
+        sub "$repo/scripts/network-setup.sh" ${dry:+--dry-run} uninstall
+        sub "$repo/scripts/greeter-setup.sh" ${dry:+--dry-run} uninstall
     fi
     echo "Paquets conservés (paru compris)."
 }
@@ -915,6 +970,10 @@ step_check() {
     if [[ ${#missing[@]} -eq 0 ]]; then echo "= commandes et polices du bureau présentes"; else echo "! absents : ${missing[*]}"; fi
     [[ -n "$dry" ]] && return
     echo
+    if [[ ${#pending[@]} -gt 0 ]]; then
+        echo "Pas encore fait :"
+        printf '  - %s\n' "${pending[@]}"
+    fi
     echo "Terminé. À faire soi-même (README.md) : mot de passe Samba (sudo smbpasswd -a ${USER:-$(id -un)}), première connexion des web apps,"
     echo "thème Catppuccin dans Obsidian / Thunderbird, logiciels hors dépôts (Claude Code, NordVPN, Plex, RustDesk)."
     echo "Nouveaux groupes et thème Qt : effectifs à la prochaine connexion."

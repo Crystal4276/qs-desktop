@@ -392,7 +392,8 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
 - **Copie pour l'écran de connexion** : 3 s après l'affichage, le rendu de chaque écran (image, panorama, triptyque) est enregistré en
   JPEG dans `/var/lib/qs-desktop/<utilisateur>/<md5(description)>.jpg`, lisible par l'utilisateur `greeter` (§ 9). Dossier créé par
   `scripts/greeter-setup.sh`, vérifié au démarrage de Quickshell (absent : aucun rendu). Écriture ratée : retentée au fond affiché
-  suivant. Banc : seulement sous `QS_GREETER_DIR`.
+  suivant. Banc : seulement sous `QS_GREETER_DIR`. Écran inconnu du bureau : le greeter prend le fond exporté d'un autre écran ;
+  avant toute session : `default.png|jpg`, fond de la config machine copié par `install.sh` (étape système).
 - IPC de test : `wallpaper state`, `wallpaper set <kind> <chemin>`.
 
 ### 7.12 Verrouillage (`modules/lock/`)

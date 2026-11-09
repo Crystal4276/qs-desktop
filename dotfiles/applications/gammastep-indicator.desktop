@@ -1,0 +1,7 @@
+[Desktop Entry]
+# Masque l'icône de tray de gammastep (paquet gammastep) dans le lanceur : la veilleuse se règle dans le panneau de réglages
+# de la barre, qui lance gammastep lui-même ; l'indicateur en lancerait un second (et demande python-xdg, absent).
+Type=Application
+Name=Gammastep Indicator
+Exec=gammastep-indicator
+NoDisplay=true

@@ -124,9 +124,14 @@ do_install() {
     # Chaque autre gestionnaire actif (iwd compris : NetworkManager utilise wpa_supplicant) est désactivé, pas désinstallé, et
     # NetworkManager prend la main **au prochain démarrage** : la connexion de l'installation n'est pas coupée. Les réseaux
     # Wi-Fi enregistrés ailleurs (iwd…) ne sont pas repris. Retrait : réactivé. Cas absent avec archinstall + NetworkManager.
-    local switched=""
+    local switched="" nm_iwd=""
+    # NetworkManager réglé sur iwd pour le Wi-Fi (archinstall : « NetworkManager (iwd backend) ») : iwd est alors son moteur,
+    # gardé actif.
+    grep -Eqs '^[[:space:]]*wifi\.backend[[:space:]]*=[[:space:]]*iwd' /etc/NetworkManager/NetworkManager.conf \
+        /etc/NetworkManager/conf.d/*.conf /usr/lib/NetworkManager/conf.d/*.conf && nm_iwd=1
     for u in systemd-networkd.service iwd.service dhcpcd.service connman.service netctl.service; do
         systemctl is-enabled --quiet "$u" 2>/dev/null || continue
+        [[ "$u" == iwd.service && -n "$nm_iwd" ]] && { echo "= iwd gardé : moteur Wi-Fi de NetworkManager (wifi.backend=iwd)"; continue; }
         run systemctl disable "$u"
         record unit-off "$u"
         switched+="$u "
