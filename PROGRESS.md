@@ -56,6 +56,10 @@ Ensuite (pas de phase 13) : maintenance et idées de `BACKLOG.md`, une à la foi
   script système en échec signalé sans arrêter la suite, `pacman -Syu` avant `pciutils`, rien pour Chromium s'il est absent,
   `wallpapersDir` de la config machine respecté, code commun factorisé (profils des web apps, sauvegarde avant écriture),
   archive Geany seulement si besoin.
+- Passe 5 : second `--uninstall` non bloqué, chemins non ASCII / `&` / `|` des web apps corrects, Samba limité à la machine
+  et au réseau des VM (`hosts allow`), bascule vers NetworkManager seulement au redémarrage (connexion jamais coupée),
+  `paru` non bloquant, dconf : clé modifiée depuis gardée au retrait, dossier Images comme `Places.qml`, simulation sans
+  téléchargement. Suite : 0 échec. **Reste : passe 6 de revue** (dernière si négligeable), puis nouvel essai dans ta VM.
 - Dépôts `qs-desktop` et `wallpapers` **publics** (audit de l'historique sans secret ; adresse e-mail des commits gardée).
 
 ## Reprise sur le laptop

@@ -287,8 +287,10 @@ step_packages() {
         else
             local tmp
             tmp="$(mktemp -d)"
-            git clone --depth 1 https://aur.archlinux.org/paru-bin.git "$tmp/paru-bin"
-            (cd "$tmp/paru-bin" && makepkg -si --noconfirm)
+            # Optionnel (mises à jour AUR) : un échec (AUR injoignable…) n'arrête pas l'installation.
+            { git clone -q --depth 1 https://aur.archlinux.org/paru-bin.git "$tmp/paru-bin" \
+                && (cd "$tmp/paru-bin" && makepkg -si --noconfirm); } \
+                || echo "! paru non installé (AUR injoignable ?) : relancer install.sh plus tard"
             rm -rf "$tmp"
         fi
     fi
@@ -361,6 +363,8 @@ touch_bashrc() {
 
 # --- 3. Thème ----------------------------------------------------------------------------------------------------------
 
+theme_sha() { awk -v n="$1" '$1 == n { print $2 }' "$repo/deps/themes.txt"; }   # empreinte d'une archive de deps/themes.txt
+
 # Archive de deps/themes.txt : téléchargée une fois dans le cache, vérifiée, extraite dans un dossier temporaire.
 fetch() {       # nom → affiche le dossier extrait
     local name="$1" sha url file dir
@@ -369,7 +373,8 @@ fetch() {       # nom → affiche le dossier extrait
     # Simulation : archive déjà vérifiée du cache lue telle quelle ; sinon téléchargement dans un dossier temporaire.
     local store="$cache"
     if [[ -n "$dry" ]] && ! echo "$sha  $cache/$name-${sha:0:12}.${url##*.}" | sha256sum -c --status 2>/dev/null; then
-        store="$dry_cache"
+        echo "+ téléchargement de $name (${url##*/}), vérification et installation" >&2
+        return 1
     fi
     file="$store/$name-${sha:0:12}.${url##*.}"
     if [[ ! -f "$file" ]] || ! echo "$sha  $file" | sha256sum -c --status; then
@@ -391,7 +396,7 @@ fetch() {       # nom → affiche le dossier extrait
 # Dossier du thème copié en entier ; un dossier déjà là sans notre marque est sauvegardé. Marque = empreinte de l'archive.
 put_dir() {     # source cible nom-de-l'archive
     local mark="$2/.qs-desktop" sha
-    sha="$(awk -v n="$3" '$1 == n { print $2 }' "$repo/deps/themes.txt")"
+    sha="$(theme_sha "$3")"
     if [[ -f "$mark" && "$(cat "$mark")" == "$sha" ]]; then echo "= $2"; return; fi
     if [[ -e "$2" ]]; then
         if recorded "$2"; then run rm -rf "$2"; else backup_once link "$2" mv; fi
@@ -442,7 +447,7 @@ papirus_overlay() {     # dossier src/ de catppuccin/papirus-folders
 # Dossiers du thème déjà installés depuis cette archive (marque = son empreinte) : rien à télécharger ni à extraire.
 theme_current() {   # nom-de-l'archive dossier…
     local sha d
-    sha="$(awk -v n="$1" '$1 == n { print $2 }' "$repo/deps/themes.txt")"; shift
+    sha="$(theme_sha "$1")"; shift
     for d in "$@"; do [[ "$(cat "$d/.qs-desktop" 2>/dev/null)" == "$sha" ]] || return 1; done
     for d in "$@"; do echo "= $d"; done
 }
@@ -482,7 +487,7 @@ step_theme() {
 
     # Geany : un seul fichier ; marque = empreinte de l'archive dont il vient (dans l'état d'install.sh).
     local geany_cs="$config/geany/colorschemes/catppuccin-mocha.conf" geany_sha
-    geany_sha="$(awk '$1 == "geany" { print $2 }' "$repo/deps/themes.txt")"
+    geany_sha="$(theme_sha geany)"
     if [[ -f "$geany_cs" && "$(cat "$state/theme-geany" 2>/dev/null)" == "$geany_sha $(sha256sum < "$geany_cs")" ]]; then
         echo "= $geany_cs"
     elif d="$(fetch geany)"; then
@@ -672,28 +677,41 @@ write_setting() {   # fichier contenu description [keep : déjà noté au regist
     written "$1"
 }
 
+# Modèle des web apps développé : @PROFILES@ et @WEBAPPS@ remplacés par les chemins tels quels (accents, &, | compris).
+# desktop : argument entier entre guillemets dans Exec si un chemin a une espace ; json : chemin échappé pour JSON.
+fill_template() {   # modèle desktop|json profils webapps
+    python3 -I - "$@" <<'PY'
+import json, re, sys
+tpl, kind, profiles, webapps = sys.argv[1:]
+text = open(tpl, encoding="utf-8").read()
+if kind == "json":
+    text = text.replace("@WEBAPPS@", json.dumps(webapps, ensure_ascii=False)[1:-1])
+else:
+    if " " in profiles + webapps:
+        text = re.sub(r'(--(?:user-data-dir|load-extension)=@(?:PROFILES|WEBAPPS)@[^ ]*)', r'"\1"', text)
+    text = text.replace("@PROFILES@", profiles).replace("@WEBAPPS@", webapps)
+print(text, end="")
+PY
+}
+
 # Web apps (deps/README.md, « Web apps ») : lanceurs et manifestes de l'hôte natif développés depuis dotfiles/webapps.
 step_webapps() {
     local webapps="$repo/dotfiles/webapps" profiles="$data/ice/profiles" tpl name out content
     if [[ "$webapps$profiles" == *[\"\`\$\\%]* ]]; then
         echo "! chemin du dépôt ou des profils avec \" \` \$ \\ ou % : web apps non installées"; return
     fi
-    local quote=""
-    [[ "$profiles$webapps" == *" "* ]] && quote='s/(--(user-data-dir|load-extension)=@(PROFILES|WEBAPPS)@[^ ]*)/"\1"/g'
     for tpl in "$webapps"/applications/*.desktop; do
         name="$(basename "$tpl")"; out="$data/applications/$name"
-        # Chemin avec espace : argument entier entre guillemets dans Exec.
-        content="$(sed -E "${quote:-}" "$tpl" | sed -e "s|@PROFILES@|$profiles|g" -e "s|@WEBAPPS@|$webapps|g")"
+        content="$(fill_template "$tpl" desktop "$profiles" "$webapps")"
         if [[ -f "$out" ]] && [[ "$(cat "$out")" == "$content" ]]; then echo "= $out"; continue; fi
         backup_once edit "$out" cp
         printf '+ %s (modèle %s)\n' "$out" "$name"
         [[ -n "$dry" ]] || { mkdir -p "$data/applications"; printf '%s\n' "$content" > "$out"; written "$out"; }
     done
-    local profile manifest json
-    json="$(python3 -I -c 'import json,sys; print(json.dumps(sys.argv[1])[1:-1])' "$webapps")"
+    local profile manifest
     for profile in $(webapp_profiles); do
         manifest="$profiles/$profile/NativeMessagingHosts/qs_desktop.open_link.json"
-        content="$(sed "s|@WEBAPPS@|$json|g" "$webapps/qs_desktop.open_link.json")"
+        content="$(fill_template "$webapps/qs_desktop.open_link.json" json "$profiles" "$webapps")"
         if [[ -f "$manifest" ]] && [[ "$(cat "$manifest")" == "$content" ]]; then echo "= $manifest"; continue; fi
         backup_once edit "$manifest" cp
         printf '+ %s\n' "$manifest"
@@ -718,8 +736,9 @@ step_wallpapers() {
         run xdg-user-dirs-update
         written "$config/user-dirs.dirs"; written "$config/user-dirs.locale"
     fi
+    # Comme services/Places.qml : dossier Images XDG s'il existe, sinon ~/Pictures.
     pictures="$(xdg-user-dir PICTURES 2>/dev/null || true)"
-    [[ -z "$pictures" || "$pictures" == "$HOME" ]] && pictures="$HOME/Pictures"
+    [[ -n "$pictures" && -d "$pictures" ]] || pictures="$HOME/Pictures"
     # Même dossier que services/Wallpapers.qml : wallpapersDir de la config machine, sinon « Wallpapers » dans Images.
     dir="$(host_setting wallpapersDir)"
     [[ -n "$dir" ]] || dir="$pictures/Wallpapers"
@@ -866,12 +885,14 @@ EOF
             esac
         done 3< <(tac "$registry")
         [[ -f "$state/dconf-old.ini" ]] && python3 -I "$repo/scripts/dconf-keys.py" ${dry:+--dry-run} restore "$state/dconf-old.ini"
-        run rm -rf "$registry" "$state/dconf-old.ini" "$state/written" "$state/theme-geany"
+        run rm -rf "$registry" "$state/dconf-old.ini" "$state/dconf-old.ini.written" "$state/written" "$state/theme-geany"
         [[ -L "$repo/dotfiles/mpv/host.conf" ]] && run rm -f "$repo/dotfiles/mpv/host.conf"
     else
         echo "= rien à retirer ($registry absent)"
     fi
-    command -v chromium >/dev/null && python3 "$repo/scripts/browser-links-setup.py" ${dry:+--dry-run} uninstall
+    if command -v chromium >/dev/null; then
+        python3 "$repo/scripts/browser-links-setup.py" ${dry:+--dry-run} uninstall 2>/dev/null || echo "= liens Chromium : rien à retirer"
+    fi
     if [[ -n "$system" ]] && ask "Défaire aussi les étapes système (greeter → ancien gestionnaire, sonde réseau, Samba, services, groupes) ?"; then
         "$repo/scripts/system-setup.sh" ${dry:+--dry-run} uninstall
         "$repo/scripts/network-setup.sh" ${dry:+--dry-run} uninstall

@@ -3,7 +3,8 @@
 
 apply <réglages.ini> <anciennes.ini> <HOME> : écrit seulement les clés qui diffèrent ; l'ancienne valeur de chaque clé changée
     est notée une seule fois dans <anciennes.ini> (« @unset » si elle n'était pas définie), pour `restore`.
-restore <anciennes.ini> : remet ces valeurs (et efface les clés qui n'existaient pas).
+restore <anciennes.ini> : remet ces valeurs (et efface les clés qui n'existaient pas), sauf pour une clé modifiée depuis
+    l'installation (valeur écrite notée dans <anciennes.ini>.written) : elle est gardée.
 --dry-run : affiche sans écrire. Format des .ini : sections = chemins dconf sans « / » initial, valeurs GVariant texte
 (comme `dconf dump`) ; @HOME@ remplacé par le dossier personnel.
 """
@@ -40,7 +41,7 @@ def act(dry, *args):
 
 
 def apply(dry, settings, old_path, home):
-    wanted, old = read_ini(settings), read_ini(old_path)
+    wanted, old, new = read_ini(settings), read_ini(old_path), read_ini(old_path + ".written")
     todo = []
     for section in wanted.sections():
         for key, value in wanted.items(section):
@@ -52,6 +53,9 @@ def apply(dry, settings, old_path, home):
                 old.add_section(section)
             if not old.has_option(section, key):
                 old.set(section, key, current or "@unset")
+            if not new.has_section(section):
+                new.add_section(section)
+            new.set(section, key, value)
             todo.append((f"/{section}/{key}", value))
     if not todo:
         print(f"= dconf : {settings.rsplit('/', 2)[-2]}/{settings.rsplit('/', 1)[-1]} déjà appliqué")
@@ -61,15 +65,22 @@ def apply(dry, settings, old_path, home):
         os.makedirs(os.path.dirname(old_path), exist_ok=True)
         with open(old_path, "w", encoding="utf-8") as f:
             old.write(f)
+        with open(old_path + ".written", "w", encoding="utf-8") as f:
+            new.write(f)
     for path, value in todo:
         act(dry, "write", path, value)
 
 
 def restore(dry, old_path):
-    old = read_ini(old_path)
+    old, new = read_ini(old_path), read_ini(old_path + ".written")
     for section in old.sections():
         for key, value in old.items(section):
             path = f"/{section}/{key}"
+            written = new.get(section, key, fallback=None)
+            current = dconf("read", path)
+            if written is not None and current and not same(current, written):
+                print(f"! dconf {path} modifié depuis l'installation : gardé ({current})")
+                continue
             if value == "@unset":
                 act(dry, "reset", path)
             else:

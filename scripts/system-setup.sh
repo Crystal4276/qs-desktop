@@ -121,15 +121,23 @@ do_install() {
     getent group kvm >/dev/null && add_group kvm
     # NetworkManager (module réseau du bureau) : jamais à côté d'un autre gestionnaire de réseau déjà actif.
     local u
-    # Chaque autre gestionnaire actif (iwd compris : NetworkManager utilise wpa_supplicant) est désactivé, pas désinstallé ; la
-    # connexion peut couper quelques secondes. Retrait : réactivé.
+    # Chaque autre gestionnaire actif (iwd compris : NetworkManager utilise wpa_supplicant) est désactivé, pas désinstallé, et
+    # NetworkManager prend la main **au prochain démarrage** : la connexion de l'installation n'est pas coupée. Les réseaux
+    # Wi-Fi enregistrés ailleurs (iwd…) ne sont pas repris. Retrait : réactivé. Cas absent avec archinstall + NetworkManager.
+    local switched=""
     for u in systemd-networkd.service iwd.service dhcpcd.service connman.service netctl.service; do
         systemctl is-enabled --quiet "$u" 2>/dev/null || continue
-        echo "! $u gère le réseau : remplacé par NetworkManager"
-        run systemctl disable --now "$u"
+        run systemctl disable "$u"
         record unit-off "$u"
+        switched+="$u "
     done
-    enable_unit NetworkManager.service
+    if [[ -n "$switched" ]] && ! systemctl is-enabled --quiet NetworkManager.service 2>/dev/null; then
+        run systemctl enable NetworkManager.service
+        record unit NetworkManager.service
+        echo "! réseau : ${switched}désactivé(s), NetworkManager au prochain démarrage ; Wi-Fi à reconnecter (nmtui ou le bureau)"
+    else
+        enable_unit NetworkManager.service
+    fi
     local libvirt_new=""
     systemctl is-enabled --quiet libvirtd.service 2>/dev/null || libvirt_new=1
     for unit in bluetooth.service power-profiles-daemon.service smb.service libvirtd.service; do
