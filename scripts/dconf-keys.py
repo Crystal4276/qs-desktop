@@ -8,6 +8,7 @@ restore <anciennes.ini> : remet ces valeurs (et efface les clés qui n'existaien
 (comme `dconf dump`) ; @HOME@ remplacé par le dossier personnel.
 """
 import configparser
+import os
 import subprocess
 import sys
 
@@ -40,27 +41,28 @@ def act(dry, *args):
 
 def apply(dry, settings, old_path, home):
     wanted, old = read_ini(settings), read_ini(old_path)
-    changed = False
+    todo = []
     for section in wanted.sections():
         for key, value in wanted.items(section):
             value = value.replace("@HOME@", home)
-            path = f"/{section}/{key}"
-            current = dconf("read", path)
+            current = dconf("read", f"/{section}/{key}")
             if current and same(current, value):
                 continue
             if not old.has_section(section):
                 old.add_section(section)
             if not old.has_option(section, key):
                 old.set(section, key, current or "@unset")
-            act(dry, "write", path, value)
-            changed = True
-    if not changed:
+            todo.append((f"/{section}/{key}", value))
+    if not todo:
         print(f"= dconf : {settings.rsplit('/', 2)[-2]}/{settings.rsplit('/', 1)[-1]} déjà appliqué")
-    elif not dry:
-        import os
+        return
+    # Anciennes valeurs enregistrées avant la première écriture : une écriture qui échoue en route reste réversible.
+    if not dry:
         os.makedirs(os.path.dirname(old_path), exist_ok=True)
         with open(old_path, "w", encoding="utf-8") as f:
             old.write(f)
+    for path, value in todo:
+        act(dry, "write", path, value)
 
 
 def restore(dry, old_path):

@@ -17,7 +17,7 @@ var=/var/lib/qs-desktop
 backups="$var/backups"        # « fichier sauvegarde » par ligne ; « fichier - » : absent avant nous (retiré par uninstall)
 previous_dm="$var/previous-dm"
 [[ $EUID -ne 0 ]] || { echo "À lancer en utilisateur, sans sudo (sudo est appelé pour chaque commande)." >&2; exit 1; }
-user="$USER"
+user="${USER:-$(id -un)}"
 stamp="$(date +%Y%m%d-%H%M%S)"
 dry=""
 
@@ -90,7 +90,8 @@ do_install() {
     # Fichiers de cette machine pas encore committés (créés par install.sh) : session par défaut, écrans du greeter.
     local host f
     host="$(cat /proc/sys/kernel/hostname)"
-    for f in "hosts/$host.json" dotfiles/sway/hosts/"$host".*; do
+    for f in "$repo/hosts/$host.json" "$repo"/dotfiles/sway/hosts/"$host".*; do
+        f="${f#"$repo"/}"
         [[ -f "$repo/$f" ]] && ! git -C "$repo" ls-files --error-unmatch "$f" >/dev/null 2>&1 \
             && { echo "+ $f (pas encore committé) ajouté à la copie"; install -D -m 644 "$repo/$f" "$tree/$f"; }
     done

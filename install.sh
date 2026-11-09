@@ -170,7 +170,8 @@ new = "\n".join(out) + "\n"
 old = "\n".join(lines) + "\n" if lines else ""
 print("same" if new == old else new, end="")
 EOF
-)"
+)" || { echo "! $file illisible (encodage ?) : non réglé"; return 0; }
+    [[ -n "$changes" ]] || return 0
     if [[ "$changes" == same ]]; then echo "= $file [$section] ${*:1:1}…"; return; fi
     if [[ -e "$file" ]]; then backup_once edit "$file" cp
     elif ! recorded "$file"; then record seed "$file" -; fi
@@ -217,6 +218,12 @@ step_packages() {
     mapfile -t want < <(pkg_list arch-pacman.txt apps.txt)
     if [[ "$games" == ask ]]; then
         if [[ -n "$yes" ]]; then games=no; elif ask "Installer aussi le profil jeux (Steam, gamescope, Lutris, GameMode) ?"; then games=yes; else games=no; fi
+    fi
+    # Steam et les paquets lib32 viennent de [multilib] : sans lui, profil jeux retiré (pacman échouerait et arrêterait tout).
+    local multilib=""
+    grep -q '^\[multilib\]' /etc/pacman.conf && multilib=1
+    if [[ "$games" == yes && -z "$multilib" && -z "$dry" ]]; then
+        echo "! [multilib] inactif : profil jeux non installé (relancer install.sh et accepter multilib)"; games=no
     fi
     [[ "$games" == yes ]] && mapfile -t -O "${#want[@]}" want < <(pkg_list games.txt)
     mapfile -t vendors < <(gpu_vendors)
@@ -449,11 +456,11 @@ dconf_apply() { # fichier ini du dépôt ; anciennes valeurs gardées dans $stat
 
 step_settings() {
     section "4. Réglages des applications"
-    if command -v dconf >/dev/null && command -v python3 >/dev/null; then
+    if command -v dconf >/dev/null && python3 -c 'import gi' 2>/dev/null; then
         dconf_apply dotfiles/dconf/desktop.ini
         [[ -f "$repo/dotfiles/dconf/hosts/$host.ini" ]] && dconf_apply "dotfiles/dconf/hosts/$host.ini"
     else
-        echo "- dconf absent : réglages GSettings ignorés"
+        echo "- dconf ou python-gobject absent : réglages GSettings ignorés"
     fi
 
     # Applications par défaut.
@@ -678,6 +685,7 @@ step_system() {
     section "6. Système (sudo, avec confirmation)"
     if ask "Écran de connexion greetd + greeter Quickshell (remplace le gestionnaire actuel) ?" oui; then
         sub "$repo/scripts/greeter-setup.sh" ${dry:+--dry-run} install
+        sub "$repo/scripts/system-setup.sh" ${dry:+--dry-run} cursor
         if [[ -n "$dry" && ! -d /usr/local/share/qs-desktop ]]; then
             echo "+ scripts/greeter-setup.sh enable (après l'installation ci-dessus)"
         else
@@ -712,7 +720,7 @@ do_uninstall() {
                     else echo "! sauvegarde $backup introuvable : $target laissé tel quel"; fi ;;
                 chromium-theme)
                     printf '+ %s : thème Chromium remis (%s)\n' "$target" "$backup"
-                    [[ -n "$dry" || ! -f "$target" ]] || python3 -I - "$target" "$backup" <<'EOF'
+                    [[ -n "$dry" || ! -f "$target" ]] || python3 -I - "$target" "$backup" <<'EOF' || echo "! $target illisible : thème Chromium laissé tel quel"
 import json, os, sys
 path, old = sys.argv[1], sys.argv[2]
 prefs = json.load(open(path, encoding="utf-8"))
@@ -729,12 +737,16 @@ else:
 EOF
                     ;;
                 link|seed)
+                    # Lien remplacé depuis par un vrai fichier ou dossier (sauf dossiers du thème, marqués) : gardé, jamais supprimé.
+                    if [[ "$kind" == link && -e "$target" && ! -L "$target" && ! -f "$target/.qs-desktop" ]]; then
+                        echo "! $target n'est plus le lien installé : gardé tel quel"; continue
+                    fi
                     if [[ "$backup" == - ]]; then run rm -rf "$target"
                     elif [[ -e "$backup" || -L "$backup" ]]; then run rm -rf "$target"; run mv "$backup" "$target"
                     else echo "! sauvegarde $backup introuvable : $target laissé tel quel"; fi ;;
                 block)
                     printf '+ retrait du bloc de %s\n' "$target"
-                    [[ -n "$dry" ]] || python3 -I - "$target" "$backup" <<'EOF'
+                    [[ -n "$dry" || ! -f "$target" ]] || python3 -I - "$target" "$backup" <<'EOF' || echo "! $target : bloc non retiré"
 import sys
 path, marker = sys.argv[1], sys.argv[2]
 lines = open(path, encoding="utf-8").read().split("\n")
@@ -777,7 +789,7 @@ step_check() {
     if [[ ${#missing[@]} -eq 0 ]]; then echo "= commandes et polices du bureau présentes"; else echo "! absents : ${missing[*]}"; fi
     [[ -n "$dry" ]] && return
     echo
-    echo "Terminé. À faire soi-même (README.md) : mot de passe Samba (sudo smbpasswd -a $USER), première connexion des web apps,"
+    echo "Terminé. À faire soi-même (README.md) : mot de passe Samba (sudo smbpasswd -a ${USER:-$(id -un)}), première connexion des web apps,"
     echo "thème Catppuccin dans Obsidian / Thunderbird, logiciels hors dépôts (Claude Code, NordVPN, Plex, RustDesk)."
     echo "Nouveaux groupes et thème Qt : effectifs à la prochaine connexion."
 }

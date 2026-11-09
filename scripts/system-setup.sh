@@ -6,6 +6,7 @@
 #         system-setup.sh [--dry-run] install     Samba (partages utilisateur, dotfiles/samba/smb.conf), QT_QPA_PLATFORMTHEME dans
 #                                                 /etc/environment, groupes (libvirt, kvm, sambashare), services (réseau, Bluetooth,
 #                                                 profils d'énergie, Samba, libvirt), réseau « default » des VM démarré au boot
+#         system-setup.sh [--dry-run] cursor      curseur du thème copié pour l'écran de connexion (/usr/local/share/icons)
 #         system-setup.sh [--dry-run] uninstall   tout ce qui a été changé est remis comme avant (fichiers, groupes, services)
 #         --dry-run : affiche les commandes sans rien modifier.
 set -euo pipefail
@@ -14,7 +15,7 @@ repo="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
 state=/var/lib/qs-desktop/system-setup
 registry="$state/registry"    # une ligne par changement : file <cible> <sauvegarde|->, group <groupe>, unit <service>, net <réseau>
 [[ $EUID -ne 0 ]] || { echo "À lancer en utilisateur, sans sudo (sudo est appelé pour chaque commande)." >&2; exit 1; }
-user="$USER"
+user="${USER:-$(id -un)}"
 stamp="$(date +%Y%m%d-%H%M%S)"
 dry=""
 
@@ -115,23 +116,6 @@ do_install() {
         run sh -c "echo 'QT_QPA_PLATFORMTHEME=qt6ct' >> /etc/environment"
     fi
 
-    # Curseur du thème pour l'écran de connexion (l'utilisateur greeter ne lit pas le compte) : copie de celui installé par
-    # install.sh dans le compte, si aucun paquet ne le fournit.
-    local cursor=catppuccin-mocha-green-cursors home_cursor="${XDG_DATA_HOME:-$HOME/.local/share}/icons/catppuccin-mocha-green-cursors"
-    if [[ -d "/usr/share/icons/$cursor" ]]; then
-        echo "= curseur $cursor fourni par un paquet"
-    elif [[ -d "$home_cursor" ]]; then
-        if diff -rq "$home_cursor" "/usr/local/share/icons/$cursor" >/dev/null 2>&1; then
-            echo "= /usr/local/share/icons/$cursor à jour"
-        else
-            recorded file "/usr/local/share/icons/$cursor" || record file "/usr/local/share/icons/$cursor" -
-            run rm -rf "/usr/local/share/icons/$cursor"
-            run install -d -m 755 /usr/local/share/icons
-            run cp -r --no-preserve=ownership "$home_cursor" "/usr/local/share/icons/$cursor"
-            run chmod -R u=rwX,go=rX "/usr/local/share/icons/$cursor"
-        fi
-    fi
-
     getent group libvirt >/dev/null && add_group libvirt
     getent group kvm >/dev/null && add_group kvm
     for unit in NetworkManager.service bluetooth.service power-profiles-daemon.service smb.service libvirtd.service; do
@@ -156,6 +140,26 @@ do_install() {
     echo "Groupes ajoutés : effectifs à la prochaine connexion. Mot de passe Samba (demandé par Windows) : sudo smbpasswd -a $user"
 }
 
+# Curseur du thème pour l'écran de connexion (l'utilisateur greeter ne lit pas le compte) : copie de celui installé par
+# install.sh dans le compte, si aucun paquet ne le fournit. Appelé avec l'étape du greeter.
+do_cursor() {
+    local cursor=catppuccin-mocha-green-cursors home_cursor="${XDG_DATA_HOME:-$HOME/.local/share}/icons/catppuccin-mocha-green-cursors"
+    if [[ -d "/usr/share/icons/$cursor" ]]; then
+        echo "= curseur $cursor fourni par un paquet"
+    elif [[ -d "$home_cursor" ]]; then
+        if diff -rq "$home_cursor" "/usr/local/share/icons/$cursor" >/dev/null 2>&1; then
+            echo "= /usr/local/share/icons/$cursor à jour"
+        else
+            recorded file "/usr/local/share/icons/$cursor" || record file "/usr/local/share/icons/$cursor" -
+            run rm -rf "/usr/local/share/icons/$cursor"
+            run install -d -m 755 /usr/local/share/icons
+            run cp -r --no-preserve=ownership "$home_cursor" "/usr/local/share/icons/$cursor"
+            run chmod -R u=rwX,go=rX "/usr/local/share/icons/$cursor"
+        fi
+    fi
+
+}
+
 do_uninstall() {
     [[ -f "$registry" ]] || { echo "= rien à défaire ($registry absent)"; return; }
     local kind target backup
@@ -163,7 +167,9 @@ do_uninstall() {
     while read -r kind target backup <&3; do
         case "$kind" in
             file)
-                if [[ "$backup" == - ]]; then run rm -rf "$target"
+                # multilib gardé : les paquets lib32 / Steam installés restent (install.sh --uninstall garde les paquets).
+                if [[ "$target" == /etc/pacman.conf ]]; then echo "= [multilib] gardé (paquets installés conservés) ; origine : $backup"
+                elif [[ "$backup" == - ]]; then run rm -rf "$target"
                 elif [[ -e "$backup" ]]; then run mv -f "$backup" "$target"
                 else echo "! sauvegarde $backup introuvable : $target laissé tel quel"; fi ;;
             group) run gpasswd -d "$user" "$target" || true ;;
@@ -177,7 +183,8 @@ do_uninstall() {
 [[ "${1:-}" == --dry-run ]] && { dry=1; shift; }
 case "${1:-}" in
     multilib) do_multilib ;;
+    cursor) do_cursor ;;
     install) do_install ;;
     uninstall) do_uninstall ;;
-    *) sed -n '5,12p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 2 ;;
+    *) sed -n '5,13p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 2 ;;
 esac
