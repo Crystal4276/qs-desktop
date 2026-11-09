@@ -68,6 +68,29 @@ Variants {
         exclusiveZone: Theme.bar.exclusiveZone
         color: Theme.bar.background
 
+        // Budgets calculés sur les largeurs naturelles : jamais sur le texte déjà abrégé.
+        readonly property var groups: [...leftSide.groups, ...rightSide.groups]
+        function fixedWidth(level: int): real {
+            const visibleGroups = groups.map(group => group.filter(slot => slot.item && slot.item.shown !== false
+                && !(level >= 2 && ["gpu", "cpu", "memory"].includes(slot.modelData)))).filter(group => group.length);
+            return visibleGroups.reduce((total, group) => total + 2 * Theme.bar.pillBorder
+                + group.reduce((sum, slot, index) => {
+                    const item = slot.item;
+                    let width = slot.modelData === "mpris" ? item.minimumWidth
+                        : slot.modelData === "clockDate" ? (level >= 1 ? item.compactContentWidth : item.naturalContentWidth)
+                        : item.contentWidth ?? item.implicitWidth;
+                    // Mesure du contenu indépendante du padding du profil affiché.
+                    if (item.contentWidth !== undefined)
+                        width = Math.max(item.minWidth, width + item.horizontalPadding
+                            + (index === group.length - 1 ? item.horizontalPadding : 0));
+                    return sum + width;
+                }, 0), Math.max(0, visibleGroups.length - 1) * Theme.bar.spacing);
+        }
+        readonly property real availableWidth: Math.max(0, width - 2 * Theme.bar.marginSide)
+        readonly property int compactLevel: fixedWidth(0) <= availableWidth ? 0 : fixedWidth(1) <= availableWidth ? 1 : 2
+        readonly property int musicCount: groups.reduce((all, group) => all.concat(group), []).filter(slot => slot.modelData === "mpris" && slot.item?.shown).length
+        readonly property real musicExtra: Math.max(0, availableWidth - fixedWidth(compactLevel)) / Math.max(1, musicCount)
+
         // Nom de module (hosts/*.json, ARCHITECTURE § 4) → composant.
         // Un module peut se masquer (`shown` faux) ; une pilule dont tous les modules sont masqués disparaît.
         readonly property var modules: ({
@@ -101,7 +124,7 @@ Variants {
         }
         Component {
             id: mprisModule
-            Mpris {}
+            Mpris { extraWidth: bar.musicExtra }
         }
         Component {
             id: volumeModule
@@ -135,6 +158,7 @@ Variants {
             id: clockDateModule
             Clock {
                 showDate: true
+                compact: bar.compactLevel >= 1
             }
         }
         Component {
@@ -162,18 +186,21 @@ Variants {
             id: side
 
             property var pills: []
+            readonly property var groups: Array.from({ length: pillRepeater.count }, (_, i) => pillRepeater.itemAt(i)?.slots ?? [])
 
             anchors.top: parent.top
             anchors.topMargin: Theme.bar.marginTop
             spacing: Theme.bar.spacing
 
             Repeater {
+                id: pillRepeater
                 model: side.pills
 
                 Pill {
                     id: pill
 
                     required property var modelData
+                    readonly property var slots: Array.from({ length: pillModules.count }, (_, i) => pillModules.itemAt(i)).filter(s => s !== null)
 
                     // Visible si l'un de ses modules veut s'afficher. Pas d'après la largeur de la rangée : une pilule
                     // cachée rend ses modules invisibles pour la mise en page, elle ne réapparaîtrait jamais.
@@ -197,6 +224,7 @@ Variants {
                             Layout.fillHeight: true
                             // Le module veut s'afficher (`visible` lu ici serait la visibilité effective, fausse si la pilule est cachée).
                             readonly property bool wanted: item !== null && item.shown !== false
+                                && !(bar.compactLevel >= 2 && ["gpu", "cpu", "memory"].includes(modelData))
 
                             sourceComponent: bar.modules[modelData] ?? null
                             visible: wanted
@@ -230,6 +258,7 @@ Variants {
         // Démarrage : contenu affiché en même temps que les fonds d'écran (Wallpapers.startupShown) ; la fenêtre, elle, est là dès
         // le début (zone réservée : les fenêtres ne sont pas réarrangées à son arrivée).
         Side {
+            id: leftSide
             visible: Wallpapers.startupShown
             anchors.left: parent.left
             anchors.leftMargin: Theme.bar.marginSide
@@ -237,6 +266,7 @@ Variants {
         }
 
         Side {
+            id: rightSide
             visible: Wallpapers.startupShown
             anchors.right: parent.right
             anchors.rightMargin: Theme.bar.marginSide

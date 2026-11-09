@@ -72,7 +72,12 @@ Règles pour Qt :
 **Barre** (`Theme.bar`) : zone exclusive 65 px (10 de marge haute + pilule de 55 bordure comprise) ; pilules fond `mantle`, bordure
 1 px `overlay0`, rayon 20 ; 10 px entre pilules et sur les côtés ; padding des modules 10 ; une seule bordure arrondie autour de chaque
 groupe de modules (pilule de la config machine). Espaces de travail : glyphes 34 px, couleur par position dans le bloc (`teal`,
-`sapphire`, `blue`), espace affiché avec un halo (ombre floue d'un `Canvas`), vide en `surface1`. Couleurs des modules : `Theme.module`.
+`sapphire`, `blue`), espace affiché avec un halo (ombre floue d'un `Canvas`), vide en `surface1`. Couleurs des modules : `Theme.module` ; luminosité `peach`, batterie `teal` (rouge à 30 % ou moins hors charge).
+
+La musique se dimensionne sur la place restante par écran : artiste et titre abrégés séparément, puis retirés si nécessaire,
+sans perdre les commandes du lecteur. Si les modules fixes manquent encore de place, la date disparaît (heure conservée),
+puis les statistiques GPU / CPU / mémoire ; restauration automatique quand la largeur revient. Le volume et son curseur restent
+affichés. Luminosité et batterie partagent la dernière pilule avec le tray et les réglages dans la configuration par défaut.
 
 **Panneaux** (`Theme.panel`, cartes du tray, calendrier, réglages, audio, polkit) : style commun — fond `mantle`, bordure 1 px
 `overlay0`, rayon 20, largeur 500 (celle du lanceur), 10 px sous la pilule ; titre jaune ; sections, lignes, boutons, interrupteurs

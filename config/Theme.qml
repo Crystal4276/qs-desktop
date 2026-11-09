@@ -244,9 +244,9 @@ Singleton {
         readonly property color volume: root.color.text
         readonly property color media: root.color.text
         readonly property color settings: root.color.text    // engrenage (ton choix du 2026-10-16 ; power : `red`)
-        readonly property color battery: root.color.green
+        readonly property color battery: root.color.teal
         readonly property color batteryWarning: root.color.red
-        readonly property color backlight: root.color.yellow
+        readonly property color backlight: root.color.peach
         readonly property color menuActiveBackground: root.color.green
         readonly property color highlightText: root.color.mantle   // survol en contrastes inversés (bouton Arch, mises à jour, horloge)
         readonly property color statsHighlight: root.module.memory // survol de la pilule GPU / CPU / mémoire, en bloc (ta demande du 2026-10-21)

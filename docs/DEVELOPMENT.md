@@ -86,6 +86,11 @@ verrouillage).
 
 ## Tests ciblés de robustesse
 
+- `python3 scripts/test-bar.py` : barre réelle sur Sway headless isolé, services média/audio/batterie factices ;
+  1280–3440 px, ellipse artiste/titre, mises à jour, tray, replis et restauration, curseur conservé, absence de matériel.
+- `python3 scripts/test-battery.py` : service Battery réel, source de données simulée et `notify-send` factice ;
+  couleurs, seuils 30 % / 15 %, urgence, absence de doublons et réarmement en charge. Aucune décharge ni notification réelle.
+
 - `python scripts/test-reflector.py` : amorçage avant les paquets et gestion des miroirs avec sudo/pacman/systemctl factices ;
   simulation, options, échecs, reprise, idempotence, sauvegardes et restauration de l'état du timer. Aucun réseau ni sudo réel.
 - `python scripts/test-greeter-cleanup.py` : retrait du greeter sur fichiers temporaires et commandes sudo/systemctl factices ;
