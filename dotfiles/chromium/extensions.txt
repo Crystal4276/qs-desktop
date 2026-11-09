@@ -1,0 +1,12 @@
+# Extensions du navigateur, installées depuis le Chrome Web Store au démarrage de Chromium (étape système d'install.sh :
+# scripts/system-setup.sh chromium-extensions → /usr/share/chromium/extensions/<identifiant>.json). Pas dans les web apps.
+# Une par ligne : identifiant du Chrome Web Store, puis le nom en commentaire.
+nngceckbapebfimnlniiiahkandclblb    # Bitwarden Password Manager
+fcoeoabgfenejglbffodgkkbkcdhcgfn    # Claude
+eimadpbcbfnmbkopoojfekhnkhdbieeh    # Dark Reader
+fihnjjcciajhdojfnbdddfaoknhalnja    # I don't care about cookies
+hdpcadigjkbcpnlcpbcohpafiaefanki    # nightTab : page Nouvel onglet ; réglages à importer : dotfiles/chromium/nighttab.json
+ldbooahljamnocpaahaidnmlgfklbben    # Recall
+clngdbkpkpeebahjckkjfobafhncgmne    # Stylus
+fijngjgcjhjmmpcmkeiomlglpeiijkld    # Talisman Wallet
+ddkjiahejlhfcafbddmgiahcphecmpfh    # uBlock Origin Lite

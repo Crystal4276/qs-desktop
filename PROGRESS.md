@@ -74,6 +74,23 @@ Ensuite (pas de phase 13) : maintenance et idées de `BACKLOG.md`, une à la foi
   1er démarrage, Chromium « Thème : GTK ». Passe 9 : restes négligeables (laissés : triptyque de `terrier` retiré à ta demande,
   `.bashrc` vide laissé si absent avant, Python lancé plusieurs fois). **Série de revues close.** Reste : nouvel essai dans ta VM.
 - Dépôts `qs-desktop` et `wallpapers` **publics** (audit de l'historique sans secret ; adresse e-mail des commits gardée).
+- Tes retours de VM (2026-11-09, Chromium) :
+  - **Boutons réduire / agrandir / fermer** : ils venaient du cadre dessiné par Chromium (`browser.custom_chrome_frame`, réglé
+    sur `false` sur `terrier`). `install.sh` règle « barre de titre et bordures du système » dans le profil principal **et**
+    les web apps (ton choix) ; vérifié sur banc et en VM, thème GTK conservé.
+  - **Extensions** : les 9 de ton profil, DOTLAN ESI Radar exclue (`dotfiles/chromium/extensions.txt`). Étape système
+    (question dédiée) : `/usr/share/chromium/extensions/<id>.json`, installation depuis le Chrome Web Store au démarrage,
+    activées sans question, retirables. Ce dossier vaut pour tous les profils, donc les web apps les refusent par leur
+    profil (`extensions.external_uninstalls`). VM : 9 extensions dans le navigateur, 0 dans les 6 web apps ; `--uninstall`
+    → désinstallées au lancement suivant.
+  - **nightTab** : réglages sauvegardés dans `dotfiles/chromium/nighttab.json` (favoris publics, recherche résiduelle
+    vidée) ; import en un clic (ton choix), rappelé en fin d'`install.sh`. Import vérifié en VM : page identique.
+  - **Thème GTK au 1er lancement** (« GTK coché, rendu standard ») : **non reproduit**. Banc Sway et environnement Hyprland,
+    boîte « conditions d'utilisation » acceptée, puis VM vierge par ton parcours exact (greetd → Hyprland → Super+A → Accept) :
+    Catppuccin dès la première fenêtre (barre `#313244` / `#181825`). Profil de ta VM lu sur disque : rien d'anormal (fichier
+    final après ta correction). À revoir au prochain essai : capture + `chrome://settings/appearance` si ça se reproduit.
+  - Tests : `test-install.py` 0 échec (nouveaux contrôles : barre de titre, refus des extensions dans les web apps, refus
+    existant gardé et remis) ; VM : installation code 0, 2ᵉ passage sans changement Chromium, retrait.
 
 ## Reprise sur le laptop
 
