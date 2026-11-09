@@ -3,7 +3,7 @@ import qs.config
 import qs.services
 
 // Utilisation du GPU (Waybar `custom/nvidia`, qui affichait la température ; multi-constructeur, ARCHITECTURE § 7.16) :
-// `U+F0379␣{usage}%`, comme le CPU (plafonné à 99 % ; largeur fixe : la plus large valeur de 0 à 99 %) (ta demande du 2026-10-20). Masqué sans utilisation lisible (Intel). Clic : panneau de statistiques système (avec les informations de nvtop).
+// `U+F0379␣{usage}%`, comme le CPU (plafonné à 99 % ; largeur fixe : la plus large valeur de 0 à 99 %) (ta demande du 2026-10-20). Masqué sans utilisation directement lisible. Clic : panneau de statistiques système (avec les informations de nvtop).
 InfoModule {
     shown: Gpu.available
     color: Theme.module.gpu

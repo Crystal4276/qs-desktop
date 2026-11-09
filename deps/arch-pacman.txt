@@ -10,7 +10,7 @@ sudo                    # scripts de mise en place système, après accord expli
 # (listes d'icônes, filtres des applications du lanceur ; `ps` du panneau de statistiques), util-linux (`rfkill` : mode avion du
 # panneau de réglages ; `kill` du panneau de statistiques ; `setpriv` : processus longs arrêtés avec Quickshell ; `setsid` : scripts/test-outputs.sh, scripts/desktop.sh ; `flock` : scripts/desktop.sh, scripts/network-setup.sh), systemd (`systemctl reboot|poweroff` du panneau de réglages,
 # `systemd-inhibit` de la veille, `busctl` des disques).
-python                  # install.sh (réglages, dconf) ; inhibition vidéo ; relevés et arrêt sécurisé des applications (scripts/monitor-processes.py)
+python                  # install.sh (réglages, dconf) ; inhibition vidéo ; relevés et arrêt sécurisé des applications (scripts/monitor-processes.py), mesures GPU (scripts/gpu-stats.py)
 python-gobject          # Gio / GLib : inhibition vidéo et suivi des ouvertures depuis Deluge / Thunderbird / Steam
 glib2                   # gdbus : disques amovibles, mise en veille du système (services/Idle.qml) ; gsettings : reconnexion Bluetooth reprise de blueman
 

@@ -376,7 +376,7 @@ FloatingWindow {
                 }
 
                 Gauge {
-                    visible: (Monitor.gpu?.memTotal ?? -1) > 0
+                    visible: (Monitor.gpu?.memTotal ?? -1) > 0 && (Monitor.gpu?.memUsed ?? -1) >= 0
                     label: "VRAM"
                     labelWidth: root.shortLabelWidth
                     valueWidth: root.gpuValueWidth
@@ -590,6 +590,16 @@ FloatingWindow {
             font.pixelSize: Theme.panel.smallFontSize
         }
 
+        Text {
+            visible: Gpu.vendor === "intel"
+            Layout.fillWidth: true
+            wrapMode: Text.Wrap
+            text: "GPU memory is shared RAM reported by clients; allocations may be shared between applications."
+            color: Theme.panel.secondaryText
+            font.family: Theme.font.text
+            font.pixelSize: Theme.panel.smallFontSize
+        }
+
         // En-têtes : clic = tri (de nouveau : sens inverse).
         RowLayout {
             id: header
@@ -603,7 +613,7 @@ FloatingWindow {
                     { key: "user", name: "User" },
                     { key: "cpu", name: "CPU" },
                     { key: "memory", name: "Memory" },
-                    { key: "gpu", name: "VRAM" }
+                    { key: "gpu", name: "GPU memory" }
                 ]
 
                 Text {
@@ -654,7 +664,7 @@ FloatingWindow {
                 // Absent le temps qu'une ligne soit retirée du modèle.
                 readonly property var process: root.rowByKey[modelData] ?? null
                 readonly property var cells: process ? [process.name, String(root.applicationView ? process.count : process.pid), process.user, `${process.cpu.toFixed(1)} %`,
-                    root.bytes(process.memory), process.gpu > 0 ? `${process.gpu} MiB` : ""] : ["", "", "", "", "", ""]
+                    root.bytes(process.memory), process.gpu > 0 ? root.bytes(process.gpu * 1048576) : ""] : ["", "", "", "", "", ""]
                 width: list.width
                 height: measure.implicitHeight + Theme.panel.rowPadding
                 radius: Theme.panel.rowRadius / 2

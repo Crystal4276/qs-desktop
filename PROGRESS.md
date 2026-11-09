@@ -229,3 +229,22 @@ marge au bord droit sur DP-1 / DP-3.
 
 Poursuivre les tests réels du laptop installé (« À tester à la main »), notamment le rendu Sway à l’échelle 1 et la persistance
 après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interface en cours depuis le laptop.
+
+## Maintenance — métriques GPU Intel (2026-11-09)
+
+- Diagnostic réel : Intel Arrow Lake-U / i915 détecté ; pas de hwmon GPU ni de `gpu_busy_percent`.
+  Accès aux compteurs perf globaux refusé (`perf_event_paranoid=2`). Choix : aucune estimation ni modification des droits ;
+  barre masquée lorsque la charge est indisponible, sans remplacement par une fréquence.
+- `Gpu.cardPath` découple la carte de son capteur. Moniteur : fréquence réelle Intel (0 MHz valide au repos), mesures sysfs
+  disponibles aussi pour AMD sans température, mémoire résidente DRM par processus et application. Identité PID + démarrage,
+  filtre PCI, clients dédupliqués dans une application. Mémoire Intel partagée signalée ; aucun total physique déduit.
+  NVIDIA garde `nvidia-smi`. Relevés uniquement panneau ouvert ; valeurs périmées effacées à la fermeture ou en cas d'échec.
+- Validations : `test-gpu.py` (7 cas), `test-monitor.py` (9 réussis, intégration Chromium optionnelle non lancée),
+  `test-gpu-qml.py` (Intel sans température, AMD sans température, NVIDIA simulés : détection, barre, moniteur, fermeture,
+  déduplication), `test-bar.py` (70 scénarios) : OK. Bancs Sway isolés, aucun avertissement QML au démarrage ; message IPC
+  de déconnexion à l'arrêt de Quickshell seulement. Captures comparées à la charte.
+- Laptop : lecture réelle de 18 clients DRM, puis moniteur ouvert et capturé (`.shots/gpu-monitor-after.png`) : fréquence
+  800 MHz et mémoire GPU des applications visibles ; fermeture et focus initial restaurés. Même bureau vivant (PID 49124),
+  pas d'erreur QML ; avertissements Qt textinput déjà présents avant le changement. Aucun paquet installé, aucun droit modifié.
+- Reste à vérifier à la main : tri par mémoire GPU et passage Applications / Processes selon ton usage ; AMD et NVIDIA réels
+  à revalider sur les machines correspondantes. Bancs arrêtés.

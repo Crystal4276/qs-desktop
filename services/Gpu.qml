@@ -15,6 +15,7 @@ Singleton {
 
     readonly property string sysfs: Quickshell.env("QS_SYSFS_ROOT") || "/sys"
     property string vendor: ""        // "nvidia", "amd", "intel" ou ""
+    property string cardPath: ""      // carte DRM retenue, indépendante de ses capteurs
     property string sensorPath: ""    // capteur du noyau (fichier temp*_input) : AMD, Intel, Nvidia sans nvidia-smi (nouveau)
     property string busyPath: ""      // utilisation (gpu_busy_percent) : AMD
     // Nvidia : nvidia-smi s'il est installé et répond ; sinon le capteur du noyau, comme les autres cartes.
@@ -44,11 +45,12 @@ Singleton {
             done
             busy=""; [ -r "$chosen/device/gpu_busy_percent" ] && busy="$chosen/device/gpu_busy_percent"
             smi=0; command -v nvidia-smi >/dev/null 2>&1 && smi=1
-            printf '%s\n' "$(cat "$chosen/device/vendor")" "$smi" "$sensor" "$busy"`, "sh", root.sysfs]
+            printf '%s\n' "$(cat "$chosen/device/vendor")" "$smi" "$sensor" "$busy" "$chosen"`, "sh", root.sysfs]
         stdout: StdioCollector {
             onStreamFinished: {
-                const [id, smi, sensor, busy] = text.split("\n");
+                const [id, smi, sensor, busy, card] = text.split("\n");
                 root.vendor = ({ "0x10de": "nvidia", "0x1002": "amd", "0x8086": "intel" })[id] ?? "";
+                root.cardPath = card ?? "";
                 root.sensorPath = sensor ?? "";
                 root.busyPath = busy ?? "";
                 root.useSmi = root.vendor === "nvidia" && smi === "1";

@@ -458,7 +458,7 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
 
 - Module GPU : cartes `/sys/class/drm/card*/device/vendor` (`0x10de` NVIDIA, `0x1002` AMD, `0x8086` Intel ; plusieurs : `boot_vga=1`).
   Affiche l'**utilisation** : `nvidia-smi --query-gpu=utilization.gpu` (NVIDIA, aucun capteur hwmon), `device/gpu_busy_percent` (AMD) ;
-  Intel n'expose pas d'utilisation → module masqué. Un échec de `nvidia-smi` ne masque pas le module définitivement.
+  Intel : aucune charge globale directement lisible dans la collecte actuelle → module masqué (aucune estimation ni fréquence dans la barre). Un échec de `nvidia-smi` ne masque pas le module définitivement.
 - Moniteur de statistiques (`modules/monitor/`, ouvert par CPU, mémoire, GPU, `qs ipc call monitor toggle`) : fenêtre native
   `FloatingWindow`, fermable par Super+Q et Échap, clic extérieur sans fermeture. Le compositeur gère bordures et coins
   (pas d’arrondis QML sur le cadre). Taille du contenu bornée par l’écran ; même écran d’ouverture et centrage dans la zone utile.
@@ -466,7 +466,13 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
   Sway via événement de fenêtre, Hyprland via attente bornée de la liste native. Recentrage après changement de dimensions,
   sans reprendre le focus ; aucun changement de raccourci ni règle globale de fenêtres. Fermeture au verrouillage.
   Relevés chaque seconde panneau ouvert ; CPU (total, température coretemp / k10temp / zenpower, cœurs), mémoire et swap, réseau, GPU (NVIDIA : charge, VRAM,
-  température, consommation, ventilateur, fréquence, VRAM par processus via `nvidia-smi pmon` ; AMD : sysfs), disques (`df`),
+  température, consommation, ventilateur, fréquence, VRAM par processus via `nvidia-smi pmon` ; AMD : sysfs ; Intel : fréquence réelle
+  `gt_act_freq_mhz`, y compris 0 MHz au repos). `Gpu.cardPath` identifie la carte indépendamment d'un capteur de température.
+  `scripts/gpu-stats.py` lit sysfs et la mémoire résidente déclarée dans les `fdinfo` des processus lisibles, uniquement panneau
+  ouvert, sans privilège ni paquet supplémentaire. Identité PID + démarrage vérifiée ; filtre PCI et déduplication par client DRM
+  dans chaque processus et application. La mémoire Intel est de la RAM partagée ; des allocations peuvent appartenir à plusieurs
+  applications. Aucun total physique ni pourcentage de charge n'est déduit de ces compteurs. Les champs absents sont masqués.
+  Disques (`df`),
   processus (charge comme top, tri, recherche), arrêt de ses propres processus avec confirmation (SIGTERM / SIGKILL).
 - Vue par défaut à chaque ouverture : Applications, y compris les applications identifiables en arrière-plan ; bascule compacte
   à gauche de la recherche vers Processes (clic sur toute la pilule : inversion, pastille animée sur 250 ms). CPU/RSS/VRAM additionnés par application et nombre de processus à la place du PID.
