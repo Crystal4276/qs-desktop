@@ -6,6 +6,6 @@ geany.desktop application/json application/octet-stream application/vnd.ms-publi
 viewnior.desktop image/bmp image/jpeg image/png image/svg+xml image/tiff image/webp image/x-icon
 chromium.desktop image/gif text/html x-scheme-handler/about x-scheme-handler/http x-scheme-handler/https x-scheme-handler/unknown
 org.mozilla.Thunderbird.desktop text/calendar x-scheme-handler/mailto
-org.deluge_torrent.deluge.desktop application/x-bittorrent x-scheme-handler/magnet
+deluge.desktop application/x-bittorrent x-scheme-handler/magnet
 org.gnome.Papers.desktop application/pdf
 nemo.desktop inode/directory
