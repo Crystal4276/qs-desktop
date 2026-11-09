@@ -1,0 +1,8 @@
+# Profil optionnel « jeux » : proposé par install.sh, jamais installé sans le demander (`--with jeux`).
+# Steam est dans le dépôt multilib (activé par install.sh). Pilote Vulkan 32 bits selon la carte : deps/gpu.txt (lignes *-jeux).
+
+steam                   # jeux (règles d'espace des compositeurs, ouvertures sur l'écran principal)
+gamescope               # micro-compositeur des jeux (règles Sway / Hyprland)
+lutris                  # autres boutiques / lanceurs
+gamemode                # optimisations pendant le jeu
+lib32-gamemode          # gamemode pour les jeux 32 bits

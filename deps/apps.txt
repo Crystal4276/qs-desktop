@@ -1,0 +1,64 @@
+# Applications de base, toujours installées (dépôts officiels Arch, un par ligne, commentaire = usage).
+# Pas des dépendances du bureau : ce sont les programmes de tous les jours, choisis le 2026-11-09.
+# Installer : pacman -S --needed $(grep -v '^#' deps/apps.txt | cut -d'#' -f1 | xargs)
+
+# --- Terminal ---
+fastfetch               # résumé système à l'ouverture du terminal (dotfiles/fastfetch, thème repris de neofetch)
+starship                # invite de commande (dotfiles/starship)
+bash-completion         # complétion des commandes dans bash
+
+# --- Fichiers ---
+nemo                    # gestionnaire de fichiers (raccourci Sway / Hyprland, dossiers par défaut)
+nemo-fileroller         # archives (extraire / compresser) dans Nemo
+nemo-share              # clic droit « Partager » : partages Samba utilisateur (échange avec les VM)
+gvfs                    # corbeille, montages, SFTP (`gio mount ssh://…`) dans Nemo
+gvfs-mtp                # téléphones Android branchés en USB
+
+# --- Internet, mail ---
+chromium                # navigateur principal ; web apps (dotfiles/webapps) ; liens externes (scripts/browser-link.py)
+thunderbird             # mail
+deluge-gtk              # BitTorrent (règles d'espace des compositeurs, ouvertures sur l'écran principal)
+
+# --- Édition, documents ---
+geany                   # éditeur de texte ($EDITOR, fichiers texte par défaut)
+geany-plugins           # extensions de Geany
+papers                  # visionneuse PDF (seule visionneuse PDF retenue)
+viewnior                # visionneuse d'images (seule visionneuse retenue)
+libreoffice-fresh       # bureautique
+obsidian                # notes
+gnome-calculator        # calculatrice
+
+# --- Création ---
+gimp                    # retouche d'images
+inkscape                # dessin vectoriel
+obs-studio              # enregistrement / diffusion d'écran
+handbrake               # conversion vidéo
+
+# --- Multimédia (le strict nécessaire) ---
+celluloid               # lecteur vidéo ; amène mpv et ffmpeg (décodeurs). Vidéos et audio par défaut
+ffmpegthumbnailer       # miniatures des vidéos dans Nemo
+spotify-launcher        # Spotify (lanceur officiel des dépôts, à la place du paquet AUR)
+# Décodage vidéo matériel : paquet VA-API choisi selon la carte graphique, voir deps/gpu.txt.
+
+# --- Windows et virtualisation ---
+wine                    # programmes Windows (sans wine-mono / wine-gecko : Wine les propose à la demande)
+qemu-desktop            # machines virtuelles
+libvirt                 # gestion des VM (service libvirtd, groupe libvirt)
+virt-manager            # interface des VM
+edk2-ovmf               # démarrage UEFI des VM
+dnsmasq                 # réseau NAT « default » de libvirt
+virtiofsd               # dossier partagé hôte → VM Linux (virtiofs)
+samba                   # partages hôte ↔ VM Windows (dotfiles/samba, étape système d'install.sh)
+
+# --- Développement, IA ---
+git                     # dépôts, dont celui-ci
+github-cli              # gh
+openai-codex            # Codex
+# Claude Code : absent des dépôts officiels, voir README.md.
+
+# --- Système ---
+gnome-keyring           # trousseau, déverrouillé à la connexion par PAM (greetd)
+btop                    # moniteur en terminal
+htop                    # moniteur en terminal
+man-db                  # pages de manuel
+nano                    # éditeur en terminal

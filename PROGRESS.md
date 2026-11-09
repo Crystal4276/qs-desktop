@@ -26,8 +26,8 @@
 | 8b | Fond d'écran, verrouillage, veille, polkit, capture, statistiques | faite (2026-10-19) |
 | 9 | Parité Hyprland | faite (2026-11-03) |
 | 10 | Bascule (configs dans `dotfiles/`, lancement par `scripts/desktop.sh`) | faite (2026-11-03), revues et audit du démarrage le 2026-11-04 ; en attente de tes tests de connexion ci-dessous |
-| 11 | Écran de connexion (greetd + greeter Quickshell au design du verrouillage) | **en cours** : code, fichiers système et docs faits et testés sur banc (2026-11-04) ; mise en place système et vraie connexion en attente de ton accord |
-| 12 | Portabilité (`install.sh`, `deps/`, laptop) | à faire |
+| 11 | Écran de connexion (greetd + greeter Quickshell au design du verrouillage) | faite : mise en place système (greetd activé, SDDM désactivé) ; vraie connexion Hyprland par greetd avec trousseau déverrouillé constatée le 2026-11-08 |
+| 12 | Portabilité (`install.sh`, `deps/`, laptop) | **en cours** (plan validé le 2026-11-09, voir ci-dessous) |
 
 Retour arrière de la bascule : `docs/ROLLBACK.md`.
 
@@ -484,7 +484,7 @@ Retour arrière de la bascule : `docs/ROLLBACK.md`.
 
 ## À tester à la main
 
-**Écran de connexion** (phase 11, après `scripts/greeter-setup.sh install`, puis `enable` et redémarrage) :
+**Écran de connexion** (phase 11 en place ; connexion Hyprland et trousseau validés par le journal du 2026-11-08) :
 - l'écran s'affiche sur les trois écrans, champ sur le Dell, fond = le tien flouté (exporté par le bureau dans `/var/lib/qs-desktop/crystal/`) ;
 - au démarrage à froid, l'écran de connexion apparaît du premier coup (pilote Nvidia hors initramfs : si greetd démarre avant lui, Sway
   partirait sans `--unsupported-gpu` ; à voir dans `journalctl -b -u greetd`) ;
@@ -549,6 +549,11 @@ sinon le mot de passe y serait tapé avec une autre disposition.
 
 ## Prochaine étape
 
-**Phase 11 — écran de connexion** : fait jusqu'à la mise en place système (`ARCHITECTURE.md` § 9). Reste, avec ton accord :
-`scripts/greeter-setup.sh install` (sudo ; `--dry-run` pour voir), essai réel, `enable`, redémarrage, tests ci-dessus. Verrouillage :
-rangée éteindre / redémarrer / veille déjà en place sur le bureau.
+**Phase 12 — portabilité**, plan validé le 2026-11-09 (`~/.claude/plans/…dragonfly.md`, résumé ici) :
+- paquets officiels d'abord, aucun paquet AUR installé par `install.sh` sauf `paru-bin` (à ta demande) ; `[multilib]` activé par
+  `install.sh` (Wine, Steam) ; Claude Code, NordVPN, Plex, RustDesk seulement documentés ;
+- base : bureau + applications retenues (`deps/apps.txt`), multimédia minimal (Celluloid, miniatures, VA-API selon le GPU),
+  virtualisation et Samba (partage VM ↔ hôte) ; profil optionnel « jeux » (Steam, gamescope, Lutris, GameMode) ;
+- thème Catppuccin Mocha green homogène GTK + Qt (Kvantum), archives officielles Catppuccin téléchargées et vérifiées ;
+- fastfetch reprenant le thème neofetch actuel ; GNOME Terminal conservé ;
+- tests dans une VM Arch neuve (overlay de l'image « basic »), puis `--dry-run` sur ce desktop.
