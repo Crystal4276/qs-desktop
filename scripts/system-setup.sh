@@ -118,14 +118,30 @@ do_install() {
 
     getent group libvirt >/dev/null && add_group libvirt
     getent group kvm >/dev/null && add_group kvm
-    for unit in NetworkManager.service bluetooth.service power-profiles-daemon.service smb.service libvirtd.service; do
+    # NetworkManager (module réseau du bureau) : jamais à côté d'un autre gestionnaire de réseau déjà actif.
+    local other u
+    for u in systemd-networkd.service dhcpcd.service connman.service netctl.service; do
+        systemctl is-enabled --quiet "$u" 2>/dev/null && other="$u"
+    done
+    if [[ -n "${other:-}" ]] && ! systemctl is-enabled --quiet NetworkManager.service 2>/dev/null; then
+        # Remplacé par NetworkManager (choix du bureau) ; la connexion peut couper quelques secondes. Retrait : remis.
+        echo "! $other gère le réseau : remplacé par NetworkManager"
+        run systemctl disable --now "$other"
+        record unit-off "$other"
+    fi
+    enable_unit NetworkManager.service
+    local libvirt_new=""
+    systemctl is-enabled --quiet libvirtd.service 2>/dev/null || libvirt_new=1
+    for unit in bluetooth.service power-profiles-daemon.service smb.service libvirtd.service; do
         enable_unit "$unit"
     done
     # Réseau NAT des VM (fourni par libvirt) démarré au boot, comme ici.
-    if command -v virsh >/dev/null; then
-        # libvirtd vient peut-être d'être démarré : quelques secondes avant qu'il réponde.
+    if [[ -n "$dry" ]]; then
+        command -v virsh >/dev/null && echo "+ virsh -c qemu:///system net-autostart default (si le réseau n'est pas déjà démarré au boot)"
+    elif command -v virsh >/dev/null; then
+        # libvirtd démarré à l'instant : quelques secondes avant qu'il réponde (pas d'attente aux passages suivants).
         local tries=0
-        if [[ -z "$dry" ]]; then
+        if [[ -n "$libvirt_new" ]]; then
             until virsh_sys net-info default >/dev/null 2>&1 || (( ++tries >= 10 )); do sleep 1; done
         fi
         if virsh_sys net-info default 2>/dev/null | grep -q '^Autostart: *yes'; then
@@ -174,6 +190,7 @@ do_uninstall() {
                 else echo "! sauvegarde $backup introuvable : $target laissé tel quel"; fi ;;
             group) run gpasswd -d "$user" "$target" || true ;;
             unit) run systemctl disable "$target" || true ;;
+            unit-off) run systemctl enable "$target" || true ;;
             net) run virsh -c qemu:///system net-autostart --disable "$target" || true ;;
         esac
     done 3< <(tac "$registry")

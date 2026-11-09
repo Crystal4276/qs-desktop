@@ -139,12 +139,19 @@ def main():
         changes = [l for l in r.stdout.splitlines() if l.startswith("+ ")]
         check(r.returncode == 0 and not changes, f"second passage sans changement {changes[:5]}")
 
+        # Une application (Viewnior) réécrit son réglage après l'installation : sa version doit survivre au retrait.
+        (cfg / "viewnior/viewnior.conf").write_text("[prefs]\nzoom-mode=3\n")
         r = install("--uninstall")
+        kept_v = sorted((cfg / "viewnior").glob("viewnior.conf.uninstall-*"))
+        check(len(kept_v) == 1 and "zoom-mode=3" in kept_v[0].read_text(), "retrait : réglage modifié par l'application gardé à côté")
+        for k in kept_v: k.unlink()
         check(r.returncode == 0, f"retrait : code {r.returncode} {r.stderr.strip()[-300:]}")
         after = snapshot(home)
         diff = sorted(set(before) ^ set(after)) + sorted(k for k in before if k in after and before[k] != after[k])
         # Restes acceptés : dossiers vides créés en chemin.
         diff = [k for k in diff if not (k in after and after[k] == "<dir>" and k not in before)]
+        kept = sorted(k for k in diff if ".uninstall-" in k)
+        check(not kept, f"retrait : aucune copie .uninstall- pour des fichiers inchangés depuis l'installation {kept[:4]}")
         check(not diff, f"retrait : dossier personnel comme avant {diff[:8]}")
         check(qt.is_symlink() and (home / "dots/qt6ct/qt6ct.conf").read_text() == "[Appearance]\nstyle=Fusion\n",
               "retrait : config liée (stow) remise, lien gardé")

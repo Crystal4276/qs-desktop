@@ -80,7 +80,7 @@ do_install() {
     # Prérequis : en simulation (machine neuve, conteneur), signalés sans arrêter la liste des commandes.
     command -v greetd >/dev/null || { echo "! greetd n'est pas installé (paquets : deps/arch-pacman.txt)." >&2; [[ -n "$dry" ]] || exit 1; }
     getent passwd greeter >/dev/null || { echo "! utilisateur « greeter » absent (créé par le paquet greetd)." >&2; [[ -n "$dry" ]] || exit 1; }
-    [[ -z "$(git -C "$repo" status --porcelain)" ]] || echo "! modifications non committées : seule la version committée est copiée"
+    [[ -z "$(git -C "$repo" status --porcelain)" ]] || echo "! modifications non committées : seule la version committée est copiée (plus les fichiers de cette machine)"
 
     # Version committée, extraite à part : copie du dépôt lisible par greeter (ton dossier personnel ne l'est pas), remplacée d'un
     # bloc, et source des fichiers système.

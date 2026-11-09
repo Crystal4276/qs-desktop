@@ -46,6 +46,11 @@ Ensuite (pas de phase 13) : maintenance et idées de `BACKLOG.md`, une à la foi
   notées avant toute écriture, fichier illisible / python-gobject absent / `.bashrc` disparu sans arrêt, curseur du greeter copié
   avec l'étape du greeter, **Samba sans accès invité** (laptop sur Wi-Fi public), multilib gardé au retrait, `deps/` ; en plus,
   `USER` absent (lancement hors session) géré. Essais jetables : Latin-1, lien remplacé, `.bashrc` supprimé, sans `USER` : OK.
+- Passe 3 : `pciutils` installé en premier puis cartes lues par `lspci` (ton choix), NetworkManager seul gestionnaire de réseau
+  (un autre actif est remplacé, remis au retrait), Geany ouvert respecté, `EDITOR="geany -i"` (attend la fermeture), retrait qui
+  garde à côté (`<fichier>.uninstall-<date>`) tout réglage modifié par une application depuis l'installation, archives du thème
+  ni téléchargées ni extraites si déjà en place, applications par défaut lues en une fois, pas d'attente libvirt aux relances ni
+  d'appel libvirt en simulation, `deps/` complété. Contre-épreuve : l'ancien code perd le réglage modifié.
 - Dépôts `qs-desktop` et `wallpapers` **publics** (audit de l'historique sans secret ; adresse e-mail des commits gardée).
 
 ## Reprise sur le laptop
