@@ -8,6 +8,9 @@
 repo="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
 state="${QS_GREETER_DIR:-/var/lib/qs-desktop}/greeter"   # QS_GREETER_DIR : banc (comme services/Greeter.qml)
 export XDG_CACHE_HOME="$state/cache" XDG_STATE_HOME="$state/state" XDG_CONFIG_HOME="$state/config"
+# Curseur du thème : paquet (/usr/share/icons) ou copie système d'install.sh (/usr/local/share/icons, hors du chemin par défaut
+# de libXcursor / wlroots).
+export XCURSOR_PATH="/usr/local/share/icons:/usr/share/icons:/usr/share/pixmaps"
 
 if [ "${1:-}" = shell ]; then
     . "$repo/scripts/qs-env.sh"
