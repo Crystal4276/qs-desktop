@@ -83,7 +83,6 @@ Les applications personnelles lancées au démarrage (Steam, Spotify, Thunderbir
 |---|---|---|
 | `scripts/desktop.sh [restart\|stop\|log]` | lance le bureau depuis l'autostart de Sway / Hyprland, le relance s'il s'arrête | `qs`, `flock`, `setsid` (`util-linux`), `swaymsg` / `swaynag` (`sway`), `hyprctl` |
 | Vérification des espaces Hyprland | complète le modèle natif lors d’une course au démarrage | `hyprctl` (`hyprland`), `timeout` (`coreutils`, déjà requis) |
-| `scripts/thunderbird-diagnostic.py run\|snapshot` | **temporaire, hors installateur final** : traces Thunderbird sous Hyprland ; à retirer après résolution (BACKLOG.md) | `python`, `loginctl` (`systemd`), `/proc` Linux ; Thunderbird reste une application personnelle |
 | `scripts/ipc.sh <cible> <fonction> …` | `qs ipc call` vers le bureau de la session (raccourcis) | `qs` |
 | `scripts/greeter.sh [shell]` | écran de connexion : Sway minimal puis Quickshell (lancé par greetd) | `sway`, `swaymsg`, `qs` |
 | `scripts/greeter-session.sh` | session choisie : shell de connexion puis `Exec` ; X11 par `startx` | `sh`, `startx` (`xorg-xinit`, sessions X11) |
