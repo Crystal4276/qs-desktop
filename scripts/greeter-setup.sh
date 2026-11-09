@@ -82,6 +82,22 @@ do_install() {
     getent passwd greeter >/dev/null || { echo "! utilisateur « greeter » absent (créé par le paquet greetd)." >&2; [[ -n "$dry" ]] || exit 1; }
     [[ -z "$(git -C "$repo" status --porcelain)" ]] || echo "! modifications non committées : seule la version committée est copiée"
 
+    # Version committée, extraite à part : copie du dépôt lisible par greeter (ton dossier personnel ne l'est pas), remplacée d'un
+    # bloc, et source des fichiers système.
+    tree="$(mktemp -d)"
+    trap 'rm -rf "$tree"' EXIT
+    git -C "$repo" archive --format=tar HEAD | tar -x -C "$tree"
+
+    # Déjà en place et identique : rien à refaire (relance d'install.sh).
+    if [[ -d "$var/greeter" && -d "$var/$user" && -d "$var/backup" ]] && diff -rq "$tree" "$dest" >/dev/null 2>&1; then
+        echo "= $dest à jour (version committée)"
+        for entry in "${files[@]}"; do
+            # shellcheck disable=SC2086
+            install_file $entry
+        done
+        return
+    fi
+
     # Dossiers d'état : greeter (dernier choix, caches), fond d'écran exporté par le bureau de l'utilisateur (lisible par greeter).
     run install -d -m 755 -o root -g root "$var"
     run install -d -m 700 -o greeter -g greeter "$var/greeter"
@@ -90,11 +106,6 @@ do_install() {
     run install -d -m 750 -o "$user" -g greeter "$var/$user"
     run setfacl -m g:greeter:rx -d -m g:greeter:r "$var/$user"
 
-    # Version committée, extraite à part : copie du dépôt lisible par greeter (ton dossier personnel ne l'est pas), remplacée d'un
-    # bloc, et source des fichiers système.
-    tree="$(mktemp -d)"
-    trap 'rm -rf "$tree"' EXIT
-    git -C "$repo" archive --format=tar HEAD | tar -x -C "$tree"
     run rm -rf "$dest.new"
     run install -d -m 755 -o root -g root "$dest.new"
     run cp -r --no-preserve=ownership "$tree/." "$dest.new/"

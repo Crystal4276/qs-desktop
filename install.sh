@@ -534,7 +534,13 @@ step_system() {
         sub "$repo/scripts/system-setup.sh" ${dry:+--dry-run} install
     fi
     if ask "Sonde de connectivité NetworkManager (portails captifs Wi-Fi) ?"; then
-        sub "$repo/scripts/network-setup.sh" ${dry:+--dry-run} install
+        # Déjà installée : le script rechargerait NetworkManager pour rien.
+        if cmp -s "$repo/dotfiles/NetworkManager/conf.d/90-qs-desktop-connectivity.conf" /etc/NetworkManager/conf.d/90-qs-desktop-connectivity.conf \
+            && [[ -f /var/lib/qs-desktop/network-setup/ready ]]; then
+            echo "= sonde de connectivité installée"
+        else
+            sub "$repo/scripts/network-setup.sh" ${dry:+--dry-run} install
+        fi
     fi
 }
 
