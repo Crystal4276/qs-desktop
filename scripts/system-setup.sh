@@ -12,6 +12,7 @@
 #                                                 Chrome Web Store au démarrage du navigateur (/usr/share/chromium/extensions)
 #         system-setup.sh [--dry-run] uninstall   tout ce qui a été changé est remis comme avant (fichiers, groupes, services)
 #         --dry-run : affiche les commandes sans rien modifier.
+#         system-setup.sh [--dry-run] pacman-sudo accès pacman sans mot de passe pour wheel (paru reste lancé en utilisateur)
 #         system-setup.sh [--dry-run] reflector   miroirs Arch rapides et récents, renouvelés chaque semaine
 set -euo pipefail
 
@@ -49,6 +50,61 @@ backup_once() {
     else
         record file "$target" -
     fi
+}
+
+# Une seule transaction root : une erreur de validation ne doit pas empêcher la restauration.
+do_pacman_sudo() {
+    echo "+ /etc/sudoers.d/90-qs-desktop-pacman : wheel, pacman sans mot de passe (paru compris)"
+    [[ -n "$dry" ]] && return 0
+    sudo bash -s -- "$repo/dotfiles/sudoers/90-qs-desktop-pacman" "$state" "$stamp" <<'ROOT'
+set -euo pipefail
+source=$1 state=$2 stamp=$3
+target=/etc/sudoers.d/90-qs-desktop-pacman
+registry="$state/registry"
+visudo -c
+# Ne pas modifier le fichier principal ni créer une règle qui serait ignorée.
+grep -Eq '^[[:space:]]*(@|#)includedir[[:space:]]+/etc/sudoers[.]d/?[[:space:]]*(#.*)?$' /etc/sudoers || {
+    echo '! /etc/sudoers.d non inclus dans /etc/sudoers' >&2; exit 1;
+}
+[[ ! -L "$target" && ( ! -e "$target" || -f "$target" ) ]] || {
+    echo "! $target : fichier ordinaire attendu" >&2; exit 1;
+}
+if cmp -s "$source" "$target" && [[ "$(stat -c '%a %u:%g' "$target")" == '440 0:0' ]]; then
+    echo "= $target à jour"; exit 0
+fi
+staged=$(mktemp /etc/sudoers.d/.qs-desktop-pacman.XXXXXX)
+previous="" replaced="" existed=""
+cleanup() {
+    local status=$?
+    if [[ -n "$replaced" ]]; then
+        if [[ -n "$existed" ]]; then mv -f "$previous" "$target"; else rm -f "$target"; fi
+    fi
+    rm -f "$staged" ${previous:+"$previous"}
+    return "$status"
+}
+trap cleanup EXIT
+trap 'exit 1' HUP INT TERM
+install -m 440 -o root -g root "$source" "$staged"
+visudo -cf "$staged"
+if [[ -e "$target" ]]; then
+    existed=1
+    previous=$(mktemp /etc/sudoers.d/.qs-desktop-pacman.XXXXXX)
+    cp -p "$target" "$previous"
+fi
+if [[ ! -f "$registry" ]] || ! awk -v t="$target" '$1 == "file" && $2 == t { found=1 } END { exit !found }' "$registry"; then
+    install -d -m 755 "$state"
+    backup=-
+    if [[ -n "$existed" ]]; then
+        backup="$state/etc_sudoers.d_90-qs-desktop-pacman.bak-$stamp"
+        cp -p "$target" "$backup"
+    fi
+    printf 'file %s %s\n' "$target" "$backup" >> "$registry"
+fi
+replaced=1
+mv -f "$staged" "$target"
+visudo -c
+replaced=""
+ROOT
 }
 
 do_multilib() {
@@ -288,6 +344,7 @@ do_uninstall() {
 
 [[ "${1:-}" == --dry-run ]] && { dry=1; shift; }
 case "${1:-}" in
+    pacman-sudo) do_pacman_sudo ;;
     multilib) do_multilib ;;
     reflector) do_reflector ;;
     cursor) do_cursor ;;

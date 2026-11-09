@@ -1,0 +1,2 @@
+# Paru runs as the user and invokes pacman through sudo.
+%wheel ALL=(root) NOPASSWD: /usr/bin/pacman

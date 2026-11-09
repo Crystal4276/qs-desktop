@@ -58,12 +58,16 @@ esac''',
     source = source.replace('/etc/xdg/reflector/reflector.conf', str(conf))
     source = source.replace('/etc/pacman.d/mirrorlist', str(mirrors))
     source = source.replace('/etc/os-release', str(root / 'os-release'))
+    # La présence du vrai Reflector sur la machine ne doit pas contourner le faux amorçage.
+    source = source.replace('command -v reflector >/dev/null', '[[ -x "$TEST_ROOT/bin/reflector" ]]')
     source = source.replace(' -o root -g root', '')  # faux sudo : aucune attribution root dans le banc
     helper = repo / 'scripts/system-setup.sh'
     helper.write_text(source)
     helper.chmod(0o755)
     source = (REPO / 'install.sh').read_text().split('\nif [[ -n "$uninstall" ]]; then\n')[0]
     source = source.replace('/etc/os-release', str(root / 'os-release'))
+    # La présence du vrai Reflector sur la machine ne doit pas contourner le faux amorçage.
+    source = source.replace('command -v reflector >/dev/null', '[[ -x "$TEST_ROOT/bin/reflector" ]]')
     # Le vrai branchement de l'étape préliminaire ; le reste du bureau n'est pas installé dans ce test.
     source += '\n[[ -n "$system" ]] && step_reflector\necho PACKAGES\nprintf "%s\\n" "${pending[@]}"\n'
     installer = repo / 'install.sh'

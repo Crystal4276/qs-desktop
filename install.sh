@@ -5,7 +5,7 @@
 #   --dry-run          affiche tout ce qui serait fait, sans rien modifier (ni paquet, ni fichier, ni sudo)
 #   --with jeux        ajoute le profil « jeux » (deps/games.txt) sans le demander ; --without jeux : ne pas le proposer
 #   --no-packages      ne touche pas aux paquets (ni multilib, ni paru)
-#   --no-system        aucune étape système (sudo) : Reflector, greeter, sonde réseau, Samba, services…
+#   --no-system        aucune étape système (sudo) : sudo pacman, Reflector, greeter, sonde réseau, Samba, services…
 #   --yes              ne pose aucune question (étapes système et profil jeux : réponse « oui » / valeur des options)
 #   --uninstall        retire les liens et copies, remet les sauvegardes et les réglages d'origine, étapes système comprises ;
 #                      les paquets installés restent
@@ -223,6 +223,15 @@ gpu_vendors() { # cartes graphiques présentes : nvidia intel amd, lues par lspc
 # --- 1. Paquets --------------------------------------------------------------------------------------------------------
 
 is_arch() { [[ -f /etc/arch-release ]] || grep -qsE '^ID(_LIKE)?=.*\barch\b' /etc/os-release; }
+
+step_pacman_sudo() {
+    is_arch || return 0
+    section "Pacman et paru sans mot de passe (wheel)"
+    ask "Autoriser pacman sans mot de passe pour le groupe wheel (paru compris) ?" oui || return 0
+    if ! "$repo/scripts/system-setup.sh" ${dry:+--dry-run} pacman-sudo; then
+        later "Accès pacman sans mot de passe non configuré : relancer install.sh après correction."
+    fi
+}
 
 # Reflector utilise les dépôts Arch : ne jamais remplacer les miroirs d'une distribution dérivée.
 step_reflector() {
@@ -1006,7 +1015,7 @@ EOF
     if command -v chromium >/dev/null; then
         python3 "$repo/scripts/browser-links-setup.py" ${dry:+--dry-run} uninstall 2>/dev/null || echo "= liens Chromium : rien à retirer"
     fi
-    if [[ -n "$system" ]] && ask "Défaire aussi les étapes système (Reflector, greeter → ancien gestionnaire, sonde réseau, Samba, services, groupes, extensions Chromium) ?"; then
+    if [[ -n "$system" ]] && ask "Défaire aussi les étapes système (sudo pacman, Reflector, greeter → ancien gestionnaire, sonde réseau, Samba, services, groupes, extensions Chromium) ?"; then
         sub "$repo/scripts/system-setup.sh" ${dry:+--dry-run} uninstall
         sub "$repo/scripts/network-setup.sh" ${dry:+--dry-run} uninstall
         sub "$repo/scripts/greeter-setup.sh" ${dry:+--dry-run} uninstall
@@ -1045,6 +1054,7 @@ if [[ -n "$uninstall" ]]; then
     exit 0
 fi
 [[ -n "$dry" ]] && echo "Simulation : rien ne sera modifié."
+[[ -n "$system" ]] && step_pacman_sudo
 [[ -n "$system" ]] && step_reflector
 [[ -n "$packages" ]] && step_packages
 step_configs

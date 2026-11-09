@@ -151,6 +151,24 @@ Ensuite (pas de phase 13) : maintenance et idées de `BACKLOG.md`, une à la foi
   candidats ont dépassé le délai du test de débit, sans empêcher le résultat. `reflector.timer` activé et actif ; prochaine
   exécution le 2026-11-16 vers 02:01 +03. Service ponctuel arrêté normalement entre les passages, déclenché par le timer.
 
+## Maintenance — pacman et paru sans mot de passe (2026-11-09)
+
+- Choix validé : tous les membres de `wheel`. `install.sh` propose la règle avant Reflector et les paquets ; commande seule :
+  `scripts/system-setup.sh pacman-sudo`. Paru reste lancé en utilisateur, ses appels sudo à pacman bénéficient de la règle.
+- `/etc/sudoers.d/90-qs-desktop-pacman` : `%wheel ALL=(root) NOPASSWD: /usr/bin/pacman`, root:root, mode 0440.
+  Inclusion du dossier et configuration existante vérifiées ; fichier préparé et validé avec `visudo`, remplacement atomique,
+  restauration en cas d'échec dans la même transaction root. Registre système existant : sauvegarde et retrait.
+- Options respectées : simulation sans sudo ni écriture ; `--no-system` exclut le réglage, `--no-packages` le permet,
+  `--yes` accepte la question. Les autres commandes sudo gardent leur authentification.
+- Tests : `python3 scripts/test-sudo-pacman.py` OK (état absent/existant, validation, retour arrière, inclusion absente ou erronée,
+  lien refusé, permissions, idempotence, options, refus, ordre et retrait) ; `test-reflector.py` OK après isolation de la détection
+  du paquet (le vrai Reflector installé ne doit pas contourner le faux amorçage). Syntaxe Bash et `git diff --check` OK.
+- `test-install.py` : un échec préexistant, reproduit avec `install.sh` de HEAD avant cette modification : le nouveau
+  `update-desktop-database` laisse `.local/share/applications/intent.cache` au retrait. Les autres contrôles passent.
+- Activation réelle demandée et faite sur le laptop avec authentification initiale dans un terminal : `visudo -c` OK,
+  propriétaire et mode relus (`root:root 440`). `sudo -k -n /usr/bin/pacman --version` réussit sans cache ;
+  `sudo -k -n /usr/bin/true` exige toujours un mot de passe. Aucun paquet installé ou mis à jour. Bureau vivant (PID 4614).
+
 ## À tester à la main
 
 **Laptop** : laptop seul, + écrans externes, capot fermé, écran interne éteint, branchement à chaud avec fenêtres ouvertes ;
