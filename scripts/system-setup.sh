@@ -180,7 +180,7 @@ do_cursor() {
         if diff -rq "$home_cursor" "/usr/local/share/icons/$cursor" >/dev/null 2>&1; then
             echo "= /usr/local/share/icons/$cursor à jour"
         else
-            recorded file "/usr/local/share/icons/$cursor" || record file "/usr/local/share/icons/$cursor" -
+            backup_once "/usr/local/share/icons/$cursor"   # dossier déjà là (posé à la main) : sauvegardé, remis au retrait
             run rm -rf "/usr/local/share/icons/$cursor"
             run install -d -m 755 /usr/local/share/icons
             run cp -r --no-preserve=ownership "$home_cursor" "/usr/local/share/icons/$cursor"
@@ -200,7 +200,7 @@ do_uninstall() {
                 # multilib gardé : les paquets lib32 / Steam installés restent (install.sh --uninstall garde les paquets).
                 if [[ "$target" == /etc/pacman.conf ]]; then echo "= [multilib] gardé (paquets installés conservés) ; origine : $backup"
                 elif [[ "$backup" == - ]]; then run rm -rf "$target"
-                elif [[ -e "$backup" ]]; then run mv -f "$backup" "$target"
+                elif [[ -e "$backup" ]]; then run rm -rf "$target"; run mv -f "$backup" "$target"
                 else echo "! sauvegarde $backup introuvable : $target laissé tel quel"; fi ;;
             group) run gpasswd -d "$user" "$target" || true ;;
             unit) run systemctl disable "$target" || true ;;

@@ -126,7 +126,8 @@ link() {        # src (chemin du dépôt, ou absolu) dest
 
 # Copie initiale d'un fichier que l'application réécrit elle-même (un lien casserait) : seulement s'il est absent.
 seed() {        # src dest
-    if [[ -e "$2" ]]; then echo "= $2 (déjà présent, gardé)"; return; fi
+    # Lien (stow) déjà là, même vers un fichier encore absent : à toi, gardé (cp n'écrit pas à travers un lien qui ne mène à rien).
+    if [[ -e "$2" || -L "$2" ]]; then echo "= $2 (déjà présent, gardé)"; return; fi
     record seed "$2" -
     run mkdir -p "$(dirname "$2")"
     run cp "$repo/$1" "$2"
@@ -404,7 +405,10 @@ put_dir() {     # source cible nom-de-l'archive
     sha="$(theme_sha "$3")"
     if [[ -f "$mark" && "$(cat "$mark")" == "$sha" ]]; then echo "= $2"; return; fi
     if [[ -e "$2" ]]; then
-        if recorded "$2"; then run rm -rf "$2"; else backup_once link "$2" mv; fi
+        # Ancienne copie d'install.sh (marquée) : remplacée ; dossier remplacé depuis par le tien : mis de côté, jamais supprimé.
+        if recorded "$2" && [[ -f "$mark" ]]; then run rm -rf "$2"
+        elif recorded "$2"; then run mv "$2" "$2.bak-$stamp"
+        else backup_once link "$2" mv; fi
     else
         recorded "$2" || record link "$2" -
     fi
@@ -426,7 +430,8 @@ put_file() {    # source cible : fichier du thème, l'ancien sauvegardé
 papirus_overlay() {     # dossier src/ de catppuccin/papirus-folders
     local src="$1" top="$data/icons" sys=/usr/share/icons/Papirus folders=cat-mocha-lavender color size f t new
     [[ -d "$sys" ]] || { echo "- Papirus absent (papirus-icon-theme) : couleur des dossiers ignorée"; return; }
-    color="$(readlink "$sys/48x48/places/folder.svg")"; color="${color#folder-}"; color="${color%.svg}"
+    color="$(readlink "$sys/48x48/places/folder.svg" || true)"; color="${color#folder-}"; color="${color%.svg}"
+    [[ -n "$color" ]] || { echo "- Papirus sans couleur de dossier lisible (folder.svg n'est pas un lien) : couleur des dossiers ignorée"; return; }
     local tree; tree="$(mktemp -d)"
     for size in 22x22 24x24 32x32 48x48 64x64; do
         mkdir -p "$tree/Papirus/$size/places"
@@ -756,7 +761,9 @@ wallpapers_dir() {
         return
     fi
     pictures="$(xdg-user-dir PICTURES 2>/dev/null || true)"
-    [[ -n "$pictures" && -d "$pictures" ]] || pictures="$HOME/Pictures"
+    # Dossier désactivé (XDG_PICTURES_DIR="$HOME/") ou absent : xdg-user-dir renvoie le dossier personnel, que Places.qml écarte.
+    pictures="${pictures%/}"
+    [[ -n "$pictures" && "$pictures" != "$HOME" && -d "$pictures" ]] || pictures="$HOME/Pictures"
     echo "$pictures/Wallpapers"
 }
 
