@@ -221,8 +221,8 @@ step_packages() {
         echo "= tous les paquets sont installés (${#want[@]})"
     else
         echo "Paquets à installer : $(echo $missing)"
-        printf '+ sudo pacman -Syu --needed %s\n' "$(echo $missing)"
-        [[ -n "$dry" ]] || sudo pacman -Syu --needed $missing
+        printf '+ sudo pacman -Syu --needed %s%s\n' "${yes:+--noconfirm }" "$(echo $missing)"
+        [[ -n "$dry" ]] || sudo pacman -Syu --needed ${yes:+--noconfirm} $missing
     fi
     # paru : seul paquet AUR, construit depuis aur.archlinux.org (binaire déjà compilé : paru-bin).
     if command -v paru >/dev/null || command -v yay >/dev/null; then

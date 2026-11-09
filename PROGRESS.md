@@ -31,6 +31,33 @@
 
 Retour arrière de la bascule : `docs/ROLLBACK.md`.
 
+## Phase 12 — portabilité (en cours, 2026-11-09)
+
+- `deps/` : `arch-pacman.txt` (bureau), `apps.txt` (applications de base retenues avec toi), `games.txt` (profil jeux,
+  jamais automatique), `gpu.txt` (VA-API, `nvidia-smi`, Vulkan 32 bits selon la carte), `themes.txt` (archives Catppuccin
+  officielles, empreintes SHA-256). Polices d'icônes par paquets officiels. Aucun AUR sauf `paru-bin`.
+- Dotfiles des applications : fastfetch (reprise fidèle du thème neofetch : seuls écarts, ligne DE/WM désormais détectée et nom
+  complet du CPU), starship, mpv et options Chromium en partie commune + machine (`hosts/terrier.conf` = réglages Nvidia
+  actuels, défaut `hwdec=auto-safe`), dconf (GTK, Nemo, Celluloid, profil GNOME Terminal Catppuccin Mocha officiel), applications
+  par défaut, bloc `~/.bashrc`, Viewnior, `smb.conf` (partages utilisateur pour les VM).
+- `install.sh` : `--dry-run`, `--uninstall`, `--with/--without jeux`, `--no-packages`, `--no-system`, `--yes` ; registre et
+  sauvegardes `<x>.bak-<date>` ; étapes système via `greeter-setup.sh`, `network-setup.sh` et le nouveau `system-setup.sh`
+  (multilib, Samba, services, groupes, `QT_QPA_PLATFORMTHEME`, curseur pour le greeter dans `/usr/local/share/icons`).
+  Thème : GTK 3/4, curseur, Kvantum, dossiers Papirus verts en surcouche dans le compte (aucun fichier de `/usr/share` touché),
+  btop, Geany ; Qt passe de KvArcDark + breeze à Kvantum Catppuccin + Papirus-Dark + Inter. `README.md` d'installation.
+- Tests : `python3 scripts/test-install.py` (dossier personnel jetable, bus privé) : simulation sans écriture, installation,
+  second passage sans aucun changement, retrait qui remet dossier personnel et dconf à l'identique : **0 échec**.
+  GitHub a renvoyé des 504 sur l'archive du curseur pendant les essais : délais curl ajoutés, une archive indisponible
+  n'arrête plus le reste ; l'archive vérifiée du matin a servi au dernier passage.
+- `install.sh --dry-run` sur ce desktop : 5 paquets à installer (`power-profiles-daemon`, `adobe-source-code-pro-fonts`,
+  `noto-fonts-cjk`, `fastfetch`, `spotify-launcher`) et les changements visibles listés ci-dessous. **Rien n'est appliqué
+  ici** tant que tu ne l'as pas validé.
+- VM : image officielle Arch « basic » du 2026-11-01 (empreinte vérifiée) dans `~/.cache/qs-desktop-vm`, disque overlay,
+  QEMU lancé en utilisateur (libvirt et ton ancienne image non touchés). Simulation complète sans écriture : OK.
+- Changements visibles à valider avant l'application sur ce desktop : dossiers Papirus lavande → verts ; palette GNOME
+  Terminal ancienne Catppuccin → Mocha officielle ; thèmes btop / Geany à jour (cadres de btop un peu différents) ; Qt en
+  Catppuccin ; `smb.conf` sans la section imprimantes ; lanceurs des web apps ouverts sur leur accueil (`deps/README.md`).
+
 ## Maintenance — workspace Spotify sur le mauvais écran au démarrage (2026-11-08)
 
 - Incident capturé après logout/relogin : Spotify bien sur 6, mais workspace 6 rattaché au centre ; répartition calculée correcte
