@@ -33,6 +33,13 @@ Puis se déconnecter : l'écran de connexion greetd apparaît au prochain démar
 Tout fichier existant est sauvegardé avant d'être remplacé (`<fichier>.bak-<date>` à côté de l'original ; fichiers système dans
 `/var/lib/qs-desktop/`).
 
+Avant les paquets, une question propose l'accès **pacman sans mot de passe pour tous les membres de `wheel`**.
+Paru se lance normalement, en utilisateur : ses appels sudo à pacman bénéficient de la même règle.
+Le fichier `/etc/sudoers.d/90-qs-desktop-pacman` est validé par `visudo`, appartient à root et a le mode `0440`.
+Les autres commandes sudo gardent leur authentification habituelle. Activation seule :
+`./scripts/system-setup.sh pacman-sudo` (authentification administrateur initiale nécessaire).
+`--no-system` ignore ce réglage ; `--no-packages` le permet ; le retrait système restaure l'état précédent.
+
 Options : `--with jeux` / `--without jeux`, `--no-packages`, `--no-system`, `--yes` (aucune question), `--uninstall`
 (retire liens et copies, remet les sauvegardes et les réglages d'origine, étapes système comprises ; les paquets restent).
 
