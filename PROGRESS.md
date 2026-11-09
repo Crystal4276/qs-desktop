@@ -54,6 +54,14 @@ Retour arrière de la bascule : `docs/ROLLBACK.md`.
   ici** tant que tu ne l'as pas validé.
 - VM : image officielle Arch « basic » du 2026-11-01 (empreinte vérifiée) dans `~/.cache/qs-desktop-vm`, disque overlay,
   QEMU lancé en utilisateur (libvirt et ton ancienne image non touchés). Simulation complète sans écriture : OK.
+  Installation réelle `--yes --without jeux` : 747 paquets, `paru-bin` construit, thème, réglages, greetd, Samba, services ;
+  reprise après un 504 GitHub en relançant ; passages suivants : **0 changement**. Redémarrage : écran de connexion greetd
+  affiché, vraie connexion Sway au clavier, bureau complet (barre, tray, espaces) ; Nemo (GTK) et qt6ct (Qt/Kvantum)
+  homogènes, dossiers verts. `--uninstall --yes` : liens, thème, bloc `.bashrc`, dconf, `pacman.conf`, `/etc/environment`,
+  groupes, services remis ; greeter fini au redémarrage suivant (prévu). Corrigés en route : `--noconfirm` avec `--yes`,
+  ordre services → sonde réseau, copie du greeter et sonde sautées si à jour, simulation sur machine nue.
+  Constats VM : NetworkManager prend le nom d'hôte du DHCP de QEMU (fichier `hosts/` à ce nom) ; premier lancement de
+  Chromium (conditions d'utilisation) et de Spotify par l'autostart.
 - Changements visibles à valider avant l'application sur ce desktop : dossiers Papirus lavande → verts ; palette GNOME
   Terminal ancienne Catppuccin → Mocha officielle ; thèmes btop / Geany à jour (cadres de btop un peu différents) ; Qt en
   Catppuccin ; `smb.conf` sans la section imprimantes ; lanceurs des web apps ouverts sur leur accueil (`deps/README.md`).
