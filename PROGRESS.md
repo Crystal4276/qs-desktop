@@ -312,3 +312,18 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
 - Contre-épreuves : nouveaux scénarios de `test-gpu-qml.py` et `test-intel-gpu-setup.py` échouent sur le code précédent,
   passent après correction. Intel avec/sans PMU, AMD, NVIDIA, `test-monitor.py` et `test-gpu.py` : OK.
   Aucun droit réel ni fichier système modifié par cette revue ; tests d'installation sur faux outils et fichiers jetables.
+
+## Revue du moniteur — passe 2, clôture (2026-11-09)
+
+- Nouvelle lecture du moniteur, UI, regroupement/arrêt des processus, collecte Intel/NVIDIA/AMD, décodeur et mise en place
+  des droits : aucun autre défaut significatif trouvé. Pas de refonte ou de correction cosmétique ajoutée.
+- Banc QML existant `scripts/tests/monitor/shell.qml` : vues Applications / Processes, sommes, tri, sélection figée,
+  bascule, animation, réouverture et comptage des utilisateurs/relevés : OK. Test supplémentaire sur copie : collecteur Intel
+  qui publie des valeurs puis échoue ; barre masquée, données PMU et cache invalidés, repli sysfs fonctionnel : OK.
+- `test-gpu-qml.py` (Intel avec/sans PMU, PID réutilisé, AMD, NVIDIA), `test-monitor.py`, `test-gpu.py`,
+  `test-intel-gpu-setup.py`, `test-sudo-pacman.py`, syntaxe Bash et `git diff --check` : OK ; intégration Chromium optionnelle non lancée.
+- Série arrêtée à cette passe conformément à ta demande. Limite des validations : AMD/NVIDIA simulés, Intel réel ;
+  pas de mise à jour réelle de paquet ni de changement des droits système pendant la revue.
+- Contrôle final réel : moniteur ouvert 6 s, mémoire des applications et mesures GPU visibles, capture
+  `.shots/monitor-review-after.png` comparée au rendu précédent ; panneau refermé et focus initial restauré.
+  Bureau vivant PID 76660, un seul collecteur Intel, aucun banc restant ; droits GPU inchangés.
