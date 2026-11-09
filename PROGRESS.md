@@ -146,6 +146,10 @@ Ensuite (pas de phase 13) : maintenance et idées de `BACKLOG.md`, une à la foi
   ce code officiel : fichier d'origine conservé.
 - Reste : validation réelle du service et du timer dans une VM Arch (image de test et accès KVM absents de cet environnement).
   Aucun paquet installé ni réglage système modifié sur la machine de travail.
+- Activation ultérieure sur le laptop, à ta demande : `reflector` installé, configuration et liste initiales sauvegardées,
+  premier passage réel réussi (`Result=success`, `ExecMainStatus=0`, environ 59 s). Liste mondiale HTTPS générée ; trois
+  candidats ont dépassé le délai du test de débit, sans empêcher le résultat. `reflector.timer` activé et actif ; prochaine
+  exécution le 2026-11-16 vers 02:01 +03. Service ponctuel arrêté normalement entre les passages, déclenché par le timer.
 
 ## À tester à la main
 
