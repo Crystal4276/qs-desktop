@@ -65,6 +65,11 @@ Retour arrière de la bascule : `docs/ROLLBACK.md`.
   Nemo **lavande**, terminal avec fastfetch (logo rose / vert, icônes et pastilles Mocha) et starship. Second passage :
   réseau libvirt « default » réglé seulement à ce moment (libvirtd pas encore prêt au premier) → attente ajoutée
   (`381fa7e`, à revérifier au prochain passage VM) ; avertissement si la machine n'a pas de nom fixe.
+  Troisième VM vierge (`331e67f`, nom de machine fixé comme le ferait archinstall) : réseau libvirt réglé dès le premier passage,
+  second passage **0 changement** ; aucun paquet NVIDIA (carte virtio : « aucune détectée »), `nano` présent. Fonds :
+  dépôt privé cloné par install.sh (bundle local en test, la VM n'a pas tes accès GitHub) dans `~/Pictures/Wallpapers` après
+  création des dossiers XDG (premier essai : cloné dans `~/Wallpapers`, corrigé) ; mis à jour ensuite (« à jour »). Après
+  connexion, fond par défaut = `simple/wallhaven-j37lop.png` (ton écran central), vérifié contre l'original.
   Constats VM : NetworkManager prend le nom d'hôte du DHCP de QEMU (fichier `hosts/` à ce nom) ; premier lancement de
   Chromium (conditions d'utilisation) et de Spotify par l'autostart.
 - Retours du 2026-11-09 : dossiers lavande (comme ici), pas de btop (remplacé par le moniteur Quickshell), pas de
