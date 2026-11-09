@@ -7,7 +7,8 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
 
 - **`terrier`** (desktop, référence) : Arch, i9-9900K, RTX 2080 (pilote propriétaire) ; trois écrans : DP-1 (LG 27GN950, gauche,
   scale 1.5), DP-2 (Dell AW3418DW, centre, principal), DP-3 (LG 27GN950, droite, scale 1.5) ; espaces 1-3 / 4-6 / 7-9.
-- **Laptop** (à venir) : Arch fraîchement installé, puis `install.sh` ; le développement (affinage de l'interface) reprendra depuis lui.
+- **`corelabs-laptop`** : Arch installé avec `install.sh` ; développement repris sur le laptop, session Hyprland 0.57.1. Dalle
+  interne 1920×1200 à 60 Hz (CSO 0x1471), échelle 1 explicite sous Sway et Hyprland.
 - Versions (2026-11-09) : Quickshell 0.3.2, Sway 1.12, Hyprland 0.57 (**config Lua** : pas de `hyprctl keyword`, `dispatch` en
   syntaxe Lua).
 
@@ -106,6 +107,21 @@ Ensuite (pas de phase 13) : maintenance et idées de `BACKLOG.md`, une à la foi
      l'écran de connexion (`dotfiles/greetd/sway.conf` ou fichier machine inclus par `scripts/greeter.sh`).
 4. Le banc d'essai et les règles de `docs/DEVELOPMENT.md` s'appliquent aussi sur le laptop (le bureau tourne depuis le dépôt).
 
+## Affinage laptop — échelle (2026-11-09)
+
+- Diagnostic : Hyprland choisissait automatiquement une échelle de 1.5 sur la dalle 1920×1200, soit seulement 1280×800 logiques.
+  Le centre de `terrier` était à 1 (les deux LG 4K à 1.5). Choix validé : échelle 1 pour le bureau et toutes les applications.
+- Configurations machine Sway et Hyprland ajoutées : dalle identifiée par description, mode préféré conservé, écrans externes
+  inchangés. Sway utilise le fabricant EDID avec virgule et `Unknown` pour la série absente ; Hyprland retire cette virgule.
+  Le fichier Sway des sorties est aussi repris par `scripts/greeter.sh` à la prochaine mise à jour de sa copie système ; aucune
+  modification système effectuée ici.
+- Validations : syntaxe Lua, `Hyprland --verify-config` et `sway --validate` OK (inclusion machine Sway vérifiée dans le log).
+  `test-outputs.sh sway` et `test-outputs.sh hyprland` sur copie isolée : **0 échec** chacun ; bancs arrêtés.
+- Session réelle : rechargement Hyprland appliqué, 1920×1200 logiques à l’échelle 1, aucune erreur de configuration ; même
+  instance Quickshell vivante. Capture avant/après (`.shots/laptop-scale-before.png`, `laptop-scale-after.png`) : barre sans
+  chevauchement, volume et curseur de nouveau visibles. Contrôle visuel du panneau de réglages à l’échelle 1.
+- Reste à vérifier à la main : rendu dans une vraie session Sway (description de sortie et échelle), persistance après reconnexion.
+
 ## À tester à la main
 
 **Laptop** : laptop seul, + écrans externes, capot fermé, écran interne éteint, branchement à chaud avec fenêtres ouvertes ;
@@ -147,5 +163,5 @@ marge au bord droit sur DP-1 / DP-3.
 
 ## Prochaine étape
 
-Installer le laptop avec `install.sh` (« Reprise sur le laptop » ci-dessus), faire ses tests, puis le rapport de fin de phase 12 avec
-captures. Ensuite : affinage de l'interface depuis le laptop.
+Poursuivre les tests réels du laptop installé (« À tester à la main »), notamment le rendu Sway à l’échelle 1 et la persistance
+après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interface en cours depuis le laptop.
