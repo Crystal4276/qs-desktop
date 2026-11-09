@@ -137,7 +137,7 @@ Singleton {
         onTriggered: {
             cpu.reload();
             mem.reload();
-            if (Gpu.vendor === "intel") intelClock.reload();
+            if (Gpu.vendor === "intel" && !Gpu.intelStats) intelClock.reload();
         }
     }
 
@@ -161,7 +161,7 @@ Singleton {
         path: Gpu.vendor === "intel" && Gpu.cardPath !== "" ? Gpu.cardPath + "/gt_act_freq_mhz" : ""
         printErrors: false
         function updateClock(value: real): void {
-            if (root.active && Gpu.vendor === "intel" && root.gpu && root.gpu.clock !== value)
+            if (root.active && Gpu.vendor === "intel" && !Gpu.intelStats && root.gpu && root.gpu.clock !== value)
                 root.gpu = Object.assign({}, root.gpu, {clock: value});
         }
         onLoaded: {
@@ -172,8 +172,32 @@ Singleton {
         onLoadFailed: updateClock(-1)
     }
 
+    function applyIntel(): void {
+        if (!active || !Gpu.intelStats) return;
+        gpu = Object.assign({}, Gpu.intelStats.gpu, {temperature: Gpu.temperature});
+        processes = processes.map(p => {
+            const clients = Gpu.intelStats.clients[p.pid] ?? {};
+            return Object.assign({}, p, {gpuClients: clients, gpu: Object.values(clients).reduce((a, b) => a + b, 0)});
+        });
+    }
+
+    Connections {
+        target: Gpu
+        function onIntelStatsChanged(): void {
+            if (!root.active || Gpu.vendor !== "intel") return;
+            if (Gpu.intelStats) root.applyIntel();
+            else {
+                root.gpu = null;
+                root.lastIntelSample = 0;
+                root.processes = root.processes.map(p => Object.assign({}, p, {gpu: 0, gpuClients: {}}));
+                root.sampleGpu();
+            }
+        }
+    }
+
     // GPU au rythme de la liste des processus, juste après elle : ces commandes n'y figurent pas.
     function sampleGpu(): void {
+        if (Gpu.vendor === "intel" && Gpu.intelStats) { applyIntel(); return; }
         if (!gpuQuery.running && (Gpu.useSmi || Gpu.cardPath !== "")) {
             // Intel exposes frequency/memory here: avoid rescanning descriptors every 2.6 s.
             const now = Date.now();
@@ -353,6 +377,7 @@ Singleton {
             onStreamFinished: {
                 if (!root.active)
                     return;
+                if (Gpu.vendor === "intel" && Gpu.intelStats) { root.applyIntel(); return; }
                 if (Gpu.vendor === "nvidia" && Gpu.useSmi) {
                     const f = text.split("\n")[0].split(",").map(s => s.trim());
                     if (f.length < 8) {   // nvidia-smi en échec : message d'erreur à la place des valeurs

@@ -5,6 +5,8 @@
 
 nvidia nvidia-utils             # nvidia-smi : module GPU de la barre (température, charge, mémoire)
 nvidia libva-nvidia-driver      # décodage vidéo matériel VA-API (Chromium, mpv) sur NVIDIA
+intel  libcap                   # getcap/setcap : droit CAP_PERFMON ciblé du collecteur
+intel  intel-gpu-tools          # intel_gpu_top : charge matérielle, fréquence, puissance et mémoire GPU
 intel  intel-media-driver       # décodage vidéo matériel VA-API, Intel Broadwell et plus récents
 # amd : VA-API inclus dans mesa, rien à ajouter
 

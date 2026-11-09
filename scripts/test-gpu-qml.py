@@ -25,15 +25,24 @@ import Quickshell
 import qs.services
 import qs.modules.bar
 import qs.modules.monitor
+import "services/IntelGpu.js" as IntelGpu
 ShellRoot {
+    property bool pmu: Quickshell.env("GPU_PMU") === "1"
     property string vendor: Quickshell.env("GPU_VENDOR")
     GpuModule { id: bar }
     MonitorPanel { id: panel }
     Timer {
         interval: 500; running: true
         onTriggered: {
-            if (Gpu.vendor !== vendor || Gpu.cardPath === "" || Gpu.available !== (vendor !== "intel") || bar.shown !== (vendor !== "intel"))
+            if (Gpu.vendor !== vendor || Gpu.cardPath === "" || Gpu.available !== (vendor !== "intel" || pmu) || bar.shown !== (vendor !== "intel" || pmu))
                 throw new Error("Intel detection / bar visibility");
+            const stream = IntelGpu.stream();
+            const payload = JSON.stringify({name: 'brace } and quote "', engines: {"Render/3D": {busy: 0, unit: "%"}}});
+            if (IntelGpu.read(stream, "[" + payload.slice(0, 15)).length !== 0) throw new Error("Partial JSON frame");
+            const frames = IntelGpu.read(stream, payload.slice(15) + "," + payload + "]");
+            if (frames.length !== 2 || IntelGpu.normalize(frames[0]).gpu.load !== 0) throw new Error("Framing / zero load");
+            const absent = IntelGpu.normalize({frequency: {requested: 1000, unit: "MHz"}, power: {Package: 10, unit: "W"}});
+            if (absent.gpu.load !== -1 || absent.gpu.clock !== -1 || absent.gpu.power !== -1) throw new Error("Invented metrics");
             panel.toggle(null);
         }
     }
@@ -42,7 +51,9 @@ ShellRoot {
         onTriggered: {
             if (Monitor.gpu?.clock !== Number(Quickshell.env("GPU_CLOCK")) || Monitor.gpu?.load !== Number(Quickshell.env("GPU_LOAD")) || Monitor.gpu?.temperature !== Number(Quickshell.env("GPU_TEMP")))
                 throw new Error("Intel GPU without temperature: " + JSON.stringify(Monitor.gpu));
-            if (vendor === "intel") {
+            if (pmu && (!Monitor.gpu?.averageClock || Monitor.gpu?.engines.find(e => e.name === "Video")?.load !== 10.4))
+                throw new Error("Native PMU metrics");
+            if (vendor === "intel" && !pmu) {
                 const before = Monitor.lastIntelSample;
                 Monitor.sampleGpu();
                 if (Monitor.lastIntelSample !== before) throw new Error("Intel polling must be throttled");
@@ -85,8 +96,11 @@ ShellRoot {
             smi = bindir/'nvidia-smi'
             smi.write_text('#!/bin/sh\ncase "$1" in\n--query-gpu=temperature.gpu,utilization.gpu) echo "45, 35";;\n--query-gpu=name,*) echo "Test NVIDIA, 35, 10, 100, 45, 20, 30, 800";;\npmon) echo "# no clients";;\nesac\n')
             smi.chmod(0o755)
+            top = bindir/'intel_gpu_top'
+            top.write_text('#!/bin/sh\n[ "$GPU_PMU" = 1 ] || exit 1\nprintf \'[\\n{"engines":{"Render/3D":{"busy":100,"unit":"%%"}}},\\n\'\nsleep .1\nprintf \'{"frequency":{"actual":400,"unit":"MHz"},"power":{"GPU":0.4,"unit":"W"},"engines":{"Render/3D":{"busy":37.2,"unit":"%%"},"Video":{"busy":10.4,"unit":"%%"}},"clients":{"a":{"pid":"%s","memory":{"system":{"resident":"1048576"}}}}}\\n\' "$PPID"\nsleep 10\n')
+            top.chmod(0o755)
             env['PATH'] = str(bindir) + ':' + env['PATH']
-            for vendor, ident, clock, load, temperature in [('intel','0x8086',1300,-1,-1), ('amd','0x1002',600,32,-1), ('nvidia','0x10de',800,35,45)]:
+            for vendor, ident, clock, load, temperature, pmu in [('intel','0x8086',1300,-1,-1,False), ('intel','0x8086',400,37.2,-1,True), ('amd','0x1002',600,32,-1,False), ('nvidia','0x10de',800,35,45,False)]:
                 (device/'vendor').write_text(ident)
                 if vendor == 'amd':
                     (device/'gpu_busy_percent').write_text('32')
@@ -96,13 +110,13 @@ ShellRoot {
                     (card/'gt_act_freq_mhz').unlink()
                 if vendor == 'nvidia':
                     (device/'gpu_busy_percent').unlink()
-                env.update(GPU_VENDOR=vendor,GPU_CLOCK=str(clock),GPU_LOAD=str(load),GPU_TEMP=str(temperature))
+                env.update(GPU_PMU="1" if pmu else "0",GPU_VENDOR=vendor,GPU_CLOCK=str(clock),GPU_LOAD=str(load),GPU_TEMP=str(temperature))
                 logpath = work/(vendor+'.log')
                 with logpath.open('w') as output:
                     shell = subprocess.Popen(['qs','-p',str(root)],env=env,stdout=output,stderr=subprocess.STDOUT)
                     try:
                         time.sleep(1.6)
-                        if vendor == 'intel':
+                        if vendor == 'intel' and not pmu:
                             # Change frequency between two expensive GPU samples.
                             (card/'gt_act_freq_mhz').write_text('1300')
                         time.sleep(.4)

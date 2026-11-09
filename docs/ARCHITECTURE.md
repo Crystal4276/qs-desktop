@@ -458,7 +458,7 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
 
 - Module GPU : cartes `/sys/class/drm/card*/device/vendor` (`0x10de` NVIDIA, `0x1002` AMD, `0x8086` Intel ; plusieurs : `boot_vga=1`).
   Affiche l'**utilisation** : `nvidia-smi --query-gpu=utilization.gpu` (NVIDIA, aucun capteur hwmon), `device/gpu_busy_percent` (AMD) ;
-  Intel : aucune charge globale directement lisible dans la collecte actuelle → module masqué (aucune estimation ni fréquence dans la barre). Un échec de `nvidia-smi` ne masque pas le module définitivement.
+  Intel : compteur matériel Render/3D via `intel_gpu_top` (module masqué si outil/droits absents). Aucune somme des moteurs ni estimation. Un échec de `nvidia-smi` ne masque pas le module définitivement.
 - Moniteur de statistiques (`modules/monitor/`, ouvert par CPU, mémoire, GPU, `qs ipc call monitor toggle`) : fenêtre native
   `FloatingWindow`, fermable par Super+Q et Échap, clic extérieur sans fermeture. Le compositeur gère bordures et coins
   (pas d’arrondis QML sur le cadre). Taille du contenu bornée par l’écran ; même écran d’ouverture et centrage dans la zone utile.
@@ -466,12 +466,17 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
   Sway via événement de fenêtre, Hyprland via attente bornée de la liste native. Recentrage après changement de dimensions,
   sans reprendre le focus ; aucun changement de raccourci ni règle globale de fenêtres. Fermeture au verrouillage.
   Relevés chaque seconde panneau ouvert ; CPU (total, température coretemp / k10temp / zenpower, cœurs), mémoire et swap, réseau, GPU (NVIDIA : charge, VRAM,
-  température, consommation, ventilateur, fréquence, VRAM par processus via `nvidia-smi pmon` ; AMD : sysfs ; Intel : fréquence réelle
-  `gt_act_freq_mhz`, y compris 0 MHz au repos). `Gpu.cardPath` identifie la carte indépendamment d'un capteur de température.
-  `scripts/gpu-stats.py` lit sysfs et la mémoire résidente déclarée dans les `fdinfo` des processus lisibles, uniquement panneau
-  ouvert, sans privilège ni paquet supplémentaire. Sur Intel, mémoire relevée environ toutes les 10 s (descripteurs DRM seulement) ; fréquence relue nativement chaque seconde panneau ouvert. Identité PID + démarrage vérifiée ; filtre PCI et déduplication par client DRM
-  dans chaque processus et application. La mémoire Intel est de la RAM partagée ; des allocations peuvent appartenir à plusieurs
-  applications. Aucun total physique ni pourcentage de charge n'est déduit de ces compteurs. Les champs absents sont masqués.
+  température, consommation, ventilateur, fréquence, VRAM par processus via `nvidia-smi pmon` ; AMD : sysfs ; Intel :
+  compteurs PMU ci-dessous ou sysfs en repli). `Gpu.cardPath` identifie la carte indépendamment d'un capteur de température.
+  Intel avec droits : un seul `intel_gpu_top -J -s 5000` persistant, partagé entre barre et moniteur via `Gpu.intelStats`.
+  `services/IntelGpu.js` extrait les objets du flux JSON ; première mesure de démarrage ignorée. Barre : Render/3D ; moniteur :
+  3D, Copy, Video, Video+, Compute selon disponibilité, fréquence réelle moyenne sur l'intervalle (libellé `avg`), consommation
+  GPU (pas celle du CPU), mémoire résidente par processus/application. Aucun total physique déduit de la mémoire partagée.
+  Le moniteur réutilise le flux natif sans deuxième collecte Python Intel. Échec ou flux figé : anciennes mesures effacées,
+  nouvelle tentative ; droits restaurés après mise à jour par le hook pacman (`scripts/intel-gpu-setup.sh`).
+  Sans PMU et pour AMD : `scripts/gpu-stats.py` lit sysfs et les fdinfo des processus lisibles, panneau ouvert ; mémoire Intel
+  de repli ~10 s, fréquence native de repli à 1 s. Identité PID + démarrage, filtre PCI et déduplication par client DRM.
+  Mémoire Intel partagée signalée, aucune charge estimée ni température CPU présentée comme GPU.
   Disques (`df`),
   processus (charge comme top, tri, recherche), arrêt de ses propres processus avec confirmation (SIGTERM / SIGKILL).
 - Vue par défaut à chaque ouverture : Applications, y compris les applications identifiables en arrière-plan ; bascule compacte

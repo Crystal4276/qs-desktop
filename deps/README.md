@@ -40,10 +40,10 @@ Chaque commande a été rattachée à son paquet sur cette machine avec `pacman 
 | Volume (icône + curseur) | natif (`Services.Pipewire`) | `pipewire`, `wireplumber` (services utilisateur actifs) | `pavucontrol` (réglages avancés du panneau audio ; `pipewire-pulse`) | Symbols Nerd Font Mono | — |
 | Sortie audio suivante (ex-`audio-toggle.sh`) | natif (`Services.Pipewire`) + `notify-send` | `libnotify` | — | — | — |
 | Mises à jour | `checkupdates` | `pacman-contrib`, **`fakeroot`** (`checkupdates` échoue sans lui ; non déclaré par `pacman-contrib`) | `paru` ou `yay` (clic) ; terminal | Inter, Hack Nerd Font | — |
-| GPU | NVIDIA : `nvidia-smi` ; AMD : sysfs (natif) ; Intel : module masqué sans charge lisible | — | `nvidia-utils` (NVIDIA uniquement : température, charge, mémoire vidéo, processus) ; module masqué sans charge lisible | Inter, Hack Nerd Font | — |
+| GPU | NVIDIA : `nvidia-smi` ; AMD : sysfs (natif) ; Intel : `intel_gpu_top` (PMU, un seul processus à 5 s) | — | `nvidia-utils` (NVIDIA) ; `intel-gpu-tools`, `libcap` (Intel), `polkit` pour accorder CAP_PERFMON ; module masqué sans charge lisible | Inter, Hack Nerd Font | — |
 | CPU | natif (`/proc/stat`) | — | — | Inter, Hack Nerd Font | — |
 | Mémoire | natif (`/proc/meminfo`) | — | — | Inter, Hack Nerd Font | — |
-| Panneau de statistiques (clic CPU / mémoire / GPU, remplace btop et nvtop) | natif (`/proc`, `/sys`) | `procps-ng` (`ps`), `util-linux` (`kill`), `coreutils` (`df`), `python` (`gpu-stats.py` : sysfs et mémoire DRM fdinfo) ; NVIDIA : `nvidia-smi` | — | Inter, Hack Nerd Font | — |
+| Panneau de statistiques (clic CPU / mémoire / GPU, remplace btop et nvtop) | natif (`/proc`, `/sys`) | `procps-ng` (`ps`), `util-linux` (`kill`), `coreutils` (`df`), `python` (`gpu-stats.py` : sysfs et mémoire DRM fdinfo) ; NVIDIA : `nvidia-smi` ; Intel : flux `intel_gpu_top` partagé avec la barre | — | Inter, Hack Nerd Font | — |
 | Horloge + fenêtre calendrier | natif (Qt) | `tzdata` (système) | — | Inter, Hack Nerd Font, Font Awesome 7 Free | — |
 | Réseau (débit) | natif (`/proc/net/dev`, `/proc/net/route`) | — | — | Inter, Hack Nerd Font | — |
 | Tray | natif (`Services.SystemTray` ; Quickshell fait aussi le rôle de « watcher ») | — | — | Inter (menus) | — |
@@ -261,3 +261,12 @@ La surcharge utilisateur Chromium s'installe sans sudo par `python3 scripts/brow
 actions et associations MIME conservées. Installation idempotente, retrait par `uninstall`, sauvegarde d'une ancienne surcharge
 native dans `$XDG_STATE_HOME/qs-desktop/browser-links` (repli `~/.local/state`, dossier 700). Les commandes personnalisées et les
 éditions ultérieures sont préservées. Ce script sera repris par `install.sh` en phase 12.
+
+### Charge matérielle Intel
+
+`install.sh` sélectionne `intel-gpu-tools` et `libcap` uniquement si Intel est détecté (`deps/gpu.txt`). L'étape système
+propose `scripts/system-setup.sh intel-gpu` : `pkexec` authentifie une transaction qui donne `cap_perfmon=ep` au seul
+`/usr/bin/intel_gpu_top`, sans changer `kernel.perf_event_paranoid` ni lancer Quickshell comme root. Le hook
+`/etc/pacman.d/hooks/90-qs-intel-gpu.hook` réapplique ce droit après une mise à jour du paquet. L'ancien droit et un éventuel
+hook préexistant sont sauvegardés dans `/var/lib/qs-desktop/intel-gpu`, restaurés au retrait système. Simulation et idempotence
+respectées. Sans autorisation, température/fréquence/mémoire accessibles restent disponibles ; aucune charge n'est inventée.

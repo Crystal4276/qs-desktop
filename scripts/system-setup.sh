@@ -12,6 +12,7 @@
 #                                                 Chrome Web Store au démarrage du navigateur (/usr/share/chromium/extensions)
 #         system-setup.sh [--dry-run] uninstall   tout ce qui a été changé est remis comme avant (fichiers, groupes, services)
 #         --dry-run : affiche les commandes sans rien modifier.
+#         system-setup.sh [--dry-run] intel-gpu   CAP_PERFMON pour intel_gpu_top, hook de mise à jour et retrait
 #         system-setup.sh [--dry-run] pacman-sudo accès pacman sans mot de passe pour wheel (paru reste lancé en utilisateur)
 #         system-setup.sh [--dry-run] reflector   miroirs Arch rapides et récents, renouvelés chaque semaine
 set -euo pipefail
@@ -319,6 +320,9 @@ do_chromium_extensions() {
 }
 
 do_uninstall() {
+    if [[ -x "$repo/scripts/intel-gpu-setup.sh" ]]; then
+        "$repo/scripts/intel-gpu-setup.sh" ${dry:+--dry-run} uninstall || echo "! Retrait des droits GPU Intel incomplet ; poursuite des autres étapes" >&2
+    fi
     [[ -f "$registry" ]] || { echo "= rien à défaire ($registry absent)"; return; }
     local kind target backup
     # Ordre inverse de l'installation.
@@ -344,6 +348,7 @@ do_uninstall() {
 
 [[ "${1:-}" == --dry-run ]] && { dry=1; shift; }
 case "${1:-}" in
+    intel-gpu) "$repo/scripts/intel-gpu-setup.sh" ${dry:+--dry-run} install ;;
     pacman-sudo) do_pacman_sudo ;;
     multilib) do_multilib ;;
     reflector) do_reflector ;;

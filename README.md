@@ -28,7 +28,7 @@ Puis se déconnecter : l'écran de connexion greetd apparaît au prochain démar
 | 3. Thème | archives officielles Catppuccin (`deps/themes.txt`, empreintes vérifiées) : GTK 3/4, curseur, Kvantum (Qt), dossiers Papirus lavande, Geany ; mêmes polices et curseur partout |
 | 4. Réglages | GSettings (`dotfiles/dconf/`), applications par défaut (`dotfiles/mime/defaults.list`), web apps, liens HTTP vers Chromium ; profils Chromium (navigateur et web apps) en thème GTK, barre de titre du système (sans boutons réduire / agrandir / fermer) |
 | 5. Config machine | crée `hosts/<machine>.json` s'il manque (à committer) |
-| 6. Système (sudo) | écran de connexion greetd, sonde des portails captifs, Samba, services (réseau, Bluetooth, énergie, VM), groupes, thème Qt du système, extensions de Chromium (`dotfiles/chromium/extensions.txt`, installées depuis le Chrome Web Store au démarrage du navigateur ; pas dans les web apps) |
+| 6. Système (sudo / authentification polkit) | compteurs GPU Intel (CAP_PERFMON ciblé et hook de mise à jour), écran de connexion greetd, sonde des portails captifs, Samba, services (réseau, Bluetooth, énergie, VM), groupes, thème Qt du système, extensions de Chromium (`dotfiles/chromium/extensions.txt`, installées depuis le Chrome Web Store au démarrage du navigateur ; pas dans les web apps) |
 
 Tout fichier existant est sauvegardé avant d'être remplacé (`<fichier>.bak-<date>` à côté de l'original ; fichiers système dans
 `/var/lib/qs-desktop/`).
@@ -88,3 +88,7 @@ Les réglages conservés directement dans le BIOS sont documentés dans les note
 
 `docs/ARCHITECTURE.md` (fonctionnement), `docs/THEME.md` (charte), `docs/DEVELOPMENT.md` (développer sans casser son bureau),
 `docs/ROLLBACK.md` (revenir en arrière), `deps/README.md` (dépendances par module), `PROGRESS.md`, `BACKLOG.md`.
+
+Sur Intel, les paquets GPU incluent `intel-gpu-tools`. La charge 3D de la barre et les moteurs du moniteur utilisent ses
+compteurs matériels. L'étape système demande l'autorisation ciblée `CAP_PERFMON` pour ce collecteur, conservée après les
+mises à jour du paquet. `--no-system` laisse les droits actuels ; `--uninstall` avec retrait système les restaure.
