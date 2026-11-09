@@ -4,6 +4,7 @@ import importlib.util
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 spec = importlib.util.spec_from_file_location('gpu', Path(__file__).with_name('gpu-stats.py'))
 gpu = importlib.util.module_from_spec(spec)
@@ -30,6 +31,10 @@ class GpuTests(unittest.TestCase):
         self.write(self.proc / str(pid) / 'stat', f'{pid} (worker (GPU)) S ' + ' '.join(['0']*18 + ['10']))
         self.write(self.proc / str(pid) / 'fdinfo' / str(fd),
                    f'drm-driver: i915\ndrm-pdev: {device}\ndrm-client-id: {identity}\ndrm-resident-system0: {memory}\n')
+        fdpath = self.proc / str(pid) / 'fd' / str(fd)
+        fdpath.parent.mkdir(parents=True, exist_ok=True)
+        if not fdpath.is_symlink():
+            fdpath.symlink_to('/dev/dri/renderD128')
         return dict(pid=pid, key=f'{pid}:10')
 
     def sample(self, vendor='intel', processes=()):
@@ -84,6 +89,20 @@ class GpuTests(unittest.TestCase):
         self.assertEqual(self.sample(processes=[p])['clients'], {})
         self.client(10, 4)
         self.assertEqual(self.sample(processes=[dict(pid=10,key='10:20'),dict(pid=99,key='99:10')])['clients'], {})
+
+    def test_non_gpu_descriptors_are_never_sampled(self):
+        p = self.client(10, 3)
+        fd = self.proc / '10/fd/99'
+        fd.symlink_to('socket:[123]')
+        ordinary = self.proc / '10/fdinfo/99'
+        ordinary.write_text('irrelevant')
+        read = Path.read_text
+        def checked(path, *args, **kwargs):
+            if path == ordinary:
+                raise AssertionError('Non-GPU fdinfo must not be read')
+            return read(path, *args, **kwargs)
+        with patch.object(Path, 'read_text', checked):
+            self.assertEqual(self.sample(processes=[p])['clients'][p['key']], {'0000:00:02.0:7': 2})
 
     def test_memory_units_and_invalid_memory(self):
         for text, result in [('1048576 B',1),('1024 KiB',1),('1 MiB',1),('1 GiB',1024),('0',0),('n/a',None)]:

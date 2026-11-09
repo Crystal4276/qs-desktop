@@ -36,6 +36,7 @@ Singleton {
 
     // --- GPU ---
     property var gpu: null             // { name, load, memUsed, memTotal (Mio), temperature, power (W), fan (%), clock (MHz) }
+    property real lastIntelSample: 0
     property var gpuProcesses: ({})    // pid → mémoire vidéo NVIDIA (Mio)
 
     // --- Disques ---
@@ -121,6 +122,7 @@ Singleton {
             previousTimes = {};
             previousTotal = 0;
             gpu = null;
+            lastIntelSample = 0;
             gpuProcesses = {};
             processes = processes.map(p => Object.assign({}, p, {gpu: 0, gpuClients: {}}));
         }
@@ -154,8 +156,15 @@ Singleton {
 
     // GPU au rythme de la liste des processus, juste après elle : ces commandes n'y figurent pas.
     function sampleGpu(): void {
-        if (!gpuQuery.running && (Gpu.useSmi || Gpu.cardPath !== ""))
-            gpuQuery.running = true;
+        if (!gpuQuery.running && (Gpu.useSmi || Gpu.cardPath !== "")) {
+            // Intel exposes frequency/memory here: avoid rescanning descriptors every 2.6 s.
+            const now = Date.now();
+            const elapsed = now - lastIntelSample;
+            if (Gpu.vendor !== "intel" || lastIntelSample === 0 || elapsed < 0 || elapsed >= 10000) {
+                lastIntelSample = now;
+                gpuQuery.running = true;
+            }
+        }
         if (!gpuProcessList.running && Gpu.vendor === "nvidia" && Gpu.useSmi)
             gpuProcessList.running = true;
     }
