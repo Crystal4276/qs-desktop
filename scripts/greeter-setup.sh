@@ -93,7 +93,7 @@ do_install() {
     for f in "$repo/hosts/$host.json" "$repo"/dotfiles/sway/hosts/"$host".*; do
         f="${f#"$repo"/}"
         [[ -f "$repo/$f" ]] && ! git -C "$repo" ls-files --error-unmatch "$f" >/dev/null 2>&1 \
-            && { echo "+ $f (pas encore committé) ajouté à la copie"; install -D -m 644 "$repo/$f" "$tree/$f"; }
+            && { echo "- $f (pas encore committé) ajouté à la copie"; install -D -m 644 "$repo/$f" "$tree/$f"; }
     done
 
     # Déjà en place et identique : rien à refaire (relance d'install.sh).

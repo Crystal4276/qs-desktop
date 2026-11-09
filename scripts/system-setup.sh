@@ -114,7 +114,8 @@ do_install() {
         echo "= QT_QPA_PLATFORMTHEME=qt6ct déjà dans /etc/environment"
     else
         backup_once /etc/environment
-        run sh -c "echo 'QT_QPA_PLATFORMTHEME=qt6ct' >> /etc/environment"
+        # Dernière ligne sans saut de ligne : ajouté d'abord (sinon la variable se collerait à la précédente).
+        run sh -c "[ ! -s /etc/environment ] || [ -z \"\$(tail -c 1 /etc/environment)\" ] || echo >> /etc/environment; echo 'QT_QPA_PLATFORMTHEME=qt6ct' >> /etc/environment"
     fi
 
     getent group libvirt >/dev/null && add_group libvirt
@@ -152,17 +153,17 @@ do_install() {
     if [[ -n "$dry" ]]; then
         command -v virsh >/dev/null && echo "+ virsh -c qemu:///system net-autostart default (si le réseau n'est pas déjà démarré au boot)"
     elif command -v virsh >/dev/null; then
-        # libvirtd démarré à l'instant : quelques secondes avant qu'il réponde (pas d'attente aux passages suivants).
-        local tries=0
-        if [[ -n "$libvirt_new" ]]; then
-            until virsh_sys net-info default >/dev/null 2>&1 || (( ++tries >= 10 )); do sleep 1; done
-        fi
-        if virsh_sys net-info default 2>/dev/null | grep -q '^Autostart: *yes'; then
+        # Une seule lecture, réessayée : libvirtd démarré à l'instant met quelques secondes à répondre, et celui déjà là s'arrête
+        # seul après 2 min sans client (--timeout 120 d'Arch) : un appel tombé pendant cet arrêt échoue, le suivant le relance.
+        local tries=0 max=3 info=""
+        [[ -n "$libvirt_new" ]] && max=10
+        until info="$(virsh_sys net-info default 2>/dev/null)" || (( ++tries >= max )); do sleep 1; done
+        if grep -q '^Autostart: *yes' <<<"$info"; then
             echo "= réseau libvirt « default » déjà démarré au boot"
-        elif virsh_sys net-info default >/dev/null 2>&1; then
+        elif [[ -n "$info" ]]; then
             run virsh -c qemu:///system net-autostart default
             run virsh -c qemu:///system net-start default || true
-            record net default
+            recorded net default || record net default
         fi
     fi
     [[ -n "$dry" ]] && return
