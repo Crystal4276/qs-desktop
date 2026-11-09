@@ -86,6 +86,8 @@ verrouillage).
 
 ## Tests ciblés de robustesse
 
+- `python scripts/test-reflector.py` : amorçage avant les paquets et gestion des miroirs avec sudo/pacman/systemctl factices ;
+  simulation, options, échecs, reprise, idempotence, sauvegardes et restauration de l'état du timer. Aucun réseau ni sudo réel.
 - `python scripts/test-greeter-cleanup.py` : retrait du greeter sur fichiers temporaires et commandes sudo/systemctl factices ;
   sauvegardes réseau/OpenRGB, fonds utilisateur, service actif, sauvegarde manquante et répétition.
 - `python scripts/test-sleep.py` : vrai service Idle sur plateforme Qt offscreen, bus privé, services QML et commandes logind factices ;

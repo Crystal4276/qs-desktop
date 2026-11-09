@@ -130,6 +130,23 @@ Ensuite (pas de phase 13) : maintenance et idées de `BACKLOG.md`, une à la foi
 - Le BIOS signale un redémarrage nécessaire. Reste : redémarrer, attendre plus de 30 s sans activité sur
   secteur, puis débrancher et vérifier l'extinction à 30 s sur batterie, le rallumage à la frappe et au rebranchement.
 
+## Maintenance — Reflector (2026-11-09)
+
+- `install.sh` propose Reflector avant les paquets du bureau (Arch Linux uniquement). S'il manque, amorçage par
+  `pacman -S --needed reflector` avec les miroirs existants, puis installation habituelle avec mise à jour complète.
+- Sélection mondiale : HTTPS, synchronisation < 12 h, vingt candidats au maximum classés par débit ; initialisation immédiate
+  via le service du paquet, puis `reflector.timer` hebdomadaire. Aucun pays fixé, aucune mise à jour de paquets automatique.
+- Configuration, liste initiale et changements d'activation/activité du timer sauvegardés pour le retrait système. Échec :
+  dernière liste conservée, suite de l'installation et rappel final ; nouvelle tentative au passage suivant. Une initialisation
+  réussie n'est pas rejouée si la configuration et la liste sont présentes. Options de simulation et d'exclusion respectées.
+- Validations : `python3 scripts/test-reflector.py` OK (commandes factices, quatre états initiaux du timer, fichiers absents,
+  échecs réseau/liste vide, reprise après une ancienne réussite, amorçage, options, idempotence et retrait) ;
+  `python3 scripts/test-install.py` **0 échec** ; syntaxe Bash et `git diff --check` OK. Source officielle Reflector 2023 vérifiée :
+  sélection vide rejetée avant toute écriture, timer hebdomadaire persistant. Test de sélection vide exécuté hors réseau sur
+  ce code officiel : fichier d'origine conservé.
+- Reste : validation réelle du service et du timer dans une VM Arch (image de test et accès KVM absents de cet environnement).
+  Aucun paquet installé ni réglage système modifié sur la machine de travail.
+
 ## À tester à la main
 
 **Laptop** : laptop seul, + écrans externes, capot fermé, écran interne éteint, branchement à chaud avec fenêtres ouvertes ;

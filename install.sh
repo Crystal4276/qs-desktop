@@ -5,12 +5,12 @@
 #   --dry-run          affiche tout ce qui serait fait, sans rien modifier (ni paquet, ni fichier, ni sudo)
 #   --with jeux        ajoute le profil « jeux » (deps/games.txt) sans le demander ; --without jeux : ne pas le proposer
 #   --no-packages      ne touche pas aux paquets (ni multilib, ni paru)
-#   --no-system        aucune étape système (sudo) : greeter, sonde réseau, Samba, services…
+#   --no-system        aucune étape système (sudo) : Reflector, greeter, sonde réseau, Samba, services…
 #   --yes              ne pose aucune question (étapes système et profil jeux : réponse « oui » / valeur des options)
 #   --uninstall        retire les liens et copies, remet les sauvegardes et les réglages d'origine, étapes système comprises ;
 #                      les paquets installés restent
 #
-# Étapes : 1 paquets (dépôts officiels, multilib, paru-bin) · 2 configs du compte (liens, sauvegardes `<x>.bak-<date>`) ·
+# Étapes : miroirs Reflector · 1 paquets (dépôts officiels, multilib, paru-bin) · 2 configs du compte (liens, sauvegardes `<x>.bak-<date>`) ·
 # 3 thème · 4 réglages (dconf, applications par défaut, web apps, liens Chromium) · 5 config machine · 6 système (sudo).
 set -euo pipefail
 
@@ -223,6 +223,27 @@ gpu_vendors() { # cartes graphiques présentes : nvidia intel amd, lues par lspc
 # --- 1. Paquets --------------------------------------------------------------------------------------------------------
 
 is_arch() { [[ -f /etc/arch-release ]] || grep -qsE '^ID(_LIKE)?=.*\barch\b' /etc/os-release; }
+
+# Reflector utilise les dépôts Arch : ne jamais remplacer les miroirs d'une distribution dérivée.
+step_reflector() {
+    grep -qxE 'ID="?arch"?' /etc/os-release || return 0
+    section "Miroirs Arch (Reflector)"
+    ask "Optimiser les miroirs maintenant et automatiquement chaque semaine (Reflector) ?" oui || return 0
+    if ! command -v reflector >/dev/null; then
+        if [[ -z "$packages" ]]; then
+            later "Reflector absent : installer le paquet reflector puis relancer sans --no-packages."
+            return
+        fi
+        printf '+ sudo pacman -S --needed %sreflector\n' "${yes:+--noconfirm }"
+        if [[ -z "$dry" ]] && ! sudo pacman -S --needed ${yes:+--noconfirm} reflector; then
+            later "Reflector non installé : miroirs existants gardés ; relancer install.sh après l'installation des paquets."
+            return
+        fi
+    fi
+    if ! "$repo/scripts/system-setup.sh" ${dry:+--dry-run} reflector; then
+        later "Reflector : configuration incomplète, miroirs existants gardés ; relancer install.sh."
+    fi
+}
 
 step_packages() {
     section "1. Paquets"
@@ -985,7 +1006,7 @@ EOF
     if command -v chromium >/dev/null; then
         python3 "$repo/scripts/browser-links-setup.py" ${dry:+--dry-run} uninstall 2>/dev/null || echo "= liens Chromium : rien à retirer"
     fi
-    if [[ -n "$system" ]] && ask "Défaire aussi les étapes système (greeter → ancien gestionnaire, sonde réseau, Samba, services, groupes, extensions Chromium) ?"; then
+    if [[ -n "$system" ]] && ask "Défaire aussi les étapes système (Reflector, greeter → ancien gestionnaire, sonde réseau, Samba, services, groupes, extensions Chromium) ?"; then
         sub "$repo/scripts/system-setup.sh" ${dry:+--dry-run} uninstall
         sub "$repo/scripts/network-setup.sh" ${dry:+--dry-run} uninstall
         sub "$repo/scripts/greeter-setup.sh" ${dry:+--dry-run} uninstall
@@ -1024,6 +1045,7 @@ if [[ -n "$uninstall" ]]; then
     exit 0
 fi
 [[ -n "$dry" ]] && echo "Simulation : rien ne sera modifié."
+[[ -n "$system" ]] && step_reflector
 [[ -n "$packages" ]] && step_packages
 step_configs
 step_theme

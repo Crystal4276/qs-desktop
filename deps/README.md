@@ -4,6 +4,9 @@ Règle (2026-11-09) : **dépôts officiels d'abord**. `install.sh` n'installe au
 lui-même ; ce qui n'existe qu'en AUR (Claude Code, NordVPN, Plex, RustDesk) est seulement documenté dans `README.md`.
 
 - `arch-pacman.txt` : le bureau (dépôts officiels Arch).
+- `reflector` (dans `arch-pacman.txt`) : amorcé avant les paquets du bureau avec confirmation système ; sélection mondiale HTTPS,
+  synchronisation < 12 h, vingt candidats classés par débit ; service et timer hebdomadaire du paquet. Configuration via
+  `scripts/system-setup.sh [--dry-run] reflector`, sauvegardes et retrait dans le même registre système.
 - `apps.txt` : applications de base, toujours installées (terminal, fichiers, navigateur, mail, documents, création,
   multimédia minimal, Wine, virtualisation, Samba).
 - `games.txt` : profil optionnel « jeux » (`install.sh --with jeux`) ; Steam vient du dépôt `multilib`, activé par `install.sh`.
