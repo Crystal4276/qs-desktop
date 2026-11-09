@@ -897,6 +897,9 @@ greeter_wallpaper() {
 
 step_system() {
     section "6. Système (sudo, avec confirmation)"
+    if gpu_vendors | grep -qx intel && ask "Mesures GPU Intel : autoriser intel_gpu_top à lire les compteurs matériels (CAP_PERFMON) ?" oui; then
+        sub "$repo/scripts/system-setup.sh" ${dry:+--dry-run} intel-gpu
+    fi
     if ask "Écran de connexion greetd + greeter Quickshell (remplace le gestionnaire actuel) ?" oui; then
         sub "$repo/scripts/greeter-setup.sh" ${dry:+--dry-run} install
         sub "$repo/scripts/system-setup.sh" ${dry:+--dry-run} cursor
@@ -1015,7 +1018,7 @@ EOF
     if command -v chromium >/dev/null; then
         python3 "$repo/scripts/browser-links-setup.py" ${dry:+--dry-run} uninstall 2>/dev/null || echo "= liens Chromium : rien à retirer"
     fi
-    if [[ -n "$system" ]] && ask "Défaire aussi les étapes système (sudo pacman, Reflector, greeter → ancien gestionnaire, sonde réseau, Samba, services, groupes, extensions Chromium) ?"; then
+    if [[ -n "$system" ]] && ask "Défaire aussi les étapes système (GPU Intel, sudo pacman, Reflector, greeter → ancien gestionnaire, sonde réseau, Samba, services, groupes, extensions Chromium) ?"; then
         sub "$repo/scripts/system-setup.sh" ${dry:+--dry-run} uninstall
         sub "$repo/scripts/network-setup.sh" ${dry:+--dry-run} uninstall
         sub "$repo/scripts/greeter-setup.sh" ${dry:+--dry-run} uninstall

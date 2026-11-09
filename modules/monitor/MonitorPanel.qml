@@ -152,7 +152,8 @@ FloatingWindow {
     readonly property int coreLabelWidth: widest(Array.from({ length: coreCount }, (_, i) => String(i)))
     readonly property int memoryValueWidth: usageWidest([Monitor.memTotal, Monitor.swapTotal])
     readonly property real gpuMemoryTotal: (Monitor.gpu?.memTotal ?? 0) * 1048576
-    readonly property int gpuValueWidth: usageWidest([gpuMemoryTotal])
+    readonly property int gpuLabelWidth: widest(["Load", "VRAM", "3D", "Copy", "Video+", "Compute"])
+    readonly property int gpuValueWidth: gpuMemoryTotal > 0 ? usageWidest([gpuMemoryTotal]) : widest(["100.0 %"])
 
     function bytes(v: real): string {
         const units = ["B", "KiB", "MiB", "GiB", "TiB"];
@@ -367,12 +368,25 @@ FloatingWindow {
 
                 Gauge {
                     visible: (Monitor.gpu?.load ?? -1) >= 0
-                    label: "Load"
-                    labelWidth: root.shortLabelWidth
+                    label: Monitor.gpu?.averageClock ? "3D" : "Load"
+                    labelWidth: root.gpuLabelWidth
                     valueWidth: root.gpuValueWidth
                     value: (Monitor.gpu?.load ?? 0) / 100
                     text: `${Monitor.gpu?.load ?? 0} %`
                     tint: Theme.monitor.gpu
+                }
+
+                Repeater {
+                    model: Monitor.gpu?.engines ?? []
+                    Gauge {
+                        required property var modelData
+                        label: modelData.name
+                        labelWidth: root.gpuLabelWidth
+                        valueWidth: root.gpuValueWidth
+                        value: modelData.load / 100
+                        text: `${modelData.load} %`
+                        tint: Theme.monitor.gpu
+                    }
                 }
 
                 Text {
@@ -387,7 +401,7 @@ FloatingWindow {
                 Gauge {
                     visible: (Monitor.gpu?.memTotal ?? -1) > 0 && (Monitor.gpu?.memUsed ?? -1) >= 0
                     label: "VRAM"
-                    labelWidth: root.shortLabelWidth
+                    labelWidth: root.gpuLabelWidth
                     valueWidth: root.gpuValueWidth
                     value: (Monitor.gpu?.memTotal ?? 0) > 0 ? Monitor.gpu.memUsed / Monitor.gpu.memTotal : 0
                     text: `${root.bytes((Monitor.gpu?.memUsed ?? 0) * 1048576)} / ${root.bytes((Monitor.gpu?.memTotal ?? 0) * 1048576)}`
@@ -397,9 +411,9 @@ FloatingWindow {
                 Text {
                     text: [
                         (Monitor.gpu?.temperature ?? -1) >= 0 ? `${Monitor.gpu.temperature} °C` : "",
-                        (Monitor.gpu?.power ?? -1) >= 0 ? `${Math.round(Monitor.gpu.power)} W` : "",
+                        (Monitor.gpu?.power ?? -1) >= 0 ? `${Monitor.gpu.power.toFixed(Monitor.gpu.power < 10 ? 1 : 0)} W` : "",
                         (Monitor.gpu?.fan ?? -1) >= 0 ? `fan ${Monitor.gpu.fan} %` : "",
-                        (Monitor.gpu?.clock ?? -1) >= 0 ? `${Monitor.gpu.clock} MHz` : ""
+                        (Monitor.gpu?.clock ?? -1) >= 0 ? `${Monitor.gpu.clock} MHz${Monitor.gpu.averageClock ? " avg" : ""}` : ""
                     ].filter(t => t !== "").join("  ·  ")
                     font.family: Theme.font.text
                     font.pixelSize: Theme.panel.smallFontSize

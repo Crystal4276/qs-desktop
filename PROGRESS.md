@@ -275,3 +275,29 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
   Capture `.shots/gpu-monitor-clock-fix.png`, fermeture et focus restaurés ; aucun avertissement QML au démarrage,
   seulement les anciennes icônes NordVPN manquantes. Lecture directe sysfs au repos : 0 MHz réel, 1200 MHz demandé
   (fréquences distinctes, aucune substitution). Bancs arrêtés.
+
+## Maintenance — vraie charge Intel et installation portable (2026-11-09)
+
+- Autorisation donnée : installer l'outil Intel et lui donner le droit ciblé si le coût reste faible ; installer aussi ce paquet
+  automatiquement sur les futures machines Intel. `intel-gpu-tools` 2.6-1 installé (dépendances libprocps, peg, xorg-xrandr).
+  `CAP_PERFMON` accordé uniquement à `/usr/bin/intel_gpu_top` ; Quickshell reste utilisateur, `perf_event_paranoid=2` conservé.
+- Un seul collecteur natif persistant à 5 s : barre = compteur matériel Render/3D ; moniteur = 3D, Copy, Video, Video+,
+  Compute, fréquence réelle moyenne `avg`, consommation GPU et mémoire déclarée par processus/application. Le flux est
+  partagé ; aucun parcours Python Intel supplémentaire avec les PMU valides. Première mesure d'initialisation ignorée ;
+  reprise après échec, expiration des données figées, repli lecture sysfs sans inventer de charge. Pas de température GPU exposée.
+- Coût réel : outil seul à 1 s 2,22 % d'un cœur, à 2,6 s 1,21 %, à 5 s 0,60 %. Intégré au bureau à 5 s : 0,40 % sur 20 s.
+  Module QML isolé + collecteur sur 20 s : 0,15 + 0,40 = **0,55 % d'un cœur**. Collecteur actif même panneau fermé pour la barre.
+- `deps/gpu.txt` : intel-gpu-tools + libcap sélectionnés pour Intel seulement. `install.sh` demande l'autorisation PMU à
+  l'étape système (`system-setup.sh intel-gpu`). `intel-gpu-setup.sh` : transaction polkit, sauvegarde de l'ancien droit et du
+  hook éventuel, idempotence, simulation, retour arrière sur échec et retrait. Hook pacman root:root 644 installé pour
+  réappliquer le droit après les mises à jour du paquet ; état d'origine sans capacité enregistré dans `/var/lib/qs-desktop/intel-gpu`.
+- Tests : `test-intel-gpu-setup.py` (sélection du paquet + étape système, droits précédents, échec, restauration, simulation,
+  idempotence), `test-gpu-qml.py` (Intel refusé et PMU valide, flux JSON fragmenté/échappé, première mesure, vrais zéros,
+  champs absents, partage barre/moniteur, AMD, NVIDIA), `test-gpu.py`, `test-monitor.py`, `test-sudo-pacman.py`,
+  `test-reflector.py`, `test-bar.py` (70 scénarios) : OK. Syntaxe Bash et diff sans erreur. Intégration Chromium optionnelle non lancée.
+- Session réelle : charge 3D variable (notamment 2,8 % puis 1,8 %), consommation 0,1 W, fréquence moyenne 29 puis 43 MHz,
+  mémoire GPU des applications affichée. Captures `.shots/intel-gpu-monitor.png` et `.shots/intel-gpu-bar.png`, charte vérifiée.
+  Démarrage propre, IPC et moniteur fonctionnels, panneau refermé et focus restauré ; bureau vivant PID 71676.
+  Avertissements préexistants : icônes NordVPN et Qt textinput ; aucune action VPN. Bancs et sondes de mesure arrêtés.
+- Reste : charge vidéo/jeu et autres machines Intel à vérifier à l'usage, mise à jour réelle du paquet (hook testé sur données
+  simulées, pas de réinstallation imposée). NVIDIA et AMD validés ici par simulation.

@@ -105,11 +105,27 @@ placé dans le mapping natif. L'accélération ne choisit pas le workspace et ne
 
 ## Collecteur GPU Intel — laptop (2026-11-09)
 
-Trois passages réels, environ 364 processus et 18 clients DRM : avant filtrage, 140–163 ms CPU par collecte ; après
-filtrage des descripteurs `/dev/dri` avec `os.scandir`, 84–100 ms CPU, données conservées. Les relevés Intel
-(fréquence et mémoire résidente déclarée) sont espacés à environ 10 s, uniquement panneau ouvert : environ 0,9 %
-d'un cœur en moyenne pour ce collecteur, contre environ 6 % au rythme initial de 2,6 s. Ce chiffre ne comprend
-pas les autres relevés du moniteur. Panneau fermé : aucune collecte GPU périodique sur ce laptop sans hwmon ni charge sysfs.
+Solution retenue : `intel_gpu_top` 2.6-1, capacité ciblée `CAP_PERFMON`, un seul processus persistant à **5 s** partagé entre
+barre et moniteur. Le flux comprend la charge matérielle par moteur, la fréquence moyenne réelle, la consommation GPU
+et la mémoire déclarée par les processus. Aucun second parcours Python Intel lorsque ce flux est disponible.
 
-Fréquence Intel (correctif suivant) : lecture native `FileView` par seconde, indépendante du parcours des processus et sans
-nouveau processus Python. L'intervalle d'environ 10 s ne concerne plus que les relevés détaillés de mémoire.
+Mesures du collecteur (temps CPU, un cœur, machine au repos avec le bureau actif) :
+
+| Cadence | Durée | CPU | Moyenne |
+|---|---:|---:|---:|
+| 1 s | 15,34 s | 340,1 ms | 2,22 % |
+| 2,6 s | 15,79 s | 191,1 ms | 1,21 % |
+| **5 s** | 20,12 s | 120,3 ms | **0,60 %** |
+| **5 s, intégré au bureau** | 20 s | 80 ms | **0,40 %** |
+
+Mesure complémentaire isolant le module QML `Gpu` et son enfant natif, sur 20 s après démarrage :
+**0,15 % d'un cœur pour QML + 0,40 % pour le collecteur = 0,55 % au total**. Le coût de l'ensemble du moniteur
+(CPU, réseau, processus, rendu) n'est pas attribué à la collecte GPU dans ce test.
+
+Le collecteur reste actif panneau fermé pour alimenter la barre. La première mesure, couvrant l'initialisation des compteurs,
+est ignorée. Le pourcentage de la barre est celui de Render/3D, sans somme artificielle des moteurs. La fréquence `avg` est
+une moyenne sur l'intervalle, intégrant les périodes de repos ; elle diffère de la fréquence instantanée sysfs.
+
+Ancien chemin sans PMU (repli uniquement désormais) : Python 140–163 ms CPU par collecte initiale, puis 84–100 ms après
+filtrage des descripteurs DRM ; mémoire espacée à ~10 s panneau ouvert et fréquence native à 1 s. Ce parcours ne tourne plus
+pour Intel avec le flux matériel valide.
