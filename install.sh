@@ -182,8 +182,7 @@ EOF
 )" || { echo "! $file illisible (encodage ?) : non réglé"; return 0; }
     [[ -n "$changes" ]] || return 0
     if [[ "$changes" == same ]]; then echo "= $file [$section] ${*:1:1}…"; return; fi
-    if [[ -e "$file" ]]; then backup_once edit "$file" cp
-    elif ! recorded "$file"; then record seed "$file" -; fi
+    before_write "$file"
     printf '+ %s : [%s] %s\n' "$file" "$section" "$*"
     [[ -n "$dry" ]] && return
     mkdir -p "$(dirname "$file")"
@@ -249,8 +248,9 @@ step_packages() {
     [[ "$games" == yes ]] && mapfile -t -O "${#want[@]}" want < <(pkg_list games.txt)
     # lspci d'abord : il choisit les paquets de la carte graphique de ce même passage.
     if ! command -v lspci >/dev/null; then
-        printf '+ sudo pacman -S --needed %spciutils\n' "${yes:+--noconfirm }"
-        [[ -n "$dry" ]] || sudo pacman -S --needed ${yes:+--noconfirm} pciutils
+        # -Syu : base des paquets à jour (une base périmée ferait échouer le téléchargement), système mis à jour d'abord.
+        printf '+ sudo pacman -Syu --needed %spciutils\n' "${yes:+--noconfirm }"
+        [[ -n "$dry" ]] || sudo pacman -Syu --needed ${yes:+--noconfirm} pciutils
     fi
     mapfile -t vendors < <(gpu_vendors)
     for v in "${vendors[@]}"; do
@@ -300,16 +300,28 @@ host_file() {   # dossier-du-dépôt extension → hosts/<machine>.<ext> s'il ex
     if [[ -f "$repo/$1/hosts/$host.$2" ]]; then echo "$1/hosts/$host.$2"; else echo "$3"; fi
 }
 
-dnd_mutes() {   # la machine coupe-t-elle des applications la nuit ? (doNotDisturb.muteApps non vide)
-    command -v python3 >/dev/null || return 1
-    python3 -I - "$repo/hosts/default.json" "$repo/hosts/$host.json" <<'EOF'
+# Valeur de premier niveau de la config machine (hosts/default.json puis hosts/<machine>.json, comme config/Settings.qml) ;
+# un chemin pointé (doNotDisturb.muteApps) descend dans les objets. Vide si absente.
+host_setting() {
+    command -v python3 >/dev/null || return 0
+    python3 -I - "$1" "$repo/hosts/default.json" "$repo/hosts/$host.json" <<'EOF'
 import json, sys
 conf = {}
-for p in sys.argv[1:]:
+for p in sys.argv[2:]:
     try: conf.update(json.load(open(p)))
     except FileNotFoundError: pass
-sys.exit(0 if conf.get("doNotDisturb", {}).get("muteApps") else 1)
+v = conf
+for k in sys.argv[1].split("."):
+    v = v.get(k) if isinstance(v, dict) else None
+if isinstance(v, (list, dict)):
+    print(json.dumps(v) if v else "")
+else:
+    print("" if v is None else v)
 EOF
+}
+
+dnd_mutes() {   # la machine coupe-t-elle des applications la nuit ? (doNotDisturb.muteApps non vide)
+    [[ -n "$(host_setting doNotDisturb.muteApps)" ]]
 }
 
 step_configs() {
@@ -393,7 +405,7 @@ put_dir() {     # source cible nom-de-l'archive
 
 put_file() {    # source cible : fichier du thème, l'ancien sauvegardé
     if [[ -f "$2" ]] && cmp -s "$1" "$2"; then echo "= $2"; return; fi
-    if [[ -e "$2" ]]; then backup_once edit "$2" cp; elif ! recorded "$2"; then record seed "$2" -; fi
+    before_write "$2"
     run mkdir -p "$(dirname "$2")"
     run cp "$1" "$2"
     written "$2"
@@ -468,9 +480,15 @@ step_theme() {
         rm -rf "$d"
     fi
 
-    if d="$(fetch geany)"; then
-        put_file "$(echo "$d"/geany-*/src/catppuccin-mocha.conf)" "$config/geany/colorschemes/catppuccin-mocha.conf"
+    # Geany : un seul fichier ; marque = empreinte de l'archive dont il vient (dans l'état d'install.sh).
+    local geany_cs="$config/geany/colorschemes/catppuccin-mocha.conf" geany_sha
+    geany_sha="$(awk '$1 == "geany" { print $2 }' "$repo/deps/themes.txt")"
+    if [[ -f "$geany_cs" && "$(cat "$state/theme-geany" 2>/dev/null)" == "$geany_sha $(sha256sum < "$geany_cs")" ]]; then
+        echo "= $geany_cs"
+    elif d="$(fetch geany)"; then
+        put_file "$(echo "$d"/geany-*/src/catppuccin-mocha.conf)" "$geany_cs"
         rm -rf "$d"
+        [[ -n "$dry" ]] || { mkdir -p "$state"; echo "$geany_sha $(sha256sum < "$geany_cs")" > "$state/theme-geany"; }
     fi
 
     # Même thème, mêmes polices et même curseur partout (docs/THEME.md ; procédure du curseur : deps/README.md).
@@ -514,7 +532,7 @@ step_settings() {
             echo "- $app absent : ses types ne changent pas"; continue
         fi
         if [[ -z "$types" ]]; then echo "= $app par défaut"; continue; fi
-        if [[ -e "$mimeapps" ]]; then backup_once edit "$mimeapps" cp; elif ! recorded "$mimeapps"; then record seed "$mimeapps" -; fi
+        before_write "$mimeapps"
         # shellcheck disable=SC2086
         run xdg-mime default "$app" $types
         written "$mimeapps"
@@ -543,7 +561,7 @@ PY
     fi
 
     deluge_no_tray
-    chromium_gtk_themes
+    command -v chromium >/dev/null && chromium_gtk_themes
     if command -v python3 >/dev/null; then step_webapps; else echo "- python3 absent (installé à l'étape 1) : web apps non générées"; fi
     if command -v chromium >/dev/null; then
         python3 "$repo/scripts/browser-links-setup.py" ${dry:+--dry-run} install
@@ -581,10 +599,15 @@ PY
 # Chromium suit le thème GTK du système, Catppuccin Mocha : réglage « Thème : GTK » (extensions.theme.system_theme = 1),
 # pour le profil principal comme sur le desktop de référence, et pour le profil isolé de chaque web app (toutes les
 # applications suivent le thème GTK). Un fichier absent est créé avec cette seule clé ; Chromium complète le reste.
+# Profils isolés des web apps (--user-data-dir des modèles de lanceurs).
+webapp_profiles() {
+    grep -ho -- '--user-data-dir=@PROFILES@/[^ "]*' "$repo"/dotfiles/webapps/applications/*.desktop | sed 's|.*/||' | sort -u
+}
+
 chromium_gtk_themes() {
     local profile
     chromium_gtk_theme "$config/chromium/Default/Preferences"
-    for profile in $(grep -ho -- '--user-data-dir=@PROFILES@/[^ "]*' "$repo"/dotfiles/webapps/applications/*.desktop | sed 's|.*/||' | sort -u); do
+    for profile in $(webapp_profiles); do
         chromium_gtk_theme "$data/ice/profiles/$profile/Default/Preferences"
     done
 }
@@ -636,10 +659,14 @@ running_here() {    # motif pgrep -f ; QS_INSTALL_ASSUME_CLOSED : tests (applica
     return 1
 }
 
-write_setting() {   # fichier contenu description [keep : déjà noté au registre par l'appelant]
-    if [[ "${4:-}" == keep ]]; then :
-    elif [[ -e "$1" ]]; then backup_once edit "$1" cp
+# Avant d'écrire un fichier de réglages : copie d'origine s'il existe, sinon noté comme créé (retiré par --uninstall).
+before_write() {
+    if [[ -e "$1" ]]; then backup_once edit "$1" cp
     elif ! recorded "$1"; then record seed "$1" -; fi
+}
+
+write_setting() {   # fichier contenu description [keep : déjà noté au registre par l'appelant]
+    [[ "${4:-}" == keep ]] || before_write "$1"
     printf '+ %s : %s\n' "$1" "$3"
     [[ -n "$dry" ]] || { mkdir -p "$(dirname "$1")"; printf '%s' "$2" > "$1"; }
     written "$1"
@@ -664,7 +691,7 @@ step_webapps() {
     done
     local profile manifest json
     json="$(python3 -I -c 'import json,sys; print(json.dumps(sys.argv[1])[1:-1])' "$webapps")"
-    for profile in $(grep -ho -- '--user-data-dir=@PROFILES@/[^ "]*' "$webapps"/applications/*.desktop | sed 's|.*/||' | sort -u); do
+    for profile in $(webapp_profiles); do
         manifest="$profiles/$profile/NativeMessagingHosts/qs_desktop.open_link.json"
         content="$(sed "s|@WEBAPPS@|$json|g" "$webapps/qs_desktop.open_link.json")"
         if [[ -f "$manifest" ]] && [[ "$(cat "$manifest")" == "$content" ]]; then echo "= $manifest"; continue; fi
@@ -693,7 +720,9 @@ step_wallpapers() {
     fi
     pictures="$(xdg-user-dir PICTURES 2>/dev/null || true)"
     [[ -z "$pictures" || "$pictures" == "$HOME" ]] && pictures="$HOME/Pictures"
-    dir="$pictures/Wallpapers"
+    # Même dossier que services/Wallpapers.qml : wallpapersDir de la config machine, sinon « Wallpapers » dans Images.
+    dir="$(host_setting wallpapersDir)"
+    [[ -n "$dir" ]] || dir="$pictures/Wallpapers"
     if [[ -d "$dir/.git" ]]; then
         if [[ -n "$(git -C "$dir" status --porcelain 2>/dev/null)" ]]; then
             echo "= $dir (modifications locales : pas de mise à jour)"
@@ -742,8 +771,8 @@ step_host() {
 # Script système : en simulation sur une machine neuve, ses prérequis (paquets de l'étape 1) peuvent manquer.
 sub() {
     "$@" && return 0
-    [[ -n "$dry" ]] || return 1
-    echo "! ${1##*/} : simulation incomplète, prérequis installés à l'étape 1"
+    if [[ -n "$dry" ]]; then echo "! ${1##*/} : simulation incomplète, prérequis installés à l'étape 1"
+    else echo "! ${1##*/} $* : échec (message ci-dessus) ; la suite continue, relancer install.sh après correction"; fi
 }
 
 step_system() {
@@ -776,7 +805,7 @@ step_system() {
 # Avant de retirer ou remettre un fichier de réglages : s'il a changé depuis la dernière écriture d'install.sh (une application
 # y a enregistré tes réglages), sa version actuelle est gardée à côté (<fichier>.uninstall-<date>).
 keep_current() {    # cible sauvegarde|-
-    [[ -f "$1" && ! -L "$1" && -s "$1" ]] || return 0
+    [[ -f "$1" && -s "$1" ]] || return 0   # lien (stow) compris : c'est son contenu qui est comparé et gardé
     [[ "$2" != - && -f "$2" ]] && cmp -s "$1" "$2" && return 0
     [[ "$(cat "$(written_mark "$1")" 2>/dev/null)" == "$(sha256sum < "$1")" ]] && return 0
     run cp -p "$1" "$1.uninstall-$stamp"
@@ -833,11 +862,11 @@ if marker in lines:
 open(path, "w", encoding="utf-8").write("\n".join(lines))
 EOF
                     ;;
-                unit-mask) run systemctl --user unmask "$target" ;;
+                unit-mask) run systemctl --user unmask "$target" || echo "! $target non démasqué (pas de session utilisateur) : systemctl --user unmask $target" ;;
             esac
         done 3< <(tac "$registry")
         [[ -f "$state/dconf-old.ini" ]] && python3 -I "$repo/scripts/dconf-keys.py" ${dry:+--dry-run} restore "$state/dconf-old.ini"
-        run rm -rf "$registry" "$state/dconf-old.ini" "$state/written"
+        run rm -rf "$registry" "$state/dconf-old.ini" "$state/written" "$state/theme-geany"
         [[ -L "$repo/dotfiles/mpv/host.conf" ]] && run rm -f "$repo/dotfiles/mpv/host.conf"
     else
         echo "= rien à retirer ($registry absent)"

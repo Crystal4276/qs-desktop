@@ -90,7 +90,8 @@ enable_unit() {
 
 # Lecture de l'état libvirt du système : sudo (le groupe libvirt n'est effectif qu'après reconnexion), sauf en simulation.
 virsh_sys() {
-    if [[ -n "$dry" ]]; then virsh -c qemu:///system "$@"; else sudo virsh -c qemu:///system "$@"; fi
+    # Sortie en anglais (« Autostart: yes ») quelle que soit la langue de la session.
+    if [[ -n "$dry" ]]; then LC_ALL=C virsh -c qemu:///system "$@"; else sudo LC_ALL=C virsh -c qemu:///system "$@"; fi
 }
 
 do_install() {
@@ -119,16 +120,15 @@ do_install() {
     getent group libvirt >/dev/null && add_group libvirt
     getent group kvm >/dev/null && add_group kvm
     # NetworkManager (module réseau du bureau) : jamais à côté d'un autre gestionnaire de réseau déjà actif.
-    local other u
-    for u in systemd-networkd.service dhcpcd.service connman.service netctl.service; do
-        systemctl is-enabled --quiet "$u" 2>/dev/null && other="$u"
+    local u
+    # Chaque autre gestionnaire actif (iwd compris : NetworkManager utilise wpa_supplicant) est désactivé, pas désinstallé ; la
+    # connexion peut couper quelques secondes. Retrait : réactivé.
+    for u in systemd-networkd.service iwd.service dhcpcd.service connman.service netctl.service; do
+        systemctl is-enabled --quiet "$u" 2>/dev/null || continue
+        echo "! $u gère le réseau : remplacé par NetworkManager"
+        run systemctl disable --now "$u"
+        record unit-off "$u"
     done
-    if [[ -n "${other:-}" ]] && ! systemctl is-enabled --quiet NetworkManager.service 2>/dev/null; then
-        # Remplacé par NetworkManager (choix du bureau) ; la connexion peut couper quelques secondes. Retrait : remis.
-        echo "! $other gère le réseau : remplacé par NetworkManager"
-        run systemctl disable --now "$other"
-        record unit-off "$other"
-    fi
     enable_unit NetworkManager.service
     local libvirt_new=""
     systemctl is-enabled --quiet libvirtd.service 2>/dev/null || libvirt_new=1
