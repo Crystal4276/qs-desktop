@@ -60,6 +60,11 @@ Retour arrière de la bascule : `docs/ROLLBACK.md`.
   homogènes, dossiers verts. `--uninstall --yes` : liens, thème, bloc `.bashrc`, dconf, `pacman.conf`, `/etc/environment`,
   groupes, services remis ; greeter fini au redémarrage suivant (prévu). Corrigés en route : `--noconfirm` avec `--yes`,
   ordre services → sonde réseau, copie du greeter et sonde sautées si à jour, simulation sur machine nue.
+  Second test sur VM vierge (2026-11-09, après tes retours, dépôt `bd9f21f`) : installation complète en un passage (code 0),
+  greetd puis connexion Sway ; barre **sans icône Deluge** (`enable_system_tray: false` posé par install.sh), dossiers
+  Nemo **lavande**, terminal avec fastfetch (logo rose / vert, icônes et pastilles Mocha) et starship. Second passage :
+  réseau libvirt « default » réglé seulement à ce moment (libvirtd pas encore prêt au premier) → attente ajoutée
+  (`381fa7e`, à revérifier au prochain passage VM) ; avertissement si la machine n'a pas de nom fixe.
   Constats VM : NetworkManager prend le nom d'hôte du DHCP de QEMU (fichier `hosts/` à ce nom) ; premier lancement de
   Chromium (conditions d'utilisation) et de Spotify par l'autostart.
 - Retours du 2026-11-09 : dossiers lavande (comme ici), pas de btop (remplacé par le moniteur Quickshell), pas de
