@@ -621,8 +621,10 @@ step_wallpapers() {
     elif command -v gh >/dev/null && gh auth status >/dev/null 2>&1; then
         gh repo clone "$src" "$dir" -- -q
     else
-        git clone -q "git@github.com:$src.git" "$dir"
-    fi || echo "! clonage de $src impossible (dépôt privé : gh auth login, ou clé SSH GitHub) ; relancer install.sh ensuite"
+        # Dépôt public : HTTPS sans compte ; sinon clé SSH. Jamais de question de mot de passe (échec immédiat).
+        GIT_TERMINAL_PROMPT=0 git clone -q "https://github.com/$src.git" "$dir" 2>/dev/null \
+            || GIT_SSH_COMMAND="ssh -o BatchMode=yes" git clone -q "git@github.com:$src.git" "$dir"
+    fi || echo "! clonage de $src impossible (réseau, ou dépôt privé : gh auth login / clé SSH GitHub) ; relancer install.sh ensuite"
 }
 
 # --- 5. Config machine -------------------------------------------------------------------------------------------------

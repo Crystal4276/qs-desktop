@@ -9,9 +9,8 @@ Prérequis : Arch Linux installé (archinstall convient : noyau, pilote graphiqu
 membre de `wheel` (sudo), une connexion Internet.
 
 ```sh
-sudo pacman -S --needed git github-cli
-gh auth login                                   # dépôt privé : connexion à GitHub (navigateur ou jeton)
-gh repo clone Crystal4276/qs-desktop ~/qs-desktop
+sudo pacman -S --needed git
+git clone https://github.com/Crystal4276/qs-desktop.git ~/qs-desktop
 cd ~/qs-desktop
 ./install.sh --dry-run     # voir tout ce qui sera fait, sans rien modifier
 ./install.sh               # installer (questions avant chaque étape système)
@@ -46,8 +45,8 @@ Autre distribution qu'Arch : pas encore prévue (paquets à installer soi-même 
 - Web apps (WhatsApp, Discord, Word, Excel, PowerPoint, Notion) : se connecter une fois dans chacune.
 - Thème des applications qui le rangent dans leur profil : Obsidian et Thunderbird (choisir Catppuccin Mocha dans leurs
   réglages), Chromium suit le thème GTK (réglé par `install.sh` : thème GTK du profil principal).
-- Fonds d'écran : `install.sh` propose de cloner le dépôt privé `Crystal4276/wallpapers` dans `~/Pictures/Wallpapers` (connexion
-  `gh` ou clé SSH GitHub) et le met à jour aux passages suivants. Fond par défaut : `simple/wallhaven-j37lop.png` (celui de l'écran
+- Fonds d'écran : `install.sh` propose de cloner le dépôt `Crystal4276/wallpapers` dans `~/Pictures/Wallpapers` (HTTPS, sans
+  compte GitHub) et le met à jour aux passages suivants. Fond par défaut : `simple/wallhaven-j37lop.png` (celui de l'écran
   central de terrier, `hosts/default.json`) ; autre choix : utilitaire de fonds d'écran du bureau.
 - Logiciels absents des dépôts officiels, avec `paru` (installé par `install.sh`) :
 
