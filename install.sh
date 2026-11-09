@@ -544,6 +544,10 @@ step_webapps() {
 
 step_host() {
     section "5. Config machine ($host)"
+    # Les fichiers par machine suivent le nom d'hôte : un nom donné par le DHCP (aucun nom fixe) peut changer d'un réseau à l'autre.
+    if command -v hostnamectl >/dev/null && [[ -z "$(hostnamectl --static 2>/dev/null)" ]]; then
+        echo "! aucun nom de machine fixe (« $host » vient du réseau) : sudo hostnamectl set-hostname <nom>, puis relancer install.sh"
+    fi
     local file="$repo/hosts/$host.json"
     if [[ -f "$file" ]]; then echo "= hosts/$host.json"; return; fi
     # Valeurs détectées seulement ; le reste vient de hosts/default.json (écran unique, laptop).

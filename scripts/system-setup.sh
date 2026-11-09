@@ -139,6 +139,11 @@ do_install() {
     done
     # Réseau NAT des VM (fourni par libvirt) démarré au boot, comme ici.
     if command -v virsh >/dev/null; then
+        # libvirtd vient peut-être d'être démarré : quelques secondes avant qu'il réponde.
+        local tries=0
+        if [[ -z "$dry" ]]; then
+            until virsh_sys net-info default >/dev/null 2>&1 || (( ++tries >= 10 )); do sleep 1; done
+        fi
         if virsh_sys net-info default 2>/dev/null | grep -q '^Autostart: *yes'; then
             echo "= réseau libvirt « default » déjà démarré au boot"
         elif virsh_sys net-info default >/dev/null 2>&1; then
