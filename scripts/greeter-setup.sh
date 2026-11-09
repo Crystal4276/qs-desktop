@@ -87,6 +87,13 @@ do_install() {
     tree="$(mktemp -d)"
     trap 'rm -rf "$tree"' EXIT
     git -C "$repo" archive --format=tar HEAD | tar -x -C "$tree"
+    # Fichiers de cette machine pas encore committés (créés par install.sh) : session par défaut, écrans du greeter.
+    local host f
+    host="$(cat /proc/sys/kernel/hostname)"
+    for f in "hosts/$host.json" dotfiles/sway/hosts/"$host".*; do
+        [[ -f "$repo/$f" ]] && ! git -C "$repo" ls-files --error-unmatch "$f" >/dev/null 2>&1 \
+            && { echo "+ $f (pas encore committé) ajouté à la copie"; install -D -m 644 "$repo/$f" "$tree/$f"; }
+    done
 
     # Déjà en place et identique : rien à refaire (relance d'install.sh).
     if [[ -d "$var/greeter" && -d "$var/$user" && -d "$var/backup" ]] && diff -rq "$tree" "$dest" >/dev/null 2>&1; then

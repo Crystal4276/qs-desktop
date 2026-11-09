@@ -32,7 +32,7 @@ while [[ $# -gt 0 ]]; do
         --no-system) system="" ;;
         --yes) yes=1 ;;
         --uninstall) uninstall=1 ;;
-        -h|--help) sed -n '4,15p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        -h|--help) sed -n '4,14p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
         *) echo "Option inconnue : $1 (--help)" >&2; exit 2 ;;
     esac
     shift
@@ -84,13 +84,14 @@ record() {      # genre cible sauvegarde
 }
 
 # Sauvegarde d'origine d'un fichier ou dossier du compte, une seule fois : `<cible>.bak-<date>` à côté, déplacée (link) ou
-# copiée (edit). Rien à sauvegarder : « - ».
+# copiée (edit). Rien à sauvegarder : « - ». Copie : contenu du fichier même si la cible est un lien (stow…), car l'écriture qui suit
+# passe à travers le lien ; le retrait réécrit ce contenu à travers le lien, qui reste en place.
 backup_once() {     # genre cible mv|cp
     local kind="$1" target="$2" how="$3" backup="-"
     recorded "$target" && return
     if [[ -e "$target" || -L "$target" ]]; then
         backup="$target.bak-$stamp"
-        if [[ "$how" == cp ]]; then run cp -a "$target" "$backup"; else run mv "$target" "$backup"; fi
+        if [[ "$how" == cp ]]; then run cp -pL "$target" "$backup"; else run mv "$target" "$backup"; fi
     fi
     record "$kind" "$target" "$backup"
 }
@@ -99,7 +100,8 @@ backup_once() {     # genre cible mv|cp
 link() {        # src (chemin du dépôt, ou absolu) dest
     local src="$1" dest="$2"
     if [[ "$src" == . ]]; then src="$repo"; elif [[ "$src" != /* ]]; then src="$repo/$src"; fi
-    if [[ -L "$dest" && "$(readlink -f "$dest")" == "$(readlink -f "$src")" ]]; then
+    # Déjà le bon lien, ou la cible elle-même (dépôt cloné directement dans ~/.config/quickshell/desktop).
+    if [[ -e "$dest" && "$(readlink -f "$dest")" == "$(readlink -f "$src")" ]]; then
         echo "= $dest"
         return
     fi
@@ -175,7 +177,7 @@ EOF
     printf '+ %s : [%s] %s\n' "$file" "$section" "$*"
     [[ -n "$dry" ]] && return
     mkdir -p "$(dirname "$file")"
-    printf '%s' "$changes" > "$file"
+    printf '%s\n' "$changes" > "$file"
 }
 
 # Bloc ajouté à la fin d'un fichier (ex. ~/.bashrc), repéré par sa première ligne ; le reste du fichier n'est pas touché.
@@ -207,7 +209,10 @@ step_packages() {
         echo "pour les autres distributions). Suite de l'installation : configs du compte seulement."
         return
     fi
-    [[ -n "$system" ]] && "$repo/scripts/system-setup.sh" ${dry:+--dry-run} multilib
+    if [[ -n "$system" ]] && ! grep -q '^\[multilib\]' /etc/pacman.conf \
+        && ask "Activer le dépôt multilib de pacman (Steam, jeux 32 bits) ?" oui; then
+        "$repo/scripts/system-setup.sh" ${dry:+--dry-run} multilib || echo "! multilib non activé : Steam et les paquets lib32 resteront indisponibles"
+    fi
     local want=() vendors v
     mapfile -t want < <(pkg_list arch-pacman.txt apps.txt)
     if [[ "$games" == ask ]]; then
@@ -536,14 +541,25 @@ PY
     if running_here '(^|/)chromium( |$)'; then
         echo "! Chromium est ouvert : le fermer puis relancer install.sh pour qu'il suive le thème GTK"; return
     fi
-    # Hors registre : tous les réglages du navigateur sont dans ce fichier, --uninstall n'y touche pas.
+    # Tous les réglages du navigateur sont dans ce fichier : le registre ne garde que l'ancienne valeur de la clé (« unset » :
+    # absente, « nofile » : fichier absent), --uninstall ne remet qu'elle.
+    if ! recorded "$file"; then
+        record chromium-theme "$file" "$(python3 -I -c '
+import json, sys
+try:
+    v = json.load(open(sys.argv[1], encoding="utf-8")).get("extensions", {}).get("theme", {}).get("system_theme")
+    print("unset" if v is None else v)
+except FileNotFoundError:
+    print("nofile")' "$file")"
+    fi
     write_setting "$file" "$content" "thème GTK (extensions.theme.system_theme 1)" keep
 }
 
 # Application ouverte avec ce même dossier personnel ? Sans HOME dans son environnement (lancée par le compositeur) :
 # même compte, considérée comme ouverte, pour ne jamais écrire un réglage qu'elle réécrirait en se fermant.
-running_here() {    # motif pgrep -f
+running_here() {    # motif pgrep -f ; QS_INSTALL_ASSUME_CLOSED : tests (applications de la machine de test ignorées)
     local pid home_of
+    [[ -n "${QS_INSTALL_ASSUME_CLOSED:-}" ]] && return 1
     for pid in $(pgrep -u "$EUID" -f "$1"); do
         home_of="$(tr '\0' '\n' < "/proc/$pid/environ" 2>/dev/null | grep '^HOME=' || true)"
         [[ -z "$home_of" || "$home_of" == "HOME=$HOME" ]] && return 0
@@ -551,7 +567,7 @@ running_here() {    # motif pgrep -f
     return 1
 }
 
-write_setting() {   # fichier contenu description [keep : hors registre, gardé par --uninstall]
+write_setting() {   # fichier contenu description [keep : déjà noté au registre par l'appelant]
     if [[ "${4:-}" == keep ]]; then :
     elif [[ -e "$1" ]]; then backup_once edit "$1" cp
     elif ! recorded "$1"; then record seed "$1" -; fi
@@ -612,7 +628,7 @@ step_wallpapers() {
         elif [[ -n "$dry" ]]; then
             echo "+ git -C $dir pull --ff-only"
         else
-            git -C "$dir" pull -q --ff-only 2>/dev/null && echo "= $dir à jour" || echo "! $dir : mise à jour impossible (réseau ou accès GitHub), gardé tel quel"
+            GIT_TERMINAL_PROMPT=0 GIT_SSH_COMMAND="ssh -o BatchMode=yes" git -C "$dir" pull -q --ff-only 2>/dev/null && echo "= $dir à jour" || echo "! $dir : mise à jour impossible (réseau ou accès GitHub), gardé tel quel"
         fi
         return
     fi
@@ -644,8 +660,8 @@ step_host() {
     # Valeurs détectées seulement ; le reste vient de hosts/default.json (écran unique, laptop).
     local session=""
     (. "$repo/scripts/qs-env.sh" && qs_nvidia_only) && session='  "greeter": { "defaultSession": "wayland/sway-vulkan" }'
+    # Fichier du dépôt, pas du compte : --uninstall le garde (il peut avoir été modifié ou committé).
     printf '+ hosts/%s.json créé (à committer)\n' "$host"
-    record seed "$file" -
     [[ -n "$dry" ]] || printf '{\n%s\n}\n' "$session" > "$file"
 }
 
@@ -690,7 +706,29 @@ do_uninstall() {
         local kind target backup
         while IFS=$'\t' read -r kind target backup <&3; do
             case "$kind" in
-                link|seed|edit)
+                edit)
+                    if [[ "$backup" == - ]]; then run rm -f "$target"
+                    elif [[ -e "$backup" ]]; then run cp "$backup" "$target"; run rm -f "$backup"
+                    else echo "! sauvegarde $backup introuvable : $target laissé tel quel"; fi ;;
+                chromium-theme)
+                    printf '+ %s : thème Chromium remis (%s)\n' "$target" "$backup"
+                    [[ -n "$dry" || ! -f "$target" ]] || python3 -I - "$target" "$backup" <<'EOF'
+import json, os, sys
+path, old = sys.argv[1], sys.argv[2]
+prefs = json.load(open(path, encoding="utf-8"))
+theme = prefs.setdefault("extensions", {}).setdefault("theme", {})
+if old in ("unset", "nofile"):
+    theme.pop("system_theme", None)
+else:
+    theme["system_theme"] = int(old)
+if old == "nofile" and prefs == {"extensions": {"theme": {}}}:
+    os.remove(path)
+else:
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(prefs, f, separators=(",", ":"))
+EOF
+                    ;;
+                link|seed)
                     if [[ "$backup" == - ]]; then run rm -rf "$target"
                     elif [[ -e "$backup" || -L "$backup" ]]; then run rm -rf "$target"; run mv "$backup" "$target"
                     else echo "! sauvegarde $backup introuvable : $target laissé tel quel"; fi ;;

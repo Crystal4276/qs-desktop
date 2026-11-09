@@ -6,6 +6,7 @@ installation, second passage sans aucun changement, retrait qui remet le dossier
 Réseau requis au premier passage (archives du thème, gardées dans QS_TEST_CACHE ou le cache du test).
 Usage : python3 scripts/test-install.py [-v]
 """
+import json
 import os
 import pathlib
 import shutil
@@ -57,19 +58,29 @@ def main():
         # Dossier personnel déjà habité : réglages à garder, fichiers à sauvegarder.
         (home / ".config/gtk-3.0").mkdir(parents=True)
         (home / ".config/gtk-3.0/settings.ini").write_text("[Settings]\ngtk-theme-name=Adwaita\ngtk-enable-animations=0\n")
+        # Config gérée par un gestionnaire de dotfiles (stow) : un lien vers un autre dépôt.
+        (home / "dots/qt6ct").mkdir(parents=True)
+        (home / "dots/qt6ct/qt6ct.conf").write_text("[Appearance]\nstyle=Fusion\n")
+        (home / ".config/qt6ct").mkdir()
+        (home / ".config/qt6ct/qt6ct.conf").symlink_to(home / "dots/qt6ct/qt6ct.conf")
+        # Profil Chromium existant, autre thème et autres réglages.
+        (home / ".config/chromium/Default").mkdir(parents=True)
+        (home / ".config/chromium/Default/Preferences").write_text('{"browser":{"x":1},"extensions":{"theme":{"system_theme":0}}}')
         (home / ".config/mpv").mkdir()
         (home / ".config/mpv/mpv.conf").write_text("volume=50\n")
         (home / ".bashrc").write_text("alias ll='ls -l'\n")
         cache = pathlib.Path(os.environ.get("QS_TEST_CACHE", tmp / "cache"))
         env = {k: v for k, v in os.environ.items() if not k.startswith(("XDG_", "DBUS_", "SWAYSOCK", "I3SOCK", "HYPRLAND", "WAYLAND", "DISPLAY"))}
-        env.update(HOME=str(home), XDG_RUNTIME_DIR=str(run), XDG_CACHE_HOME=str(cache), LANG="C.UTF-8")
+        env.update(HOME=str(home), XDG_RUNTIME_DIR=str(run), XDG_CACHE_HOME=str(cache), LANG="C.UTF-8", QS_INSTALL_ASSUME_CLOSED="1")
 
         def install(*args):
             cmd = ["dbus-run-session", "--", "bash", "-c", 'dconf load / < "$0" 2>/dev/null; bash "$1" "${@:2}"; rc=$?; dconf dump / > "$0"; exit $rc',
                    str(tmp / "dconf.ini"), str(repo / "install.sh"), "--no-packages", "--no-system", *args]
             log = open(tmp / "last.log", "w")
             try:
-                r = subprocess.run(cmd, env=env, stdout=subprocess.PIPE, stderr=log, text=True, timeout=300)
+                # Nouvelle session sans terminal : les questions d'install.sh répondent « non » sans attendre (fonds non clonés).
+                r = subprocess.run(cmd, env=env, stdout=subprocess.PIPE, stderr=log, stdin=subprocess.DEVNULL, text=True,
+                                   timeout=300, start_new_session=True)
             except subprocess.TimeoutExpired as e:
                 out = (e.stdout or b"").decode() if isinstance(e.stdout, bytes) else (e.stdout or "")
                 print("BLOQUÉ (300 s) :", " ".join(args) or "installation", "\n" + out[-1500:], (tmp / "last.log").read_text()[-800:])
@@ -115,19 +126,16 @@ def main():
         check(any((home / ".local/share/applications").glob("WebApp-*.desktop")), "web apps générées")
 
         r = install()
-        # Un Deluge ouvert sur la machine de test (même compte) : install.sh ne doit pas écrire sous lui.
-        if subprocess.run(["pgrep", "-u", str(os.getuid()), "-f", "(^|/)deluge(-gtk)?( |$)"], capture_output=True).returncode == 0:
-            check("Deluge est ouvert" in r.stdout and not (cfg / "deluge/gtk3ui.conf").exists(),
-                  "Deluge ouvert : réglage reporté, rien d'écrit")
-        else:
-            deluge = (cfg / "deluge/gtk3ui.conf").read_text()
-            check('"enable_system_tray": false' in deluge and deluge.startswith("{"), "Deluge : pas d'icône dans la barre")
-        prefs = cfg / "chromium/Default/Preferences"
-        if subprocess.run(["pgrep", "-u", str(os.getuid()), "-f", "(^|/)chromium( |$)"], capture_output=True).returncode == 0:
-            check("Chromium est ouvert" in r.stdout and not prefs.exists(), "Chromium ouvert : réglage reporté, rien d'écrit")
-        else:
-            webapp = home / ".local/share/ice/profiles/Whatsapp8699/Default/Preferences"
-            check('"system_theme":1' in prefs.read_text() and '"system_theme":1' in webapp.read_text(), "Chromium et web apps : thème GTK")
+        deluge = (cfg / "deluge/gtk3ui.conf").read_text()
+        check('"enable_system_tray": false' in deluge and deluge.startswith("{"), "Deluge : pas d'icône dans la barre")
+        prefs = json.loads((cfg / "chromium/Default/Preferences").read_text())
+        webapp = home / ".local/share/ice/profiles/Whatsapp8699/Default/Preferences"
+        check(prefs["extensions"]["theme"]["system_theme"] == 1 and prefs["browser"] == {"x": 1}
+              and '"system_theme":1' in webapp.read_text(), "Chromium et web apps : thème GTK, autres réglages gardés")
+        qt = home / ".config/qt6ct/qt6ct.conf"
+        check(qt.is_symlink() and "style=kvantum" in (home / "dots/qt6ct/qt6ct.conf").read_text(),
+              "config liée (stow) : lien gardé, réglage écrit à travers")
+        check(gtk3.endswith("\n") and (cfg / "qt6ct/qt6ct.conf").read_text().endswith("\n"), "fichiers réglés : saut de ligne final")
         changes = [l for l in r.stdout.splitlines() if l.startswith("+ ")]
         check(r.returncode == 0 and not changes, f"second passage sans changement {changes[:5]}")
 
@@ -138,6 +146,9 @@ def main():
         # Restes acceptés : dossiers vides créés en chemin.
         diff = [k for k in diff if not (k in after and after[k] == "<dir>" and k not in before)]
         check(not diff, f"retrait : dossier personnel comme avant {diff[:8]}")
+        check(qt.is_symlink() and (home / "dots/qt6ct/qt6ct.conf").read_text() == "[Appearance]\nstyle=Fusion\n",
+              "retrait : config liée (stow) remise, lien gardé")
+        check(not webapp.exists(), "retrait : profil de web app créé pour le thème retiré")
         check("font-name='Cantarell 11'" in (tmp / "dconf.ini").read_text()
               and "accent-color" not in (tmp / "dconf.ini").read_text(), "retrait : dconf comme avant")
     finally:
