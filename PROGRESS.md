@@ -59,7 +59,13 @@ Ensuite (pas de phase 13) : maintenance et idées de `BACKLOG.md`, une à la foi
 - Passe 5 : second `--uninstall` non bloqué, chemins non ASCII / `&` / `|` des web apps corrects, Samba limité à la machine
   et au réseau des VM (`hosts allow`), bascule vers NetworkManager seulement au redémarrage (connexion jamais coupée),
   `paru` non bloquant, dconf : clé modifiée depuis gardée au retrait, dossier Images comme `Places.qml`, simulation sans
-  téléchargement. Suite : 0 échec. **Reste : passe 6 de revue** (dernière si négligeable), puis nouvel essai dans ta VM.
+  téléchargement. Suite : 0 échec.
+- Passe 6 + tes retours de VM : NetworkManager réglé sur iwd (archinstall « iwd backend ») → iwd gardé, retrait système qui
+  continue après un échec, dconf injoignable non bloquant, lien stow vers un fichier absent gardé au retrait, simulation qui annonce
+  le bon dossier Images, un seul `pacman -Syu`. **Chromium** : thème GTK vérifié en VM ; seul le profil réellement ouvert (verrou
+  `SingletonLock`) bloque, et tout réglage remis à plus tard est rappelé à la fin (« Pas encore fait »). **Gammastep Indicator**
+  masqué du lanceur (inutile : la barre lance gammastep). **Écran de connexion** : fond de la config machine dès le premier
+  démarrage (avant, uni jusqu'à la première session). Ghostty : absent de `deps/`. **Reste : passe 7**, puis nouvel essai dans ta VM.
 - Dépôts `qs-desktop` et `wallpapers` **publics** (audit de l'historique sans secret ; adresse e-mail des commits gardée).
 
 ## Reprise sur le laptop
