@@ -4,6 +4,9 @@ Idées et défauts connus hors du programme des phases. Rien ici n'est implémen
 
 ## Fonctions
 
+- **Autres distributions** (Fedora, Debian / Ubuntu) : correspondances de paquets et `install.sh` hors Arch, retirées de la
+  phase 12 le 2026-11-09 (pas d'usage prévu). Point de départ : historique git de `deps/README.md`.
+
 - Titre de la fenêtre active / mode Sway dans la barre (retirés de `Compositor` faute de widget : à rétablir avec lui).
 - Événements Thunderbird dans le calendrier : lecture seule de `calendar-data/cache.sqlite` et `local.sqlite` (3 CalDAV, 2 Owl, 1 local) ;
   difficultés : lecture sans gêner Thunderbird (WAL : `immutable` ou copie), récurrences, fuseaux, présence des calendriers Owl dans le cache.
