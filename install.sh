@@ -463,10 +463,47 @@ step_settings() {
     # Geany : son fichier de réglages est réécrit par l'application ; seules les clés du thème et des polices changent.
     ini_set "$config/geany/geany.conf" geany color_scheme catppuccin-mocha.conf editor_font "Inter 16" tagbar_font "Symbols Nerd Font Mono 9"
 
+    deluge_no_tray
     if command -v python3 >/dev/null; then step_webapps; else echo "- python3 absent (installé à l'étape 1) : web apps non générées"; fi
     if command -v chromium >/dev/null; then
         python3 "$repo/scripts/browser-links-setup.py" ${dry:+--dry-run} install
     fi
+}
+
+# Deluge sans icône dans la barre (comme sur le desktop de référence). Son fichier : deux objets JSON à la suite (en-tête de
+# format, puis réglages) ; Deluge complète les clés absentes par ses valeurs par défaut. Deluge ouvert réécrirait le fichier.
+deluge_no_tray() {
+    local file="$config/deluge/gtk3ui.conf" content
+    command -v python3 >/dev/null || return 0
+    content="$(python3 -I - "$file" <<'PY'
+import json, sys
+try:
+    text = open(sys.argv[1], encoding="utf-8").read()
+    dec = json.JSONDecoder()
+    head, end = dec.raw_decode(text)
+    conf, _ = dec.raw_decode(text[end:].lstrip())
+except FileNotFoundError:
+    head, conf = {"file": 1, "format": 1}, {}
+if conf.get("enable_system_tray") is False:
+    print("same", end="")
+else:
+    conf["enable_system_tray"] = False
+    print(json.dumps(head, indent=4, sort_keys=True) + json.dumps(conf, indent=4, sort_keys=True), end="")
+PY
+)" || { echo "! $file illisible : icône de Deluge laissée telle quelle"; return 0; }
+    if [[ "$content" == same ]]; then echo "= Deluge sans icône dans la barre"; return; fi
+    # Deluge ouvert avec ce même dossier personnel (interface GTK : deluge-gtk, ou deluge lancé par Python).
+    local pid home_of
+    for pid in $(pgrep -u "$EUID" -f '(^|/)deluge(-gtk)?( |$)'); do
+        home_of="$(tr '\0' '\n' < "/proc/$pid/environ" 2>/dev/null | grep '^HOME=' || true)"
+        # Sans HOME (lancé par le compositeur) : même compte, considéré comme ouvert.
+        if [[ -z "$home_of" || "$home_of" == "HOME=$HOME" ]]; then
+            echo "! Deluge est ouvert : le fermer puis relancer install.sh pour retirer son icône de la barre"; return
+        fi
+    done
+    if [[ -e "$file" ]]; then backup_once edit "$file" cp; elif ! recorded "$file"; then record seed "$file" -; fi
+    printf '+ %s : enable_system_tray false\n' "$file"
+    [[ -n "$dry" ]] || { mkdir -p "$(dirname "$file")"; printf '%s' "$content" > "$file"; }
 }
 
 # Web apps (deps/README.md, « Web apps ») : lanceurs et manifestes de l'hôte natif développés depuis dotfiles/webapps.
