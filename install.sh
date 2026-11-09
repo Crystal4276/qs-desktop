@@ -120,6 +120,7 @@ seed() {        # src dest
 # Clés d'un fichier INI (ou `clé = valeur` sans section) : seules ces clés changent, le reste du fichier est gardé.
 ini_set() {     # fichier section clé valeur [clé valeur…] ; section "" = début du fichier ; séparateur "=" ou " = " gardé
     local file="$1" section="$2"; shift 2
+    command -v python3 >/dev/null || { echo "- python3 absent (installé à l'étape 1) : $file non réglé"; return; }
     local changes
     changes="$(python3 -I - "$file" "$section" "$@" <<'EOF'
 import sys
@@ -246,6 +247,7 @@ host_file() {   # dossier-du-dépôt extension → hosts/<machine>.<ext> s'il ex
 }
 
 dnd_mutes() {   # la machine coupe-t-elle des applications la nuit ? (doNotDisturb.muteApps non vide)
+    command -v python3 >/dev/null || return 1
     python3 -I - "$repo/hosts/default.json" "$repo/hosts/$host.json" <<'EOF'
 import json, sys
 conf = {}
@@ -430,7 +432,7 @@ dconf_apply() { # fichier ini du dépôt ; anciennes valeurs gardées dans $stat
 
 step_settings() {
     section "4. Réglages des applications"
-    if command -v dconf >/dev/null; then
+    if command -v dconf >/dev/null && command -v python3 >/dev/null; then
         dconf_apply dotfiles/dconf/desktop.ini
         [[ -f "$repo/dotfiles/dconf/hosts/$host.ini" ]] && dconf_apply "dotfiles/dconf/hosts/$host.ini"
     else
@@ -455,7 +457,7 @@ step_settings() {
     ini_set "$config/geany/geany.conf" geany color_scheme catppuccin-mocha.conf editor_font "Inter 16" tagbar_font "Symbols Nerd Font Mono 9"
     ini_set "$config/btop/btop.conf" "" color_theme '"catppuccin_mocha"' theme_background true truecolor true
 
-    step_webapps
+    if command -v python3 >/dev/null; then step_webapps; else echo "- python3 absent (installé à l'étape 1) : web apps non générées"; fi
     if command -v chromium >/dev/null; then
         python3 "$repo/scripts/browser-links-setup.py" ${dry:+--dry-run} install
     fi
