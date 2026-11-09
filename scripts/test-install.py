@@ -115,6 +115,13 @@ def main():
         check(any((home / ".local/share/applications").glob("WebApp-*.desktop")), "web apps générées")
 
         r = install()
+        # Un Deluge ouvert sur la machine de test (même compte) : install.sh ne doit pas écrire sous lui.
+        if subprocess.run(["pgrep", "-u", str(os.getuid()), "-f", "(^|/)deluge(-gtk)?( |$)"], capture_output=True).returncode == 0:
+            check("Deluge est ouvert" in r.stdout and not (cfg / "deluge/gtk3ui.conf").exists(),
+                  "Deluge ouvert : réglage reporté, rien d'écrit")
+        else:
+            deluge = (cfg / "deluge/gtk3ui.conf").read_text()
+            check('"enable_system_tray": false' in deluge and deluge.startswith("{"), "Deluge : pas d'icône dans la barre")
         changes = [l for l in r.stdout.splitlines() if l.startswith("+ ")]
         check(r.returncode == 0 and not changes, f"second passage sans changement {changes[:5]}")
 
