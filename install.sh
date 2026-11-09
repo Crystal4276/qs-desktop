@@ -128,7 +128,7 @@ link() {        # src (chemin du dépôt, ou absolu) dest
 seed() {        # src dest
     # Lien (stow) déjà là, même vers un fichier encore absent : à toi, gardé (cp n'écrit pas à travers un lien qui ne mène à rien).
     if [[ -e "$2" || -L "$2" ]]; then echo "= $2 (déjà présent, gardé)"; return; fi
-    record seed "$2" -
+    recorded "$2" || record seed "$2" -
     run mkdir -p "$(dirname "$2")"
     run cp "$repo/$1" "$2"
     written "$2"
@@ -435,7 +435,7 @@ papirus_overlay() {     # dossier src/ de catppuccin/papirus-folders
     local tree; tree="$(mktemp -d)"
     for size in 22x22 24x24 32x32 48x48 64x64; do
         mkdir -p "$tree/Papirus/$size/places"
-        cp "$src/$size/places/"*-"$folders"* "$tree/Papirus/$size/places/"
+        cp "$src/$size/places/"*-"$folders"* "$tree/Papirus/$size/places/" 2>/dev/null || { echo "- papirus-folders : pas de $folders en $size"; continue; }
         for f in "$sys/$size/places/"*; do
             [[ -L "$f" ]] || continue
             t="$(readlink "$f")"
@@ -614,14 +614,14 @@ PY
     write_setting "$file" "$content" "enable_system_tray false"
 }
 
-# Chromium suit le thème GTK du système, Catppuccin Mocha : réglage « Thème : GTK » (extensions.theme.system_theme = 1),
-# pour le profil principal comme sur le desktop de référence, et pour le profil isolé de chaque web app (toutes les
-# applications suivent le thème GTK). Un fichier absent est créé avec cette seule clé ; Chromium complète le reste.
 # Profils isolés des web apps (--user-data-dir des modèles de lanceurs).
 webapp_profiles() {
     grep -ho -- '--user-data-dir=@PROFILES@/[^ "]*' "$repo"/dotfiles/webapps/applications/*.desktop | sed 's|.*/||' | sort -u
 }
 
+# Chromium suit le thème GTK du système, Catppuccin Mocha : réglage « Thème : GTK » (extensions.theme.system_theme = 1),
+# pour le profil principal comme sur le desktop de référence, et pour le profil isolé de chaque web app (toutes les
+# applications suivent le thème GTK). Un fichier absent est créé avec cette seule clé ; Chromium complète le reste.
 chromium_gtk_themes() {
     local profile
     chromium_gtk_theme "$config/chromium" Chromium
@@ -826,7 +826,7 @@ step_host() {
 sub() {
     "$@" && return 0
     if [[ -n "$dry" ]]; then echo "! ${1##*/} : simulation incomplète, prérequis installés à l'étape 1"
-    else echo "! ${1##*/} $* : échec (message ci-dessus) ; la suite continue, relancer install.sh après correction"; fi
+    else echo "! ${1##*/} ${*:2} : échec (message ci-dessus) ; la suite continue, relancer install.sh après correction"; fi
 }
 
 # Fond de l'écran de connexion avant la première session : le bureau exporte ensuite le sien, écran par écran, à chaque

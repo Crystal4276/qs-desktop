@@ -126,6 +126,10 @@ do_install() {
     # NetworkManager prend la main **au prochain démarrage** : la connexion de l'installation n'est pas coupée. Les réseaux
     # Wi-Fi enregistrés ailleurs (iwd…) ne sont pas repris. Retrait : réactivé. Cas absent avec archinstall + NetworkManager.
     local switched="" nm_iwd=""
+    # NetworkManager absent (paquet non installé) : rien n'est désactivé, la machine garderait sinon aucun réseau au démarrage.
+    if ! systemctl cat NetworkManager.service >/dev/null 2>&1; then
+        echo "! NetworkManager absent (paquet networkmanager) : gestionnaire de réseau actuel gardé"
+    else
     # NetworkManager réglé sur iwd pour le Wi-Fi (archinstall : « NetworkManager (iwd backend) ») : iwd est alors son moteur,
     # gardé actif.
     grep -Eqs '^[[:space:]]*wifi\.backend[[:space:]]*=[[:space:]]*iwd' /etc/NetworkManager/NetworkManager.conf \
@@ -143,6 +147,7 @@ do_install() {
         echo "! réseau : ${switched}désactivé(s), NetworkManager au prochain démarrage ; Wi-Fi à reconnecter (nmtui ou le bureau)"
     else
         enable_unit NetworkManager.service
+    fi
     fi
     local libvirt_new=""
     systemctl is-enabled --quiet libvirtd.service 2>/dev/null || libvirt_new=1
