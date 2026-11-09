@@ -584,7 +584,7 @@ EOF
         "$repo/scripts/network-setup.sh" ${dry:+--dry-run} uninstall
         "$repo/scripts/greeter-setup.sh" ${dry:+--dry-run} uninstall
     fi
-    echo "Paquets conservés. Pour [multilib] et paru : voir README.md."
+    echo "Paquets conservés (paru compris)."
 }
 
 # --- Vérifications finales ---------------------------------------------------------------------------------------------
