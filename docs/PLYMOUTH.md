@@ -199,7 +199,17 @@ profil n'est plus `travail`), `docs/ROLLBACK.md` (section Plymouth), `docs/ARCHI
 Mesuré en VM : la vérification d'une phrase par `cryptsetup` dure ce que règle le volume LUKS. archinstall vise ~10 s
 (argon2id, 1 Go : 9,5 à 10,4 s en VM, bonne ou mauvaise phrase) ; retenu (ton choix) : **5 s** (`cryptsetup luksConvertKey
 --pbkdf argon2id --iter-time 5000`, après `luksHeaderBackup`), mesuré 5,2 à 5,4 s en VM. Réglage du disque, pas du thème :
-fait à la main sur chaque machine (étape 5 pour le laptop), jamais par `install.sh`. Le texte de la demande est celui du hook `encrypt` : « A password is required to access
+fait à la main sur chaque machine (étape 5 pour le laptop), jamais par `install.sh`.
+Revu (ton choix : **deux tours** après une bonne phrase, pas trois) : il faut dérivation + fin du démarrage jusqu'au signal de
+sortie ≤ 4,8 s (deux cycles). En VM, ce signal arrive ~1,7 s après le déverrouillage → dérivation **2,5 s** (2,6 s mesurés) :
+deux tours puis la fermeture, vérifié par un vrai démarrage. Sur le laptop : mesurer ce délai, puis `--iter-time` ≈
+(4,8 − délai − 0,5 de marge) × 1000.
+
+**Cadence et temps (mesuré en VM)** : le script compte en images, mais l'affichage de la VM plafonne vers 41 images/s
+(virtio, ~24 ms par envoi d'image), quelle que soit la cadence demandée : animation ralentie d'un quart. L'horloge du rappel
+de progression (temps réel) est figée par `plymouthd` de la demande de phrase de passe jusqu'au déverrouillage ; ailleurs, le
+thème la suit (`now` calé sur elle, extrapolé entre ses mises à jour). Cadence demandée : 60 images/s ; le vrai matériel écrit
+directement dans l'écran et devrait la tenir : à mesurer sur le laptop (compteur d'images, étape 5). Le texte de la demande est celui du hook `encrypt` : « A password is required to access
 the root volume ».
 
 **Passage au greeter, constaté en VM (à régler à l'étape 4)** : `plymouth quit --retain-splash` seul laisse un **écran noir**
