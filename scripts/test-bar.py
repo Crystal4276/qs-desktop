@@ -100,6 +100,8 @@ def test(work):
                     assert media['textWidth'] <= 600.5, value
                     # An artist reduced to a bare ellipsis is dropped, the title takes its place.
                     assert not media['text'].startswith('… - '), value
+                    # No room for text: player icon only (no pause icon).
+                    if not media['text']: assert media['segments'] == 1, value
                     # A short artist and title that fit are never elided.
                     if width >= 1920 and artist == 'Ren': assert media['text'] == 'Ren - Hi Ren', value
                     if width == 3440 and artist.startswith('W'): assert media['text'] and media['textWidth'] > 590, value
