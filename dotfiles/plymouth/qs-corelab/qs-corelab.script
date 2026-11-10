@@ -1384,12 +1384,13 @@ SET[4].form_prompt.x = 310.672; SET[4].form_prompt.y = 0; SET[4].form_prompt.w =
 // end of its turn) → exit (at the end of the current cycle, after `plymouth update --status=qs-corelab-exit`) → crust only.
 // Every screen shows the same scene: the script plugin centres each display on one canvas, so there is a single scale.
 // One screen: its own. Several: the reference screen, 1440 px high (or the one whose height is closest to 1440).
-// Plymouth script: no clock (time = refreshes), no hexadecimal or exponent literals, no include.
+// Plymouth script: no clock function, no hexadecimal or exponent literals, no include. Time comes from the boot progress
+// callback (real seconds since Plymouth started, 30 updates a second): the real frame period is measured on it and each
+// refresh advances the animation by that much, so durations hold even when the display runs below REFRESH (≈ 40/s in VM).
 // Measuring statuses (VM bench, docs/DEVELOPMENT.md): bench-intro | bench-peak | bench-loop | bench-idle.
 
 REFRESH = 50;
-FRAME_MS = 1000 / REFRESH;
-CYCLE = 2400 / FRAME_MS;                 // frames per rotation cycle
+CYCLE_MS = 2400;                         // rotation cycle
 EXIT_STATUS = "qs-corelab-exit";
 
 // crust
@@ -1560,7 +1561,7 @@ form.dur = 1;
 fun form_fade(to, ms) {
   global.form.from = form.op;
   global.form.to = to;
-  global.form.t0 = frame;
+  global.form.t0 = now;
   global.form.dur = ms;
 }
 
@@ -1578,7 +1579,7 @@ fun set_prompt_image() {
 // Applies the state to the sprites; o = block opacity, dots_o = pulse while verifying.
 fun form_frame() {
   if (!SCENE) return;
-  local.p = (frame - form.t0) * FRAME_MS / form.dur;
+  local.p = (now - form.t0) / form.dur;
   global.form.op = form.from + (form.to - form.from) * ease(EASE, p);
   local.o = form.op;
   if (o < 0.011 && form.to == 0) { if (form.shown) { form_hide_all(); global.form.shown = 0; } return; }
@@ -1666,12 +1667,45 @@ Plymouth.SetRootMountedFunction(unlocked);  // root mounted (hook update-root-fs
 MODE = Plymouth.GetMode();
 phase = "intro";
 frame = 0;               // refreshes since the start
-phase_frame = 0;         // refreshes since the start of the phase
+now = 0;                 // animation time (ms)
+frame_ms = 1000 / REFRESH; // real frame period (ms), measured on the boot clock
+phase_t0 = 0;            // animation time at the start of the phase
+loop_cycle = -1;         // rotation cycle in progress
 exit_requested = 0;
 
+// Boot clock (seconds). A window of at least 0.5 s gives the frame period; a clock that stops moving (more than 6
+// refreshes without a new value) starts a new window.
+bc.clock = -1;
+bc.cal_clock = -1;
+bc.cal_frame = 0;
+bc.last_clock = -1;
+bc.last_frame = 0;
+fun boot_progress(duration, progress) { global.bc.clock = duration; }
+
+fun measure_frame() {
+  if (bc.clock < 0 || bc.clock == bc.last_clock) return;
+  if (bc.cal_clock < 0 || frame - bc.last_frame > 6) {
+    global.bc.cal_clock = bc.clock;
+    global.bc.cal_frame = frame;
+  }
+  else if (bc.clock - bc.cal_clock >= 0.5) {
+    local.ms = 1000 * (bc.clock - bc.cal_clock) / (frame - bc.cal_frame);
+    if (ms >= 8 && ms <= 60) global.frame_ms = ms;
+    global.bc.cal_clock = bc.clock;
+    global.bc.cal_frame = frame;
+  }
+  global.bc.last_clock = bc.clock;
+  global.bc.last_frame = frame;
+}
+
+fun start_phase(name) {
+  global.phase = name;
+  global.phase_t0 = now;
+  global.loop_cycle = -1;
+}
+
 fun start_loop() {
-  global.phase = "loop";
-  global.phase_frame = 0;
+  start_phase("loop");
 }
 
 fun intro_frame(ms) {
@@ -1750,24 +1784,26 @@ fun apply_phase() {
 fun refresh() {
   if (!SCENE) return;
   global.frame++;
-  global.phase_frame++;
-  local.ms = phase_frame * FRAME_MS;
+  measure_frame();
+  global.now += frame_ms;
+  local.ms = now - phase_t0;
 
   if (phase == "intro") {
     intro_frame(ms);
     if (ms >= 2200) {
-      if (pw.active && pw.state != "verify") { global.phase = "prompt"; global.phase_frame = 0; form_fade(1, 300); }
+      if (pw.active && pw.state != "verify") { start_phase("prompt"); form_fade(1, 300); }
       else start_loop();                   // no passphrase, or entered blind during the intro
-      global.phase_frame = 0;
     }
   }
   else if (phase == "loop") {
     // Cycle boundary: every half-ring at rest. Exit, or hold while a passphrase is awaited (refused, or asked late).
-    if ((phase_frame - 1) - Math.Int((phase_frame - 1) / CYCLE) * CYCLE == 0) {
-      if (exit_requested) { global.phase = "exit"; global.phase_frame = 0; for (local.i = 0; i < 4; i++) set_angle(i, 0); }
-      else if (pw.active && pw.state != "verify") { global.phase = "prompt"; global.phase_frame = 0; }
+    local.c = Math.Int(ms / CYCLE_MS);
+    if (c != loop_cycle) {
+      global.loop_cycle = c;
+      if (exit_requested) { start_phase("exit"); for (local.i = 0; i < 4; i++) set_angle(i, 0); }
+      else if (pw.active && pw.state != "verify") start_phase("prompt");
     }
-    if (phase == "loop") loop_frame((phase_frame - 1) * FRAME_MS);
+    if (phase == "loop") loop_frame(ms);
   }
   else if (phase == "exit") {
     exit_frame(ms);
@@ -1775,7 +1811,7 @@ fun refresh() {
   }
   else if (phase == "bench-intro") {
     intro_frame(ms);
-    if (ms >= 2200) global.phase_frame = 0;
+    if (ms >= 2200) global.phase_t0 = now;
   }
   else if (phase == "bench-peak") {        // worst window: rings and half-rings both moving
     intro_frame(900 + ms - Math.Int(ms / 360) * 360);
@@ -1789,8 +1825,7 @@ fun refresh() {
 fun update_status(text) {
   if (text == EXIT_STATUS) { global.exit_requested = 1; return; }
   if (text == "bench-intro" || text == "bench-peak" || text == "bench-loop" || text == "bench-idle") {
-    global.phase = text;
-    global.phase_frame = 0;
+    start_phase(text);
     return;
   }
   // systemd reports units only after the switch to the real root: the volume is open.
@@ -1811,6 +1846,8 @@ fun blank_scene() {
 
 if (MODE == "boot") {
   build_scene();
+  Plymouth.SetRefreshRate(REFRESH);
+  Plymouth.SetBootProgressFunction(boot_progress);
   Plymouth.SetRefreshFunction(refresh);
   Plymouth.SetUpdateStatusFunction(update_status);
   Plymouth.SetDisplayHotplugFunction(hotplug);
