@@ -648,7 +648,15 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
   - Initramfs : +4,4 Mo (Inter Regular seule ; `Inter.ttc` aurait ajouté 13 Mo). archinstall ne crée pas d'image `fallback`.
   - `test-install.py` : simulation système travail (étape Plymouth prévue) et jeux (rien) ; 0 échec. Sur `terrier` (jeux), rien
     de Plymouth n'est installé.
-  - Étape 5 (laptop, avec ton accord) : `./install.sh` (ou `scripts/plymouth-setup.sh install`), redémarrage ; à tester à la main :
+  - Ton essai dans Virtual Manager (VM `qs-plymouth-corelab`, disque de l'étape 4) : rendu jugé « pas mal » ; trop long après
+    Entrée. Cause : dérivation de clé LUKS d'archinstall (~10 s par essai, bonne ou mauvaise phrase), pas Plymouth.
+  - Tes choix : dérivation à **5 s** ; pendant la vérification, champ masqué et **rotation** ; refus → champ aussitôt de
+    retour (« Wrong passphrase »), rotation arrêtée à la fin de son tour ; bonne phrase → rotation jusqu'à la fin du démarrage,
+    puis fermeture. Fait (thème, « Unlocking… » retiré). VM : disque passé à 5 s (5,4 s mesurés, en-tête sauvegardé dans
+    `/root/luks-header-before-5s.img` de la VM), démarrage enregistré : champ masqué et rotation à l'Entrée, refus 5,2 s
+    plus tard, rotation jusqu'à la fermeture, greeter. La VM est rendue à Virtual Manager (éteinte).
+  - Étape 5 (laptop, avec ton accord) : dérivation LUKS à 5 s (`luksHeaderBackup`, puis `luksConvertKey --pbkdf argon2id
+    --iter-time 5000`) ; `./install.sh` (ou `scripts/plymouth-setup.sh install`), redémarrage ; à tester à la main :
     démarrage à froid, mauvaise phrase, Verr. Maj., écran externe branché au démarrage (dont le 1440p), arrêt et redémarrage
     (écran crust), échelle HiDPI éventuelle de Plymouth sur la dalle interne.
 
