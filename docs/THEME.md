@@ -73,7 +73,7 @@ Règles pour Qt :
 **Barre** (`Theme.bar`) : zone exclusive 65 px (10 de marge haute + pilule de 55 bordure comprise) ; pilules fond `mantle`, bordure
 1 px `overlay0`, rayon 20 ; 10 px entre pilules et sur les côtés ; padding des modules 10 ; une seule bordure arrondie autour de chaque
 groupe de modules (pilule de la config machine). Espaces de travail : glyphes 34 px, neuf couleurs Catppuccin par position :
-`green`, `teal`, `sapphire`, `blue`, `lavender`, `mauve`, `pink`, `red`, `peach`. Chaque barre recommence au début et utilise les
+`green`, `teal`, `sapphire`, `blue`, `lavender`, `mauve`, `pink`, `peach`, `red`. Chaque barre recommence au début et utilise les
 N premières couleurs pour ses N espaces, sans interpolation ni espacement dans la palette. Espace affiché avec un halo
 (ombre floue d'un `Canvas`), vide en `surface1` ; un glyphe par numéro selon le
 profil de la machine (`Theme.icon.workspaces.jeux` : 5 Discord, 6 Spotify, 7 goutte de Deluge, 9 Steam ; `.travail` : 5 `nf-md-circle_double`,
