@@ -496,3 +496,21 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
 - Configuration réelle rechargée : aucune erreur Hyprland, même instance Quickshell vivante (PID 1882).
 - Reste à vérifier à la main : absence du halo au changement de focus, au redimensionnement et à l’ouverture des dialogues
   GMS, en Wayland puis XWayland. Aucun changement de Wine, du lanceur ou des effets des autres applications.
+
+
+## Barre — couleurs des espaces de travail (2026-11-10)
+
+- Neuf couleurs Catppuccin Mocha, par position dans chaque barre : green, teal, sapphire, blue, lavender, mauve, pink, red, peach.
+  Chaque écran reprend les N premières couleurs pour ses N espaces, sans interpolation ; les espaces vides restent en surface1.
+  Couleur au survol et halo de l’espace affiché conservés ; indice borné pendant le retrait des boutons.
+- Vérification ciblée du vrai composant sur copie isolée : 169 contrôles passent, deux profils, blocs de 0/1/2/3/4/5/9 espaces,
+  réduction puis restauration, redémarrage de la palette sur le second écran, espaces visibles et vides. Captures du banc vérifiées.
+- `test-outputs.sh sway` : 0 échec ; Hyprland : 0 échec au second passage. Premier passage Hyprland : une commande
+  pendant l’extinction séquentielle des trois écrans, assertion « aucun écran actif » en échec ; comparaison au code
+  d’origine : 0 échec. Écart intermittent à surveiller dans le banc, aucun changement des services de placement.
+- Démarrages complets : aucun avertissement QML du composant ; avertissements habituels du portail et des icônes
+  NordVPN, plus PipeWire absent sur Sway isolé. Aucune action VPN ni système effectuée.
+- Application groupée : même instance réelle Hyprland vivante (PID 1882), IPC : espaces 1–9 sur la dalle interne,
+  rechargement sans avertissement. Capture contrôlée : `.shots/workspace-colors-after.png` ; neuf couleurs du banc :
+  `.shots/workspace-colors-nine-bench.png`. Tous les bancs arrêtés, aucun écran virtuel restant.
+- À vérifier à la main : appréciation des couleurs, survol et halo, vrai branchement d’un écran externe.

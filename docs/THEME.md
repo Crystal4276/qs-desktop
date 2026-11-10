@@ -28,14 +28,15 @@ n'y font que référence, avec une opacité au besoin.
 | `overlay0` | **bordure de toutes les pilules et de tous les panneaux** ; bordure de fenêtre active (Sway) |
 | `overlay1` | bordure de fenêtre active (Hyprland) |
 | `overlay2` | cadre des notifications |
-| `teal` / `sapphire` / `blue` | 1er / 2e / 3e espace de travail de chaque barre ; `teal` : CPU ; `sapphire` : mises à jour |
+| `teal` / `sapphire` / `blue` | espaces de travail ; `teal` : CPU ; `sapphire` : mises à jour |
 | `sky` | GPU, réseau |
 | `green` | mémoire, logo Arch, bouton actif ou survolé, sélection, aujourd'hui (calendrier), fond actuel (sélecteur), bordure urgente (Sway) |
 | `yellow` | horloge, titres des cartes |
 | `peach` | cadre des notifications critiques |
 | `red` | erreurs |
 | `pink` | cadre de sélection de l'outil de capture (couleur de l'ancien `slurp`) |
-| `lavender`, `maroon`, `mauve`, `flamingo`, `rosewater`, `subtext1`, `surface0` | disponibles, peu ou pas utilisés |
+| `lavender`, `mauve` | espaces de travail |
+| `maroon`, `flamingo`, `rosewater`, `subtext1`, `surface0` | disponibles, peu ou pas utilisés |
 
 Hors Mocha : `rofiBg` / `rofiFg` / `rofiSel` / `rofiImg` (lanceur, anciennes valeurs Catppuccin de Rofi), `gtkText` (texte des
 menus du tray, thème GTK), `papirusText` / `papirusWarning` (glyphe Wi-Fi), `slurpVeil` (voile de la capture). Fond de la barre :
@@ -71,8 +72,10 @@ Règles pour Qt :
 
 **Barre** (`Theme.bar`) : zone exclusive 65 px (10 de marge haute + pilule de 55 bordure comprise) ; pilules fond `mantle`, bordure
 1 px `overlay0`, rayon 20 ; 10 px entre pilules et sur les côtés ; padding des modules 10 ; une seule bordure arrondie autour de chaque
-groupe de modules (pilule de la config machine). Espaces de travail : glyphes 34 px, couleur par position dans le bloc (`teal`,
-`sapphire`, `blue`), espace affiché avec un halo (ombre floue d'un `Canvas`), vide en `surface1` ; un glyphe par numéro selon le
+groupe de modules (pilule de la config machine). Espaces de travail : glyphes 34 px, neuf couleurs Catppuccin par position :
+`green`, `teal`, `sapphire`, `blue`, `lavender`, `mauve`, `pink`, `red`, `peach`. Chaque barre recommence au début et utilise les
+N premières couleurs pour ses N espaces, sans interpolation ni espacement dans la palette. Espace affiché avec un halo
+(ombre floue d'un `Canvas`), vide en `surface1` ; un glyphe par numéro selon le
 profil de la machine (`Theme.icon.workspaces.jeux` : 5 Discord, 6 Spotify, 7 goutte de Deluge, 9 Steam ; `.travail` : 5 `nf-md-circle_double`,
 6 Discord, 7 Spotify, 9 `nf-md-microscope` pour DigitalMicrograph). Couleurs des modules : `Theme.module` ; luminosité `peach`, batterie `teal` (rouge à 30 % ou moins hors charge).
 

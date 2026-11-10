@@ -40,15 +40,6 @@ Item {
         });
     }
 
-    // Couleur au point t (0 → 1) du dégradé linéaire passant par les couleurs de Theme.module.workspaces.
-    function gradient(t: real): color {
-        const stops = Theme.module.workspaces;
-        const x = Math.max(0, Math.min(1, t)) * (stops.length - 1);   // index -1 : bouton en cours de retrait (ScriptModel)
-        const i = Math.min(Math.floor(x), stops.length - 2);
-        const a = stops[i], b = stops[i + 1], f = x - i;
-        return Qt.rgba(a.r + (b.r - a.r) * f, a.g + (b.g - a.g) * f, a.b + (b.b - a.b) * f, 1);
-    }
-
     implicitWidth: row.implicitWidth
     implicitHeight: row.implicitHeight
     clip: true   // halo de l'espace focalisé
@@ -70,9 +61,8 @@ Item {
                 required property var modelData
                 required property int index
 
-                // Couleur par position dans la barre, en dégradé sur les couleurs du thème (THEME.md § 3) :
-                // avec 3 espaces, exactement teal / sapphire / blue comme Waybar.
-                readonly property color positionColor: root.gradient(root.shown.length > 1 ? index / (root.shown.length - 1) : 0)
+                // Chaque barre reprend les premières couleurs du thème ; index -1 pendant le retrait d'un bouton.
+                readonly property color positionColor: Theme.module.workspaces[Math.max(0, Math.min(index, Theme.module.workspaces.length - 1))]
                 readonly property color glyphColor: modelData.visible || hover.hovered || !modelData.empty ? positionColor : Theme.module.workspaceEmpty
 
                 width: glyph.implicitWidth + 2 * Theme.bar.workspacePadding
