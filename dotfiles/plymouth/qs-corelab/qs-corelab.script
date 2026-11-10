@@ -1386,8 +1386,8 @@ SET[4].form_prompt.x = 310.672; SET[4].form_prompt.y = 0; SET[4].form_prompt.w =
 //
 // Phases: intro (2.2 s) → passphrase (after the intro, LUKS) → loop (rotation, 2.4 s cycle) → exit (at the end of the
 // current cycle, after `plymouth update --status=qs-corelab-exit`) → crust only, kept by `plymouth quit --retain-splash`.
-// Every screen shows the same scene: the script plugin centres each display on one canvas, so there is a single scale,
-// the one of the smallest screen (everything stays visible everywhere; a bigger screen shows more rings).
+// Every screen shows the same scene: the script plugin centres each display on one canvas, so there is a single scale.
+// One screen: its own. Several: the reference screen, 1440 px high (or the one whose height is closest to 1440).
 // Plymouth script: no clock (time = refreshes), no hexadecimal or exponent literals, no include.
 // Measuring statuses (VM bench, docs/DEVELOPMENT.md): bench-intro | bench-peak | bench-loop | bench-idle.
 
@@ -1441,11 +1441,11 @@ fun build_scene() {
   clear_scene();
   global.CW = Window.GetWidth();          // canvas: largest display; every display is centred on it
   global.CH = Window.GetHeight();
-  local.minh = 0;
+  local.refh = 0;
   for (local.i = 0; Window.GetWidth(i); i++)
-    if (minh == 0 || Window.GetHeight(i) < minh) minh = Window.GetHeight(i);
-  if (minh <= 0) { global.SCENE = 0; return; }
-  global.s = minh / 1200;
+    if (refh == 0 || Math.Abs(Window.GetHeight(i) - 1440) < Math.Abs(refh - 1440)) refh = Window.GetHeight(i);
+  if (refh <= 0) { global.SCENE = 0; return; }
+  global.s = refh / 1200;
 
   // Smallest set at least as large as the scale, else the largest.
   local.best = -1;

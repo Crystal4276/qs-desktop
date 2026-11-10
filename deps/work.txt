@@ -8,3 +8,4 @@ wine-gecko              # moteur HTML de Wine (installeur Gatan)
 cabextract              # archives .cab des runtimes (winetricks)
 icoutils                # icône de DM extraite du kit Gatan (icotool, étape 50)
 potrace                 # icône de DM vectorisée en SVG (étape 50)
+plymouth                # écran de démarrage Core Lab (initramfs, phrase de passe LUKS) : scripts/plymouth-setup.sh, docs/PLYMOUTH.md
