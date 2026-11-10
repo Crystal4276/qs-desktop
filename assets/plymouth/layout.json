@@ -105,15 +105,6 @@
     "h": 19,
     "w": 111
    },
-   "msg-unlocking": {
-    "dx": -1,
-    "dy": -1,
-    "eh": 17,
-    "ew": 80.703,
-    "file": "msg-unlocking.png",
-    "h": 19,
-    "w": 83
-   },
    "msg-wrong": {
     "dx": -1,
     "dy": -1,
@@ -2641,15 +2632,6 @@
     "file": "msg-caps.png",
     "h": 22,
     "w": 123
-   },
-   "msg-unlocking": {
-    "dx": -1,
-    "dy": -1,
-    "eh": 20,
-    "ew": 89.719,
-    "file": "msg-unlocking.png",
-    "h": 22,
-    "w": 92
    },
    "msg-wrong": {
     "dx": -1,
@@ -5179,15 +5161,6 @@
     "h": 26,
     "w": 147
    },
-   "msg-unlocking": {
-    "dx": -1,
-    "dy": -1,
-    "eh": 24,
-    "ew": 107.594,
-    "file": "msg-unlocking.png",
-    "h": 26,
-    "w": 110
-   },
    "msg-wrong": {
     "dx": -1,
     "dy": -1,
@@ -7716,15 +7689,6 @@
     "h": 31,
     "w": 183
    },
-   "msg-unlocking": {
-    "dx": -1,
-    "dy": -1,
-    "eh": 29,
-    "ew": 134.578,
-    "file": "msg-unlocking.png",
-    "h": 31,
-    "w": 137
-   },
    "msg-wrong": {
     "dx": -1,
     "dy": -1,
@@ -10252,15 +10216,6 @@
     "file": "msg-caps.png",
     "h": 37,
     "w": 219
-   },
-   "msg-unlocking": {
-    "dx": -1,
-    "dy": -1,
-    "eh": 35,
-    "ew": 161.484,
-    "file": "msg-unlocking.png",
-    "h": 37,
-    "w": 164
    },
    "msg-wrong": {
     "dx": -1,

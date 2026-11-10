@@ -277,7 +277,6 @@ SET[0].field_error.dx = -1; SET[0].field_error.dy = -1; SET[0].field_error.ew = 
 SET[0].field_idle.dx = -1; SET[0].field_idle.dy = -1; SET[0].field_idle.ew = 324; SET[0].field_idle.eh = 50.391;
 SET[0].lockup.dx = -1; SET[0].lockup.dy = -1; SET[0].lockup.ew = 402.406; SET[0].lockup.eh = 26.094;
 SET[0].msg_caps.dx = -1; SET[0].msg_caps.dy = -1; SET[0].msg_caps.ew = 108.25; SET[0].msg_caps.eh = 17;
-SET[0].msg_unlocking.dx = -1; SET[0].msg_unlocking.dy = -1; SET[0].msg_unlocking.ew = 80.703; SET[0].msg_unlocking.eh = 17;
 SET[0].msg_wrong.dx = -1; SET[0].msg_wrong.dy = -1; SET[0].msg_wrong.ew = 127.906; SET[0].msg_wrong.eh = 17;
 SET[0].placeholder.dx = -1; SET[0].placeholder.dy = -1; SET[0].placeholder.ew = 99.156; SET[0].placeholder.eh = 21;
 SET[0].form_field.x = 438; SET[0].form_field.y = 29.594; SET[0].form_field.w = 324; SET[0].form_field.h = 50.391;
@@ -551,7 +550,6 @@ SET[1].field_error.dx = -1; SET[1].field_error.dy = -1; SET[1].field_error.ew = 
 SET[1].field_idle.dx = -1; SET[1].field_idle.dy = -1; SET[1].field_idle.ew = 360; SET[1].field_idle.eh = 56;
 SET[1].lockup.dx = -1; SET[1].lockup.dy = -1; SET[1].lockup.ew = 447.094; SET[1].lockup.eh = 29;
 SET[1].msg_caps.dx = -1; SET[1].msg_caps.dy = -1; SET[1].msg_caps.ew = 120.344; SET[1].msg_caps.eh = 20;
-SET[1].msg_unlocking.dx = -1; SET[1].msg_unlocking.dy = -1; SET[1].msg_unlocking.ew = 89.719; SET[1].msg_unlocking.eh = 20;
 SET[1].msg_wrong.dx = -1; SET[1].msg_wrong.dy = -1; SET[1].msg_wrong.ew = 142.203; SET[1].msg_wrong.eh = 20;
 SET[1].placeholder.dx = -1; SET[1].placeholder.dy = -1; SET[1].placeholder.ew = 110.172; SET[1].placeholder.eh = 24;
 SET[1].form_field.x = 420; SET[1].form_field.y = 34; SET[1].form_field.w = 360; SET[1].form_field.h = 56;
@@ -825,7 +823,6 @@ SET[2].field_error.dx = -1; SET[2].field_error.dy = -1; SET[2].field_error.ew = 
 SET[2].field_idle.dx = -1; SET[2].field_idle.dy = -1; SET[2].field_idle.ew = 432; SET[2].field_idle.eh = 67.188;
 SET[2].lockup.dx = -1; SET[2].lockup.dy = -1; SET[2].lockup.ew = 529.922; SET[2].lockup.eh = 34.797;
 SET[2].msg_caps.dx = -1; SET[2].msg_caps.dy = -1; SET[2].msg_caps.ew = 144.328; SET[2].msg_caps.eh = 24;
-SET[2].msg_unlocking.dx = -1; SET[2].msg_unlocking.dy = -1; SET[2].msg_unlocking.ew = 107.594; SET[2].msg_unlocking.eh = 24;
 SET[2].msg_wrong.dx = -1; SET[2].msg_wrong.dy = -1; SET[2].msg_wrong.ew = 170.547; SET[2].msg_wrong.eh = 24;
 SET[2].placeholder.dx = -1; SET[2].placeholder.dy = -1; SET[2].placeholder.ew = 132.203; SET[2].placeholder.eh = 29;
 SET[2].form_field.x = 384; SET[2].form_field.y = 40.797; SET[2].form_field.w = 432; SET[2].form_field.h = 67.188;
@@ -1099,7 +1096,6 @@ SET[3].field_error.dx = -1; SET[3].field_error.dy = -1; SET[3].field_error.ew = 
 SET[3].field_idle.dx = -1; SET[3].field_idle.dy = -1; SET[3].field_idle.ew = 540; SET[3].field_idle.eh = 84;
 SET[3].lockup.dx = -1; SET[3].lockup.dy = -1; SET[3].lockup.ew = 641.594; SET[3].lockup.eh = 43.5;
 SET[3].msg_caps.dx = -1; SET[3].msg_caps.dy = -1; SET[3].msg_caps.ew = 180.516; SET[3].msg_caps.eh = 29;
-SET[3].msg_unlocking.dx = -1; SET[3].msg_unlocking.dy = -1; SET[3].msg_unlocking.ew = 134.578; SET[3].msg_unlocking.eh = 29;
 SET[3].msg_wrong.dx = -1; SET[3].msg_wrong.dy = -1; SET[3].msg_wrong.ew = 213.312; SET[3].msg_wrong.eh = 29;
 SET[3].placeholder.dx = -1; SET[3].placeholder.dy = -1; SET[3].placeholder.ew = 165.25; SET[3].placeholder.eh = 36;
 SET[3].form_field.x = 330; SET[3].form_field.y = 50; SET[3].form_field.w = 540; SET[3].form_field.h = 84;
@@ -1373,7 +1369,6 @@ SET[4].field_error.dx = -1; SET[4].field_error.dy = -1; SET[4].field_error.ew = 
 SET[4].field_idle.dx = -1; SET[4].field_idle.dy = -1; SET[4].field_idle.ew = 648; SET[4].field_idle.eh = 100.797;
 SET[4].lockup.dx = -1; SET[4].lockup.dy = -1; SET[4].lockup.ew = 744.594; SET[4].lockup.eh = 52.188;
 SET[4].msg_caps.dx = -1; SET[4].msg_caps.dy = -1; SET[4].msg_caps.ew = 216.609; SET[4].msg_caps.eh = 35;
-SET[4].msg_unlocking.dx = -1; SET[4].msg_unlocking.dy = -1; SET[4].msg_unlocking.ew = 161.484; SET[4].msg_unlocking.eh = 35;
 SET[4].msg_wrong.dx = -1; SET[4].msg_wrong.dy = -1; SET[4].msg_wrong.ew = 255.953; SET[4].msg_wrong.eh = 35;
 SET[4].placeholder.dx = -1; SET[4].placeholder.dy = -1; SET[4].placeholder.ew = 198.312; SET[4].placeholder.eh = 44;
 SET[4].form_field.x = 276; SET[4].form_field.y = 60.188; SET[4].form_field.w = 648; SET[4].form_field.h = 100.797;
@@ -1384,8 +1379,9 @@ SET[4].form_prompt.x = 310.672; SET[4].form_prompt.y = 0; SET[4].form_prompt.w =
 
 // Plymouth « Core Lab » theme (docs/PLYMOUTH.md), work profile. Data above: scripts/plymouth-assets.py.
 //
-// Phases: intro (2.2 s) → passphrase (after the intro, LUKS) → loop (rotation, 2.4 s cycle) → exit (at the end of the
-// current cycle, after `plymouth update --status=qs-corelab-exit`) → crust only, kept by `plymouth quit --retain-splash`.
+// Phases: intro (2.2 s) → passphrase (after the intro, LUKS) → loop (rotation, 2.4 s cycle; it starts as soon as the
+// passphrase is entered, during the key derivation; a refusal brings the field back at once and the rotation stops at the
+// end of its turn) → exit (at the end of the current cycle, after `plymouth update --status=qs-corelab-exit`) → crust only.
 // Every screen shows the same scene: the script plugin centres each display on one canvas, so there is a single scale.
 // One screen: its own. Several: the reference screen, 1440 px high (or the one whose height is closest to 1440).
 // Plymouth script: no clock (time = refreshes), no hexadecimal or exponent literals, no include.
@@ -1518,7 +1514,6 @@ fun build_scene() {
   global.form.img_idle = load("field-idle.png");
   global.form.img_active = load("field-active.png");
   global.form.img_error = load("field-error.png");
-  global.form.img_unlocking = load("msg-unlocking.png");
   global.form.img_wrong = load("msg-wrong.png");
   global.form.img_caps = load("msg-caps.png");
   global.form.field.sprite = Sprite(form.img_idle);
@@ -1527,7 +1522,7 @@ fun build_scene() {
   global.form.placeholder.sprite = Sprite(load("placeholder.png"));
   form.placeholder.sprite.SetPosition(round(cx - S.placeholder.ew * f / 2 + S.placeholder.dx * f),
                                       round(form.field_cy - S.placeholder.eh * f / 2 + S.placeholder.dy * f), 11);
-  global.form.message.sprite = Sprite(form.img_unlocking);
+  global.form.message.sprite = Sprite(form.img_wrong);
   global.form.message.y = form.top + S.form_msgline.y * f;
   global.form.dot_img = load("dot.png");
   for (local.k = 0; k < 22; k++) {
@@ -1553,7 +1548,7 @@ fun form_hide_all() {
 // --- Passphrase block ---------------------------------------------------------------------------------------------
 
 pw.active = 0;           // a passphrase is asked and not yet accepted
-pw.state = "idle";       // idle | typing | verify | error | unlocked (fading out, drawn like verify)
+pw.state = "idle";       // idle | typing | verify (field fading out, rotation) | error
 pw.bullets = 0;
 pw.prompt = "";
 form.op = 0;             // block opacity (fades)
@@ -1588,7 +1583,7 @@ fun form_frame() {
   local.o = form.op;
   if (o < 0.011 && form.to == 0) { if (form.shown) { form_hide_all(); global.form.shown = 0; } return; }
   global.form.shown = 1;
-  local.verifying = (pw.state == "verify" || pw.state == "unlocked");
+  local.verifying = (pw.state == "verify");    // the block fades out as it was entered
   set_prompt_image();
   form.prompt.sprite.SetOpacity(o);
 
@@ -1607,33 +1602,24 @@ fun form_frame() {
   if (pw.bullets == 0 && !verifying) form.placeholder.sprite.SetOpacity(o);
   else form.placeholder.sprite.SetOpacity(0);
 
-  // Dots: 10 px, 10 px apart, centred, 22 at most; pulsing (1 → 0.35 → 1, 1.2 s) while verifying.
+  // Dots: 10 px, 10 px apart, centred, 22 at most.
   local.n = Math.Min(pw.bullets, 22);
-  local.dots_o = 1;
-  if (verifying) {
-    local.u = ((frame - pw.verify_frame) * FRAME_MS) / 600;
-    u = u - Math.Int(u / 2) * 2;
-    if (u < 1) dots_o = 1 - 0.65 * ease(EASE_IN_OUT, u);
-    else dots_o = 0.35 + 0.65 * ease(EASE_IN_OUT, u - 1);
-  }
   local.x0 = cx - (n * 20 - 10) * s / 2;
   for (local.k = 0; k < 22; k++) {
     if (k < n) {
       dot[k].sprite.SetPosition(round(x0 + k * 20 * s + S.dot.dx * f), round(form.field_cy - 5 * s + S.dot.dy * f), 11);
-      dot[k].sprite.SetOpacity(o * dots_o);
+      dot[k].sprite.SetOpacity(o);
     }
     else dot[k].sprite.SetOpacity(0);
   }
 
-  // Message: Unlocking… > Wrong passphrase > Caps Lock is on.
+  // Message: Wrong passphrase > Caps Lock is on.
   local.key = "";
-  if (verifying) key = "msg_unlocking";
-  else if (pw.state == "error") key = "msg_wrong";
-  else if (Plymouth.GetCapslockState()) key = "msg_caps";
+  if (pw.state == "error") key = "msg_wrong";
+  else if (!verifying && Plymouth.GetCapslockState()) key = "msg_caps";
   if (key != "") {
     if (key != form.msg_key) {
-      if (key == "msg_unlocking") form.message.sprite.SetImage(form.img_unlocking);
-      else if (key == "msg_wrong") form.message.sprite.SetImage(form.img_wrong);
+      if (key == "msg_wrong") form.message.sprite.SetImage(form.img_wrong);
       else form.message.sprite.SetImage(form.img_caps);
       global.form.msg_key = key;
       form.message.sprite.SetPosition(round(cx - S[key].ew * f / 2 + S[key].dx * f), round(form.message.y + S[key].dy * f), 10);
@@ -1644,22 +1630,23 @@ fun form_frame() {
 }
 
 fun display_password(prompt, bullets) {
-  global.pw.prompt = prompt;
-  if (pw.state == "verify") global.pw.state = "error";   // asked again after Enter: refused
+  // Asked again after Enter with the same prompt: refused. Another prompt (second volume): a new request.
+  if (pw.state == "verify" && prompt == pw.prompt) global.pw.state = "error";
   else if (bullets > 0) global.pw.state = "typing";      // a key clears the refusal
-  else if (pw.state != "error") global.pw.state = "idle"; // (also a new volume after « unlocked »)
+  else if (pw.state != "error" || prompt != pw.prompt) global.pw.state = "idle";
+  global.pw.prompt = prompt;
   global.pw.bullets = bullets;
-  if (!pw.active) {
-    global.pw.active = 1;
-    if (phase == "prompt") form_fade(1, 300);             // otherwise shown at the end of the intro / cycle
-  }
+  global.pw.active = 1;
+  // Shown at once (after the intro); a rotation in progress stops at the end of its turn.
+  if (phase != "intro" && form.to == 0) form_fade(1, 300);
 }
 Plymouth.SetDisplayPasswordFunction(display_password);
 
 fun display_normal() {
-  if (pw.active && pw.state != "verify" && pw.state != "error") {   // Enter: cryptsetup derives the key
+  if (pw.active && pw.state != "verify" && pw.state != "error") {   // Enter: cryptsetup derives the key (seconds)
     global.pw.state = "verify";
-    global.pw.verify_frame = frame;
+    form_fade(0, 500);                     // the block leaves and the rotation runs during the check
+    if (phase == "prompt") start_loop();
   }
 }
 Plymouth.SetDisplayNormalFunction(display_normal);
@@ -1667,9 +1654,10 @@ Plymouth.SetDisplayNormalFunction(display_normal);
 fun unlocked() {
   if (!pw.active) return;
   global.pw.active = 0;
-  global.pw.state = "unlocked";            // dots and « Unlocking… » stay while the block fades out
-  form_fade(0, 500);                       // ... and the rotation starts
-  if (phase == "prompt") start_loop();
+  global.pw.state = "idle";
+  global.pw.bullets = 0;
+  if (form.to != 0) form_fade(0, 500);
+  if (phase == "prompt") start_loop();     // the rotation goes on until the end of the boot
 }
 Plymouth.SetRootMountedFunction(unlocked);  // root mounted (hook update-root-fs): the volume is open
 
@@ -1768,16 +1756,16 @@ fun refresh() {
   if (phase == "intro") {
     intro_frame(ms);
     if (ms >= 2200) {
-      if (pw.active) { global.phase = "prompt"; global.phase_frame = 0; form_fade(1, 300); }
-      else start_loop();
+      if (pw.active && pw.state != "verify") { global.phase = "prompt"; global.phase_frame = 0; form_fade(1, 300); }
+      else start_loop();                   // no passphrase, or entered blind during the intro
       global.phase_frame = 0;
     }
   }
   else if (phase == "loop") {
-    // Cycle boundary: every half-ring at rest. Exit, or hold for a passphrase asked late.
+    // Cycle boundary: every half-ring at rest. Exit, or hold while a passphrase is awaited (refused, or asked late).
     if ((phase_frame - 1) - Math.Int((phase_frame - 1) / CYCLE) * CYCLE == 0) {
       if (exit_requested) { global.phase = "exit"; global.phase_frame = 0; for (local.i = 0; i < 4; i++) set_angle(i, 0); }
-      else if (pw.active) { global.phase = "prompt"; global.phase_frame = 0; form_fade(1, 300); }
+      else if (pw.active && pw.state != "verify") { global.phase = "prompt"; global.phase_frame = 0; }
     }
     if (phase == "loop") loop_frame((phase_frame - 1) * FRAME_MS);
   }
