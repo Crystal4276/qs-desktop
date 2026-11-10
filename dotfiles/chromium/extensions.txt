@@ -7,6 +7,6 @@ eimadpbcbfnmbkopoojfekhnkhdbieeh    # Dark Reader
 fihnjjcciajhdojfnbdddfaoknhalnja    # I don't care about cookies
 hdpcadigjkbcpnlcpbcohpafiaefanki    # nightTab : page Nouvel onglet ; réglages à importer : dotfiles/chromium/nighttab.json
 ldbooahljamnocpaahaidnmlgfklbben    # Recall
-clngdbkpkpeebahjckkjfobafhncgmne    # Stylus
+clngdbkpkpeebahjckkjfobafhncgmne    # Stylus : styles à importer : dotfiles/chromium/stylus.json
 fijngjgcjhjmmpcmkeiomlglpeiijkld    # Talisman Wallet
 ddkjiahejlhfcafbddmgiahcphecmpfh    # uBlock Origin Lite

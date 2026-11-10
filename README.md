@@ -68,6 +68,9 @@ Autre distribution qu'Arch : pas encore prévue (paquets à installer soi-même 
   depuis `dotfiles/chromium/nighttab.json` (Chromium fermé et extension installée, sinon rappelé à la fin : relancer
   `install.sh`). Réimportés seulement quand ce fichier change. Après un changement sur une machine : nouvel onglet → roue
   dentée → Data → Export data, puis remplacer le fichier du dépôt.
+- Stylus (styles des sites, Catppuccin surtout) : ses styles sont importés de la même façon depuis `dotfiles/chromium/stylus.json`
+  (sauvegarde de Stylus ; styles déjà là remplacés, autres gardés ; mis à jour ensuite par Stylus lui-même). Après un
+  changement : icône de Stylus → Gérer → Exporter, puis remplacer le fichier du dépôt.
 - Dossiers du compte : Applications, Desktop, Documents, Downloads, Music, Pictures, Videos ; Modèles, Public et Projets
   désactivés (`~/.config/user-dirs.dirs`), retirés s'ils sont vides.
 - Fonds d'écran : `install.sh` propose de cloner le dépôt `Crystal4276/wallpapers` dans `~/Pictures/Wallpapers` (HTTPS, sans

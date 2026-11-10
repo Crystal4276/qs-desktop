@@ -1256,7 +1256,7 @@ EOF
             run cp "$state/dconf-old.ini" "$HOME/qs-desktop-dconf-old.ini-$stamp"
             echo "! dconf : anciennes valeurs non remises (bus de session injoignable ?), gardées dans ~/qs-desktop-dconf-old.ini-$stamp"
         fi
-        run rm -rf "$registry" "$state/dconf-old.ini" "$state/dconf-old.ini.written" "$state/written" "$state/theme-geany" "$state/nighttab"
+        run rm -rf "$registry" "$state/dconf-old.ini" "$state/dconf-old.ini.written" "$state/written" "$state/theme-geany" "$state/nighttab" "$state/stylus"
         [[ -L "$repo/dotfiles/mpv/host.conf" ]] && run rm -f "$repo/dotfiles/mpv/host.conf"
     else
         echo "= rien à retirer ($registry absent)"
@@ -1277,24 +1277,30 @@ EOF
 
 # --- Vérifications finales ---------------------------------------------------------------------------------------------
 
-# nightTab (page Nouvel onglet) : réglages du dépôt chargés dans le profil principal de Chromium (scripts/nighttab-import.py,
-# Chromium sans fenêtre). Une fois par version de dotfiles/chromium/nighttab.json : tes changements ensuite ne sont pas écrasés
-# tant que le fichier du dépôt ne change pas. Il faut l'extension (étape système) et Chromium fermé ; sinon rappelé à la fin.
-step_nighttab() {
-    local profile="$config/chromium" src="$repo/dotfiles/chromium/nighttab.json" id=hdpcadigjkbcpnlcpbcohpafiaefanki sha rc=0
+# Extensions de Chromium réglées depuis le dépôt, dans le profil principal (scripts/extension-import.py, Chromium sans
+# fenêtre) : nightTab (page Nouvel onglet, dotfiles/chromium/nighttab.json) et Stylus (styles, dotfiles/chromium/stylus.json).
+# Une fois par version du fichier : tes changements ensuite ne sont pas écrasés tant que le fichier du dépôt ne change pas.
+# Il faut l'extension (étape système) et Chromium fermé ; sinon rappelé à la fin.
+step_extensions() {
     command -v chromium >/dev/null && command -v python3 >/dev/null || return 0
-    section "nightTab"
+    section "nightTab et Stylus"
+    extension_import nighttab nightTab hdpcadigjkbcpnlcpbcohpafiaefanki réglages "nouvel onglet > roue dentée > Data > Import from file"
+    extension_import stylus Stylus clngdbkpkpeebahjckkjfobafhncgmne styles "icône de Stylus > Gérer > Importer"
+}
+
+extension_import() {    # clé (fichier dotfiles/chromium/<clé>.json) nom identifiant contenu import-à-la-main
+    local key="$1" name="$2" id="$3" what="$4" manual="$5" profile="$config/chromium" src="$repo/dotfiles/chromium/$1.json" sha rc=0
     sha="$(sha256sum < "$src" | cut -c1-64)"
-    if [[ "$(cat "$state/nighttab" 2>/dev/null)" == "$sha" ]]; then echo "= nightTab : réglages du dépôt déjà importés"; return; fi
+    if [[ "$(cat "$state/$key" 2>/dev/null)" == "$sha" ]]; then echo "= $name : $what du dépôt déjà importés"; return; fi
     if [[ ! -d "$profile/Default/Extensions/$id" && ! -f "/usr/share/chromium/extensions/$id.json" && -z "$dry" ]]; then
-        echo "- nightTab non installé (extensions de Chromium refusées) : réglages non importés"; return
+        echo "- $name non installé (extensions de Chromium refusées) : $what non importés"; return
     fi
-    if chromium_open "$profile"; then later "nightTab : Chromium ouvert ; le fermer puis relancer install.sh pour importer ses réglages"; return; fi
-    python3 -I "$repo/scripts/nighttab-import.py" ${dry:+--dry-run} "$profile" "$src" || rc=$?
+    if chromium_open "$profile"; then later "$name : Chromium ouvert ; le fermer puis relancer install.sh pour importer ses $what"; return; fi
+    python3 -I "$repo/scripts/extension-import.py" ${dry:+--dry-run} "$key" "$profile" "$src" || rc=$?
     case "$rc" in
-        0) [[ -n "$dry" ]] || { mkdir -p "$state"; echo "$sha" > "$state/nighttab"; } ;;
-        3) later "nightTab : extension pas encore installée par Chromium (réseau ?) ; relancer install.sh" ;;
-        *) later "nightTab : import impossible (message ci-dessus) ; à la main : nouvel onglet > roue dentée > Data > Import from file : $src" ;;
+        0) [[ -n "$dry" ]] || { mkdir -p "$state"; echo "$sha" > "$state/$key"; } ;;
+        3) later "$name : extension pas encore installée par Chromium (réseau ?) ; relancer install.sh" ;;
+        *) later "$name : import impossible (message ci-dessus) ; à la main : $manual : $src" ;;
     esac
 }
 
@@ -1339,5 +1345,5 @@ step_wallpapers
 [[ "$profile" == travail ]] && step_dm
 step_host
 [[ -n "$system" ]] && is_arch && step_system
-step_nighttab
+step_extensions
 step_check

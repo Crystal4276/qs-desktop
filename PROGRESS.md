@@ -702,3 +702,21 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
   l'écran de connexion, `/usr/local/share/qs-desktop`) ; dans la session Hyprland, changer de fond, attendre 3 s, se déconnecter :
   l'écran de connexion doit l'afficher. Idem sous Sway. Un éventuel choix **par écran** fait sur le laptop sous l'ancienne
   description est à refaire une fois (choix global conservé).
+
+## Stylus — styles de `terrier` installés par `install.sh` (2026-11-10)
+
+- Constat (laptop) : Stylus installé par l'étape système, mais aucun style.
+- Sauvegarde des styles de `terrier` (copie de ses données, Chromium sans fenêtre, même export que Gérer → Exporter) :
+  `dotfiles/chromium/stylus.json` (3 Mo) : **139 styles**, 137 Catppuccin (mis à jour ensuite par Stylus, `updateUrl`), dont
+  YouTube, Wikipedia, Shinigami Eyes en Mocha/vert, Claude et ChatGPT en vert, et tes deux styles Focalboard (`localhost:7000`,
+  l'un désactivé). Réglages de Stylus : tous par défaut, non importés. Rien de personnel (adresses, jetons) dans le fichier.
+- Import : `scripts/nighttab-import.py` devient `scripts/extension-import.py nighttab|stylus` (même Chromium sans fenêtre) ;
+  Stylus par son propre import (celui du glisser-déposer d'une sauvegarde sur Gérer), puis relecture style par style (nom,
+  actif, options). `install.sh` : étape « nightTab et Stylus », une fois par version de chaque fichier, rappel en fin
+  d'installation si Chromium est ouvert ou l'extension pas encore là.
+- Tests (profils jetables, Stylus 2.4.17 de `terrier`) : profil neuf → 139 styles relus, CSS compilé identique à `terrier`
+  (seule différence : l'ancienne section d'en-tête, commentaire seul, de 3 styles) ; relance → 0 changement ; styles modifiés
+  (couleur, désactivé) → remis comme le dépôt ; extension absente → code 3 ; nightTab refait par le nouveau script : 11 favoris.
+  `test-install.py` : 0 échec.
+- **À tester sur le laptop** : `git pull`, **fermer Chromium**, `./install.sh` → « = Stylus : 139 styles relus » ; puis un site
+  (GitHub, YouTube) en Catppuccin.
