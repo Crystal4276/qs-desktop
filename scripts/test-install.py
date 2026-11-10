@@ -194,6 +194,14 @@ def main():
             r = install("--dry-run", "--yes", system=True)
             check(r.returncode == 0 and "plymouth" not in r.stdout.lower().replace("plymouth-vm", ""),
                   f"simulation système, jeux : rien de Plymouth (code {r.returncode})")
+        # plymouth-setup.sh lui-même, depuis le dépôt (git archive), sur un hôte GRUB : install.sh avale ses échecs (sub).
+        if all(pathlib.Path(p).exists() for p in ("/etc/default/grub", "/boot/grub", "/usr/bin/mkinitcpio")):
+            r = subprocess.run([str(REPO / "scripts/plymouth-setup.sh"), "--dry-run", "install"], capture_output=True, text=True)
+            check(r.returncode == 0 and "Écran de démarrage Core Lab au prochain démarrage" in r.stdout
+                  and ("+ mkinitcpio -P" in r.stdout or "= hook plymouth" in r.stdout),
+                  f"plymouth-setup.sh --dry-run install (code {r.returncode}) {r.stderr.strip()[-300:]}")
+            r = subprocess.run([str(REPO / "scripts/plymouth-setup.sh"), "--dry-run", "uninstall"], capture_output=True, text=True)
+            check(r.returncode == 0, f"plymouth-setup.sh --dry-run uninstall (code {r.returncode}) {r.stderr.strip()[-300:]}")
 
         r = install("--dry-run")
         check(r.returncode == 0, f"simulation : code {r.returncode} {r.stderr.strip()[-300:]}")
