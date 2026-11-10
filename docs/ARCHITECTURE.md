@@ -208,7 +208,7 @@ de ce desktop n'en est pas une), rétroéclairage (`/sys/class/backlight`), GPU 
   `application.id` du flux (web apps : `env PULSE_PROP_OVERRIDE=application.id=whatsapp chromium …` dans leur lanceur) ou par
   binaire ; ici `["discord", "whatsapp"]`. Va avec `dotfiles/wireplumber/wireplumber.conf.d/50-dnd-no-restore.conf` (WirePlumber ne
   retient ni volume ni coupure de ces flux).
-- `idle` : `timeout` (300 s par défaut), `lockBeforeSleep` (par défaut : machine avec batterie).
+- `idle` : `timeout` (300 s par défaut), `lockOnIdle` et `lockBeforeSleep` (null : machine avec batterie ; true/false : choix explicite).
 - `wallpaper`, `wallpapersDir` : fond par défaut et dossier des fonds (§ 7.11).
 - `greeter.defaultSession` : session proposée par l'écran de connexion tant que l'utilisateur n'en a choisi aucune,
   `wayland/<fichier .desktop sans extension>` ou `x11/…` ; `wayland/sway` par défaut, `wayland/sway-vulkan` ici (§ 9).
@@ -424,6 +424,9 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
 - `IdleMonitor` (inhibitions du compositeur, « Keep Screen On », vidéos Wayland respectées) : après `idle.timeout`, écrans éteints
   (`Compositor.setPower` : Sway `output * power off` ; Hyprland `hl.dsp.dpms({ action = … })`), tous rallumés d'un coup à la reprise
   (un rallumage par écran refait un modeset sous Sway). Quickshell relancé écrans éteints : rallumés 2 s après le démarrage.
+- Sur laptop, `idle.lockOnIdle` demande le verrouillage et attend la confirmation du compositeur avant extinction.
+  Une reprise d’activité annule l’extinction différée, sans annuler le verrouillage ; un verrou refusé laisse les écrans allumés.
+  Le délai reste de 300 s, sur secteur comme sur batterie ; les inhibitions ci-dessous restent respectées.
 - Inhibitions D-Bus : `scripts/idle-inhibit.py` (Python/Gio) publie `org.freedesktop.ScreenSaver`, objets
   `/org/freedesktop/ScreenSaver` et `/ScreenSaver`, méthodes `Inhibit(ss) → u`, `UnInhibit(u)`. Cookies propres à leur appelant,
   libérés à sa déconnexion ; identifiants uint32 non nuls tirés au hasard, sans collision parmi les demandes actives,

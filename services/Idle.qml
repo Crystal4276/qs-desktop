@@ -7,8 +7,8 @@ import Quickshell.Wayland
 import qs.config
 
 // Veille des écrans (remplace swayidle et hypridle, ARCHITECTURE § 7.13) : après `Settings.idle.timeout` secondes sans activité,
-// écrans éteints par le compositeur ; à la reprise, tous rallumés ensemble. Les inhibitions sont respectées : règles `inhibit_idle`
-// du compositeur, « Keep Screen On »
+// verrouillage sur laptop puis écrans éteints par le compositeur ; à la reprise, tous rallumés ensemble.
+// Inhibitions respectées : règles `inhibit_idle` du compositeur, « Keep Screen On »
 // (IdleInhibitor des barres), manette Bluetooth connectée (même inhibiteur), vidéos des applications Wayland.
 // Verrouillage avant la mise en veille du système (laptop par défaut) : verrou « delay » de logind, relâché une fois l'écran verrouillé.
 // Au réveil sous Hyprland : `hyprctl reload` (after_sleep_cmd de ton hypridle : la disposition des écrans ne survit pas à la veille).
@@ -17,6 +17,7 @@ Singleton {
     id: root
 
     readonly property var settings: Settings.idle
+    readonly property bool lockOnIdle: settings.lockOnIdle ?? Battery.available
     readonly property bool lockBeforeSleep: settings.lockBeforeSleep ?? Battery.available
 
     // Tests : `qs ipc call idle state` (JSON).
@@ -25,7 +26,7 @@ Singleton {
 
         function state(): string {
             return JSON.stringify({ enabled: monitor.enabled, timeout: monitor.timeout, idle: monitor.isIdle,
-                lockBeforeSleep: root.lockBeforeSleep, dbusReady: root.dbusReady, dbusInhibitors: root.dbusInhibitors });
+                lockOnIdle: root.lockOnIdle, lockBeforeSleep: root.lockBeforeSleep, dbusReady: root.dbusReady, dbusInhibitors: root.dbusInhibitors });
         }
     }
 
@@ -79,7 +80,16 @@ Singleton {
         }
     }
 
+    property bool waitingIdleLock: false
+
     function screensOff(): void {
+        if (root.lockOnIdle && !Session.locked) {
+            root.waitingIdleLock = true;
+            if (!Session.lockActive)
+                Session.lock();
+            return;
+        }
+        root.waitingIdleLock = false;
         Compositor.setPower([], false);
     }
 
@@ -87,6 +97,7 @@ Singleton {
     // configuration de tous les écrans en un seul commit : rallumer un écran à part refaisait un modeset qui éteignait de nouveau
     // les autres. `output * power on` efface aussi le `power off` de la config `*` (sinon, un écran branché ensuite resterait éteint).
     function screensOn(): void {
+        root.waitingIdleLock = false;
         Compositor.setPower([], true);
     }
 
@@ -166,6 +177,12 @@ Singleton {
     Connections {
         target: Session
         function onLockedChanged() {
+            // Une reprise d'activité annule l'extinction différée, sans annuler le verrouillage.
+            if (Session.locked && root.waitingIdleLock) {
+                root.waitingIdleLock = false;
+                if (monitor.isIdle)
+                    Compositor.setPower([], false);
+            }
             if (Session.locked && root.preparingSleep)
                 root.holding = false;
         }

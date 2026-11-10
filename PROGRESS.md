@@ -450,3 +450,21 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
   `sway -C` headless et `Hyprland --verify-config` pour jeux et travail : OK, sans erreur de configuration.
 - Configurations actives liées aux fichiers corrigés ; bureau réel Hyprland vivant (PID 1894).
 - À tester à la main : nouvelle connexion Sway puis Hyprland, Spotify ouvert sur l'espace musique (6 en jeux, 7 en travail).
+
+## Laptop — verrouillage à l’inactivité (2026-11-10)
+
+- Choix validé : verrouiller après inactivité des écrans **et** avant suspension du système, sur secteur comme sur batterie.
+  Délai conservé à 300 s. `idle.lockOnIdle` : null par défaut (machine avec batterie), true/false pour un choix explicite.
+- `Idle` attend la confirmation du compositeur avant extinction ; activité pendant l’attente → extinction annulée, verrouillage
+  conservé. Verrou refusé → écrans allumés. Inhibitions vidéo, Wayland/D-Bus et « Keep Screen On » respectées.
+  `idle state` expose `lockOnIdle`. Mécanisme logind avant suspension conservé.
+- Validations sur copie : `test-idle-lock.py` passe (IdleMonitor, WlSessionLock et DPMS réels sur Sway headless ; mouvement du
+  pointeur pendant l’attente, confirmation tardive, refus, session déjà verrouillée, laptop/desktop, choix explicites, inhibitions
+  et délai nul) ; `test-sleep.py` et `test-idle-inhibit.py` passent. Pas de nouvelle erreur QML au démarrage complet.
+- `test-bar.py` échoue sur son assertion de largeur musicale à 3440 px (580,98 px mesurés, > 590 attendus) ;
+  échec identique reproduit sur le code d’origine, sans rapport avec ce changement. Avertissements connus de portail Qt
+  et icônes NordVPN au démarrage complet ; aucune action VPN effectuée.
+- À vérifier à la main : attendre 5 minutes sans inhibition, réveiller et saisir le mot de passe ; capot → suspension → réveil,
+  en vraie session Sway et Hyprland. Aucune suspension ni authentification réelle pendant les essais.
+- Application groupée au dépôt : rechargement réussi sur la session Hyprland réelle ; IPC répond, `lockOnIdle=true`,
+  `lockBeforeSleep=true`, délai 300 s et pont D-Bus prêt. Aucun nouvel avertissement QML au rechargement ; bancs arrêtés.
