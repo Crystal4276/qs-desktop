@@ -565,5 +565,14 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
     peut être 2,3 fois plus lent sans ralentir l'animation. 8 arcs : plus de mémoire (192 Mo) ; 32 : pas de gain.
   - Pièges notés (`DEVELOPMENT.md`) : littéraux hexadécimaux = analyse bloquée, écran noir ; pas d'exposant ; `splash`
     nécessaire même hors démarrage (`--kernel-command-line`). Pas de HiDPI appliqué en VM ; à vérifier sur le laptop.
-  - En attente de ta réponse : correction d'`install.sh` sans `python3` (Arch minimal) ; ensuite étape 3 (thème complet :
-    phrase de passe, sortie, plusieurs écrans).
+- **Validation de l'étape 2** (tes retours) : choix techniques acceptés ; ajout de 1920×1080 et 2560×1440.
+  - Jeu s = 0,9 ajouté (1920×1080 sans réduction) ; 2560×1440 = jeu s = 1,2 comme 3440×1440. `check` sur cinq tailles :
+    écart moyen 0,10 à 0,38 sur 255, 0,09 à 0,34 % de pixels > 32 (un seul jeu 4K réduit : 2 à 3 fois plus). Thème 1,8 Mo.
+  - `install.sh` sur un Arch minimal sans `python3` : profil lu sans Python (sous `set -e`, l'échec dans `$(…)` arrêtait
+    tout, code 127, sans message). Test ajouté (`PATH` sans python) : échoue sur l'ancien code, passe sur le nouveau.
+    Au passage, échec déjà présent corrigé : `intent.cache` (desktop-file-utils 0.29) noté et retiré au retrait.
+    `test-install.py` : 0 échec. Vérifié en vrai sur un Arch minimal chiffré neuf (sans python) : code 0, python installé
+    à l'étape 1 ; second passage : seul le clonage de DigitalMicrograph (dépôt privé, injoignable depuis la VM) est retenté.
+  - Second passage, sudoers : « + » affiché à tort avant « = … à jour » ; l'annonce est maintenant faite par l'étape root
+    après la comparaison (vérifié en VM : à jour « = », absent « + », simulation « + »).
+  - Suite : étape 3 (thème complet : phrase de passe, sortie, plusieurs écrans).

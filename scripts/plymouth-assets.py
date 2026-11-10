@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Images of the Plymouth « Core Lab » theme (docs/PLYMOUTH.md), one set per scale s = screen height / 1200.
 
-    plymouth-assets.py build [--scales 1.0,1.2,1.5,1.8] [--tiles 16] [--out DIR] [--layout FILE]
-    plymouth-assets.py check [--sizes 1920x1200,3440x1440,3840x2160] [--shots DIR] [--layout FILE] [--from-largest]
+    plymouth-assets.py build [--scales 0.9,1.0,1.2,1.5,1.8] [--tiles 16] [--out DIR] [--layout FILE]
+    plymouth-assets.py check [--sizes 1920x1080,1920x1200,2560x1440,3440x1440,3840x2160] [--shots DIR] [--layout FILE] [--from-largest]
 
 build  draws every image of the theme for each scale:
          - dotted rings cut into arcs (r<ring>-<arc>.png): small sprites, tight boxes, whole dots only;
@@ -455,12 +455,12 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
     b = sub.add_parser("build")
-    b.add_argument("--scales", default="1.0,1.2,1.5,1.8")
+    b.add_argument("--scales", default="0.9,1.0,1.2,1.5,1.8")
     b.add_argument("--tiles", type=int, default=16)
     b.add_argument("--out", default=THEME)
     b.add_argument("--layout", default=LAYOUT)
     c = sub.add_parser("check")
-    c.add_argument("--sizes", default="1920x1200,3440x1440,3840x2160")
+    c.add_argument("--sizes", default="1920x1080,1920x1200,2560x1440,3440x1440,3840x2160")
     c.add_argument("--out", default=THEME)
     c.add_argument("--layout", default=LAYOUT)
     c.add_argument("--shots", default=os.path.join(REPO, ".shots/plymouth"))
