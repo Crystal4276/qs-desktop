@@ -98,6 +98,9 @@ verrouillage).
 - `python scripts/test-sleep.py` : vrai service Idle sur plateforme Qt offscreen, bus privé, services QML et commandes logind factices ;
   confirmation tardive du verrouillage, libération volontaire, réveil et relance des processus. Aucune suspension ni authentification.
 
+- `python scripts/test-idle-lock.py` : IdleMonitor, verrou Wayland et DPMS réels sur Sway headless ; politiques laptop/desktop,
+  confirmation tardive, annulation, refus, inhibitions Wayland/D-Bus et délai désactivé. Aucun verrouillage de la vraie session.
+
 ## VM d'installation (`install.sh` sur une machine neuve)
 
 Image officielle Arch « basic » (`geo.mirror.pkgbuild.com/images/latest/`, empreinte `.SHA256` vérifiée ; compte `arch` / `arch`,
