@@ -45,8 +45,8 @@ système. Les signaler dans `PROGRESS.md`.
 |---|---|---|---|
 | 1 · Assemblage | Plymouth s'affiche | Fond crust. Les quatre demi-anneaux arrivent de leur côté (droite pour 1 et 3, gauche pour 2 et 4) et s'emboîtent au centre ; les anneaux en pointillés apparaissent de l'intérieur vers l'extérieur ; le filet horizontal et le nom du lab apparaissent en fondu. | 2,2 s |
 | 2 · Phrase de passe | Demande de phrase de passe (LUKS) | Le logo reste en place. Sous lui, en fondu (0,3 s) : le texte de la demande, le champ, la ligne de message. **Le champ attend la fin de la phase 1** même si la demande arrive avant. | jusqu'à la saisie |
-| 2b · Vérification | Entrée | Points du champ qui pulsent, bordure green, message « Unlocking… » pendant que cryptsetup dérive la clé. Refus : champ vidé, bordure red, « Wrong passphrase », retour en phase 2. | ~1 à 2 s (réel) |
-| 3 · Chargement | Déverrouillage réussi (ou fin de la phase 1 sans demande de phrase de passe) | Le prompt disparaît en fondu (0,5 s) **pendant que** la rotation démarre : chaque demi-anneau fait un tour, sens alternés (diaphragme), puis se repose ; cycle de 2,4 s, en boucle. | jusqu'à la fin du démarrage |
+| 2b · Vérification | Entrée | **Modifié (2026-11-10, ton choix)** : le champ disparaît en fondu (0,5 s) et la rotation de la phase 3 démarre aussitôt, pendant que cryptsetup dérive la clé. Refus : le champ revient tout de suite (fondu 0,3 s), vidé, bordure red, « Wrong passphrase » ; les demi-anneaux finissent leur tour sans en commencer un autre. Plus de « Unlocking… » ni de points pulsés. | durée de la dérivation (~5 s, réglage LUKS) |
+| 3 · Chargement | Déverrouillage réussi (ou fin de la phase 1 sans demande de phrase de passe) | La rotation (déjà lancée à l'Entrée) continue : chaque demi-anneau fait un tour, sens alternés (diaphragme), puis se repose ; cycle de 2,4 s, en boucle. | jusqu'à la fin du démarrage |
 | 4 · Sortie | Fin du démarrage (passage au greeter) | **À la fin du cycle en cours** (tous les demi-anneaux au repos) : les demi-anneaux repartent de leur côté, les anneaux s'effacent de l'extérieur vers l'intérieur, filet et nom du lab en fondu. Reste un écran crust uni, sur lequel le greeter s'affiche. | 0,95 s (+ fin du cycle, ≤ 2,4 s) |
 
 ### Couleurs (`config/Theme.qml`)
@@ -129,7 +129,7 @@ Courbes au format `cubic-bezier` (identiques dans la référence). *i* = indice 
 |---|---|---|---|
 | Repos (champ vide) | `overlay0` | « Passphrase » | — |
 | Saisie | `green` | un point par caractère | — |
-| Vérification | `green` | points qui pulsent | « Unlocking… » (`subtext0`) |
+| Vérification | `green` (pendant le fondu de sortie) | points | — (champ masqué, rotation) |
 | Refus | `red` jusqu'à la frappe suivante | champ vidé, « Passphrase » | « Wrong passphrase » (`red`) |
 | Verr. Maj. (si détectable) | selon l'état | — | « Caps Lock is on » (`yellow`) |
 
@@ -189,15 +189,17 @@ profil n'est plus `travail`), `docs/ROLLBACK.md` (section Plymouth), `docs/ARCHI
 |---|---|
 | Affichage du thème | phase 1 |
 | Demande de phrase de passe | phase 2 (après la fin de la phase 1) ; nombre de points = nombre de caractères que Plymouth rapporte |
-| Retour à l'affichage normal après Entrée | phase 2b (« Unlocking… ») — ne pas masquer le champ tout de suite |
-| Nouvelle demande de phrase de passe après une 2b | refus |
+| Retour à l'affichage normal après Entrée | phase 2b : champ masqué, rotation |
+| Nouvelle demande de phrase de passe après une 2b | refus si la demande est la même ; une autre demande (second volume) est une nouvelle saisie |
 | Déverrouillage réussi | phase 3 : `RootMounted` (hook tardif `update-root-fs`, la racine ne se monte qu'une fois le volume ouvert) ; à défaut, premier message d'état de systemd (après le passage à la vraie racine). Vérifié en VM. Le champ garde points et « Unlocking… » pendant son fondu. |
 | Pas de demande à la fin de la phase 1 | phase 3 directement (machine sans LUKS, ou volume déjà ouvert) ; une demande tardive est montrée à la fin du cycle en cours, la rotation attend le déverrouillage |
 | Passage au greeter | `plymouth update --status=qs-corelab-exit` : phase 4 à la fin du cycle (ou dès la fin de l'intro) ; au plus 3,35 s après la demande, puis écran crust seul |
 | Arrêt, redémarrage (`GetMode` ≠ `boot`) | écran crust seul (sprite plein écran : sans sprite, le plugin n'affiche rien) |
 
-Mesuré en VM (étape 3) : la vérification d'une phrase par `cryptsetup` (argon2) dure 5 à 8 s dans la VM ; « Unlocking… » et
-les points pulsés restent tout ce temps. Le texte de la demande est celui du hook `encrypt` : « A password is required to access
+Mesuré en VM : la vérification d'une phrase par `cryptsetup` dure ce que règle le volume LUKS. archinstall vise ~10 s
+(argon2id, 1 Go : 9,5 à 10,4 s en VM, bonne ou mauvaise phrase) ; retenu (ton choix) : **5 s** (`cryptsetup luksConvertKey
+--pbkdf argon2id --iter-time 5000`, après `luksHeaderBackup`), mesuré 5,2 à 5,4 s en VM. Réglage du disque, pas du thème :
+fait à la main sur chaque machine (étape 5 pour le laptop), jamais par `install.sh`. Le texte de la demande est celui du hook `encrypt` : « A password is required to access
 the root volume ».
 
 **Passage au greeter, constaté en VM (à régler à l'étape 4)** : `plymouth quit --retain-splash` seul laisse un **écran noir**
