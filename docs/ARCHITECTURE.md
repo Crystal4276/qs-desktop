@@ -60,7 +60,10 @@ Deux problèmes, deux mécanismes, **un seul** par problème.
 ### 3.1 Configuration des sorties → le compositeur, écrans identifiés par description
 
 Chaque compositeur configure ses sorties nativement, par **description** d'écran (marque modèle numéro de série), jamais par
-connecteur, dans la partie machine de sa config (§ 1). Le reste de la config est commun.
+connecteur, dans la partie machine de sa config (§ 1). Le reste de la config est commun. Côté Quickshell, la description
+(`Compositor.describe`) est la même sous les deux : sans le « Unknown » de Sway pour un champ absent de l'EDID ni les virgules
+qu'Hyprland retire (dalle du laptop : `China Star Optoelectronics Technology Co. Ltd 0x1471`). Clé de `hosts/*.json`, des fonds
+par écran et des fonds exportés pour l'écran de connexion, qui tourne sous Sway même pour une session Hyprland.
 
 | | Sway 1.12 | Hyprland 0.57 (Lua) |
 |---|---|---|
@@ -412,8 +415,8 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
 - **Copie pour l'écran de connexion** : 3 s après l'affichage, le rendu de chaque écran (image, panorama, triptyque) est enregistré en
   JPEG dans `/var/lib/qs-desktop/<utilisateur>/<md5(description)>.jpg`, lisible par l'utilisateur `greeter` (§ 9). Dossier créé par
   `scripts/greeter-setup.sh`, vérifié au démarrage de Quickshell (absent : aucun rendu). Écriture ratée : retentée au fond affiché
-  suivant. Banc : seulement sous `QS_GREETER_DIR`. Écran inconnu du bureau : le greeter prend le fond exporté d'un autre écran ;
-  avant toute session : `default.png|jpg`, fond de la config machine copié par `install.sh` (étape système).
+  suivant. Banc : seulement sous `QS_GREETER_DIR`. Aucun fond exporté pour cet écran (aucune session ouverte
+  encore, écran inconnu du bureau) : `default.png|jpg`, fond de la config machine copié par `install.sh` (étape système).
 - IPC de test : `wallpaper state`, `wallpaper set <kind> <chemin>` (dont `corelab corelab/<design>`). `state` inclut les noms de designs `corelab`.
 
 ### 7.12 Verrouillage (`modules/lock/`)

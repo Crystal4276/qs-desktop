@@ -687,3 +687,18 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
 
 - Synchronisation du déploiement : commits Plymouth / installation publiés par l’autre session conservés par fusion ;
   seul conflit dans le journal résolu en gardant les deux ajouts. Aucun installateur ni réglage système exécuté.
+
+## Écran de connexion — fond de la session Hyprland (2026-11-10)
+
+- Constat (laptop, profil travail) : fond changé, déconnexion, l'écran de connexion garde le fond par défaut.
+- Cause : le bureau exporte le fond de chaque écran sous `md5(description).jpg` ; l'écran de connexion tourne sous Sway, la
+  session du laptop sous Hyprland, et la description de la dalle diffère : Sway `China Star Optoelectronics Technology Co., Ltd
+  0x1471 Unknown` (pas de numéro de série dans l'EDID), Hyprland sans « Unknown » (virgules retirées de ses propres descriptions).
+  Fichier introuvable → `default.jpg`. `terrier` non touché (numéros de série, aucune virgule : même chaîne partout).
+- Correctif : `Compositor.describe`, même description sous les deux compositeurs (sans « Unknown » ni virgules). Descriptions
+  de `terrier` inchangées (vérifiées sous Hyprland, choix par écran retrouvés) ; `test-outputs.sh sway` : 0 échec ; bureau rechargé
+  sans erreur. Doc : `ARCHITECTURE.md` § 3.1, § 7.11 (le greeter ne prend plus le fond d'un autre écran depuis la phase 12).
+- **À tester sur le laptop** : `git pull`, `./install.sh` en acceptant l'étape système (met à jour la copie du dépôt lue par
+  l'écran de connexion, `/usr/local/share/qs-desktop`) ; dans la session Hyprland, changer de fond, attendre 3 s, se déconnecter :
+  l'écran de connexion doit l'afficher. Idem sous Sway. Un éventuel choix **par écran** fait sur le laptop sous l'ancienne
+  description est à refaire une fois (choix global conservé).
