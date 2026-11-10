@@ -359,3 +359,18 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
   `/etc/sudoers.d/arch` mal réglé dans l'image de test, sans rapport). `--uninstall` : politique, copie et `user-dirs.dirs` retirés.
 - **Sur le laptop** : `git pull`, fermer Chromium, `./install.sh` (accepter l'étape « Thème Catppuccin de Thunderbird ») ;
   puis vérifier Nemo (zoom), Thunderbird au prochain lancement, nouvel onglet de Chromium.
+
+## Pastille musique — régression de largeur (2026-11-10)
+
+- Cause : `a7a55f2` (barre adaptative) donnait à la musique **toute** la place restante (aucun plafond : titre long étiré jusqu'aux
+  mises à jour sur l'ultrawide), et `elideWidth: Math.floor(…)` abrégeait un artiste qui tenait (« R… - Hi Ren »).
+- Corrigé (`Mpris.qml`, `Theme.bar`) — tes choix : texte plafonné à **600 px** (`mediaTextMaxWidth`) ; écart restant
+  **< 50 px** (`mediaSnapGap`) → la pilule se cale sur l'écart normal de 10 px. Artiste / titre entiers quand ils tiennent ;
+  artiste réduit à « … » retiré, le titre prend la place.
+- Tests : `test-bar.py` complété (texte ≤ 600 px, « Ren - Hi Ren » entier dès 1920 px, écart = 10 px ou ≥ 50 px, pas de
+  « … - ») ; passe sur copie de 1480 à 3440 px, sans avertissement QML. Captures du banc à 1480 / 1600 / 1920 / 3440 vérifiées ;
+  bureau réel rechargé sans erreur (Hyprland, PID 498448), `.shots/media-pill-after.png`.
+- **Connu** : sur `terrier`, `test-bar.py` échoue **déjà avant ce correctif** à 1280 px (modules fixes 1278 px pour 1260
+  disponibles) et sur le niveau attendu à 1480 px : le tray réel de cette machine fait 155 px (plus d'icônes que sur le laptop
+  où le test a été écrit). Le test dépend donc du tray de la machine ; à décider (tray figé dans le test, ou niveau de repli en plus).
+- À tester à la main sur le laptop : titres longs, apparition des mises à jour, tray qui grandit (écart toujours 10 px ou ≥ 50 px).

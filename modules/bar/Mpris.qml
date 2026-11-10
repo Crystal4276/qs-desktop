@@ -10,21 +10,34 @@ Item {
 
     readonly property bool shown: Media.player !== null
 
+    // Place au-delà de `minimumWidth` avant la pilule voisine (Bar.musicExtra), écart `spacing` déjà réservé.
     property real extraWidth: 0
     readonly property real minimumWidth: prefix.implicitWidth + 2 * Theme.bar.modulePadding
     readonly property string artist: (Media.player?.trackArtist ?? "").trim()
     readonly property string title: (Media.player?.trackTitle ?? "").trim()
     readonly property string separator: artist && title ? " - " : ""
     readonly property string gap: Media.paused ? " " : "  "
-    readonly property real textBudget: Math.max(0, extraWidth - metrics.advanceWidth(gap + separator))
+    // Texte « artiste - titre » plafonné à mediaTextMaxWidth, même s'il reste de la place.
+    readonly property real textBudget: Math.max(0, Math.min(extraWidth - metrics.advanceWidth(gap), Theme.bar.mediaTextMaxWidth)
+        - metrics.advanceWidth(separator))
     readonly property real artistWidth: metrics.advanceWidth(artist)
     readonly property real titleWidth: metrics.advanceWidth(title)
     readonly property real artistBudget: Math.min(artistWidth, Math.max(textBudget / 2, textBudget - titleWidth))
+    // Abrégé seulement s'il dépasse son budget (largeurs fractionnaires : elideWidth arrondi couperait un texte qui tient).
     readonly property string dynamic: {
         if (textBudget < metrics.advanceWidth("…") * (artist && title ? 2 : 1))
             return "";
-        return [artist ? artistMeasure.elidedText : "", title ? titleMeasure.elidedText : ""].filter(s => s).join(separator);
+        const shownArtist = artistWidth <= artistBudget ? artist : artistMeasure.elidedText;
+        // Artiste réduit à « … » : retiré, le titre prend toute la place (séparateur compris).
+        if (title && shownArtist === "…")
+            return titleWidth <= textBudget + metrics.advanceWidth(separator) ? title : titleAlone.elidedText;
+        const shownTitle = titleWidth <= textBudget - artistBudget ? title : titleMeasure.elidedText;
+        return [artist ? shownArtist : "", title ? shownTitle : ""].filter(s => s).join(separator);
     }
+    readonly property real textWidth: metrics.advanceWidth(dynamic)
+    // Place laissée en plus de `spacing` ; trop peu (écart < mediaSnapGap) : la pilule se cale sur l'écart normal.
+    readonly property bool snapped: extraWidth - (dynamic ? metrics.advanceWidth(gap + dynamic) : 0)
+        + Theme.bar.spacing < Theme.bar.mediaSnapGap
     FontMetrics {
         id: metrics
         font.family: Theme.font.text
@@ -44,6 +57,13 @@ Item {
         elide: Qt.ElideRight
         elideWidth: Math.floor(root.textBudget - root.artistBudget)
     }
+    TextMetrics {
+        id: titleAlone
+        font: metrics.font
+        text: root.title
+        elide: Qt.ElideRight
+        elideWidth: Math.floor(root.textBudget + metrics.advanceWidth(root.separator))
+    }
     RichLabel {
         id: prefix
         visible: false
@@ -53,7 +73,7 @@ Item {
         [root.icon.font, root.icon.glyph + " "], [Theme.font.awesome4, Theme.icon.paused]
     ] : [[root.icon.font, root.icon.glyph]]
 
-    implicitWidth: Math.ceil(label.implicitWidth) + 2 * Theme.bar.modulePadding
+    implicitWidth: snapped ? Math.floor(minimumWidth + extraWidth) : Math.ceil(label.implicitWidth) + 2 * Theme.bar.modulePadding
     implicitHeight: label.implicitHeight + 2 * Theme.bar.modulePadding
 
     readonly property var icon: Theme.icon.players[Media.playerName] ?? Theme.icon.players.default

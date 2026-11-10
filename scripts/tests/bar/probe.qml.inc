@@ -8,5 +8,5 @@
             function state(): string { return JSON.stringify({ width: bar.width, level: bar.compactLevel,
                 fixed: [bar.fixedWidth(0), bar.fixedWidth(1), bar.fixedWidth(2)], extra: bar.musicExtra,
                 leftEnd: leftSide.x + leftSide.width, rightStart: rightSide.x,
-                slots: bar.groups.reduce((all, group) => all.concat(group), []).map(s => ({ name: s.modelData, wanted: s.wanted, width: s.width, itemWidth: s.item?.width, text: s.item?.dynamic ?? "" })) }); }
+                slots: bar.groups.reduce((all, group) => all.concat(group), []).map(s => ({ name: s.modelData, wanted: s.wanted, width: s.width, itemWidth: s.item?.width, text: s.item?.dynamic ?? "", textWidth: s.item?.textWidth ?? 0 })) }); }
         }
