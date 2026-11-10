@@ -129,3 +129,25 @@ une moyenne sur l'intervalle, intégrant les périodes de repos ; elle diffère 
 Ancien chemin sans PMU (repli uniquement désormais) : Python 140–163 ms CPU par collecte initiale, puis 84–100 ms après
 filtrage des descripteurs DRM ; mémoire espacée à ~10 s panneau ouvert et fréquence native à 1 s. Ce parcours ne tourne plus
 pour Intel avec le flux matériel valide.
+
+## Sélecteur Core Lab — cache des empreintes (2026-11-10)
+
+Le cache PNG existait, mais chaque ouverture recalculait les empreintes des 341 images (252 variantes Core Lab),
+puis remplaçait les objets du modèle. Trace QML Hyprland : 100–220 ms dans le traitement du scan sur une instance fraîche.
+Un banc avec 4 000 appels Qt.md5 supplémentaires reproduit le retard : **1 043 ms du relâchement du clic à apply**,
+**1 091 ms à Image.Ready**, avec un trou de **1 184 ms** sur le fil de l'interface à la réouverture.
+Ce préchargement simule l'accumulation d'appels ; il ne mesure pas une durée précise de session réelle.
+
+Correction : empreintes des vignettes calculées une fois par chemin/date ; empreintes des copies écran mémorisées par
+chemin absolu. Un scan identique conserve les objets du modèle et les réservations d'écritures de vignettes.
+Noms des fichiers en cache et résolution des variantes inchangés. Scan des métadonnées conservé à l'ouverture.
+
+Après correction, même banc Hyprland 1920×1200 avec bibliothèque réelle, copie du cache et préchargement de 4 000 appels :
+**1–2 ms** du clic à apply, **31–52 ms** à Image.Ready sur dix clics. À la réouverture, attendre que l'animation de la surface
+soit stabilisée avant d'envoyer le pointeur virtuel ; un clic injecté trop tôt peut manquer le cadre animé.
+Les pixels du fond sont comparés à l'original sur une bande hors du sélecteur : dix captures PPM identiques.
+Le temps de lancement et de lecture des captures (114–179 ms) n'est pas confondu avec le décodage.
+Le choix de résolution n'est pas le poste coûteux : quelques millisecondes au total pour 135 appels.
+
+`test-wallpapers.py` et `--compositor hyprland` vérifient sans seuil temporel fragile qu'un scan inchangé ne recalcule
+aucune empreinte connue et ne remplace pas le modèle ; un fichier modifié ne recalcule que sa clé.

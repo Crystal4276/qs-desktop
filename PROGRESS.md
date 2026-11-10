@@ -519,3 +519,18 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
   169 contrôles ciblés sur copie isolée passent ; capture `.shots/workspace-colors-red-bench.png`. Même instance réelle
   vivante (PID 1882), IPC prêt après rechargement, capture `.shots/workspace-colors-red-after.png` contrôlée ; banc arrêté.
   Un avertissement `Notifs.qml:42` (`scheduled`, undefined → bool) au rechargement, hors du composant modifié.
+
+
+## Sélecteur Core Lab — latence et caches (2026-11-10)
+
+- Branche exceptionnelle `fix/wallpaper-corelab-latency`, worktree isolé depuis `a698fb3` : master et le bureau réel préservés.
+- Cause reproduite sur Hyprland : recalcul des empreintes de toute la bibliothèque à chaque ouverture, malgré les PNG
+  en cache ; le coût augmente après accumulation d'appels Qt.md5. Préchargement de 4 000 appels : clic retardé de 1 043 ms.
+- Empreintes mémorisées par version de fichier ; modèle conservé si identique, écritures en cours préservées et écritures
+  pendant un scan fusionnées. Noms de caches, choix enregistrés et sélection de résolution inchangés.
+- Banc Hyprland corrigé : dix clics pris en compte en 1–2 ms, images prêtes en 31–52 ms ; pixels contrôlés par captures PPM.
+  Mesures et limites dans docs/PERFORMANCE.md. Tests Sway et Hyprland : caches stables, modification / ajout / suppression,
+  suppression du cache, écriture pendant un scan, changement de dossier, persistance, profils et résolutions.
+  Contre-épreuve sur l’ancien service : le test détecte 65 empreintes recalculées au premier scan inchangé du jeu de données.
+- Aucun paquet ni réglage système modifié, aucune action VPN. Validation réelle du correctif à faire après intégration
+  par l'autre session : aucune copie dans master et aucun rechargement du bureau réel effectués ici.
