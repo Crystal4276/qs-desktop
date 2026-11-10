@@ -373,4 +373,7 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
 - **Connu** : sur `terrier`, `test-bar.py` échoue **déjà avant ce correctif** à 1280 px (modules fixes 1278 px pour 1260
   disponibles) et sur le niveau attendu à 1480 px : le tray réel de cette machine fait 155 px (plus d'icônes que sur le laptop
   où le test a été écrit). Le test dépend donc du tray de la machine ; à décider (tray figé dans le test, ou niveau de repli en plus).
+- Ta demande : sans place pour le texte, la pastille ne montre que l'**icône du lecteur** (Spotify, Chromium…), le haut-parleur et
+  le curseur ; l'icône de pause n'apparaît qu'avec le texte. Testé sur le banc (pause et lecture, 1480 → 3440 px) ; bureau réel
+  rechargé sans erreur, `.shots/media-pill-iconsonly.png`.
 - À tester à la main sur le laptop : titres longs, apparition des mises à jour, tray qui grandit (écart toujours 10 px ou ≥ 50 px).
