@@ -392,6 +392,11 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
   affiché pendant le décodage du nouveau.
 - Choix : état local `wallpaper.json` (un fond pour tous, ou une image par écran, clé = description). Rien de choisi : `wallpaper` de
   la config machine, sinon aucune image. Dossier : `wallpapersDir`, sinon « Wallpapers » dans le dossier Images XDG.
+- Profil travail : `corelab/<design>/<design>_<L>x<H>.png`, regroupés en designs dans l'onglet **Core Lab**. Choix global
+  `{ kind: "corelab", path: "corelab/<design>" }` ; choix par écran : même chemin de design dans `overrides`. Résolution physique
+  exacte (échelle comprise), sinon rapport le plus proche puis plus petite taille suffisante, ou plus grande disponible.
+  Le même design s'adapte à chaque écran et aux changements de mode. Images / Panoramas / Triptychs restent disponibles.
+  Profil jeux : Core Lab masqué, choix mémorisé conservé mais remplacé à l'affichage par le repli habituel.
 - Sélecteur (`PickerWindow.qml`, `qs ipc call wallpaper-picker toggle`) : onglets Images / Panoramas / Triptychs, vignettes en cache
   (`wallpaper-thumbs/`), appliqué au clic, rangée « All screens » / un écran.
 - **Copie à la taille de l'écran** (démarrage plus rapide) : chaque fond simple affiché est enregistré en BMP tel qu'affiché dans
@@ -404,7 +409,7 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
   `scripts/greeter-setup.sh`, vérifié au démarrage de Quickshell (absent : aucun rendu). Écriture ratée : retentée au fond affiché
   suivant. Banc : seulement sous `QS_GREETER_DIR`. Écran inconnu du bureau : le greeter prend le fond exporté d'un autre écran ;
   avant toute session : `default.png|jpg`, fond de la config machine copié par `install.sh` (étape système).
-- IPC de test : `wallpaper state`, `wallpaper set <kind> <chemin>`.
+- IPC de test : `wallpaper state`, `wallpaper set <kind> <chemin>` (dont `corelab corelab/<design>`). `state` inclut les noms de designs `corelab`.
 
 ### 7.12 Verrouillage (`modules/lock/`)
 

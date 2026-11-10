@@ -7,7 +7,7 @@ import qs.config
 
 // Fonds d'écran (ARCHITECTURE § 7.11). Dossier : `wallpapersDir` de la config machine, sinon « Wallpapers »
 // dans le dossier Images XDG, rangé en `simple/`, `panorama/` (image à étaler sur plusieurs écrans) et `triptych/<nom>/{left,center,
-// right}.<ext>`. Choix mémorisé dans l'état local (pas dans le dépôt) : un fond pour tous les écrans, plus une image simple par écran
+// right}.<ext>`, plus `corelab/<design>/*_<L>x<H>.png` (travail). Choix mémorisé dans l'état local (pas dans le dépôt) : un fond pour tous les écrans, plus une image simple par écran
 // si on en a choisi une pour lui. Rien de choisi : celui de la config machine (`wallpaper`), sinon aucune image.
 Singleton {
     id: root
@@ -15,10 +15,12 @@ Singleton {
     readonly property string dir: Settings.wallpapersDir !== "" ? Settings.wallpapersDir
         : Places.pictures !== "" ? `${Places.pictures}/Wallpapers` : ""
 
-    // Chemins relatifs au dossier : { simple: [chemin], panorama: [chemin], triptych: [{ path, name, parts: { left, center, right } }] }
-    property var library: ({ simple: [], panorama: [], triptych: [] })
+    // Chemins relatifs : simple/panorama [chemin], triptych [{path, name, parts}], corelab [{path, name, variants}].
+    property var library: ({ simple: [], panorama: [], triptych: [], corelab: [] })
+    readonly property bool corelabEnabled: Settings.profile === "travail"
+    onCorelabEnabledChanged: refresh()
 
-    // { kind: "simple" | "panorama" | "triptych", path } pour tous les écrans ; images simples par écran : { description: chemin }.
+    // { kind: "simple" | "panorama" | "triptych" | "corelab", path } pour tous les écrans ; images ou designs par écran : { description: chemin }.
     readonly property var selection: state.selection ?? Settings.wallpaper
     readonly property var overrides: state.overrides ?? ({})
 
@@ -32,8 +34,11 @@ Singleton {
         if (!output || dir === "" || !stateRead)
             return null;
         const own = overrides[output.description];
-        if (own && (!libraryRead || library.simple.includes(own)))
-            return { kind: "image", source: url(own), path: own };
+        if (own) {
+            const shown = pick({ kind: own.startsWith("corelab/") ? "corelab" : "simple", path: own }, output, outputs);
+            if (shown)
+                return shown;
+        }
         // Choix enregistré disparu du dossier (fichier supprimé ou renommé) : fond de la config machine.
         return pick(selection, output, outputs)
             ?? (libraryRead && selection !== Settings.wallpaper ? pick(Settings.wallpaper, output, outputs) : null);
@@ -68,6 +73,10 @@ Singleton {
     function pick(s: var, output: var, outputs: var): var {
         if (!s)
             return null;
+        if (s.kind === "corelab") {
+            const path = corelabPath(s.path, output);
+            return path === "" ? null : { kind: "image", source: url(path), path: path };
+        }
         if (libraryRead && s.kind !== "triptych" && !(library[s.kind] ?? []).includes(s.path))
             return null;
         if (s.kind === "panorama")
@@ -85,7 +94,31 @@ Singleton {
         return { kind: "image", source: url(s.path), path: s.path };
     }
 
-    // Choix pour tous les écrans (efface les choix par écran) ; image simple pour un seul écran.
+    // Les choix Core Lab désignent un design ; le rendu et les caches utilisent son fichier résolu.
+    function corelabPath(design: string, output: var): string {
+        if (!corelabEnabled || !output || output.width <= 0 || output.height <= 0)
+            return "";
+        const variants = library.corelab.find(d => d.path === design)?.variants ?? [];
+        const w = Math.round(output.width * output.scale), h = Math.round(output.height * output.scale);
+        // La conversion physique → logique du compositeur peut arrondir d'un pixel.
+        const tolerance = Math.ceil(output.scale);
+        const exact = variants.find(v => Math.abs(v.width - w) <= tolerance && Math.abs(v.height - h) <= tolerance);
+        if (exact)
+            return exact.path;
+        const ranked = [...variants].sort((a, b) => {
+            const ratio = Math.abs(Math.log((a.width / a.height) / (w / h)))
+                - Math.abs(Math.log((b.width / b.height) / (w / h)));
+            if (Math.abs(ratio) > 0.000001)
+                return ratio;
+            const fitsA = a.width >= w && a.height >= h, fitsB = b.width >= w && b.height >= h;
+            if (fitsA !== fitsB)
+                return fitsA ? -1 : 1;
+            return (fitsA ? 1 : -1) * (a.width * a.height - b.width * b.height) || a.path.localeCompare(b.path);
+        });
+        return ranked[0]?.path ?? "";
+    }
+
+    // Choix pour tous les écrans (efface les choix par écran) ; image simple ou design pour un seul écran.
     function setAll(kind: string, path: string): void {
         state.overrides = {};
         state.selection = { kind: kind, path: path };
@@ -115,7 +148,7 @@ Singleton {
         // Commande fixée ici : liée par une liaison, elle pourrait ne pas encore suivre un dossier qui vient de changer.
         // Lignes `w<tab>date<tab>chemin` (images, triées par chemin), `t<tab>fichier` (vignettes en cache), puis
         // `c<tab>date<tab>fichier` (copies à la taille des écrans).
-        scan.command = ["sh", "-c", `mkdir -p "$1" "$2"; (cd "$0" 2>/dev/null && find -L simple panorama triptych -type f \\( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \\) -printf 'w\\t%T@\\t%p\\n' 2>/dev/null | sort -t "$(printf '\\t')" -k3); find "$1" -maxdepth 1 -name '*.png' -printf 't\\t%f\\n' 2>/dev/null; find "$2" -maxdepth 1 -name '*.bmp' -printf 'c\\t%T@\\t%f\\n' 2>/dev/null; exit 0`, dir, thumbDir, screenDir];
+        scan.command = ["sh", "-c", `mkdir -p "$1" "$2"; (cd "$0" 2>/dev/null && find -L simple panorama triptych corelab -type f \\( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \\) -printf 'w\\t%T@\\t%p\\n' 2>/dev/null | sort -t "$(printf '\\t')" -k3); find "$1" -maxdepth 1 -name '*.png' -printf 't\\t%f\\n' 2>/dev/null; find "$2" -maxdepth 1 -name '*.bmp' -printf 'c\\t%T@\\t%f\\n' 2>/dev/null; exit 0`, dir, thumbDir, screenDir];
         writtenSinceScan = {};
         scan.running = true;
     }
@@ -194,6 +227,11 @@ Singleton {
             paths.push(...Object.values(triptych(selection.path)?.parts ?? {}));
         else if (selection?.kind === "simple")
             paths.push(selection.path);
+        const designs = [...Object.values(overrides).filter(p => p.startsWith("corelab/"))];
+        if (selection?.kind === "corelab")
+            designs.push(selection.path);
+        for (const design of designs)
+            paths.push(...(library.corelab.find(d => d.path === design)?.variants ?? []).map(v => v.path));
         return paths;
     }
 
@@ -363,7 +401,8 @@ Singleton {
 
         function state(): string {
             return JSON.stringify({ dir: root.dir, selection: root.selection, overrides: root.overrides,
-                simple: root.library.simple.length, panorama: root.library.panorama.length, triptych: root.library.triptych.map(t => t.name) });
+                simple: root.library.simple.length, panorama: root.library.panorama.length, triptych: root.library.triptych.map(t => t.name),
+                corelab: root.corelabEnabled ? root.library.corelab.map(d => d.name) : [] });
         }
     }
 
@@ -389,7 +428,8 @@ Singleton {
         id: scan
         stdout: StdioCollector {
             onStreamFinished: {
-                const lib = { simple: [], panorama: [], triptych: [] };
+                const lib = { simple: [], panorama: [], triptych: [], corelab: [] };
+                const designs = {};
                 const triptychs = {};
                 const stamps = {}, thumbs = {}, screens = {};
                 for (const line of text.split("\n")) {
@@ -407,10 +447,18 @@ Singleton {
                         const key = `triptych/${parts[1]}`;
                         const t = triptychs[key] ?? (triptychs[key] = { path: key, name: parts[1], parts: {} });
                         t.parts[parts[2].replace(/\.[^.]*$/, "")] = path;
+                    } else if (parts[0] === "corelab" && parts.length === 3 && root.corelabEnabled) {
+                        const match = parts[2].match(/_(\d+)x(\d+)\.png$/i);
+                        if (match && Number(match[1]) > 0 && Number(match[2]) > 0) {
+                            const key = `corelab/${parts[1]}`;
+                            const d = designs[key] ?? (designs[key] = { path: key, name: parts[1], variants: [] });
+                            d.variants.push({ path: path, width: Number(match[1]), height: Number(match[2]) });
+                        }
                     } else if (parts[0] === "simple" || parts[0] === "panorama") {
                         lib[parts[0]].push(path);
                     }
                 }
+                lib.corelab = Object.values(designs);
                 lib.triptych = Object.values(triptychs).filter(t => t.parts.left && t.parts.center && t.parts.right);
                 // Vignettes d'images disparues ou modifiées : effacées (pas si le dossier n'a pas pu être lu : rien n'est perdu).
                 const used = new Set(Object.keys(stamps).map(p => Qt.md5(`${p}\t${stamps[p]}`)));

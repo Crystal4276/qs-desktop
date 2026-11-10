@@ -468,3 +468,21 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
   en vraie session Sway et Hyprland. Aucune suspension ni authentification réelle pendant les essais.
 - Application groupée au dépôt : rechargement réussi sur la session Hyprland réelle ; IPC répond, `lockOnIdle=true`,
   `lockBeforeSleep=true`, délai 300 s et pont D-Bus prêt. Aucun nouvel avertissement QML au rechargement ; bancs arrêtés.
+
+
+## Fonds Core Lab — profil travail (2026-11-10)
+
+- Cause : le dépôt local des fonds était déjà à jour, mais le service ignorait le nouveau dossier `corelab/`.
+- Onglet **Core Lab** réservé au profil travail : neuf designs regroupés (28 résolutions chacun dans le dépôt des images),
+  bibliothèque Images / Panoramas / Triptychs conservée. Aucun fond imposé à l'activation.
+- Choix mémorisé par design (`kind: corelab`, chemin `corelab/<design>`), global ou par écran. Chaque écran prend sa résolution
+  physique, échelle comprise ; sinon rapport le plus proche, plus petite taille suffisante ou plus grande disponible.
+  Résolution réévaluée à chaud ; caches sur le fichier résolu. Profil jeux : repli habituel, choix Core Lab conservé.
+- `test-wallpapers.py` sur Sway isolé : neuf vignettes, sélection globale / par écran, 1920×1200, ultrawide, 4K à 1,5,
+  arrondi fractionnaire, variante et dossier absents, caches des choix, persistance après relance et changement de profil : OK.
+  Démarrages complets sans avertissement QML ; avertissements connus du portail, icônes et PipeWire sans serveur sur le banc.
+- Contrôle visuel avec les vraies images : `.shots/corelab-picker-bench.png`. Application groupée, même bureau réel vivant
+  (PID 1882), IPC : neuf designs, 40 images et 43 panoramas inchangés, fond actuel conservé. Sélecteur ouvert puis refermé,
+  capture des neuf vignettes `.shots/corelab-picker-live.png` ; pas de nouvelle erreur QML au rechargement (avertissements textinput Qt déjà présents).
+- Reste à vérifier à la main : clic dans Core Lab / Entrée sur le laptop, nouvel écran externe avec des dimensions différentes.
+  Aucun paquet installé, aucune action VPN ; bancs arrêtés.
