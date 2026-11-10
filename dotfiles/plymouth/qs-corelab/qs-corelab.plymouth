@@ -2,7 +2,9 @@
 Name=Core Lab
 Description=Bureau Quickshell, profil travail (docs/PLYMOUTH.md)
 ModuleName=script
-Font=Inter
+# Police du texte variable (demande de phrase de passe), seule embarquée dans l'initramfs : Inter Regular en un fichier
+# (InterVariable.ttf, 0,9 Mo ; « Inter » donnerait Inter.ttc, toutes les graisses, 13 Mo).
+Font=Inter Variable
 
 [script]
 ImageDir=/usr/share/plymouth/themes/qs-corelab/images
