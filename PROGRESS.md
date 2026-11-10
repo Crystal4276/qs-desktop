@@ -546,3 +546,24 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
   - Risques : anneaux = 13 à 15 images (56 Mo en 1920×1200, 118 Mo en 3440×1440, 185 Mo en 4K en RGBA) et composition
     logicielle plein écran pendant leur apparition ; sortie ajoutée au démarrage : fin de cycle + 0,95 s (jusqu'à 3,35 s).
   - Hors Plymouth : `install.sh` muet (code 127) sans `python3` sur un Arch minimal.
+- **Étape 2, images et coût (2026-11-10)** — en attente de validation. Décisions : sortie après la fin du cycle ; fichiers du
+  zip gardés dans le dépôt ; animation au moindre coût, même en 4K.
+  - Moteur : Plymouth n'a aucun rendu accéléré ; `two-step` ne joue que des suites d'images figées (pas d'intro, pas de
+    calques) ; le plugin `script` ne redessine que les rectangles des sprites modifiés. D'où : **anneaux découpés en 16 arcs**
+    (petites PNG, points entiers, échelle 0,94 → 1 par rapprochement des arcs), demi-anneaux tournés par `Image.Rotate`,
+    bande et filet en sprites fixes.
+  - `scripts/plymouth-assets.py build` : un jeu d'images par échelle (1,0 / 1,2 / 1,5 / 1,8), 240 arcs par jeu, textes et
+    champ par Chromium (CSS et polices de la référence), courbes précalculées ; bloc de données dans
+    `dotfiles/plymouth/qs-corelab/qs-corelab.script` (prototype : intro + rotation + modes de mesure). 1,6 Mo, reproductible
+    (deux passages identiques). Un seul jeu 4K réduit à 1920×1200 doublerait l'écart (texte épaissi, points amincis).
+  - `check` (planche de contrôle, `.shots/plymouth/`) : écart moyen 0,10 à 0,28 sur 255, 0,09 à 0,23 % de pixels > 32 aux trois
+    tailles. Écarts acceptés : Chromium place les points un peu irrégulièrement (≤ 1 px selon le quadrant ; ici espacement
+    exact), texte du nom au demi-pixel près. Le texte de la demande (variable) n'est pas dans les images.
+  - VM, vrai rendu Plymouth en 4K : identique à l'émulation (écart nul), donc à la référence comme ci-dessus.
+  - Coût mesuré (VM, i9-9900K, CPU de `plymouthd`) : intro au pire moment 8,7 ms par image en 4K ; rotation 6,6 ms (4K),
+    4,8 ms (1920×1200) ; repos 1,2 ms ; mémoire 57 Mo (1920×1200) à 111 Mo (4K). Budget 20 ms par image (50/s) : le laptop
+    peut être 2,3 fois plus lent sans ralentir l'animation. 8 arcs : plus de mémoire (192 Mo) ; 32 : pas de gain.
+  - Pièges notés (`DEVELOPMENT.md`) : littéraux hexadécimaux = analyse bloquée, écran noir ; pas d'exposant ; `splash`
+    nécessaire même hors démarrage (`--kernel-command-line`). Pas de HiDPI appliqué en VM ; à vérifier sur le laptop.
+  - En attente de ta réponse : correction d'`install.sh` sans `python3` (Arch minimal) ; ensuite étape 3 (thème complet :
+    phrase de passe, sortie, plusieurs écrans).

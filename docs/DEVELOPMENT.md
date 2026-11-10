@@ -141,6 +141,13 @@ et `cryptdevice=UUID=…:root` (choix d'archinstall 4.5). Comptes de test : `arc
   --profil travail` passé) → essais sur `plymouth-trial.qcow2` (jetable, avec sa copie `*-vars.fd` d'OVMF).
 - Démarrage : `vm.sh start <disque> <vars> [W H]`, puis `vm.sh type corelab` à la demande de phrase de passe, `vm.sh wait-ssh`.
 - Arch minimal sans `python3` : `install.sh` s'arrête sans message (code 127) ; python installé à la main dans la VM.
+- **Banc Plymouth** : `bench.sh push <dossier du thème>` (copie dans `/usr/share/plymouth/themes/qs-corelab`, sans initramfs),
+  `bench.sh show` (greetd arrêté, `plymouthd --kernel-command-line="quiet splash plymouth.debug=file:/tmp/ply.log"` : sans
+  `splash`, aucun écran graphique), `bench.sh measure <statut> <s>` (`plymouth update --status=…`, CPU et mémoire de `plymouthd`),
+  `bench.sh quit`. Hors démarrage, le texte passe par `label-pango` (fontconfig) ; dans l'initramfs, par `label-freetype`.
+- Vrai démarrage : hook `plymouth` avant `block encrypt`, `splash` dans GRUB, `mkinitcpio -P` ; pour mesurer après le
+  démarrage, `plymouth-quit.service` masqué et greetd désactivé **dans l'overlay d'essai seulement** (à recréer depuis
+  `plymouth-luks-desktop.qcow2` pour revenir à zéro).
 
 ## Pièges connus
 
@@ -149,6 +156,14 @@ et `cryptdevice=UUID=…:root` (choix d'archinstall 4.5). Comptes de test : `arc
 - `flatMap`, `Object.fromEntries` : absents.
 - `grabToImage` multiplie sa taille cible par l'échelle de l'écran (450 px → 675 en scale 1.5) : diviser.
 - Bogue de Qt 6.12 au coin des menus (raison parmi d'autres de l'abandon du menu copié de GTK).
+
+**Plymouth 26 (plugin `script`)**
+- Pas de littéraux hexadécimaux (`0x11`) : l'analyse du script se bloque sans message, écran noir. Décimal seulement, sans
+  exposant (`1e-05` : erreur d'analyse) ; pas d'`include`, un seul fichier de script.
+- Ni rotation ni échelle de sprite : `Image.Rotate` (angle positif = sens horaire) / `Image.Scale` créent de nouvelles images ;
+  `Image.Scale` échantillonne sans moyenne (réduire beaucoup = texte crénelé).
+- Le coût d'une image = rectangles des sprites modifiés × calques qui s'y superposent : petits sprites, rien de plein écran ne bouge.
+- Pas d'horloge : le temps compte les rafraîchissements (50/s, minuteur réarmé avant le dessin).
 
 **Quickshell 0.3.2**
 - `FileView` dont on change `path` rend encore les données de l'ancien fichier : un `FileView` par fichier. `setData` crée les dossiers.

@@ -130,6 +130,7 @@ lui (il réécrit la ligne `Exec` et ferait sauter `PULSE_PROP_OVERRIDE` et `--l
 | `scripts/shot.sh <nom> [sortie\|géométrie]` | capture dans `.shots/` (ignoré par git) | `grim` |
 | `scripts/crop.sh <image> <géométrie> [sortie]` | recadre une capture | `magick` (`imagemagick`) |
 | `scripts/test-outputs.sh [sway\|hyprland] [-v]` | teste la répartition des espaces (et `$mod+N`, `$mod+Ctrl+N`, début de session) dans une session isolée | `sway` ou `hyprland`, `jq`, `zenity`, `qs` |
+| `scripts/plymouth-assets.py build\|check` | images et bloc de données du thème Plymouth (`docs/PLYMOUTH.md`) ; planche de contrôle contre la référence. Jamais lancé par `install.sh` (PNG committés) | `python-cairo`, `python-numpy`, `python-pillow`, `chromium` (+ réseau : DM Sans et Inter de Google Fonts, comme la référence) |
 
 ## Prérequis système d'un nouveau PC (au-delà des paquets)
 
