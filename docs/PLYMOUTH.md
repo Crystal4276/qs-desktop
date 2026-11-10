@@ -164,6 +164,10 @@ celui d'un volume `cryptroot`.
 - **Pas de détection de résolution à l'installation** : à chaque démarrage, le thème lit la taille de **chaque** écran et calcule
   son s. Laptop seul ou avec un écran externe, sans réglage. Si Plymouth applique un facteur HiDPI, calculer s sur la taille qu'il
   expose au script. Plusieurs écrans : la même scène sur chacun, à son échelle.
+  **Écart (étape 3, imposé par Plymouth)** : le plugin `script` centre tous les écrans sur une seule toile et y dessine
+  chaque sprite ; une seule échelle est possible. Retenu : celle du **plus petit écran** (tout visible partout ; un écran
+  plus grand montre la composition plus petite, nom du lab plus près du centre, et plus d'anneaux). Une ligne à changer
+  (`build_scene`) pour prendre le plus grand ou le premier.
 
 ### Fichiers proposés
 
@@ -187,9 +191,21 @@ profil n'est plus `travail`), `docs/ROLLBACK.md` (section Plymouth), `docs/ARCHI
 | Demande de phrase de passe | phase 2 (après la fin de la phase 1) ; nombre de points = nombre de caractères que Plymouth rapporte |
 | Retour à l'affichage normal après Entrée | phase 2b (« Unlocking… ») — ne pas masquer le champ tout de suite |
 | Nouvelle demande de phrase de passe après une 2b | refus |
-| Déverrouillage réussi | phase 3. **À déterminer** : le signal fiable (reprise de la progression, message d'état de l'unité `systemd-cryptsetup@…`, ou absence de nouvelle demande après un délai). Proposer, mesurer dans la VM. |
-| Pas de demande à la fin de la phase 1 | phase 3 directement (machine sans LUKS, ou volume déjà ouvert) |
-| Passage au greeter | phase 4, puis Plymouth quitte |
+| Déverrouillage réussi | phase 3 : `RootMounted` (hook tardif `update-root-fs`, la racine ne se monte qu'une fois le volume ouvert) ; à défaut, premier message d'état de systemd (après le passage à la vraie racine). Vérifié en VM. Le champ garde points et « Unlocking… » pendant son fondu. |
+| Pas de demande à la fin de la phase 1 | phase 3 directement (machine sans LUKS, ou volume déjà ouvert) ; une demande tardive est montrée à la fin du cycle en cours, la rotation attend le déverrouillage |
+| Passage au greeter | `plymouth update --status=qs-corelab-exit` : phase 4 à la fin du cycle (ou dès la fin de l'intro) ; au plus 3,35 s après la demande, puis écran crust seul |
+| Arrêt, redémarrage (`GetMode` ≠ `boot`) | écran crust seul (sprite plein écran : sans sprite, le plugin n'affiche rien) |
+
+Mesuré en VM (étape 3) : la vérification d'une phrase par `cryptsetup` (argon2) dure 5 à 8 s dans la VM ; « Unlocking… » et
+les points pulsés restent tout ce temps. Le texte de la demande est celui du hook `encrypt` : « A password is required to access
+the root volume ».
+
+**Passage au greeter, constaté en VM (à régler à l'étape 4)** : `plymouth quit --retain-splash` seul laisse un **écran noir**
+(l'image appartient à `plymouthd` : à sa sortie, le noyau la retire) jusqu'au greeter (~1,2 s en VM). Méthode de GDM, vérifiée :
+`plymouth deactivate` (image crust gardée à l'écran, Plymouth ne dessine plus), lancement du greeter, puis `plymouth quit
+--retain-splash`. Deux points restent : greetd est `After=plymouth-quit-wait.service` (qui attend la fin de Plymouth : il faut
+que cette attente se termine au `deactivate`), et le compositeur du greeter affiche ~0,75 s de noir avant de dessiner (couleur
+de fond du compositeur du greeter à mettre en crust).
 
 ### Intégration système (à auditer, puis à me proposer)
 
