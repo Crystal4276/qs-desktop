@@ -257,7 +257,12 @@ Singleton {
     // Glyphes (planche docs/reference/glyphs.png), avec leur police
     readonly property QtObject icon: QtObject {
         // font.icons (Symbols Nerd Font Mono)
-        readonly property list<string> workspaces: ["\ue79a", "\ue78c", "\uf32e", "\u{f043e}", "\uf1ff", "\uf1bc", "\uf043", "\uf0e0", "\uf1b6"]  // par numéro, 1 à 9
+        // par numéro, 1 à 9, selon le profil de la machine (Settings.profile) ; jeux : 7 Deluge (goutte), 9 Steam ;
+        // travail : 7 libre (nf-md-circle_double), 9 DigitalMicrograph (nf-md-microscope)
+        readonly property var workspaces: ({
+            jeux: ["\ue79a", "\ue78c", "\uf32e", "\u{f043e}", "\uf1ff", "\uf1bc", "\uf043", "\uf0e0", "\uf1b6"],
+            travail: ["\ue79a", "\ue78c", "\uf32e", "\u{f043e}", "\uf1ff", "\uf1bc", "\u{f0e95}", "\uf0e0", "\u{f0654}"]
+        })
         readonly property list<string> volume: ["\uf026", "\uf027", "\uf028"]  // 0–33, 34–66, 67–100 %
         readonly property string muted: "\uf466"
         readonly property string microphone: "\uf130"        // OSD (nouveau, 2026-10-16) : nf-fa-microphone

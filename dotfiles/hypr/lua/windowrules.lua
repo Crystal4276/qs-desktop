@@ -29,8 +29,7 @@ hl.window_rule({ name = "whatsapp-web-ws5", match = { class = "^(chrome-web\\.wh
 -- La forme [Ss] couvre les deux orthographes sans rien coûter.
 hl.window_rule({ name = "spotify-ws6",    match = { class = "^([Ss]potify)$" }, workspace = "6 silent" })
 
-hl.window_rule({ name = "steam-ws9",      match = { class = "^(steam)$" },     workspace = "9 silent" })
-hl.window_rule({ name = "deluge-ws7",     match = { class = "^(deluge)$" },    workspace = "7 silent" })
+-- Steam et Deluge (profil jeux), DigitalMicrograph (profil travail) : profiles/<profil>.lua.
 
 -- Thunderbird est passé à un app-id natif Wayland ; valeur confirmée sur la
 -- session en cours.
@@ -47,14 +46,6 @@ hl.window_rule({
    focus_on_activate = true,
 })
 
--- Comme sous Sway : le dialogue d'ajout affiche l'espace de Deluge, même si
--- GTK ne transmet pas de jeton d'activation. Après « 7 silent » pour le remplacer.
-hl.window_rule({
-   name = "deluge-add-torrents",
-   match = { class = "^(deluge)$", title = "^Add Torrents.*$" },
-   workspace = "7",
-})
-
 ------------------------------------------------------------------------------
 -- Fenêtres flottantes et centrées
 ------------------------------------------------------------------------------
@@ -65,8 +56,6 @@ local floatingCentered = {
    { name = "volume-control",        match = { title = "^(Volume Control)$" } },
    { name = "virt-manager",          match = { class = "^(virt-manager)$" } },
    { name = "calculator",            match = { title = "^(Calculator)$" } },
-   { name = "steam-settings",        match = { class = "^(steam)$", title = "^(Steam Settings)$" } },
-   { name = "steam-special-offers",  match = { class = "^(steam)$", title = "^(Special Offers)$" } },
    { name = "nm-connection-editor",  match = { class = "^(nm-connection-editor)$" } },
 }
 
@@ -79,57 +68,7 @@ for _, rule in ipairs(floatingCentered) do
    })
 end
 
-------------------------------------------------------------------------------
--- Jeux Steam
-------------------------------------------------------------------------------
-
-hl.window_rule({
-   name      = "steam-games",
-   match     = { class = "^(steam_app_[0-9]+)$" },
-   workspace = "3 silent",
-   tile      = true,
-})
-
--- Lanceur EVE.
-hl.window_rule({
-   name      = "eve-launcher",
-   match     = { class = "^(steam_app_8500)$", title = "^(EVE Launcher)$" },
-   workspace = "9 silent",
-   float     = true,
-   size      = "1600 800",
-   center    = true,
-})
-
--- Fenêtre de zone de notification d'EVE : ni titre ni titre initial.
-hl.window_rule({
-   name      = "eve-systray",
-   match     = { class = "^(steam_app_8500)$", title = "^$", initial_title = "^$" },
-   workspace = "9 silent",
-   float     = true,
-   move      = "1280 20",
-})
-
--- Fenêtre de jeu EVE.
-hl.window_rule({
-   name      = "eve-game",
-   match     = { class = "^(steam_app_8500)$", initial_title = "^(EVE)$" },
-   workspace = "3",
-   tile      = true,
-})
-
 -- Contenu externe : placement par origine dans lua/openorigin.lua, jamais par workspace source.
-
-------------------------------------------------------------------------------
--- Gamescope
-------------------------------------------------------------------------------
-
-hl.window_rule({
-   name      = "gamescope",
-   match     = { class = "^(gamescope)$" },
-   float     = true,
-   animation = "none",
-   workspace = "3 silent",
-})
 
 ------------------------------------------------------------------------------
 -- Règles générales (en dernier)

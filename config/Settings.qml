@@ -13,6 +13,9 @@ Singleton {
     readonly property string hostname: hostnameFile.text().trim()
     readonly property var config: Object.assign({}, parse(defaultFile), parse(hostFile))
 
+    // Profil de la machine : « jeux » (Steam, Deluge) ou « travail » (DigitalMicrograph) ; glyphes des espaces (Theme.icon.workspaces).
+    // Mêmes règles que scripts/profile.sh (Sway, Hyprland, install.sh) : valeur absente ou inconnue → travail.
+    readonly property string profile: config.profile === "jeux" ? "jeux" : "travail"
     readonly property string primaryOutput: config.primaryOutput ?? ""
     // Seuls les objets sont gardés : une entrée mal formée (null, liste…) ne doit pas casser la répartition.
     readonly property var workspaceLayouts: (Array.isArray(config.workspaceLayouts) ? config.workspaceLayouts : [])

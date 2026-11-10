@@ -15,6 +15,10 @@ local ok, host = pcall(require, "lua/host")
 if not ok then
    host = {}
 end
+local okProfile, profile = pcall(require, "lua/profile")
+if not okProfile then
+   profile = {}
+end
 
 hl.on("hyprland.start", function()
    -- Bureau Quickshell : relancé s'il s'arrête ; chaque écran affiche le premier espace de son bloc (1 / 4 / 7).
@@ -30,14 +34,16 @@ hl.on("hyprland.start", function()
 
    -- Applications.
    hl.exec_cmd("LD_PRELOAD=/usr/lib/spotify-adblock.so spotify")
-   hl.exec_cmd("deluge")
-
-   -- Ces deux-là attendent que le compositeur soit posé avant de démarrer.
-   hl.exec_cmd("sleep 4 && steam")
+   -- Attend que le compositeur soit posé avant de démarrer.
    hl.exec_cmd("sleep 4 && thunderbird")
    -- Discord et WhatsApp : web apps, comme sous Sway.
    hl.exec_cmd("gtk-launch WebApp-DiscordWeb2996")
    hl.exec_cmd("gtk-launch WebApp-Whatsapp8699")
+
+   -- Applications du profil (profiles/<profil>.lua : Deluge et Steam en profil jeux).
+   for _, command in ipairs(profile.autostart or {}) do
+      hl.exec_cmd(command)
+   end
 
    -- Matériel de cette machine (hosts/<hostname>.lua).
    for _, command in ipairs(host.autostart or {}) do
