@@ -151,3 +151,24 @@ Le choix de résolution n'est pas le poste coûteux : quelques millisecondes au 
 
 `test-wallpapers.py` et `--compositor hyprland` vérifient sans seuil temporel fragile qu'un scan inchangé ne recalcule
 aucune empreinte connue et ne remplace pas le modèle ; un fichier modifié ne recalcule que sa clé.
+
+## Onglets du sélecteur — grilles conservées (2026-11-10)
+
+Sur b1d8212, les cellules demandent transitoirement un original avec sourceSize=240×0 avant le PNG 240×135.
+Le remplacement de l’unique modèle recrée aussi 25 cellules Images / 9 Core Lab. Sans profileur : médianes de séries
+courtes à cache chaud 391,5 ms / 43 ms jusqu’à Image.Ready. Le simple garde-fou de taille et un cache Qt conditionnel
+abaissent ces valeurs à 50,5 / 8 ms, mais conservent les reconstructions ; cette variante n’est pas retenue.
+
+Correction finale : Loader stable par onglet, grille créée à sa première visite puis conservée, modèle comparé avant
+remplacement, Image.cache=false et sources uniquement à sourceSize valide. Cent bascules mesurées sur le code final :
+les 98 après les premières visites totalisent **zéro cellule créée/détruite et zéro nouvelle demande de source**.
+Huit vrais clics avec comparaison de pixels du banc Hyprland : première capture correcte vers **31–33 ms**, coût
+de capture inclus. Aucun nouveau chargement ne signifie pas un rendu en zéro milliseconde.
+
+Captures logiques : à l’échelle 1,5, les PNG nommés 360×203 font désormais réellement 360×203, au lieu de 540×305.
+Cache isolé par bibliothèque ; l’ancien cache plat est ignoré et les vignettes régénérées une fois, choix conservés.
+Jobs par identité : échec/fermeture/destruction libèrent la réservation, résultats périmés ignorés. Une vignette
+corrompue est oubliée puis régénérée ; un onglet caché ne réserve pas de capture. Pas de minuteur de maintenance.
+
+Banc de diagnostic et rapport détaillé conservés dans /tmp : profile-wallpaper-tabs.py et corelab-tabs-profiling.md.
+Le premier décodage à cache vide reste nécessaire et asynchrone ; aucun paquet ou outil natif ajouté.

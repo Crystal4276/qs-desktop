@@ -534,3 +534,18 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
   Contre-épreuve sur l’ancien service : le test détecte 65 empreintes recalculées au premier scan inchangé du jeu de données.
 - Aucun paquet ni réglage système modifié, aucune action VPN. Validation réelle du correctif à faire après intégration
   par l'autre session : aucune copie dans master et aucun rechargement du bureau réel effectués ici.
+
+
+## Onglets Images / Core Lab — réutilisation des grilles (2026-11-10)
+
+- Suite sur `fix/wallpaper-corelab-latency`, worktree isolé : master et la session réelle conservés.
+- SourceSize validée avant chargement ; une grille par onglet visité garde ses cellules, sa sélection clavier et son
+  défilement. Pas de préchargement des variantes ; pas de cache Qt conditionnel ni de processus de maintenance.
+- Vignettes isolées par dossier, captures à taille logique, jobs annulables par identité, récupération après cache
+  absent/corrompu. Ancien cache plat régénéré une fois ; aucun choix enregistré ni cache écran migré.
+- Mesure du code final sur Hyprland : cent bascules, zéro cellule recréée et zéro lecture supplémentaire après les deux
+  premières visites ; huit vrais clics, pixels corrects vers 31–33 ms (capture incluse). Détails dans PERFORMANCE.md.
+- Tests : Sway et Hyprland, profils/persistance/résolutions et invalidations ; callbacks obsolètes, fermeture pendant
+  une capture, corruption du cache et dimensions physiques aux échelles 1 / 1,25 / 1,5 / 2.
+- Aucun paquet ni réglage système modifié, aucune action VPN. À apprécier après intégration : navigation clavier,
+  défilement par onglet et première régénération du cache sur la vraie session ; rien appliqué à master ici.

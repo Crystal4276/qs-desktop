@@ -21,7 +21,7 @@ def run(*args, **kwargs):
     return subprocess.check_output(args, text=True, timeout=40, **kwargs).strip()
 
 
-def test(work, compositor="sway"):
+def test(work, compositor="sway", scale=1):
     root = work / 'shell'
     shutil.copytree(REPO, root, ignore=shutil.ignore_patterns('.git', '.shots', '.agents', '.codex', '__pycache__'))
     wallpapers = work / 'wallpapers'
@@ -47,19 +47,27 @@ def test(work, compositor="sway"):
     profile('travail')
     service = root/'services/Wallpapers.qml'
     text = service.read_text().replace('Qt.md5(', 'countedHash(')
+    text=text.replace('    id: root','    id: root\n    signal thumbStarted()',1).replace('        thumbJobs.set(name, job);','        thumbJobs.set(name, job); thumbStarted();')
     text = text.replace('    id: root', '''    id: root
     readonly property var perf: ({hashCalls:0,scans:0})
     function countedHash(value: string): string { perf.hashCalls++; return Qt.md5(value); }
 ''', 1)
     text = text.replace('            onStreamFinished: {', '            onStreamFinished: { root.perf.scans++;')
     service.write_text(text)
+    picker_source=root/'modules/wallpaper/PickerWindow.qml'
+    t=picker_source.read_text().replace('    id: root','    id: root\n    readonly property var lifecycle: ({created:0,destroyed:0})',1)
+    t=t.replace('                id: cell','                id: cell\n                Component.onCompleted: root.lifecycle.created++\n                Component.onDestruction: root.lifecycle.destroyed++')
+    picker_source.write_text(t)
     probe = root / 'shell.qml'
     qml = probe.read_text().replace('import Quickshell\n', 'import QtQuick\nimport Quickshell\nimport Quickshell.Io\n')
     qml = qml[:qml.rfind('}')] + '''
     PickerWindow { id: picker }
+    property var pending: null
+    property bool closeNext: false
     property int libraryChanges: 0
     property int stampChanges: 0
     Connections { target: Wallpapers
+        function onThumbStarted() { if(closeNext) { closeNext=false; Qt.callLater(()=>picker.close()); } }
         function onLibraryChanged() { libraryChanges++; }
         function onStampsChanged() { stampChanges++; }
     }
@@ -68,10 +76,38 @@ def test(work, compositor="sway"):
         function open(): void { picker.open(null); picker.tab = "corelab"; }
         function close(): void { picker.close(); }
         function cacheStats(): string { return JSON.stringify({hashes:Wallpapers.perf.hashCalls,scans:Wallpapers.perf.scans,
-            libraryChanges:libraryChanges,stampChanges:stampChanges, thumbs:Wallpapers.thumbs}); }
+            visible:picker.visible,pending:Wallpapers.thumbJobs.size,created:picker.lifecycle.created,destroyed:picker.lifecycle.destroyed,libraryChanges:libraryChanges,stampChanges:stampChanges, thumbs:Wallpapers.thumbs}); }
         function name(): string { return Wallpapers.thumbName("simple/old.png",Qt.size(240,135)); }
-        function reserve(): string { return Wallpapers.thumbFile("simple/old.png",Qt.size(241,136)); }
-        function finish(file: string): void { Wallpapers.refresh(); Wallpapers.thumbWritten(file); }
+        function reserve(): string {
+            const job=Wallpapers.beginThumb("simple/old.png",Qt.size(241,136));
+            if (job) pending=job;
+            return job?.file ?? "";
+        }
+        function closeOnSave(): void { closeNext=true; }
+        function tokens(): bool {
+            const a=Wallpapers.beginThumb("simple/old.png",Qt.size(242,137));
+            Wallpapers.cancelThumb(a);
+            const b=Wallpapers.beginThumb("simple/old.png",Qt.size(242,137));
+            Wallpapers.finishThumb(a,true);
+            const ok=Wallpapers.currentThumb(b);
+            Wallpapers.cancelThumb(b);
+            return ok;
+        }
+        function cancel(): void { Wallpapers.cancelThumb(pending); }
+        function tab(value: string): void { picker.tab=value; }
+        function gridState(): string { return JSON.stringify({index:picker.grid?.currentIndex,y:picker.grid?.contentY}); }
+        function reloadGrid(): void { picker.visited={}; Qt.callLater(()=>picker.visit()); }
+        function imageStates(): string {
+            const images=[];
+            function collect(item) {
+                if(typeof item.path === "string" && item.status !== undefined) images.push({path:item.path,status:item.status});
+                for(const child of item.children ?? []) collect(child);
+            }
+            if(picker.grid) collect(picker.grid);
+            return JSON.stringify(images);
+        }
+        function corrupt(): string { return Wallpapers.thumbSource(picker.items[0].images[0],Qt.size(Math.ceil(240*picker.pixelRatio),Math.ceil(135*picker.pixelRatio))); }
+        function finish(file: string): void { Wallpapers.refresh(); Wallpapers.finishThumb(pending,true); }
         function refresh(): void { Wallpapers.refresh(); }
         function choose(index: int): void { picker.apply(index); }
         function own(): void { Wallpapers.setOutput("test", "corelab/design1"); }
@@ -123,11 +159,11 @@ def test(work, compositor="sway"):
                     run('hyprctl','dispatch','hl.dsp.window.move({window="address:'+window['address']+'",workspace="special:qs-wallpaper-test",follow=false})',env=parent)
             env.update(HYPRLAND_INSTANCE_SIGNATURE=ipc_sockets[0].parent.name,WAYLAND_DISPLAY=sockets[0].name,QT_QPA_PLATFORM='wayland')
             run('hyprctl','output','create','headless',env=env); time.sleep(.25)
-            run('hyprctl','eval','hl.monitor({output="HEADLESS-1",mode="1920x1200@60",position="0x0",scale=1}); hl.monitor({output="WAYLAND-1",disabled=true})',env=env)
+            run('hyprctl','eval',f'hl.monitor({{output="HEADLESS-1",mode="{round(1920*scale)}x{round(1200*scale)}@60",position="0x0",scale={scale}}}); hl.monitor({{output="WAYLAND-1",disabled=true}})',env=env)
             time.sleep(.5)
         else:
             config = work / 'sway.conf'
-            config.write_text('xwayland disable\nswaybg_command -\noutput HEADLESS-1 mode 1920x1200\n')
+            config.write_text(f'xwayland disable\nswaybg_command -\noutput HEADLESS-1 mode {round(1920*scale)}x{round(1200*scale)} scale {scale}\n')
             sway = subprocess.Popen(['sway', '-c', str(config)], env=env, stdout=(work / 'sway.log').open('w'), stderr=subprocess.STDOUT)
             sock = runtime / f'sway-ipc.{os.getuid()}.{sway.pid}.sock'
             for _ in range(60):
@@ -177,12 +213,25 @@ def test(work, compositor="sway"):
             assert after['stampChanges']==before['stampChanges'], (before,after)
             before=after
         # Modifying one file only computes its new digest; other keys stay cached.
+        # Visited grids keep their delegates/decoded pixels. Same grid object on return.
+        # The active grid index and scrolling are local to each tab.
+        ipc('tab','simple'); time.sleep(.3)
+        ipc('tab','corelab'); time.sleep(.3)
+        before_tabs=stats()
+        for _ in range(10):
+            ipc('tab','simple'); ipc('tab','corelab')
+        assert stats()['hashes']==before_tabs['hashes']
+        assert stats()['created']==before_tabs['created'], (before_tabs,stats())
+        assert stats()['destroyed']==before_tabs['destroyed'], (before_tabs,stats())
         old_name=ipc('name')
         os.utime(wallpapers/'simple/old.png',ns=(1900000000000000000,1900000000000000000))
         ipc('refresh'); time.sleep(.4)
         assert ipc('name')!=old_name
         assert stats()['hashes']-before['hashes']==1, (before,stats())
+        assert ipc('tokens')=='true', 'stale callback released a newer reservation'
         pending=ipc('reserve'); assert pending
+        ipc('cancel'); assert ipc('reserve') == pending, 'canceled reservation did not become writable'
+
         ipc('refresh'); time.sleep(.3)
         assert ipc('reserve') == "", 'scan lost a pending thumbnail write'
         Path(pending).write_bytes(png)
@@ -194,6 +243,30 @@ def test(work, compositor="sway"):
         shutil.rmtree(Path(pending).parent); ipc('refresh'); time.sleep(.4)
         assert ipc('reserve') == pending, 'cleared disk cache was not rebuilt'
         Path(pending).write_bytes(png); ipc('finish',pending); time.sleep(.3)
+        ipc('closeOnSave')
+        shutil.rmtree(Path(pending).parent); ipc('refresh'); time.sleep(.6)
+        assert not stats()['visible'] and stats()['pending']==0, stats()
+        ipc('open'); time.sleep(.8)
+        assert stats()['pending']==0, stats()
+        # Main thumbnail PNGs use the requested physical size, including fractional scale.
+        import math
+        target=(math.ceil(240*scale),math.ceil(135*scale))
+        generated=list(Path(pending).parent.glob(f'*-{target[0]}x{target[1]}.png'))
+        assert generated, target
+        for image in generated:
+            size=struct.unpack('!II',image.read_bytes()[16:24])
+            assert all(abs(a-b)<=1 for a,b in zip(size,target)), (image,size,target)
+        from urllib.parse import urlparse,unquote
+        cached=Path(unquote(urlparse(ipc('corrupt')).path))
+        cached.write_bytes(b'corrupt PNG')
+        ipc('reloadGrid')
+        deadline=time.monotonic()+10
+        while time.monotonic()<deadline:
+            images=json.loads(ipc('imageStates'))
+            if images and all(i['status']==1 for i in images) and cached.exists() and cached.read_bytes().startswith(b'\x89PNG'):
+                break
+            time.sleep(.1)
+        else: raise AssertionError(('cache recovery',images))
         new=wallpapers/'simple/new.png'; new.write_bytes(png)
         ipc('refresh'); wait_for(lambda v: 'simple/new.png' in v['lib']['simple'])
         new.unlink(); ipc('refresh'); wait_for(lambda v: 'simple/new.png' not in v['lib']['simple'])
@@ -241,7 +314,8 @@ def test(work, compositor="sway"):
         ipc('refresh'); wait_for(lambda v: not v['lib']['corelab'])
         assert resolve(1920,1200) == 'simple/old.png'
         log = (work/'qs.log').read_text()
-        assert 'WARN scene:' not in log and not re.search(r'^\s*ERROR(?! quickshell.service.pipewire.loop:)\b', log, re.MULTILINE), log
+        unexpected='\n'.join(line for line in log.splitlines() if 'WARN scene:' in line and not ('Cannot open:' in line or 'Error decoding:' in line))
+        assert not unexpected and not re.search(r'^\s*ERROR(?! quickshell.service.pipewire.loop:)\b', log, re.MULTILINE), log
         print(f'PASS Core Lab ({compositor}): selection, resolutions, stable cache/model, invalidation, concurrent writes, directory, persistence, profiles')
     finally:
         if shell:
@@ -255,10 +329,11 @@ def test(work, compositor="sway"):
 if __name__ == '__main__':
     parser=argparse.ArgumentParser()
     parser.add_argument('--compositor',choices=['sway','hyprland'],default='sway')
+    parser.add_argument('--scale',type=float,default=1)
     args=parser.parse_args()
     with tempfile.TemporaryDirectory(prefix='qw-') as temporary:
         try:
-            test(Path(temporary),args.compositor)
+            test(Path(temporary),args.compositor,args.scale)
         except Exception:
             for name in ('sway.log', 'qs.log'):
                 p = Path(temporary)/name

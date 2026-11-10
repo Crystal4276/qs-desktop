@@ -162,7 +162,7 @@ Singleton {
     // Vignettes de l'utilitaire en cache (PNG à la taille affichée, en pixels réels) : décoder les originaux (jusqu'à 13 Mo) prenait
     // 2 à 3 s à la première ouverture. Nom : empreinte du chemin et de la date de l'image (une image remplacée n'a plus de vignette),
     // puis la taille. Celles d'images disparues ou modifiées sont effacées à la lecture du dossier.
-    readonly property string thumbDir: Quickshell.cachePath("wallpaper-thumbs")
+    readonly property string thumbDir: `${Quickshell.cachePath("wallpaper-thumbs")}/${Qt.md5(dir)}`
     property var stamps: ({})   // chemin → date de modification
     property var thumbs: ({})   // fichiers de vignette présents
 
@@ -177,7 +177,7 @@ Singleton {
     // Source d'une vignette : le cache s'il y est (ou vient d'y être écrite), sinon l'original.
     function thumbSource(path: string, size: size): string {
         const name = thumbName(path, size);
-        return thumbs[name] || saved.get(name) ? Icons.fileUrl(`${thumbDir}/${name}`) : url(path);
+        return indexedDir === dir && !failedThumbs.has(name) && (thumbs[name] || saved.get(name)) ? Icons.fileUrl(`${thumbDir}/${name}`) : url(path);
     }
 
     // Vignettes enregistrées depuis la dernière lecture du dossier : nom → fichier écrit (false pendant l'écriture). Modifié sur
@@ -185,21 +185,57 @@ Singleton {
     // onglet) partent du fichier écrit. Sans lui, chaque changement d'onglet réenregistrait tout, et le défilement redécodait.
     readonly property var saved: new Map()
 
-    // Fichier où enregistrer la vignette décodée depuis l'original, une seule fois ("" : déjà en cache ou en cours, ou date de
-    // l'image pas encore lue) ; `thumbWritten` une fois le fichier écrit.
-    function thumbFile(path: string, size: size): string {
+    readonly property var thumbJobs: new Map()
+    readonly property var failedThumbs: new Set()
+
+    function beginThumb(path: string, size: size): var {
         const name = thumbName(path, size);
-        if (name === "" || thumbs[name] || saved.has(name))
-            return "";
+        if (indexedDir !== dir || name === "" || (!failedThumbs.has(name) && thumbs[name]) || saved.has(name))
+            return null;
+        const job = { name: name, file: `${thumbDir}/${name}`, dir: dir, path: path, key: thumbKeys[path] };
         saved.set(name, false);
-        return `${thumbDir}/${name}`;
+        thumbJobs.set(name, job);
+        return job;
     }
 
-    function thumbWritten(file: string): void {
-        const name = file.slice(thumbDir.length + 1);
-        saved.set(name, true);
-        if (scan.running)
-            thumbWritesDuringScan[name] = true;
+    function currentThumb(job: var): bool {
+        return !!job && thumbJobs.get(job.name) === job && job.dir === dir && thumbKeys[job.path] === job.key;
+    }
+
+    function cancelThumb(job: var): void {
+        if (job && thumbJobs.get(job.name) === job) {
+            thumbJobs.delete(job.name);
+            saved.delete(job.name);
+        }
+    }
+
+    function finishThumb(job: var, ok: bool): void {
+        if (!currentThumb(job)) {
+            cancelThumb(job);
+            return;
+        }
+        cancelThumb(job);
+        if (!ok)
+            Quickshell.execDetached(["mkdir", "-p", thumbDir]);
+        if (ok) {
+            saved.set(job.name, true);
+            failedThumbs.delete(job.name);
+            if (scan.running)
+                thumbWritesDuringScan[job.name] = true;
+        }
+    }
+
+    function thumbFailed(path: string, size: size): void {
+        const name = thumbName(path, size);
+        if (name === "" || failedThumbs.has(name))
+            return;
+        failedThumbs.add(name);
+        cancelThumb(thumbJobs.get(name));
+        saved.delete(name);
+        const entries = Object.assign({}, thumbs);
+        delete entries[name];
+        removeFiles([`${thumbDir}/${name}`]);
+        thumbs = entries;
     }
 
     // Copie de chaque fond affiché, à la taille de son écran, en BMP (sans perte, décodée 4 à 6 fois plus vite que tes PNG ;
@@ -449,6 +485,10 @@ Singleton {
                 // Dossier changé pendant find : ne pas publier son ancien contenu.
                 if (root.scannedDir !== root.dir)
                     return;
+                if (root.indexedDir !== root.dir) {
+                    root.saved.clear();
+                    root.failedThumbs.clear();
+                }
                 const lib = { simple: [], panorama: [], triptych: [], corelab: [] };
                 const designs = {};
                 const triptychs = {};
@@ -488,6 +528,12 @@ Singleton {
                         ? root.thumbKeys[path] : Qt.md5(`${path}\t${stamps[path]}`);
                 const used = new Set(Object.values(keys));
                 Object.assign(thumbs, root.thumbWritesDuringScan);
+                for (const name of root.failedThumbs)
+                    delete thumbs[name];
+                for (const job of root.thumbJobs.values()) {
+                    if (job.dir !== root.dir || keys[job.path] !== job.key)
+                        root.cancelThumb(job);
+                }
                 const stale = Object.keys(thumbs).filter(f => !used.has(f.split("-")[0]));
                 if (used.size > 0 && stale.length > 0) {
                     root.removeFiles(stale.map(f => `${root.thumbDir}/${f}`));
@@ -501,12 +547,15 @@ Singleton {
                     root.thumbKeys = keys;
                 root.indexedDir = root.dir;
                 root.screenFiles = used.size > 0 ? screens : null;   // dossier illisible : copies pas vérifiées
-                if (JSON.stringify(root.thumbs) !== JSON.stringify(thumbs))
-                    root.thumbs = thumbs;
+                let availabilityChanged = false;
                 for (const [name, written] of root.saved) {
-                    if (!used.has(name.split("-")[0]) || (written && !root.thumbWritesDuringScan[name]))
+                    if (!used.has(name.split("-")[0]) || (written && !root.thumbWritesDuringScan[name])) {
+                        availabilityChanged = availabilityChanged || (written && !thumbs[name]);
                         root.saved.delete(name);
+                    }
                 }
+                if (availabilityChanged || JSON.stringify(root.thumbs) !== JSON.stringify(thumbs))
+                    root.thumbs = thumbs;
                 if (JSON.stringify(root.library) !== JSON.stringify(lib))
                     root.library = lib;
                 // Empreintes indépendantes des dimensions ; oublier les chemins hors de cette bibliothèque.
