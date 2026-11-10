@@ -1385,8 +1385,9 @@ SET[4].form_prompt.x = 310.672; SET[4].form_prompt.y = 0; SET[4].form_prompt.w =
 // Every screen shows the same scene: the script plugin centres each display on one canvas, so there is a single scale.
 // One screen: its own. Several: the reference screen, 1440 px high (or the one whose height is closest to 1440).
 // Plymouth script: no clock function, no hexadecimal or exponent literals, no include. Time comes from the boot progress
-// callback (real seconds since Plymouth started, 30 updates a second): the real frame period is measured on it and each
-// refresh advances the animation by that much, so durations hold even when the display runs below REFRESH (≈ 40/s in VM).
+// callback (real seconds, 30 updates a second; plymouthd pauses it while a passphrase is typed): the animation follows it
+// (catching up when the CPU is busy, e.g. during the key derivation), extrapolated between updates with the measured frame
+// period, and runs on that period alone while the clock is paused. Durations hold at any refresh rate (≈ 40/s in VM).
 // Measuring statuses (VM bench, docs/DEVELOPMENT.md): bench-intro | bench-peak | bench-loop | bench-idle.
 
 REFRESH = 50;
@@ -1674,8 +1675,9 @@ loop_cycle = -1;         // rotation cycle in progress
 exit_requested = 0;
 
 // Boot clock (seconds). A window of at least 0.5 s gives the frame period; a clock that stops moving (more than 6
-// refreshes without a new value) starts a new window.
+// refreshes without a new value: paused) starts a new window, and the animation time is re-anchored when it moves again.
 bc.clock = -1;
+bc.offset = 0;           // animation time - clock (ms), set when the clock (re)starts
 bc.cal_clock = -1;
 bc.cal_frame = 0;
 bc.last_clock = -1;
@@ -1687,6 +1689,7 @@ fun measure_frame() {
   if (bc.cal_clock < 0 || frame - bc.last_frame > 6) {
     global.bc.cal_clock = bc.clock;
     global.bc.cal_frame = frame;
+    global.bc.offset = now - bc.clock * 1000;
   }
   else if (bc.clock - bc.cal_clock >= 0.5) {
     local.ms = 1000 * (bc.clock - bc.cal_clock) / (frame - bc.cal_frame);
@@ -1785,7 +1788,14 @@ fun refresh() {
   if (!SCENE) return;
   global.frame++;
   measure_frame();
-  global.now += frame_ms;
+  local.next = now + frame_ms;
+  if (bc.last_clock >= 0 && frame - bc.last_frame <= 6) {   // clock running: follow it, never ahead by more than 50 ms
+    local.c = bc.clock * 1000 + bc.offset;
+    if (next < c) next = c;
+    if (next > c + 50) next = c + 50;
+    if (next < now) next = now;
+  }
+  global.now = next;
   local.ms = now - phase_t0;
 
   if (phase == "intro") {
