@@ -78,15 +78,15 @@ un rapport court + captures. Je valide, puis on passe à la suite.
 - **Dépôts officiels d'abord** : pas de paquet AUR installé par `install.sh` (seule exception : `paru-bin`, qu'il construit) ; ce qui
   n'existe qu'en AUR est documenté dans `README.md`. Pas d'import manuel quand un paquet officiel existe.
 - `arch-pacman.txt` (le bureau, un par ligne, commentaire = usage), `apps.txt` (applications de base), `games.txt` (profil
-  optionnel), `gpu.txt` (selon la carte détectée), `themes.txt` (archives Catppuccin officielles, empreintes SHA-256),
+  jeux), `work.txt` (profil travail), `gpu.txt` (selon la carte détectée), `themes.txt` (archives Catppuccin officielles, empreintes SHA-256),
   `optional.txt` (matériel ou module optionnel), `README.md` (par module, prérequis d'un nouveau PC). Autres distributions :
   plus tard (`BACKLOG.md`).
 - Toute commande externe, police, thème d'icônes ou module Quickshell ajouté met à jour `deps/` **dans le même commit**.
 
 ### `install.sh`
 
-À la racine, **idempotent** (relancé, il ne refait que ce qui manque), `--dry-run`, `--uninstall`, `--with jeux`, `--no-system`,
-`--yes` : paquets, liens des configs (sauvegardes `<x>.bak-<date>`), thème, réglages des applications, fonds d'écran, config machine,
+À la racine, **idempotent** (relancé, il ne refait que ce qui manque), `--dry-run`, `--uninstall`, `--profil jeux|travail`,
+`--no-system`, `--yes` ; deux questions au plus (profil, étapes système d'un bloc) : paquets, liens des configs (sauvegardes `<x>.bak-<date>`), thème, réglages des applications, fonds d'écran, config machine,
 étape système (sudo, avec confirmation : greeter, sonde réseau, `scripts/system-setup.sh`). Détail : `README.md`.
 Tests : `python3 scripts/test-install.py` (dossier personnel jetable), puis VM Arch vierge (`docs/DEVELOPMENT.md`, « VM d'installation »).
 Toute nouvelle config d'application ou étape système passe par `install.sh` et son test.

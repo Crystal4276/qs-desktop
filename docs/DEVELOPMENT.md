@@ -114,7 +114,7 @@ qemu-system-x86_64 -enable-kvm -cpu host -m 8192 -smp 6 -drive file=$D/test.qcow
 - SSH sans `sshpass` : `SSH_ASKPASS` (script qui affiche `arch`) + `SSH_ASKPASS_REQUIRE=force`, `setsid -w ssh -p 2222 arch@127.0.0.1`.
 - Dépôt : `git bundle create … master` copié dans la VM puis cloné (version committée). Fixer un nom de machine
   (`hostnamectl set-hostname`) avant, comme archinstall : sinon NetworkManager prend celui du DHCP.
-- Lancement : `./install.sh --yes --without jeux` en arrière-plan (`setsid`), code de sortie écrit dans un fichier ; ne pas
+- Lancement : `./install.sh --yes --profil travail` en arrière-plan (`setsid`), code de sortie écrit dans un fichier ; ne pas
   surveiller par `pgrep -f "<motif>"` (la commande de surveillance contient le motif) ; ne jamais `pkill -f` un mot présent dans sa
   propre commande SSH.
 - Fonds d'écran : `QS_WALLPAPERS_REPO=<bundle du dépôt wallpapers>` évite tout accès GitHub depuis la VM.
