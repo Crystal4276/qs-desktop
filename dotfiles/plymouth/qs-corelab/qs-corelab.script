@@ -1390,7 +1390,7 @@ SET[4].form_prompt.x = 310.672; SET[4].form_prompt.y = 0; SET[4].form_prompt.w =
 // period, and runs on that period alone while the clock is paused. Durations hold at any refresh rate (≈ 40/s in VM).
 // Measuring statuses (VM bench, docs/DEVELOPMENT.md): bench-intro | bench-peak | bench-loop | bench-idle.
 
-REFRESH = 50;
+REFRESH = 60;                            // refreshes per second asked (60 Hz panels); the VM display keeps ≈ 41
 CYCLE_MS = 2400;                         // rotation cycle
 EXIT_STATUS = "qs-corelab-exit";
 
