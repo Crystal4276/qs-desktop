@@ -68,13 +68,17 @@ Autre distribution qu'Arch : pas encore prévue (paquets à installer soi-même 
 - Dossiers du compte : Applications, Desktop, Documents, Downloads, Music, Pictures, Videos ; Modèles, Public et Projets
   désactivés (`~/.config/user-dirs.dirs`), retirés s'ils sont vides.
 - Fonds d'écran : `install.sh` propose de cloner le dépôt `Crystal4276/wallpapers` dans `~/Pictures/Wallpapers` (HTTPS, sans
-  compte GitHub) et le met à jour aux passages suivants. Fond par défaut : `simple/wallhaven-j37lop.png` (celui de l'écran
+  compte GitHub, dernière version seulement, progression affichée) et le met à jour aux passages suivants. Fond par défaut : `simple/wallhaven-j37lop.png` (celui de l'écran
   central de terrier, `hosts/default.json`) ; autre choix : utilitaire de fonds d'écran du bureau.
+- Claude Code : installé par `install.sh` avec le script officiel (`https://claude.ai/install.sh`, dans `~/.local/bin`,
+  ajouté au PATH des terminaux ; mises à jour faites par Claude Code), sauf s'il est déjà là. Codex vient des dépôts
+  (`openai-codex`). Barres d'état des deux (modèle, contexte, limites 5 h et semaine) réglées comme sur `terrier` :
+  `dotfiles/claude/statusline-command.sh` (lié dans `~/.claude`, déclaré dans `settings.json`) et `[tui] status_line` de
+  `~/.codex/config.toml` ; le reste de ces fichiers est gardé. Connexion : `claude`, `codex`.
 - Logiciels absents des dépôts officiels, avec `paru` (installé par `install.sh`) :
 
 | Logiciel | Commande | Remarque |
 |---|---|---|
-| Claude Code | `paru -S claude-code` | |
 | NordVPN | `paru -S nordvpn-bin`, puis `sudo systemctl enable --now nordvpnd`, `sudo usermod -aG nordvpn $USER`, `nordvpn login` | module de la barre masqué sans lui |
 | Plex Media Server | `paru -S plex-media-server`, puis `sudo systemctl enable --now plexmediaserver` | |
 | RustDesk | `paru -S rustdesk-bin` | |

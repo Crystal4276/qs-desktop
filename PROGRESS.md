@@ -25,8 +25,8 @@ Ensuite (pas de phase 13) : maintenance et idées de `BACKLOG.md`, une à la foi
 
 ## Phase 12 — ce qui existe
 
-- `install.sh` (`README.md`) : paquets officiels d'abord (`[multilib]` activé, `paru-bin` seule construction AUR ; Claude Code,
-  NordVPN, Plex, RustDesk seulement documentés), paquets selon la carte (`deps/gpu.txt`), profil optionnel jeux, liens des configs,
+- `install.sh` (`README.md`) : paquets officiels d'abord (`[multilib]` activé, `paru-bin` seule construction AUR ; Claude Code
+  par son script officiel ; NordVPN, Plex, RustDesk seulement documentés), paquets selon la carte (`deps/gpu.txt`), profil optionnel jeux, liens des configs,
   thème Catppuccin (archives officielles vérifiées, `deps/themes.txt`), réglages (dconf, applications par défaut, web apps, Chromium
   et web apps en thème GTK, Deluge sans icône de tray), fonds d'écran clonés, config machine, étape système (greeter, sonde
   réseau, `scripts/system-setup.sh` : Samba, services, groupes). `--dry-run`, `--uninstall`, idempotent.
@@ -385,3 +385,27 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
   le curseur ; l'icône de pause n'apparaît qu'avec le texte. Testé sur le banc (pause et lecture, 1480 → 3440 px) ; bureau réel
   rechargé sans erreur, `.shots/media-pill-iconsonly.png`.
 - À tester à la main sur le laptop : titres longs, apparition des mises à jour, tray qui grandit (écart toujours 10 px ou ≥ 50 px).
+
+## Installation — Claude Code, barres d'état, fonds d'écran (2026-11-10)
+
+- **Claude Code** : `install.sh` (étape 1, après paru) propose le script officiel `https://claude.ai/install.sh`, téléchargé en
+  entier puis lancé (binaire dans `~/.local/bin`) ; rien si `claude` existe déjà (paquet AUR sur `terrier`). `~/.local/bin`
+  ajouté au PATH des terminaux (`dotfiles/bash/qs-desktop.bash`). Codex : déjà installé par `deps/apps.txt` (`openai-codex`).
+- **Barres d'état** reprises de `terrier` (étape 4) : `dotfiles/claude/statusline-command.sh` (ton script, jq) lié dans
+  `~/.claude/`, clé `statusLine` fusionnée dans `~/.claude/settings.json` (mise en forme et autres clés gardées) ; Codex :
+  `[tui] status_line` de `~/.codex/config.toml` (7 éléments natifs). Seules ces clés sont remises au retrait. Fusion JSON
+  commune à Chromium et Claude Code (`json_merge`, `json_write`). Sur `terrier` : réglages déjà identiques, seul le script
+  devient un lien vers le dépôt (ancien fichier en `.bak-<date>`).
+- **Fonds d'écran** : clonage avec la progression de git (objets, Mo, débit) et `--depth 1` depuis GitHub (dernière version :
+  pas les images retirées de l'historique). Dépôt `wallpapers` : `simple/wallhaven-dpqjwj-3440.jpg` et `-3440.png` retirés
+  (`31d9a7b`), gardé `wallhaven-dpqjwj.jpg` (3840×2160). Sur `terrier`, le choix « tous les écrans » pointait vers l'un d'eux :
+  sans effet (chaque écran a son propre fond ; sinon repli sur le fond de la config machine).
+- Tests : `test-install.py` complété (réglages existants gardés, script de barre d'état lancé sur un JSON d'exemple, Codex lu
+  par `tomllib`, retrait à l'identique) : 0 échec ; simulation sur `terrier` sans changement inattendu ; clone réel vérifié.
+- Vus au passage, **non retirés** (à ta décision) : `panorama/336375.jpg` = `52RY9Px.jpeg` (Voie lactée, 5760×1080, fichiers
+  presque identiques), `simple/nathan-anderson-…-unsplash.jpg` (7010×2955) = `photo-1475738198235-….jpeg` (3476×1465, ciel
+  étoilé), `panorama/andrii-ganzevych-…-unsplash.jpg` (10591×3555) ≈ `photo-1536919641626-….jpeg` (3456×1160, lac turquoise,
+  autre étalonnage).
+- **À tester sur le laptop** : `git pull`, `./install.sh` → question Claude Code (si absent), `claude` dans un nouveau terminal,
+  barres d'état de `claude` et `codex` ; fonds : `rm -rf ~/Pictures/Wallpapers` n'est **pas** nécessaire (`git pull` retire les
+  deux doublons).

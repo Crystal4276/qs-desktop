@@ -114,6 +114,12 @@ def main():
         (home / ".config/mpv").mkdir()
         (home / ".config/mpv/mpv.conf").write_text("volume=50\n")
         (home / ".bashrc").write_text("alias ll='ls -l'\n")
+        # Claude Code et Codex déjà utilisés : leurs autres réglages (et la mise en forme de settings.json) sont à garder.
+        (home / ".claude").mkdir()
+        (home / ".claude/settings.json").write_text('{\n  "theme": "dark",\n  "note": "réglage à garder"\n}\n')
+        (home / ".codex").mkdir()
+        (home / ".codex/config.toml").write_text(
+            'model = "gpt-5"\n\n[tui]\nscreen_reader_detection_done = true\n\n[tui.model_availability_nux]\n"gpt-5" = 4\n')
         # Dossiers XDG par défaut d'un compte déjà connecté : Modèles et Projets vides, Public avec un fichier.
         xdg = {"DESKTOP": "Desktop", "DOWNLOAD": "Downloads", "TEMPLATES": "Templates", "PUBLICSHARE": "Public",
                "DOCUMENTS": "Documents", "MUSIC": "Music", "PICTURES": "Pictures", "VIDEOS": "Videos", "PROJECTS": "Projects"}
@@ -210,6 +216,27 @@ def main():
         check(any((home / ".local/share/applications").glob("WebApp-*.desktop")), "web apps générées")
         gs = home / ".local/share/applications/gammastep-indicator.desktop"
         check(gs.is_symlink() and "NoDisplay=true" in gs.read_text(), "lanceur : Gammastep Indicator masqué")
+        # Barres d'état (réglées seulement si l'application est installée sur la machine de test).
+        if shutil.which("claude"):
+            text = (home / ".claude/settings.json").read_text()
+            cs = json.loads(text)
+            line = home / ".claude/statusline-command.sh"
+            check(cs.get("note") == "réglage à garder" and cs.get("statusLine") == {"type": "command", "command": f"bash {line}"}
+                  and text.startswith('{\n  "') and text.endswith("}\n") and "réglage" in text
+                  and os.readlink(line) == str(repo / "dotfiles/claude/statusline-command.sh"),
+                  "Claude Code : barre d'état déclarée, script lié, autres réglages et mise en forme gardés")
+            payload = {"model": {"display_name": "Opus"}, "context_window": {"context_window_size": 200000, "used_percentage": 25,
+                       "current_usage": {"input_tokens": 50000}}, "rate_limits": {"five_hour": {"used_percentage": 12, "resets_at": 1700000000},
+                       "seven_day": {"used_percentage": 90, "resets_at": 1700000000}}}
+            out = subprocess.run(["bash", str(line)], input=json.dumps(payload), capture_output=True, text=True, env=env).stdout
+            check(out.startswith("Opus | [####------------] | 25% | 50k / 200k | ") and "5h 12%" in out and "Sem 90%" in out,
+                  f"Claude Code : barre d'état affichée {out!r}")
+        if shutil.which("codex"):
+            import tomllib
+            ct = tomllib.loads((home / ".codex/config.toml").read_text())
+            check(ct.get("model") == "gpt-5" and ct["tui"].get("screen_reader_detection_done") is True
+                  and ct["tui"].get("status_line", [""])[0] == "model-with-reasoning" and len(ct["tui"]["status_line"]) == 7
+                  and ct["tui"]["model_availability_nux"] == {"gpt-5": 4}, "Codex : barre d'état réglée, autres réglages gardés")
 
         r = install()
         deluge = (cfg / "deluge/gtk3ui.conf").read_text()

@@ -83,5 +83,5 @@ slurp                   # choix de l'écran partagé (xdg-desktop-portal-wlr) ; 
 iproute2                # `ip -j addr` : interfaces ZeroTier sans jeton (panneau réseau) ; dans `base`
 wl-clipboard            # presse-papiers : captures (outil natif), IP / noms copiés depuis le panneau réseau
 imagemagick             # scripts/crop.sh
-jq                      # scripts de test (lecture JSON swaymsg/hyprctl)
+jq                      # scripts de test (lecture JSON swaymsg/hyprctl) ; barre d'état de Claude Code (dotfiles/claude)
 zenity                  # fenêtres de test (scripts/test-outputs.sh)
