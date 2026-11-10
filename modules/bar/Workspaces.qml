@@ -10,6 +10,8 @@ Item {
     id: root
 
     required property string output
+    // Glyphes des espaces 1 à 9 du profil de la machine.
+    readonly property var glyphs: Theme.icon.workspaces[Settings.profile]
 
     readonly property var shown: {
         const workspaces = Compositor.workspaces;
@@ -124,8 +126,8 @@ Item {
                 Text {
                     id: glyph
                     anchors.centerIn: parent
-                    text: button.modelData.number >= 1 && button.modelData.number <= Theme.icon.workspaces.length
-                        ? Theme.icon.workspaces[button.modelData.number - 1] : button.modelData.name
+                    text: button.modelData.number >= 1 && button.modelData.number <= root.glyphs.length
+                        ? root.glyphs[button.modelData.number - 1] : button.modelData.name
                     font.family: Theme.font.icons
                     font.pixelSize: Theme.font.workspaceGlyph
                     color: button.glyphColor

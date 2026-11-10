@@ -1,4 +1,5 @@
 {
+  "profile": "jeux",
   "updateCommand": "paru -Syu",
   "doNotDisturb": { "muteApps": ["discord", "whatsapp"] },
   "primaryOutput": "Dell Inc. Dell AW3418DW #ASPFPBQwWjbd",
