@@ -1,5 +1,6 @@
 -- Profil de cette machine (jeux | travail : clé « profile » de hosts/<hostname>.json, lue par scripts/profile.sh) :
--- charge profiles/<profil>.lua (règles de ses applications) et renvoie sa table { autostart = { commandes } }.
+-- charge profiles/<profil>.lua (règles de ses applications) et renvoie sa table { workspaces = { chat, music }, autostart = { … } }.
+-- Chargé par hyprland.lua avant lua/windowrules.lua (numéros d'espace des règles communes).
 -- Script absent ou muet : travail. Aucun hl.exec_cmd hors de l'autostart (`Hyprland --verify-config` exécute ce fichier).
 
 local MODULE = ...   -- nom passé par require ("lua/profile")

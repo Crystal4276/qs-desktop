@@ -16,18 +16,24 @@
 -- (c'est ce que signifie « silent »).
 ------------------------------------------------------------------------------
 
-hl.window_rule({ name = "discord-ws5",    match = { class = "^(discord)$" },   workspace = "5 silent" })
-hl.window_rule({ name = "whatsdesk-ws5",  match = { class = "^(whatsdesk)$" }, workspace = "5 silent" })
+-- Espaces de Discord-WhatsApp et de Spotify selon le profil (profiles/<profil>.lua : 5 / 6 en jeux, 6 / 7 en travail). Profil
+-- déjà chargé par hyprland.lua (une erreur y est signalée ; ici, la table vide qu'il laisse donne 5 / 6).
+local okProfile, profile = pcall(require, "lua/profile")
+local ws = okProfile and profile.workspaces or { chat = 5, music = 6 }
+local chat, music = ws.chat .. " silent", ws.music .. " silent"
+
+hl.window_rule({ name = "discord-chat",   match = { class = "^(discord)$" },   workspace = chat })
+hl.window_rule({ name = "whatsdesk-chat", match = { class = "^(whatsdesk)$" }, workspace = chat })
 -- Web apps Discord et WhatsApp (classes relevées sur la session, comme les `assign` de Sway).
 -- Discord : classe selon l'adresse de départ, avec ou sans numéro de salon.
-hl.window_rule({ name = "discord-web-ws5",  match = { class = "^(chrome-discord\\.com__channels_@me(_[0-9]+)?-Default)$" },      workspace = "5 silent" })
-hl.window_rule({ name = "whatsapp-web-ws5", match = { class = "^(chrome-web\\.whatsapp\\.com__-Default)$" },                         workspace = "5 silent" })
+hl.window_rule({ name = "discord-web-chat",  match = { class = "^(chrome-discord\\.com__channels_@me(_[0-9]+)?-Default)$" },      workspace = chat })
+hl.window_rule({ name = "whatsapp-web-chat", match = { class = "^(chrome-web\\.whatsapp\\.com__-Default)$" },                         workspace = chat })
 
 -- La classe réelle est « Spotify » avec une majuscule (fenêtre X11, relevée sur
 -- la session en cours). La conversion 0.53 l'avait passée en minuscules, ce qui
 -- cassait silencieusement cette règle — RE2 est sensible à la casse.
 -- La forme [Ss] couvre les deux orthographes sans rien coûter.
-hl.window_rule({ name = "spotify-ws6",    match = { class = "^([Ss]potify)$" }, workspace = "6 silent" })
+hl.window_rule({ name = "spotify-music",  match = { class = "^([Ss]potify)$" }, workspace = music })
 
 -- Steam et Deluge (profil jeux), DigitalMicrograph (profil travail) : profiles/<profil>.lua.
 

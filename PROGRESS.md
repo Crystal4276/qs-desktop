@@ -417,8 +417,9 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
   (`lua/profile.lua` → `profiles/<profil>.lua`) et `install.sh` ; `Settings.profile` côté Quickshell.
 - **jeux** : règles et démarrage de Steam, de ses jeux (EVE, gamescope, Megabonk) et de Deluge déplacés tels quels dans
   `dotfiles/{sway,hypr}/profiles/jeux.*` ; paquets `deps/games.txt` (Deluge y passe depuis `apps.txt`), `[multilib]`.
-- **travail** : DigitalMicrograph sur l'espace 9 (classe ou app_id `digitalmicrograph.exe`, sans casse), 7 libre, aucun démarrage
-  automatique ; glyphes 7 `nf-md-circle_double` (U+F0E95) et 9 `nf-md-microscope` (U+F0654) ; paquets `deps/work.txt`
+- **travail** : espace 5 libre, Discord-WhatsApp sur 6, Spotify sur 7, DigitalMicrograph sur 9, aucun démarrage automatique ;
+  glyphes 5 `nf-md-circle_double` (U+F0E95) et 9 `nf-md-microscope` (U+F0654). Espaces de Discord-WhatsApp et de Spotify fournis
+  par le profil (`$ws_chat` / `$ws_music` sous Sway, `workspaces` sous Hyprland), règles communes ; paquets `deps/work.txt`
   (winetricks, wine-mono, wine-gecko, cabextract, icoutils, potrace) ; `install.sh` clone `Crystal4276/GMSFreeAnalysis17` dans
   `~/GMSFreeAnalysis17` (gh ou SSH) et rappelle à la fin de lancer son `scripts/install-all.sh` avec le kit Gatan.
 - **install.sh, deux questions au plus** : profil (seulement si la config machine n'en a pas ; `--profil jeux|travail` remplace
@@ -430,5 +431,10 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
   simulations `--profil jeux` / `--profil travail` sur `terrier`.
 - **Laptop** : `corelabs-laptop` n'a pas de `hosts/*.json` dans le dépôt : au `git pull`, il passe en **travail** (plus de Steam ni
   Deluge au démarrage, glyphes 7 / 9 changés). `./install.sh` y demandera le profil et créera le fichier (à committer).
-- **À tester à la main (laptop)** : DM s'ouvre sur l'espace 9 en Wayland natif et avec `GMS_WAYLAND=0` (classe réelle à confirmer :
-  `hyprctl clients` / `swaymsg -t get_tree`) ; `./install.sh` → deux questions, clone de GMSFreeAnalysis17, rappel d'installation.
+- **DigitalMicrograph, vérifié sur la VM `qs-desktop-test`** (agent invité QEMU, Sway headless à part, greeter intact, VM
+  rééteinte) : app_id `digitalmicrograph.exe` avec le pilote Wayland de Wine, classe X11 `digitalmicrograph.exe` (instance
+  idem) avec `GMS_WAYLAND=0` ; dans les deux cas, fenêtre sur l'espace 9, focus resté sur 1. Règles réduites à ce nom exact.
+- Vérifié pour les deux profils : numéros 5 / 6 (jeux) et 6 / 7 (travail) réellement appliqués sous Sway (`sway -C -d`) et
+  Hyprland (sonde dans `--verify-config`) ; barre travail sur banc : double cercle, Discord, Spotify, enveloppe, microscope.
+- **À tester à la main (laptop)** : Hyprland avec DM (même nom attendu) ; `./install.sh` → deux questions, clone de
+  GMSFreeAnalysis17, rappel d'installation ; Discord / WhatsApp sur 6 et Spotify sur 7 au démarrage.

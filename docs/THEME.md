@@ -73,8 +73,8 @@ Règles pour Qt :
 1 px `overlay0`, rayon 20 ; 10 px entre pilules et sur les côtés ; padding des modules 10 ; une seule bordure arrondie autour de chaque
 groupe de modules (pilule de la config machine). Espaces de travail : glyphes 34 px, couleur par position dans le bloc (`teal`,
 `sapphire`, `blue`), espace affiché avec un halo (ombre floue d'un `Canvas`), vide en `surface1` ; un glyphe par numéro selon le
-profil de la machine (`Theme.icon.workspaces.jeux` : 7 goutte de Deluge, 9 Steam ; `.travail` : 7 `nf-md-circle_double`, 9
-`nf-md-microscope` pour DigitalMicrograph). Couleurs des modules : `Theme.module` ; luminosité `peach`, batterie `teal` (rouge à 30 % ou moins hors charge).
+profil de la machine (`Theme.icon.workspaces.jeux` : 5 Discord, 6 Spotify, 7 goutte de Deluge, 9 Steam ; `.travail` : 5 `nf-md-circle_double`,
+6 Discord, 7 Spotify, 9 `nf-md-microscope` pour DigitalMicrograph). Couleurs des modules : `Theme.module` ; luminosité `peach`, batterie `teal` (rouge à 30 % ou moins hors charge).
 
 La musique se dimensionne sur la place restante par écran, texte « artiste - titre » plafonné à 600 px
 (`mediaTextMaxWidth`, ~ l'ancienne limite Waybar de 40 caractères) : artiste et titre abrégés séparément seulement s'ils ne

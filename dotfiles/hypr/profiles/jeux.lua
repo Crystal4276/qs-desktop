@@ -1,5 +1,6 @@
 -- Profil « jeux » (chargé par lua/profile.lua d'après scripts/profile.sh) : Steam, ses jeux, EVE, gamescope et Deluge.
--- Mêmes règles que dotfiles/sway/profiles/jeux.conf. Renvoie { autostart = { commandes } }, lancées par lua/autostart.lua.
+-- Mêmes règles que dotfiles/sway/profiles/jeux.conf. Renvoie les espaces de Discord-WhatsApp et de Spotify (lua/windowrules.lua)
+-- et { autostart = { commandes } }, lancées par lua/autostart.lua.
 -- Aucun hl.exec_cmd ici : `Hyprland --verify-config` exécute le code de premier niveau.
 
 -- Applications de démarrage envoyées sur leur espace sans voler le focus.
@@ -78,6 +79,7 @@ hl.window_rule({
 })
 
 return {
+   workspaces = { chat = 5, music = 6 },
    autostart = {
       "deluge",
       -- Attend que le compositeur soit posé avant de démarrer.

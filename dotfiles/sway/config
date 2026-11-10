@@ -63,15 +63,18 @@
     bindsym $mod+Left move container to output left, focus output left
     bindsym $mod+Right move container to output right, focus output right
 
+    # Applications du profil de cette machine (jeux | travail : clé « profile » de hosts/<hostname>.json) : leurs règles, et
+    # $ws_chat / $ws_music, espaces de Discord-WhatsApp et de Spotify (5 / 6 en jeux, 6 / 7 en travail). Avant leur usage.
+    include profiles/$(~/.config/quickshell/desktop/scripts/profile.sh).conf
+
     # Application assignments to workspace
-    assign [instance="discord"] 5
+    assign [instance="discord"] $ws_chat
     # Web app Discord : app_id selon l'adresse de départ (avec ou sans numéro de salon).
-    assign [app_id="^chrome-discord\.com__channels_@me(_[0-9]+)?-Default$"] 5
-    assign [app_id="whatsdesk"] 5
-    assign [app_id="chrome-web.whatsapp.com__-Default"] 5
-    assign [class="Spotify"] 6
+    assign [app_id="^chrome-discord\.com__channels_@me(_[0-9]+)?-Default$"] $ws_chat
+    assign [app_id="whatsdesk"] $ws_chat
+    assign [app_id="chrome-web.whatsapp.com__-Default"] $ws_chat
+    assign [class="Spotify"] $ws_music
     assign [app_id="org.mozilla.Thunderbird"] 8
-    # Steam et Deluge (profil jeux), DigitalMicrograph (profil travail) : profiles/<profil>.conf, inclus plus bas.
 
 # Floating rules
     floating_maximum_size -1 x -1
@@ -178,9 +181,6 @@
     exec --no-startup-id gtk-launch WebApp-DiscordWeb2996
     exec --no-startup-id gtk-launch WebApp-Whatsapp8699
     exec "pkill spotify || true; sleep 4 && LD_PRELOAD=/usr/lib/spotify-adblock.so spotify"
-
-# Applications du profil de cette machine (jeux | travail : clé « profile » de hosts/<hostname>.json).
-include profiles/$(~/.config/quickshell/desktop/scripts/profile.sh).conf
 
 # Réglages de cette machine : écrans (par description), matériel. Absent sur une autre machine : ignoré.
 include hosts/$(cat /proc/sys/kernel/hostname).conf
