@@ -486,3 +486,13 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
   capture des neuf vignettes `.shots/corelab-picker-live.png` ; pas de nouvelle erreur QML au rechargement (avertissements textinput Qt déjà présents).
 - Reste à vérifier à la main : clic dans Core Lab / Entrée sur le laptop, nouvel écran externe avec des dimensions différentes.
   Aucun paquet installé, aucune action VPN ; bancs arrêtés.
+
+## DigitalMicrograph — halo Hyprland (2026-11-10)
+
+- Règle commune aux profils jeux / travail pour la classe exacte `digitalmicrograph.exe` : `no_blur=true`,
+  `no_shadow=true`. Classe documentée pour Wine Wayland natif et XWayland ; placement sur l’espace 9 conservé.
+- Validé sur copie temporaire : syntaxe Lua et `Hyprland --verify-config` pour les deux profils (`config ok`).
+  Le validateur émet aussi un diagnostic de socket IPC, sans erreur de parsing.
+- Configuration réelle rechargée : aucune erreur Hyprland, même instance Quickshell vivante (PID 1882).
+- Reste à vérifier à la main : absence du halo au changement de focus, au redimensionnement et à l’ouverture des dialogues
+  GMS, en Wayland puis XWayland. Aucun changement de Wine, du lanceur ou des effets des autres applications.
