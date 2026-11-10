@@ -526,3 +526,23 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
   `assets/plymouth/source/`. Étapes 1 à 5 de la spec, arrêt pour validation après chacune.
 - Décisions : tout le travail système en **VM** (Arch par archinstall, UEFI, **GRUB** comme le laptop, racine LUKS), jamais sur
   `terrier` (profil jeux) ; ISO officielle et paquets dans la VM acceptés. Laptop seulement à l'étape 5, avec ton accord.
+- VM chiffrée prête (`docs/DEVELOPMENT.md`, « VM chiffrée ») : archinstall 4.5, GRUB, LUKS, `install.sh --profil travail` passé.
+- **Étape 1, audit (VM, Plymouth 26.134.222)** — en attente de validation :
+  - Démarrage : `HOOKS=(base udev autodetect microcode modconf kms keyboard keymap consolefont block encrypt filesystems fsck)`,
+    GRUB `loglevel=3 quiet` + `cryptdevice=UUID=…:root`. Le hook `encrypt` passe par `plymouth ask-for-password
+    --command="cryptsetup open …"` quand Plymouth tourne : Plymouth relance lui-même la demande après un refus. Invite :
+    « A password is required to access the root volume » (pas celle de systemd-cryptsetup de la référence).
+  - API `script` présente : rappels Refresh, BootProgress, RootMounted, KeyboardInput, UpdateStatus, DisplayNormal, DisplayPassword,
+    DisplayQuestion, DisplayPrompt, DisplayHotplug, ValidateInput, DisplayMessage, HideMessage, Quit, SystemUpdate ; `SetRefreshRate`,
+    `GetCapslockState`, `GetMode` ; `Image.Rotate/Scale/Crop/Tile/Text` ; `Sprite.SetX/Y/Z/Opacity` ; `Window.GetWidth/GetHeight/GetX/GetY`.
+    **Ni rotation ni échelle de sprite** : rotation et échelle = nouvelles images (`Image.Rotate` / `Image.Scale`).
+  - Polices : l'initramfs ne reçoit que la police `Font=` du thème (+ gras) ; `Font=Inter` → `/usr/share/fonts/inter/Inter.ttc`
+    (paquet `inter-font`), rendue par `label-freetype` : le texte variable en Inter est possible.
+  - HiDPI : `DeviceScale` (plymouthd.conf) et `PLYMOUTH_FORCE_SCALE` existent ; à mesurer en 4K (image agrandie ×2 sinon).
+  - Signaux : déverrouillage → `RootMounted` (le hook tardif `update-root-fs` ne passe qu'après ouverture du volume) ; sortie →
+    `Quit` arrive trop tard pour animer : il faut un signal avant (`plymouth update --status=…` depuis une unité à nous), puis
+    `plymouth quit --retain-splash`. greetd est `After=plymouth-quit-wait.service` ; `plymouth-quit.service` (multi-user) quitte sans
+    garder l'image : à ordonner après notre unité.
+  - Risques : anneaux = 13 à 15 images (56 Mo en 1920×1200, 118 Mo en 3440×1440, 185 Mo en 4K en RGBA) et composition
+    logicielle plein écran pendant leur apparition ; sortie ajoutée au démarrage : fin de cycle + 0,95 s (jusqu'à 3,35 s).
+  - Hors Plymouth : `install.sh` muet (code 127) sans `python3` sur un Arch minimal.
