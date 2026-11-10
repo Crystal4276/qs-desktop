@@ -203,6 +203,7 @@ def main():
         check(not blue, f"Papirus : ancienne surcouche refaite {blue[:4]}")
         dconf = (tmp / "dconf.ini").read_text()
         check("accent-color='green'" in dconf and "gtk-theme='catppuccin-mocha-green-standard+default'" in dconf, "dconf appliqué")
+        check("[org/cinnamon/desktop/applications/terminal]\nexec='gnome-terminal'" in dconf, "dconf : terminal de Nemo")
         mime = (cfg / "mimeapps.list").read_text() if (cfg / "mimeapps.list").exists() else ""
         check("video/mp4=io.github.celluloid_player.Celluloid.desktop" in mime or "Celluloid" not in mime and not shutil.which("celluloid"),
               "applications par défaut")
