@@ -180,7 +180,7 @@
     exec "pkill thunderbird || true; sleep 4 && thunderbird"
     exec --no-startup-id gtk-launch WebApp-DiscordWeb2996
     exec --no-startup-id gtk-launch WebApp-Whatsapp8699
-    exec "pkill spotify || true; sleep 4 && LD_PRELOAD=/usr/lib/spotify-adblock.so spotify"
+    exec "pkill spotify || true; sleep 4 && bash $qs/scripts/spotify-launch.sh"
 
 # Réglages de cette machine : écrans (par description), matériel. Absent sur une autre machine : ignoré.
 include hosts/$(cat /proc/sys/kernel/hostname).conf

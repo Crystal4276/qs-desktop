@@ -40,7 +40,7 @@ Chaque commande a été rattachée à son paquet sur cette machine avec `pacman 
 | Barre (toutes) | layer-shell Wayland | `quickshell`, `sway` ou `hyprland` | — | — | — |
 | Bouton Arch | natif (ouvre le menu d'applications maison) | — | — | — | `assets/arch_linux_icon_green.svg`, `arch_linux_icon_mantle.svg` |
 | Espaces de travail | natif (`Quickshell.I3` / `Quickshell.Hyprland`) | — | — | Symbols Nerd Font Mono | — |
-| Média (mpris) | natif (`Services.Mpris`, D-Bus) | — | un lecteur MPRIS (Spotify, AUR, n'est pas une dépendance du bureau) ; choix du lecteur à la molette natif (plus de `playerctl`) | Inter, Font Awesome 7 Brands, FontAwesome 4.7 | — |
+| Média (mpris) | natif (`Services.Mpris`, D-Bus) | — | un lecteur MPRIS (Spotify via `spotify-launcher` ou le paquet AUR `spotify`, n'est pas une dépendance du bureau) ; choix du lecteur à la molette natif (plus de `playerctl`) | Inter, Font Awesome 7 Brands, FontAwesome 4.7 | — |
 | Volume (icône + curseur) | natif (`Services.Pipewire`) | `pipewire`, `wireplumber` (services utilisateur actifs) | `pavucontrol` (réglages avancés du panneau audio ; `pipewire-pulse`) | Symbols Nerd Font Mono | — |
 | Sortie audio suivante (ex-`audio-toggle.sh`) | natif (`Services.Pipewire`) + `notify-send` | `libnotify` | — | — | — |
 | Mises à jour | `checkupdates` | `pacman-contrib`, **`fakeroot`** (`checkupdates` échoue sans lui ; non déclaré par `pacman-contrib`) | `paru` ou `yay` (clic) ; terminal | Inter, Hack Nerd Font | — |
@@ -90,6 +90,7 @@ Les applications personnelles lancées au démarrage (Steam, Spotify, Thunderbir
 |---|---|---|
 | `scripts/desktop.sh [restart\|stop\|log]` | lance le bureau depuis l'autostart de Sway / Hyprland, le relance s'il s'arrête | `qs`, `flock`, `setsid` (`util-linux`), `swaymsg` / `swaynag` (`sway`), `hyprctl` |
 | Vérification des espaces Hyprland | complète le modèle natif lors d’une course au démarrage | `hyprctl` (`hyprland`), `timeout` (`coreutils`, déjà requis) |
+| `scripts/spotify-launch.sh [arguments…]` | lancement commun de Spotify sous Sway / Hyprland, priorité au client direct | `spotify` (AUR) ou `spotify-launcher` (dépôts officiels, `deps/apps.txt`) |
 | `scripts/ipc.sh <cible> <fonction> …` | `qs ipc call` vers le bureau de la session (raccourcis) | `qs` |
 | `scripts/greeter.sh [shell]` | écran de connexion : Sway minimal puis Quickshell (lancé par greetd) | `sway`, `swaymsg`, `qs` |
 | `scripts/greeter-session.sh` | session choisie : shell de connexion puis `Exec` ; X11 par `startx` | `sh`, `startx` (`xorg-xinit`, sessions X11) |
