@@ -549,3 +549,14 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
   une capture, corruption du cache et dimensions physiques aux échelles 1 / 1,25 / 1,5 / 2.
 - Aucun paquet ni réglage système modifié, aucune action VPN. À apprécier après intégration : navigation clavier,
   défilement par onglet et première régénération du cache sur la vraie session ; rien appliqué à master ici.
+
+
+## Déploiement réel du sélecteur (2026-11-10)
+
+- À ta demande : les deux correctifs de `fix/wallpaper-corelab-latency` intégrés à master par avance rapide
+  jusqu’à `d43a53d`. Aucun changement suivi en attente ; fichier machine non suivi conservé.
+- Rechargement groupé, même instance réelle PID 1882 : `Configuration Loaded`, IPC répond, aucune erreur QML
+  ni boucle de liaison depuis le rechargement. Avertissements textinput Qt préexistants conservés.
+- Sélecteur ouvert et contrôlé visuellement après la première régénération du cache : neuf designs Core Lab,
+  fond `02b-degrade-vert-bleu` et choix enregistrés inchangés. Capture `.shots/corelab-tabs-deployed-ready.png`.
+  Sélecteur refermé, aucun changement d’écran ni action VPN.
