@@ -1,4 +1,4 @@
-# Retour arrière de la bascule (phase 10, 2026-11-03) et de l'écran de connexion (phase 11)
+# Retour arrière de la bascule (phase 10, 2026-11-03), de l'écran de connexion (phase 11) et de l'écran de démarrage
 
 Ce que la bascule a changé sur cette machine, et comment revenir à l'ancien bureau (Waybar, Dunst, Rofi, swaybg, swayidle /
 hypridle, polkit-gnome, nm-applet, blueman, udiskie). Aucun paquet n'a été désinstallé.
@@ -99,3 +99,44 @@ sudo systemctl restart greetd
 
 Journal de l'écran de connexion : `journalctl -b -u greetd` (greetd, PAM) ; Quickshell du greeter :
 `/run/user/$(id -u greeter)/quickshell/` pendant qu'il tourne, `/var/lib/qs-desktop/greeter/` (caches, état).
+
+## Écran de démarrage Plymouth (profil travail, `docs/PLYMOUTH.md`)
+
+`scripts/plymouth-setup.sh install` (étape système d'`install.sh`, profil travail seulement) :
+
+| Changement | Défait par `uninstall` |
+|---|---|
+| Thème dans `/usr/share/plymouth/themes/qs-corelab` (version committée) | retiré |
+| Thème par défaut `qs-corelab` (`/etc/plymouth/plymouthd.conf`) | fichier d'origine remis, ou thème précédent |
+| Hook `plymouth` avant `block` / `encrypt` dans `HOOKS` (`/etc/mkinitcpio.conf` ou `.conf.d`) | mot retiré |
+| `splash` dans `GRUB_CMDLINE_LINUX_DEFAULT` (`/etc/default/grub`) | mot retiré |
+| Surcharges `/etc/systemd/system/plymouth-quit-wait.service.d/qs-corelab.conf` et `plymouth-quit.service.d/qs-corelab.conf` | retirées |
+| Initramfs (`mkinitcpio -P`) et `/boot/grub/grub.cfg` (`grub-mkconfig`) refaits | refaits |
+
+Ce qui a été ajouté est noté dans `/var/lib/qs-desktop/plymouth/state` ; une copie d'origine de chaque fichier touché reste dans
+`/var/lib/qs-desktop/plymouth/backup/` (retour à la main). Le paquet `plymouth` n'est pas désinstallé. Une machine passée en profil
+jeux le perd au prochain `install.sh` (même retrait) ; `install.sh --uninstall` le retire aussi.
+
+```sh
+~/qs-desktop/scripts/plymouth-setup.sh status      # état de chaque élément
+~/qs-desktop/scripts/plymouth-setup.sh uninstall   # tout défaire, initramfs et GRUB refaits
+```
+
+### La machine ne démarre plus (écran figé, pas de demande de phrase de passe)
+
+archinstall ne crée pas d'image de secours (`fallback`) : le secours passe par GRUB.
+
+1. Au menu GRUB (touche `Échap` ou `Maj` au démarrage s'il est caché), sur l'entrée Arch Linux : `e`.
+2. Sur la ligne `linux …`, retirer `splash` (et `quiet` pour voir les messages). `Ctrl+X` pour démarrer : sans `splash`,
+   Plymouth reste en mode texte et la phrase de passe LUKS est demandée comme avant (`plymouth.enable=0` n'y fait rien : le
+   hook de l'initramfs lance `plymouthd` sans le lire).
+3. Une fois connecté (TTY `Ctrl+Alt+F2` si l'écran de connexion ne vient pas) : `~/qs-desktop/scripts/plymouth-setup.sh uninstall`,
+   puis `sudo reboot`.
+
+À la main, sans le script : remettre les copies de `/var/lib/qs-desktop/plymouth/backup/` (`etc_mkinitcpio.conf.bak-*` →
+`/etc/mkinitcpio.conf`, `etc_default_grub.bak-*` → `/etc/default/grub`, `etc_plymouth_plymouthd.conf.bak-*` →
+`/etc/plymouth/plymouthd.conf`), supprimer les deux surcharges, puis `sudo systemctl daemon-reload && sudo mkinitcpio -P &&
+sudo grub-mkconfig -o /boot/grub/grub.cfg`.
+
+L'écran de connexion n'apparaît pas après l'écran de démarrage : `systemctl status plymouth-quit-wait plymouth-quit greetd` ;
+`sudo plymouth quit` libère l'écran si Plymouth est resté actif.

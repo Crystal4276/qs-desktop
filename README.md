@@ -29,7 +29,7 @@ Puis se déconnecter : l'écran de connexion greetd apparaît au prochain démar
 | 4. Réglages | GSettings (`dotfiles/dconf/`), applications par défaut (`dotfiles/mime/defaults.list`), web apps, liens HTTP vers Chromium ; profils Chromium (navigateur et web apps) en thème GTK, barre de titre du système (sans boutons réduire / agrandir / fermer) |
 | Fonds, DigitalMicrograph | clone les fonds d'écran ; profil travail : clone `Crystal4276/GMSFreeAnalysis17` (privé : `gh auth login` ou clé SSH) dans `~/GMSFreeAnalysis17` |
 | 5. Config machine | crée `hosts/<machine>.json` s'il manque, avec le profil (à committer) |
-| 6. Système (sudo / authentification polkit) | compteurs GPU Intel (CAP_PERFMON ciblé et hook de mise à jour), écran de connexion greetd, sonde des portails captifs, Samba, services (réseau, Bluetooth, énergie, VM), groupes, thème Qt du système, extensions de Chromium (`dotfiles/chromium/extensions.txt`, installées depuis le Chrome Web Store au démarrage du navigateur ; pas dans les web apps) |
+| 6. Système (sudo / authentification polkit) | compteurs GPU Intel (CAP_PERFMON ciblé et hook de mise à jour), écran de connexion greetd, profil travail : écran de démarrage Plymouth Core Lab (initramfs, `splash` dans GRUB : `docs/PLYMOUTH.md`, retour : `docs/ROLLBACK.md`), sonde des portails captifs, Samba, services (réseau, Bluetooth, énergie, VM), groupes, thème Qt du système, extensions de Chromium (`dotfiles/chromium/extensions.txt`, installées depuis le Chrome Web Store au démarrage du navigateur ; pas dans les web apps) |
 
 Tout fichier existant est sauvegardé avant d'être remplacé (`<fichier>.bak-<date>` à côté de l'original ; fichiers système dans
 `/var/lib/qs-desktop/`).
