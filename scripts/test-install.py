@@ -206,6 +206,9 @@ def main():
 
         r = install("--dry-run")
         check(r.returncode == 0, f"simulation : code {r.returncode} {r.stderr.strip()[-300:]}")
+        if shutil.which("chromium"):
+            check("+ nightTab : " in r.stdout and "+ Stylus : " in r.stdout,
+                  "simulation : réglages de nightTab et styles de Stylus prévus (dotfiles/chromium/*.json lus)")
         now = snapshot(home)
         written = sorted(set(before) ^ set(now)) + sorted(k for k in before if k in now and before[k] != now[k])
         check(not written and (tmp / "dconf.ini").read_text() == dconf_before, f"simulation : rien d'écrit {written[:8]}")
