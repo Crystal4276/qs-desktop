@@ -16,8 +16,8 @@ require("lua/env")         -- avant autostart, qui en dépend
 require("lua/monitors")
 require("lua/looknfeel")
 require("lua/input")
+require("lua/profile")     -- règles du profil (jeux | travail) et ses espaces de Discord-WhatsApp / Spotify, lus par windowrules
 require("lua/windowrules") -- clés d'effet non typées : plus fort risque d'erreur d'exécution
 require("lua/openorigin") -- placement du contenu externe avant le premier rendu
-require("lua/profile")     -- après les règles communes : celles du profil (jeux | travail) s'y ajoutent
 require("lua/host")        -- après les règles communes : celles de la machine s'y ajoutent
 require("lua/autostart")   -- dernier : le plus à effets de bord
