@@ -1838,8 +1838,9 @@ fun update_status(text) {
     start_phase(text);
     return;
   }
-  // systemd reports units only after the switch to the real root: the volume is open.
-  if (pw.active && pw.state == "verify") unlocked();
+  // With the busybox encrypt hook, systemd reports units only after the switch to the real root: the volume is open.
+  // State kept at "verify": with sd-encrypt, systemd also reports during the check, and a refusal must still show.
+  if (pw.active && pw.state == "verify") global.pw.active = 0;
 }
 
 fun hotplug() {
