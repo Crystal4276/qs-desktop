@@ -15,7 +15,9 @@ repo="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
 theme=qs-corelab
 dest=/usr/share/plymouth/themes/$theme
 var=/var/lib/qs-desktop/plymouth
-state="$var/state"            # ce qui a été ajouté par nous (défait par uninstall) : hooks=<fichier>, splash=1, previous-theme=<nom>
+state="$var/state"            # ce qui a été ajouté par nous (défait par uninstall) : hooks=<fichier>, splash=1, previous-theme=<nom>,
+                              # ou plymouthd-conf=<copie> (fichier d'origine sans thème explicite, remis tel quel ; « - » : absent)
+conf=/etc/plymouth/plymouthd.conf
 grub=/etc/default/grub
 dropins=(
     "dotfiles/plymouth/plymouth-quit-wait.conf /etc/systemd/system/plymouth-quit-wait.service.d/qs-corelab.conf"
@@ -109,8 +111,17 @@ do_install() {
     if [[ "$current" == "$theme" ]]; then
         echo "= thème Plymouth par défaut : $theme"
     else
-        [[ -n "$(noted previous-theme)" ]] || note previous-theme "${current:-bgrt}"
-        [[ -f /etc/plymouth/plymouthd.conf ]] && keep_original /etc/plymouth/plymouthd.conf
+        if [[ -n "$(noted previous-theme)$(noted plymouthd-conf)" ]]; then
+            :
+        elif grep -qE '^Theme=' "$conf" 2>/dev/null; then
+            note previous-theme "$current"
+        elif [[ -f "$conf" ]]; then          # thème par défaut de la distribution : fichier remis tel quel au retrait
+            run install -D -m 644 "$conf" "$var/plymouthd.conf.orig"
+            note plymouthd-conf "$var/plymouthd.conf.orig"
+        else
+            note plymouthd-conf -
+        fi
+        [[ -f "$conf" ]] && keep_original "$conf"
         run plymouth-set-default-theme "$theme"
         initramfs=1
     fi
@@ -139,7 +150,7 @@ do_install() {
 }
 
 do_uninstall() {
-    local hf previous entry src target
+    local hf previous original entry src target
     hf="$(noted hooks)"
     if [[ -n "$hf" && -f "$hf" ]] && has_hook "$hf"; then
         run sed -i -E '/^HOOKS=\(/{s/\bplymouth //;s/ plymouth\)/)/}' "$hf"
@@ -149,9 +160,17 @@ do_uninstall() {
         run sed -i -E '/^GRUB_CMDLINE_LINUX_DEFAULT="/{s/ splash\b//;s/"splash /"/;s/"splash"/""/}' "$grub"
         bootloader=1
     fi
-    previous="$(noted previous-theme)"
-    if [[ -n "$previous" ]] && [[ "$(plymouth-set-default-theme 2>/dev/null || true)" == "$theme" ]]; then
-        run plymouth-set-default-theme "$previous"
+    previous="$(noted previous-theme)" original="$(noted plymouthd-conf)"
+    if [[ "$(plymouth-set-default-theme 2>/dev/null || true)" == "$theme" ]]; then
+        if [[ "$original" == - ]]; then
+            run rm -f "$conf"
+        elif [[ -n "$original" && -f "$original" ]]; then
+            run install -m 644 "$original" "$conf"
+        elif [[ -n "$previous" ]]; then
+            run plymouth-set-default-theme "$previous"
+        else
+            run plymouth-set-default-theme --reset
+        fi
         initramfs=1
     fi
     for entry in "${dropins[@]}"; do
@@ -167,7 +186,7 @@ do_uninstall() {
         initramfs=1
     fi
     finish
-    [[ -f "$state" ]] && run rm -f "$state"
+    [[ -f "$state" ]] && run rm -f "$state" "$var/plymouthd.conf.orig"
     [[ -d "$var/backup" ]] && echo "- copies d'origine gardées dans $var/backup (retour à la main)"
     return 0
 }
