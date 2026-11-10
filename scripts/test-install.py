@@ -195,7 +195,11 @@ def main():
             check(r.returncode == 0 and "plymouth" not in r.stdout.lower().replace("plymouth-vm", ""),
                   f"simulation système, jeux : rien de Plymouth (code {r.returncode})")
         # plymouth-setup.sh lui-même, depuis le dépôt (git archive), sur un hôte GRUB : install.sh avale ses échecs (sub).
-        if all(pathlib.Path(p).exists() for p in ("/etc/default/grub", "/boot/grub", "/usr/bin/mkinitcpio")):
+        # Mêmes conditions que check_bootloader ; /boot illisible (ESP, dmask=0077) : supposé bon en simulation.
+        grub = pathlib.Path("/etc/default/grub")
+        if (grub.exists() and "\nGRUB_CMDLINE_LINUX_DEFAULT=\"" in "\n" + grub.read_text()
+                and shutil.which("grub-mkconfig") and shutil.which("mkinitcpio")
+                and (not os.access("/boot", os.X_OK) or pathlib.Path("/boot/grub").is_dir())):
             r = subprocess.run([str(REPO / "scripts/plymouth-setup.sh"), "--dry-run", "install"], capture_output=True, text=True)
             check(r.returncode == 0 and "Écran de démarrage Core Lab au prochain démarrage" in r.stdout
                   and ("+ mkinitcpio -P" in r.stdout or "= hook plymouth" in r.stdout),

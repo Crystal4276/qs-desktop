@@ -1654,7 +1654,7 @@ fun display_normal() {
 Plymouth.SetDisplayNormalFunction(display_normal);
 
 fun unlocked() {
-  if (!pw.active) return;
+  if (!pw.active && pw.state != "verify") return;     // "verify" left by a systemd status (update_status)
   global.pw.active = 0;
   global.pw.state = "idle";
   global.pw.bullets = 0;

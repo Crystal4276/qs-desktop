@@ -1087,12 +1087,15 @@ EOF
 
 # --- 6. Système (sudo) -------------------------------------------------------------------------------------------------
 
-# Script système : en simulation sur une machine neuve, ses prérequis (paquets de l'étape 1) peuvent manquer. Code 3 : non
-# pris en charge sur cette machine (rien de modifié, message du script), pas un échec à corriger.
+# Script système : en simulation sur une machine neuve, ses prérequis (paquets de l'étape 1) peuvent manquer.
+# --unsupported-ok : le code 3 du script veut dire « non pris en charge sur cette machine » (rien de modifié, message du
+# script), pas un échec à corriger (plymouth-setup.sh seulement).
 sub() {
-    local rc=0
+    local rc=0 ok3=""
+    [[ "$1" == --unsupported-ok ]] && { ok3=1; shift; }
     "$@" || rc=$?
-    (( rc == 0 || rc == 3 )) && return 0
+    (( rc == 0 )) && return 0
+    [[ -n "$ok3" ]] && (( rc == 3 )) && return 0
     if [[ -n "$dry" ]]; then echo "! ${1##*/} : simulation incomplète, prérequis installés à l'étape 1"
     else echo "! ${1##*/} ${*:2} : échec (message ci-dessus) ; la suite continue, relancer install.sh après correction"; fi
 }
@@ -1121,7 +1124,7 @@ plymouth_installed() { [[ -f /var/lib/qs-desktop/plymouth/state || -d /usr/share
 step_plymouth() {
     if [[ "$profile" == travail ]]; then
         echo "Écran de démarrage Plymouth Core Lab (thème, hook de l'initramfs, splash dans GRUB, passage au greeter)"
-        sub "$repo/scripts/plymouth-setup.sh" ${dry:+--dry-run} install
+        sub --unsupported-ok "$repo/scripts/plymouth-setup.sh" ${dry:+--dry-run} install
     elif plymouth_installed; then
         echo "Écran de démarrage Plymouth retiré (profil jeux)"
         sub "$repo/scripts/plymouth-setup.sh" ${dry:+--dry-run} uninstall
