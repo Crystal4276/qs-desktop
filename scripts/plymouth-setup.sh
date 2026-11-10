@@ -60,8 +60,15 @@ has_splash() { grep -qE '^GRUB_CMDLINE_LINUX_DEFAULT="[^"]*\bsplash\b' "$grub"; 
 theme_now() { plymouth-set-default-theme 2>/dev/null || sed -n 's/^Theme=//p' "$conf" 2>/dev/null | tail -n1; }
 
 # Chargeur : GRUB dans /boot/grub seulement (le laptop) ; autre chose → rien n'est modifié (code 3 : non pris en charge).
+# /boot (ESP en vfat, dmask=0077 par archinstall) peut être illisible en utilisateur ; en simulation, sans sudo, supposé bon.
+grub_dir() {
+    [[ -d /boot/grub ]] && return 0
+    [[ -x /boot ]] && return 1
+    [[ -n "$dry" ]] || sudo test -d /boot/grub
+}
+
 check_bootloader() {
-    if [[ -f "$grub" && -d /boot/grub ]] && command -v grub-mkconfig >/dev/null \
+    if [[ -f "$grub" ]] && grub_dir && command -v grub-mkconfig >/dev/null \
         && grep -qE '^GRUB_CMDLINE_LINUX_DEFAULT="' "$grub"; then
         return 0
     fi
