@@ -597,6 +597,18 @@ Dépôt privé séparé `Crystal4276/fonts-ms` (polices propriétaires, jamais d
   service et se relance après chaque changement du greeter ; `enable` : greetd au prochain démarrage. Repris par `install.sh` (phase 12).
 - **Retour arrière** : `docs/ROLLBACK.md` ; SDDM reste installé jusqu'à ta décision.
 
+### 9.1 Écran de démarrage Plymouth (profil travail)
+
+Avant l'écran de connexion, sur les machines au profil travail : thème Plymouth `qs-corelab` (`dotfiles/plymouth/`, spécification
+`docs/PLYMOUTH.md`) au design des fonds Core Lab, demande de phrase de passe LUKS comprise.
+
+- **Thème** : plugin `script` ; images préparées par `scripts/plymouth-assets.py` (un jeu par échelle, anneaux découpés en arcs ;
+  données dans le bloc généré du script). Plusieurs écrans : une seule scène (contrainte de Plymouth), à l'échelle de l'écran 1440p.
+- **Installation** : `scripts/plymouth-setup.sh` (étape système d'`install.sh`) : hook de l'initramfs, `splash` dans GRUB.
+- **Passage au greeter** : greetd attend `plymouth-quit-wait.service`, surchargé pour jouer la sortie du thème (statut
+  `qs-corelab-exit`, 3,4 s) puis `plymouth deactivate` (image crust gardée) ; `plymouth-quit.service` ne quitte qu'après greetd.
+  Le Sway du greeter part sur fond noir (~1 s, pas de `swaybg` : accepté).
+
 ## 10. Couverture de l'API Quickshell
 
 Revue complète des types (documentation 0.3.0, `qmltypes` de 0.3.2, code source) ; à tenir à jour.

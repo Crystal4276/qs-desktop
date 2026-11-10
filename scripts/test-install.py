@@ -147,9 +147,10 @@ def main():
                    QS_PAPIRUS_DIR=str(icons / "Papirus"), QS_WALLPAPERS_REPO=git_repo(tmp / "src/wallpapers", "fond.png"),
                    QS_DM_REPO=git_repo(tmp / "src/gms", "install-all.sh"))
 
-        def install(*args, profile=("--profil", "jeux"), path=None):
+        def install(*args, profile=("--profil", "jeux"), path=None, system=False):
             cmd = ["dbus-run-session", "--", "bash", "-c", 'dconf load / < "$0" 2>/dev/null; bash "$1" "${@:2}"; rc=$?; dconf dump / > "$0"; exit $rc',
-                   str(tmp / "dconf.ini"), str(repo / "install.sh"), "--no-packages", "--no-system", *profile, *args]
+                   str(tmp / "dconf.ini"), str(repo / "install.sh"), "--no-packages", *(() if system else ("--no-system",)),
+                   *profile, *args]
             log = open(tmp / "last.log", "w")
             try:
                 # Nouvelle session sans terminal : les questions d'install.sh répondent « non » sans attendre.
@@ -182,6 +183,17 @@ def main():
         check(r.returncode == 0 and "Profil : travail (hosts/" in r.stdout,
               f"sans python3 : simulation complète, profil lu dans hosts/ (code {r.returncode}) {r.stderr.strip()[-300:]}")
         host_json.write_text(host_saved) if host_saved is not None else host_json.unlink()
+
+        # Écran de démarrage Plymouth (étape système, simulée) : profil travail seulement ; une machine jeux qui ne l'a jamais
+        # eu n'est pas touchée.
+        if not pathlib.Path("/usr/share/plymouth/themes/qs-corelab").exists():
+            r = install("--dry-run", "--yes", profile=("--profil", "travail"), system=True)
+            # Copie de test sans .git : le détail (git archive) n'est pas simulé ici ; essais réels en VM (docs/DEVELOPMENT.md).
+            check(r.returncode == 0 and "Écran de démarrage Plymouth Core Lab (thème" in r.stdout,
+                  f"simulation système, travail : Plymouth prévu (code {r.returncode})")
+            r = install("--dry-run", "--yes", system=True)
+            check(r.returncode == 0 and "plymouth" not in r.stdout.lower().replace("plymouth-vm", ""),
+                  f"simulation système, jeux : rien de Plymouth (code {r.returncode})")
 
         r = install("--dry-run")
         check(r.returncode == 0, f"simulation : code {r.returncode} {r.stderr.strip()[-300:]}")
