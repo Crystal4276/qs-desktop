@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """Test des étapes du compte d'install.sh (sans paquets ni sudo) dans un dossier personnel jetable.
 
-Copie du dépôt, HOME et XDG_RUNTIME_DIR temporaires, bus D-Bus privé (dconf isolé). Vérifie : simulation sans écriture,
-installation, second passage sans aucun changement, retrait qui remet le dossier personnel et dconf dans leur état initial.
+Copie du dépôt, HOME et XDG_RUNTIME_DIR temporaires, bus D-Bus privé (dconf isolé), dépôts des fonds et de DigitalMicrograph
+remplacés par des dépôts locaux. Vérifie : simulation sans écriture, installation (profil jeux), second passage sans aucun
+changement, retrait qui remet le dossier personnel et dconf dans leur état initial (clones gardés), puis profil travail choisi
+par la question (sans terminal : travail) et écrit dans la config machine.
 Réseau requis au premier passage (archives du thème, gardées dans QS_TEST_CACHE ou le cache du test).
 Usage : python3 scripts/test-install.py [-v]
 """
@@ -88,11 +90,21 @@ def icon(bases, theme, d, name):
     return ""
 
 
+def git_repo(path, name):
+    """Petit dépôt git local (un fichier, un commit) : remplace un dépôt GitHub cloné par install.sh."""
+    path.mkdir(parents=True)
+    (path / name).write_text(name + "\n")
+    for cmd in (["init", "-q"], ["add", "."], ["-c", "user.name=test", "-c", "user.email=test@example.invalid", "commit", "-qm", "init"]):
+        subprocess.run(["git", "-C", str(path), *cmd], check=True, capture_output=True)
+    return str(path)
+
+
 def main():
     tmp = pathlib.Path(tempfile.mkdtemp(prefix="qs-install-test-"))
     try:
         repo = tmp / "repo"
         shutil.copytree(REPO, repo, symlinks=True, ignore=shutil.ignore_patterns(".git", ".shots", "__pycache__"))
+        host_json = repo / "hosts" / (pathlib.Path("/proc/sys/kernel/hostname").read_text().strip() + ".json")
         (repo / "dotfiles/mpv/host.conf").unlink(missing_ok=True)
         home, run = tmp / "home", tmp / "run"
         run.mkdir(mode=0o700)
@@ -132,14 +144,15 @@ def main():
         cache = pathlib.Path(os.environ.get("QS_TEST_CACHE", tmp / "cache"))
         env = {k: v for k, v in os.environ.items() if not k.startswith(("XDG_", "DBUS_", "SWAYSOCK", "I3SOCK", "HYPRLAND", "WAYLAND", "DISPLAY"))}
         env.update(HOME=str(home), XDG_RUNTIME_DIR=str(run), XDG_CACHE_HOME=str(cache), LANG="C.UTF-8", QS_INSTALL_ASSUME_CLOSED="1",
-                   QS_PAPIRUS_DIR=str(icons / "Papirus"))
+                   QS_PAPIRUS_DIR=str(icons / "Papirus"), QS_WALLPAPERS_REPO=git_repo(tmp / "src/wallpapers", "fond.png"),
+                   QS_DM_REPO=git_repo(tmp / "src/gms", "install-all.sh"))
 
-        def install(*args):
+        def install(*args, profile=("--profil", "jeux")):
             cmd = ["dbus-run-session", "--", "bash", "-c", 'dconf load / < "$0" 2>/dev/null; bash "$1" "${@:2}"; rc=$?; dconf dump / > "$0"; exit $rc',
-                   str(tmp / "dconf.ini"), str(repo / "install.sh"), "--no-packages", "--no-system", *args]
+                   str(tmp / "dconf.ini"), str(repo / "install.sh"), "--no-packages", "--no-system", *profile, *args]
             log = open(tmp / "last.log", "w")
             try:
-                # Nouvelle session sans terminal : les questions d'install.sh répondent « non » sans attendre (fonds non clonés).
+                # Nouvelle session sans terminal : les questions d'install.sh répondent « non » sans attendre.
                 r = subprocess.run(cmd, env=env, stdout=subprocess.PIPE, stderr=log, stdin=subprocess.DEVNULL, text=True,
                                    timeout=300, start_new_session=True)
             except subprocess.TimeoutExpired as e:
@@ -165,6 +178,9 @@ def main():
         r = install()
         check(r.returncode == 0, f"installation : code {r.returncode} {r.stderr.strip()[-300:]}")
         cfg = home / ".config"
+        check((home / "Pictures/Wallpapers/fond.png").is_file(), "fonds d'écran clonés sans question")
+        check(json.loads(host_json.read_text()).get("profile") == "jeux", "config machine : profil jeux (--profil)")
+        check(not (home / "GMSFreeAnalysis17").exists(), "profil jeux : dépôt de DigitalMicrograph non cloné")
         check(os.readlink(cfg / "quickshell/desktop") == str(repo), "lien quickshell/desktop")
         check(os.readlink(cfg / "mpv") == str(repo / "dotfiles/mpv"), "lien mpv")
         check(any(p.name.startswith("mpv.bak-") for p in cfg.iterdir()), "ancien ~/.config/mpv sauvegardé")
@@ -269,8 +285,9 @@ def main():
         check(r.returncode == 0, f"retrait : code {r.returncode} {r.stderr.strip()[-300:]}")
         after = snapshot(home)
         diff = sorted(set(before) ^ set(after)) + sorted(k for k in before if k in after and before[k] != after[k])
-        # Restes acceptés : dossiers vides créés en chemin.
-        diff = [k for k in diff if not (k in after and after[k] == "<dir>" and k not in before)]
+        # Restes acceptés : dossiers vides créés en chemin, clones (tes données).
+        diff = [k for k in diff if not (k in after and after[k] == "<dir>" and k not in before)
+                and not k.startswith(("Pictures/Wallpapers", "GMSFreeAnalysis17"))]
         kept = sorted(k for k in diff if ".uninstall-" in k)
         check(not kept, f"retrait : aucune copie .uninstall- pour des fichiers inchangés depuis l'installation {kept[:4]}")
         check(not diff, f"retrait : dossier personnel comme avant {diff[:8]}")
@@ -279,6 +296,22 @@ def main():
         check(not webapp.exists(), "retrait : profil de web app créé pour ses réglages retiré")
         check("font-name='Cantarell 11'" in (tmp / "dconf.ini").read_text()
               and "accent-color" not in (tmp / "dconf.ini").read_text(), "retrait : dconf comme avant")
+
+        # Profil absent de la config machine : question (sans terminal, réponse « non » → travail), écrit en tête du fichier.
+        conf = json.loads(host_json.read_text())
+        conf.pop("profile", None)
+        host_json.write_text(json.dumps(conf, indent=2) + "\n")
+        r = install(profile=())
+        text = host_json.read_text()
+        rest = json.loads(text)
+        check(r.returncode == 0 and rest.pop("profile", None) == "travail" and rest == conf and text.startswith('{\n  "profile": "travail"'),
+              f"profil travail par défaut, écrit dans la config machine, reste gardé {r.stderr.strip()[-200:]}")
+        check(not (cfg / "deluge/gtk3ui.conf").exists(), "profil travail : Deluge non réglé")
+        check((home / "GMSFreeAnalysis17/install-all.sh").is_file() and "DigitalMicrograph : copier le kit Gatan" in r.stdout,
+              "profil travail : dépôt de DigitalMicrograph cloné, installation rappelée")
+        r = install(profile=())
+        changes = [l for l in r.stdout.splitlines() if l.startswith("+ ")]
+        check(r.returncode == 0 and not changes and "Profil : travail (hosts/" in r.stdout, f"profil travail : second passage sans changement {changes[:5]}")
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
     print(f"\n{len(failures)} échec(s)")

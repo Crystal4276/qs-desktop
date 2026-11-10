@@ -3,13 +3,15 @@
 #
 # Usage : ./install.sh [options]
 #   --dry-run          affiche tout ce qui serait fait, sans rien modifier (ni paquet, ni fichier, ni sudo)
-#   --with jeux        ajoute le profil « jeux » (deps/games.txt) sans le demander ; --without jeux : ne pas le proposer
+#   --profil P         profil de la machine, sans le demander : jeux (Steam, Lutris, Deluge : deps/games.txt) ou travail
+#                      (DigitalMicrograph : deps/work.txt) ; écrit dans hosts/<machine>.json (clé « profile »)
 #   --no-packages      ne touche pas aux paquets (ni multilib, ni paru)
 #   --no-system        aucune étape système (sudo) : sudo pacman, Reflector, greeter, sonde réseau, Samba, services…
-#   --yes              ne pose aucune question (étapes système et profil jeux : réponse « oui » / valeur des options)
+#   --yes              ne pose aucune question : étapes système faites, profil de hosts/<machine>.json, sinon travail
 #   --uninstall        retire les liens et copies, remet les sauvegardes et les réglages d'origine, étapes système comprises ;
 #                      les paquets installés restent
 #
+# Deux questions au plus : le profil (si hosts/<machine>.json n'en a pas) et les étapes système (toutes ou aucune).
 # Étapes : miroirs Reflector · 1 paquets (dépôts officiels, multilib, paru-bin, Claude Code) · 2 configs du compte (liens, sauvegardes
 # `<x>.bak-<date>`) · 3 thème · 4 réglages (dconf, applications par défaut, barres d'état de Claude Code et Codex, web apps,
 # liens Chromium) · 5 config machine · 6 système (sudo).
@@ -19,7 +21,7 @@ repo="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
 [[ $EUID -ne 0 ]] || { echo "À lancer en utilisateur, sans sudo (sudo est demandé pour chaque étape système)." >&2; exit 1; }
 
 dry=""
-games=ask
+profile=""      # jeux | travail (choose_profile)
 packages=1
 system=1
 yes=""
@@ -27,13 +29,13 @@ uninstall=""
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --dry-run) dry=1 ;;
-        --with) [[ "${2:-}" == jeux ]] || { echo "Profil inconnu : ${2:-}" >&2; exit 2; }; games=yes; shift ;;
-        --without) [[ "${2:-}" == jeux ]] || { echo "Profil inconnu : ${2:-}" >&2; exit 2; }; games=no; shift ;;
+        --profil) [[ "${2:-}" == jeux || "${2:-}" == travail ]] || { echo "Profil inconnu : ${2:-} (jeux ou travail)" >&2; exit 2; }
+            profile="$2"; shift ;;
         --no-packages) packages="" ;;
         --no-system) system="" ;;
         --yes) yes=1 ;;
         --uninstall) uninstall=1 ;;
-        -h|--help) sed -n '4,15p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        -h|--help) sed -n '4,17p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
         *) echo "Option inconnue : $1 (--help)" >&2; exit 2 ;;
     esac
     shift
@@ -221,6 +223,52 @@ gpu_vendors() { # cartes graphiques présentes : nvidia intel amd, lues par lspc
     done | sort -u
 }
 
+# --- Questions ---------------------------------------------------------------------------------------------------------
+
+# Profil écrit dans hosts/<machine>.json seulement (pas celui de hosts/default.json) : vide s'il n'y en a pas.
+host_profile() {
+    python3 -I - "$repo/hosts/$host.json" 2>/dev/null <<'EOF'
+import json, sys
+try:
+    print(json.load(open(sys.argv[1])).get("profile", ""))
+except (OSError, ValueError, AttributeError):
+    print("")
+EOF
+}
+
+# Question 1 : profil de la machine (--profil, sinon hosts/<machine>.json, sinon demandé) ; écrit par step_host.
+choose_profile() {
+    local current
+    current="$(host_profile)"
+    if [[ -n "$profile" ]]; then
+        echo "Profil : $profile (--profil)"
+    elif [[ "$current" == jeux || "$current" == travail ]]; then
+        profile="$current"
+        echo "Profil : $profile (hosts/$host.json)"
+    elif [[ -n "$yes" ]]; then
+        profile=travail
+        echo "Profil : travail (--yes ; --profil jeux pour l'autre)"
+    elif [[ -n "$dry" ]]; then
+        profile=travail
+        echo "? Profil de cette machine (simulation : travail ; --profil jeux pour voir l'autre)"
+    elif ask "Profil de cette machine : jeux (Steam, Lutris, Deluge) ? Sinon : travail (DigitalMicrograph)"; then
+        profile=jeux
+    else
+        profile=travail
+    fi
+}
+
+# Question 2 : étapes système (sudo), toutes ou aucune ; « non » vaut --no-system.
+ask_system() {
+    [[ -n "$system" ]] || return 0
+    is_arch || { system=""; return 0; }
+    echo "Étapes système (sudo) : pacman et paru sans mot de passe (wheel), miroirs Reflector,"
+    [[ "$profile" == jeux ]] && echo "  dépôt multilib (Steam, jeux 32 bits),"
+    echo "  écran de connexion greetd + greeter Quickshell, Samba, services (réseau, Bluetooth, énergie, VM), groupes, thème Qt,"
+    echo "  extensions de Chromium, thème de Thunderbird, sonde de connectivité NetworkManager, mesures GPU Intel (s'il y en a un)."
+    ask "Faire ces étapes système ?" oui || { system=""; echo "- étapes système non faites (relancer install.sh pour les faire)"; }
+}
+
 # --- 1. Paquets --------------------------------------------------------------------------------------------------------
 
 is_arch() { [[ -f /etc/arch-release ]] || grep -qsE '^ID(_LIKE)?=.*\barch\b' /etc/os-release; }
@@ -228,7 +276,6 @@ is_arch() { [[ -f /etc/arch-release ]] || grep -qsE '^ID(_LIKE)?=.*\barch\b' /et
 step_pacman_sudo() {
     is_arch || return 0
     section "Pacman et paru sans mot de passe (wheel)"
-    ask "Autoriser pacman sans mot de passe pour le groupe wheel (paru compris) ?" oui || return 0
     if ! "$repo/scripts/system-setup.sh" ${dry:+--dry-run} pacman-sudo; then
         later "Accès pacman sans mot de passe non configuré : relancer install.sh après correction."
     fi
@@ -237,8 +284,7 @@ step_pacman_sudo() {
 # Reflector utilise les dépôts Arch : ne jamais remplacer les miroirs d'une distribution dérivée.
 step_reflector() {
     grep -qxE 'ID="?arch"?' /etc/os-release || return 0
-    section "Miroirs Arch (Reflector)"
-    ask "Optimiser les miroirs maintenant et automatiquement chaque semaine (Reflector) ?" oui || return 0
+    section "Miroirs Arch (Reflector), maintenant et chaque semaine"
     if ! command -v reflector >/dev/null; then
         if [[ -z "$packages" ]]; then
             later "Reflector absent : installer le paquet reflector puis relancer sans --no-packages."
@@ -262,22 +308,22 @@ step_packages() {
         echo "pour les autres distributions). Suite de l'installation : configs du compte seulement."
         return
     fi
-    if [[ -n "$system" ]] && ! grep -q '^\[multilib\]' /etc/pacman.conf \
-        && ask "Activer le dépôt multilib de pacman (Steam, jeux 32 bits) ?" oui; then
+    # Profil jeux : Steam et les paquets lib32 viennent de [multilib], activé avec les étapes système.
+    if [[ "$profile" == jeux && -n "$system" ]] && ! grep -q '^\[multilib\]' /etc/pacman.conf; then
         "$repo/scripts/system-setup.sh" ${dry:+--dry-run} multilib || echo "! multilib non activé : Steam et les paquets lib32 resteront indisponibles"
     fi
-    local want=() vendors v
+    local want=() vendors v games=""
     mapfile -t want < <(pkg_list arch-pacman.txt apps.txt)
-    if [[ "$games" == ask ]]; then
-        if [[ -n "$yes" ]]; then games=no; elif ask "Installer aussi le profil jeux (Steam, gamescope, Lutris, GameMode) ?"; then games=yes; else games=no; fi
+    if [[ "$profile" == jeux ]]; then
+        games=yes
+        # Sans [multilib], paquets du profil jeux retirés (pacman échouerait et arrêterait tout).
+        if ! grep -q '^\[multilib\]' /etc/pacman.conf && [[ -z "$dry" ]]; then
+            later "[multilib] inactif : paquets du profil jeux non installés (relancer install.sh en acceptant les étapes système)"; games=""
+        fi
+        [[ -n "$games" ]] && mapfile -t -O "${#want[@]}" want < <(pkg_list games.txt)
+    else
+        mapfile -t -O "${#want[@]}" want < <(pkg_list work.txt)
     fi
-    # Steam et les paquets lib32 viennent de [multilib] : sans lui, profil jeux retiré (pacman échouerait et arrêterait tout).
-    local multilib=""
-    grep -q '^\[multilib\]' /etc/pacman.conf && multilib=1
-    if [[ "$games" == yes && -z "$multilib" && -z "$dry" ]]; then
-        echo "! [multilib] inactif : profil jeux non installé (relancer install.sh et accepter multilib)"; games=no
-    fi
-    [[ "$games" == yes ]] && mapfile -t -O "${#want[@]}" want < <(pkg_list games.txt)
     # lspci d'abord : il choisit les paquets de la carte graphique de ce même passage.
     # -Syu : base des paquets à jour (une base périmée ferait échouer le téléchargement), système mis à jour d'abord ; une fois.
     local sync=-Syu
@@ -340,7 +386,6 @@ claude_bin() {
 step_claude() {
     local bin script
     if bin="$(claude_bin)"; then echo "= $bin"; return; fi
-    ask "Installer Claude Code (script officiel https://claude.ai/install.sh, dans ~/.local/bin) ?" oui || { echo "- Claude Code non installé"; return; }
     [[ -n "$dry" ]] && { echo "+ curl -fsSL https://claude.ai/install.sh | bash"; return; }
     # Script entier téléchargé avant de le lancer : une coupure réseau n'en exécute jamais un morceau.
     script="$(mktemp)"
@@ -661,7 +706,7 @@ PY
         ini_set "$config/geany/geany.conf" geany color_scheme catppuccin-mocha.conf editor_font "Inter 16" tagbar_font "Symbols Nerd Font Mono 9"
     fi
 
-    deluge_no_tray
+    [[ "$profile" == jeux ]] && deluge_no_tray
     if command -v python3 >/dev/null; then ai_statuslines; else echo "- python3 absent (installé à l'étape 1) : barres d'état de Claude Code et Codex non réglées"; fi
     command -v chromium >/dev/null && chromium_profiles
     if command -v python3 >/dev/null; then step_webapps; else echo "- python3 absent (installé à l'étape 1) : web apps non générées"; fi
@@ -944,9 +989,10 @@ step_home_dirs() {
     if [[ -d "$HOME/Applications" ]]; then echo "= $HOME/Applications"; else run mkdir -p "$HOME/Applications"; fi
 }
 
-step_wallpapers() {
-    local src="${QS_WALLPAPERS_REPO:-Crystal4276/wallpapers}" dir
-    dir="$(wallpapers_dir)"
+# Dépôt GitHub cloné dans le compte (fonds d'écran, DigitalMicrograph), sans question ; déjà cloné : mis à jour s'il n'a aucune
+# modification locale. Dossier existant qui n'est pas un clone : gardé. --uninstall ne le retire pas (tes données).
+sync_repo() {   # source (propriétaire/dépôt, ou chemin / adresse git) dossier description [options de git clone…]
+    local src="$1" dir="$2" what="$3"; shift 3
     if [[ -d "$dir/.git" ]]; then
         if [[ -n "$(git -C "$dir" status --porcelain 2>/dev/null)" ]]; then
             echo "= $dir (modifications locales : pas de mise à jour)"
@@ -958,22 +1004,38 @@ step_wallpapers() {
         return
     fi
     if [[ -e "$dir" ]]; then echo "= $dir existe déjà (pas un clone : gardé tel quel)"; return; fi
-    ask "Cloner tes fonds d'écran ($src, environ 300 Mo) dans $dir ?" oui || { echo "- fonds d'écran non clonés : aucun fond affiché"; return; }
     run mkdir -p "$(dirname "$dir")"
     [[ -n "$dry" ]] && { echo "+ clone de $src dans $dir"; return; }
-    # Téléchargement long : progression de git affichée (objets reçus, Mo, débit). GitHub : dernière version seulement
-    # (--depth 1), sans les images retirées de l'historique ; `git pull` la met à jour ensuite.
-    echo "Téléchargement des fonds d'écran (environ 300 Mo) :"
+    echo "Téléchargement : $what"
+    # Progression de git affichée (objets reçus, Mo, débit).
     if [[ "$src" == */*/* || "$src" == /* || "$src" == *:* ]]; then
-        git clone --progress "$src" "$dir"
+        git clone --progress "$@" "$src" "$dir"
     elif command -v gh >/dev/null && gh auth status >/dev/null 2>&1; then
-        gh repo clone "$src" "$dir" -- --progress --depth 1
+        gh repo clone "$src" "$dir" -- --progress "$@"
     else
         # Dépôt public : HTTPS sans compte ; sinon clé SSH. Jamais de question de mot de passe (échec immédiat).
-        GIT_TERMINAL_PROMPT=0 git clone --progress --depth 1 "https://github.com/$src.git" "$dir" \
+        GIT_TERMINAL_PROMPT=0 git clone --progress "$@" "https://github.com/$src.git" "$dir" \
             || { echo "! HTTPS impossible : essai par SSH"
-                 GIT_SSH_COMMAND="ssh -o BatchMode=yes" git clone --progress --depth 1 "git@github.com:$src.git" "$dir"; }
-    fi || echo "! clonage de $src impossible (réseau, ou dépôt privé : gh auth login / clé SSH GitHub) ; relancer install.sh ensuite"
+                 GIT_SSH_COMMAND="ssh -o BatchMode=yes" git clone --progress "$@" "git@github.com:$src.git" "$dir"; }
+    fi || { later "clonage de $src impossible (réseau, ou dépôt privé : gh auth login / clé SSH GitHub) ; relancer install.sh ensuite"; return 1; }
+}
+
+step_wallpapers() {
+    # GitHub : dernière version seulement (--depth 1), sans les images retirées de l'historique ; `git pull` la met à jour ensuite.
+    sync_repo "${QS_WALLPAPERS_REPO:-Crystal4276/wallpapers}" "$(wallpapers_dir)" "fonds d'écran (environ 300 Mo)" --depth 1 || true
+}
+
+# Profil travail : DigitalMicrograph (Gatan Microscopy Suite sous Wine). Ses paquets viennent de deps/work.txt ; son dépôt (privé)
+# est cloné ici ; l'installation elle-même (kit Gatan, étape à la souris, 15 Go) reste à lancer depuis ce dépôt.
+step_dm() {
+    local dir="$HOME/GMSFreeAnalysis17"
+    section "DigitalMicrograph (profil travail)"
+    sync_repo "${QS_DM_REPO:-Crystal4276/GMSFreeAnalysis17}" "$dir" "scripts d'installation de DigitalMicrograph" || return 0
+    if [[ -x "$HOME/.local/bin/digitalmicrograph" ]]; then
+        echo "= DigitalMicrograph installé"
+    elif [[ -z "$dry" ]]; then
+        later "DigitalMicrograph : copier le kit Gatan décompressé (GMS_FreeAnalysis17.zip) dans $dir, puis $dir/scripts/install-all.sh"
+    fi
 }
 
 # --- 5. Config machine -------------------------------------------------------------------------------------------------
@@ -985,13 +1047,32 @@ step_host() {
         echo "! aucun nom de machine fixe (« $host » vient du réseau) : sudo hostnamectl set-hostname <nom>, puis relancer install.sh"
     fi
     local file="$repo/hosts/$host.json"
-    if [[ -f "$file" ]]; then echo "= hosts/$host.json"; return; fi
-    # Valeurs détectées seulement ; le reste vient de hosts/default.json (écran unique, laptop).
-    local session=""
-    (. "$repo/scripts/qs-env.sh" && qs_nvidia_only) && session='  "greeter": { "defaultSession": "wayland/sway-vulkan" }'
     # Fichier du dépôt, pas du compte : --uninstall le garde (il peut avoir été modifié ou committé).
+    if [[ -f "$file" ]]; then
+        if [[ "$(host_profile)" == "$profile" ]]; then echo "= hosts/$host.json (profil $profile)"; return; fi
+        printf '+ hosts/%s.json : profil %s (à committer)\n' "$host" "$profile"
+        [[ -n "$dry" ]] && return
+        # Seule la ligne du profil change (ajoutée en tête si absente) : le reste du fichier garde sa mise en forme.
+        python3 -I - "$file" "$profile" <<'EOF' || echo "! hosts/$host.json illisible (JSON invalide ?) : profil non écrit"
+import json, re, sys
+path, profile = sys.argv[1:]
+text = open(path, encoding="utf-8").read()
+conf = json.loads(text)
+if "profile" in conf:
+    text = re.sub(r'("profile"\s*:\s*)"[^"]*"', lambda m: m.group(1) + json.dumps(profile), text, count=1)
+elif conf and text.startswith("{\n"):
+    text = '{\n  "profile": %s,\n' % json.dumps(profile) + text[2:]
+else:
+    text = json.dumps({"profile": profile, **conf}, indent=2, ensure_ascii=False) + "\n"
+open(path, "w", encoding="utf-8").write(text)
+EOF
+        return
+    fi
+    # Valeurs détectées et profil ; le reste vient de hosts/default.json (écran unique, laptop).
+    local lines="  \"profile\": \"$profile\""
+    (. "$repo/scripts/qs-env.sh" && qs_nvidia_only) && lines+=$',\n  "greeter": { "defaultSession": "wayland/sway-vulkan" }'
     printf '+ hosts/%s.json créé (à committer)\n' "$host"
-    [[ -n "$dry" ]] || printf '{\n%s\n}\n' "$session" > "$file"
+    [[ -n "$dry" ]] || printf '{\n%s\n}\n' "$lines" > "$file"
 }
 
 # --- 6. Système (sudo) -------------------------------------------------------------------------------------------------
@@ -1023,38 +1104,38 @@ greeter_wallpaper() {
 
 step_system() {
     section "6. Système (sudo, avec confirmation)"
-    if gpu_vendors | grep -qx intel && ask "Mesures GPU Intel : autoriser intel_gpu_top à lire les compteurs matériels (CAP_PERFMON) ?" oui; then
+    # Accord donné une fois pour toutes (ask_system).
+    if gpu_vendors | grep -qx intel; then
+        echo "Mesures GPU Intel : intel_gpu_top autorisé à lire les compteurs matériels (CAP_PERFMON)"
         sub "$repo/scripts/system-setup.sh" ${dry:+--dry-run} intel-gpu
     fi
-    if ask "Écran de connexion greetd + greeter Quickshell (remplace le gestionnaire actuel) ?" oui; then
-        sub "$repo/scripts/greeter-setup.sh" ${dry:+--dry-run} install
-        sub "$repo/scripts/system-setup.sh" ${dry:+--dry-run} cursor
-        if [[ -n "$dry" && ! -d /usr/local/share/qs-desktop ]]; then
-            echo "+ scripts/greeter-setup.sh enable (après l'installation ci-dessus)"
-        else
-            sub "$repo/scripts/greeter-setup.sh" ${dry:+--dry-run} enable
-        fi
-        greeter_wallpaper
+    echo "Écran de connexion greetd + greeter Quickshell (remplace le gestionnaire actuel)"
+    sub "$repo/scripts/greeter-setup.sh" ${dry:+--dry-run} install
+    sub "$repo/scripts/system-setup.sh" ${dry:+--dry-run} cursor
+    if [[ -n "$dry" && ! -d /usr/local/share/qs-desktop ]]; then
+        echo "+ scripts/greeter-setup.sh enable (après l'installation ci-dessus)"
+    else
+        sub "$repo/scripts/greeter-setup.sh" ${dry:+--dry-run} enable
     fi
-    if ask "Samba, services (réseau, Bluetooth, énergie, VM), groupes et thème Qt du système ?" oui; then
-        sub "$repo/scripts/system-setup.sh" ${dry:+--dry-run} install
-    fi
-    if command -v chromium >/dev/null && ask "Extensions de Chromium (dotfiles/chromium/extensions.txt : Dark Reader, Stylus, nightTab…) ?" oui; then
+    greeter_wallpaper
+    echo "Samba, services (réseau, Bluetooth, énergie, VM), groupes et thème Qt du système"
+    sub "$repo/scripts/system-setup.sh" ${dry:+--dry-run} install
+    if command -v chromium >/dev/null; then
+        echo "Extensions de Chromium (dotfiles/chromium/extensions.txt : Dark Reader, Stylus, nightTab…)"
         sub "$repo/scripts/system-setup.sh" ${dry:+--dry-run} chromium-extensions
     fi
-    if command -v thunderbird >/dev/null && ask "Thème Catppuccin de Thunderbird (Mocha Green, pour tout profil, même neuf) ?" oui; then
+    if command -v thunderbird >/dev/null; then
+        echo "Thème Catppuccin de Thunderbird (Mocha Green, pour tout profil, même neuf)"
         local xpi
         if xpi="$(download thunderbird)"; then sub "$repo/scripts/system-setup.sh" ${dry:+--dry-run} thunderbird-theme "$xpi"
         elif [[ -z "$dry" ]]; then later "thème Thunderbird : téléchargement impossible ; relancer install.sh"; fi
     fi
-    if ask "Sonde de connectivité NetworkManager (portails captifs Wi-Fi) ?" oui; then
-        # Déjà installée : le script rechargerait NetworkManager pour rien.
-        if cmp -s "$repo/dotfiles/NetworkManager/conf.d/90-qs-desktop-connectivity.conf" /etc/NetworkManager/conf.d/90-qs-desktop-connectivity.conf \
-            && [[ -f /var/lib/qs-desktop/network-setup/ready ]]; then
-            echo "= sonde de connectivité installée"
-        else
-            sub "$repo/scripts/network-setup.sh" ${dry:+--dry-run} install
-        fi
+    # Sonde de connectivité NetworkManager (portails captifs Wi-Fi). Déjà installée : le script rechargerait NetworkManager pour rien.
+    if cmp -s "$repo/dotfiles/NetworkManager/conf.d/90-qs-desktop-connectivity.conf" /etc/NetworkManager/conf.d/90-qs-desktop-connectivity.conf \
+        && [[ -f /var/lib/qs-desktop/network-setup/ready ]]; then
+        echo "= sonde de connectivité installée"
+    else
+        sub "$repo/scripts/network-setup.sh" ${dry:+--dry-run} install
     fi
 }
 
@@ -1212,6 +1293,8 @@ if [[ -n "$uninstall" ]]; then
     exit 0
 fi
 [[ -n "$dry" ]] && echo "Simulation : rien ne sera modifié."
+choose_profile
+ask_system
 [[ -n "$system" ]] && step_pacman_sudo
 [[ -n "$system" ]] && step_reflector
 [[ -n "$packages" ]] && step_packages
@@ -1222,6 +1305,7 @@ section "Dossiers du compte"
 step_home_dirs
 section "Fonds d'écran"
 step_wallpapers
+[[ "$profile" == travail ]] && step_dm
 step_host
 [[ -n "$system" ]] && is_arch && step_system
 step_nighttab

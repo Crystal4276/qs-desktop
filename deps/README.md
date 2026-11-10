@@ -10,7 +10,10 @@ des dépôts, est installé par son script officiel (`https://claude.ai/install.
   `scripts/system-setup.sh [--dry-run] reflector`, sauvegardes et retrait dans le même registre système.
 - `apps.txt` : applications de base, toujours installées (terminal, fichiers, navigateur, mail, documents, création,
   multimédia minimal, Wine, virtualisation, Samba).
-- `games.txt` : profil optionnel « jeux » (`install.sh --with jeux`) ; Steam vient du dépôt `multilib`, activé par `install.sh`.
+- `games.txt` : profil « jeux » (Steam, gamescope, Lutris, GameMode, Deluge) ; Steam vient du dépôt `multilib`, activé par `install.sh`.
+- `work.txt` : profil « travail » (paquets de DigitalMicrograph sous Wine ; son dépôt privé `GMSFreeAnalysis17` est cloné par
+  `install.sh`, son installation se lance à la main). Profil de la machine : clé `profile` de `hosts/<machine>.json`
+  (`scripts/profile.sh`), demandé par `install.sh` s'il manque, ou `--profil jeux|travail`.
 - `gpu.txt` : paquets selon la carte graphique détectée (VA-API, `nvidia-smi`, Vulkan 32 bits des jeux).
 - `themes.txt` : thème Catppuccin (GTK, curseur, Kvantum, dossiers Papirus, Geany) : archives officielles, empreintes SHA-256.
 - `optional.txt` : selon le matériel ou les modules utilisés.
@@ -92,7 +95,7 @@ Les applications personnelles lancées au démarrage (Steam, Spotify, Thunderbir
 | `scripts/greeter-session.sh` | session choisie : shell de connexion puis `Exec` ; X11 par `startx` | `sh`, `startx` (`xorg-xinit`, sessions X11) |
 | `scripts/greeter-setup.sh [--dry-run] install\|enable\|uninstall` | mise en place système de l'écran de connexion | `sudo`, `git`, `tar`, `install` / `cmp` (`coreutils`, `diffutils`), `systemctl`, `getent`, `setfacl` (`acl`, paquet de base) |
 
-| `install.sh [--dry-run] [--with jeux] [--no-packages] [--no-system] [--yes] [--uninstall]` | installation complète d'une machine (README.md) ; registre et sauvegardes dans `~/.local/state/qs-desktop/install` | `pacman`, `sudo`, `git` + `makepkg` (`base-devel` : paru-bin), `lspci` (`pciutils`), `curl`, `sha256sum`, `tar`, `unzip`, `python` (+ `python-gobject` : `scripts/dconf-keys.py`), `dconf`, `xdg-mime` (`xdg-utils`), `update-desktop-database` (`desktop-file-utils`), `gtk-update-icon-cache` (`gtk3`), `fc-list` |
+| `install.sh [--dry-run] [--profil jeux|travail] [--no-packages] [--no-system] [--yes] [--uninstall]` | installation complète d'une machine (README.md) ; registre et sauvegardes dans `~/.local/state/qs-desktop/install` | `pacman`, `sudo`, `git` + `makepkg` (`base-devel` : paru-bin), `lspci` (`pciutils`), `curl`, `sha256sum`, `tar`, `unzip`, `python` (+ `python-gobject` : `scripts/dconf-keys.py`), `dconf`, `xdg-mime` (`xdg-utils`), `update-desktop-database` (`desktop-file-utils`), `gtk-update-icon-cache` (`gtk3`), `fc-list` |
 | `scripts/system-setup.sh [--dry-run] pacman-sudo\|multilib\|install\|uninstall` | sudo pacman sans mot de passe pour wheel, `[multilib]`, Samba (`dotfiles/samba/smb.conf`, partages utilisateur), `QT_QPA_PLATFORMTHEME`, groupes, services, réseau des VM, curseur de l'écran de connexion (`/usr/local/share/icons`) | `sudo` + `visudo` (paquet `sudo`), `sed`, `install`, `cmp`, `usermod` / `gpasswd` / `groupadd` (`shadow`), `systemctl`, `virsh` (`libvirt`) |
 | `scripts/test-install.py` | étapes du compte d'`install.sh` dans un dossier personnel jetable : simulation, installation, idempotence, retrait | `dbus-run-session` (`dbus`), `dconf` |
 

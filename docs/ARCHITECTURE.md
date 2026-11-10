@@ -166,6 +166,7 @@ de ce desktop n'en est pas une), rétroéclairage (`/sys/class/backlight`), GPU 
 
 ```json
 {
+  "profile": "jeux",
   "updateCommand": "paru -Syu",
   "wallpaper": { "kind": "triptych", "path": "triptych/green-storm" },
   "doNotDisturb": { "muteApps": ["discord", "whatsapp"] },
@@ -180,6 +181,12 @@ de ce desktop n'en est pas une), rétroéclairage (`/sys/class/backlight`), GPU 
 }
 ```
 
+- `profile` : `jeux` ou `travail` (défaut, `default.json`). Seule clé lue hors de Quickshell : `scripts/profile.sh` la donne à Sway
+  (`include profiles/<profil>.conf`), à Hyprland (`lua/profile.lua` → `profiles/<profil>.lua`) et à `install.sh`. **jeux** : règles
+  et démarrage de Steam, de ses jeux (EVE, gamescope) et de Deluge (espaces 9 et 7), paquets `deps/games.txt`. **travail** :
+  DigitalMicrograph sur l'espace 9 (Wine, classe `digitalmicrograph.exe`), espace 7 libre, paquets `deps/work.txt`. Glyphes des
+  espaces : `Theme.icon.workspaces[Settings.profile]`. Changement : éditer la clé (ou `install.sh --profil …`), puis recharger le
+  compositeur.
 - `primaryOutput` : écran principal, par description. `workspaceLayouts` (facultatif, absent ici : la règle générale tombe juste) :
   liste de répartitions imposées, chacune `{ "<description>": [1, 2, 3], … }`, appliquée quand l'ensemble des écrans actifs est
   exactement celui-là.

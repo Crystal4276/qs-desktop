@@ -17,7 +17,6 @@ gvfs-mtp                # téléphones Android branchés en USB
 # --- Internet, mail ---
 chromium                # navigateur principal ; web apps (dotfiles/webapps) ; liens externes (scripts/browser-link.py)
 thunderbird             # mail
-deluge-gtk              # BitTorrent (règles d'espace des compositeurs, ouvertures sur l'écran principal)
 
 # --- Édition, documents ---
 geany                   # éditeur de texte ($EDITOR, fichiers texte par défaut)

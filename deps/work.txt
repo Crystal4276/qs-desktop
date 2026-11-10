@@ -1,0 +1,10 @@
+# Profil « travail » (clé « profile » de hosts/<machine>.json, ou `install.sh --profil travail`) : à la place de deps/games.txt.
+# DigitalMicrograph (Gatan Microscopy Suite 3.6) sous Wine : dépôt privé Crystal4276/GMSFreeAnalysis17, cloné par install.sh dans
+# ~/GMSFreeAnalysis17 ; son installation (kit Gatan, scripts/install-all.sh) se lance à la main. `wine` : deps/apps.txt ;
+# git, github-cli, noto-fonts, imagemagick : déjà dans deps/apps.txt et deps/arch-pacman.txt.
+winetricks              # .NET 4.8, polices et VC++ 2022 du préfixe Wine de DM (étapes 20 et 25)
+wine-mono               # .NET de Wine, présent dès la création du préfixe (étape 10)
+wine-gecko              # moteur HTML de Wine (installeur Gatan)
+cabextract              # archives .cab des runtimes (winetricks)
+icoutils                # icône de DM extraite du kit Gatan (icotool, étape 50)
+potrace                 # icône de DM vectorisée en SVG (étape 50)

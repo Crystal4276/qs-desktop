@@ -13,7 +13,7 @@ sudo pacman -S --needed git
 git clone https://github.com/Crystal4276/qs-desktop.git ~/qs-desktop
 cd ~/qs-desktop
 ./install.sh --dry-run     # voir tout ce qui sera fait, sans rien modifier
-./install.sh               # installer (questions avant chaque étape système)
+./install.sh               # installer : deux questions au plus (profil de la machine, étapes système)
 ```
 
 Puis se déconnecter : l'écran de connexion greetd apparaît au prochain démarrage ; choisir Sway ou Hyprland.
@@ -22,25 +22,28 @@ Puis se déconnecter : l'écran de connexion greetd apparaît au prochain démar
 
 | Étape | Ce qui est fait |
 |---|---|
-| Avant les paquets | propose Reflector : installe d'abord ce seul paquet avec les miroirs existants s'il manque, classe jusqu'à 20 miroirs HTTPS mondiaux synchronisés depuis moins de 12 h par débit, puis active le renouvellement hebdomadaire (`reflector.timer`) |
-| 1. Paquets | active le dépôt `[multilib]`, installe `deps/arch-pacman.txt` (le bureau) et `deps/apps.txt` (applications de base), les paquets de la carte graphique (`deps/gpu.txt`), `brightnessctl` sur un laptop ; propose le profil jeux (`deps/games.txt`) ; construit `paru-bin`, seul paquet AUR |
+| Avant les paquets | profil de la machine (question 1) ; étapes système acceptées (question 2) : Reflector installe d'abord ce seul paquet avec les miroirs existants s'il manque, classe jusqu'à 20 miroirs HTTPS mondiaux synchronisés depuis moins de 12 h par débit, puis active le renouvellement hebdomadaire (`reflector.timer`) |
+| 1. Paquets | installe `deps/arch-pacman.txt` (le bureau) et `deps/apps.txt` (applications de base), les paquets du profil (`deps/games.txt` avec le dépôt `[multilib]`, ou `deps/work.txt`), ceux de la carte graphique (`deps/gpu.txt`), `brightnessctl` sur un laptop ; construit `paru-bin`, seul paquet AUR ; installe Claude Code |
 | 2. Configs du compte | liens vers le dépôt : `~/.config/quickshell/desktop`, `sway`, `hypr`, `fastfetch`, `mpv`, `starship.toml`, `chromium-flags.conf`, règle WirePlumber ; bloc ajouté à `~/.bashrc` (le reste n'est pas touché) |
 | 3. Thème | archives officielles Catppuccin (`deps/themes.txt`, empreintes vérifiées) : GTK 3/4, curseur, Kvantum (Qt), dossiers Papirus lavande, Geany ; mêmes polices et curseur partout |
 | 4. Réglages | GSettings (`dotfiles/dconf/`), applications par défaut (`dotfiles/mime/defaults.list`), web apps, liens HTTP vers Chromium ; profils Chromium (navigateur et web apps) en thème GTK, barre de titre du système (sans boutons réduire / agrandir / fermer) |
-| 5. Config machine | crée `hosts/<machine>.json` s'il manque (à committer) |
+| Fonds, DigitalMicrograph | clone les fonds d'écran ; profil travail : clone `Crystal4276/GMSFreeAnalysis17` (privé : `gh auth login` ou clé SSH) dans `~/GMSFreeAnalysis17` |
+| 5. Config machine | crée `hosts/<machine>.json` s'il manque, avec le profil (à committer) |
 | 6. Système (sudo / authentification polkit) | compteurs GPU Intel (CAP_PERFMON ciblé et hook de mise à jour), écran de connexion greetd, sonde des portails captifs, Samba, services (réseau, Bluetooth, énergie, VM), groupes, thème Qt du système, extensions de Chromium (`dotfiles/chromium/extensions.txt`, installées depuis le Chrome Web Store au démarrage du navigateur ; pas dans les web apps) |
 
 Tout fichier existant est sauvegardé avant d'être remplacé (`<fichier>.bak-<date>` à côté de l'original ; fichiers système dans
 `/var/lib/qs-desktop/`).
 
-Avant les paquets, une question propose l'accès **pacman sans mot de passe pour tous les membres de `wheel`**.
+Les étapes système (sudo) sont acceptées ou refusées d'un bloc, après la liste affichée ; « non » vaut `--no-system`. Parmi elles,
+l'accès **pacman sans mot de passe pour tous les membres de `wheel`**.
 Paru se lance normalement, en utilisateur : ses appels sudo à pacman bénéficient de la même règle.
 Le fichier `/etc/sudoers.d/90-qs-desktop-pacman` est validé par `visudo`, appartient à root et a le mode `0440`.
 Les autres commandes sudo gardent leur authentification habituelle. Activation seule :
 `./scripts/system-setup.sh pacman-sudo` (authentification administrateur initiale nécessaire).
 `--no-system` ignore ce réglage ; `--no-packages` le permet ; le retrait système restaure l'état précédent.
 
-Options : `--with jeux` / `--without jeux`, `--no-packages`, `--no-system`, `--yes` (aucune question), `--uninstall`
+Options : `--profil jeux|travail`, `--no-packages`, `--no-system`, `--yes` (aucune question : étapes système faites, profil de
+`hosts/<machine>.json`, sinon travail), `--uninstall`
 (retire liens et copies, remet les sauvegardes et les réglages d'origine, étapes système comprises ; les paquets restent).
 
 Reflector est réservé à Arch Linux. `--no-system` ignore cette étape ; `--no-packages` peut configurer un Reflector déjà présent.
