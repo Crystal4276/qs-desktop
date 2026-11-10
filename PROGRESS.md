@@ -223,6 +223,8 @@ marge au bord droit sur DP-1 / DP-3.
 - Avertissement `services/Bluez.qml[31:5]` « Unable to assign [undefined] to bool » au démarrage : sans effet connu.
 - Calendrier : après un clic dedans, Échap et ←/→ ne répondent plus (pas d'API pour rendre le clavier à la barre).
 - Audio seul sous Hyprland : Chromium garde un inhibiteur de veille Wayland natif (pas contourné).
+- Spotify annonce sa pause ~260 ms après la commande (fixe, fondu interne ; lecture et Chromium : ~10 ms) : la pastille attend
+  l'état réel. Laissé tel quel (ton choix du 2026-11-10, pas d'affichage anticipé).
 - NetworkManager prend le nom d'hôte du DHCP quand la machine n'a pas de nom fixe (`install.sh` le signale).
 
 ## Prochaine étape
