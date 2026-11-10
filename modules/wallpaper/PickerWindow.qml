@@ -24,18 +24,27 @@ OverlayPopup {
         ...(outputs.length > 1 ? [{ key: "panorama", name: "Panoramas" }] : []),
         ...(outputs.length === 3 ? [{ key: "triptych", name: "Triptychs" }] : [])
     ]
-    readonly property bool wide: tab === "panorama" || tab === "triptych"   // panoramas et triptyques : vignettes de deux colonnes
     // `images` : chemins des images de la vignette (trois pour un triptyque).
-    readonly property var items: {
+    function entries(kind: string): var {
         const lib = Wallpapers.library;
-        if (tab === "corelab") {
+        if (kind === "corelab") {
             const output = outputs.find(o => target !== "" ? o.description === target : o.name === screen?.name) ?? outputs[0];
             return lib.corelab.map(d => ({ path: d.path, images: [Wallpapers.corelabPath(d.path, output)] })).filter(d => d.images[0] !== "");
         }
-        if (tab === "triptych")
+        if (kind === "triptych")
             return lib.triptych.map(t => ({ path: t.path, images: ["left", "center", "right"].map(p => t.parts[p]) }));
-        return (tab === "panorama" ? lib.panorama : lib.simple).map(p => ({ path: p, images: [p] }));
+        return (kind === "panorama" ? lib.panorama : lib.simple).map(p => ({ path: p, images: [p] }));
     }
+    readonly property var items: entries(tab)
+    property var visited: ({})
+    property var tabLoaders: ({})
+    readonly property var grid: tabLoaders[tab]?.item ?? null
+
+    function visit(): void {
+        visited = Object.assign({}, visited, { [tab]: true });
+        Qt.callLater(() => { if (visible) grid?.forceActiveFocus(); });
+    }
+
     // Après une lecture du dossier seulement : pas de message pendant la première.
     readonly property bool empty: Wallpapers.libraryRead && items.length === 0
 
@@ -47,7 +56,7 @@ OverlayPopup {
             tab = "simple";
         prepareOpen(null);
         visible = true;
-        grid.forceActiveFocus();
+        visit();
     }
 
     function toggle(): void {
@@ -72,10 +81,16 @@ OverlayPopup {
             Wallpapers.setAll(tab, item.path);
     }
 
+    Connections {
+        target: Wallpapers
+        function onDirChanged() { root.visited = {}; if (root.visible) root.visit(); }
+    }
+
     WlrLayershell.namespace: "quickshell-wallpaper-picker"
     frameItem: frame
 
-    onTabChanged: grid.currentIndex = 0
+    onTabChanged: visit()
+    onGridChanged: if (visible) Qt.callLater(() => grid?.forceActiveFocus())
     // Écrans changés, fenêtre ouverte : onglet disparu → images simples ; écran visé disparu → tous les écrans.
     onTabsChanged: {
         if (!tabs.some(t => t.key === tab))
@@ -135,89 +150,97 @@ OverlayPopup {
             text: `No wallpapers in ${dir}/${root.tab}`
         }
 
-        GridView {
-            id: grid
-
+        Item {
             Layout.fillWidth: true
-            Layout.preferredHeight: root.empty ? 0 : Theme.wallpaperPicker.rows * cellHeight
-            cellWidth: (Theme.wallpaperPicker.thumbWidth + 2 * Theme.wallpaperPicker.selectionPadding) * (root.wide ? 2 : 1)
-            cellHeight: Theme.wallpaperPicker.thumbHeight + 2 * Theme.wallpaperPicker.selectionPadding
-            clip: true
-            boundsBehavior: Flickable.StopAtBounds
-            keyNavigationEnabled: true
-            model: root.items
-
-            Keys.onReturnPressed: root.apply(currentIndex)
-            Keys.onEnterPressed: root.apply(currentIndex)
-            Keys.onEscapePressed: root.close()
-
-            delegate: Item {
-                id: cell
-
-                required property var modelData
-                required property int index
-                readonly property bool current: root.isCurrent(modelData.path)
-
-                width: grid.cellWidth
-                height: grid.cellHeight
-
-                // Fond choisi : cadre `green` ; vignette sous le pointeur ou au clavier : cadre `surface0`.
-                Rectangle {
+            Layout.preferredHeight: root.empty ? 0 : Theme.wallpaperPicker.rows * (Theme.wallpaperPicker.thumbHeight + 2 * Theme.wallpaperPicker.selectionPadding)
+            Repeater {
+                id: grids
+                model: ["simple", "corelab", "panorama", "triptych"]
+                onItemAdded: (index, item) => root.tabLoaders = Object.assign({}, root.tabLoaders, { [item.modelData]: item })
+                Loader {
+                    id: tabLoader
+                    required property string modelData
                     anchors.fill: parent
-                    radius: Theme.wallpaperPicker.radius + Theme.wallpaperPicker.selectionPadding
-                    color: cell.current ? Theme.wallpaperPicker.selection
-                        : hover.hovered || (grid.activeFocus && grid.currentIndex === cell.index) ? Theme.wallpaperPicker.hover : "transparent"
-                }
+                    active: !!root.visited[modelData] && root.tabs.some(t => t.key === modelData)
+                    visible: root.tab === modelData
+                    sourceComponent: Component {
+                        GridView {
+                            id: view
 
-                ClippingRectangle {
-                    anchors.fill: parent
-                    anchors.margins: Theme.wallpaperPicker.selectionPadding
-                    radius: Theme.wallpaperPicker.radius
-                    color: Theme.panel.fieldBackground
+                            readonly property string kind: tabLoader.modelData
+                            property var modelEntries: []
+                            readonly property string signature: JSON.stringify(root.entries(kind))
+                            onSignatureChanged: {
+                                const next = JSON.parse(signature);
+                                if (JSON.stringify(modelEntries) !== signature) modelEntries = next;
+                            }
+                            anchors.fill: parent
+                            cellWidth: (Theme.wallpaperPicker.thumbWidth + 2 * Theme.wallpaperPicker.selectionPadding) * ((kind === "panorama" || kind === "triptych") ? 2 : 1)
+                            cellHeight: Theme.wallpaperPicker.thumbHeight + 2 * Theme.wallpaperPicker.selectionPadding
+                            clip: true
+                            boundsBehavior: Flickable.StopAtBounds
+                            keyNavigationEnabled: true
+                            model: modelEntries
 
-                    Row {
-                        anchors.fill: parent
+                            Keys.onReturnPressed: root.apply(currentIndex)
+                            Keys.onEnterPressed: root.apply(currentIndex)
+                            Keys.onEscapePressed: root.close()
 
-                        Repeater {
-                            model: cell.modelData.images
+                            delegate: Item {
+                                id: cell
 
-                            Image {
-                                required property string modelData   // chemin dans le dossier des fonds
-                                width: parent.width / cell.modelData.images.length
-                                height: parent.height
-                                // Pas de source avant la taille finale : elle fait partie du nom de la vignette en cache.
-                                source: width > 0 && height > 0 ? Wallpapers.thumbSource(modelData, sourceSize) : ""
-                                fillMode: Image.PreserveAspectCrop
-                                sourceSize: Qt.size(Math.ceil(width * root.pixelRatio), Math.ceil(height * root.pixelRatio))
-                                asynchronous: true
-                                // Pas le cache mémoire de Qt (par adresse) : une image remplacée sous le même nom y resterait
-                                // l'ancienne, et serait enregistrée comme vignette de la nouvelle.
-                                cache: false
-                                // Décodée depuis l'original : enregistrée, telle qu'affichée, pour les ouvertures suivantes.
-                                onStatusChanged: {
-                                    if (status !== Image.Ready || !root.visible)
-                                        return;
-                                    const file = Wallpapers.thumbFile(modelData, sourceSize);
-                                    if (file !== "")
-                                        grabToImage(result => {
-                                            if (result.saveToFile(file))
-                                                Wallpapers.thumbWritten(file);
-                                        }, sourceSize);
+                                required property var modelData
+                                required property int index
+                                readonly property bool current: root.isCurrent(modelData.path)
+
+                                width: view.cellWidth
+                                height: view.cellHeight
+
+                                // Fond choisi : cadre `green` ; vignette sous le pointeur ou au clavier : cadre `surface0`.
+                                Rectangle {
+                                    anchors.fill: parent
+                                    radius: Theme.wallpaperPicker.radius + Theme.wallpaperPicker.selectionPadding
+                                    color: cell.current ? Theme.wallpaperPicker.selection
+                                        : hover.hovered || (view.activeFocus && view.currentIndex === cell.index) ? Theme.wallpaperPicker.hover : "transparent"
+                                }
+
+                                ClippingRectangle {
+                                    anchors.fill: parent
+                                    anchors.margins: Theme.wallpaperPicker.selectionPadding
+                                    radius: Theme.wallpaperPicker.radius
+                                    color: Theme.panel.fieldBackground
+
+                                    Row {
+                                        anchors.fill: parent
+
+                                        Repeater {
+                                            model: cell.modelData.images
+
+                                            Thumbnail {
+                                                required property string modelData
+                                                path: modelData
+                                                pixelRatio: root.pixelRatio
+                                                active: root.visible && tabLoader.visible
+                                                width: parent.width / cell.modelData.images.length
+                                                height: parent.height
+                                            }
+                                        }
+                                    }
+                                }
+
+                                HoverHandler {
+                                    id: hover
+                                }
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    onClicked: {
+                                        view.currentIndex = cell.index;
+                                        root.apply(cell.index);
+                                    }
                                 }
                             }
                         }
-                    }
-                }
-
-                HoverHandler {
-                    id: hover
-                }
-
-                MouseArea {
-                    anchors.fill: parent
-                    onClicked: {
-                        grid.currentIndex = cell.index;
-                        root.apply(cell.index);
                     }
                 }
             }
