@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="288" height="288" viewBox="-4.5 -4.5 9 9">
+  <!-- Logo Core Lab (wallpaper 04 Diffraction) : quatre demi-anneaux, épaisseur 1, rayons moyens 1 à 4.
+       Demi-anneaux 1 et 3 à droite, 2 et 4 à gauche. Opacité d'ensemble 0,9. Taille de base 288 px pour un écran de 1200 px de haut. -->
+  <g fill="none" stroke-width="1" opacity="0.9">
+    <path id="half-1" d="M0 -1A1 1 0 0 1 0 1" stroke="#a6e3a1"/>
+    <path id="half-2" d="M0 -2A2 2 0 0 0 0 2" stroke="#94e2d5"/>
+    <path id="half-3" d="M0 -3A3 3 0 0 1 0 3" stroke="#89dceb"/>
+    <path id="half-4" d="M0 -4A4 4 0 0 0 0 4" stroke="#74c7ec"/>
+  </g>
+</svg>

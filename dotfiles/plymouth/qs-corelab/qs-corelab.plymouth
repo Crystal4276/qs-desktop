@@ -1,0 +1,9 @@
+[Plymouth Theme]
+Name=Core Lab
+Description=Bureau Quickshell, profil travail (docs/PLYMOUTH.md)
+ModuleName=script
+Font=Inter
+
+[script]
+ImageDir=/usr/share/plymouth/themes/qs-corelab/images
+ScriptFile=/usr/share/plymouth/themes/qs-corelab/qs-corelab.script
