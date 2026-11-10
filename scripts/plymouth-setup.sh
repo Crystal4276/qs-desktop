@@ -56,15 +56,18 @@ hooks_file() {
 
 has_hook() { grep -qE '^HOOKS=\(.*\bplymouth\b' "$1"; }
 has_splash() { grep -qE '^GRUB_CMDLINE_LINUX_DEFAULT="[^"]*\bsplash\b' "$grub"; }
+# Thème par défaut ; Theme= lu directement si l'outil manque (paquet retiré avant uninstall).
+theme_now() { plymouth-set-default-theme 2>/dev/null || sed -n 's/^Theme=//p' "$conf" 2>/dev/null | tail -n1; }
 
-# Chargeur : GRUB seulement (le laptop) ; autre chose → rien n'est modifié.
+# Chargeur : GRUB dans /boot/grub seulement (le laptop) ; autre chose → rien n'est modifié (code 3 : non pris en charge).
 check_bootloader() {
-    if [[ -f "$grub" ]] && command -v grub-mkconfig >/dev/null && grep -qE '^GRUB_CMDLINE_LINUX_DEFAULT="' "$grub"; then
+    if [[ -f "$grub" && -d /boot/grub ]] && command -v grub-mkconfig >/dev/null \
+        && grep -qE '^GRUB_CMDLINE_LINUX_DEFAULT="' "$grub"; then
         return 0
     fi
-    echo "! chargeur de démarrage non pris en charge (GRUB attendu : $grub, grub-mkconfig) ; rien n'est modifié." >&2
+    echo "! chargeur de démarrage non pris en charge (GRUB attendu : $grub, /boot/grub, grub-mkconfig) ; rien n'est modifié." >&2
     echo "  systemd-boot / UKI : ajouter « splash » à la ligne de commande du noyau à la main (docs/PLYMOUTH.md)." >&2
-    return 1
+    exit 3
 }
 
 install_theme() {
@@ -98,16 +101,20 @@ install_theme() {
 
 do_install() {
     command -v plymouthd >/dev/null || { echo "! plymouth n'est pas installé (paquets : deps/work.txt)." >&2; [[ -n "$dry" ]] || exit 1; }
-    command -v mkinitcpio >/dev/null || { echo "! mkinitcpio absent : initramfs non pris en charge ; rien n'est modifié." >&2; exit 1; }
+    command -v mkinitcpio >/dev/null || { echo "! mkinitcpio absent : initramfs non pris en charge ; rien n'est modifié." >&2; exit 3; }
     check_bootloader
     local hf
     hf="$(hooks_file)"
     [[ -n "$hf" ]] || { echo "! HOOKS introuvable dans /etc/mkinitcpio.conf(.d) ; rien n'est modifié." >&2; exit 1; }
+    # Le sed du hook ne traite que HOOKS=( … ) sur une ligne.
+    has_hook "$hf" || grep -qE '^HOOKS=\(.*\)' "$hf" \
+        || { echo "! HOOKS sur plusieurs lignes dans $hf : ajouter « plymouth » avant block / encrypt à la main ; rien n'est modifié." >&2; exit 1; }
+    pending
 
     install_theme
 
     local current
-    current="$(plymouth-set-default-theme 2>/dev/null || true)"
+    current="$(theme_now || true)"
     if [[ "$current" == "$theme" ]]; then
         echo "= thème Plymouth par défaut : $theme"
     else
@@ -151,6 +158,7 @@ do_install() {
 
 do_uninstall() {
     local hf previous original entry src target
+    pending
     hf="$(noted hooks)"
     if [[ -n "$hf" && -f "$hf" ]] && has_hook "$hf"; then
         run sed -i -E '/^HOOKS=\(/{s/\bplymouth //;s/ plymouth\)/)/}' "$hf"
@@ -161,7 +169,7 @@ do_uninstall() {
         bootloader=1
     fi
     previous="$(noted previous-theme)" original="$(noted plymouthd-conf)"
-    if [[ "$(plymouth-set-default-theme 2>/dev/null || true)" == "$theme" ]]; then
+    if [[ "$(theme_now || true)" == "$theme" ]]; then
         if [[ "$original" == - ]]; then
             run rm -f "$conf"
         elif [[ -n "$original" && -f "$original" ]]; then
@@ -191,10 +199,21 @@ do_uninstall() {
     return 0
 }
 
+# Reconstruction interrompue au dernier passage (mkinitcpio ou grub-mkconfig en échec) : refaite, même si rien n'a changé depuis.
+pending() {
+    [[ -f "$var/rebuild" ]] || return 0
+    echo "! initramfs et GRUB non refaits au dernier passage : refaits maintenant"
+    initramfs=1 bootloader=1
+}
+
 finish() {
     [[ -n "$units" ]] && run systemctl daemon-reload
-    [[ -n "$initramfs" ]] && run mkinitcpio -P
-    [[ -n "$bootloader" ]] && run grub-mkconfig -o /boot/grub/grub.cfg
+    if [[ -n "$initramfs$bootloader" ]]; then
+        run sh -c "mkdir -p '$var' && touch '$var/rebuild'"     # retiré seulement si tout réussit
+        [[ -n "$initramfs" ]] && run mkinitcpio -P
+        [[ -n "$bootloader" ]] && run grub-mkconfig -o /boot/grub/grub.cfg
+        run rm -f "$var/rebuild"
+    fi
     return 0
 }
 

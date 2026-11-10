@@ -1087,9 +1087,12 @@ EOF
 
 # --- 6. Système (sudo) -------------------------------------------------------------------------------------------------
 
-# Script système : en simulation sur une machine neuve, ses prérequis (paquets de l'étape 1) peuvent manquer.
+# Script système : en simulation sur une machine neuve, ses prérequis (paquets de l'étape 1) peuvent manquer. Code 3 : non
+# pris en charge sur cette machine (rien de modifié, message du script), pas un échec à corriger.
 sub() {
-    "$@" && return 0
+    local rc=0
+    "$@" || rc=$?
+    (( rc == 0 || rc == 3 )) && return 0
     if [[ -n "$dry" ]]; then echo "! ${1##*/} : simulation incomplète, prérequis installés à l'étape 1"
     else echo "! ${1##*/} ${*:2} : échec (message ci-dessus) ; la suite continue, relancer install.sh après correction"; fi
 }
