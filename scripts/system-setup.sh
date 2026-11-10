@@ -10,6 +10,8 @@
 #         system-setup.sh [--dry-run] chromium-extensions
 #                                                 extensions de Chromium (dotfiles/chromium/extensions.txt), installées depuis le
 #                                                 Chrome Web Store au démarrage du navigateur (/usr/share/chromium/extensions)
+#         system-setup.sh [--dry-run] thunderbird-theme <xpi>
+#                                                 thème Catppuccin de Thunderbird pour tout profil (/etc/thunderbird/policies)
 #         system-setup.sh [--dry-run] uninstall   tout ce qui a été changé est remis comme avant (fichiers, groupes, services)
 #         --dry-run : affiche les commandes sans rien modifier.
 #         system-setup.sh [--dry-run] intel-gpu   CAP_PERFMON pour intel_gpu_top, hook de mise à jour et retrait
@@ -319,6 +321,35 @@ do_chromium_extensions() {
     done
 }
 
+# Thème Catppuccin Mocha Green de Thunderbird (fichier de deps/themes.txt, vérifié par install.sh, qui en passe le chemin) :
+# politique ExtensionSettings dans /etc/thunderbird/policies, lue par tous les profils, même créés plus tard. Thunderbird
+# l'installe au démarrage depuis la copie système et en fait le thème actif ; désactivable, pas supprimable (normal_installed).
+# Nom de la copie = empreinte : une nouvelle version change l'adresse, Thunderbird la réinstalle. Une politique à toi (fichier
+# déjà là, pas d'install.sh) n'est jamais écrasée. Retrait : politique et copie retirées ; le thème reste dans les profils.
+do_thunderbird_theme() {
+    local xpi="${1:-}" dir=/usr/local/share/catppuccin-thunderbird policy=/etc/thunderbird/policies/policies.json dest tmp
+    local id='{3782e2b5-f78b-54d6-9475-20d4fab2c92c}'
+    command -v thunderbird >/dev/null || { echo "- thunderbird absent : thème ignoré"; return; }
+    [[ -f "$xpi" ]] || { echo "! thème Thunderbird : fichier $xpi introuvable" >&2; return 1; }
+    if [[ -f "$policy" ]] && ! recorded file "$policy"; then
+        echo "! $policy existe déjà (politiques à toi) : gardé ; y ajouter l'entrée $id d'ExtensionSettings à la main"
+        return
+    fi
+    dest="$dir/mocha-green-$(sha256sum < "$xpi" | cut -c1-12).xpi"
+    tmp="$(mktemp)"
+    printf '{\n  "policies": {\n    "ExtensionSettings": {\n      "%s": {\n        "installation_mode": "normal_installed",\n        "install_url": "file://%s"\n      }\n    }\n  }\n}\n' "$id" "$dest" > "$tmp"
+    if [[ -f "$dest" ]] && cmp -s "$xpi" "$dest" && cmp -s "$tmp" "$policy"; then
+        echo "= thème Thunderbird ($dest) à jour"; rm -f "$tmp"; return
+    fi
+    backup_once "$dir"
+    run rm -rf "$dir"
+    run install -D -m 644 -o root -g root "$xpi" "$dest"
+    [[ -e /etc/thunderbird ]] || backup_once /etc/thunderbird     # créé ici : retiré avec la politique
+    backup_once "$policy"
+    run install -D -m 644 -o root -g root "$tmp" "$policy"
+    rm -f "$tmp"
+}
+
 do_uninstall() {
     if [[ -x "$repo/scripts/intel-gpu-setup.sh" ]]; then
         "$repo/scripts/intel-gpu-setup.sh" ${dry:+--dry-run} uninstall || echo "! Retrait des droits GPU Intel incomplet ; poursuite des autres étapes" >&2
@@ -355,6 +386,7 @@ case "${1:-}" in
     cursor) do_cursor ;;
     install) do_install ;;
     chromium-extensions) do_chromium_extensions ;;
+    thunderbird-theme) do_thunderbird_theme "${2:-}" ;;
     uninstall) do_uninstall ;;
-    *) sed -n '5,15p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 2 ;;
+    *) sed -n '5,19p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 2 ;;
 esac
