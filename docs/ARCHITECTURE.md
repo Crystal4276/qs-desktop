@@ -398,7 +398,9 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
   Le même design s'adapte à chaque écran et aux changements de mode. Images / Panoramas / Triptychs restent disponibles.
   Profil jeux : Core Lab masqué, choix mémorisé conservé mais remplacé à l'affichage par le repli habituel.
 - Sélecteur (`PickerWindow.qml`, `qs ipc call wallpaper-picker toggle`) : onglets Images / Panoramas / Triptychs, vignettes en cache
-  (`wallpaper-thumbs/`), appliqué au clic, rangée « All screens » / un écran.
+  (`wallpaper-thumbs/`), appliqué au clic, rangée « All screens » / un écran. Empreintes mémorisées par version de fichier ;
+  un scan identique conserve les objets du modèle et les images décodées. Les écritures pendant un scan sont fusionnées
+  avec son résultat et les écritures en cours restent réservées. Les noms des caches disque sont inchangés.
 - **Copie à la taille de l'écran** (démarrage plus rapide) : chaque fond simple affiché est enregistré en BMP tel qu'affiché dans
   `~/.cache/quickshell/by-shell/desktop/wallpaper-screens/` (3 s après l'affichage ; 28 ms au lieu de 125–165 ms ; sans perte). Seules
   restent les copies des fonds choisis ou affichés ; une copie sans entrée n'est effacée qu'après un jour (une autre instance peut

@@ -138,6 +138,10 @@ Singleton {
     property bool libraryRead: false
     property var writtenSinceScan: ({})   // copies écrites depuis le début de la lecture en cours : pas encore vues par elle, gardées
 
+    property string scannedDir: ""
+    property string indexedDir: ""
+    property var thumbWritesDuringScan: ({})
+
     function refresh(): void {
         if (dir === "")
             return;
@@ -149,6 +153,8 @@ Singleton {
         // Lignes `w<tab>date<tab>chemin` (images, triées par chemin), `t<tab>fichier` (vignettes en cache), puis
         // `c<tab>date<tab>fichier` (copies à la taille des écrans).
         scan.command = ["sh", "-c", `mkdir -p "$1" "$2"; (cd "$0" 2>/dev/null && find -L simple panorama triptych corelab -type f \\( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \\) -printf 'w\\t%T@\\t%p\\n' 2>/dev/null | sort -t "$(printf '\\t')" -k3); find "$1" -maxdepth 1 -name '*.png' -printf 't\\t%f\\n' 2>/dev/null; find "$2" -maxdepth 1 -name '*.bmp' -printf 'c\\t%T@\\t%f\\n' 2>/dev/null; exit 0`, dir, thumbDir, screenDir];
+        scannedDir = dir;
+        thumbWritesDuringScan = {};
         writtenSinceScan = {};
         scan.running = true;
     }
@@ -160,8 +166,12 @@ Singleton {
     property var stamps: ({})   // chemin → date de modification
     property var thumbs: ({})   // fichiers de vignette présents
 
+    // Une empreinte par version du fichier, partagée entre les tailles et le nettoyage du cache.
+    property var thumbKeys: ({})
+
     function thumbName(path: string, size: size): string {
-        return `${Qt.md5(`${path}\t${stamps[path] ?? ""}`)}-${size.width}x${size.height}.png`;
+        const key = thumbKeys[path];
+        return key ? `${key}-${size.width}x${size.height}.png` : "";
     }
 
     // Source d'une vignette : le cache s'il y est (ou vient d'y être écrite), sinon l'original.
@@ -179,14 +189,17 @@ Singleton {
     // l'image pas encore lue) ; `thumbWritten` une fois le fichier écrit.
     function thumbFile(path: string, size: size): string {
         const name = thumbName(path, size);
-        if (thumbs[name] || saved.has(name) || stamps[path] === undefined)
+        if (name === "" || thumbs[name] || saved.has(name))
             return "";
         saved.set(name, false);
         return `${thumbDir}/${name}`;
     }
 
     function thumbWritten(file: string): void {
-        saved.set(file.slice(thumbDir.length + 1), true);
+        const name = file.slice(thumbDir.length + 1);
+        saved.set(name, true);
+        if (scan.running)
+            thumbWritesDuringScan[name] = true;
     }
 
     // Copie de chaque fond affiché, à la taille de son écran, en BMP (sans perte, décodée 4 à 6 fois plus vite que tes PNG ;
@@ -195,8 +208,13 @@ Singleton {
     readonly property string screenDir: Quickshell.cachePath("wallpaper-screens")
     readonly property var screenSaving: ({})   // copies en cours d'écriture (nom de fichier)
 
+    readonly property var screenKeys: new Map()
+
     function screenName(path: string, size: size): string {
-        return `${Qt.md5(`${dir}/${path}`)}-${size.width}x${size.height}.bmp`;
+        const full = `${dir}/${path}`;
+        if (!screenKeys.has(full))
+            screenKeys.set(full, Qt.md5(full));
+        return `${screenKeys.get(full)}-${size.width}x${size.height}.bmp`;
     }
 
     function hasCopy(name: string): bool {
@@ -428,6 +446,9 @@ Singleton {
         id: scan
         stdout: StdioCollector {
             onStreamFinished: {
+                // Dossier changé pendant find : ne pas publier son ancien contenu.
+                if (root.scannedDir !== root.dir)
+                    return;
                 const lib = { simple: [], panorama: [], triptych: [], corelab: [] };
                 const designs = {};
                 const triptychs = {};
@@ -461,18 +482,39 @@ Singleton {
                 lib.corelab = Object.values(designs);
                 lib.triptych = Object.values(triptychs).filter(t => t.parts.left && t.parts.center && t.parts.right);
                 // Vignettes d'images disparues ou modifiées : effacées (pas si le dossier n'a pas pu être lu : rien n'est perdu).
-                const used = new Set(Object.keys(stamps).map(p => Qt.md5(`${p}\t${stamps[p]}`)));
+                const keys = {};
+                for (const path of Object.keys(stamps))
+                    keys[path] = root.indexedDir === root.dir && root.stamps[path] === stamps[path] && root.thumbKeys[path]
+                        ? root.thumbKeys[path] : Qt.md5(`${path}\t${stamps[path]}`);
+                const used = new Set(Object.values(keys));
+                Object.assign(thumbs, root.thumbWritesDuringScan);
                 const stale = Object.keys(thumbs).filter(f => !used.has(f.split("-")[0]));
                 if (used.size > 0 && stale.length > 0) {
                     root.removeFiles(stale.map(f => `${root.thumbDir}/${f}`));
                     stale.forEach(f => delete thumbs[f]);
                 }
                 // Dates et vignettes avant la bibliothèque : les vignettes recréées partent directement du cache.
-                root.stamps = stamps;
+                // Objets inchangés conservés : la grille garde ses cellules et leurs images décodées.
+                if (JSON.stringify(root.stamps) !== JSON.stringify(stamps))
+                    root.stamps = stamps;
+                if (JSON.stringify(root.thumbKeys) !== JSON.stringify(keys))
+                    root.thumbKeys = keys;
+                root.indexedDir = root.dir;
                 root.screenFiles = used.size > 0 ? screens : null;   // dossier illisible : copies pas vérifiées
-                root.thumbs = thumbs;
-                root.saved.clear();
-                root.library = lib;
+                if (JSON.stringify(root.thumbs) !== JSON.stringify(thumbs))
+                    root.thumbs = thumbs;
+                for (const [name, written] of root.saved) {
+                    if (!used.has(name.split("-")[0]) || (written && !root.thumbWritesDuringScan[name]))
+                        root.saved.delete(name);
+                }
+                if (JSON.stringify(root.library) !== JSON.stringify(lib))
+                    root.library = lib;
+                // Empreintes indépendantes des dimensions ; oublier les chemins hors de cette bibliothèque.
+                const fullPaths = new Set(Object.keys(stamps).map(path => `${root.dir}/${path}`));
+                for (const full of root.screenKeys.keys()) {
+                    if (!fullPaths.has(full))
+                        root.screenKeys.delete(full);
+                }
                 root.libraryRead = true;
                 root.checkCopies();   // après la bibliothèque : parties des triptyques connues (dropUnchosen)
             }
