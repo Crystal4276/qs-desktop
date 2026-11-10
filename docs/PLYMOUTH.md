@@ -146,10 +146,17 @@ celui d'un volume `cryptroot`.
   demande de mot de passe, retour à l'affichage normal, message, mise à jour d'état, progression, fin), fréquence de
   rafraîchissement, `Image.Rotate` / `Image.Scale` / `Image.Text`, gestion de plusieurs écrans (`Window.GetWidth/GetHeight/GetX/GetY`
   avec un indice), détection du verrouillage des majuscules.
-- **Images préparées, réduites au démarrage** : les éléments sont rendus en PNG pour s = 1,8 (4K) par un script du dépôt
-  (`rsvg-convert` est déjà présent ; sinon Chromium headless sur la référence), puis mis à l'échelle à l'exécution selon chaque
-  écran. Le script de génération est versionné et reproductible ; les PNG générés sont committés (pas d'outil de rendu à
-  l'installation).
+- **Images préparées, un jeu par échelle** (étape 2, mesuré) : `scripts/plymouth-assets.py build` rend les PNG pour s = 1,0 ;
+  1,2 ; 1,5 ; 1,8 (formes en cairo, textes et champ par Chromium avec le CSS et les polices de la référence). Au démarrage, chaque
+  écran prend le plus petit jeu au moins aussi grand que lui, réduit une seule fois par `Image.Scale`. Plymouth ne redimensionne
+  que par échantillonnage bilinéaire ponctuel (sans moyenne) : un seul jeu 4K réduit en 1920×1200 épaissit le texte et
+  amincit les points (écart à la référence doublé). Générateur reproductible, PNG et bloc de données committés (1,6 Mo).
+- **Coût d'animation** (étape 2, mesuré) : Plymouth ne redessine que les rectangles des sprites qui changent. Les anneaux sont
+  donc découpés en 16 arcs par anneau (petites PNG, points entiers), jamais en images plein écran ; l'échelle 0,94 → 1 est
+  rendue en rapprochant les arcs du centre ; les demi-anneaux tournent par `Image.Rotate` (angle positif = sens horaire,
+  comme le CSS). Mesuré en VM (i9-9900K) : 8,7 ms au pire moment de l'intro en 4K, 6,6 ms par image de rotation en 4K,
+  4,8 ms en 1920×1200 ; budget 20 ms (50 images/s, minuteur réarmé avant le dessin). Le script n'a pas d'horloge : le temps
+  compte les rafraîchissements, une image trop lente ralentirait l'animation.
 - **Textes fixes** (« Passphrase », « Unlocking… », « Wrong passphrase », « Caps Lock is on », nom du lab) : images préparées en
   Inter / DM Sans, pour ne dépendre d'aucune police dans l'initramfs. **Texte de la demande** (variable) : `Image.Text` avec Inter
   si la police est bien embarquée dans l'initramfs (**à vérifier** : comment le hook `plymouth` choisit les polices) ; sinon,
