@@ -207,7 +207,15 @@ the root volume ».
 que cette attente se termine au `deactivate`), et le compositeur du greeter affiche ~0,75 s de noir avant de dessiner (couleur
 de fond du compositeur du greeter à mettre en crust).
 
-### Intégration système (à auditer, puis à me proposer)
+### Intégration système (faite à l'étape 4, vérifiée en VM)
+
+`scripts/plymouth-setup.sh install | uninstall | status`, lancé par l'étape système d'`install.sh` en profil travail (retrait si la
+machine passe en jeux, et par `--uninstall`). Détail et retour arrière : `docs/ROLLBACK.md`. Mesuré en VM : initramfs +4,4 Mo
+(police : Inter Regular seule, `InterVariable.ttf` ; `Inter.ttc` en aurait ajouté 13) ; retrait = fichiers système identiques
+aux originaux et initramfs de nouveau à l'octet près. Pas de `preview` dans le script (un aperçu prendrait l'écran au bureau) :
+aperçu en VM (`docs/DEVELOPMENT.md`). Proposition d'origine ci-dessous, pour mémoire.
+
+### Intégration système (proposition d'origine)
 
 - **Initramfs** (`/etc/mkinitcpio.conf`) : hook `plymouth` à sa place (après `systemd` ou `udev`, avant `sd-encrypt` ou
   `encrypt`) ; pilote graphique chargé tôt (KMS : hook `kms` ou module du GPU dans `MODULES`) pour éviter le clignotement et un

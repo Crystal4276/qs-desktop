@@ -153,6 +153,9 @@ et `cryptdevice=UUID=…:root` (choix d'archinstall 4.5). Comptes de test : `arc
 - `preview.sh <dossier> [W H]` : tous les états hors démarrage (demande simulée par `plymouth ask-for-password --command=
   /tmp/check-pw.sh`, phrase `corelab`, ~1,2 s de vérification ; touches par QMP), puis rotation et sortie.
 - Deux écrans : seconde carte `-device virtio-gpu-pci,xres=…,yres=…,id=gpu1`, capture QMP `screendump` avec `"device":"gpu1"`.
+- Installation réelle (étape 4) : overlay `plymouth-step4.qcow2` sur `plymouth-luks-desktop.qcow2`, dépôt par `git bundle`,
+  `./install.sh --yes --profil travail` (puis `--profil jeux --no-packages`, `--uninstall`) ; enregistrement du démarrage complet
+  (captures QMP toutes les 0,15 s) jusqu'au greeter.
 - Vrai démarrage : hook `plymouth` avant `block encrypt`, `splash` dans GRUB, `mkinitcpio -P` ; pour mesurer après le
   démarrage, `plymouth-quit.service` masqué et greetd désactivé **dans l'overlay d'essai seulement** (à recréer depuis
   `plymouth-luks-desktop.qcow2` pour revenir à zéro).
