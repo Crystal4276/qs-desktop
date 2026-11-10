@@ -327,3 +327,35 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
 - Contrôle final réel : moniteur ouvert 6 s, mémoire des applications et mesures GPU visibles, capture
   `.shots/monitor-review-after.png` comparée au rendu précédent ; panneau refermé et focus initial restauré.
   Bureau vivant PID 76660, un seul collecteur Intel, aucun banc restant ; droits GPU inchangés.
+
+## Retours laptop — Nemo, Thunderbird, nightTab (2026-11-10)
+
+- **Icônes de Nemo bleues** (Vidéos, et toutes au zoom) : deux défauts de la surcouche Papirus d'`install.sh`. Papirus sert
+  `folder-videos` par une chaîne de liens (→ `folder-video` → `folder-blue-video`) que la surcouche ne suivait pas ; et les
+  tailles 96 / 128 du zoom (liens `96x96/places → 48x48`) n'y étaient pas, donc GTK prenait les dossiers bleus du système.
+  Corrigé : chaînes suivies, liens de tailles repris tels quels (Papirus et Papirus-Dark), noms explicitement bleus
+  (`folder-blue-*`) laissés bleus. Révision dans la marque du thème : la surcouche est refaite sur les machines déjà installées.
+  Comparaison réelle (recherche GTK simulée) avec le Papirus de `terrier` : **0 différence sur 1 186** couples icône × taille
+  (419 avec l'ancien code).
+- **Dossiers du Home** (ton choix : `Applications` au pluriel) : Modèles, Public et Projets désactivés dans
+  `user-dirs.dirs` (« $HOME/ », plus recréés à la connexion), retirés s'ils sont vides, gardés avec un message sinon ;
+  `~/Applications` créé. `--uninstall` remet `user-dirs.dirs` et recrée les dossiers vides retirés.
+- **Thunderbird** (ton choix : politique système) : thème officiel `mocha-green.xpi` (commit figé, SHA-256 dans
+  `deps/themes.txt` ; même thème que sur `terrier`, une couleur `lwt_frame` en plus) copié dans
+  `/usr/local/share/catppuccin-thunderbird/`, installé par `ExtensionSettings` dans `/etc/thunderbird/policies/policies.json`
+  (`normal_installed` : actif, désactivable). Une politique existante à toi n'est jamais écrasée. Thunderbird 159 range ses
+  profils dans `~/.config/thunderbird` (`terrier` : encore `~/.thunderbird`).
+- **nightTab** : `dotfiles/chromium/nighttab.json` était **identique** à ta page de `terrier` (11 favoris, thème, icônes ; seule
+  la recherche en cours vidée) : rien d'oublié, l'import était manuel. Ton choix : import automatique,
+  `scripts/nighttab-import.py` (Chromium sans fenêtre piloté par `--remote-debugging-pipe`, écriture de la clé `nightTab`,
+  rechargement, relecture). Une fois par version du fichier ; Chromium ouvert ou extension absente : rappel en fin d'installation.
+- Tests : `test-install.py` 0 échec (Papirus d'origine en miniature résolu comme GTK, mise à niveau d'une ancienne surcouche,
+  Home déjà habité) ; contre-épreuve sur l'ancien `install.sh` : 4 échecs. `test-thunderbird-theme.py` OK (installation,
+  idempotence, nouvelle version, politique existante, retrait). Import nightTab sur un profil jetable : page identique.
+- **VM Arch vierge** : installation code 0 ; Home = Applications, Desktop, Documents, Downloads, Music, Pictures, Videos ;
+  nightTab importé dans le profil **neuf** (extension installée depuis le Web Store pendant l'import), page vérifiée dans
+  Chromium ; Thunderbird : thème Catppuccin actif dans un profil neuf (`extensions.json`, `activeThemeID`) ; Nemo : dossiers
+  lavande au zoom normal et maximal, Vidéos compris. Second passage sans changement (hors `sudo pacman`, refusé à cause de
+  `/etc/sudoers.d/arch` mal réglé dans l'image de test, sans rapport). `--uninstall` : politique, copie et `user-dirs.dirs` retirés.
+- **Sur le laptop** : `git pull`, fermer Chromium, `./install.sh` (accepter l'étape « Thème Catppuccin de Thunderbird ») ;
+  puis vérifier Nemo (zoom), Thunderbird au prochain lancement, nouvel onglet de Chromium.
