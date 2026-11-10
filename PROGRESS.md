@@ -500,7 +500,7 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
 
 ## Barre — couleurs des espaces de travail (2026-11-10)
 
-- Neuf couleurs Catppuccin Mocha, par position dans chaque barre : green, teal, sapphire, blue, lavender, mauve, pink, red, peach.
+- Neuf couleurs Catppuccin Mocha, par position dans chaque barre : green, teal, sapphire, blue, lavender, mauve, pink, peach, red.
   Chaque écran reprend les N premières couleurs pour ses N espaces, sans interpolation ; les espaces vides restent en surface1.
   Couleur au survol et halo de l’espace affiché conservés ; indice borné pendant le retrait des boutons.
 - Vérification ciblée du vrai composant sur copie isolée : 169 contrôles passent, deux profils, blocs de 0/1/2/3/4/5/9 espaces,
@@ -514,3 +514,8 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
   rechargement sans avertissement. Capture contrôlée : `.shots/workspace-colors-after.png` ; neuf couleurs du banc :
   `.shots/workspace-colors-nine-bench.png`. Tous les bancs arrêtés, aucun écran virtuel restant.
 - À vérifier à la main : appréciation des couleurs, survol et halo, vrai branchement d’un écran externe.
+
+- Ajustement demandé : rouge en dernière position, pêche en huitième pour conserver neuf teintes distinctes.
+  169 contrôles ciblés sur copie isolée passent ; capture `.shots/workspace-colors-red-bench.png`. Même instance réelle
+  vivante (PID 1882), IPC prêt après rechargement, capture `.shots/workspace-colors-red-after.png` contrôlée ; banc arrêté.
+  Un avertissement `Notifs.qml:42` (`scheduled`, undefined → bool) au rechargement, hors du composant modifié.
