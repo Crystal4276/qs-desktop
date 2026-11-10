@@ -147,13 +147,13 @@ def main():
                    QS_PAPIRUS_DIR=str(icons / "Papirus"), QS_WALLPAPERS_REPO=git_repo(tmp / "src/wallpapers", "fond.png"),
                    QS_DM_REPO=git_repo(tmp / "src/gms", "install-all.sh"))
 
-        def install(*args, profile=("--profil", "jeux")):
+        def install(*args, profile=("--profil", "jeux"), path=None):
             cmd = ["dbus-run-session", "--", "bash", "-c", 'dconf load / < "$0" 2>/dev/null; bash "$1" "${@:2}"; rc=$?; dconf dump / > "$0"; exit $rc',
                    str(tmp / "dconf.ini"), str(repo / "install.sh"), "--no-packages", "--no-system", *profile, *args]
             log = open(tmp / "last.log", "w")
             try:
                 # Nouvelle session sans terminal : les questions d'install.sh répondent « non » sans attendre.
-                r = subprocess.run(cmd, env=env, stdout=subprocess.PIPE, stderr=log, stdin=subprocess.DEVNULL, text=True,
+                r = subprocess.run(cmd, env=dict(env, PATH=path) if path else env, stdout=subprocess.PIPE, stderr=log, stdin=subprocess.DEVNULL, text=True,
                                    timeout=300, start_new_session=True)
             except subprocess.TimeoutExpired as e:
                 out = (e.stdout or b"").decode() if isinstance(e.stdout, bytes) else (e.stdout or "")
@@ -168,6 +168,20 @@ def main():
         subprocess.run(["dbus-run-session", "--", "bash", "-c", 'dconf load / < "$0"; dconf dump / > "$0"', str(tmp / "dconf.ini")],
                        env=env, capture_output=True)   # forme normalisée par dconf, pour comparer
         before, dconf_before = snapshot(home), (tmp / "dconf.ini").read_text()
+
+        # Arch minimal (archinstall, profil « minimal ») : pas encore de python3, installé à l'étape 1.
+        nopy = tmp / "bin-nopython"
+        nopy.mkdir()
+        for d in os.environ["PATH"].split(":"):
+            for exe in (pathlib.Path(d).iterdir() if pathlib.Path(d).is_dir() else []):
+                if not exe.name.startswith("python") and not (nopy / exe.name).exists():
+                    (nopy / exe.name).symlink_to(exe)
+        host_saved = host_json.read_text() if host_json.exists() else None
+        host_json.write_text('{\n  "profile": "travail"\n}\n')
+        r = install("--dry-run", profile=(), path=str(nopy))
+        check(r.returncode == 0 and "Profil : travail (hosts/" in r.stdout,
+              f"sans python3 : simulation complète, profil lu dans hosts/ (code {r.returncode}) {r.stderr.strip()[-300:]}")
+        host_json.write_text(host_saved) if host_saved is not None else host_json.unlink()
 
         r = install("--dry-run")
         check(r.returncode == 0, f"simulation : code {r.returncode} {r.stderr.strip()[-300:]}")

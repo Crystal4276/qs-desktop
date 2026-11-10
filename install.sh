@@ -226,7 +226,13 @@ gpu_vendors() { # cartes graphiques présentes : nvidia intel amd, lues par lspc
 # --- Questions ---------------------------------------------------------------------------------------------------------
 
 # Profil écrit dans hosts/<machine>.json seulement (pas celui de hosts/default.json) : vide s'il n'y en a pas.
+# Sans python3 (Arch minimal : python arrive à l'étape 1), lecture simple de la clé ; sous set -e, un python3 absent
+# dans « $(…) » arrêtait tout sans message.
 host_profile() {
+    if ! command -v python3 >/dev/null; then
+        sed -n 's/.*"profile"[[:space:]]*:[[:space:]]*"\(jeux\|travail\)".*/\1/p' "$repo/hosts/$host.json" 2>/dev/null | head -n 1
+        return 0
+    fi
     python3 -I - "$repo/hosts/$host.json" 2>/dev/null <<'EOF'
 import json, sys
 try:
@@ -905,7 +911,7 @@ PY
 
 # Web apps (deps/README.md, « Web apps ») : lanceurs et manifestes de l'hôte natif développés depuis dotfiles/webapps.
 step_webapps() {
-    local webapps="$repo/dotfiles/webapps" profiles="$data/ice/profiles" tpl name out content
+    local webapps="$repo/dotfiles/webapps" profiles="$data/ice/profiles" tpl name out content dbfile
     if [[ "$webapps$profiles" == *[\"\`\$\\%]* ]]; then
         echo "! chemin du dépôt ou des profils avec \" \` \$ \\ ou % : web apps non installées"; return
     fi
@@ -928,9 +934,12 @@ step_webapps() {
     done
     [[ -x "$webapps/open-link" ]] || run chmod +x "$webapps/open-link"
     if [[ -z "$dry" ]] && command -v update-desktop-database >/dev/null; then
-        [[ -e "$data/applications/mimeinfo.cache" ]] || recorded "$data/applications/mimeinfo.cache" || record seed "$data/applications/mimeinfo.cache" -
+        # intent.cache : écrit aussi par desktop-file-utils ≥ 0.29.
+        for dbfile in mimeinfo.cache intent.cache; do
+            [[ -e "$data/applications/$dbfile" ]] || recorded "$data/applications/$dbfile" || record seed "$data/applications/$dbfile" -
+        done
         update-desktop-database "$data/applications" 2>/dev/null || true
-        written "$data/applications/mimeinfo.cache"
+        for dbfile in mimeinfo.cache intent.cache; do written "$data/applications/$dbfile"; done
     fi
 }
 
