@@ -664,6 +664,26 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
     --iter-time 5000`) ; `./install.sh` (ou `scripts/plymouth-setup.sh install`), redémarrage ; à tester à la main :
     démarrage à froid, mauvaise phrase, Verr. Maj., écran externe branché au démarrage (dont le 1440p), arrêt et redémarrage
     (écran crust), échelle HiDPI éventuelle de Plymouth sur la dalle interne.
+  - Revue de code (2026-11-10, trois passages jusqu'à ne plus trouver que du négligeable). Corrigé dans `plymouth-setup.sh` :
+    - une reconstruction interrompue est reprise au passage suivant, grâce à une marque `rebuild` posée avant le premier
+      changement (mkinitcpio, grub-mkconfig ou sudo en échec) ;
+    - HOOKS sur plusieurs lignes refusé d'emblée, sauf si le hook a été ajouté à la main ;
+    - GRUB exigé dans `/boot/grub`, vérifié par sudo quand l'ESP est illisible (dmask=0077 d'archinstall : sans cela,
+      le laptop aurait été refusé à tort) ;
+    - machine non prise en charge : code 3, signalé une fois par `install.sh`, sans « relancer » ;
+    - retrait possible même sans `plymouth-set-default-theme`.
+
+    Dans le thème : un statut systemd pendant la vérification (cas `sd-encrypt`) n'efface plus un refus.
+
+    Côté test, `test-install` lance `plymouth-setup.sh --dry-run` depuis le dépôt.
+
+    Tout est vérifié dans une couche jetable de la VM : échec de mkinitcpio puis reprise, `/etc/default/grub` non modifiable
+    puis reprise, retrait sans l'outil, HOOKS sur plusieurs lignes, puis redémarrage avec refus, déverrouillage, greeter et
+    départ de plymouthd. Laissé de côté, jugé négligeable :
+    - les cinq jeux d'images dans l'initramfs ;
+    - les couleurs recopiées de la spec ;
+    - deux passages de Chromium dans `plymouth-assets.py` ;
+    - quelques formes de HOOKS improbables.
 
 - Synchronisation du déploiement : commits Plymouth / installation publiés par l’autre session conservés par fusion ;
   seul conflit dans le journal résolu en gardant les deux ajouts. Aucun installateur ni réglage système exécuté.
