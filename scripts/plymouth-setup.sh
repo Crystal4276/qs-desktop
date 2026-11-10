@@ -54,17 +54,27 @@ hooks_file() {
     echo "$last"
 }
 
-has_hook() { grep -qE '^HOOKS=\(.*\bplymouth\b' "$1"; }
+# Tableau HOOKS=( … ), sur une ou plusieurs lignes (le hook a pu être ajouté à la main).
+has_hook() { awk '/^HOOKS=\(/{f=1} f{print} f&&/\)/{exit}' "$1" | grep -qw plymouth; }
 has_splash() { grep -qE '^GRUB_CMDLINE_LINUX_DEFAULT="[^"]*\bsplash\b' "$grub"; }
-# Thème par défaut ; Theme= lu directement si l'outil manque (paquet retiré avant uninstall).
+# Thème par défaut ; Theme= lu et écrit directement si l'outil manque (paquet retiré avant uninstall).
 theme_now() { plymouth-set-default-theme 2>/dev/null || sed -n 's/^Theme=//p' "$conf" 2>/dev/null | tail -n1; }
+set_theme() {   # <nom> | --reset
+    if command -v plymouth-set-default-theme >/dev/null; then run plymouth-set-default-theme "$1"
+    elif [[ "$1" == --reset ]]; then run sed -i '/^Theme=/d' "$conf"
+    else run sed -i "s/^Theme=.*/Theme=$1/" "$conf"; fi
+}
 
 # Chargeur : GRUB dans /boot/grub seulement (le laptop) ; autre chose → rien n'est modifié (code 3 : non pris en charge).
-# /boot (ESP en vfat, dmask=0077 par archinstall) peut être illisible en utilisateur ; en simulation, sans sudo, supposé bon.
+# /boot (ESP en vfat, dmask=0077 par archinstall) peut être illisible en utilisateur : vérifié par sudo (un refus de sudo
+# est un échec, pas un chargeur non pris en charge) ; en simulation, sans sudo, supposé bon.
 grub_dir() {
     [[ -d /boot/grub ]] && return 0
     [[ -x /boot ]] && return 1
-    [[ -n "$dry" ]] || sudo test -d /boot/grub
+    [[ -n "$dry" ]] && return 0
+    local r
+    r="$(sudo sh -c 'test -d /boot/grub && echo yes || echo no')" || { echo "! sudo : échec" >&2; exit 1; }
+    [[ "$r" == yes ]]
 }
 
 check_bootloader() {
@@ -86,12 +96,12 @@ install_theme() {
     if diff -rq "$tree/dotfiles/plymouth/$theme" "$dest" >/dev/null 2>&1; then
         echo "= $dest à jour"
     else
+        rebuild initramfs
         run rm -rf "$dest.new"
         run cp -r --no-preserve=ownership "$tree/dotfiles/plymouth/$theme" "$dest.new"
         run chmod -R u=rwX,go=rX "$dest.new"
         run rm -rf "$dest"
         run mv "$dest.new" "$dest"
-        initramfs=1
     fi
     local entry src target
     for entry in "${dropins[@]}"; do
@@ -115,7 +125,7 @@ do_install() {
     [[ -n "$hf" ]] || { echo "! HOOKS introuvable dans /etc/mkinitcpio.conf(.d) ; rien n'est modifié." >&2; exit 1; }
     # Le sed du hook ne traite que HOOKS=( … ) sur une ligne.
     has_hook "$hf" || grep -qE '^HOOKS=\(.*\)' "$hf" \
-        || { echo "! HOOKS sur plusieurs lignes dans $hf : ajouter « plymouth » avant block / encrypt à la main ; rien n'est modifié." >&2; exit 1; }
+        || { echo "! HOOKS de $hf hors de la forme HOOKS=( … ) sur une ligne : ajouter « plymouth » avant block / encrypt à la main ; rien n'est modifié." >&2; exit 1; }
     pending
 
     install_theme
@@ -125,6 +135,7 @@ do_install() {
     if [[ "$current" == "$theme" ]]; then
         echo "= thème Plymouth par défaut : $theme"
     else
+        rebuild initramfs
         if [[ -n "$(noted previous-theme)$(noted plymouthd-conf)" ]]; then
             :
         elif grep -qE '^Theme=' "$conf" 2>/dev/null; then
@@ -136,27 +147,26 @@ do_install() {
             note plymouthd-conf -
         fi
         [[ -f "$conf" ]] && keep_original "$conf"
-        run plymouth-set-default-theme "$theme"
-        initramfs=1
+        set_theme "$theme"
     fi
 
     # Hook juste avant le premier de block / sd-encrypt / encrypt / filesystems : Plymouth affiché avant la phrase de passe.
     if has_hook "$hf"; then
         echo "= hook plymouth dans $hf"
     else
+        rebuild initramfs
         keep_original "$hf"
         [[ -n "$(noted hooks)" ]] || note hooks "$hf"
         run sed -i -E '/^HOOKS=\(/{s/\b(block|sd-encrypt|encrypt|filesystems)\b/plymouth \1/;t;s/\)/ plymouth)/}' "$hf"
-        initramfs=1
     fi
 
     if has_splash; then
         echo "= splash dans $grub"
     else
+        rebuild bootloader
         keep_original "$grub"
         [[ -n "$(noted splash)" ]] || note splash 1
         run sed -i -E 's/^(GRUB_CMDLINE_LINUX_DEFAULT=")([^"]*)"/\1\2 splash"/; s/^(GRUB_CMDLINE_LINUX_DEFAULT=") /\1/' "$grub"
-        bootloader=1
     fi
     finish
     [[ -n "$dry" || -n "$initramfs$bootloader$units" ]] && echo "Écran de démarrage Core Lab au prochain démarrage (retour : $0 uninstall, docs/ROLLBACK.md)."
@@ -168,25 +178,25 @@ do_uninstall() {
     pending
     hf="$(noted hooks)"
     if [[ -n "$hf" && -f "$hf" ]] && has_hook "$hf"; then
+        rebuild initramfs
         run sed -i -E '/^HOOKS=\(/{s/\bplymouth //;s/ plymouth\)/)/}' "$hf"
-        initramfs=1
     fi
     if [[ -n "$(noted splash)" ]] && has_splash; then
+        rebuild bootloader
         run sed -i -E '/^GRUB_CMDLINE_LINUX_DEFAULT="/{s/ splash\b//;s/"splash /"/;s/"splash"/""/}' "$grub"
-        bootloader=1
     fi
     previous="$(noted previous-theme)" original="$(noted plymouthd-conf)"
     if [[ "$(theme_now || true)" == "$theme" ]]; then
+        rebuild initramfs
         if [[ "$original" == - ]]; then
             run rm -f "$conf"
         elif [[ -n "$original" && -f "$original" ]]; then
             run install -m 644 "$original" "$conf"
         elif [[ -n "$previous" ]]; then
-            run plymouth-set-default-theme "$previous"
+            set_theme "$previous"
         else
-            run plymouth-set-default-theme --reset
+            set_theme --reset
         fi
-        initramfs=1
     fi
     for entry in "${dropins[@]}"; do
         read -r src target <<<"$entry"
@@ -197,8 +207,8 @@ do_uninstall() {
         fi
     done
     if [[ -d "$dest" ]]; then
+        rebuild initramfs
         run rm -rf "$dest"
-        initramfs=1
     fi
     finish
     [[ -f "$state" ]] && run rm -f "$state" "$var/plymouthd.conf.orig"
@@ -206,21 +216,28 @@ do_uninstall() {
     return 0
 }
 
-# Reconstruction interrompue au dernier passage (mkinitcpio ou grub-mkconfig en échec) : refaite, même si rien n'a changé depuis.
+# Marque $var/rebuild posée avant le premier changement qui demande de refaire l'initramfs ou GRUB, retirée quand les deux
+# sont refaits : un passage interrompu (sudo refusé, mkinitcpio ou grub-mkconfig en échec) est repris au suivant, même si
+# rien d'autre n'a changé depuis.
+marked=""
+rebuild() {   # initramfs | bootloader
+    printf -v "$1" 1
+    [[ -z "$marked" ]] || return 0
+    marked=1
+    [[ -f "$var/rebuild" ]] || run sh -c "mkdir -p '$var' && touch '$var/rebuild'"
+}
+
 pending() {
     [[ -f "$var/rebuild" ]] || return 0
     echo "! initramfs et GRUB non refaits au dernier passage : refaits maintenant"
-    initramfs=1 bootloader=1
+    initramfs=1 bootloader=1 marked=1
 }
 
 finish() {
     [[ -n "$units" ]] && run systemctl daemon-reload
-    if [[ -n "$initramfs$bootloader" ]]; then
-        run sh -c "mkdir -p '$var' && touch '$var/rebuild'"     # retiré seulement si tout réussit
-        [[ -n "$initramfs" ]] && run mkinitcpio -P
-        [[ -n "$bootloader" ]] && run grub-mkconfig -o /boot/grub/grub.cfg
-        run rm -f "$var/rebuild"
-    fi
+    [[ -n "$initramfs" ]] && run mkinitcpio -P
+    [[ -n "$bootloader" ]] && run grub-mkconfig -o /boot/grub/grub.cfg
+    [[ -n "$marked" ]] && run rm -f "$var/rebuild"
     return 0
 }
 
@@ -228,7 +245,8 @@ do_status() {
     local hf
     hf="$(hooks_file)"
     echo "thème installé      : $([[ -f "$dest/$theme.plymouth" ]] && echo oui || echo non) ($dest)"
-    echo "thème par défaut    : $(plymouth-set-default-theme 2>/dev/null || echo '?')"
+    echo "thème par défaut    : $(theme_now || true)"
+    [[ -f "$var/rebuild" ]] && echo "! initramfs et GRUB à refaire (passage interrompu) : relancer install ou uninstall"
     echo "hook plymouth       : $([[ -n "$hf" ]] && has_hook "$hf" && echo "oui ($hf)" || echo non)"
     echo "splash (GRUB)       : $([[ -f "$grub" ]] && has_splash && echo oui || echo non) ; noyau en cours : $(grep -qw splash /proc/cmdline && echo splash || echo 'sans splash')"
     local entry src target
