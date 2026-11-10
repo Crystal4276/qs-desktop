@@ -1,7 +1,8 @@
 # Dépendances
 
 Règle (2026-11-09) : **dépôts officiels d'abord**. `install.sh` n'installe aucun paquet AUR, sauf `paru-bin` qu'il construit
-lui-même ; ce qui n'existe qu'en AUR (Claude Code, NordVPN, Plex, RustDesk) est seulement documenté dans `README.md`.
+lui-même ; ce qui n'existe qu'en AUR (NordVPN, Plex, RustDesk) est seulement documenté dans `README.md`. Claude Code, absent
+des dépôts, est installé par son script officiel (`https://claude.ai/install.sh`, dans `~/.local/bin`), avec confirmation.
 
 - `arch-pacman.txt` : le bureau (dépôts officiels Arch).
 - `reflector` (dans `arch-pacman.txt`) : amorcé avant les paquets du bureau avec confirmation système ; sélection mondiale HTTPS,
@@ -143,7 +144,7 @@ Ce que `install.sh` (phase 12) devra installer, activer ou vérifier — relevé
 | Lien `~/.config/quickshell/desktop` → dépôt | lancement par `qs -c desktop` | existe | créé par `install.sh` |
 | Thème d'icônes `Papirus-Dark` | icônes d'applications | paquet | paquet + `//@ pragma IconTheme Papirus-Dark` dans `shell.qml` (indispensable : le thème `breeze` de qt6ct n'est pas installé ici, `ARCHITECTURE.md` § 8.1) |
 | Curseur, thème GTK, Kvantum, dossiers Papirus | apparence des applications | paquets AUR (ancienne installation) | archives Catppuccin de `deps/themes.txt` dans le compte + réglages GTK / Qt / dconf, par `install.sh` (étape 3) |
-| Dépôt `wallpapers` | fonds d'écran | `~/Pictures/Wallpapers` | `git clone git@github.com:Crystal4276/wallpapers.git "$(xdg-user-dir PICTURES)/Wallpapers"` (dépôt privé : clé SSH GitHub nécessaire) ; facultatif |
+| Dépôt `wallpapers` | fonds d'écran | `~/Pictures/Wallpapers` | cloné par `install.sh` (dépôt public, HTTPS, `--depth 1`, progression affichée) ; facultatif |
 | Commande de session Sway sur Nvidia | `WLR_RENDERER=vulkan sway --unsupported-gpu` | fichier `/usr/share/wayland-sessions/sway-vulkan.desktop` créé à la main pour SDDM | versionné (`dotfiles/greetd/sway-vulkan.desktop`), installé dans `/usr/local/share/wayland-sessions/` par `scripts/greeter-setup.sh` si Nvidia est la seule carte graphique (laptop hybride : phase 12) ; le Sway du greeter le détecte seul (`scripts/greeter.sh`) |
 | Gestionnaire de connexion | greetd + greeter Quickshell (phase 11, `ARCHITECTURE.md` § 9) | SDDM activé (`sddm.service`), PAM `/etc/pam.d/sddm` avec `pam_gnome_keyring.so` | paquets `greetd` (+ `greetd-agreety`), puis `scripts/greeter-setup.sh install` (copie dans `/usr/local/share/qs-desktop`, `/etc/greetd/config.toml`, `/etc/pam.d/greetd` avec le trousseau, `/etc/pam.d/greetd-greeter`, `/var/lib/qs-desktop/`) et `enable` (ancien gestionnaire désactivé) — `sudo`, avec ton accord |
 | `QT_QPA_PLATFORMTHEME=qt6ct` | thème des applications Qt (Kvantum `KvArcDark`, icônes `breeze`) | dans `/etc/environment` | à reproduire (fichier système, `sudo`) ; Quickshell en hérite (`ARCHITECTURE.md` § 8.1) |

@@ -10,8 +10,9 @@
 #   --uninstall        retire les liens et copies, remet les sauvegardes et les réglages d'origine, étapes système comprises ;
 #                      les paquets installés restent
 #
-# Étapes : miroirs Reflector · 1 paquets (dépôts officiels, multilib, paru-bin) · 2 configs du compte (liens, sauvegardes `<x>.bak-<date>`) ·
-# 3 thème · 4 réglages (dconf, applications par défaut, web apps, liens Chromium) · 5 config machine · 6 système (sudo).
+# Étapes : miroirs Reflector · 1 paquets (dépôts officiels, multilib, paru-bin, Claude Code) · 2 configs du compte (liens, sauvegardes
+# `<x>.bak-<date>`) · 3 thème · 4 réglages (dconf, applications par défaut, barres d'état de Claude Code et Codex, web apps,
+# liens Chromium) · 5 config machine · 6 système (sudo).
 set -euo pipefail
 
 repo="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
@@ -32,7 +33,7 @@ while [[ $# -gt 0 ]]; do
         --no-system) system="" ;;
         --yes) yes=1 ;;
         --uninstall) uninstall=1 ;;
-        -h|--help) sed -n '4,14p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        -h|--help) sed -n '4,15p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
         *) echo "Option inconnue : $1 (--help)" >&2; exit 2 ;;
     esac
     shift
@@ -327,6 +328,26 @@ step_packages() {
             rm -rf "$tmp"
         fi
     fi
+    step_claude
+}
+
+# Claude Code : absent des dépôts officiels ; script officiel d'Anthropic (binaire dans ~/.local/bin, ajouté au PATH par
+# dotfiles/bash/qs-desktop.bash ; mises à jour faites par Claude Code lui-même). Déjà là (paquet AUR compris) : rien.
+claude_bin() {
+    command -v claude || { [[ -x "$HOME/.local/bin/claude" ]] && echo "$HOME/.local/bin/claude"; }
+}
+
+step_claude() {
+    local bin script
+    if bin="$(claude_bin)"; then echo "= $bin"; return; fi
+    ask "Installer Claude Code (script officiel https://claude.ai/install.sh, dans ~/.local/bin) ?" oui || { echo "- Claude Code non installé"; return; }
+    [[ -n "$dry" ]] && { echo "+ curl -fsSL https://claude.ai/install.sh | bash"; return; }
+    # Script entier téléchargé avant de le lancer : une coupure réseau n'en exécute jamais un morceau.
+    script="$(mktemp)"
+    { curl -fsSL --connect-timeout 15 --max-time 120 --retry 3 --retry-delay 5 -o "$script" https://claude.ai/install.sh \
+        && bash "$script" </dev/null; } \
+        || later "Claude Code non installé (réseau ? message ci-dessus) : relancer install.sh"
+    rm -f "$script"
 }
 
 # --- 2. Configs du compte ----------------------------------------------------------------------------------------------
@@ -641,6 +662,7 @@ PY
     fi
 
     deluge_no_tray
+    if command -v python3 >/dev/null; then ai_statuslines; else echo "- python3 absent (installé à l'étape 1) : barres d'état de Claude Code et Codex non réglées"; fi
     command -v chromium >/dev/null && chromium_profiles
     if command -v python3 >/dev/null; then step_webapps; else echo "- python3 absent (installé à l'étape 1) : web apps non générées"; fi
     if command -v chromium >/dev/null; then
@@ -707,19 +729,21 @@ chromium_open() {   # dossier de données (--user-data-dir)
     [[ "$(ps -o comm= -p "${lock##*-}" 2>/dev/null)" == chrom* ]]
 }
 
-chromium_prefs() {  # dossier de données d'un profil, nom affiché, clés voulues (JSON : « a.b.c »: valeur ; liste : ajoutée)
-    local file="$1/Default/Preferences" content key old
-    command -v python3 >/dev/null || return 0
-    # Une lecture : une ligne « clé<TAB>ancienne valeur » par clé à changer (JSON ; « unset » : absente, « nofile » : fichier
-    # absent), puis le contenu à écrire sur une seule ligne.
-    content="$(python3 -I - "$file" "$3" <<'PY'
+# Clés d'un fichier JSON de réglages qu'une application réécrit elle-même (Chromium, Claude Code). Une lecture : une ligne
+# « clé<TAB>ancienne valeur » par clé à changer (JSON ; « unset » : absente, « nofile » : fichier absent), une ligne vide, puis
+# le contenu à écrire ; « same » si rien ne change. Mise en forme du fichier gardée (compacte ou indentée, saut de ligne final ;
+# fichier absent : indentée avec « pretty »). Sortie suivie d'un point (gardé par $(…) avec le saut de ligne final), à retirer.
+json_merge() {      # fichier clés-voulues (JSON : « a.b.c »: valeur ; liste : ajoutée) [pretty]
+    python3 -I - "$@" <<'PY' || return 1
 import json, sys
+path, want, style = sys.argv[1], sys.argv[2], (sys.argv[3:] or [""])[0]
 try:
-    prefs, nofile = json.load(open(sys.argv[1], encoding="utf-8")), False
+    text, nofile = open(path, encoding="utf-8").read(), False
+    prefs = json.loads(text)
 except FileNotFoundError:
-    prefs, nofile = {}, True
+    text, prefs, nofile = "", {}, True
 changed = []
-for key, value in json.loads(sys.argv[2]).items():
+for key, value in json.loads(want).items():
     *parents, leaf = key.split(".")
     node = prefs
     for p in parents:
@@ -729,26 +753,67 @@ for key, value in json.loads(sys.argv[2]).items():
         value = cur + [v for v in value if v not in cur]
     if leaf in node and cur == value:
         continue
-    changed.append(f"{key}\t{'nofile' if nofile else json.dumps(cur) if leaf in node else 'unset'}")
+    changed.append(f"{key}\t{'nofile' if nofile else json.dumps(cur, ensure_ascii=False) if leaf in node else 'unset'}")
     node[leaf] = value
 if not changed:
     print("same", end="")
 else:
-    print("\n".join(changed))
-    print(json.dumps(prefs, separators=(",", ":")), end="")
+    pretty = "\n" in text.strip() or (nofile and style == "pretty")
+    end = "\n" if text.endswith("\n") or (nofile and style == "pretty") else ""
+    print("\n".join(changed) + "\n")
+    print(json.dumps(prefs, ensure_ascii=False, **({"indent": 2} if pretty else {"separators": (",", ":")})), end=end)
 PY
-)" || { echo "! $file illisible : réglages de Chromium laissés tels quels"; return 0; }
+    echo .
+}
+
+# Résultat de json_merge noté (ancienne valeur de chaque clé changée : --uninstall ne remet qu'elles) puis écrit.
+json_write() {      # fichier résultat genre-au-registre description
+    local key old
+    while IFS=$'\t' read -r key old; do
+        recorded "$1#$key" || { [[ "$key" == extensions.theme.system_theme ]] && recorded "$1"; } \
+            || record "$3" "$1#$key" "$old"
+    done <<< "${2%%$'\n\n'*}"
+    write_setting "$1" "${2#*$'\n\n'}" "$4" keep
+}
+
+chromium_prefs() {  # dossier de données d'un profil, nom affiché, clés voulues (json_merge)
+    local file="$1/Default/Preferences" content
+    command -v python3 >/dev/null || return 0
+    content="$(json_merge "$file" "$3")" || { echo "! $file illisible : réglages de Chromium laissés tels quels"; return 0; }
+    content="${content%.}"
     if [[ "$content" == same ]]; then echo "= $file : thème GTK, barre de titre du système"; return; fi
     if chromium_open "$1"; then
         later "$2 ouvert : le fermer puis relancer install.sh pour ses réglages (thème GTK, barre de titre)"; return
     fi
-    # Tous les réglages du navigateur sont dans ce fichier : le registre ne garde que l'ancienne valeur de chaque clé changée,
-    # --uninstall ne remet qu'elles. Ancien registre (« chromium-theme <fichier> ») : la clé du thème y est déjà notée.
-    while IFS=$'\t' read -r key old; do
-        recorded "$file#$key" || { [[ "$key" == extensions.theme.system_theme ]] && recorded "$file"; } \
-            || record chromium-pref "$file#$key" "$old"
-    done <<< "${content%$'\n'*}"
-    write_setting "$file" "${content##*$'\n'}" "thème GTK, barre de titre du système$([[ "$3" == *external_uninstalls* ]] && echo ", sans les extensions du navigateur")" keep
+    # Tous les réglages du navigateur sont dans ce fichier : seules les clés changées sont notées et remises au retrait.
+    # Ancien registre (« chromium-theme <fichier> ») : la clé du thème y est déjà notée.
+    json_write "$file" "$content" chromium-pref \
+        "thème GTK, barre de titre du système$([[ "$3" == *external_uninstalls* ]] && echo ", sans les extensions du navigateur")"
+}
+
+# Barres d'état de Claude Code et de Codex comme sur le desktop de référence : modèle, contexte utilisé, limites de
+# l'abonnement (5 h, semaine). Claude Code : script du dépôt (dotfiles/claude, lit le JSON de Claude Code avec jq) lié dans
+# son dossier, déclaré dans settings.json ; Codex : éléments natifs de sa barre ([tui] status_line). Seules ces clés
+# changent ; les deux fichiers sont réécrits par leur application (le reste y est gardé).
+ai_statuslines() {
+    local dir="${CLAUDE_CONFIG_DIR:-$HOME/.claude}" content cmd
+    if claude_bin >/dev/null; then
+        link dotfiles/claude/statusline-command.sh "$dir/statusline-command.sh"
+        cmd="bash $(printf '%q' "$dir/statusline-command.sh")"
+        content="$(json_merge "$dir/settings.json" "{\"statusLine\": {\"type\": \"command\", \"command\": $(printf '%s' "$cmd" | python3 -I -c 'import json, sys; print(json.dumps(sys.stdin.read()))')}}" pretty)" \
+            || { echo "! $dir/settings.json illisible : barre d'état de Claude Code non réglée"; content=""; }
+        content="${content%.}"
+        if [[ "$content" == same ]]; then echo "= $dir/settings.json : barre d'état"
+        elif [[ -n "$content" ]]; then json_write "$dir/settings.json" "$content" json-pref "barre d'état (statusLine)"; fi
+    else
+        echo "- Claude Code absent : barre d'état non réglée"
+    fi
+    if command -v codex >/dev/null; then
+        ini_set "${CODEX_HOME:-$HOME/.codex}/config.toml" tui status_line \
+            '["model-with-reasoning", "current-dir", "context-used", "five-hour-limit", "weekly-limit", "context-window-size", "used-tokens"]'
+    else
+        echo "- Codex absent : barre d'état non réglée"
+    fi
 }
 
 # Application ouverte avec ce même dossier personnel ? Sans HOME dans son environnement (lancée par le compositeur) :
@@ -896,14 +961,18 @@ step_wallpapers() {
     ask "Cloner tes fonds d'écran ($src, environ 300 Mo) dans $dir ?" oui || { echo "- fonds d'écran non clonés : aucun fond affiché"; return; }
     run mkdir -p "$(dirname "$dir")"
     [[ -n "$dry" ]] && { echo "+ clone de $src dans $dir"; return; }
+    # Téléchargement long : progression de git affichée (objets reçus, Mo, débit). GitHub : dernière version seulement
+    # (--depth 1), sans les images retirées de l'historique ; `git pull` la met à jour ensuite.
+    echo "Téléchargement des fonds d'écran (environ 300 Mo) :"
     if [[ "$src" == */*/* || "$src" == /* || "$src" == *:* ]]; then
-        git clone -q "$src" "$dir"
+        git clone --progress "$src" "$dir"
     elif command -v gh >/dev/null && gh auth status >/dev/null 2>&1; then
-        gh repo clone "$src" "$dir" -- -q
+        gh repo clone "$src" "$dir" -- --progress --depth 1
     else
         # Dépôt public : HTTPS sans compte ; sinon clé SSH. Jamais de question de mot de passe (échec immédiat).
-        GIT_TERMINAL_PROMPT=0 git clone -q "https://github.com/$src.git" "$dir" 2>/dev/null \
-            || GIT_SSH_COMMAND="ssh -o BatchMode=yes" git clone -q "git@github.com:$src.git" "$dir"
+        GIT_TERMINAL_PROMPT=0 git clone --progress --depth 1 "https://github.com/$src.git" "$dir" \
+            || { echo "! HTTPS impossible : essai par SSH"
+                 GIT_SSH_COMMAND="ssh -o BatchMode=yes" git clone --progress --depth 1 "git@github.com:$src.git" "$dir"; }
     fi || echo "! clonage de $src impossible (réseau, ou dépôt privé : gh auth login / clé SSH GitHub) ; relancer install.sh ensuite"
 }
 
@@ -1011,17 +1080,19 @@ do_uninstall() {
                     if [[ "$backup" == - ]]; then run rm -f "$target"
                     elif [[ -e "$backup" ]]; then run cp "$backup" "$target"; run rm -f "$backup"
                     else echo "! sauvegarde $backup introuvable : $target laissé tel quel"; fi ;;
-                chromium-pref|chromium-theme)
+                chromium-pref|chromium-theme|json-pref)
                     # « chromium-theme <fichier> » : ancien registre, clé du thème seule.
                     local key=extensions.theme.system_theme
-                    [[ "$kind" == chromium-pref ]] && { key="${target##*#}"; target="${target%#*}"; }
+                    [[ "$kind" != chromium-theme ]] && { key="${target##*#}"; target="${target%#*}"; }
                     # Profil ouvert : Chromium réécrirait le fichier en se fermant (clé remise quand même, signalé).
-                    chromium_open "${target%/Default/Preferences}" && echo "! Chromium ouvert ($target) : le fermer, sinon ses réglages restent"
+                    [[ "$kind" != json-pref ]] && chromium_open "${target%/Default/Preferences}" \
+                        && echo "! Chromium ouvert ($target) : le fermer, sinon ses réglages restent"
                     printf '+ %s : %s remis (%s)\n' "$target" "$key" "$backup"
                     [[ -n "$dry" || ! -f "$target" ]] || python3 -I - "$target" "$key" "$backup" <<'EOF' || echo "! $target illisible : $key laissé tel quel"
 import json, os, sys
 path, key, old = sys.argv[1:]
-prefs = json.load(open(path, encoding="utf-8"))
+text = open(path, encoding="utf-8").read()
+prefs = json.loads(text)
 *parents, leaf = key.split(".")
 nodes = [prefs]
 for p in parents:
@@ -1038,7 +1109,8 @@ if old == "nofile" and prefs == {}:
     os.remove(path)
 else:
     with open(path, "w", encoding="utf-8") as f:
-        json.dump(prefs, f, separators=(",", ":"))
+        json.dump(prefs, f, ensure_ascii=False, **({"indent": 2} if "\n" in text.strip() else {"separators": (",", ":")}))
+        f.write("\n" if text.endswith("\n") else "")
 EOF
                     ;;
                 link|seed)
@@ -1131,7 +1203,7 @@ step_check() {
         printf '  - %s\n' "${pending[@]}"
     fi
     echo "Terminé. À faire soi-même (README.md) : mot de passe Samba (sudo smbpasswd -a ${USER:-$(id -un)}), première connexion des web apps,"
-    echo "thème Catppuccin dans Obsidian, logiciels hors dépôts (Claude Code, NordVPN, Plex, RustDesk)."
+    echo "thème Catppuccin dans Obsidian, logiciels hors dépôts (NordVPN, Plex, RustDesk), connexion de Claude Code et de Codex."
     echo "Nouveaux groupes et thème Qt : effectifs à la prochaine connexion."
 }
 

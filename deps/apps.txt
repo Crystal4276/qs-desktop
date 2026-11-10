@@ -53,8 +53,8 @@ samba                   # partages hôte ↔ VM Windows (dotfiles/samba, étape 
 # --- Développement, IA ---
 git                     # dépôts, dont celui-ci
 github-cli              # gh
-openai-codex            # Codex
-# Claude Code : absent des dépôts officiels, voir README.md.
+openai-codex            # Codex (barre d'état réglée par install.sh)
+# Claude Code : absent des dépôts officiels, installé par install.sh avec le script officiel (README.md).
 
 # --- Système ---
 gnome-keyring           # trousseau, déverrouillé à la connexion par PAM (greetd)
