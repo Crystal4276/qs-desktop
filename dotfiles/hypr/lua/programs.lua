@@ -12,5 +12,6 @@ return {
    -- Bureau Quickshell : lancement et surveillance, appels IPC vers l'instance de cette session.
    desktop     = desktop .. "/scripts/desktop.sh",
    chromium    = "bash '" .. (desktop .. "/scripts/chromium-launch.sh"):gsub("'", "'\\''") .. "' chromium",
+   spotify     = "bash '" .. (desktop .. "/scripts/spotify-launch.sh"):gsub("'", "'\\''") .. "'",
    ipc         = desktop .. "/scripts/ipc.sh",
 }

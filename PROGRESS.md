@@ -438,3 +438,15 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
   Hyprland (sonde dans `--verify-config`) ; barre travail sur banc : double cercle, Discord, Spotify, enveloppe, microscope.
 - **À tester à la main (laptop)** : Hyprland avec DM (même nom attendu) ; `./install.sh` → deux questions, clone de
   GMSFreeAnalysis17, rappel d'installation ; Discord / WhatsApp sur 6 et Spotify sur 7 au démarrage.
+
+## Maintenance — démarrage Spotify (2026-11-10)
+
+- Cause : les deux autostarts appelaient `spotify`, alors que l'installation du laptop fournit `spotify-launcher`.
+  Script commun `scripts/spotify-launch.sh` : client direct prioritaire, sinon lanceur officiel ; erreur explicite si aucun
+  n'est présent. Arguments et code de sortie transmis ; temporisations et espaces des profils conservés.
+- À ta demande : lancement standard pour ton abonnement, sans bibliothèque préchargée ; anciennes références retirées
+  des deux configurations et de l'inventaire archivé. Aucun paquet ni bibliothèque supplémentaire à retirer sur le laptop.
+- Vérifié sur copie isolée : quatre cas de disponibilité des commandes, arguments et codes de sortie ; syntaxes Bash/Lua ;
+  `sway -C` headless et `Hyprland --verify-config` pour jeux et travail : OK, sans erreur de configuration.
+- Configurations actives liées aux fichiers corrigés ; bureau réel Hyprland vivant (PID 1894).
+- À tester à la main : nouvelle connexion Sway puis Hyprland, Spotify ouvert sur l'espace musique (6 en jeux, 7 en travail).

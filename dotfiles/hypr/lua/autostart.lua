@@ -33,7 +33,7 @@ hl.on("hyprland.start", function()
    hl.exec_cmd("gsettings set org.gnome.desktop.interface cursor-size 48")
 
    -- Applications.
-   hl.exec_cmd("LD_PRELOAD=/usr/lib/spotify-adblock.so spotify")
+   hl.exec_cmd(prog.spotify)
    -- Attend que le compositeur soit posé avant de démarrer.
    hl.exec_cmd("sleep 4 && thunderbird")
    -- Discord et WhatsApp : web apps, comme sous Sway.

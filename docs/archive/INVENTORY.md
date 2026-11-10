@@ -295,7 +295,7 @@ touches volume (`wpctl`, ±5 %), luminosité (`brightnessctl` ±10 %), média (`
 - `exec_always sleep 1 && waybar`
 - `modprobe sidewinder`, `polkit-gnome-authentication-agent-1`, `gsettings … cursor-size 48`, `systemctl --user import-environment …`
 - VPN : `nordvpn login --token …` (**jeton en clair dans la config**), `nordvpn c Netherlands`
-- Applications : deluge (flatpak), thunderbird, steam, montage `gio mount ssh://…`, Discord web app, whatsdesk, spotify (adblock), `openrgb -p purple.orp`
+- Applications : deluge (flatpak), thunderbird, steam, montage `gio mount ssh://…`, Discord web app, whatsdesk, spotify, `openrgb -p purple.orp`
 - Tray : `nm-applet --indicator`, `blueman-applet`, `udiskie --appindicator`
 - Focus initial : `workspace 1; workspace 4; workspace 9`, puis `focus output DP-2`
 - `include /etc/sway/config.d/*` (import d'environnement systemd/D-Bus)
