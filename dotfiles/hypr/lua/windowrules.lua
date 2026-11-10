@@ -74,6 +74,14 @@ for _, rule in ipairs(floatingCentered) do
    })
 end
 
+-- Pas de flou ni d'ombre autour de DigitalMicrograph (Wine, Wayland et XWayland).
+hl.window_rule({
+   name = "digitalmicrograph-no-halo",
+   match = { class = "^digitalmicrograph\\.exe$" },
+   no_blur = true,
+   no_shadow = true,
+})
+
 -- Contenu externe : placement par origine dans lua/openorigin.lua, jamais par workspace source.
 
 ------------------------------------------------------------------------------
