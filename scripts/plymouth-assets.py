@@ -182,8 +182,7 @@ def text_page(s):
         return ('<div id="field-{st}" class="field" style="border-color:{c}">'
                 '<div class="lock">{lock}</div></div>').format(st=state, c=C[colour], lock=lock)
 
-    msgs = [("msg-unlocking", "Unlocking…", "subtext0"), ("msg-wrong", "Wrong passphrase", "red"),
-            ("msg-caps", "Caps Lock is on", "yellow")]
+    msgs = [("msg-wrong", "Wrong passphrase", "red"), ("msg-caps", "Caps Lock is on", "yellow")]
     return """<!doctype html><html><head><meta charset="utf-8">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=DM+Sans:opsz,wght@9..40,600&amp;display=swap" rel="stylesheet">
 <style>
@@ -218,7 +217,7 @@ html, body {{ margin: 0; background: transparent; font-family: Inter, sans-serif
 <script>
 document.fonts.ready.then(function () {{
   const r = {{}};
-  for (const id of ['lockup', 'field-idle', 'field-active', 'field-error', 'placeholder', 'msg-unlocking',
+  for (const id of ['lockup', 'field-idle', 'field-active', 'field-error', 'placeholder',
                     'msg-wrong', 'msg-caps', 'dot', 'form', 'prompt', 'field', 'message', 'msgline']) {{
     const b = document.getElementById(id).getBoundingClientRect();
     r[id] = [b.left, b.top, b.width, b.height];
@@ -246,7 +245,7 @@ def build_text(s, out, tmp):
     chromium("file://" + page, 1400, 1400, shot=shot)
     img = Image.open(shot).convert("RGBA")
     entries = {}
-    for name in ["lockup", "field-idle", "field-active", "field-error", "placeholder", "msg-unlocking",
+    for name in ["lockup", "field-idle", "field-active", "field-error", "placeholder",
                  "msg-wrong", "msg-caps", "dot"]:
         x, y, w, h = rects[name]
         box = (math.floor(x) - 1, math.floor(y) - 1, math.ceil(x + w) + 1, math.ceil(y + h) + 1)
