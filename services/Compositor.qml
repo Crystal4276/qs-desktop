@@ -30,13 +30,21 @@ Singleton {
         onTriggered: if ((root.isSway || root.isHyprland) && Quickshell.env("QS_TEST") !== "1") externalOpens.running = true
     }
 
+    // Description d'un écran (`make`, `model`, `serial` de l'IPC), identique sous Sway et Hyprland : clé de hosts/*.json, des
+    // fonds par écran et des fonds exportés pour l'écran de connexion (qui tourne sous Sway, même pour une session Hyprland).
+    // Sans le « Unknown » que Sway met pour un champ absent de l'EDID ni les virgules, qu'Hyprland retire de ses descriptions
+    // (`desc:` de dotfiles/hypr/hosts/) : dalle de laptop « China Star Optoelectronics Technology Co. Ltd 0x1471 » sous les deux.
+    function describe(o: var): string {
+        return [o.make, o.model, o.serial].filter(s => s && s !== "Unknown").join(" ").replace(/,/g, "");
+    }
+
     // Sorties actives : { name, description, x, y, width, height, scale, powered, hdrCapable, hdr, vrrCapable, vrr }
     // x, y, width, height en px logiques. description = « marque modèle numéro de série ». powered : faux si éteinte par la veille.
     readonly property var outputs: {
         if (isSway)
             return I3.monitors.values.filter(m => m.lastIpcObject.active === true).map(m => ({
                 name: m.name,
-                description: [m.lastIpcObject.make, m.lastIpcObject.model, m.lastIpcObject.serial].filter(s => s).join(" "),
+                description: root.describe(m.lastIpcObject),
                 x: m.x, y: m.y, width: m.width, height: m.height,
                 scale: m.scale,
                 powered: m.lastIpcObject.power !== false,
@@ -57,8 +65,7 @@ Singleton {
                 const rotated = (o.transform ?? 0) % 2 === 1;
                 return {
                     name: m.name,
-                    // Même composition que sous Sway (make, model, serial de `hyprctl monitors`) : mêmes clés dans hosts/*.json.
-                    description: [o.make, o.model, o.serial].filter(s => s).join(" "),
+                    description: root.describe(o),
                     x: m.x, y: m.y,
                     width: rotated ? h : w, height: rotated ? w : h,
                     scale: m.scale,
