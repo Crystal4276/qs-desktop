@@ -655,7 +655,12 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
     puis fermeture. Fait (thème, « Unlocking… » retiré). VM : disque passé à 5 s (5,4 s mesurés, en-tête sauvegardé dans
     `/root/luks-header-before-5s.img` de la VM), démarrage enregistré : champ masqué et rotation à l'Entrée, refus 5,2 s
     plus tard, rotation jusqu'à la fermeture, greeter. La VM est rendue à Virtual Manager (éteinte).
-  - Étape 5 (laptop, avec ton accord) : dérivation LUKS à 5 s (`luksHeaderBackup`, puis `luksConvertKey --pbkdf argon2id
+  - Ton retour : deux tours au lieu de trois après une bonne phrase. Fait : dérivation de la VM à **2,5 s** (signal de sortie
+    ~1,7 s après le déverrouillage) → deux tours puis la fermeture, vérifié. Trouvé au passage : l'affichage de la VM plafonne
+    à ~41 images/s (le thème en supposait 50 : animation 20 % trop lente) ; temps désormais calé sur l'horloge de démarrage
+    quand elle tourne (figée par plymouthd de la demande au déverrouillage), cadence demandée 60 images/s.
+  - Étape 5 (laptop, avec ton accord) : mesurer les images/s réelles et le délai déverrouillage → signal de sortie, puis
+    dérivation LUKS ≈ (4,8 − délai − 0,5) s (au lieu des 5 s prévues) (`luksHeaderBackup`, puis `luksConvertKey --pbkdf argon2id
     --iter-time 5000`) ; `./install.sh` (ou `scripts/plymouth-setup.sh install`), redémarrage ; à tester à la main :
     démarrage à froid, mauvaise phrase, Verr. Maj., écran externe branché au démarrage (dont le 1440p), arrêt et redémarrage
     (écran crust), échelle HiDPI éventuelle de Plymouth sur la dalle interne.
