@@ -404,9 +404,9 @@ touch_bashrc() {
 declare -A layout=([papirus-folders]=2)
 theme_sha() { echo "$(awk -v n="$1" '$1 == n { print $2 }' "$repo/deps/themes.txt")${layout[$1]:+-r${layout[$1]}}"; }
 
-# Archive de deps/themes.txt : téléchargée une fois dans le cache, vérifiée, extraite dans un dossier temporaire.
-fetch() {       # nom → affiche le dossier extrait
-    local name="$1" sha url file dir
+# Fichier de deps/themes.txt : téléchargé une fois dans le cache et vérifié.
+download() {    # nom → affiche le fichier du cache
+    local name="$1" sha url file
     read -r sha url < <(awk -v n="$name" '$1 == n { print $2, $3 }' "$repo/deps/themes.txt")
     [[ -n "$url" ]] || { echo "! $name absent de deps/themes.txt" >&2; return 1; }
     # Simulation : archive déjà vérifiée du cache lue telle quelle ; sinon téléchargement dans un dossier temporaire.
@@ -424,6 +424,13 @@ fetch() {       # nom → affiche le dossier extrait
         fi
         mv "$file.part" "$file"
     fi
+    echo "$file"
+}
+
+# Archive de deps/themes.txt : téléchargée et vérifiée (download), extraite dans un dossier temporaire.
+fetch() {       # nom → affiche le dossier extrait
+    local file dir
+    file="$(download "$1")" || return 1
     dir="$(mktemp -d)"
     case "$file" in
         *.zip) unzip -q "$file" -d "$dir" ;;
@@ -966,6 +973,11 @@ step_system() {
     if command -v chromium >/dev/null && ask "Extensions de Chromium (dotfiles/chromium/extensions.txt : Dark Reader, Stylus, nightTab…) ?" oui; then
         sub "$repo/scripts/system-setup.sh" ${dry:+--dry-run} chromium-extensions
     fi
+    if command -v thunderbird >/dev/null && ask "Thème Catppuccin de Thunderbird (Mocha Green, pour tout profil, même neuf) ?" oui; then
+        local xpi
+        if xpi="$(download thunderbird)"; then sub "$repo/scripts/system-setup.sh" ${dry:+--dry-run} thunderbird-theme "$xpi"
+        elif [[ -z "$dry" ]]; then later "thème Thunderbird : téléchargement impossible ; relancer install.sh"; fi
+    fi
     if ask "Sonde de connectivité NetworkManager (portails captifs Wi-Fi) ?" oui; then
         # Déjà installée : le script rechargerait NetworkManager pour rien.
         if cmp -s "$repo/dotfiles/NetworkManager/conf.d/90-qs-desktop-connectivity.conf" /etc/NetworkManager/conf.d/90-qs-desktop-connectivity.conf \
@@ -1061,7 +1073,7 @@ EOF
             run cp "$state/dconf-old.ini" "$HOME/qs-desktop-dconf-old.ini-$stamp"
             echo "! dconf : anciennes valeurs non remises (bus de session injoignable ?), gardées dans ~/qs-desktop-dconf-old.ini-$stamp"
         fi
-        run rm -rf "$registry" "$state/dconf-old.ini" "$state/dconf-old.ini.written" "$state/written" "$state/theme-geany"
+        run rm -rf "$registry" "$state/dconf-old.ini" "$state/dconf-old.ini.written" "$state/written" "$state/theme-geany" "$state/nighttab"
         [[ -L "$repo/dotfiles/mpv/host.conf" ]] && run rm -f "$repo/dotfiles/mpv/host.conf"
     else
         echo "= rien à retirer ($registry absent)"
@@ -1069,7 +1081,7 @@ EOF
     if command -v chromium >/dev/null; then
         python3 "$repo/scripts/browser-links-setup.py" ${dry:+--dry-run} uninstall 2>/dev/null || echo "= liens Chromium : rien à retirer"
     fi
-    if [[ -n "$system" ]] && ask "Défaire aussi les étapes système (GPU Intel, sudo pacman, Reflector, greeter → ancien gestionnaire, sonde réseau, Samba, services, groupes, extensions Chromium) ?"; then
+    if [[ -n "$system" ]] && ask "Défaire aussi les étapes système (GPU Intel, sudo pacman, Reflector, greeter → ancien gestionnaire, sonde réseau, Samba, services, groupes, extensions Chromium, thème Thunderbird) ?"; then
         sub "$repo/scripts/system-setup.sh" ${dry:+--dry-run} uninstall
         sub "$repo/scripts/network-setup.sh" ${dry:+--dry-run} uninstall
         sub "$repo/scripts/greeter-setup.sh" ${dry:+--dry-run} uninstall
@@ -1080,6 +1092,27 @@ EOF
 }
 
 # --- Vérifications finales ---------------------------------------------------------------------------------------------
+
+# nightTab (page Nouvel onglet) : réglages du dépôt chargés dans le profil principal de Chromium (scripts/nighttab-import.py,
+# Chromium sans fenêtre). Une fois par version de dotfiles/chromium/nighttab.json : tes changements ensuite ne sont pas écrasés
+# tant que le fichier du dépôt ne change pas. Il faut l'extension (étape système) et Chromium fermé ; sinon rappelé à la fin.
+step_nighttab() {
+    local profile="$config/chromium" src="$repo/dotfiles/chromium/nighttab.json" id=hdpcadigjkbcpnlcpbcohpafiaefanki sha rc=0
+    command -v chromium >/dev/null && command -v python3 >/dev/null || return 0
+    section "nightTab"
+    sha="$(sha256sum < "$src" | cut -c1-64)"
+    if [[ "$(cat "$state/nighttab" 2>/dev/null)" == "$sha" ]]; then echo "= nightTab : réglages du dépôt déjà importés"; return; fi
+    if [[ ! -d "$profile/Default/Extensions/$id" && ! -f "/usr/share/chromium/extensions/$id.json" && -z "$dry" ]]; then
+        echo "- nightTab non installé (extensions de Chromium refusées) : réglages non importés"; return
+    fi
+    if chromium_open "$profile"; then later "nightTab : Chromium ouvert ; le fermer puis relancer install.sh pour importer ses réglages"; return; fi
+    python3 -I "$repo/scripts/nighttab-import.py" ${dry:+--dry-run} "$profile" "$src" || rc=$?
+    case "$rc" in
+        0) [[ -n "$dry" ]] || { mkdir -p "$state"; echo "$sha" > "$state/nighttab"; } ;;
+        3) later "nightTab : extension pas encore installée par Chromium (réseau ?) ; relancer install.sh" ;;
+        *) later "nightTab : import impossible (message ci-dessus) ; à la main : nouvel onglet > roue dentée > Data > Import from file : $src" ;;
+    esac
+}
 
 step_check() {
     section "Vérifications"
@@ -1098,8 +1131,7 @@ step_check() {
         printf '  - %s\n' "${pending[@]}"
     fi
     echo "Terminé. À faire soi-même (README.md) : mot de passe Samba (sudo smbpasswd -a ${USER:-$(id -un)}), première connexion des web apps,"
-    echo "thème Catppuccin dans Obsidian / Thunderbird, logiciels hors dépôts (Claude Code, NordVPN, Plex, RustDesk),"
-    echo "réglages de nightTab (nouvel onglet de Chromium > roue dentée > Data > Import from file : $repo/dotfiles/chromium/nighttab.json)."
+    echo "thème Catppuccin dans Obsidian, logiciels hors dépôts (Claude Code, NordVPN, Plex, RustDesk)."
     echo "Nouveaux groupes et thème Qt : effectifs à la prochaine connexion."
 }
 
@@ -1120,4 +1152,5 @@ section "Fonds d'écran"
 step_wallpapers
 step_host
 [[ -n "$system" ]] && is_arch && step_system
+step_nighttab
 step_check

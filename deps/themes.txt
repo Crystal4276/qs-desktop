@@ -1,5 +1,6 @@
 # Thème Catppuccin Mocha, accent green : archives officielles de github.com/catppuccin (aucun paquet dans les dépôts officiels).
-# Téléchargées par install.sh (curl, cache ~/.cache/qs-desktop/downloads), vérifiées par leur SHA-256, installées dans le compte.
+# Téléchargées par install.sh (curl, cache ~/.cache/qs-desktop/downloads), vérifiées par leur SHA-256, installées dans le compte
+# (thunderbird : fichier .xpi, copié par l'étape système et installé par une politique de Thunderbird, scripts/system-setup.sh).
 # Mise à jour : changer l'adresse (version ou commit) ET l'empreinte (`sha256sum`), puis relancer install.sh.
 # nom              sha256                                                            adresse
 gtk                c874ae7326a620ecd8f39cf480aa25284f560a9cff7fb5d8804dd856674a0f03  https://github.com/catppuccin/gtk/releases/download/v1.0.3/catppuccin-mocha-green-standard+default.zip
@@ -7,3 +8,4 @@ cursors            376a59f36b190ecb6ee0bcbdf73c7f4f30a339f80d641a59f2b5f9b557ddc
 kvantum            f2bd573f8d7500c65fd69e1629b3bcf3eba3468124b81f1d12d54b2f5dda1a0c  https://github.com/catppuccin/kvantum/archive/71105d224fef95dd023691303477ce3eea487457.tar.gz
 papirus-folders    52105ae8a0b97ec6d6d9d3978f9ab7b4c274d9eb752e79c22fe30dc153cc2a5b  https://github.com/catppuccin/papirus-folders/archive/f83671d17ea67e335b34f8028a7e6d78bca735d7.tar.gz
 geany              40d0cb55be330c22e61e7ddc6d2ad42fcd37c99570256badee27a8266ce8dc83  https://github.com/catppuccin/geany/archive/ab96041d6ec462b19e5d70c232e8a20bc738ca99.tar.gz
+thunderbird        1be494cb3dec4888f7471eccc6fb4c1fdc60a843760fb044c0551de50ec5e87a  https://raw.githubusercontent.com/catppuccin/thunderbird/575ab278460137dba10c1a23d00af0bc583fe509/themes/mocha/mocha-green.xpi

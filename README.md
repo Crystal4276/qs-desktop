@@ -57,11 +57,16 @@ Autre distribution qu'Arch : pas encore prévue (paquets à installer soi-même 
 - Mot de passe Samba (demandé par Windows pour les partages avec les VM) : `sudo smbpasswd -a $USER`. Partager un dossier :
   clic droit dans Nemo → Partager.
 - Web apps (WhatsApp, Discord, Word, Excel, PowerPoint, Notion) : se connecter une fois dans chacune.
-- Thème des applications qui le rangent dans leur profil : Obsidian et Thunderbird (choisir Catppuccin Mocha dans leurs
-  réglages), Chromium suit le thème GTK (réglé par `install.sh` dans chaque profil).
-- nightTab (page Nouvel onglet de Chromium) : ses réglages (favoris, horloge, thème) vivent dans l'extension ; les importer une
-  fois depuis `dotfiles/chromium/nighttab.json` (nouvel onglet → roue dentée → Data → Import from file). Après un changement :
-  Data → Export data, puis remplacer le fichier du dépôt.
+- Thème d'Obsidian (rangé dans son profil) : choisir Catppuccin Mocha dans ses réglages. Chromium suit le thème GTK (réglé
+  par `install.sh` dans chaque profil) ; Thunderbird reçoit Catppuccin Mocha Green par l'étape système (politique
+  `/etc/thunderbird/policies`, tout profil, même neuf ; désactivable dans ses modules, réinstallé au démarrage tant que la
+  politique est là).
+- nightTab (page Nouvel onglet de Chromium) : ses réglages (favoris, couleurs, icônes, horloge) sont importés par `install.sh`
+  depuis `dotfiles/chromium/nighttab.json` (Chromium fermé et extension installée, sinon rappelé à la fin : relancer
+  `install.sh`). Réimportés seulement quand ce fichier change. Après un changement sur une machine : nouvel onglet → roue
+  dentée → Data → Export data, puis remplacer le fichier du dépôt.
+- Dossiers du compte : Applications, Desktop, Documents, Downloads, Music, Pictures, Videos ; Modèles, Public et Projets
+  désactivés (`~/.config/user-dirs.dirs`), retirés s'ils sont vides.
 - Fonds d'écran : `install.sh` propose de cloner le dépôt `Crystal4276/wallpapers` dans `~/Pictures/Wallpapers` (HTTPS, sans
   compte GitHub) et le met à jour aux passages suivants. Fond par défaut : `simple/wallhaven-j37lop.png` (celui de l'écran
   central de terrier, `hosts/default.json`) ; autre choix : utilitaire de fonds d'écran du bureau.
