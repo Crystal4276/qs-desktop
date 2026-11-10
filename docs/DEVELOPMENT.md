@@ -134,6 +134,26 @@ qemu-system-x86_64 -enable-kvm -cpu host -m 8192 -smp 6 -drive file=$D/test.qcow
 - Mémoire : 8 Go pour la VM ; `/tmp` est en RAM (bundles volumineux ailleurs) ; une seconde VM ouverte peut épuiser la mémoire.
 - Critères : premier passage code 0 ; second passage **0 ligne `+ `** ; redémarrage → greetd → session Sway ; `--uninstall`.
 
+## VM chiffrée (Plymouth, `docs/PLYMOUTH.md`)
+
+Comme le laptop : ISO officielle (`~/.cache/qs-desktop-vm/archlinux-x86_64.iso`, SHA-256 vérifiée), UEFI (OVMF), archinstall
+sans intervention (`--config` / `--creds` / `--silent`), **GRUB**, racine **LUKS** sans clé matérielle → hooks `udev … encrypt`
+et `cryptdevice=UUID=…:root` (choix d'archinstall 4.5). Comptes de test : `arch` / `arch`, phrase LUKS `corelab`.
+
+- Outils dans `~/.cache/qs-desktop-vm/plymouth/` : `vm.sh start|shot|type|keys|ssh|wait-ssh|stop` (SSH par clé sur le port 2223,
+  VNC :16, QMP), `config.json` / `creds.json` d'archinstall, `cidata.iso` (cloud-init de l'ISO live : clé SSH de root).
+- Couches en lecture seule : `plymouth-luks-base.qcow2` (Arch minimal chiffré) → `plymouth-luks-desktop.qcow2` (`install.sh --yes
+  --profil travail` passé) → essais sur `plymouth-trial.qcow2` (jetable, avec sa copie `*-vars.fd` d'OVMF).
+- Démarrage : `vm.sh start <disque> <vars> [W H]`, puis `vm.sh type corelab` à la demande de phrase de passe, `vm.sh wait-ssh`.
+- Arch minimal sans `python3` : `install.sh` s'arrête sans message (code 127) ; python installé à la main dans la VM.
+- **Banc Plymouth** : `bench.sh push <dossier du thème>` (copie dans `/usr/share/plymouth/themes/qs-corelab`, sans initramfs),
+  `bench.sh show` (greetd arrêté, `plymouthd --kernel-command-line="quiet splash plymouth.debug=file:/tmp/ply.log"` : sans
+  `splash`, aucun écran graphique), `bench.sh measure <statut> <s>` (`plymouth update --status=…`, CPU et mémoire de `plymouthd`),
+  `bench.sh quit`. Hors démarrage, le texte passe par `label-pango` (fontconfig) ; dans l'initramfs, par `label-freetype`.
+- Vrai démarrage : hook `plymouth` avant `block encrypt`, `splash` dans GRUB, `mkinitcpio -P` ; pour mesurer après le
+  démarrage, `plymouth-quit.service` masqué et greetd désactivé **dans l'overlay d'essai seulement** (à recréer depuis
+  `plymouth-luks-desktop.qcow2` pour revenir à zéro).
+
 ## Pièges connus
 
 **Moteur JavaScript de Qt 6 / QML**
@@ -141,6 +161,14 @@ qemu-system-x86_64 -enable-kvm -cpu host -m 8192 -smp 6 -drive file=$D/test.qcow
 - `flatMap`, `Object.fromEntries` : absents.
 - `grabToImage` multiplie sa taille cible par l'échelle de l'écran (450 px → 675 en scale 1.5) : diviser.
 - Bogue de Qt 6.12 au coin des menus (raison parmi d'autres de l'abandon du menu copié de GTK).
+
+**Plymouth 26 (plugin `script`)**
+- Pas de littéraux hexadécimaux (`0x11`) : l'analyse du script se bloque sans message, écran noir. Décimal seulement, sans
+  exposant (`1e-05` : erreur d'analyse) ; pas d'`include`, un seul fichier de script.
+- Ni rotation ni échelle de sprite : `Image.Rotate` (angle positif = sens horaire) / `Image.Scale` créent de nouvelles images ;
+  `Image.Scale` échantillonne sans moyenne (réduire beaucoup = texte crénelé).
+- Le coût d'une image = rectangles des sprites modifiés × calques qui s'y superposent : petits sprites, rien de plein écran ne bouge.
+- Pas d'horloge : le temps compte les rafraîchissements (50/s, minuteur réarmé avant le dessin).
 
 **Quickshell 0.3.2**
 - `FileView` dont on change `path` rend encore les données de l'ancien fichier : un `FileView` par fichier. `setData` crée les dossiers.

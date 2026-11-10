@@ -57,8 +57,8 @@ backup_once() {
 
 # Une seule transaction root : une erreur de validation ne doit pas empêcher la restauration.
 do_pacman_sudo() {
-    echo "+ /etc/sudoers.d/90-qs-desktop-pacman : wheel, pacman sans mot de passe (paru compris)"
-    [[ -n "$dry" ]] && return 0
+    # « + » annoncé par l'étape root, après la comparaison : un second passage n'affiche que « = … à jour ».
+    [[ -n "$dry" ]] && { echo "+ /etc/sudoers.d/90-qs-desktop-pacman : wheel, pacman sans mot de passe (paru compris)"; return 0; }
     sudo bash -s -- "$repo/dotfiles/sudoers/90-qs-desktop-pacman" "$state" "$stamp" <<'ROOT'
 set -euo pipefail
 source=$1 state=$2 stamp=$3
@@ -75,6 +75,7 @@ grep -Eq '^[[:space:]]*(@|#)includedir[[:space:]]+/etc/sudoers[.]d/?[[:space:]]*
 if cmp -s "$source" "$target" && [[ "$(stat -c '%a %u:%g' "$target")" == '440 0:0' ]]; then
     echo "= $target à jour"; exit 0
 fi
+echo "+ $target : wheel, pacman sans mot de passe (paru compris)"
 staged=$(mktemp /etc/sudoers.d/.qs-desktop-pacman.XXXXXX)
 previous="" replaced="" existed=""
 cleanup() {
