@@ -361,6 +361,12 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
   `/etc/sudoers.d/arch` mal réglé dans l'image de test, sans rapport). `--uninstall` : politique, copie et `user-dirs.dirs` retirés.
 - **Sur le laptop** : `git pull`, fermer Chromium, `./install.sh` (accepter l'étape « Thème Catppuccin de Thunderbird ») ;
   puis vérifier Nemo (zoom), Thunderbird au prochain lancement, nouvel onglet de Chromium.
+- **Nemo, « Ouvrir dans un terminal » sans effet** (laptop et VM) : Nemo lance le terminal de la clé Cinnamon
+  `org.cinnamon.desktop.default-applications.terminal exec`, dont le défaut (`cinnamon-desktop` 6.8) est `velocitty`, absent.
+  Sur `terrier`, la clé valait `gnome-terminal` par un reste de l'ancienne session Cinnamon. Corrigé : `exec='gnome-terminal'`,
+  `exec-arg='--'` dans `dotfiles/dconf/desktop.ini` (gardé au retrait comme les autres clés). `test-install.py` : 0 échec,
+  contrôle ajouté ; dconf isolé : `velocitty` → `gnome-terminal`. **À tester** : `git pull`, `./install.sh`, puis Nemo →
+  clic droit dans un dossier → « Ouvrir dans un terminal » (GNOME Terminal dans ce dossier).
 
 ## Pastille musique — régression de largeur (2026-11-10)
 
