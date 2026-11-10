@@ -20,13 +20,18 @@ OverlayPopup {
     readonly property real pixelRatio: Compositor.output(screen?.name ?? "")?.scale ?? 1   // réelle (WallpaperView.qml)
     readonly property var tabs: [
         { key: "simple", name: "Images" },
+        ...(Wallpapers.corelabEnabled ? [{ key: "corelab", name: "Core Lab" }] : []),
         ...(outputs.length > 1 ? [{ key: "panorama", name: "Panoramas" }] : []),
         ...(outputs.length === 3 ? [{ key: "triptych", name: "Triptychs" }] : [])
     ]
-    readonly property bool wide: tab !== "simple"   // panoramas et triptyques : vignettes de deux colonnes
+    readonly property bool wide: tab === "panorama" || tab === "triptych"   // panoramas et triptyques : vignettes de deux colonnes
     // `images` : chemins des images de la vignette (trois pour un triptyque).
     readonly property var items: {
         const lib = Wallpapers.library;
+        if (tab === "corelab") {
+            const output = outputs.find(o => target !== "" ? o.description === target : o.name === screen?.name) ?? outputs[0];
+            return lib.corelab.map(d => ({ path: d.path, images: [Wallpapers.corelabPath(d.path, output)] })).filter(d => d.images[0] !== "");
+        }
         if (tab === "triptych")
             return lib.triptych.map(t => ({ path: t.path, images: ["left", "center", "right"].map(p => t.parts[p]) }));
         return (tab === "panorama" ? lib.panorama : lib.simple).map(p => ({ path: p, images: [p] }));
@@ -51,7 +56,7 @@ OverlayPopup {
 
     // Choix « tous les écrans » : seulement si aucun écran présent n'a sa propre image (celles d'écrans débranchés ne comptent pas).
     function isCurrent(path: string): bool {
-        if (tab === "simple" && target !== "")
+        if ((tab === "simple" || tab === "corelab") && target !== "")
             return Wallpapers.overrides[target] === path;
         const s = Wallpapers.selection;
         return s !== null && s.kind === tab && s.path === path && !outputs.some(o => Wallpapers.overrides[o.description]);
@@ -61,7 +66,7 @@ OverlayPopup {
         const item = items[index];
         if (!item)
             return;
-        if (tab === "simple" && target !== "")
+        if ((tab === "simple" || tab === "corelab") && target !== "")
             Wallpapers.setOutput(target, item.path);
         else
             Wallpapers.setAll(tab, item.path);
@@ -112,7 +117,7 @@ OverlayPopup {
             }
 
             Repeater {
-                model: root.tab === "simple" && root.outputs.length > 1 ? [{ description: "", name: "All screens" }, ...root.outputs] : []
+                model: (root.tab === "simple" || root.tab === "corelab") && root.outputs.length > 1 ? [{ description: "", name: "All screens" }, ...root.outputs] : []
 
                 PanelButton {
                     required property var modelData
@@ -190,7 +195,7 @@ OverlayPopup {
                                 cache: false
                                 // Décodée depuis l'original : enregistrée, telle qu'affichée, pour les ouvertures suivantes.
                                 onStatusChanged: {
-                                    if (status !== Image.Ready)
+                                    if (status !== Image.Ready || !root.visible)
                                         return;
                                     const file = Wallpapers.thumbFile(modelData, sourceSize);
                                     if (file !== "")

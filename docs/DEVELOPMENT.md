@@ -86,6 +86,9 @@ verrouillage).
 
 ## Tests ciblés de robustesse
 
+- `python3 scripts/test-wallpapers.py` : service et sélecteur réels sur Sway isolé ; regroupement Core Lab, résolution physique,
+  échelle fractionnaire, replis, choix par écran, persistance et changement de profil, dossier ou variante absents.
+
 - `python3 scripts/test-bar.py` : barre réelle sur Sway headless isolé, services média/audio/batterie factices ;
   1280–3440 px, ellipse artiste/titre, mises à jour, tray, replis et restauration, curseur conservé, absence de matériel.
 - `python3 scripts/test-battery.py` : service Battery réel, source de données simulée et `notify-send` factice ;
