@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Plymouth Core Lab — référence Assemblage</title>
+<!--
+  Référence exécutable du design validé (canvas « Plymouth Core Lab », proposition A · Assemblage).
+  Ce fichier n'est pas le thème : c'est l'étalon visuel et temporel à reproduire dans Plymouth (docs/PLYMOUTH.md).
+
+  Paramètres d'URL :
+    w, h      taille de l'écran simulé (défaut 1920 × 1200) ; ex. ?w=3440&h=1440, ?w=3840&h=2160
+    boot      durée simulée du démarrage après déverrouillage, en secondes (défaut 6)
+    prompt    texte de la demande de phrase de passe (défaut : celui de systemd-cryptsetup pour « cryptroot »)
+    noluks=1  pas de phrase de passe : la rotation suit directement l'assemblage
+    auto=1    saisie automatique 600 ms après l'apparition du champ (12 caractères, puis Entrée) : captures sans clavier
+    freeze=   état figé, sans animation, pour les captures : idle | luks | typing | unlocking | error | caps
+
+  Clavier : caractères = points ; Entrée valide ; Retour arrière, Échap. La phrase « wrong » simule un refus.
+  Phase courante lisible par script : window.qsPlymouth.phase
+  (intro | luks | verify | unlock | loop | exit | done). Touche R en fin de séquence : rejouer.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=DM+Sans:opsz,wght@9..40,600&amp;display=swap" rel="stylesheet">
+<style>
+html, body { margin: 0; background: #11111b; overflow: hidden; }
+#stage { position: relative; overflow: hidden; background: #11111b; font-family: Inter, sans-serif; color: #cdd6f4; }
+#stage .abs { position: absolute; }
+@keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+@keyframes fadeOut { from { opacity: 1 } to { opacity: 0 } }
+@keyframes dotsPulse { 0%, 100% { opacity: 1 } 50% { opacity: .35 } }
+@keyframes ringIn { from { opacity: 0; transform: scale(.94) } to { opacity: 1; transform: scale(1) } }
+/* 222.2 % de la largeur du logo = 640 px quand le logo fait 288 px */
+@keyframes inR { from { opacity: 0; transform: translateX(222.2%) } to { opacity: 1; transform: translateX(0) } }
+@keyframes inL { from { opacity: 0; transform: translateX(-222.2%) } to { opacity: 1; transform: translateX(0) } }
+@keyframes outR { from { opacity: 1; transform: translateX(0) } to { opacity: 0; transform: translateX(222.2%) } }
+@keyframes outL { from { opacity: 1; transform: translateX(0) } to { opacity: 0; transform: translateX(-222.2%) } }
+/* un tour en 50 % du cycle, puis repos jusqu'à la fin du cycle */
+@keyframes spinCW { 0% { transform: rotate(0deg) } 50%, 100% { transform: rotate(360deg) } }
+@keyframes spinCCW { 0% { transform: rotate(0deg) } 50%, 100% { transform: rotate(-360deg) } }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+(function () {
+  const q = new URLSearchParams(location.search);
+  const W = Number(q.get('w')) || 1920;
+  const H = Number(q.get('h')) || 1200;
+  const BOOT = Math.max(1, Number(q.get('boot')) || 6) * 1000;
+  const PROMPT = q.get('prompt') || 'Please enter passphrase for disk cryptroot';
+  const NOLUKS = q.get('noluks') === '1';
+  const AUTO = q.get('auto') === '1';
+  const FREEZE = q.get('freeze');
+
+  // Tout est dessiné pour 1200 px de haut, multiplié par s, centré sur l'écran.
+  const s = H / 1200;
+  const cx = W / 2, cy = H / 2;
+  const px = v => v * s;
+
+  // Durées (ms)
+  const T = { intro: 2200, verify: 1200, unlock: 500, exit: 950, period: 2400 };
+
+  // Palette : noms de config/Theme.qml
+  const C = {
+    crust: '#11111b', mantle: '#181825', text: '#cdd6f4', subtext0: '#a6adc8', overlay0: '#6c7086',
+    surface0: '#313244', surface1: '#45475a', surface2: '#585b70',
+    green: '#a6e3a1', teal: '#94e2d5', sky: '#89dceb', sapphire: '#74c7ec', blue: '#89b4fa',
+    red: '#f38ba8', yellow: '#f9e2af'
+  };
+
+  // Anneaux : [facteur × rayon du logo (144), couleur, opacité du trait, épaisseur, espacement des points (pour R = 180)]
+  const RINGS = [
+    [1.278, C.sky, 0.55, 3, 10], [1.456, C.sky, 0.32, 2, 14], [1.733, C.sapphire, 0.45, 3, 12],
+    [2.122, C.sapphire, 0.28, 2, 16], [2.467, C.blue, 0.30, 3, 18], [2.956, C.blue, 0.20, 2, 20],
+    [3.456, C.overlay0, 0.45, 2, 22], [4.022, C.surface2, 0.45, 2, 24], [4.644, C.surface1, 0.50, 2, 26],
+    [5.350, C.surface1, 0.42, 2, 28], [6.100, C.surface1, 0.34, 2, 30], [6.900, C.surface0, 0.70, 2, 32],
+    [7.750, C.surface0, 0.55, 2, 34], [8.650, C.surface0, 0.45, 2, 36], [9.600, C.surface0, 0.35, 2, 38]
+  ];
+  const HALVES = [
+    { d: 'M0 -1A1 1 0 0 1 0 1', color: C.green, right: true },
+    { d: 'M0 -2A2 2 0 0 0 0 2', color: C.teal, right: false },
+    { d: 'M0 -3A3 3 0 0 1 0 3', color: C.sky, right: true },
+    { d: 'M0 -4A4 4 0 0 0 0 4', color: C.sapphire, right: false }
+  ];
+  const KAUST = document.createElement('template');
+  KAUST.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="140 392 215 208"><path fill="#e3853b" d="M281.1,516.4c3.2-4.4,4.7-10,4.7-16.9s-.6-7.8-1.6-11.1c-3.6,3.4-5.9,7.7-5.9,12.8s.9,9.6,2.7,15.1"/><path fill="#e3853b" d="M321,476.5c1.1,6.1,1.6,12.2,1.6,18.2,0,22.6-4.4,38.7-11.1,50.3,1.1.1,2.3.2,3.5.2,31.6,0,38.4-29.4,38.4-42.2,0-20.5-20.9-26-32.4-26.5"/><path fill="#e3853b" d="M289.2,499.5c0,8.6-2.4,15.4-6.8,20.5,1.2,2.9,2.7,5.9,4.5,8.7,6.2-7.1,9.3-17.4,9.3-30.7s-.9-10.8-2.6-15.6c-2.4,1.1-4.6,2.4-6.6,3.8,1.3,3.9,2.2,8.3,2.2,13.4"/><path fill="#e3853b" d="M300.2,497.9c0,16.2-4.4,26.9-11,34.1,1.7,2.1,3.6,4.1,5.6,5.8,7-8.8,11.6-21.9,11.6-41.5s-.8-12-2.3-17.7c-2.3.6-4.6,1.3-6.8,2.2,1.8,5.3,2.9,11,2.9,17.2"/><path fill="#e3853b" d="M311.4,496.3c0,21-5.1,35-12.5,44.4,2.1,1.3,4.3,2.3,6.8,3,6.9-11,11.2-26.7,11.2-49.1s-.3-10-1.8-18c-1.9.2-4,.4-6.3.9,1.7,6.1,2.5,12.5,2.5,18.8"/><path fill="#efbd4b" d="M248.3,448.9c17.5,0,32,6.7,41.2,17.8,1.9-2.6,3.5-5.4,4.8-8.2-8.3-10.4-21.1-17.4-38.7-17.4s-26.4,2.2-41.6,8c.3,1.8.9,3.7,1.8,5.4,10.7-3.9,22.8-5.6,32.5-5.6"/><path fill="#efbd4b" d="M298.9,435.5c-1.2-15.9-9.6-42-38.8-42s-36.1,21.3-42.4,37.4c17.2-5.4,34.8-7.5,45-7.5,15.3,0,27.1,4.7,36.1,12.1"/><path fill="#efbd4b" d="M223.1,463.3c5.3-1.2,11.3-1.9,18-1.9,9.9,0,28.6,1.7,39.6,13.7,2.3-1.5,4.4-3.3,6.2-5.3-8.4-10.6-22-17-38.5-17s-20.4,1.5-30.4,5c1.4,1.9,3.2,3.8,5.2,5.5"/><path fill="#efbd4b" d="M277.4,476.9c-10.2-10.5-27.3-12.1-36.4-12.1s-10.1.4-14.5,1.3c11.2,8.2,27.2,13.9,37.6,13.9s9.5-1.2,13.3-3"/><path fill="#efbd4b" d="M255.5,436c18.2,0,31.6,7,40.8,17.5,1.5-4.2,2.3-7.9,2.6-10.6-8-8.1-19.5-13.8-36.1-13.8s-29.5,2.5-47.3,8.6c-.6,2.2-1.1,4.2-1.4,5.8,14.7-5.3,30.8-7.5,41.4-7.5"/><path fill="#c2cc51" d="M179.5,480.1c0-13.2,8.4-22.8,20-29.7-1.7-1.1-3.5-2-5.3-2.6-10.9,7.1-18.4,16.5-18.4,28.7s4,24.8,11.2,38.5c1.2,0,2.4-.3,3.4-.7-6.9-12.2-10.9-24.6-10.9-34.2"/><path fill="#c2cc51" d="M188.9,483.7c0-11.4,7.4-19.6,17.5-25.1-.9-1.8-1.8-3.4-3-4.7-10.9,6-19,14.5-19,26.2s3.7,20.6,10.2,32c1.1-.8,2.1-1.7,3-2.7-5.5-9.1-8.7-18.4-8.7-25.7"/><path fill="#c2cc51" d="M186.6,446.2c-1.5-.1-2.8-.2-4.1-.2-13.2,0-41.5,10.9-41.5,31.1s24,34.9,39.6,37.5c-6.8-13.7-10.6-27.4-10.6-38.2s6.7-22.6,16.6-30.2"/><path fill="#c2cc51" d="M197.9,487.3c0-7.6,4-13.8,11-18.3-.2-2.5-.5-4.8-1.1-6.8-8.7,4.9-14.9,11.9-14.9,21.5s2.6,14.4,7.2,22.4c.9-1.4,1.7-2.9,2.4-4.5-3-5.2-4.6-10.2-4.6-14.3"/><path fill="#c2cc51" d="M201.3,487.3c0,3,1,6.7,2.8,10.4,3.5-9.3,4.6-19.9,4.9-24.7-4.9,3.7-7.7,8.6-7.7,14.3"/><path fill="#49a098" d="M251.9,530.8c-15.7,0-29-6.9-38.5-15.7-1.8.7-3.5,1.5-5.2,2.4,10.9,12.8,27,23.2,46.2,23.2s17-1.6,23.2-4.9c-1.2-3.4-2.9-6.3-4.9-8.9-5.6,2.5-12.5,3.8-20.8,3.8"/><path fill="#49a098" d="M189.9,530.4c-6.7,6.7-11,14.3-11,21.8,0,29.3,45.6,45.8,63.3,45.8s30.7-13.3,35-27.3c-6.3,1.6-12.5,2.1-17.8,2.1-29.2,0-53.5-19.4-69.4-42.4"/><path fill="#49a098" d="M235.1,510.6c-5.9,0-12.1,1.2-18.2,3.3,8.8,7.7,20.9,13.5,35,13.5s13.5-1.1,18.5-3.1c-11.1-11.5-28.5-13.7-35.3-13.7"/><path fill="#49a098" d="M254.4,544.7c-20.7,0-38-11.5-49.6-25.4-1.3.7-2.6,1.5-3.9,2.3,12.9,17.5,32.5,32.2,56,32.2s15.7-1.2,23.1-4.5c0-3.5-.5-6.7-1.2-9.6-7.6,3.7-16.3,5-24.4,5"/><path fill="#49a098" d="M256.9,558.8c-25.2,0-46.2-15.7-60-34.4-1,.7-1.9,1.5-2.9,2.3,14.8,21.9,37.8,40.3,65.3,40.3s12.9-.8,19.3-2.7c.7-3.3,1-6.6,1.2-9.7-8,3.2-16.3,4.1-23,4.1"/></svg>';
+
+  const stage = document.getElementById('stage');
+  stage.style.width = W + 'px';
+  stage.style.height = H + 'px';
+
+  function el(tag, style, parent) {
+    const e = document.createElement(tag);
+    e.className = 'abs';
+    Object.assign(e.style, style || {});
+    (parent || stage).appendChild(e);
+    return e;
+  }
+  function flow(tag, style, parent) {
+    const e = document.createElement(tag);
+    Object.assign(e.style, style || {});
+    parent.appendChild(e);
+    return e;
+  }
+  function anim(e, value) {
+    e.style.animation = 'none';
+    void e.offsetWidth;   // redémarre l'animation
+    e.style.animation = value;
+  }
+
+  // --- Anneaux en pointillés (sous la bande)
+  const R = px(144);
+  const rings = RINGS.map(function (x) {
+    const r = R * x[0];
+    const d = Math.ceil(2 * r + px(8));
+    const w = el('div', { left: (cx - d / 2) + 'px', top: (cy - d / 2) + 'px', width: d + 'px', height: d + 'px', zIndex: 1 });
+    w.innerHTML = '<svg width="' + d + '" height="' + d + '" style="display:block"><circle cx="' + d / 2 + '" cy="' + d / 2 + '" r="' + r +
+      '" fill="none" stroke="' + x[1] + '" stroke-opacity="' + x[2] + '" stroke-width="' + px(x[3]) +
+      '" stroke-dasharray="0 ' + (x[4] * R / 180) + '" stroke-linecap="round"/></svg>';
+    return w;
+  });
+
+  // --- Bande horizontale : masque crust (18) + filet mantle (4)
+  el('div', { left: 0, top: (cy - px(9)) + 'px', width: W + 'px', height: px(18) + 'px', background: C.crust, zIndex: 2 });
+  const filet = el('div', { left: 0, top: (cy - px(2)) + 'px', width: W + 'px', height: px(4) + 'px', background: C.mantle, zIndex: 2 });
+
+  // --- Logo : quatre demi-anneaux, chacun sur son calque
+  const M = px(288);
+  const halves = HALVES.map(function (h) {
+    const w = el('div', { left: (cx - M / 2) + 'px', top: (cy - M / 2) + 'px', width: M + 'px', height: M + 'px', zIndex: 3 });
+    w.innerHTML = '<svg width="' + M + '" height="' + M + '" viewBox="-4.5 -4.5 9 9" style="display:block;opacity:.9"><path d="' + h.d +
+      '" fill="none" stroke="' + h.color + '" stroke-width="1"/></svg>';
+    return w;
+  });
+
+  // --- Nom du lab + KAUST, en bas
+  const lockup = el('div', { left: 0, top: px(1090) + 'px', width: W + 'px', zIndex: 3, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: px(14) + 'px' });
+  flow('span', { fontFamily: "'DM Sans', sans-serif", fontSize: px(22) + 'px', fontWeight: 600, letterSpacing: '-0.01em', color: C.text }, lockup)
+    .textContent = 'Imaging and Characterization Core Lab';
+  const k = KAUST.content.firstChild.cloneNode(true);
+  k.setAttribute('width', px(30));
+  k.setAttribute('height', px(29));
+  lockup.appendChild(k);
+
+  // --- Demande de phrase de passe
+  const form = el('div', { left: 0, top: (cy + px(184)) + 'px', width: W + 'px', zIndex: 4, display: 'none', flexDirection: 'column', alignItems: 'center', gap: px(14) + 'px' });
+  flow('div', { fontSize: px(16) + 'px', color: C.subtext0 }, form).textContent = PROMPT;
+  const border = Math.max(1, Math.round(s));
+  const field = flow('div', { position: 'relative', width: px(360) + 'px', height: px(56) + 'px', boxSizing: 'border-box', borderRadius: px(28) + 'px',
+    background: 'rgba(24, 24, 37, 0.85)', border: border + 'px solid ' + C.overlay0 }, form);
+  const lock = el('div', { left: px(20) + 'px', top: ((px(56) - 2 * border - px(20)) / 2) + 'px', width: px(20) + 'px', height: px(20) + 'px' }, field);
+  lock.innerHTML = '<svg width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="' + C.subtext0 +
+    '" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></svg>';
+  const placeholder = el('div', { inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: px(20) + 'px', color: C.subtext0 }, field);
+  placeholder.textContent = 'Passphrase';
+  const dotsBox = el('div', { inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: px(10) + 'px' }, field);
+  const message = flow('div', { height: px(24) + 'px', fontSize: px(16) + 'px', color: C.subtext0 }, form);
+
+  // --- État
+  let phase = 'intro';
+  let pw = '';
+  let error = false;
+  let caps = false;
+  const timers = [];
+  function later(ms, fn) { timers.push(setTimeout(fn, ms)); }
+  window.qsPlymouth = { get phase() { return phase; } };
+
+  function renderField() {
+    const typing = pw.length > 0 || phase === 'verify' || phase === 'unlock';
+    field.style.borderColor = error ? C.red : typing ? C.green : C.overlay0;
+    placeholder.style.display = pw.length === 0 ? 'flex' : 'none';
+    const n = Math.min(pw.length, 22);
+    while (dotsBox.children.length > n) dotsBox.lastChild.remove();
+    while (dotsBox.children.length < n) {
+      flow('span', { display: 'block', width: px(10) + 'px', height: px(10) + 'px', borderRadius: '50%', background: C.text }, dotsBox);
+    }
+    if (phase === 'verify' || phase === 'unlock') { message.textContent = 'Unlocking…'; message.style.color = C.subtext0; }
+    else if (error) { message.textContent = 'Wrong passphrase'; message.style.color = C.red; }
+    else if (caps) { message.textContent = 'Caps Lock is on'; message.style.color = C.yellow; }
+    else { message.textContent = ''; }
+  }
+
+  function loopMs() { return Math.max(1, Math.ceil(BOOT / T.period)) * T.period; }
+
+  // Phase 1 : assemblage, dès que Plymouth s'affiche
+  function intro() {
+    phase = 'intro';
+    anim(filet, 'fadeIn 400ms ease both');
+    anim(lockup, 'fadeIn 600ms ease 400ms both');
+    halves.forEach(function (h, i) {
+      anim(h, (HALVES[i].right ? 'inR' : 'inL') + ' 900ms cubic-bezier(.16,.84,.24,1) ' + (i * 120) + 'ms both');
+    });
+    rings.forEach(function (r, i) { anim(r, 'ringIn 600ms cubic-bezier(.2,.8,.2,1) ' + (900 + i * 45) + 'ms both'); });
+    // Le champ attend la fin de l'assemblage, même si la demande arrive plus tôt.
+    later(T.intro, NOLUKS ? startLoop : showPrompt);
+  }
+
+  // Phase 2 : phrase de passe
+  function showPrompt() {
+    phase = 'luks';
+    form.style.display = 'flex';
+    anim(form, 'fadeIn 300ms ease both');
+    renderField();
+    if (AUTO) later(600, autoType);
+  }
+
+  function autoType() {
+    let i = 0;
+    (function next() {
+      if (phase !== 'luks') return;
+      if (i < 12) { pw += 'x'; i += 1; error = false; renderField(); later(80, next); }
+      else submit();
+    })();
+  }
+
+  function submit() {
+    phase = 'verify';
+    anim(dotsBox, 'dotsPulse 1200ms ease-in-out infinite');
+    renderField();
+    later(T.verify, function () {
+      if (pw === 'wrong') {          // refus : champ vidé, bordure red jusqu'à la frappe suivante
+        phase = 'luks'; pw = ''; error = true;
+        anim(dotsBox, 'none');
+        renderField();
+        return;
+      }
+      phase = 'unlock';
+      renderField();
+      anim(form, 'fadeOut 500ms ease both');
+      startLoop();
+      later(T.unlock, function () { form.style.display = 'none'; phase = 'loop'; });
+    });
+  }
+
+  // Phase 3 : rotation alternée, dès le déverrouillage
+  function startLoop() {
+    if (phase !== 'unlock') phase = 'loop';
+    halves.forEach(function (h, i) {
+      anim(h, (HALVES[i].right ? 'spinCW' : 'spinCCW') + ' ' + T.period + 'ms cubic-bezier(.65,0,.35,1) ' + (i * 150) + 'ms infinite backwards');
+    });
+    // La sortie part toujours à la fin d'un cycle complet (tous les demi-anneaux au repos).
+    later(loopMs(), exit);
+  }
+
+  // Phase 4 : sortie vers le greeter
+  function exit() {
+    phase = 'exit';
+    const last = rings.length - 1;
+    halves.forEach(function (h, i) {
+      anim(h, (HALVES[i].right ? 'outR' : 'outL') + ' 650ms cubic-bezier(.5,0,.75,0) ' + ((3 - i) * 80) + 'ms both');
+    });
+    rings.forEach(function (r, i) { anim(r, 'fadeOut 500ms ease ' + ((last - i) * 30) + 'ms both'); });
+    anim(filet, 'fadeOut 500ms ease 300ms both');
+    anim(lockup, 'fadeOut 500ms ease 350ms both');
+    later(T.exit, function () { phase = 'done'; });
+  }
+
+  document.addEventListener('keydown', function (e) {
+    if (phase === 'done' && (e.key === 'r' || e.key === 'R')) { location.reload(); return; }
+    if (phase !== 'luks') return;
+    if (e.getModifierState) caps = e.getModifierState('CapsLock');
+    if (e.key === 'Enter') { submit(); return; }
+    if (e.key === 'Escape') pw = '';
+    else if (e.key === 'Backspace') pw = pw.slice(0, -1);
+    else if (e.key.length === 1) { pw += e.key; error = false; }
+    else { renderField(); return; }
+    e.preventDefault();
+    renderField();
+  });
+
+  // États figés pour les captures
+  if (FREEZE) {
+    phase = 'luks';
+    if (FREEZE === 'idle') { phase = 'loop'; return; }
+    form.style.display = 'flex';
+    if (FREEZE === 'typing') pw = 'xxxxxxxxx';
+    if (FREEZE === 'unlocking') { pw = 'xxxxxxxxx'; phase = 'verify'; dotsBox.style.opacity = '0.5'; }
+    if (FREEZE === 'error') error = true;
+    if (FREEZE === 'caps') { pw = 'xxxx'; caps = true; }
+    renderField();
+    return;
+  }
+  intro();
+})();
+</script>
+</body>
+</html>

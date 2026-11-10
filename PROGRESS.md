@@ -519,3 +519,10 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
   169 contrôles ciblés sur copie isolée passent ; capture `.shots/workspace-colors-red-bench.png`. Même instance réelle
   vivante (PID 1882), IPC prêt après rechargement, capture `.shots/workspace-colors-red-after.png` contrôlée ; banc arrêté.
   Un avertissement `Notifs.qml:42` (`scheduled`, undefined → bool) au rechargement, hors du composant modifié.
+
+## Plymouth « Core Lab » — profil travail (en cours, 2026-11-10)
+
+- Spécification et design validé versés : `docs/PLYMOUTH.md`, référence `assets/plymouth/reference/assemblage.html`, logos
+  `assets/plymouth/source/`. Étapes 1 à 5 de la spec, arrêt pour validation après chacune.
+- Décisions : tout le travail système en **VM** (Arch par archinstall, UEFI, **GRUB** comme le laptop, racine LUKS), jamais sur
+  `terrier` (profil jeux) ; ISO officielle et paquets dans la VM acceptés. Laptop seulement à l'étape 5, avec ton accord.
