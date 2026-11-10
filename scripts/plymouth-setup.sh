@@ -219,25 +219,22 @@ do_uninstall() {
 # Marque $var/rebuild posée avant le premier changement qui demande de refaire l'initramfs ou GRUB, retirée quand les deux
 # sont refaits : un passage interrompu (sudo refusé, mkinitcpio ou grub-mkconfig en échec) est repris au suivant, même si
 # rien d'autre n'a changé depuis.
-marked=""
 rebuild() {   # initramfs | bootloader
+    [[ -n "$initramfs$bootloader" || -f "$var/rebuild" ]] || run sh -c "mkdir -p '$var' && touch '$var/rebuild'"
     printf -v "$1" 1
-    [[ -z "$marked" ]] || return 0
-    marked=1
-    [[ -f "$var/rebuild" ]] || run sh -c "mkdir -p '$var' && touch '$var/rebuild'"
 }
 
 pending() {
     [[ -f "$var/rebuild" ]] || return 0
     echo "! initramfs et GRUB non refaits au dernier passage : refaits maintenant"
-    initramfs=1 bootloader=1 marked=1
+    initramfs=1 bootloader=1
 }
 
 finish() {
     [[ -n "$units" ]] && run systemctl daemon-reload
     [[ -n "$initramfs" ]] && run mkinitcpio -P
     [[ -n "$bootloader" ]] && run grub-mkconfig -o /boot/grub/grub.cfg
-    [[ -n "$marked" ]] && run rm -f "$var/rebuild"
+    [[ -n "$initramfs$bootloader" ]] && run rm -f "$var/rebuild"
     return 0
 }
 
