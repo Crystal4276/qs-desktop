@@ -47,6 +47,47 @@ def snapshot(home):
     return out
 
 
+def fake_papirus(root):
+    """Papirus d'origine en miniature : dossiers bleus, chaînes de liens, tailles servies par des liens, Papirus-Dark."""
+    p = root / "Papirus"
+    for size in ("16x16", "22x22", "24x24", "32x32", "48x48", "64x64"):
+        d = p / size / "places"
+        d.mkdir(parents=True)
+        if size == "16x16":
+            (d / "folder.svg").write_text("16")
+            continue
+        (d / "folder-blue.svg").write_text("blue")
+        (d / "folder-blue-video.svg").write_text("blue video")
+        (d / "folder.svg").symlink_to("folder-blue.svg")
+        (d / "folder-video.svg").symlink_to("folder-blue-video.svg")
+        (d / "folder-videos.svg").symlink_to("folder-video.svg")              # chaîne : videos → video → blue-video
+        (d / "folder-blue-videos.svg").symlink_to("folder-blue-video.svg")    # bleu demandé explicitement
+    for size, to in (("96x96", "48x48"), ("128x128", "64x64")):
+        (p / size).mkdir()
+        (p / size / "places").symlink_to(f"../{to}/places")
+    for size in ("16x16", "22x22", "48x48", "64x64"):
+        (p / f"{size}@2x").symlink_to(size)
+    dirs = ["16x16/places", "22x22/places", "48x48/places", "48x48@2x/places", "64x64/places", "96x96/places", "128x128/places"]
+    (p / "index.theme").write_text("[Icon Theme]\nName=Papirus\nDirectories=" + ",".join(dirs) + "\n")
+    dark = root / "Papirus-Dark"
+    (dark / "22x22").mkdir(parents=True)
+    (dark / "22x22/places").symlink_to("../../Papirus/22x22/places")
+    for size in ("48x48", "64x64", "96x96", "128x128"):
+        (dark / size).symlink_to(f"../Papirus/{size}")
+    (dark / "48x48@2x").symlink_to("48x48")
+    (dark / "index.theme").write_text("[Icon Theme]\nName=Papirus-Dark\nInherits=breeze-dark,hicolor\nDirectories=" + ",".join(dirs) + "\n")
+    return dirs
+
+
+def icon(bases, theme, d, name):
+    """Fichier qu'affiche GTK : premier dossier de base (compte, puis système) qui a ce nom, liens suivis."""
+    for b in bases:
+        f = b / theme / d / name
+        if f.exists():
+            return os.path.realpath(f)
+    return ""
+
+
 def main():
     tmp = pathlib.Path(tempfile.mkdtemp(prefix="qs-install-test-"))
     try:
@@ -73,9 +114,19 @@ def main():
         (home / ".config/mpv").mkdir()
         (home / ".config/mpv/mpv.conf").write_text("volume=50\n")
         (home / ".bashrc").write_text("alias ll='ls -l'\n")
+        # Dossiers XDG par défaut d'un compte déjà connecté : Modèles et Projets vides, Public avec un fichier.
+        xdg = {"DESKTOP": "Desktop", "DOWNLOAD": "Downloads", "TEMPLATES": "Templates", "PUBLICSHARE": "Public",
+               "DOCUMENTS": "Documents", "MUSIC": "Music", "PICTURES": "Pictures", "VIDEOS": "Videos", "PROJECTS": "Projects"}
+        (home / ".config/user-dirs.dirs").write_text("".join(f'XDG_{k}_DIR="$HOME/{v}"\n' for k, v in xdg.items()))
+        for v in xdg.values():
+            (home / v).mkdir()
+        (home / "Public/partage.txt").write_text("à garder\n")
+        icons = tmp / "system-icons"
+        icon_dirs = fake_papirus(icons)
         cache = pathlib.Path(os.environ.get("QS_TEST_CACHE", tmp / "cache"))
         env = {k: v for k, v in os.environ.items() if not k.startswith(("XDG_", "DBUS_", "SWAYSOCK", "I3SOCK", "HYPRLAND", "WAYLAND", "DISPLAY"))}
-        env.update(HOME=str(home), XDG_RUNTIME_DIR=str(run), XDG_CACHE_HOME=str(cache), LANG="C.UTF-8", QS_INSTALL_ASSUME_CLOSED="1")
+        env.update(HOME=str(home), XDG_RUNTIME_DIR=str(run), XDG_CACHE_HOME=str(cache), LANG="C.UTF-8", QS_INSTALL_ASSUME_CLOSED="1",
+                   QS_PAPIRUS_DIR=str(icons / "Papirus"))
 
         def install(*args):
             cmd = ["dbus-run-session", "--", "bash", "-c", 'dconf load / < "$0" 2>/dev/null; bash "$1" "${@:2}"; rc=$?; dconf dump / > "$0"; exit $rc',
@@ -122,6 +173,34 @@ def main():
         check((cfg / "Kvantum/catppuccin-mocha-green/catppuccin-mocha-green.kvconfig").is_file(), "Kvantum installé")
         folder = home / ".local/share/icons/Papirus/48x48/places/folder.svg"
         check(folder.is_symlink() and "cat-mocha-lavender" in os.readlink(folder), "Papirus : dossiers lavande")
+        bases = [home / ".local/share/icons", icons]
+
+        def papirus_ok():
+            shown = {(t, d, n): os.path.basename(icon(bases, t, d, n)) for t in ("Papirus", "Papirus-Dark")
+                     for d in icon_dirs if not d.startswith("16x16") for n in ("folder.svg", "folder-video.svg", "folder-videos.svg")}
+            blue = [k for k, v in shown.items() if "cat-mocha-lavender" not in v]
+            kept = {os.path.basename(icon(bases, "Papirus-Dark", d, "folder-blue-videos.svg")) for d in ("48x48/places", "96x96/places")}
+            return blue, kept
+
+        blue, kept = papirus_ok()
+        check(not blue, f"Papirus : lavande à toutes les tailles (zoom 96/128, @2x), chaînes de liens comprises {blue[:4]}")
+        check(kept == {"folder-blue-video.svg"}, f"Papirus : nom explicitement bleu gardé bleu {kept}")
+        dirs = sorted(p.name for p in home.iterdir() if p.is_dir() and not p.name.startswith(".") and p.name != "dots")
+        check(dirs == ["Applications", "Desktop", "Documents", "Downloads", "Music", "Pictures", "Public", "Videos"],
+              f"dossiers du compte : Modèles et Projets vides retirés, Public non vide gardé, Applications créé {dirs}")
+        ud = (cfg / "user-dirs.dirs").read_text()
+        check(all(f'XDG_{k}_DIR="$HOME/"' in ud for k in ("TEMPLATES", "PUBLICSHARE", "PROJECTS"))
+              and 'XDG_PICTURES_DIR="$HOME/Pictures"' in ud, "user-dirs.dirs : Modèles, Public, Projets désactivés, autres gardés")
+
+        # Machine installée avec l'ancienne surcouche (marque = empreinte seule, sans 96x96) : refaite au passage suivant.
+        for t in ("Papirus", "Papirus-Dark"):
+            mark = home / ".local/share/icons" / t / ".qs-desktop"
+            mark.write_text(mark.read_text().split("-r")[0] + "\n")
+            target = home / ".local/share/icons" / t / "96x96"
+            shutil.rmtree(target) if target.is_dir() and not target.is_symlink() else target.unlink()
+        install()
+        blue, _ = papirus_ok()
+        check(not blue, f"Papirus : ancienne surcouche refaite {blue[:4]}")
         dconf = (tmp / "dconf.ini").read_text()
         check("accent-color='green'" in dconf and "gtk-theme='catppuccin-mocha-green-standard+default'" in dconf, "dconf appliqué")
         mime = (cfg / "mimeapps.list").read_text() if (cfg / "mimeapps.list").exists() else ""

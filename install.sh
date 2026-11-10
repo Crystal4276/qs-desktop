@@ -399,7 +399,10 @@ touch_bashrc() {
 
 # --- 3. Thème ----------------------------------------------------------------------------------------------------------
 
-theme_sha() { awk -v n="$1" '$1 == n { print $2 }' "$repo/deps/themes.txt"; }   # empreinte d'une archive de deps/themes.txt
+# Marque des dossiers installés depuis une archive de deps/themes.txt : son empreinte, suivie de la révision de la mise en place
+# quand install.sh la construit lui-même (à incrémenter quand celle-ci change : refaite sur les machines déjà installées).
+declare -A layout=([papirus-folders]=2)
+theme_sha() { echo "$(awk -v n="$1" '$1 == n { print $2 }' "$repo/deps/themes.txt")${layout[$1]:+-r${layout[$1]}}"; }
 
 # Archive de deps/themes.txt : téléchargée une fois dans le cache, vérifiée, extraite dans un dossier temporaire.
 fetch() {       # nom → affiche le dossier extrait
@@ -456,28 +459,51 @@ put_file() {    # source cible : fichier du thème, l'ancien sauvegardé
 }
 
 # Dossiers Catppuccin lavande (ton choix : comme sur le desktop de référence) sans toucher au thème du système : surcouche Papirus dans le compte (mêmes noms de dossiers, les autres icônes
-# viennent toujours de /usr/share/icons/Papirus). Les noms génériques (folder.svg, user-home.svg…) pointent vers $folders.
+# viennent toujours de /usr/share/icons/Papirus). Chaque lien de Papirus qui mène, directement ou par une chaîne de liens
+# (folder-videos.svg → folder-video.svg → folder-blue-video.svg), à un dossier de sa couleur pointe vers $folders. GTK cherche
+# chaque nom d'abord dans le compte : un nom absent de la surcouche reprend l'icône bleue du système. Les tailles que Papirus
+# sert par des liens (96x96/places → 48x48, 128x128 → 64x64, @2x, Papirus-Dark) sont reprises à l'identique dans la surcouche.
 papirus_overlay() {     # dossier src/ de catppuccin/papirus-folders
-    local src="$1" top="$data/icons" sys=/usr/share/icons/Papirus folders=cat-mocha-lavender color size f t new
+    local src="$1" top="$data/icons" sys="${QS_PAPIRUS_DIR:-/usr/share/icons/Papirus}" folders=cat-mocha-lavender color size f t n new e
     [[ -d "$sys" ]] || { echo "- Papirus absent (papirus-icon-theme) : couleur des dossiers ignorée"; return; }
     color="$(readlink "$sys/48x48/places/folder.svg" || true)"; color="${color#folder-}"; color="${color%.svg}"
     [[ -n "$color" ]] || { echo "- Papirus sans couleur de dossier lisible (folder.svg n'est pas un lien) : couleur des dossiers ignorée"; return; }
-    local tree; tree="$(mktemp -d)"
-    for size in 22x22 24x24 32x32 48x48 64x64; do
+    local tree sizes=(); tree="$(mktemp -d)"
+    for size in "$src"/*/; do
+        size="$(basename "$size")"
+        [[ -d "$sys/$size/places" && ! -L "$sys/$size" && ! -L "$sys/$size/places" ]] || continue
         mkdir -p "$tree/Papirus/$size/places"
         cp "$src/$size/places/"*-"$folders"* "$tree/Papirus/$size/places/" 2>/dev/null || { echo "- papirus-folders : pas de $folders en $size"; continue; }
+        sizes+=("$size")
         for f in "$sys/$size/places/"*; do
-            [[ -L "$f" ]] || continue
-            t="$(readlink "$f")"
+            [[ -L "$f" && "$(basename "$f")" != *"-$color"* ]] || continue   # folder-blue-videos.svg : bleu demandé, gardé
+            t="$(readlink "$f")"; n=0
+            while [[ "$t" != */* && -L "$sys/$size/places/$t" && $n -lt 8 ]]; do t="$(readlink "$sys/$size/places/$t")"; n=$((n + 1)); done
             [[ "$t" == *"-$color"* && "$t" != */* ]] || continue
             new="${t/-$color/-$folders}"
             if [[ -e "$tree/Papirus/$size/places/$new" ]]; then ln -sfn "$new" "$tree/Papirus/$size/places/$(basename "$f")"
             elif [[ -e "$sys/$size/places/$new" ]]; then ln -sfn "$sys/$size/places/$new" "$tree/Papirus/$size/places/$(basename "$f")"; fi
         done
-        ln -sfn "$size" "$tree/Papirus/$size@2x"
-        mkdir -p "$tree/Papirus-Dark"
-        ln -sfn "../Papirus/$size" "$tree/Papirus-Dark/$size"
-        ln -sfn "$size" "$tree/Papirus-Dark/$size@2x"
+    done
+    [[ ${#sizes[@]} -gt 0 ]] || { rm -rf "$tree"; return; }
+    # Liens de Papirus vers les tailles couvertes : dossier entier (48x48@2x → 48x48) ou seulement places (96x96/places → ../48x48/places).
+    for e in "$sys"/*/; do
+        e="$(basename "$e")"
+        if [[ -L "$sys/$e" ]]; then
+            t="$(readlink "$sys/$e")"
+            if [[ " ${sizes[*]} " == *" $t "* ]]; then ln -sfn "$t" "$tree/Papirus/$e"; fi
+        elif [[ -L "$sys/$e/places" ]]; then
+            t="$(readlink "$sys/$e/places")"; n="${t#../}"; n="${n%/places}"
+            [[ "$t" == "../$n/places" && " ${sizes[*]} " == *" $n "* ]] || continue
+            mkdir -p "$tree/Papirus/$e"; ln -sfn "$t" "$tree/Papirus/$e/places"
+        fi
+    done
+    # Papirus-Dark : chaque taille de la surcouche, comme Papirus-Dark/<taille> → ../Papirus/<taille> (ses places sont celles de Papirus).
+    mkdir -p "$tree/Papirus-Dark"
+    for e in "$tree/Papirus"/*; do
+        e="$(basename "$e")"
+        if [[ -L "$tree/Papirus/$e" ]]; then ln -sfn "$(readlink "$tree/Papirus/$e")" "$tree/Papirus-Dark/$e"
+        else ln -sfn "../Papirus/$e" "$tree/Papirus-Dark/$e"; fi
     done
     put_dir "$tree/Papirus" "$top/Papirus" papirus-folders
     put_dir "$tree/Papirus-Dark" "$top/Papirus-Dark" papirus-folders
@@ -815,15 +841,39 @@ wallpapers_dir() {
     echo "$pictures/Wallpapers"
 }
 
+# Dossiers du compte (ton choix) : Applications, Desktop, Documents, Downloads, Music, Pictures, Videos, rien d'autre.
+# Modèles, Public et Projets désactivés dans user-dirs.dirs (« $HOME/ » : xdg-user-dirs-update ne les recrée plus à la connexion)
+# et retirés s'ils sont vides ; non vides, gardés. Machine neuve : les autres dossiers XDG créés tout de suite (Images pour les fonds).
+step_home_dirs() {
+    local f="$config/user-dirs.dirs" key dir fresh="" off=()
+    if command -v xdg-user-dirs-update >/dev/null; then
+        [[ -f "$f" ]] || fresh=1
+        for key in TEMPLATES PUBLICSHARE PROJECTS; do
+            grep -qx "XDG_${key}_DIR=\"\\\$HOME/\"" "$f" 2>/dev/null || off+=("$key")
+        done
+        if [[ ${#off[@]} -gt 0 ]]; then
+            before_write "$f"
+            [[ -e "$config/user-dirs.locale" ]] || recorded "$config/user-dirs.locale" || record seed "$config/user-dirs.locale" -
+            for key in "${off[@]}"; do
+                dir=""; [[ -n "$fresh" ]] || dir="$(xdg-user-dir "$key" 2>/dev/null || true)"; dir="${dir%/}"
+                run xdg-user-dirs-update --set "$key" "$HOME" || echo "! $key : xdg-user-dirs-update --set refusé"
+                [[ -n "$dir" && "$dir" != "$HOME" && -d "$dir" && ! -L "$dir" ]] || continue
+                if [[ -n "$(ls -A "$dir")" ]]; then echo "! $dir non vide : gardé (plus un dossier XDG)"; continue; fi
+                recorded "$dir" || record rmdir "$dir" -     # recréé par --uninstall
+                run rmdir "$dir"
+            done
+            # Machine neuve : les dossiers XDG (Images…) ne sont créés qu'à la première connexion ; xdg-user-dir renverrait alors $HOME.
+            [[ -z "$fresh" ]] || run xdg-user-dirs-update
+            written "$f"; written "$config/user-dirs.locale"
+        else
+            echo "= $f (Modèles, Public, Projets désactivés)"
+        fi
+    fi
+    if [[ -d "$HOME/Applications" ]]; then echo "= $HOME/Applications"; else run mkdir -p "$HOME/Applications"; fi
+}
+
 step_wallpapers() {
     local src="${QS_WALLPAPERS_REPO:-Crystal4276/wallpapers}" dir
-    # Machine neuve : les dossiers XDG (Images…) ne sont créés qu'à la première connexion ; xdg-user-dir renverrait alors $HOME.
-    if command -v xdg-user-dirs-update >/dev/null && [[ ! -f "$config/user-dirs.dirs" ]]; then
-        recorded "$config/user-dirs.dirs" || record seed "$config/user-dirs.dirs" -
-        [[ -e "$config/user-dirs.locale" ]] || recorded "$config/user-dirs.locale" || record seed "$config/user-dirs.locale" -
-        run xdg-user-dirs-update
-        written "$config/user-dirs.dirs"; written "$config/user-dirs.locale"
-    fi
     dir="$(wallpapers_dir)"
     if [[ -d "$dir/.git" ]]; then
         if [[ -n "$(git -C "$dir" status --porcelain 2>/dev/null)" ]]; then
@@ -1004,6 +1054,7 @@ open(path, "w", encoding="utf-8").write("\n".join(lines))
 EOF
                     ;;
                 unit-mask) run systemctl --user unmask "$target" || echo "! $target non démasqué (pas de session utilisateur) : systemctl --user unmask $target" ;;
+                rmdir) [[ -e "$target" || -L "$target" ]] || run mkdir -p "$target" ;;   # dossier XDG vide retiré par step_home_dirs
             esac
         done 3< <(tac "$registry")
         if [[ -f "$state/dconf-old.ini" ]] && ! python3 -I "$repo/scripts/dconf-keys.py" ${dry:+--dry-run} restore "$state/dconf-old.ini"; then
@@ -1063,6 +1114,8 @@ fi
 step_configs
 step_theme
 step_settings
+section "Dossiers du compte"
+step_home_dirs
 section "Fonds d'écran"
 step_wallpapers
 step_host
