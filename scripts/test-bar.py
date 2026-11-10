@@ -78,7 +78,11 @@ def test(work):
         def state():
             time.sleep(.1)
             value = json.loads(ipc('state'))
-            assert value['rightStart'] - value['leftEnd'] >= 9.99, value
+            gap = value['rightStart'] - value['leftEnd']
+            assert gap >= 9.99, value
+            # Media pill snaps to the usual pill spacing when it would leave less than mediaSnapGap (50 px).
+            if any(s['name'] == 'mpris' and s['wanted'] for s in value['slots']):
+                assert abs(gap - 10) < 1 or gap >= 50, value
             for name in ('volume', 'slider'):
                 assert any(s['name'] == name and s['wanted'] and s['width'] > 0 for s in value['slots']), value
             return value
@@ -86,10 +90,19 @@ def test(work):
             run('swaymsg', 'output', 'HEADLESS-1', 'mode', f'{width}x1200', env=env)
             time.sleep(.2)
             for artist, title in [('Run The Jewels', 'ooh la la (feat. long title)'), ('W'*100, 'long title '*20),
-                                  ('', 'Title only'), ('Artist only', ''), ('日本語 🎵 café'*10, 'Été 👩🏽‍💻'*30)]:
+                                  ('', 'Title only'), ('Artist only', ''), ('日本語 🎵 café'*10, 'Été 👩🏽‍💻'*30),
+                                  ('Ren', 'Hi Ren')]:
                 for paused, updates in [('true', 999), ('false', 0)]:
                     ipc('configure', artist, title, paused, updates)
                     value = state()
+                    media = next(s for s in value['slots'] if s['name'] == 'mpris')
+                    # Text (artist - title) capped at Theme.bar.mediaTextMaxWidth (600 px).
+                    assert media['textWidth'] <= 600.5, value
+                    # An artist reduced to a bare ellipsis is dropped, the title takes its place.
+                    assert not media['text'].startswith('… - '), value
+                    # A short artist and title that fit are never elided.
+                    if width >= 1920 and artist == 'Ren': assert media['text'] == 'Ren - Hi Ren', value
+                    if width == 3440 and artist.startswith('W'): assert media['text'] and media['textWidth'] > 590, value
                     if width == 1280: assert value['level'] == 2, value
                     if width == 1480 and updates: assert value['level'] == 1, value
                     if width >= 1920: assert value['level'] == 0, value
@@ -102,7 +115,7 @@ def test(work):
         assert all(not s['wanted'] for s in value['slots'] if s['name'] in ('mpris', 'battery', 'backlight')), value
         log = (work / 'qs.log').read_text()
         assert 'WARN scene:' not in log and not re.search(r'^\s*ERROR\b', log, re.MULTILINE), log
-        print('PASS bar: 70 metadata/update/pause/resize cases, tray growth, hardware/media absence; no QML warnings')
+        print('PASS bar: 84 metadata/update/pause/resize cases, tray growth, hardware/media absence; no QML warnings')
     finally:
         if shell:
             try: os.killpg(shell.pid, signal.SIGTERM)

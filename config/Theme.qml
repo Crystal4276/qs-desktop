@@ -93,6 +93,8 @@ Singleton {
         readonly property int spacing: 10              // entre pilules
         readonly property int marginSide: 10
         readonly property int modulePadding: 10        // haut/bas et gauche/droite
+        readonly property int mediaTextMaxWidth: 600   // texte de la musique (artiste - titre) : ~ l'ancienne limite de 40 caractères (ton choix du 2026-11-10)
+        readonly property int mediaSnapGap: 50         // en dessous, la pilule musique se cale sur `spacing` (ton choix du 2026-11-10)
         readonly property int workspacePadding: 8      // horizontal
         readonly property int menuButtonMin: 40
         readonly property int menuButtonPadding: 10
