@@ -617,6 +617,21 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
   - Second passage, sudoers : « + » affiché à tort avant « = … à jour » ; l'annonce est maintenant faite par l'étape root
     après la comparaison (vérifié en VM : à jour « = », absent « + », simulation « + »).
   - Suite : étape 3 (thème complet : phrase de passe, sortie, plusieurs écrans).
+- **Étape 3, thème complet (2026-11-10)** — en attente de validation. `dotfiles/plymouth/qs-corelab/qs-corelab.script` : intro →
+  phrase de passe (repos, saisie, Verr. Maj., « Unlocking… » pulsé, refus) → rotation → sortie à la fin du cycle → crust ;
+  arrêt et redémarrage : crust seul ; écrans branchés à chaud : scène reconstruite.
+  - VM, hors démarrage (`preview.sh`), comparé à la référence figée avec la même invite : 0,15 à 0,25 % de pixels > 32 sur l'écran
+    entier, en 1920×1200, 3440×1440 et 4K ; après la sortie, 100 % crust. Captures : `.shots/plymouth/step3-*`.
+  - VM, vrai démarrage chiffré (initramfs) : intro, champ après l'intro, mauvaise phrase (« Unlocking… » pendant tout le calcul
+    d'argon2, 5 à 8 s en VM) puis « Wrong passphrase », bonne phrase → fondu et rotation (`RootMounted`).
+  - Coût du thème complet (4K) : 37 % d'un cœur au pire moment de l'intro, 30 % en rotation (7,4 et 6 ms par image).
+  - **Écart imposé par Plymouth** : tous les écrans voient la même scène (une toile commune) ; échelle retenue : celle du plus
+    petit écran (`.shots/plymouth/step3-two-screens.png`, 1920×1200 + 1280×800). À confirmer.
+  - **Passage au greeter** (pour l'étape 4) : `quit --retain-splash` seul → écran noir ~1,2 s ; `plymouth deactivate` garde le
+    crust jusqu'au greeter (vérifié). Restent : l'ordre de greetd (`After=plymouth-quit-wait`) et ~0,75 s de noir du compositeur
+    du greeter avant son premier dessin. L'unité de sortie attendra 3,4 s fixes après la demande (le script ne peut pas
+    signaler la fin de son animation).
+  - Pièges ajoutés (`DEVELOPMENT.md`) : sans sprite, pas d'affichage ; écrans centrés sur une toile ; `global.` dans les fonctions.
 
 - Synchronisation du déploiement : commits Plymouth / installation publiés par l’autre session conservés par fusion ;
   seul conflit dans le journal résolu en gardant les deux ajouts. Aucun installateur ni réglage système exécuté.

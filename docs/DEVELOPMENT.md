@@ -150,6 +150,9 @@ et `cryptdevice=UUID=…:root` (choix d'archinstall 4.5). Comptes de test : `arc
   `bench.sh show` (greetd arrêté, `plymouthd --kernel-command-line="quiet splash plymouth.debug=file:/tmp/ply.log"` : sans
   `splash`, aucun écran graphique), `bench.sh measure <statut> <s>` (`plymouth update --status=…`, CPU et mémoire de `plymouthd`),
   `bench.sh quit`. Hors démarrage, le texte passe par `label-pango` (fontconfig) ; dans l'initramfs, par `label-freetype`.
+- `preview.sh <dossier> [W H]` : tous les états hors démarrage (demande simulée par `plymouth ask-for-password --command=
+  /tmp/check-pw.sh`, phrase `corelab`, ~1,2 s de vérification ; touches par QMP), puis rotation et sortie.
+- Deux écrans : seconde carte `-device virtio-gpu-pci,xres=…,yres=…,id=gpu1`, capture QMP `screendump` avec `"device":"gpu1"`.
 - Vrai démarrage : hook `plymouth` avant `block encrypt`, `splash` dans GRUB, `mkinitcpio -P` ; pour mesurer après le
   démarrage, `plymouth-quit.service` masqué et greetd désactivé **dans l'overlay d'essai seulement** (à recréer depuis
   `plymouth-luks-desktop.qcow2` pour revenir à zéro).
@@ -169,6 +172,11 @@ et `cryptdevice=UUID=…:root` (choix d'archinstall 4.5). Comptes de test : `arc
   `Image.Scale` échantillonne sans moyenne (réduire beaucoup = texte crénelé).
 - Le coût d'une image = rectangles des sprites modifiés × calques qui s'y superposent : petits sprites, rien de plein écran ne bouge.
 - Pas d'horloge : le temps compte les rafraîchissements (50/s, minuteur réarmé avant le dessin).
+- Tous les écrans sont centrés sur une seule toile (largeur et hauteur max) : chaque sprite apparaît sur chaque écran.
+- Sans aucun sprite (fond seul), le plugin ne prend pas l'écran : la console reste affichée.
+- `Image.Text(…, "Inter 16px")` : taille en pixels entiers (`label-freetype` dans l'initramfs, Pango hors démarrage).
+- `plymouth quit --retain-splash` seul : écran noir (l'image disparaît avec `plymouthd`) ; `plymouth deactivate` la garde.
+- Écrire dans une variable globale depuis une fonction : `global.x = …` (sinon variable locale créée).
 
 **Quickshell 0.3.2**
 - `FileView` dont on change `path` rend encore les données de l'ancien fichier : un `FileView` par fichier. `setData` crée les dossiers.

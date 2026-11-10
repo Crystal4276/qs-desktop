@@ -1382,14 +1382,21 @@ SET[4].form_msgline.x = 519.25; SET[4].form_msgline.y = 186.172; SET[4].form_msg
 SET[4].form_prompt.x = 310.672; SET[4].form_prompt.y = 0; SET[4].form_prompt.w = 578.641; SET[4].form_prompt.h = 35;
 // END GENERATED
 
-// --- Prototype (step 2 of docs/PLYMOUTH.md): intro (arcs + half-rings) then rotation loop, first screen only.
-// Measuring modes: plymouth update --status=bench-intro | bench-rings | bench-halves | bench-peak | bench-loop |
-// bench-still | bench-idle. The full theme (passphrase, exit, every screen) comes in step 3.
+// Plymouth « Core Lab » theme (docs/PLYMOUTH.md), work profile. Data above: scripts/plymouth-assets.py.
+//
+// Phases: intro (2.2 s) → passphrase (after the intro, LUKS) → loop (rotation, 2.4 s cycle) → exit (at the end of the
+// current cycle, after `plymouth update --status=qs-corelab-exit`) → crust only, kept by `plymouth quit --retain-splash`.
+// Every screen shows the same scene: the script plugin centres each display on one canvas, so there is a single scale,
+// the one of the smallest screen (everything stays visible everywhere; a bigger screen shows more rings).
+// Plymouth script: no clock (time = refreshes), no hexadecimal or exponent literals, no include.
+// Measuring statuses (VM bench, docs/DEVELOPMENT.md): bench-intro | bench-peak | bench-loop | bench-idle.
 
 REFRESH = 50;
-Plymouth.SetRefreshRate(REFRESH);
 FRAME_MS = 1000 / REFRESH;
+CYCLE = 2400 / FRAME_MS;                 // frames per rotation cycle
+EXIT_STATUS = "qs-corelab-exit";
 
+// crust
 Window.SetBackgroundTopColor(17 / 255, 17 / 255, 27 / 255);
 Window.SetBackgroundBottomColor(17 / 255, 17 / 255, 27 / 255);
 
@@ -1406,26 +1413,7 @@ fun round(v) {
   return Math.Int(v + 0.5);
 }
 
-SW = Window.GetWidth(0);
-SH = Window.GetHeight(0);
-SX = Window.GetX(0);
-SY = Window.GetY(0);
-s = SH / 1200;
-
-// Smallest set at least as large as the screen, else the largest.
-best = -1;
-for (i = 0; i < SETS; i++) {
-  if (SET[i].s >= s - 0.000001) {
-    if (best < 0) best = i;
-    else if (SET[i].s < SET[best].s) best = i;
-  }
-}
-if (best < 0) {
-  best = 0;
-  for (i = 1; i < SETS; i++) if (SET[i].s > SET[best].s) best = i;
-}
-S = SET[best];
-f = s / S.s;
+// --- Scene ----------------------------------------------------------------------------------------------------------
 
 fun load(name) {
   local.img = Image(S.dir + name);
@@ -1434,72 +1422,276 @@ fun load(name) {
   return img;
 }
 
-cx = SX + Math.Int(SW / 2);
-cy = SY + Math.Int(SH / 2);
-
-// Arcs of the dotted rings: only those on screen (arcs come ring by ring).
-for (j = 0; j < RING_COUNT; j++) {
-  ring_count[j] = 0;
-  ring_first[j] = 0;
-  ring_last[j] = -1;
+// Sprites of the previous scene are freed by replacing them (a sprite disappears with its last reference).
+fun clear_scene() {
+  for (local.k = 0; k < ARCS; k++) global.arc[k].sprite = 0;
+  for (local.i = 0; i < 4; i++) global.half[i].sprite = 0;
+  for (local.k = 0; k < 22; k++) global.dot[k].sprite = 0;
+  global.band.sprite = 0;
+  global.filet.sprite = 0;
+  global.lockup.sprite = 0;
+  global.form.prompt.sprite = 0;
+  global.form.field.sprite = 0;
+  global.form.placeholder.sprite = 0;
+  global.form.message.sprite = 0;
+  global.ARCS = 0;
 }
-n = 0;
-for (i = 0; i < S.tile_count; i++) {
-  t = S.tile[i];
-  x = cx + round(t.x * f);
-  y = cy + round(t.y * f);
-  if (x < SX + SW && y < SY + SH && x + t.w * f + 1 > SX && y + t.h * f + 1 > SY) {
-    if (ring_count[t.ring] == 0) ring_first[t.ring] = n;
-    ring_count[t.ring]++;
-    arc[n].image = load(t.file);
-    arc[n].sprite = Sprite(arc[n].image);
-    arc[n].x = x;
-    arc[n].y = y;
-    arc[n].mx = t.mx * f;
-    arc[n].my = t.my * f;
-    arc[n].ring = t.ring;
-    arc[n].sprite.SetPosition(x, y, 1);
-    arc[n].sprite.SetOpacity(0);
-    n++;
+
+fun build_scene() {
+  clear_scene();
+  global.CW = Window.GetWidth();          // canvas: largest display; every display is centred on it
+  global.CH = Window.GetHeight();
+  local.minh = 0;
+  for (local.i = 0; Window.GetWidth(i); i++)
+    if (minh == 0 || Window.GetHeight(i) < minh) minh = Window.GetHeight(i);
+  if (minh <= 0) { global.SCENE = 0; return; }
+  global.s = minh / 1200;
+
+  // Smallest set at least as large as the scale, else the largest.
+  local.best = -1;
+  for (local.i = 0; i < SETS; i++)
+    if (SET[i].s >= s - 0.000001 && (best < 0 || SET[i].s < SET[best].s)) best = i;
+  if (best < 0) {
+    best = 0;
+    for (local.i = 1; i < SETS; i++) if (SET[i].s > SET[best].s) best = i;
+  }
+  global.S = SET[best];
+  global.f = s / S.s;
+  global.cx = Window.GetX() + Math.Int(CW / 2);
+  global.cy = Window.GetY() + Math.Int(CH / 2);
+
+  // Arcs of the dotted rings (they come ring by ring), only those on the canvas.
+  for (local.j = 0; j < RING_COUNT; j++) {
+    global.ring_count[j] = 0;
+    global.ring_first[j] = 0;
+    global.ring_last[j] = -1;             // force the next update
+  }
+  local.n = 0;
+  for (local.i = 0; i < S.tile_count; i++) {
+    local.t = S.tile[i];
+    local.x = cx + round(t.x * f);
+    local.y = cy + round(t.y * f);
+    if (x < cx + CW / 2 && y < cy + CH / 2 && x + t.w * f + 1 > cx - CW / 2 && y + t.h * f + 1 > cy - CH / 2) {
+      if (ring_count[t.ring] == 0) global.ring_first[t.ring] = n;
+      global.ring_count[t.ring]++;
+      global.arc[n].sprite = Sprite(load(t.file));
+      global.arc[n].x = x;
+      global.arc[n].y = y;
+      global.arc[n].mx = t.mx * f;
+      global.arc[n].my = t.my * f;
+      arc[n].sprite.SetPosition(x, y, 1);
+      arc[n].sprite.SetOpacity(0);
+      n++;
+    }
+  }
+  global.ARCS = n;
+
+  // Band: crust mask over the rings, mantle line, both as wide as the canvas.
+  global.band.sprite = Sprite(Image("crust.png").Scale(CW, round(18 * s)));
+  band.sprite.SetPosition(cx - Math.Int(CW / 2), cy - Math.Int(round(18 * s) / 2), 2);
+  global.filet.sprite = Sprite(Image("mantle.png").Scale(CW, round(4 * s)));
+  filet.sprite.SetPosition(cx - Math.Int(CW / 2), cy - Math.Int(round(4 * s) / 2), 3);
+  filet.sprite.SetOpacity(0);
+
+  // Half-rings: squares centred on the logo (rotation centre).
+  for (local.i = 0; i < 4; i++) {
+    global.half[i].image = load(S.half[i].file);
+    global.half[i].side = S.half[i].side;
+    global.half[i].sprite = Sprite(half[i].image);
+    global.half[i].x = cx - Math.Int(half[i].image.GetWidth() / 2);
+    global.half[i].y = cy - Math.Int(half[i].image.GetHeight() / 2);
+    global.half[i].angle = 0;
+    half[i].sprite.SetPosition(half[i].x, half[i].y, 4);
+    half[i].sprite.SetOpacity(0);
+  }
+
+  // Lab name + KAUST emblem, top at 1090 (screen of 1200).
+  global.lockup.sprite = Sprite(load("lockup.png"));
+  lockup.sprite.SetPosition(round(cx - S.lockup.ew * f / 2 + S.lockup.dx * f),
+                            round(cy + (1090 - 600) * s + S.lockup.dy * f), 3);
+  lockup.sprite.SetOpacity(0);
+
+  // Passphrase block, from cy + 184: prompt line, field, message line (layout measured on the reference).
+  global.form.top = cy + 184 * s;
+  global.form.field_y = form.top + S.form_field.y * f;
+  global.form.field_cy = form.field_y + S.form_field.h * f / 2;
+  global.form.img_idle = load("field-idle.png");
+  global.form.img_active = load("field-active.png");
+  global.form.img_error = load("field-error.png");
+  global.form.img_unlocking = load("msg-unlocking.png");
+  global.form.img_wrong = load("msg-wrong.png");
+  global.form.img_caps = load("msg-caps.png");
+  global.form.field.sprite = Sprite(form.img_idle);
+  form.field.sprite.SetPosition(round(cx - S.form_field.w * f / 2 + S.field_idle.dx * f),
+                                round(form.field_y + S.field_idle.dy * f), 10);
+  global.form.placeholder.sprite = Sprite(load("placeholder.png"));
+  form.placeholder.sprite.SetPosition(round(cx - S.placeholder.ew * f / 2 + S.placeholder.dx * f),
+                                      round(form.field_cy - S.placeholder.eh * f / 2 + S.placeholder.dy * f), 11);
+  global.form.message.sprite = Sprite(form.img_unlocking);
+  global.form.message.y = form.top + S.form_msgline.y * f;
+  global.form.dot_img = load("dot.png");
+  for (local.k = 0; k < 22; k++) {
+    global.dot[k].sprite = Sprite(form.dot_img);
+    dot[k].sprite.SetOpacity(0);
+  }
+  global.form.prompt_text = "";          // redrawn (Image.Text) on the next update
+  global.form.field_key = "idle";
+  global.form.msg_key = "";              // position set on first use
+  global.form.dirty = 1;
+  global.SCENE = 1;
+  form_hide_all();
+}
+
+fun form_hide_all() {
+  form.prompt.sprite.SetOpacity(0);
+  form.field.sprite.SetOpacity(0);
+  form.placeholder.sprite.SetOpacity(0);
+  form.message.sprite.SetOpacity(0);
+  for (local.k = 0; k < 22; k++) dot[k].sprite.SetOpacity(0);
+}
+
+// --- Passphrase block ---------------------------------------------------------------------------------------------
+
+pw.active = 0;           // a passphrase is asked and not yet accepted
+pw.state = "idle";       // idle | typing | verify | error | unlocked (fading out, drawn like verify)
+pw.bullets = 0;
+pw.prompt = "";
+form.op = 0;             // block opacity (fades)
+form.from = 0;
+form.to = 0;
+form.t0 = 0;
+form.dur = 1;
+
+fun form_fade(to, ms) {
+  global.form.from = form.op;
+  global.form.to = to;
+  global.form.t0 = frame;
+  global.form.dur = ms;
+}
+
+fun set_prompt_image() {
+  if (form.prompt_text == pw.prompt) return;
+  global.form.prompt_text = pw.prompt;
+  // subtext0, Inter (theme font, embedded by the hook), 16 px on a 1200 px screen
+  local.img = Image.Text(pw.prompt, 166 / 255, 173 / 255, 200 / 255, 1, "Inter " + round(16 * s) + "px");
+  global.form.prompt.sprite = Sprite(img);
+  form.prompt.sprite.SetPosition(round(cx - img.GetWidth() / 2),
+                                 round(form.top + (S.form_prompt.y + S.form_prompt.h / 2) * f - img.GetHeight() / 2), 10);
+  form.prompt.sprite.SetOpacity(0);
+}
+
+// Applies the state to the sprites; o = block opacity, dots_o = pulse while verifying.
+fun form_frame() {
+  if (!SCENE) return;
+  local.p = (frame - form.t0) * FRAME_MS / form.dur;
+  global.form.op = form.from + (form.to - form.from) * ease(EASE, p);
+  local.o = form.op;
+  if (o < 0.011 && form.to == 0) { if (form.shown) { form_hide_all(); global.form.shown = 0; } return; }
+  global.form.shown = 1;
+  local.verifying = (pw.state == "verify" || pw.state == "unlocked");
+  set_prompt_image();
+  form.prompt.sprite.SetOpacity(o);
+
+  // Border: overlay0 at rest, green while typing / verifying, red after a refusal (until the next key).
+  local.fk = "idle";
+  if (pw.state == "error") fk = "error";
+  else if (pw.bullets > 0 || verifying) fk = "active";
+  if (fk != form.field_key) {
+    if (fk == "error") form.field.sprite.SetImage(form.img_error);
+    else if (fk == "active") form.field.sprite.SetImage(form.img_active);
+    else form.field.sprite.SetImage(form.img_idle);
+    global.form.field_key = fk;
+  }
+  form.field.sprite.SetOpacity(o);
+
+  if (pw.bullets == 0 && !verifying) form.placeholder.sprite.SetOpacity(o);
+  else form.placeholder.sprite.SetOpacity(0);
+
+  // Dots: 10 px, 10 px apart, centred, 22 at most; pulsing (1 → 0.35 → 1, 1.2 s) while verifying.
+  local.n = Math.Min(pw.bullets, 22);
+  local.dots_o = 1;
+  if (verifying) {
+    local.u = ((frame - pw.verify_frame) * FRAME_MS) / 600;
+    u = u - Math.Int(u / 2) * 2;
+    if (u < 1) dots_o = 1 - 0.65 * ease(EASE_IN_OUT, u);
+    else dots_o = 0.35 + 0.65 * ease(EASE_IN_OUT, u - 1);
+  }
+  local.x0 = cx - (n * 20 - 10) * s / 2;
+  for (local.k = 0; k < 22; k++) {
+    if (k < n) {
+      dot[k].sprite.SetPosition(round(x0 + k * 20 * s + S.dot.dx * f), round(form.field_cy - 5 * s + S.dot.dy * f), 11);
+      dot[k].sprite.SetOpacity(o * dots_o);
+    }
+    else dot[k].sprite.SetOpacity(0);
+  }
+
+  // Message: Unlocking… > Wrong passphrase > Caps Lock is on.
+  local.key = "";
+  if (verifying) key = "msg_unlocking";
+  else if (pw.state == "error") key = "msg_wrong";
+  else if (Plymouth.GetCapslockState()) key = "msg_caps";
+  if (key != "") {
+    if (key != form.msg_key) {
+      if (key == "msg_unlocking") form.message.sprite.SetImage(form.img_unlocking);
+      else if (key == "msg_wrong") form.message.sprite.SetImage(form.img_wrong);
+      else form.message.sprite.SetImage(form.img_caps);
+      global.form.msg_key = key;
+      form.message.sprite.SetPosition(round(cx - S[key].ew * f / 2 + S[key].dx * f), round(form.message.y + S[key].dy * f), 10);
+    }
+    form.message.sprite.SetOpacity(o);
+  }
+  else form.message.sprite.SetOpacity(0);
+}
+
+fun display_password(prompt, bullets) {
+  global.pw.prompt = prompt;
+  if (pw.state == "verify") global.pw.state = "error";   // asked again after Enter: refused
+  else if (bullets > 0) global.pw.state = "typing";      // a key clears the refusal
+  else if (pw.state != "error") global.pw.state = "idle"; // (also a new volume after « unlocked »)
+  global.pw.bullets = bullets;
+  if (!pw.active) {
+    global.pw.active = 1;
+    if (phase == "prompt") form_fade(1, 300);             // otherwise shown at the end of the intro / cycle
   }
 }
-ARCS = n;
+Plymouth.SetDisplayPasswordFunction(display_password);
 
-band.image = Image("crust.png").Scale(SW, round(18 * s));
-band.sprite = Sprite(band.image);
-band.sprite.SetPosition(SX, cy - Math.Int(band.image.GetHeight() / 2), 2);
-filet.image = Image("mantle.png").Scale(SW, round(4 * s));
-filet.sprite = Sprite(filet.image);
-filet.sprite.SetPosition(SX, cy - Math.Int(filet.image.GetHeight() / 2), 3);
+fun display_normal() {
+  if (pw.active && pw.state != "verify" && pw.state != "error") {   // Enter: cryptsetup derives the key
+    global.pw.state = "verify";
+    global.pw.verify_frame = frame;
+  }
+}
+Plymouth.SetDisplayNormalFunction(display_normal);
 
-for (i = 0; i < 4; i++) {
-  half[i].image = load(S.half[i].file);
-  half[i].side = S.half[i].side;
-  half[i].sprite = Sprite(half[i].image);
-  half[i].x = cx - Math.Int(half[i].image.GetWidth() / 2);
-  half[i].y = cy - Math.Int(half[i].image.GetHeight() / 2);
-  half[i].sprite.SetPosition(half[i].x, half[i].y, 4);
-  half[i].angle = 0;
+fun unlocked() {
+  if (!pw.active) return;
+  global.pw.active = 0;
+  global.pw.state = "unlocked";            // dots and « Unlocking… » stay while the block fades out
+  form_fade(0, 500);                       // ... and the rotation starts
+  if (phase == "prompt") start_loop();
+}
+Plymouth.SetRootMountedFunction(unlocked);  // root mounted (hook update-root-fs): the volume is open
+
+// --- Phases ---------------------------------------------------------------------------------------------------------
+
+MODE = Plymouth.GetMode();
+phase = "intro";
+frame = 0;               // refreshes since the start
+phase_frame = 0;         // refreshes since the start of the phase
+exit_requested = 0;
+
+fun start_loop() {
+  global.phase = "loop";
+  global.phase_frame = 0;
 }
 
-lockup.image = load("lockup.png");
-lockup.sprite = Sprite(lockup.image);
-lockup.sprite.SetPosition(round(cx - S.lockup.ew * f / 2 + S.lockup.dx * f), round(SY + 1090 * s + S.lockup.dy * f), 3);
-
-info.image = Image.Text("screen " + SW + "x" + SH + " at " + SX + "," + SY + "  s=" + s + "  set " + S.dir + "  f=" + f +
-                        "  arcs " + ARCS, 0.65, 0.68, 0.78, 1, "Sans 12");
-info.sprite = Sprite(info.image);
-info.sprite.SetPosition(SX + 10, SY + 10, 10);
-
-mode = "intro";
-frame = 0;
-
 fun intro_frame(ms) {
-  if (mode != "bench-halves") for (local.j = 0; j < RING_COUNT; j++) {
+  for (local.j = 0; j < RING_COUNT; j++) {
     local.p = (ms - 900 - j * 45) / 600;
     if (p < 0) p = 0;
     if (p > 1) p = 1;
-    if (p != ring_last[j]) {          // only rings that move this frame
+    if (p != ring_last[j]) {               // only rings that move this frame
       global.ring_last[j] = p;
       local.op = ease(EASE_RING_IN, p);
       local.sc = 0.94 + 0.06 * op;
@@ -1509,7 +1701,7 @@ fun intro_frame(ms) {
       }
     }
   }
-  if (mode != "bench-rings") for (local.i = 0; i < 4; i++) {
+  for (local.i = 0; i < 4; i++) {
     local.p = ease(EASE_HALF_IN, (ms - i * 120) / 900);
     half[i].sprite.SetX(half[i].x + round(half[i].side * (1 - p) * 640 * s));
     half[i].sprite.SetOpacity(p);
@@ -1518,6 +1710,14 @@ fun intro_frame(ms) {
   lockup.sprite.SetOpacity(ease(EASE, (ms - 400) / 600));
 }
 
+fun set_angle(i, angle) {
+  if (angle == half[i].angle) return;
+  if (angle == 0) half[i].sprite.SetImage(half[i].image);
+  else half[i].sprite.SetImage(half[i].image.Rotate(angle));
+  global.half[i].angle = angle;
+}
+
+// Half-ring i turns once (even: clockwise, odd: counter-clockwise) in the first half of each cycle, i × 150 ms late.
 fun loop_frame(ms) {
   for (local.i = 0; i < 4; i++) {
     local.u = ms - i * 150;
@@ -1526,44 +1726,108 @@ fun loop_frame(ms) {
       u = u - Math.Int(u / 2400) * 2400;
       if (u < 1200) angle = ease(EASE_SPIN, u / 1200) * 2 * Math.Pi * half[i].side;
     }
-    if (angle != half[i].angle) {
-      half[i].sprite.SetImage(half[i].image.Rotate(angle));
-      half[i].angle = angle;
+    set_angle(i, angle);
+  }
+}
+
+fun exit_frame(ms) {
+  for (local.i = 0; i < 4; i++) {
+    local.p = ease(EASE_HALF_OUT, (ms - (3 - i) * 80) / 650);
+    half[i].sprite.SetX(half[i].x + round(half[i].side * p * 640 * s));
+    half[i].sprite.SetOpacity(1 - p);
+  }
+  for (local.j = 0; j < RING_COUNT; j++) {
+    local.op = 1 - ease(EASE, (ms - (RING_COUNT - 1 - j) * 30) / 500);
+    if (op != ring_last[j]) {
+      global.ring_last[j] = op;
+      for (local.k = ring_first[j]; k < ring_first[j] + ring_count[j]; k++) arc[k].sprite.SetOpacity(op);
     }
   }
+  filet.sprite.SetOpacity(1 - ease(EASE, (ms - 300) / 500));
+  lockup.sprite.SetOpacity(1 - ease(EASE, (ms - 350) / 500));
+}
+
+// Static frame of a phase, after a (re)build of the scene.
+fun apply_phase() {
+  if (phase == "intro") return;            // drawn by intro_frame
+  local.op = 1;
+  if (phase == "done") op = 0;
+  for (local.k = 0; k < ARCS; k++) { arc[k].sprite.SetOpacity(op); }
+  for (local.j = 0; j < RING_COUNT; j++) global.ring_last[j] = op;
+  for (local.i = 0; i < 4; i++) { half[i].sprite.SetOpacity(op); global.half[i].angle = 0; }
+  filet.sprite.SetOpacity(op);
+  lockup.sprite.SetOpacity(op);
 }
 
 fun refresh() {
-  ms = frame * FRAME_MS;
-  if (mode == "intro") {
+  if (!SCENE) return;
+  global.frame++;
+  global.phase_frame++;
+  local.ms = phase_frame * FRAME_MS;
+
+  if (phase == "intro") {
     intro_frame(ms);
-    if (ms >= 2200) { global.mode = "loop"; global.frame = 0; return; }
-  }
-  else if (mode == "bench-intro" || mode == "bench-rings" || mode == "bench-halves") {
-    intro_frame(ms);
-    if (ms >= 2200) { global.frame = 0; return; }
-  }
-  else if (mode == "bench-still") {            // final state of the intro, half-rings at rest
-    if (frame == 0) {
-      intro_frame(3000);
-      for (local.i = 0; i < 4; i++) { half[i].sprite.SetImage(half[i].image); half[i].angle = 0; }
-      info.sprite.SetOpacity(0);
+    if (ms >= 2200) {
+      if (pw.active) { global.phase = "prompt"; global.phase_frame = 0; form_fade(1, 300); }
+      else start_loop();
+      global.phase_frame = 0;
     }
   }
-  else if (mode == "bench-peak") {             // worst window: rings and half-rings both moving
+  else if (phase == "loop") {
+    // Cycle boundary: every half-ring at rest. Exit, or hold for a passphrase asked late.
+    if ((phase_frame - 1) - Math.Int((phase_frame - 1) / CYCLE) * CYCLE == 0) {
+      if (exit_requested) { global.phase = "exit"; global.phase_frame = 0; for (local.i = 0; i < 4; i++) set_angle(i, 0); }
+      else if (pw.active) { global.phase = "prompt"; global.phase_frame = 0; form_fade(1, 300); }
+    }
+    if (phase == "loop") loop_frame((phase_frame - 1) * FRAME_MS);
+  }
+  else if (phase == "exit") {
+    exit_frame(ms);
+    if (ms >= 950) global.phase = "done";
+  }
+  else if (phase == "bench-intro") {
+    intro_frame(ms);
+    if (ms >= 2200) global.phase_frame = 0;
+  }
+  else if (phase == "bench-peak") {        // worst window: rings and half-rings both moving
     intro_frame(900 + ms - Math.Int(ms / 360) * 360);
   }
-  else if (mode == "loop" || mode == "bench-loop") {
+  else if (phase == "bench-loop") {
     loop_frame(ms);
   }
-  global.frame++;
+  form_frame();
 }
-Plymouth.SetRefreshFunction(refresh);
 
-fun status(text) {
-  if (text == "bench-intro" || text == "bench-loop" || text == "bench-idle" || text == "bench-rings" || text == "bench-halves" || text == "bench-peak" || text == "bench-still") {
-    global.mode = text;
-    global.frame = 0;
+fun update_status(text) {
+  if (text == EXIT_STATUS) { global.exit_requested = 1; return; }
+  if (text == "bench-intro" || text == "bench-peak" || text == "bench-loop" || text == "bench-idle") {
+    global.phase = text;
+    global.phase_frame = 0;
+    return;
   }
+  // systemd reports units only after the switch to the real root: the volume is open.
+  if (pw.active && pw.state == "verify") unlocked();
 }
-Plymouth.SetUpdateStatusFunction(status);
+
+fun hotplug() {
+  build_scene();
+  apply_phase();
+}
+
+// Shutdown, reboot, updates: crust only. The plugin shows nothing without a sprite (background colour alone: text
+// console left on screen), hence a crust sprite as large as the canvas.
+fun blank_scene() {
+  global.blank.sprite = Sprite(Image("crust.png").Scale(Window.GetWidth(), Window.GetHeight()));
+  blank.sprite.SetPosition(Window.GetX(), Window.GetY(), 0);
+}
+
+if (MODE == "boot") {
+  build_scene();
+  Plymouth.SetRefreshFunction(refresh);
+  Plymouth.SetUpdateStatusFunction(update_status);
+  Plymouth.SetDisplayHotplugFunction(hotplug);
+}
+else {
+  blank_scene();
+  Plymouth.SetDisplayHotplugFunction(blank_scene);
+}
