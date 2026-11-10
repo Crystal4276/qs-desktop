@@ -129,6 +129,19 @@ qemu-system-x86_64 -enable-kvm -cpu host -m 8192 -smp 6 -drive file=$D/test.qcow
 - Mémoire : 8 Go pour la VM ; `/tmp` est en RAM (bundles volumineux ailleurs) ; une seconde VM ouverte peut épuiser la mémoire.
 - Critères : premier passage code 0 ; second passage **0 ligne `+ `** ; redémarrage → greetd → session Sway ; `--uninstall`.
 
+## VM chiffrée (Plymouth, `docs/PLYMOUTH.md`)
+
+Comme le laptop : ISO officielle (`~/.cache/qs-desktop-vm/archlinux-x86_64.iso`, SHA-256 vérifiée), UEFI (OVMF), archinstall
+sans intervention (`--config` / `--creds` / `--silent`), **GRUB**, racine **LUKS** sans clé matérielle → hooks `udev … encrypt`
+et `cryptdevice=UUID=…:root` (choix d'archinstall 4.5). Comptes de test : `arch` / `arch`, phrase LUKS `corelab`.
+
+- Outils dans `~/.cache/qs-desktop-vm/plymouth/` : `vm.sh start|shot|type|keys|ssh|wait-ssh|stop` (SSH par clé sur le port 2223,
+  VNC :16, QMP), `config.json` / `creds.json` d'archinstall, `cidata.iso` (cloud-init de l'ISO live : clé SSH de root).
+- Couches en lecture seule : `plymouth-luks-base.qcow2` (Arch minimal chiffré) → `plymouth-luks-desktop.qcow2` (`install.sh --yes
+  --profil travail` passé) → essais sur `plymouth-trial.qcow2` (jetable, avec sa copie `*-vars.fd` d'OVMF).
+- Démarrage : `vm.sh start <disque> <vars> [W H]`, puis `vm.sh type corelab` à la demande de phrase de passe, `vm.sh wait-ssh`.
+- Arch minimal sans `python3` : `install.sh` s'arrête sans message (code 127) ; python installé à la main dans la VM.
+
 ## Pièges connus
 
 **Moteur JavaScript de Qt 6 / QML**
