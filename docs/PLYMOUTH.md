@@ -165,9 +165,9 @@ celui d'un volume `cryptroot`.
   son s. Laptop seul ou avec un écran externe, sans réglage. Si Plymouth applique un facteur HiDPI, calculer s sur la taille qu'il
   expose au script. Plusieurs écrans : la même scène sur chacun, à son échelle.
   **Écart (étape 3, imposé par Plymouth)** : le plugin `script` centre tous les écrans sur une seule toile et y dessine
-  chaque sprite ; une seule échelle est possible. Retenu : celle du **plus petit écran** (tout visible partout ; un écran
-  plus grand montre la composition plus petite, nom du lab plus près du centre, et plus d'anneaux). Une ligne à changer
-  (`build_scene`) pour prendre le plus grand ou le premier.
+  chaque sprite ; une seule échelle est possible. Retenu (ton choix) : un écran seul, la sienne ; plusieurs écrans, celle de
+  l'**écran de référence 1440p** (à défaut, celui dont la hauteur est la plus proche de 1440). Un écran plus petit en montre
+  le centre (le nom du lab peut sortir en bas), un plus grand une composition plus petite (`build_scene`).
 
 ### Fichiers proposés
 

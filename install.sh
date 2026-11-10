@@ -272,6 +272,7 @@ ask_system() {
     [[ "$profile" == jeux ]] && echo "  dépôt multilib (Steam, jeux 32 bits),"
     echo "  écran de connexion greetd + greeter Quickshell, Samba, services (réseau, Bluetooth, énergie, VM), groupes, thème Qt,"
     echo "  extensions de Chromium, thème de Thunderbird, sonde de connectivité NetworkManager, mesures GPU Intel (s'il y en a un)."
+    [[ "$profile" == travail ]] && echo "  écran de démarrage Plymouth Core Lab (initramfs, GRUB : docs/PLYMOUTH.md)."
     ask "Faire ces étapes système ?" oui || { system=""; echo "- étapes système non faites (relancer install.sh pour les faire)"; }
 }
 
@@ -1111,6 +1112,19 @@ greeter_wallpaper() {
     run cp "$src" "$dest/default.$ext"
 }
 
+# Écran de démarrage Plymouth « Core Lab » (docs/PLYMOUTH.md) : profil travail seulement. Une machine passée en jeux le perd
+# (même retrait que --uninstall) ; une machine jeux qui ne l'a jamais eu n'est pas touchée.
+plymouth_installed() { [[ -f /var/lib/qs-desktop/plymouth/state || -d /usr/share/plymouth/themes/qs-corelab ]]; }
+step_plymouth() {
+    if [[ "$profile" == travail ]]; then
+        echo "Écran de démarrage Plymouth Core Lab (thème, hook de l'initramfs, splash dans GRUB, passage au greeter)"
+        sub "$repo/scripts/plymouth-setup.sh" ${dry:+--dry-run} install
+    elif plymouth_installed; then
+        echo "Écran de démarrage Plymouth retiré (profil jeux)"
+        sub "$repo/scripts/plymouth-setup.sh" ${dry:+--dry-run} uninstall
+    fi
+}
+
 step_system() {
     section "6. Système (sudo, avec confirmation)"
     # Accord donné une fois pour toutes (ask_system).
@@ -1127,6 +1141,7 @@ step_system() {
         sub "$repo/scripts/greeter-setup.sh" ${dry:+--dry-run} enable
     fi
     greeter_wallpaper
+    step_plymouth
     echo "Samba, services (réseau, Bluetooth, énergie, VM), groupes et thème Qt du système"
     sub "$repo/scripts/system-setup.sh" ${dry:+--dry-run} install
     if command -v chromium >/dev/null; then
@@ -1243,7 +1258,8 @@ EOF
     if command -v chromium >/dev/null; then
         python3 "$repo/scripts/browser-links-setup.py" ${dry:+--dry-run} uninstall 2>/dev/null || echo "= liens Chromium : rien à retirer"
     fi
-    if [[ -n "$system" ]] && ask "Défaire aussi les étapes système (GPU Intel, sudo pacman, Reflector, greeter → ancien gestionnaire, sonde réseau, Samba, services, groupes, extensions Chromium, thème Thunderbird) ?"; then
+    if [[ -n "$system" ]] && ask "Défaire aussi les étapes système (GPU Intel, sudo pacman, Reflector, greeter → ancien gestionnaire, écran de démarrage Plymouth, sonde réseau, Samba, services, groupes, extensions Chromium, thème Thunderbird) ?"; then
+        plymouth_installed && sub "$repo/scripts/plymouth-setup.sh" ${dry:+--dry-run} uninstall
         sub "$repo/scripts/system-setup.sh" ${dry:+--dry-run} uninstall
         sub "$repo/scripts/network-setup.sh" ${dry:+--dry-run} uninstall
         sub "$repo/scripts/greeter-setup.sh" ${dry:+--dry-run} uninstall
