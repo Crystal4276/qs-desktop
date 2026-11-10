@@ -632,6 +632,25 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
     du greeter avant son premier dessin. L'unité de sortie attendra 3,4 s fixes après la demande (le script ne peut pas
     signaler la fin de son animation).
   - Pièges ajoutés (`DEVELOPMENT.md`) : sans sprite, pas d'affichage ; écrans centrés sur une toile ; `global.` dans les fonctions.
+- **Validation de l'étape 3** (tes retours) : écran de référence 1440p (un écran : le sien ; plusieurs : le 1440p, sinon le
+  plus proche de 1440) ; pas de `swaybg` : le noir du greeter (~1,1 s) est accepté.
+- **Étape 4, installation (2026-11-10)** — en attente de validation. `scripts/plymouth-setup.sh install|uninstall|status` ;
+  `install.sh` : profil travail → installé (paquet `plymouth` dans `deps/work.txt`), profil jeux → retiré s'il était là,
+  `--uninstall` → retiré. Surcharges `plymouth-quit-wait` (sortie du thème, 3,4 s, `plymouth deactivate`) et `plymouth-quit`
+  (après greetd, `quit --retain-splash`). Docs : `ROLLBACK.md` (section Plymouth, secours depuis GRUB), `ARCHITECTURE.md` § 9.1,
+  `README.md`, `PLYMOUTH.md`.
+  - VM (Arch archinstall, GRUB, LUKS, `install.sh` réel) : installation code 0 ; second passage sans changement côté Plymouth ;
+    démarrage complet enregistré : thème à 7,2 s, phrase de passe, rotation, sortie à la fin du cycle, ~1,3 s de noir du Sway du
+    greeter, greeter. Bascule en jeux et `--uninstall` : `mkinitcpio.conf`, `/etc/default/grub`, `plymouthd.conf` identiques aux
+    originaux (sommes de contrôle), initramfs revenu à sa taille exacte ; redémarrage : demande texte habituelle.
+  - Secours vérifié en VM : GRUB `e`, `splash` retiré → phrase de passe en mode texte, démarrage et greetd normaux
+    (`plymouth.enable=0` est sans effet avec le hook de l'initramfs).
+  - Initramfs : +4,4 Mo (Inter Regular seule ; `Inter.ttc` aurait ajouté 13 Mo). archinstall ne crée pas d'image `fallback`.
+  - `test-install.py` : simulation système travail (étape Plymouth prévue) et jeux (rien) ; 0 échec. Sur `terrier` (jeux), rien
+    de Plymouth n'est installé.
+  - Étape 5 (laptop, avec ton accord) : `./install.sh` (ou `scripts/plymouth-setup.sh install`), redémarrage ; à tester à la main :
+    démarrage à froid, mauvaise phrase, Verr. Maj., écran externe branché au démarrage (dont le 1440p), arrêt et redémarrage
+    (écran crust), échelle HiDPI éventuelle de Plymouth sur la dalle interne.
 
 - Synchronisation du déploiement : commits Plymouth / installation publiés par l’autre session conservés par fusion ;
   seul conflit dans le journal résolu en gardant les deux ajouts. Aucun installateur ni réglage système exécuté.
