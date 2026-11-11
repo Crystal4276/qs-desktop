@@ -830,3 +830,11 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
   `.shots/launcher-icon-spacing.png`, `.shots/menu-windows11-padding.png`. Aucun avertissement QML ; restent les
   avertissements externes du banc (portails privés, rendu logiciel et icône de tray NordVPN absente). Aucune action VPN.
 - Seuls le thème et le SVG validés appliqués au bureau réel ; textes de recherche et défilement forcés du banc non repris.
+
+## Launcher — icônes plus grandes (2026-11-11)
+
+- Ton retour : les icônes du launcher paraissent trop petites face au texte. Emplacements agrandis de 24 à 32 px
+  (`Theme.launcher.itemIconSize`, taille déjà utilisée par la charte), écart horizontal de 10 px conservé. Menu inchangé.
+- Démarrage complet sur copie et Sway isolé, liste de plusieurs applications contrôlée visuellement :
+  `.shots/launcher-icon-spacing.png`. Aucun nouvel avertissement QML ; mêmes avertissements externes de banc.
+- Thème appliqué seul au bureau réel ; banc arrêté.
