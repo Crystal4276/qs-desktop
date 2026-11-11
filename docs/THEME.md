@@ -81,8 +81,9 @@ profil de la machine (`Theme.icon.workspaces.jeux` : 5 Discord, 6 Spotify, 7 gou
 
 La musique se dimensionne sur la place restante par écran, texte « artiste - titre » plafonné à 600 px
 (`mediaTextMaxWidth`, ~ l'ancienne limite Waybar de 40 caractères) : artiste et titre abrégés séparément seulement s'ils ne
-tiennent pas (un artiste réduit à « … » est retiré au profit du titre), puis retirés si nécessaire : il ne reste alors que
-l'icône du lecteur (pas d'icône de pause), le haut-parleur et le curseur. Si la pilule laisserait moins de 50 px (`mediaSnapGap`) avant sa voisine, elle se cale sur l'écart normal de 10 px. Si les modules fixes manquent encore de place, la date disparaît (heure conservée),
+tiennent pas (un artiste réduit à « … » est retiré au profit du titre), puis retirés si nécessaire, ou si le libellé rendu
+sortirait de la pilule : il ne reste alors que l'icône du lecteur (et l'icône de pause en pause), le haut-parleur et le
+curseur. Si la pilule laisserait moins de 50 px (`mediaSnapGap`) avant sa voisine, elle se cale sur l'écart normal de 10 px. Si les modules fixes manquent encore de place, la date disparaît (heure conservée),
 puis les statistiques GPU / CPU / mémoire ; restauration automatique quand la largeur revient. Le volume et son curseur restent
 affichés. Luminosité et batterie partagent la dernière pilule avec le tray et les réglages dans la configuration par défaut.
 

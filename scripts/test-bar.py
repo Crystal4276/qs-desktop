@@ -85,13 +85,21 @@ def test(work):
                 assert abs(gap - 10) < 1 or gap >= 50, value
             for name in ('volume', 'slider'):
                 assert any(s['name'] == name and s['wanted'] and s['width'] > 0 for s in value['slots']), value
+            # Rendered media label inside its module (padding 10 px on each side): never over its neighbours.
+            for s in value['slots']:
+                if s['name'] == 'mpris' and s['wanted']: assert s['label'] + 20 <= s['width'] + 0.5, value
             return value
+        # Player already present when the bar is built, room changed without a track change (widths measured before the bar
+        # font was applied stayed ~60 % too small: full text over the speaker, 2026-11-11).
+        for updates in (999, 0, 999):
+            ipc('updates', updates)
+            state()
         for width in (1280, 1480, 1600, 1920, 3440, 1280, 1920):
             run('swaymsg', 'output', 'HEADLESS-1', 'mode', f'{width}x1200', env=env)
             time.sleep(.2)
             for artist, title in [('Run The Jewels', 'ooh la la (feat. long title)'), ('W'*100, 'long title '*20),
                                   ('', 'Title only'), ('Artist only', ''), ('日本語 🎵 café'*10, 'Été 👩🏽‍💻'*30),
-                                  ('Ren', 'Hi Ren')]:
+                                  ('Ren', 'Hi Ren'), ('Deftones', 'Around the Fur')]:
                 for paused, updates in [('true', 999), ('false', 0)]:
                     ipc('configure', artist, title, paused, updates)
                     value = state()
@@ -100,11 +108,12 @@ def test(work):
                     assert media['textWidth'] <= 600.5, value
                     # An artist reduced to a bare ellipsis is dropped, the title takes its place.
                     assert not media['text'].startswith('… - '), value
-                    # No room for text: player icon only (no pause icon).
-                    if not media['text']: assert media['segments'] == 1, value
+                    # No room for text: player icon only, plus the pause icon when paused.
+                    if not media['text']: assert media['segments'] == (2 if paused == 'true' else 1), value
                     # A short artist and title that fit are never elided.
                     if width >= 1920 and artist == 'Ren': assert media['text'] == 'Ren - Hi Ren', value
-                    if width == 3440 and artist.startswith('W'): assert media['text'] and media['textWidth'] > 590, value
+                    # Near the cap: each elided half may lose up to one glyph ('W' ≈ 26 px; 581 px on the laptop).
+                    if width == 3440 and artist.startswith('W'): assert media['text'] and media['textWidth'] > 550, value
                     if width == 1280: assert value['level'] == 2, value
                     if width == 1480 and updates: assert value['level'] == 1, value
                     if width >= 1920: assert value['level'] == 0, value
@@ -117,7 +126,8 @@ def test(work):
         assert all(not s['wanted'] for s in value['slots'] if s['name'] in ('mpris', 'battery', 'backlight')), value
         log = (work / 'qs.log').read_text()
         assert 'WARN scene:' not in log and not re.search(r'^\s*ERROR\b', log, re.MULTILINE), log
-        print('PASS bar: 84 metadata/update/pause/resize cases, tray growth, hardware/media absence; no QML warnings')
+        print('PASS bar: player present at startup, 98 metadata/update/pause/resize cases, tray growth, hardware/media absence; '
+              'media label always inside its module; no QML warnings')
     finally:
         if shell:
             try: os.killpg(shell.pid, signal.SIGTERM)
