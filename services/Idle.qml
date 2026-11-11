@@ -193,9 +193,9 @@ Singleton {
 
     // logind ignore le capot avec un écran externe (HandleLidSwitchDocked), mais un écran éteint par la veille a son connecteur
     // détaché (sysfs `enabled`, vérifié sous Hyprland) : capot fermé, il mettrait le laptop en veille. Bloqué tant qu'un externe
-    // physique est actif (sans effet sur une machine sans capot).
+    // est actif (connecteurs externes comptés par logind ; l'USB-C est un DP).
     Process {
-        running: Compositor.outputs.some(o => !/^(eDP|LVDS|DSI|HEADLESS|WAYLAND|X11)-/.test(o.name)) && !Quickshell.env("QS_TEST")
+        running: Battery.available && Compositor.outputs.some(o => /^(DP|HDMI|DVI|VGA)-/.test(o.name)) && !Quickshell.env("QS_TEST")
         command: ["setpriv", "--pdeathsig", "TERM", "systemd-inhibit", "--what=handle-lid-switch", "--mode=block", "--who=Quickshell",
             "--why=External display active", "sleep", "infinity"]
     }
