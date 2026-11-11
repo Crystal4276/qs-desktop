@@ -80,6 +80,10 @@ def changed(**values):
                     GLib.Variant('(sa{sv}as)', ('org.freedesktop.UPower', {k: GLib.Variant('b', v) for k, v in values.items()}, [])))
 
 
+def silent(bridge, seconds=1):
+    return not select.select([bridge.stdout], [], [], seconds)[0]
+
+
 def released(fd):
     return bool(select.select([fd], [], [], 2)[0]) and os.read(fd, 1) == b''
 
@@ -90,6 +94,7 @@ try:
     bridge = start()
     check('UPower absent: not ready', read(bridge) == dict(ready=False, present=False, closed=False))
     own('org.freedesktop.UPower')
+    check('refused inhibitor: lid state still reported', read(bridge) == dict(ready=True, present=True, closed=False))
     burst = time.monotonic()
     for closed in (True, False, True, False):
         changed(LidIsClosed=closed)
@@ -112,6 +117,12 @@ try:
     changed(LidIsClosed=True)
     check('PropertiesChanged followed', read(bridge)['closed'])
     check('no duplicate inhibitor', len(readers) == n + 1)
+    changed(OnBattery=True)
+    check('unrelated UPower property: no line', silent(bridge))
+    for value in (True, False):
+        bus.emit_signal(None, '/org/freedesktop/login1', 'org.freedesktop.login1.Manager', 'PrepareForSleep',
+                        GLib.Variant('(b)', (value,)))
+    check('resume reported once', read(bridge) == dict(ready=True, present=True, closed=True, resumed=True) and silent(bridge))
     bridge.terminate(); bridge.wait(timeout=3)
     check('process exit: inhibitor released', released(readers[-1]))
 
