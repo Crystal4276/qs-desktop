@@ -79,7 +79,7 @@ hl.window_rule({
 })
 
 return {
-   workspaces = { chat = 5, music = 6 },
+   workspaces = { chat = 5, music = 6, mail = 8, windows = 5 },
    autostart = {
       "deluge",
       -- Attend que le compositeur soit posé avant de démarrer.

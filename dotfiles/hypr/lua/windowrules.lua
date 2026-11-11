@@ -16,7 +16,7 @@
 -- (c'est ce que signifie « silent »).
 ------------------------------------------------------------------------------
 
--- Espaces de Discord-WhatsApp et de Spotify selon le profil (profiles/<profil>.lua : 5 / 6 en jeux, 6 / 7 en travail). Profil
+-- Espaces de Discord-WhatsApp et de Spotify selon le profil (profiles/<profil>.lua : 5 / 6 en jeux, 8 / 9 en travail). Profil
 -- déjà chargé par hyprland.lua (une erreur y est signalée ; ici, la table vide qu'il laisse donne 5 / 6).
 local okProfile, profile = pcall(require, "lua/profile")
 local ws = okProfile and profile.workspaces or { chat = 5, music = 6 }
@@ -39,7 +39,7 @@ hl.window_rule({ name = "spotify-music",  match = { class = "^([Ss]potify)$" }, 
 
 -- Thunderbird est passé à un app-id natif Wayland ; valeur confirmée sur la
 -- session en cours.
-hl.window_rule({ name = "thunderbird-ws8", match = { class = "^(org\\.mozilla\\.Thunderbird)$" }, workspace = "8 silent" })
+hl.window_rule({ name = "thunderbird-mail", match = { class = "^(org\\.mozilla\\.Thunderbird)$" }, workspace = (ws.mail or 8) .. " silent" })
 
 ------------------------------------------------------------------------------
 -- Ouverture de fichiers dans une application déjà lancée.

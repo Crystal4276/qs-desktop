@@ -283,4 +283,4 @@ respectées. Sans autorisation, température/fréquence/mémoire accessibles res
 `windows11` dans `hosts/<machine>.json` (`uri`, `domain`) active une entrée native commune au menu et au lanceur.
 `scripts/windows11-launch.sh URI DOMAINE` utilise `virsh` (libvirt), `virt-viewer`, `flock` (util-linux) et
 `notify-send` (libnotify). La console seule se ferme ; la VM continue. Sur le laptop, les règles machine Sway et Hyprland
-placent sa console sur 5 en mosaïque sans changer l’espace courant. Logo : `assets/windows11-source.md`.
+placent sa console sur l’espace du profil (6 en travail, 5 en jeux), en mosaïque sans changer l’espace courant. Logo : `assets/windows11-source.md`.
