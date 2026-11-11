@@ -16,7 +16,9 @@ Codes : 0 importé, 3 extension absente à l'expiration du délai, 1 autre éche
 """
 import json
 import os
+import re
 import select
+import signal
 import subprocess
 import sys
 import time
@@ -86,15 +88,22 @@ class Cdp:
         return value
 
     def close(self):
+        """Fermeture normale (données écrites) ; sinon arrêt, puis arrêt forcé de tous ses processus."""
         try:
             self.call("Browser.close", timeout=10)
         except Exception:
             pass
-        try:
-            self.proc.wait(timeout=30)
-        except subprocess.TimeoutExpired:
-            self.proc.terminate()
-            self.proc.wait(timeout=10)
+        for sig, wait in ((None, 30), (signal.SIGTERM, 15), (signal.SIGKILL, 10)):
+            if sig:
+                try:
+                    os.killpg(self.proc.pid, sig)
+                except ProcessLookupError:
+                    pass
+            try:
+                self.proc.wait(timeout=wait)
+                return
+            except subprocess.TimeoutExpired:
+                pass
 
 
 def open_page(cdp, page, deadline):
@@ -186,6 +195,15 @@ class Stylus:
         return f"{len(self.want)} styles relus ({len(have)} dans le profil)"
 
 
+def user_agent():
+    """Agent utilisateur de Chromium avec fenêtre : celui sans fenêtre (« HeadlessChrome/… ») fait croire à Bitwarden qu'il
+    tourne sous Safari ; il écrit alors une exception en boucle (des millions au journal) et Chromium ne répond plus."""
+    out = subprocess.run(["chromium", "--version"], capture_output=True, text=True).stdout
+    version = re.search(r"\b(\d+)\.\d", out)
+    major = version.group(1) if version else "0"
+    return f"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{major}.0.0.0 Safari/537.36"
+
+
 def main():
     argv = sys.argv[1:]
     dry = "--dry-run" in argv
@@ -207,7 +225,7 @@ def main():
     if dry:
         return 0
     cdp = Cdp(["chromium", "--headless=new", f"--user-data-dir={profile}", "--remote-debugging-pipe", "--no-first-run",
-               "--no-default-browser-check", *extra, "about:blank"])
+               "--no-default-browser-check", f"--user-agent={user_agent()}", *extra, "about:blank"])
     try:
         session = open_page(cdp, ext.page, time.monotonic() + timeout)
         if session is None:

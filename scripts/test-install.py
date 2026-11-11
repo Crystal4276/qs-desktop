@@ -143,6 +143,15 @@ def main():
         icon_dirs = fake_papirus(icons)
         cache = pathlib.Path(os.environ.get("QS_TEST_CACHE", tmp / "cache"))
         env = {k: v for k, v in os.environ.items() if not k.startswith(("XDG_", "DBUS_", "SWAYSOCK", "I3SOCK", "HYPRLAND", "WAYLAND", "DISPLAY"))}
+        # Chromium factice si le vrai est là : lancé par l'import de nightTab et Stylus, il écrirait un profil complet dans le
+        # dossier jetable (l'import est testé à part, scripts/extension-import.py sur une copie de profil).
+        if shutil.which("chromium"):
+            (tmp / "bin").mkdir()
+            (tmp / "bin/chromium").write_text('#!/bin/sh\n[ "$1" = --version ] && echo "Chromium 0.0.0.0" && exit 0\nexit 1\n')
+            (tmp / "bin/chromium").chmod(0o755)
+            env["PATH"] = f"{tmp / 'bin'}:{env['PATH']}"
+        # Import raté exprès (Chromium factice) : retenté à chaque passage, hors du test « sans changement ».
+        IMPORTS = ("+ nightTab : ", "+ Stylus : ") if shutil.which("chromium") else ()
         env.update(HOME=str(home), XDG_RUNTIME_DIR=str(run), XDG_CACHE_HOME=str(cache), LANG="C.UTF-8", QS_INSTALL_ASSUME_CLOSED="1",
                    QS_PAPIRUS_DIR=str(icons / "Papirus"), QS_WALLPAPERS_REPO=git_repo(tmp / "src/wallpapers", "fond.png"),
                    QS_DM_REPO=git_repo(tmp / "src/gms", "install-all.sh"))
@@ -311,7 +320,7 @@ def main():
         check(qt.is_symlink() and "style=kvantum" in (home / "dots/qt6ct/qt6ct.conf").read_text(),
               "config liée (stow) : lien gardé, réglage écrit à travers")
         check(gtk3.endswith("\n") and (cfg / "qt6ct/qt6ct.conf").read_text().endswith("\n"), "fichiers réglés : saut de ligne final")
-        changes = [l for l in r.stdout.splitlines() if l.startswith("+ ")]
+        changes = [l for l in r.stdout.splitlines() if l.startswith("+ ") and not l.startswith(IMPORTS)]
         check(r.returncode == 0 and not changes, f"second passage sans changement {changes[:5]}")
 
         # Une application (Viewnior) réécrit son réglage après l'installation : sa version doit survivre au retrait.
@@ -348,7 +357,7 @@ def main():
         check((home / "GMSFreeAnalysis17/install-all.sh").is_file() and "DigitalMicrograph : copier le kit Gatan" in r.stdout,
               "profil travail : dépôt de DigitalMicrograph cloné, installation rappelée")
         r = install(profile=())
-        changes = [l for l in r.stdout.splitlines() if l.startswith("+ ")]
+        changes = [l for l in r.stdout.splitlines() if l.startswith("+ ") and not l.startswith(IMPORTS)]
         check(r.returncode == 0 and not changes and "Profil : travail (hosts/" in r.stdout, f"profil travail : second passage sans changement {changes[:5]}")
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
