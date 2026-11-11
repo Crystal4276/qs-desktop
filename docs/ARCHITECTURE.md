@@ -73,7 +73,7 @@ par écran et des fonds exportés pour l'écran de connexion, qui tourne sous Sw
 | VRR | `adaptive_sync on/off` | `misc.vrr` (le champ `vrr` de `hl.monitor` est sans effet) |
 | Désactiver | `disable` | `disabled = true` |
 | Écran inconnu | placé à droite, mode préféré | règle de repli `output = ""`, `preferred`, `auto`, échelle `auto` |
-| Capot du laptop | `bindswitch --locked lid:on output <desc> disable` / `lid:off … enable` | `hl.bind("switch:on:Lid Switch", …)` → `hl.monitor({ …, disabled = true })` |
+| Capot du laptop | `bindswitch --locked --reload lid:on output <desc> disable` / `lid:off … enable` | `hl.bind("switch:on:Lid Switch", …)` → `hl.monitor({ …, disabled = true })`, état relu au chargement |
 
 Pas de Kanshi : il ne transporte ni HDR ni profondeur de couleur (deux sources pour un même écran), le `hyprctl reload` du réveil
 écraserait sa configuration, et ses profils conditionnels ne répondent à aucun besoin actuel (réévaluation : `BACKLOG.md`).
@@ -461,29 +461,16 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
   `PrepareForSleep` suivi aussi pour le `reload` du réveil. Cette attente ne garantit pas le verrouillage si le shell est figé ou si le verrou est refusé.
 - Animation `fadeDpms` coupée dans la config Hyprland (rallumage lent sinon). IPC de test : `idle state`.
 
-### 7.13.1 Capot (`services/Lid.qml`)
+### 7.13.1 Capot du laptop
 
-- `scripts/lid-state.py` suit `LidIsPresent` / `LidIsClosed` de UPower (état initial et PropertiesChanged) et tient le FD
-  `handle-lid-switch` de logind. Flux JSON `{ready,present,closed}` vers Quickshell, une ligne seulement quand l'état change ;
-  `ready` : état du capot connu d'UPower, avec ou sans inhibiteur. Inhibiteur refusé : logind applique aussi sa politique (la
-  même par défaut), nouvel essai à 5 s (une seule relance en attente). Réveil (`PrepareForSleep(false)` de logind) : ligne
-  avec `resumed`. Sans capot (desktop) : le pont l'annonce et s'arrête (code 0, pas relancé). Fin du pont / de Quickshell :
-  FD libéré, logind reprend ses réglages. Relance du pont à 5 s ; `QS_TEST=1` coupe le pont réel.
-- Lecture seulement capot fermé, puis une fois à l'ouverture : après stabilisation 500 ms, `Compositor.requestConnectedOutputs()`
-  lit toutes les sorties (`get_outputs` / `monitors all`), y compris désactivées ou en miroir. Déclencheurs : liste des écrans
-  actifs (pas DPMS), `outputsChanging` (Hyprland), rechargement de config. Sorties virtuelles exclues, connecteurs eDP/LVDS/DSI
-  internes. Échec de lecture : aucune décision sur un faux ensemble vide, nouvel essai à 5 s. Pas de scrutation au repos.
-- Capot fermé sans externe **activé** (un externe branché mais désactivé ne compte pas) : `Session.suspend()`, verrouillage par
-  Idle existant ; retrait du dernier externe : même règle, secteur comme batterie. Vidéo et « garder l’écran allumé » ne
-  remplacent pas cette politique mécanique. Délai de 30 s comme `HoldoffTimeoutSec` de logind : pas de suspension dans les 30 s
-  qui suivent un réveil (signalé par le pont, quel que soit `lockBeforeSleep` ; écrans d'un dock encore absents) ; demande
-  refaite 30 s après une demande restée sans veille (refus, réveil capot fermé). Délai non gardé au rechargement QML.
-- Avec externe : dalle désactivée (Sway `disable`, Hyprland `hl.monitor` avec `disabled=true`), espaces repris par Outputs.
-- Réouverture d'un capot vu fermé par cette instance (état gardé au rechargement QML, perdu au plantage) : dalles désactivées
-  par Lid rallumées avec leur règle géométrique ; toute autre dalle interne éteinte (par toi avant la fermeture, ou laissée par
-  un shell planté) rallumée par la config native (reload sous Hyprland). Tant que le capot reste ouvert, une dalle désactivée
-  n'est jamais rallumée. Plantage capot fermé : la reprise suppose que l'instance relancée par `desktop.sh` voie le capot
-  encore fermé. `lid state` expose l’état, le délai en cours et la dernière lecture des sorties.
+- Veille : **logind** par défaut (capot fermé → veille, sur secteur comme batterie ; ignoré avec un écran externe ; 30 s de
+  répit après un réveil ; veille aussi au retrait du dernier externe capot fermé). Verrouillage avant veille : § 7.13.
+- Un écran éteint par la veille a son connecteur détaché (sysfs `enabled`, vérifié sous Hyprland) : logind ne voit plus
+  l'externe et mettrait en veille un laptop branché capot fermé. `Idle.qml` bloque donc `handle-lid-switch` tant qu'un écran
+  externe est **actif** dans `Compositor.outputs` (veille des écrans comprise ; laptop seulement, pas sous `QS_TEST`).
+- Dalle : éteinte capot fermé, rallumée à l'ouverture par le compositeur (§ 3.1, `dotfiles/*/hosts/<laptop>`) ; Hyprland relit
+  l'état du capot à chaque chargement (`/proc/acpi/button/lid/*/state`), le `hyprctl reload` du réveil la rallumerait. Espaces
+  repris par `Outputs.qml`.
 
 ### 7.14 Agent polkit (`services/Polkit.qml`, `modules/polkit/`)
 
