@@ -106,13 +106,16 @@ def test(work):
                     media = next(s for s in value['slots'] if s['name'] == 'mpris')
                     # Text (artist - title) capped at Theme.bar.mediaTextMaxWidth (600 px).
                     assert media['textWidth'] <= 600.5, value
-                    # An artist reduced to a bare ellipsis is dropped, the title takes its place.
-                    assert not media['text'].startswith('… - '), value
+                    # Whole text, else the artist alone (title dropped first; the title when there is no artist), elided if
+                    # needed: never part of the title next to the artist.
+                    full, main, text = ' - '.join(s for s in (artist, title) if s), artist or title, media['text']
+                    assert text in ('', full, main) or (text.endswith('…') and main.startswith(text[:-1])), value
+                    if width == 1920 and artist == 'Deftones' and text != full: assert text == 'Deftones', value
                     # No room for text: player icon only, plus the pause icon when paused.
                     if not media['text']: assert media['segments'] == (2 if paused == 'true' else 1), value
                     # A short artist and title that fit are never elided.
                     if width >= 1920 and artist == 'Ren': assert media['text'] == 'Ren - Hi Ren', value
-                    # Near the cap: each elided half may lose up to one glyph ('W' ≈ 26 px; 581 px on the laptop).
+                    # Near the cap: the elided artist may lose up to one glyph ('W' ≈ 26 px).
                     if width == 3440 and artist.startswith('W'): assert media['text'] and media['textWidth'] > 550, value
                     if width == 1280: assert value['level'] == 2, value
                     if width == 1480 and updates: assert value['level'] == 1, value
