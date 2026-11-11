@@ -880,3 +880,13 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
   mesuré par `FontMetrics.advanceWidth()` dans une liaison) ; `InfoModule.qml:83` (`tightBoundingRect`, avec un repli sur
   `implicitWidth`, sans effet visible connu).
 - À tester à la main : pastille au démarrage avec Spotify déjà lancé, en lecture et en pause, sur le laptop.
+
+## Espace 5 — glyphe Windows 11 (2026-11-11)
+
+- Profil travail : double cercle remplacé par le logo Windows 11 à quatre carrés (`nf-dev-windows11`, U+E8E5), présent
+  dans la police embarquée Symbols Nerd Font Mono. Taille 34 px, couleurs, survol et halo conservés ; profil jeux inchangé.
+- Copie isolée : démarrage complet, rendu contrôlé à vide et actif (captures `.shots/workspace5-windows11-empty.png`
+  et `workspace5-windows11-active.png`). Aucun avertissement QML ; avertissements externes du banc (portails, rendu logiciel,
+  PipeWire inaccessible sur le runtime isolé et icône NordVPN absente). Aucune action VPN.
+- Tests des espaces Sway et Hyprland : **0 échec** chacun. Thème appliqué seul au bureau réel, rechargement sans erreur,
+  même instance vivante (PID 1909), espace 1 conservé et bancs arrêtés. Capture `.shots/workspace5-windows11.png`.

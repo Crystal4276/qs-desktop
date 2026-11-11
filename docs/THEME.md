@@ -76,7 +76,7 @@ groupe de modules (pilule de la config machine). Espaces de travail : glyphes 34
 `green`, `teal`, `sapphire`, `blue`, `lavender`, `mauve`, `pink`, `peach`, `red`. Chaque barre recommence au début et utilise les
 N premières couleurs pour ses N espaces, sans interpolation ni espacement dans la palette. Espace affiché avec un halo
 (ombre floue d'un `Canvas`), vide en `surface1` ; un glyphe par numéro selon le
-profil de la machine (`Theme.icon.workspaces.jeux` : 5 Discord, 6 Spotify, 7 goutte de Deluge, 9 Steam ; `.travail` : 5 `nf-md-circle_double`,
+profil de la machine (`Theme.icon.workspaces.jeux` : 5 Discord, 6 Spotify, 7 goutte de Deluge, 9 Steam ; `.travail` : 5 Windows 11 (`nf-dev-windows11`, U+E8E5),
 6 Discord, 7 Spotify, 9 `nf-md-microscope` pour DigitalMicrograph). Couleurs des modules : `Theme.module` ; luminosité `peach`, batterie `teal` (rouge à 30 % ou moins hors charge).
 
 La musique se dimensionne sur la place restante par écran, texte « artiste - titre » plafonné à 600 px
