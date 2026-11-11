@@ -118,6 +118,7 @@ démarrage (`plymouth-setup.sh status`, ligne « démarrage ») :
 | Surcharges `/etc/systemd/system/plymouth-quit-wait.service.d/qs-corelab.conf` et `plymouth-quit.service.d/qs-corelab.conf` | les deux | retirées |
 | `splash` : `/etc/cmdline.d/qs-corelab.conf`, seulement s'il manque à la ligne de commande | UKI | fichier retiré |
 | **Image de secours sans Plymouth** par noyau : preset `rescue` ajouté (`-S plymouth`), `<image>~rescue.efi` | UKI | preset remis, image retirée |
+| Logo Arch de systemd-stub retiré (`--splash <bmp>` de `default_options`, mis par archinstall) | UKI | option remise |
 | `splash` dans `GRUB_CMDLINE_LINUX_DEFAULT` (`/etc/default/grub`) | GRUB | mot retiré |
 | Initramfs (`mkinitcpio -P`), et `/boot/grub/grub.cfg` (`grub-mkconfig`) en mode GRUB | — | refaits |
 
