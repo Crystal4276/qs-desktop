@@ -863,6 +863,12 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
   abrégé. La pilule remplit de nouveau la place et se cale à 10 px. Banc : 1920, 1500 et 1280 px (« D… » en lecture,
   icônes seules en pause) ; `test-bar.py` vérifie la règle (la version « artiste seul » échoue). Bureau réel rechargé sans
   erreur : « La Rumeur - Le coffre-fort… », calé à 10 px (`.shots/media-pill-title.png`).
+- Ton choix : artiste seul abrégé à moins de **3 lettres** (`Theme.bar.mediaMinLetters`, « D… ») → icônes seules. Le titre
+  abrégé après l'artiste entier garde sa règle (une lettre suffit : la pilule reste calée). Banc à 1280 px : icônes seules
+  en lecture, pilule à ~70 px de sa voisine (au-delà de `mediaSnapGap`, pas de calage) ; `test-bar.py` vérifie le
+  minimum (balayage serré de 1250 à 1350 px ; l'ancienne version échoue sur « D… »). Bureau réel : « Orbital - Dwr Budr »
+  entier. **Au rechargement**, Quickshell a planté une fois (segfault Qt dans `QQuickImageBase::loadPixmap` sur une mise à
+  jour D-Bus, 6 s après) et s'est relancé seul ; rapport `~/.cache/quickshell/crashes/2h1s0mcot/`. À surveiller.
 - Tests : `test-bar.py` contrôle dans tous les cas que le libellé rendu tient dans le module. S'y ajoutent le cas
   « lecteur présent au démarrage, place changée sans changer de morceau », « Deftones - Around the Fur » et 2 segments
   sans texte en pause. Contre-épreuve : l'ancien `Mpris.qml` échoue dès le démarrage (libellé de 435 px dans 388).
