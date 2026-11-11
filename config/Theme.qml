@@ -435,7 +435,7 @@ Singleton {
         readonly property int itemPadding: 6
         readonly property int itemRadius: 4
         readonly property int itemIconSize: 24
-        readonly property int itemTextMargin: 2
+        readonly property int itemTextMargin: root.panel.spacing - itemSpacing // icône → texte : 10 px au total, comme le menu
         readonly property int itemSpacing: 2      // icône → texte, et entre bouton loupe, prompt et champ : espacement par défaut des boîtes Rofi
         readonly property color text: root.color.rofiFg
         // Sélection : survol des cartes des panneaux (`surface0`), texte inchangé (ton choix du 2026-10-21 ; Rofi : fond `green`, texte `SEL`).

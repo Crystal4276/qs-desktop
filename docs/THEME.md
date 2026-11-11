@@ -103,7 +103,8 @@ carte média et lignes du centre de notifications (`Theme.mediaCard`, `Theme.not
 ## 5. Lanceur
 
 `Theme.launcher` : couleurs Rofi (`rofiBg`, `rofiFg`, `rofiSel`, prompt `rofiImg`), Inter 20 pt, sélection `green`, cadre arrondi
-vers le haut et la gauche.
+vers le haut et la gauche. Les lignes gardent 10 px entre le cadre d’icône et le texte (`itemSpacing` +
+`itemTextMargin`, comme l’espacement du menu) ; l’en-tête conserve son espacement Rofi.
 
 ## 6. Panneau de réglages
 
