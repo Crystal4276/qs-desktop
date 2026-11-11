@@ -720,3 +720,22 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
   `test-install.py` : 0 échec.
 - **À tester sur le laptop** : `git pull`, **fermer Chromium**, `./install.sh` → « = Stylus : 139 styles relus » ; puis un site
   (GitHub, YouTube) en Catppuccin.
+
+## Stylus — import bloqué par Bitwarden (2026-11-11)
+
+- Constat (laptop) : « ! Stylus : pas de rapport d'import après 120 s », puis une trace Python (Chromium sans fenêtre ne se
+  fermait pas). Reproduit sur `terrier` avec une copie du profil réel.
+- Cause : sans fenêtre, l'agent utilisateur de Chromium est `HeadlessChrome/…` ; Bitwarden se croit alors sous Safari et lève
+  une exception en boucle (`browser.runtime.sendNativeMessage is not a function`, 1,2 million de lignes en 25 s). Le processus
+  principal de Chromium sature (130 % de CPU, mémoire jusqu'à 3 Go) et ne répond plus au protocole de débogage. Bitwarden
+  isolé par désactivation tour à tour des extensions (copie du profil).
+- Correctif (`scripts/extension-import.py`) : Chromium sans fenêtre lancé avec l'agent utilisateur de Chromium avec fenêtre
+  (version tirée de `chromium --version`) ; fermeture sûre : Browser.close, puis SIGTERM, puis SIGKILL sur tout le groupe de
+  processus, sans plus jamais lever d'exception.
+- Tests (copies jetables) : profil réel de `terrier` → Stylus 139 styles relus en 7 s, nightTab 11 favoris, relance 1 s ;
+  profil neuf (extensions téléchargées au démarrage) → Stylus 10 s, nightTab 9 s ; processus qui ignore SIGTERM → tué en 55 s,
+  rien ne traîne.
+- `test-install.py` lançait le vrai Chromium dans le dossier jetable (extensions déclarées dans `/usr/share/chromium/extensions`
+  sur `terrier`) : profil complet écrit, 2 à 3 échecs. Désormais un `chromium` factice (import raté exprès, retenté à chaque
+  passage, hors du test « sans changement ») ; l'import réel se teste sur une copie de profil. `test-install.py` : 0 échec.
+- **À tester sur le laptop** : `git pull`, fermer Chromium, `./install.sh` → « = Stylus : 139 styles relus ».
