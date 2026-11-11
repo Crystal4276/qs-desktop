@@ -106,11 +106,14 @@ def test(work):
                     media = next(s for s in value['slots'] if s['name'] == 'mpris')
                     # Text (artist - title) capped at Theme.bar.mediaTextMaxWidth (600 px).
                     assert media['textWidth'] <= 600.5, value
-                    # Whole text, else the artist alone (title dropped first; the title when there is no artist), elided if
-                    # needed: never part of the title next to the artist.
+                    # Whole text; else the whole artist and the title elided; else the artist alone (the title when there is
+                    # no artist), elided if needed: never an elided artist next to the title.
                     full, main, text = ' - '.join(s for s in (artist, title) if s), artist or title, media['text']
-                    assert text in ('', full, main) or (text.endswith('…') and main.startswith(text[:-1])), value
-                    if width == 1920 and artist == 'Deftones' and text != full: assert text == 'Deftones', value
+                    rest = text[len(artist) + 3:] if artist and title and text.startswith(artist + ' - ') else None
+                    assert (text in ('', full, main) or (rest and rest.endswith('…') and title.startswith(rest[:-1]))
+                            or (text.endswith('…') and main.startswith(text[:-1]))), value
+                    # The title fills the room left by the artist (Deftones at 1920 px: whole artist, part of the title).
+                    if width == 1920 and artist == 'Deftones' and text != full: assert rest, value
                     # No room for text: player icon only, plus the pause icon when paused.
                     if not media['text']: assert media['segments'] == (2 if paused == 'true' else 1), value
                     # A short artist and title that fit are never elided.

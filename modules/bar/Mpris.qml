@@ -3,9 +3,9 @@ import qs.config
 import qs.services
 
 // Lecture en cours (Waybar `mpris`) : `{player_icon} {status_icon} {dynamic}`, identique en lecture, pause et arrêt ;
-// icône d'état seulement en pause. Texte trop long : l'artiste seul, le titre est retiré (ton choix du 2026-11-11), abrégé s'il le
-// faut. Sans place pour le texte, ou si le libellé rendu ne tiendrait pas : icônes seules (lecteur, plus la pause en pause).
-// Lecteur absent → masqué.
+// icône d'état seulement en pause. Texte trop long (ton choix du 2026-11-11) : artiste entier et titre abrégé dans la place
+// restante ; sinon l'artiste seul, abrégé s'il le faut. Sans place pour le texte, ou si le libellé rendu ne tiendrait pas : icônes
+// seules (lecteur, plus la pause en pause). Lecteur absent → masqué.
 // Clic gauche : lecture / pause ; milieu : précédent ; droit : suivant ; molette : lecteur suivant / précédent (Media.qml).
 Item {
     id: root
@@ -23,13 +23,17 @@ Item {
     // Place du texte, plafonnée à mediaTextMaxWidth même s'il en reste.
     readonly property real textBudget: Math.max(0, Math.min(extraWidth - advance(gap), Theme.bar.mediaTextMaxWidth))
     readonly property string fullText: [artist, title].filter(s => s).join(separator)
-    // Texte gardé quand « artiste - titre » ne tient pas : l'artiste, ou le titre s'il n'y a pas d'artiste.
+    // Place du titre après l'artiste entier et le séparateur.
+    readonly property real titleBudget: textBudget - advance(artist + separator)
+    // Texte gardé quand le titre ne tient même pas abrégé : l'artiste, ou le titre s'il n'y a pas d'artiste.
     readonly property string mainText: artist || title
     // Abrégé seulement s'il dépasse la place (largeurs fractionnaires : elideWidth arrondi couperait un texte qui tient) ;
-    // réduit à « … », plus rien.
+    // réduit à « … », retiré.
     readonly property string dynamic: {
         if (advance(fullText) <= textBudget)
             return fullText;
+        if (artist && title && titleBudget > 0 && titleMeasure.elidedText.length > 1)
+            return artist + separator + titleMeasure.elidedText;
         if (advance(mainText) <= textBudget)
             return mainText;
         return mainMeasure.elidedText.length > 1 ? mainMeasure.elidedText : "";
@@ -52,6 +56,13 @@ Item {
         id: metrics
         font.family: Theme.font.text
         font.pixelSize: Theme.font.barText
+    }
+    TextMetrics {
+        id: titleMeasure
+        font: metrics.font
+        text: root.title
+        elide: Qt.ElideRight
+        elideWidth: Math.floor(root.titleBudget)
     }
     TextMetrics {
         id: mainMeasure
