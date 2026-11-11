@@ -464,17 +464,23 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
 ### 7.13.1 Capot (`services/Lid.qml`)
 
 - `scripts/lid-state.py` suit `LidIsPresent` / `LidIsClosed` de UPower (état initial et PropertiesChanged) et tient le FD
-  `handle-lid-switch` de logind. Flux JSON `{ready,present,closed}` vers Quickshell ; sans capot, aucun inhibiteur.
-  Fin du pont / de Quickshell : FD libéré, logind reprend ses réglages. Relance à 5 s ; `QS_TEST=1` coupe le pont réel.
-- Après stabilisation 500 ms, `Compositor.requestConnectedOutputs()` lit toutes les sorties (`get_outputs` / `monitors all`),
-  y compris désactivées ou en miroir ; DPMS indépendant. Sorties virtuelles exclues, connecteurs eDP/LVDS/DSI internes.
-  Échec de lecture : aucune décision sur un faux ensemble vide, nouvel essai à 5 s. Pas de scrutation au repos.
-- Capot fermé sans externe : `Session.suspend()`, verrouillage par Idle existant ; retrait du dernier externe : même règle,
-  secteur comme batterie. Vidéo et « garder l’écran allumé » ne remplacent pas cette politique mécanique.
+  `handle-lid-switch` de logind. Flux JSON `{ready,present,closed}` vers Quickshell. Sans capot (desktop) : le pont l'annonce
+  et s'arrête (code 0, pas relancé), aucun inhibiteur. Fin du pont / de Quickshell : FD libéré, logind reprend ses réglages.
+  Relance à 5 s (une seule relance en attente dans le pont, quel que soit le nombre d'échecs) ; `QS_TEST=1` coupe le pont réel.
+- Lecture seulement capot fermé, puis une fois à l'ouverture : après stabilisation 500 ms, `Compositor.requestConnectedOutputs()`
+  lit toutes les sorties (`get_outputs` / `monitors all`), y compris désactivées ou en miroir. Déclencheurs : liste des écrans
+  actifs (pas DPMS), `outputsChanging` (Hyprland), rechargement de config. Sorties virtuelles exclues, connecteurs eDP/LVDS/DSI
+  internes. Échec de lecture : aucune décision sur un faux ensemble vide, nouvel essai à 5 s. Pas de scrutation au repos.
+- Capot fermé sans externe **activé** (un externe branché mais désactivé ne compte pas) : `Session.suspend()`, verrouillage par
+  Idle existant ; retrait du dernier externe : même règle, secteur comme batterie. Vidéo et « garder l’écran allumé » ne
+  remplacent pas cette politique mécanique. Délai de 30 s comme `HoldoffTimeoutSec` de logind : pas de suspension dans les 30 s
+  qui suivent un réveil (écrans d'un dock encore absents) ; demande refaite 30 s après une demande restée sans veille (refus,
+  réveil capot fermé).
 - Avec externe : dalle désactivée (Sway `disable`, Hyprland `hl.monitor` avec `disabled=true`), espaces repris par Outputs.
-  Réouverture : seules les dalles désactivées par Lid sont restaurées ; règle géométrique retenue au rechargement QML.
-  Après plantage complet, une dalle interne encore désactivée est rétablie via la config native (reload sous Hyprland).
-  Réévaluation après réveil / reconfiguration. `lid state` expose l’état et la dernière lecture des sorties.
+  Réouverture d'un capot vu fermé : seules les dalles désactivées par Lid sont restaurées ; règle géométrique retenue au
+  rechargement QML. Après plantage complet, une dalle interne encore désactivée est rétablie via la config native (reload sous
+  Hyprland). Capot ouvert, une dalle désactivée (par toi, par la config) n'est jamais rallumée. `lid state` expose l’état, le
+  délai en cours et la dernière lecture des sorties.
 
 ### 7.14 Agent polkit (`services/Polkit.qml`, `modules/polkit/`)
 

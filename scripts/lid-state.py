@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""UPower lid events and logind ownership; JSON stream consumed by Lid.qml."""
+"""UPower lid events and logind ownership; JSON stream consumed by Lid.qml.
+Exit code 0: no lid (desktop), Lid.qml does not restart the bridge."""
 import json
 import os
 import signal
@@ -10,6 +11,8 @@ from gi.repository import Gio, GLib
 class LidState:
     def __init__(self):
         self.fd = None
+        self.absent = False
+        self.retry_source = 0
         self.loop = GLib.MainLoop()
         self.bus = Gio.bus_get_sync(Gio.BusType.SYSTEM, None)
         self.power = Gio.DBusProxy.new_sync(self.bus, Gio.DBusProxyFlags.NONE, None,
@@ -38,9 +41,11 @@ class LidState:
             self.release()
             print(json.dumps(dict(ready=False, present=False, closed=False)), flush=True)
             print(f"Lid bridge: {error}", file=sys.stderr)
-            GLib.timeout_add_seconds(5, self.retry)
+            if not self.retry_source:  # one pending retry, however many events failed
+                self.retry_source = GLib.timeout_add_seconds(5, self.retry)
 
     def retry(self):
+        self.retry_source = 0
         self.event_changed()
         return GLib.SOURCE_REMOVE
 
@@ -61,10 +66,15 @@ class LidState:
             self.fd = fds.get(reply.unpack()[0])
         print(json.dumps(dict(ready=known, present=bool(present and present.unpack()),
                               closed=bool(closed and closed.unpack()))), flush=True)
+        # No lid (desktop): logind keeps its own handling, nothing to follow.
+        self.absent = known and not present.unpack()
+        if self.absent:
+            self.loop.quit()
 
     def run(self):
         try:
-            self.loop.run()
+            if not self.absent:
+                self.loop.run()
         finally:
             self.release()
 
@@ -72,7 +82,9 @@ class LidState:
 if __name__ == '__main__':
     signal.signal(signal.SIGPIPE, signal.SIG_DFL)
     try:
-        LidState().run()
+        state = LidState()
+        state.run()
     except (GLib.Error, OSError) as error:
         print(f'Lid bridge: {error}', file=sys.stderr)
         sys.exit(1)
+    sys.exit(0 if state.absent else 1)

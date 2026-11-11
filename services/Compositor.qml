@@ -682,7 +682,7 @@ Singleton {
         // Abonnements posés après le chargement : I3IpcListener se connecte dès qu'ils sont posés, puis recrée sa connexion après le
         // chargement (« I3 event socket disconnected »). Vide à ce moment-là, il ne se connecte qu'une fois (Quickshell 0.3.2).
         property bool loaded: false
-        subscriptions: root.isSway && loaded ? ["window", "workspace", "output"] : []
+        subscriptions: root.isSway && loaded ? ["window", "workspace"] : []
         Component.onCompleted: Qt.callLater(() => i3Listener.loaded = true)
 
         onIpcEvent: event => {
@@ -691,7 +691,6 @@ Singleton {
             if (event.type === "window" && Date.now() > root.monitorPlacementDeadline && Date.now() > root.activationDeadline && /^\s*\{\s*"change"\s*:\s*"(title|focus)"/.test(event.data))
                 return;
             const data = JSON.parse(event.data);
-            if (event.type === "output") { root.outputsChanging(); return; }
             // Fenêtre déjà urgente avant le clic : Sway n'envoie pas de nouvel « urgent » ; Chromium change alors d'onglet, donc
             // de titre (revue de code, passe 8).
             if (event.type === "window" && ["urgent", "title"].includes(data.change) && data.container?.urgent
