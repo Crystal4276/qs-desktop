@@ -916,12 +916,18 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
   - veille : logind par défaut (`/etc/systemd/logind.conf` inchangé) ; verrouillage avant veille : `Idle.qml`, inchangé ;
   - dalle : `bindswitch` Sway et `hl.bind("switch:on|off:Lid Switch")` Hyprland dans les fichiers machine du laptop, comme
     prévu dès le départ par `ARCHITECTURE.md` § 3.1 ; Hyprland relit l'état du capot au chargement (reload du réveil) ;
-  - seul code : un `systemd-inhibit --what=handle-lid-switch` dans `Idle.qml` tant qu'un externe est actif (8 lignes). Raison
-    mesurée sur ce laptop : écran en veille DPMS → connecteur `disabled` dans sysfs, donc logind ne verrait plus l'externe.
+  - seul code : un `systemd-inhibit --what=handle-lid-switch` dans `Idle.qml` tant qu'un externe physique est actif (8 lignes).
+    Raison mesurée sur ce laptop : écran en veille DPMS → connecteur `disabled` dans sysfs, donc logind ne verrait plus l'externe ;
+  - état du capot relu au chargement par les deux compositeurs : libinput ne le donne au démarrage que pour un capot réputé
+    fiable (quirk absent pour ce Dell), une session ouverte capot fermé garderait sinon la dalle allumée.
 - Validé : `Hyprland --verify-config`, `sway --validate` (commande liée avec la description entre guillemets), liaisons chargées
   par ta session Hyprland (`hyprctl binds`), vérification jetable de l'inhibiteur (externe, veille DPMS, dalle éteinte,
   retrait, reprise après arrêt), `test-sleep.py` OK, `test-outputs.sh sway` 0 échec, banc Sway sans avertissement.
   `test-idle-lock.py` échoue sur un avertissement de portail, **déjà avant** le travail du capot (environnement).
+- Revue de la version native, passe 1 : écrans virtuels comptés comme externes, condition `Battery.available` superflue, état
+  initial du capot sous Sway : corrigés. Acceptés : un écran qui coupe sa connexion en veille profonde (ou un KVM basculé) vaut
+  un débranchement, comme dans la version Codex ; relance de Quickshell écrans éteints capot fermé → veille (sans danger) ;
+  dalle éteinte même sans externe (plan § 3.1, `Outputs.qml` gère « aucun écran »).
 - Règles : `CLAUDE.md` règle 6 « Natif d'abord, code minimal » (proposer avant de s'écarter d'une solution documentée ou
   d'ajouter un processus, un script ou un protocole maison) ; la revue en boucle juge aussi l'altitude (`DEVELOPMENT.md`).
 - **À faire** : `$mod+Ctrl+W` (l'instance actuelle tourne encore avec l'ancien `Lid.qml` en mémoire ; sa surveillance des

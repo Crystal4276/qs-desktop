@@ -73,7 +73,7 @@ par écran et des fonds exportés pour l'écran de connexion, qui tourne sous Sw
 | VRR | `adaptive_sync on/off` | `misc.vrr` (le champ `vrr` de `hl.monitor` est sans effet) |
 | Désactiver | `disable` | `disabled = true` |
 | Écran inconnu | placé à droite, mode préféré | règle de repli `output = ""`, `preferred`, `auto`, échelle `auto` |
-| Capot du laptop | `bindswitch --locked --reload lid:on output <desc> disable` / `lid:off … enable` | `hl.bind("switch:on:Lid Switch", …)` → `hl.monitor({ …, disabled = true })`, état relu au chargement |
+| Capot du laptop | `bindswitch --locked lid:on output <desc> disable` / `lid:off … enable`, état relu au chargement (`exec_always`) | `hl.bind("switch:on:Lid Switch", …)` → `hl.monitor({ …, disabled = true })`, état relu au chargement |
 
 Pas de Kanshi : il ne transporte ni HDR ni profondeur de couleur (deux sources pour un même écran), le `hyprctl reload` du réveil
 écraserait sa configuration, et ses profils conditionnels ne répondent à aucun besoin actuel (réévaluation : `BACKLOG.md`).
@@ -467,10 +467,11 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
   répit après un réveil ; veille aussi au retrait du dernier externe capot fermé). Verrouillage avant veille : § 7.13.
 - Un écran éteint par la veille a son connecteur détaché (sysfs `enabled`, vérifié sous Hyprland) : logind ne voit plus
   l'externe et mettrait en veille un laptop branché capot fermé. `Idle.qml` bloque donc `handle-lid-switch` tant qu'un écran
-  externe est **actif** dans `Compositor.outputs` (veille des écrans comprise ; laptop seulement, pas sous `QS_TEST`).
-- Dalle : éteinte capot fermé, rallumée à l'ouverture par le compositeur (§ 3.1, `dotfiles/*/hosts/<laptop>`) ; Hyprland relit
-  l'état du capot à chaque chargement (`/proc/acpi/button/lid/*/state`), le `hyprctl reload` du réveil la rallumerait. Espaces
-  repris par `Outputs.qml`.
+  externe physique est **actif** dans `Compositor.outputs` (veille des écrans comprise ; sans effet sans capot ; pas sous
+  `QS_TEST`).
+- Dalle : éteinte capot fermé, rallumée à l'ouverture par le compositeur (§ 3.1, `dotfiles/*/hosts/<laptop>`). État du capot
+  relu à chaque chargement (`/proc/acpi/button/lid/*/state`) : libinput ne le donne au démarrage que pour les capots réputés
+  fiables (quirk), et le `hyprctl reload` du réveil rallumerait la dalle. Espaces repris par `Outputs.qml`.
 
 ### 7.14 Agent polkit (`services/Polkit.qml`, `modules/polkit/`)
 
