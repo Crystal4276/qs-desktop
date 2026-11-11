@@ -905,3 +905,27 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
 - Bureau réel : Hyprland rechargé sans erreur ; fenêtres ouvertes de Thunderbird, Discord, WhatsApp et Spotify déplacées
   sur 7 / 8 / 8 / 9. Sondes GTK DigitalMicrograph et Windows sur 5 / 6, en mosaïque, puis fermées. Espace courant 1 conservé,
   Quickshell PID 1909 vivant, bancs arrêtés. Capture `.shots/workspaces-work-order.png`. Aucun changement de session imposé.
+
+
+## Laptop — fermeture du capot (2026-11-11)
+
+- Choix : suspension sans écran externe, sur secteur comme batterie ; avec écran externe USB-C / dock / HDMI, dalle interne
+  désactivée, session conservée sur les externes. Débrancher le dernier externe capot fermé suspend aussi (choix confirmé).
+- `Lid.qml` + pont UPower Python/Gio ; inhibition ciblée `handle-lid-switch`, libérée à la fin du pont. Aucun fichier système
+  modifié ni paquet ajouté. Logind reprend automatiquement hors session ou après arrêt du pont. Verrouillage avant veille
+  existant réutilisé. Source des connexions indépendante de DPMS et des miroirs ; sorties virtuelles exclues.
+- Règle restaurée à la réouverture ; état retenu au rechargement QML, reprise via config native après perte complète d’état.
+  Erreurs de lecture : pas de fausse suspension, nouvel essai espacé. Carte batterie / recharge / modes de sommeil : BACKLOG.
+- Tests isolés : `test-lid.py` (politique QML et commandes simulées), `test-lid-bridge.py` (vrais échanges D-Bus / FD sur bus
+  privé, libération et reprise de l’inhibition), `test-sleep.py`, `test-idle-lock.py` : OK. `test-outputs.sh sway|hyprland` :
+  0 échec chacun. Lecture réelle des sorties par sonde QML séparée : eDP interne actif, résultat valide.
+- À tester physiquement : fermer sans externe puis réveiller et déverrouiller ; fermer avec HDMI puis USB-C ; rouvrir
+  (mode / échelle restaurés) ; débrancher le dernier externe capot fermé. Essais sur secteur et batterie, sous Sway et
+  Hyprland. Aucune suspension réelle déclenchée pendant le développement.
+- Commandes natives d’activation/restauration exercées via IPC sur les sorties virtuelles Sway / Hyprland avec fenêtres :
+  0 échec chacun, mode / échelle et focus préservés. Le test adapté distingue dans le journal les commandes de sortie des
+  placements d’espaces (les trois désactivations volontaires ne sont pas trois placements indésirables).
+- Appliqué au laptop : rechargement réussi, même Quickshell PID 1909 ; `lid state` : ready/present=true, closed=false,
+  dalle eDP active, échelle 1 ; inhibition ciblée présente. Aucun changement système ni suspension réelle. Bancs arrêtés.
+  Avertissement préexistant de vérification des espaces pendant le banc Hyprland : l’espace spécial du banc n’a pas d’id
+  numérique dans l’IPC 0.57.2 ; répartition réelle correcte (espaces 1–9 sur la dalle).

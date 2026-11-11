@@ -4,6 +4,8 @@ Idées et défauts connus hors du programme des phases. Rien ici n'est implémen
 
 ## Fonctions
 
+- **Carte batterie du laptop** : informations de recharge (puissance, durée, état / santé), présentation et choix des modes de sommeil ; développement ultérieur, sans changement de mode avec la gestion du capot.
+
 - **Autres distributions** (Fedora, Debian / Ubuntu) : correspondances de paquets et `install.sh` hors Arch, retirées de la
   phase 12 le 2026-11-09 (pas d'usage prévu). Point de départ : historique git de `deps/README.md`.
 

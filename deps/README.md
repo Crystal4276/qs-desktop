@@ -190,7 +190,9 @@ les applications déjà ouvertes peuvent garder leur curseur jusqu'à leur proch
 
 Autres constats pour un nouveau PC :
 - trousseau `gnome-keyring` déverrouillé par PAM à la connexion (greetd : `dotfiles/greetd/pam-greetd`) ;
-- `logind` par défaut (bouton power = extinction ; capot = mise en veille) ;
+- `logind` par défaut hors session (bouton power = extinction ; capot = mise en veille) ; en session Sway / Hyprland,
+  `Lid.qml` + `scripts/lid-state.py` prennent seulement `handle-lid-switch` : suspension sans écran externe, dalle interne
+  désactivée avec écran externe ; Python/Gio (`python-gobject`), UPower, systemd, util-linux (`setpriv`), compositeur déjà installés ;
 - polices de repli : `noto-fonts-cjk` (japonais, chinois, coréen ; ici les polices Microsoft le font), `noto-fonts-emoji` ;
 - partage d'écran sous Sway : `xdg-desktop-portal-wlr` choisit l'écran avec `slurp` ;
 - **secrets jamais versionnés** : jetons (NordVPN…), adresses de montage (`gio mount ssh://…`) → `~/.config/qs-desktop.local/`.
