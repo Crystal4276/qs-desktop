@@ -851,14 +851,20 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
 - Corrigé (`Mpris.qml`) : une seule mesure, `advance()`, qui lit `metrics.font` (réévaluée quand la police arrive).
   **Contrôle sur le rendu**, comme demandé : le libellé complet est rendu hors écran (`candidate`) ; s'il sortirait de la
   pilule, le texte est retiré (icônes seules). Ton choix : en icônes seules, l'**icône de pause** reste affichée en pause
-  (largeur minimale = icône du lecteur + pause). Abrégé gardé quand il tient (ton choix).
+  (largeur minimale = icône du lecteur + pause).
+- Ton choix ensuite : **priorité à l'artiste**. Texte entier s'il tient ; sinon le titre est retiré et l'artiste reste seul
+  (le titre seul s'il n'y a pas d'artiste), abrégé s'il le faut ; plus de partage artiste / titre ni de « … - … ». Remplace
+  la règle du 2026-11-10 (« artiste réduit à « … » retiré, le titre prend la place »). Trois mesures en moins dans `Mpris.qml`.
+  Banc : « Deftones » à 1920 et 1500 px, « D… » à 1280 px en lecture, icônes seules en pause ; `test-bar.py` vérifie la
+  règle dans tous les cas (l'ancienne version échoue : « Ru… - oo… »). Bureau réel rechargé sans erreur, capture
+  `.shots/media-pill-artist.png` (« Slipknot - Prosthetics » entier, il tenait).
 - Tests : `test-bar.py` contrôle dans tous les cas que le libellé rendu tient dans le module. S'y ajoutent le cas
   « lecteur présent au démarrage, place changée sans changer de morceau », « Deftones - Around the Fur » et 2 segments
   sans texte en pause. Contre-épreuve : l'ancien `Mpris.qml` échoue dès le démarrage (libellé de 435 px dans 388).
   Seuil « texte proche du plafond » à 3440 px ramené de 590 à 550 px : il échouait déjà sur le laptop avant ce
   correctif (581 px, chaque moitié abrégée peut perdre un « W » d'environ 26 px). Passe sur copie, sans avertissement QML.
 - Captures du banc (avant / après, 1920, 1500 et 1280 px, lecture et pause) vérifiées. Bureau réel rechargé sans erreur
-  (PID 1910) ; la barre était cachée par Windows en plein écran sur l'espace 5, capture réelle à refaire.
+  (PID 1910).
 - Même schéma vu ailleurs, non corrigé (hors sujet) : `VolumeLine.qml:50` (largeur du bouton « Unmute », texte constant
   mesuré par `FontMetrics.advanceWidth()` dans une liaison) ; `InfoModule.qml:83` (`tightBoundingRect`, avec un repli sur
   `implicitWidth`, sans effet visible connu).

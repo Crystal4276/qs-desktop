@@ -3,8 +3,9 @@ import qs.config
 import qs.services
 
 // Lecture en cours (Waybar `mpris`) : `{player_icon} {status_icon} {dynamic}`, identique en lecture, pause et arrêt ;
-// icône d'état seulement en pause. Sans place pour le texte, ou si le libellé rendu ne tiendrait pas : icônes seules (lecteur,
-// plus la pause en pause ; ton choix du 2026-11-11). Lecteur absent → masqué.
+// icône d'état seulement en pause. Texte trop long : l'artiste seul, le titre est retiré (ton choix du 2026-11-11), abrégé s'il le
+// faut. Sans place pour le texte, ou si le libellé rendu ne tiendrait pas : icônes seules (lecteur, plus la pause en pause).
+// Lecteur absent → masqué.
 // Clic gauche : lecture / pause ; milieu : précédent ; droit : suivant ; molette : lecteur suivant / précédent (Media.qml).
 Item {
     id: root
@@ -19,22 +20,19 @@ Item {
     readonly property string title: (Media.player?.trackTitle ?? "").trim()
     readonly property string separator: artist && title ? " - " : ""
     readonly property string gap: Media.paused ? " " : "  "
-    // Texte « artiste - titre » plafonné à mediaTextMaxWidth, même s'il reste de la place.
-    readonly property real textBudget: Math.max(0, Math.min(extraWidth - advance(gap), Theme.bar.mediaTextMaxWidth)
-        - advance(separator))
-    readonly property real artistWidth: advance(artist)
-    readonly property real titleWidth: advance(title)
-    readonly property real artistBudget: Math.min(artistWidth, Math.max(textBudget / 2, textBudget - titleWidth))
-    // Abrégé seulement s'il dépasse son budget (largeurs fractionnaires : elideWidth arrondi couperait un texte qui tient).
+    // Place du texte, plafonnée à mediaTextMaxWidth même s'il en reste.
+    readonly property real textBudget: Math.max(0, Math.min(extraWidth - advance(gap), Theme.bar.mediaTextMaxWidth))
+    readonly property string fullText: [artist, title].filter(s => s).join(separator)
+    // Texte gardé quand « artiste - titre » ne tient pas : l'artiste, ou le titre s'il n'y a pas d'artiste.
+    readonly property string mainText: artist || title
+    // Abrégé seulement s'il dépasse la place (largeurs fractionnaires : elideWidth arrondi couperait un texte qui tient) ;
+    // réduit à « … », plus rien.
     readonly property string dynamic: {
-        if (textBudget < advance("…") * (artist && title ? 2 : 1))
-            return "";
-        const shownArtist = artistWidth <= artistBudget ? artist : artistMeasure.elidedText;
-        // Artiste réduit à « … » : retiré, le titre prend toute la place (séparateur compris).
-        if (title && shownArtist === "…")
-            return titleWidth <= textBudget + advance(separator) ? title : titleAlone.elidedText;
-        const shownTitle = titleWidth <= textBudget - artistBudget ? title : titleMeasure.elidedText;
-        return [artist ? shownArtist : "", title ? shownTitle : ""].filter(s => s).join(separator);
+        if (advance(fullText) <= textBudget)
+            return fullText;
+        if (advance(mainText) <= textBudget)
+            return mainText;
+        return mainMeasure.elidedText.length > 1 ? mainMeasure.elidedText : "";
     }
     // Contrôle sur le libellé rendu (candidate) : un texte qui sortirait de la pilule n'est pas affiché, icônes seules.
     readonly property string shownText: dynamic && candidate.implicitWidth <= prefix.implicitWidth + extraWidth ? dynamic : ""
@@ -56,25 +54,11 @@ Item {
         font.pixelSize: Theme.font.barText
     }
     TextMetrics {
-        id: artistMeasure
+        id: mainMeasure
         font: metrics.font
-        text: root.artist
+        text: root.mainText
         elide: Qt.ElideRight
-        elideWidth: Math.floor(root.artistBudget)
-    }
-    TextMetrics {
-        id: titleMeasure
-        font: metrics.font
-        text: root.title
-        elide: Qt.ElideRight
-        elideWidth: Math.floor(root.textBudget - root.artistBudget)
-    }
-    TextMetrics {
-        id: titleAlone
-        font: metrics.font
-        text: root.title
-        elide: Qt.ElideRight
-        elideWidth: Math.floor(root.textBudget + root.advance(root.separator))
+        elideWidth: Math.floor(root.textBudget)
     }
     RichLabel {
         id: prefix
