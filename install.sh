@@ -429,6 +429,34 @@ EOF
     then :; else echo "! hosts/$host.json illisible (JSON invalide ?) : réglage $1 par défaut" >&2; fi
 }
 
+# Entrée native commune au menu et au lanceur ; aucune interrogation libvirt à l'installation.
+step_windows11() {
+    local uri domain out="$data/applications/qs-windows11.desktop" content
+    uri="$(host_setting windows11.uri)"
+    domain="$(host_setting windows11.domain)"
+    [[ -n "$uri" && -n "$domain" ]] || return 0
+    content="$(python3 -I - "$repo" "$uri" "$domain" <<'EOF'
+import sys
+repo, uri, domain = sys.argv[1:]
+# Exec est une liste d'arguments desktop, sans interpréteur shell.
+def value(s):
+    return s.replace('\\', '\\\\').replace('\n', '\\n').replace('\r', '\\r')
+def arg(s):
+    s = s.replace('%', '%%')
+    for char in ('\\', '"', '`', '$'):
+        s = s.replace(char, '\\' + char)
+    return value('"' + s + '"')
+print('[Desktop Entry]\nType=Application\nName=Windows 11\nComment=Ouvrir la machine virtuelle Windows 11\nCategories=System;\nTerminal=false\nStartupNotify=false')
+print('Icon=' + value(repo + '/assets/windows11.svg'))
+print('Exec=' + ' '.join(arg(s) for s in (repo + '/scripts/windows11-launch.sh', uri, domain)))
+EOF
+)" || return 1
+    if [[ -f "$out" && "$(cat "$out")" == "$content" ]]; then echo "= $out"; return; fi
+    backup_once edit "$out" cp
+    printf '+ %s (Windows 11)\n' "$out"
+    [[ -n "$dry" ]] || { mkdir -p "$(dirname "$out")"; printf '%s\n' "$content" > "$out"; written "$out"; }
+}
+
 dnd_mutes() {   # la machine coupe-t-elle des applications la nuit ? (doNotDisturb.muteApps non vide)
     [[ -n "$(host_setting doNotDisturb.muteApps)" ]]
 }
@@ -442,6 +470,7 @@ step_configs() {
     link dotfiles/starship/starship.toml "$config/starship.toml"
     # Lanceur : entrée « Gammastep Indicator » masquée (veilleuse réglée par la barre).
     link dotfiles/applications/gammastep-indicator.desktop "$data/applications/gammastep-indicator.desktop"
+    step_windows11
     link dotfiles/mpv "$config/mpv"
     # host.conf vit dans le dépôt (dotfiles/mpv est lié) : ignoré par git, choisi pour cette machine.
     local mpv_host

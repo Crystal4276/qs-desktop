@@ -277,3 +277,10 @@ propose `scripts/system-setup.sh intel-gpu` : `pkexec` authentifie une transacti
 `/etc/pacman.d/hooks/90-qs-intel-gpu.hook` réapplique ce droit après une mise à jour du paquet. L'ancien droit et un éventuel
 hook préexistant sont sauvegardés dans `/var/lib/qs-desktop/intel-gpu`, restaurés au retrait système ; une capacité modifiée par l’administrateur depuis l’installation est conservée. Simulation et idempotence
 respectées. Sans autorisation, température/fréquence/mémoire accessibles restent disponibles ; aucune charge n'est inventée.
+
+### Windows 11
+
+`windows11` dans `hosts/<machine>.json` (`uri`, `domain`) active une entrée native commune au menu et au lanceur.
+`scripts/windows11-launch.sh URI DOMAINE` utilise `virsh` (libvirt), `virt-viewer`, `flock` (util-linux) et
+`notify-send` (libnotify). La console seule se ferme ; la VM continue. Sur le laptop, les règles machine Sway et Hyprland
+placent sa console sur 5 en mosaïque sans changer l’espace courant. Logo : `assets/windows11-source.md`.
