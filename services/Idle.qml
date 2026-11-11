@@ -12,6 +12,7 @@ import qs.config
 // (IdleInhibitor des barres), manette Bluetooth connectée (même inhibiteur), vidéos des applications Wayland.
 // Verrouillage avant la mise en veille du système (laptop par défaut) : verrou « delay » de logind, relâché une fois l'écran verrouillé.
 // Au réveil sous Hyprland : `hyprctl reload` (after_sleep_cmd de ton hypridle : la disposition des écrans ne survit pas à la veille).
+// Capot : veille par logind, sauf écran externe actif (verrou ci-dessous) ; dalle éteinte par le compositeur (dotfiles/*/hosts/).
 // Inhibitions D-Bus : scripts/idle-inhibit.py, conservées hors du moteur QML par desktop.sh.
 Singleton {
     id: root
@@ -186,5 +187,15 @@ Singleton {
             if (Session.locked && root.preparingSleep)
                 root.holding = false;
         }
+    }
+
+    // --- Capot (laptop) ---
+
+    // logind ignore le capot avec un écran externe (HandleLidSwitchDocked), mais un écran éteint par la veille a son connecteur
+    // détaché (sysfs `enabled`, vérifié sous Hyprland) : capot fermé, il mettrait le laptop en veille. Bloqué tant qu'un externe est actif.
+    Process {
+        running: Battery.available && Compositor.outputs.some(o => !/^(eDP|LVDS|DSI)-/.test(o.name)) && !Quickshell.env("QS_TEST")
+        command: ["setpriv", "--pdeathsig", "TERM", "systemd-inhibit", "--what=handle-lid-switch", "--mode=block", "--who=Quickshell",
+            "--why=External display active", "sleep", "infinity"]
     }
 }

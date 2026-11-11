@@ -27,6 +27,7 @@ Savoir-faire pour modifier le bureau sans le casser. Version cible : **Quickshel
 5. Un banc ne prouve pas le focus clavier : vérifier l'ouverture des popups sur la vraie session avant d'annoncer un succès.
 6. **Revue en boucle** (quand demandée) : `/code-review high` sur les fichiers entiers, chaque constat reproduit sur banc avant
    correction (contre-épreuve sur l'ancien code), un commit par passe, arrêt quand une passe ne trouve plus que du négligeable.
+   Chaque passe juge aussi l'altitude : une solution native ou plus courte remplacerait-elle le code revu (`CLAUDE.md`, règle 6) ?
    Partir de l'usage réel (applications, réglages, chemins vraiment utilisés) ; ignorer les rapports en retard sur du code remplacé.
 7. **Jamais d'action `nordvpn`** (connexion, déconnexion, réglage), ni sur le vrai système ni sur banc : faux `nordvpn` qui transmet
    les lectures et simule les actions. Consigne à transmettre à tout sous-agent, avec celles des bancs.
@@ -108,14 +109,6 @@ verrouillage).
 
 - `python scripts/test-idle-lock.py` : IdleMonitor, verrou Wayland et DPMS réels sur Sway headless ; politiques laptop/desktop,
   confirmation tardive, annulation, refus, inhibitions Wayland/D-Bus et délai désactivé. Aucun verrouillage de la vraie session.
-
-- `python3 scripts/test-lid.py` : vrai service Lid, bus privé et source capot / réveils / sorties / suspension factices ;
-  fermeture, externes multiples et désactivés, dalle désactivée capot ouvert ou avant fermeture, réouverture, retrait du
-  dernier, délai après réveil et nouvelle demande, erreurs, aucune lecture capot ouvert, rechargement à chaud réel (règles
-  gardées ; `QS_NO_RELOAD_POPUP=1` : hors écran, l'échec du popup laisse l'IPC refuser les requêtes).
-- `python3 scripts/test-lid-bridge.py` : vrais proxies et échange de FD sur bus privé avec faux UPower / logind ;
-  refus de logind (état transmis, une seule relance), lignes inchangées non répétées, réveil, libération à l'arrêt, machine
-  sans capot (arrêt, code 0). Aucun accès matériel, aucune inhibition de la machine réelle.
 
 ## VM d'installation (`install.sh` sur une machine neuve)
 

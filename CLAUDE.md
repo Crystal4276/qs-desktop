@@ -43,7 +43,11 @@ Ensuite : affinage de l'interface (depuis le laptop), maintenance et idées de `
    menu GTK, pas de rustine.
 5. **Rien de spécifique à cette machine en dur** hors `hosts/` et `dotfiles/*/hosts/` : noms et nombre d'écrans, chemins vers
    `/home/…`, GPU Nvidia. Tout passe par la détection ou par la config par machine.
-6. **Simplicité.** Pas de framework générique, pas d'abstraction « au cas où » : une abstraction sert au moins deux usages réels
+6. **Natif d'abord, code minimal.** Avant d'écrire du code : ce que font déjà le système (systemd, logind), les compositeurs
+   (config native) et Quickshell, et ce que prévoit `docs/ARCHITECTURE.md`. Le code ne comble que l'écart, au plus court ; chaque
+   ligne ajoutée se justifie, supprimer vaut mieux qu'ajouter. S'écarter d'une solution documentée ou ajouter un processus
+   permanent, un script ou un protocole maison : me le proposer d'abord, avec l'alternative native et pourquoi elle ne suffit pas.
+   Pas de framework générique, pas d'abstraction « au cas où » : une abstraction sert au moins deux usages réels
    (Sway + Hyprland, desktop + laptop). Les idées vont dans `BACKLOG.md`, pas dans le code.
 7. **NordVPN : aucune action réelle** (connexion, déconnexion, réglage), ni en test ni sur banc. Consigne à transmettre à tout sous-agent.
 8. Les sauvegardes `~/.config/*.bak-*` et les données privées de `~/.config/qs-desktop.local/` ne sont jamais modifiées ni versionnées.

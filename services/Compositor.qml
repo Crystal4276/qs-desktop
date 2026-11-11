@@ -79,58 +79,6 @@ Singleton {
         return [];
     }
 
-    // Écrans physiques branchés, dalles désactivées et miroirs compris, indépendamment de la veille (services/Lid.qml).
-    property var connectedOutputs: []
-    property bool connectedDirty: false
-    signal connectedOutputsReady(bool success)
-    signal configurationReloaded
-
-    function requestConnectedOutputs(): void {
-        if (connectedQuery.running) { connectedDirty = true; return; }
-        connectedQuery.running = true;
-    }
-    Process {
-        id: connectedQuery
-        command: root.isSway ? ["timeout", "2", "swaymsg", "-r", "-t", "get_outputs"]
-            : ["timeout", "2", "hyprctl", "-j", "monitors", "all"]
-        stdout: StdioCollector { id: connectedReply }
-        onExited: code => {
-            if (root.connectedDirty) {
-                root.connectedDirty = false;
-                connectedQuery.running = true;
-                return;
-            }
-            try {
-                const rows = JSON.parse(connectedReply.text);
-                if (code !== 0 || !Array.isArray(rows) || !rows.every(o => typeof o.name === "string"))
-                    throw new Error("invalid connected display snapshot");
-                root.connectedOutputs = rows.filter(o => !/^(HEADLESS|WAYLAND|X11|FALLBACK)/i.test(o.name))
-                    .filter(o => !o.non_desktop && (!root.isHyprland || !o.hardwareDetails?.backend || o.hardwareDetails.backend === "drm"))
-                    .map(o => ({name: o.name, internal: /^(eDP|LVDS|DSI)[-0-9]/i.test(o.name),
-                        enabled: root.isSway ? o.active === true : o.disabled !== true}));
-                root.connectedOutputsReady(true);
-            } catch (error) {
-                console.warn("Compositor: connected displays unavailable", error);
-                root.connectedOutputsReady(false);
-            }
-        }
-    }
-
-    // Après un plantage, la règle retenue est perdue : config native rechargée plutôt qu'une échelle de dalle devinée.
-    function restoreInternalOutputs(names: var): void {
-        if (isHyprland) Quickshell.execDetached(["hyprctl", "reload"]);
-        else for (const name of names) setOutputEnabled(name, true, "");
-    }
-    function lidRestoreRule(name: string): string {
-        return isHyprland ? ruleKey(name) : "";
-    }
-    function setOutputEnabled(name: string, enabled: bool, restoreRule: string): void {
-        if (isSway)
-            I3.dispatch(`output ${luaString(name)} ${enabled ? "enable" : "disable"}`);
-        else if (isHyprland)
-            hyprlandBatch([`function() hl.monitor({ ${restoreRule}, disabled = ${!enabled} }) end`], "activation des sorties");
-    }
-
     // Espaces de travail existants : { number, name, output, focused, visible, urgent, empty }
     // empty = aucune fenêtre, flottantes comprises (classe `empty` de Waybar).
     // Sway : focus et visibilité lus dans l'objet IPC de l'espace (relu après chaque événement d'espace), pas dans `focused` et
@@ -746,10 +694,8 @@ Singleton {
                 root.outputsChanging();
                 monitorReread.restart();
             }
-            else if (event.name === "configreloaded") {
+            else if (event.name === "configreloaded")
                 root.replayRuntimeRules();
-                root.configurationReloaded();
-            }
             else if (event.name === "urgent" && root.takeActivation(Hyprland.toplevels.values.find(t => t.address === event.data)?.wayland?.appId ?? ""))   // « ADRESSE » (hexadécimal, sans 0x, vérifié)
                 hyprlandBatch([`hl.dsp.focus({ window = "address:0x${event.data}" })`]);
         }

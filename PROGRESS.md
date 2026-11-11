@@ -906,67 +906,28 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
   sur 7 / 8 / 8 / 9. Sondes GTK DigitalMicrograph et Windows sur 5 / 6, en mosaïque, puis fermées. Espace courant 1 conservé,
   Quickshell PID 1909 vivant, bancs arrêtés. Capture `.shots/workspaces-work-order.png`. Aucun changement de session imposé.
 
-
 ## Laptop — fermeture du capot (2026-11-11)
 
-- Choix : suspension sans écran externe, sur secteur comme batterie ; avec écran externe USB-C / dock / HDMI, dalle interne
-  désactivée, session conservée sur les externes. Débrancher le dernier externe capot fermé suspend aussi (choix confirmé).
-- `Lid.qml` + pont UPower Python/Gio ; inhibition ciblée `handle-lid-switch`, libérée à la fin du pont. Aucun fichier système
-  modifié ni paquet ajouté. Logind reprend automatiquement hors session ou après arrêt du pont. Verrouillage avant veille
-  existant réutilisé. Source des connexions indépendante de DPMS et des miroirs ; sorties virtuelles exclues.
-- Règle restaurée à la réouverture ; état retenu au rechargement QML, reprise via config native après perte complète d’état.
-  Erreurs de lecture : pas de fausse suspension, nouvel essai espacé. Carte batterie / recharge / modes de sommeil : BACKLOG.
-- Tests isolés : `test-lid.py` (politique QML et commandes simulées), `test-lid-bridge.py` (vrais échanges D-Bus / FD sur bus
-  privé, libération et reprise de l’inhibition), `test-sleep.py`, `test-idle-lock.py` : OK. `test-outputs.sh sway|hyprland` :
-  0 échec chacun. Lecture réelle des sorties par sonde QML séparée : eDP interne actif, résultat valide.
-- À tester physiquement : fermer sans externe puis réveiller et déverrouiller ; fermer avec HDMI puis USB-C ; rouvrir
-  (mode / échelle restaurés) ; débrancher le dernier externe capot fermé. Essais sur secteur et batterie, sous Sway et
-  Hyprland. Aucune suspension réelle déclenchée pendant le développement.
-- Commandes natives d’activation/restauration exercées via IPC sur les sorties virtuelles Sway / Hyprland avec fenêtres :
-  0 échec chacun, mode / échelle et focus préservés. Le test adapté distingue dans le journal les commandes de sortie des
-  placements d’espaces (les trois désactivations volontaires ne sont pas trois placements indésirables).
-- Appliqué au laptop : rechargement réussi, même Quickshell PID 1909 ; `lid state` : ready/present=true, closed=false,
-  dalle eDP active, échelle 1 ; inhibition ciblée présente. Aucun changement système ni suspension réelle. Bancs arrêtés.
-  Avertissement préexistant de vérification des espaces pendant le banc Hyprland : l’espace spécial du banc n’a pas d’id
-  numérique dans l’IPC 0.57.2 ; répartition réelle correcte (espaces 1–9 sur la dalle).
-
-## Capot — série de revues de code (2026-11-11)
-
-- **Passe 1** (`/code-review high`, 10 constats ; chaque correctif contre-éprouvé sur l'ancien code) :
-  - externe **branché mais désactivé** compté comme externe : capot fermé → dalle coupée, aucun écran actif, pas de veille.
-    Seul un externe activé compte désormais (veille sinon) ;
-  - dalle désactivée **capot ouvert** (par toi, la config) rallumée à chaque changement d'écran ; sous Hyprland, `hyprctl reload`
-    en boucle si la config la désactive. Rallumage seulement à l'ouverture d'un capot vu fermé ;
-  - **délai de 30 s** comme `HoldoffTimeoutSec` de logind : pas de suspension dans les 30 s après un réveil (dock réveillé capot
-    fermé : ses écrans arrivent en quelques secondes, avant : resuspension à 500 ms) ; demande refaite après 30 s si la veille
-    n'a pas eu lieu (refus, réveil capot fermé sans `lockBeforeSleep` : avant, plus jamais de veille jusqu'à l'ouverture) ;
-  - abonnement Sway `output` retiré : chaque veille d'écran relançait le placement des espaces d'`Outputs.qml` (banc Sway : `$mod+2`
-    juste après le réveil des écrans annulé, espace 1 rendu ; corrigé : espace 2 gardé). `Lid` suit la liste des écrans actifs ;
-  - aucune lecture des sorties capot ouvert ; pont : une seule relance en attente (avant, une chaîne par échec : 5 relances
-    simultanées sur banc), arrêt (code 0, pas relancé) sur une machine **sans capot** (32 Mo de Python en moins sur `terrier`) ;
-  - `test-lid.py` réécrit (attente active du PID, contrôles nommés) : 17 contrôles OK, ancien code 11 échecs ;
-    `test-lid-bridge.py` : 11 OK, ancien pont 2 échecs ; `test-outputs.sh sway` 0 échec.
-  - Non retenu (décision à toi) : remplacer le pont par le comportement natif (logind `HandleLidSwitchDocked=ignore` + liaisons de
-    capot du compositeur). Nuancé : logind ignore les inhibiteurs de veille du même utilisateur, seul un inhibiteur d'un autre
-    compte bloque `systemctl suspend` (la nouvelle demande à 30 s couvre ce cas).
-- **Passe 2** (10 constats ; retenus et contre-éprouvés sur le code de la passe 1) :
-  - délai après réveil tiré d'`Idle.preparingSleep`, muet sans `lockBeforeSleep` : le pont signale lui-même le réveil
-    (`PrepareForSleep(false)` → ligne `resumed`) ; test du délai rendu indépendant de la demande en cours ;
-  - `ready` faux dès que l'inhibiteur manquait (refus, logind relancé) : une dalle coupée n'était plus rallumée à l'ouverture.
-    `ready` = état du capot connu d'UPower ; sans inhibiteur, logind applique aussi sa politique (la même par défaut) ;
-  - pont : une ligne seulement quand l'état change (avant : à chaque propriété UPower, secteur compris) ;
-  - doc corrigée (ma passe 1 promettait l'inverse du code) : rouvrir un capot vu fermé rallume la dalle interne, y compris
-    une dalle que tu avais éteinte avant de fermer ; capot ouvert, rien n'est rallumé ; commentaires de `Compositor.qml` en français ;
-  - non retenus : délai non gardé au rechargement QML, nouvelle demande toutes les 30 s tant que la veille échoue (comme
-    logind), miroir Hyprland (l'externe garde la session, conforme à ta politique).
-  - **Trouvé sur le bureau réel** (rechargement à 23:15:55) : `PersistentProperties` ne transmet pas un objet JS d'un moteur à
-    l'autre (« JSValue can't be reassigned to another engine ») : après **tout rechargement à chaud**, les règles des dalles
-    coupées étaient `undefined`, réouverture du capot en TypeError (dalle jamais rallumée), `lid state` vide. Présent depuis
-    le commit d'origine. Règles gardées en chaîne JSON (`disabledRules`) ; `test-lid.py` fait un vrai rechargement à chaud :
-    20 contrôles OK, code précédent : avertissement et TypeError reproduits.
-  - Tests : `test-lid.py` 20 OK, `test-lid-bridge.py` 14 OK (code de la passe 1 : 6 et 3 échecs) ; banc Sway : démarrage sans
-    avertissement nouveau.
-  - **Bureau réel** : il tourne avec le code de la passe 2 (rechargé à 23:15:55, PID 1909), sans risque pour la dalle
-    (capot fermé avec externe : règles recréées ; le TypeError ne touche que `lid state` et l'ouverture après veille, sans dalle
-    à rallumer). La surveillance des fichiers de l'instance ne couvre que la racine du dépôt : copie et `touch shell.qml` sans
-    effet. **À faire** : `$mod+Ctrl+W`, puis `scripts/ipc.sh lid state` (doit répondre, champ `holdoff`).
+- Cahier des charges (ton choix) : capot fermé sans écran externe → veille, sur secteur comme batterie ; avec un externe (USB-C,
+  dock, HDMI) → dalle éteinte, session sur les externes ; retrait du dernier externe capot fermé → veille.
+- **Version native** (ta décision, après une première version de Codex : pont Python UPower/logind, `Lid.qml`, lecture des
+  sorties, règles de restauration, ~600 lignes avec tests, 32 Mo de Python en permanence, et 4 défauts réels trouvés en revue,
+  dont des règles perdues à chaque rechargement à chaud) :
+  - veille : logind par défaut (`/etc/systemd/logind.conf` inchangé) ; verrouillage avant veille : `Idle.qml`, inchangé ;
+  - dalle : `bindswitch` Sway et `hl.bind("switch:on|off:Lid Switch")` Hyprland dans les fichiers machine du laptop, comme
+    prévu dès le départ par `ARCHITECTURE.md` § 3.1 ; Hyprland relit l'état du capot au chargement (reload du réveil) ;
+  - seul code : un `systemd-inhibit --what=handle-lid-switch` dans `Idle.qml` tant qu'un externe est actif (8 lignes). Raison
+    mesurée sur ce laptop : écran en veille DPMS → connecteur `disabled` dans sysfs, donc logind ne verrait plus l'externe.
+- Validé : `Hyprland --verify-config`, `sway --validate` (commande liée avec la description entre guillemets), liaisons chargées
+  par ta session Hyprland (`hyprctl binds`), vérification jetable de l'inhibiteur (externe, veille DPMS, dalle éteinte,
+  retrait, reprise après arrêt), `test-sleep.py` OK, `test-outputs.sh sway` 0 échec, banc Sway sans avertissement.
+  `test-idle-lock.py` échoue sur un avertissement de portail, **déjà avant** le travail du capot (environnement).
+- Règles : `CLAUDE.md` règle 6 « Natif d'abord, code minimal » (proposer avant de s'écarter d'une solution documentée ou
+  d'ajouter un processus, un script ou un protocole maison) ; la revue en boucle juge aussi l'altitude (`DEVELOPMENT.md`).
+- **À faire** : `$mod+Ctrl+W` (l'instance actuelle tourne encore avec l'ancien `Lid.qml` en mémoire ; sa surveillance des
+  fichiers ne couvrait plus que la racine du dépôt). Puis tester à la main, sous Hyprland et Sway, sur secteur et batterie :
+  fermer sans externe (veille, verrouillé au réveil) ; fermer avec HDMI puis USB-C (dalle éteinte, pas de veille, y compris
+  après l'extinction des écrans par la veille) ; débrancher le dernier externe capot fermé (veille) ; rouvrir (dalle rallumée,
+  échelle 1) ; réveil capot fermé avec externe sous Hyprland (dalle reste éteinte). `systemd-inhibit --list` : verrou
+  `handle-lid-switch` seulement avec un externe actif. L'écran de connexion reprend les liaisons Sway à la prochaine mise à
+  jour de sa copie système (`install.sh`, étape système).
