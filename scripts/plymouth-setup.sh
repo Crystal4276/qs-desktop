@@ -3,11 +3,19 @@
 # commande système passe par sudo. Idempotent ; repris par install.sh (étape système).
 #
 # Usage : plymouth-setup.sh [--dry-run] install     thème (version committée) dans /usr/share/plymouth/themes, thème par défaut,
-#                                                  hook `plymouth` dans l'initramfs, `splash` dans GRUB, passage au greeter
-#                                                  (surcharges de plymouth-quit-wait et plymouth-quit), initramfs et GRUB refaits
-#         plymouth-setup.sh [--dry-run] uninstall   chaque changement défait (hook, splash, thème précédent, surcharges, thème)
+#                                                  hook `plymouth` dans l'initramfs, `splash` sur la ligne de commande du noyau,
+#                                                  passage au greeter (surcharges de plymouth-quit-wait et plymouth-quit) ;
+#                                                  UKI : image de secours sans Plymouth par noyau ; initramfs (et GRUB) refaits
+#         plymouth-setup.sh [--dry-run] uninstall   chaque changement défait (hook, splash, secours, thème précédent, surcharges,
+#                                                  thème)
 #         plymouth-setup.sh status                  état de chaque élément
 #         --dry-run : affiche les commandes sans rien modifier.
+# Deux modes de démarrage (docs/PLYMOUTH.md, « Intégration système ») :
+# - UKI (archinstall « Unified kernel images ») : un preset de mkinitcpio porte default_uki= ; la ligne de commande est intégrée
+#   à l'UKI (/etc/kernel/cmdline + /etc/cmdline.d) ; le chargeur (GRUB et /etc/grub.d/15_uki, systemd-boot) la lance tel quel.
+#   GRUB n'est pas touché.
+# - GRUB classique (initramfs à part) : `splash` dans GRUB_CMDLINE_LINUX_DEFAULT, grub.cfg refait.
+# Les mises à jour du noyau, de plymouth ou de systemd refont les images par le hook pacman de mkinitcpio, avec ces réglages.
 # Retour arrière à la main (machine qui ne démarre plus) : docs/ROLLBACK.md, section Plymouth.
 set -euo pipefail
 
@@ -15,10 +23,18 @@ repo="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
 theme=qs-corelab
 dest=/usr/share/plymouth/themes/$theme
 var=/var/lib/qs-desktop/plymouth
-state="$var/state"            # ce qui a été ajouté par nous (défait par uninstall) : hooks=<fichier>, splash=1, previous-theme=<nom>,
-                              # ou plymouthd-conf=<copie> (fichier d'origine sans thème explicite, remis tel quel ; « - » : absent)
+state="$var/state"            # ce qui a été ajouté par nous (défait par uninstall) : hooks=<fichier>, splash=1 (GRUB),
+                              # cmdline=<fichier de /etc/cmdline.d>, rescue=<preset>, previous-theme=<nom>, ou
+                              # plymouthd-conf=<copie> (fichier d'origine sans thème explicite, remis tel quel ; « - » : absent)
 conf=/etc/plymouth/plymouthd.conf
 grub=/etc/default/grub
+presets_dir=/etc/mkinitcpio.d
+dropin=/etc/cmdline.d/qs-corelab.conf
+# Image de secours (UKI) : preset « rescue » ajouté à chaque preset UKI, sans le hook plymouth (phrase de passe LUKS en mode
+# texte). Titre propre dans le menu (GRUB : PRETTY_NAME de l'os-release intégré, $var/os-release-rescue-<noyau>). Nom
+# <image>~rescue.efi : GRUB range les UKI par nom décroissant (filevercmp, « ~ » avant la fin du nom), chaque secours
+# juste sous son image normale ; la première entrée (par défaut) reste une image normale. Lignes repérées par $mark.
+mark="# qs-corelab : image de secours sans Plymouth (scripts/plymouth-setup.sh)"
 dropins=(
     "dotfiles/plymouth/plymouth-quit-wait.conf /etc/systemd/system/plymouth-quit-wait.service.d/qs-corelab.conf"
     "dotfiles/plymouth/plymouth-quit.conf /etc/systemd/system/plymouth-quit.service.d/qs-corelab.conf"
@@ -64,6 +80,117 @@ set_theme() {   # <nom> | --reset
     elif [[ "$1" == --reset ]]; then run sed -i '/^Theme=/d' "$conf"
     else run sed -i "s/^Theme=.*/Theme=$1/" "$conf"; fi
 }
+
+noted_all() { [[ -f "$state" ]] && grep "^$1=" "$state" | cut -d= -f2- || true; }
+unnote() { run sed -i "\\|^$1=$2\$|d" "$state"; }
+
+# --- Mode UKI ---------------------------------------------------------------------------------------------------------
+
+uki_presets() { grep -lE '^default_uki=' "$presets_dir"/*.preset 2>/dev/null || true; }
+preset_value() { bash -c 'source "$1" && printf %s "${!2}"' _ "$1" "$2"; }   # $1 = preset, $2 = variable
+
+# Fichiers de la ligne de commande intégrée par mkinitcpio (sans --cmdline) : /etc/kernel/cmdline (sinon
+# /usr/lib/kernel/cmdline), puis /etc/cmdline.d/*.conf. Aucun : mkinitcpio reprend /proc/cmdline (refusé ici).
+cmdline_files() {
+    local f
+    for f in /etc/kernel/cmdline /usr/lib/kernel/cmdline; do [[ -f "$f" ]] && { echo "$f"; break; }; done
+    find /etc/cmdline.d -xtype f -name '*.conf' 2>/dev/null | LC_ALL=C sort -V
+}
+cmdline_splash() {
+    local files
+    mapfile -t files < <(cmdline_files)
+    (( ${#files[@]} )) && grep -h -- '^[^#]' "${files[@]}" | grep -qw splash
+}
+
+# Vérifications du mode UKI, avant tout changement.
+check_uki() {
+    local p
+    if grep -qE '^(ALL|[a-z]+)_cmdline=' $(uki_presets); then
+        echo "! un preset de $presets_dir fixe sa propre ligne de commande (*_cmdline=) : ajouter « splash » à la main ; rien n'est modifié." >&2
+        exit 1
+    fi
+    if [[ -z "$(cmdline_files)" ]]; then
+        echo "! UKI sans /etc/kernel/cmdline ni /etc/cmdline.d : mkinitcpio reprendrait /proc/cmdline ; rien n'est modifié." >&2
+        exit 1
+    fi
+    for p in $(uki_presets); do
+        grep -qxF "$mark" "$p" && continue
+        grep -qE "^PRESETS=\([^)]*\)[[:space:]]*$" "$p" && ! grep -qE "^rescue_|'rescue'" "$p" \
+            || { echo "! $p : PRESETS=( … ) sur une ligne attendu, sans preset « rescue » ; rien n'est modifié." >&2; exit 1; }
+    done
+}
+
+# Os-release intégré à l'image de secours d'un preset : seul son PRETTY_NAME change (titre de l'entrée du menu).
+osrel_of() { echo "$var/os-release-rescue-$(basename "$1" .preset)"; }
+rescue_osrel() {   # $1 = preset
+    local kernel src=/etc/os-release tmp out
+    kernel="$(basename "$1" .preset)" out="$(osrel_of "$1")"
+    [[ -f "$src" ]] || src=/usr/lib/os-release
+    tmp="$(mktemp)"
+    sed -E "s/^PRETTY_NAME=.*/PRETTY_NAME=\"Arch Linux ($kernel rescue, no splash)\"/" "$src" >"$tmp"
+    grep -q '^PRETTY_NAME=' "$tmp" || echo "PRETTY_NAME=\"Arch Linux ($kernel rescue, no splash)\"" >>"$tmp"
+    if cmp -s "$tmp" "$out"; then rm -f "$tmp"; return; fi
+    rebuild initramfs
+    run install -D -m 644 "$tmp" "$out"
+    rm -f "$tmp"
+}
+
+install_uki() {
+    local p uki
+    if cmdline_splash; then
+        echo "= splash dans la ligne de commande du noyau ($(cmdline_files | tr '\n' ' '))"
+    else
+        rebuild initramfs
+        [[ -n "$(noted cmdline)" ]] || note cmdline "$dropin"
+        run install -D -m 644 /dev/stdin "$dropin" <<<"splash"
+    fi
+    for p in $(uki_presets); do
+        rescue_osrel "$p"
+        if grep -qxF "$mark" "$p"; then
+            echo "= image de secours sans Plymouth dans $p"
+            continue
+        fi
+        uki="$(preset_value "$p" default_uki)"
+        rebuild initramfs
+        keep_original "$p"
+        [[ -n "$(noted_all rescue | grep -xF "$p")" ]] || note rescue "$p"
+        run sed -i -E "s/^PRESETS=\(([^)]*)\)/PRESETS=(\1 'rescue')/" "$p"
+        # Dernière ligne sans saut de ligne : ajouté d'abord (le bloc se collerait sinon à la ligne précédente).
+        run sh -c "[ -z \"\$(tail -c 1 '$p')\" ] || echo >> '$p'; printf '%s\n%s\n%s\n' '$mark' 'rescue_uki=\"${uki%.efi}~rescue.efi\"' 'rescue_options=(-S plymouth --osrelease $(osrel_of "$p"))' >> '$p'"
+    done
+    # Reprise : « splash » ajouté dans GRUB par une version précédente, sans effet sur une UKI ; défait sans grub-mkconfig.
+    if [[ -n "$(noted splash)" ]]; then
+        has_splash && run sed -i -E '/^GRUB_CMDLINE_LINUX_DEFAULT="/{s/ splash\b//;s/"splash /"/;s/"splash"/""/}' "$grub"
+        unnote splash 1
+    fi
+}
+
+uninstall_uki() {
+    local p uki
+    for p in $(noted_all rescue); do
+        if [[ -f "$p" ]] && grep -qxF "$mark" "$p"; then
+            uki="$(preset_value "$p" rescue_uki)"
+            rebuild initramfs
+            run sed -i -e "\\|^$mark\$|d" -e '/^rescue_uki=/d' -e '/^rescue_options=/d' \
+                -e "s/^PRESETS=(\(.*\) 'rescue')/PRESETS=(\1)/" "$p"
+            [[ -n "$uki" ]] && run rm -f "$uki"
+        fi
+        [[ -f "$(osrel_of "$p")" ]] && run rm -f "$(osrel_of "$p")"
+        unnote rescue "$p"
+    done
+    if [[ -n "$(noted cmdline)" ]]; then
+        rebuild initramfs
+        run rm -f "$(noted cmdline)"
+        run rmdir --ignore-fail-on-non-empty "$(dirname "$(noted cmdline)")"
+        unnote cmdline "$(noted cmdline)"
+    fi
+    if [[ -n "$(noted splash)" ]]; then
+        has_splash && run sed -i -E '/^GRUB_CMDLINE_LINUX_DEFAULT="/{s/ splash\b//;s/"splash /"/;s/"splash"/""/}' "$grub"
+        unnote splash 1
+    fi
+}
+
+# --- Mode GRUB classique ----------------------------------------------------------------------------------------------
 
 # Chargeur : GRUB dans /boot/grub seulement (le laptop) ; autre chose → rien n'est modifié (code 3 : non pris en charge).
 # /boot (ESP en vfat, dmask=0077 par archinstall) peut être illisible en utilisateur : vérifié par sudo (un refus de sudo
@@ -119,7 +246,7 @@ install_theme() {
 do_install() {
     command -v plymouthd >/dev/null || { echo "! plymouth n'est pas installé (paquets : deps/work.txt)." >&2; [[ -n "$dry" ]] || exit 1; }
     command -v mkinitcpio >/dev/null || { echo "! mkinitcpio absent : initramfs non pris en charge ; rien n'est modifié." >&2; exit 3; }
-    check_bootloader
+    if [[ "$mode" == uki ]]; then check_uki; else check_bootloader; fi
     local hf
     hf="$(hooks_file)"
     [[ -n "$hf" ]] || { echo "! HOOKS introuvable dans /etc/mkinitcpio.conf(.d) ; rien n'est modifié." >&2; exit 1; }
@@ -160,7 +287,9 @@ do_install() {
         run sed -i -E '/^HOOKS=\(/{s/\b(block|sd-encrypt|encrypt|filesystems)\b/plymouth \1/;t;s/\)/ plymouth)/}' "$hf"
     fi
 
-    if has_splash; then
+    if [[ "$mode" == uki ]]; then
+        install_uki
+    elif has_splash; then
         echo "= splash dans $grub"
     else
         rebuild bootloader
@@ -181,7 +310,9 @@ do_uninstall() {
         rebuild initramfs
         run sed -i -E '/^HOOKS=\(/{s/\bplymouth //;s/ plymouth\)/)/}' "$hf"
     fi
-    if [[ -n "$(noted splash)" ]] && has_splash; then
+    if [[ "$mode" == uki ]]; then
+        uninstall_uki
+    elif [[ -n "$(noted splash)" ]] && has_splash; then
         rebuild bootloader
         run sed -i -E '/^GRUB_CMDLINE_LINUX_DEFAULT="/{s/ splash\b//;s/"splash /"/;s/"splash"/""/}' "$grub"
     fi
@@ -226,8 +357,9 @@ rebuild() {   # initramfs | bootloader
 
 pending() {
     [[ -f "$var/rebuild" ]] || return 0
-    echo "! initramfs et GRUB non refaits au dernier passage : refaits maintenant"
-    initramfs=1 bootloader=1
+    echo "! initramfs (et GRUB) non refaits au dernier passage : refaits maintenant"
+    initramfs=1
+    [[ "$mode" == uki ]] || bootloader=1
 }
 
 finish() {
@@ -245,7 +377,20 @@ do_status() {
     echo "thème par défaut    : $(theme_now || true)"
     [[ -f "$var/rebuild" ]] && echo "! initramfs et GRUB à refaire (passage interrompu) : relancer install ou uninstall"
     echo "hook plymouth       : $([[ -n "$hf" ]] && has_hook "$hf" && echo "oui ($hf)" || echo non)"
-    echo "splash (GRUB)       : $([[ -f "$grub" ]] && has_splash && echo oui || echo non) ; noyau en cours : $(grep -qw splash /proc/cmdline && echo splash || echo 'sans splash')"
+    local running
+    running="$(grep -qw splash /proc/cmdline && echo splash || echo 'sans splash')"
+    if [[ "$mode" == uki ]]; then
+        echo "démarrage           : UKI ($(uki_presets | tr '\n' ' '))"
+        echo "splash (UKI)        : $(cmdline_splash && echo oui || echo non) ($(cmdline_files | tr '\n' ' ')) ; noyau en cours : $running"
+        local p
+        for p in $(uki_presets); do
+            echo "image de secours    : $(grep -qxF "$mark" "$p" && echo "oui ($(preset_value "$p" rescue_uki))" || echo non) ($p)"
+        done
+        [[ -f "$grub" ]] && has_splash && echo "splash (GRUB)       : oui, sans effet sur une UKI"
+    else
+        echo "démarrage           : GRUB classique"
+        echo "splash (GRUB)       : $([[ -f "$grub" ]] && has_splash && echo oui || echo non) ; noyau en cours : $running"
+    fi
     local entry src target
     for entry in "${dropins[@]}"; do
         read -r src target <<<"$entry"
@@ -255,9 +400,11 @@ do_status() {
 }
 
 [[ "${1:-}" == --dry-run ]] && { dry=1; shift; }
+mode=grub
+[[ -z "$(uki_presets)" ]] || mode=uki
 case "${1:-}" in
     install) do_install ;;
     uninstall) do_uninstall ;;
     status) do_status ;;
-    *) sed -n '5,11p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 2 ;;
+    *) sed -n '5,12p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 2 ;;
 esac

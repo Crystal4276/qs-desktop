@@ -227,6 +227,18 @@ machine passe en jeux, et par `--uninstall`). Détail et retour arrière : `docs
 aux originaux et initramfs de nouveau à l'octet près. Pas de `preview` dans le script (un aperçu prendrait l'écran au bureau) :
 aperçu en VM (`docs/DEVELOPMENT.md`). Proposition d'origine ci-dessous, pour mémoire.
 
+**Deux modes de démarrage (2026-11-11)**. Le laptop ne démarre pas comme la VM de l'étape 4 : archinstall l'a installé en
+**GRUB + UKI** (`/etc/grub.d/15_uki`, `10_linux` désactivé ; presets `default_uki=`, sans image `fallback`). La ligne de
+commande du noyau y est intégrée à l'image (`/etc/kernel/cmdline`, `/etc/cmdline.d`) : `splash` dans `/etc/default/grub` et
+`grub-mkconfig` n'y servaient à rien, et la procédure de secours « GRUB `e`, retirer `splash` » n'existe pas (pas de ligne
+`linux`). En mode UKI, le script ne touche plus GRUB, garantit `splash` par `/etc/cmdline.d/qs-corelab.conf` s'il manque, et
+ajoute à chaque preset une image de secours sans le hook `plymouth` (`rescue_options=(-S plymouth --osrelease …)`, titre
+« Arch Linux (<noyau> rescue, no splash) », nom `<image>~rescue.efi` : GRUB trie par nom décroissant avec `filevercmp`, le
+`~` range chaque secours sous son image normale et la première entrée reste normale). Mode GRUB classique inchangé.
+Vérifié dans une VM chiffrée au format du laptop (`docs/DEVELOPMENT.md`, « VM UKI ») : reprise de l'état laissé par l'ancienne
+version, menu, entrée normale (thème), entrée de secours (phrase en texte, démarrage complet), mise à jour simulée du noyau
+(les deux images refaites), retrait (fichiers identiques aux originaux, menu d'origine).
+
 ### Intégration système (proposition d'origine)
 
 - **Initramfs** (`/etc/mkinitcpio.conf`) : hook `plymouth` à sa place (après `systemd` ou `udev`, avant `sd-encrypt` ou

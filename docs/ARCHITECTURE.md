@@ -607,7 +607,11 @@ Avant l'écran de connexion, sur les machines au profil travail : thème Plymout
 
 - **Thème** : plugin `script` ; images préparées par `scripts/plymouth-assets.py` (un jeu par échelle, anneaux découpés en arcs ;
   données dans le bloc généré du script). Plusieurs écrans : une seule scène (contrainte de Plymouth), à l'échelle de l'écran 1440p.
-- **Installation** : `scripts/plymouth-setup.sh` (étape système d'`install.sh`) : hook de l'initramfs, `splash` dans GRUB.
+- **Installation** : `scripts/plymouth-setup.sh` (étape système d'`install.sh`) : hook de l'initramfs et `splash`. Deux modes :
+  **UKI** (archinstall, le laptop : ligne de commande intégrée à l'image, `/etc/kernel/cmdline` + `/etc/cmdline.d`, GRUB non
+  touché, image de secours sans Plymouth par noyau, `<image>~rescue.efi`) et **GRUB classique** (`splash` dans
+  `/etc/default/grub`, `grub-mkconfig`). Mises à jour du noyau : le hook pacman de mkinitcpio refait les images ; machine
+  GRUB + UKI : hook `90-qs-grub-uki.hook` (garde `10_linux` désactivé). Détail : `docs/ROLLBACK.md`.
 - **Passage au greeter** : greetd attend `plymouth-quit-wait.service`, surchargé pour jouer la sortie du thème (statut
   `qs-corelab-exit`, 3,4 s) puis `plymouth deactivate` (image crust gardée) ; `plymouth-quit.service` ne quitte qu'après greetd.
   Le Sway du greeter part sur fond noir (~1 s, pas de `swaybg` : accepté).

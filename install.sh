@@ -272,7 +272,7 @@ ask_system() {
     [[ "$profile" == jeux ]] && echo "  dépôt multilib (Steam, jeux 32 bits),"
     echo "  écran de connexion greetd + greeter Quickshell, Samba, services (réseau, Bluetooth, énergie, VM), groupes, thème Qt,"
     echo "  extensions de Chromium, thème de Thunderbird, sonde de connectivité NetworkManager, mesures GPU Intel (s'il y en a un)."
-    [[ "$profile" == travail ]] && echo "  écran de démarrage Plymouth Core Lab (initramfs, GRUB : docs/PLYMOUTH.md)."
+    [[ "$profile" == travail ]] && echo "  écran de démarrage Plymouth Core Lab (initramfs, ligne de commande du noyau, image de secours : docs/PLYMOUTH.md)."
     ask "Faire ces étapes système ?" oui || { system=""; echo "- étapes système non faites (relancer install.sh pour les faire)"; }
 }
 
@@ -1123,7 +1123,7 @@ greeter_wallpaper() {
 plymouth_installed() { [[ -f /var/lib/qs-desktop/plymouth/state || -d /usr/share/plymouth/themes/qs-corelab ]]; }
 step_plymouth() {
     if [[ "$profile" == travail ]]; then
-        echo "Écran de démarrage Plymouth Core Lab (thème, hook de l'initramfs, splash dans GRUB, passage au greeter)"
+        echo "Écran de démarrage Plymouth Core Lab (thème, hook de l'initramfs, splash, image de secours, passage au greeter)"
         sub --unsupported-ok "$repo/scripts/plymouth-setup.sh" ${dry:+--dry-run} install
     elif plymouth_installed; then
         echo "Écran de démarrage Plymouth retiré (profil jeux)"
