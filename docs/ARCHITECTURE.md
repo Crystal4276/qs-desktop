@@ -461,6 +461,21 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
   `PrepareForSleep` suivi aussi pour le `reload` du réveil. Cette attente ne garantit pas le verrouillage si le shell est figé ou si le verrou est refusé.
 - Animation `fadeDpms` coupée dans la config Hyprland (rallumage lent sinon). IPC de test : `idle state`.
 
+### 7.13.1 Capot (`services/Lid.qml`)
+
+- `scripts/lid-state.py` suit `LidIsPresent` / `LidIsClosed` de UPower (état initial et PropertiesChanged) et tient le FD
+  `handle-lid-switch` de logind. Flux JSON `{ready,present,closed}` vers Quickshell ; sans capot, aucun inhibiteur.
+  Fin du pont / de Quickshell : FD libéré, logind reprend ses réglages. Relance à 5 s ; `QS_TEST=1` coupe le pont réel.
+- Après stabilisation 500 ms, `Compositor.requestConnectedOutputs()` lit toutes les sorties (`get_outputs` / `monitors all`),
+  y compris désactivées ou en miroir ; DPMS indépendant. Sorties virtuelles exclues, connecteurs eDP/LVDS/DSI internes.
+  Échec de lecture : aucune décision sur un faux ensemble vide, nouvel essai à 5 s. Pas de scrutation au repos.
+- Capot fermé sans externe : `Session.suspend()`, verrouillage par Idle existant ; retrait du dernier externe : même règle,
+  secteur comme batterie. Vidéo et « garder l’écran allumé » ne remplacent pas cette politique mécanique.
+- Avec externe : dalle désactivée (Sway `disable`, Hyprland `hl.monitor` avec `disabled=true`), espaces repris par Outputs.
+  Réouverture : seules les dalles désactivées par Lid sont restaurées ; règle géométrique retenue au rechargement QML.
+  Après plantage complet, une dalle interne encore désactivée est rétablie via la config native (reload sous Hyprland).
+  Réévaluation après réveil / reconfiguration. `lid state` expose l’état et la dernière lecture des sorties.
+
 ### 7.14 Agent polkit (`services/Polkit.qml`, `modules/polkit/`)
 
 - `PolkitAgent` ; fenêtre `OverlayPopup` centrée sur l'écran focalisé : icône, message (texte brut), champ, erreur, Cancel /

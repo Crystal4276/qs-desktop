@@ -109,6 +109,11 @@ verrouillage).
 - `python scripts/test-idle-lock.py` : IdleMonitor, verrou Wayland et DPMS réels sur Sway headless ; politiques laptop/desktop,
   confirmation tardive, annulation, refus, inhibitions Wayland/D-Bus et délai désactivé. Aucun verrouillage de la vraie session.
 
+- `python3 scripts/test-lid.py` : vrai service Lid, bus privé et source capot / sorties / suspension factices ; fermeture,
+  externes multiples et désactivés, réouverture, retrait du dernier, erreurs et restauration après perte d’état.
+- `python3 scripts/test-lid-bridge.py` : vrais proxies et échange de FD sur bus privé avec faux UPower / logind ;
+  aucun accès matériel, aucune inhibition de la machine réelle.
+
 ## VM d'installation (`install.sh` sur une machine neuve)
 
 Image officielle Arch « basic » (`geo.mirror.pkgbuild.com/images/latest/`, empreinte `.SHA256` vérifiée ; compte `arch` / `arch`,
