@@ -1,0 +1,13 @@
+# GRUB + UKI (archinstall « Unified kernel images ») : /etc/grub.d/15_uki lance les UKI, 10_linux est désactivé (ses entrées
+# n'auraient pas d'initramfs). Le paquet grub le livre exécutable : chaque mise à jour le réactive, et le grub-mkconfig suivant
+# mettrait en tête du menu des entrées qui ne démarrent pas. Posé par scripts/system-setup.sh (docs/ROLLBACK.md).
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Type = Path
+Target = etc/grub.d/10_linux
+
+[Action]
+Description = Keeping GRUB's 10_linux disabled (unified kernel images, /etc/grub.d/15_uki)
+When = PostTransaction
+Exec = /usr/bin/sh -c '[ ! -e /etc/grub.d/15_uki ] || chmod a-x /etc/grub.d/10_linux'

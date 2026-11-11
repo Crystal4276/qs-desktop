@@ -5,7 +5,8 @@
 # Usage : system-setup.sh [--dry-run] multilib    active le dépôt [multilib] de /etc/pacman.conf (Steam, lib32) ; pas de -Sy ici
 #         system-setup.sh [--dry-run] install     Samba (partages utilisateur, dotfiles/samba/smb.conf), QT_QPA_PLATFORMTHEME dans
 #                                                 /etc/environment, groupes (libvirt, kvm, sambashare), services (réseau, Bluetooth,
-#                                                 profils d'énergie, Samba, libvirt), réseau « default » des VM démarré au boot
+#                                                 profils d'énergie, Samba, libvirt), réseau « default » des VM démarré au boot,
+#                                                 hook pacman gardant 10_linux de GRUB désactivé (machine GRUB + UKI)
 #         system-setup.sh [--dry-run] cursor      curseur du thème copié pour l'écran de connexion (/usr/local/share/icons)
 #         system-setup.sh [--dry-run] chromium-extensions
 #                                                 extensions de Chromium (dotfiles/chromium/extensions.txt), installées depuis le
@@ -231,6 +232,13 @@ do_install() {
         backup_once /etc/environment
         # Dernière ligne sans saut de ligne : ajouté d'abord (sinon la variable se collerait à la précédente).
         run sh -c "[ ! -s /etc/environment ] || [ -z \"\$(tail -c 1 /etc/environment)\" ] || echo >> /etc/environment; echo 'QT_QPA_PLATFORMTHEME=qt6ct' >> /etc/environment"
+    fi
+
+    # GRUB + UKI (archinstall) : 10_linux désactivé, que chaque mise à jour du paquet grub réactive ; un hook pacman le
+    # désactive à nouveau (dotfiles/pacman/hooks/90-qs-grub-uki.hook). Machine dans cet état seulement.
+    if [[ -f /etc/grub.d/15_uki && -f /etc/grub.d/10_linux && ! -x /etc/grub.d/10_linux ]] \
+        || [[ -f /etc/pacman.d/hooks/90-qs-grub-uki.hook ]]; then
+        install_file dotfiles/pacman/hooks/90-qs-grub-uki.hook /etc/pacman.d/hooks/90-qs-grub-uki.hook
     fi
 
     getent group libvirt >/dev/null && add_group libvirt

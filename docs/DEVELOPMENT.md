@@ -160,6 +160,23 @@ et `cryptdevice=UUID=…:root` (choix d'archinstall 4.5). Comptes de test : `arc
   démarrage, `plymouth-quit.service` masqué et greetd désactivé **dans l'overlay d'essai seulement** (à recréer depuis
   `plymouth-luks-desktop.qcow2` pour revenir à zéro).
 
+## VM UKI (démarrage du laptop : GRUB + UKI, LUKS)
+
+Construite sur le laptop (2026-11-11) pour `plymouth-setup.sh` en mode UKI, dans `~/.cache/qs-desktop-vm/uki/` (hors dépôt).
+- `install-vm.sh`, lancé par SSH dans la session live de l'ISO (clé de root par `cidata.iso`, cloud-init) : GPT, ESP en `/boot`
+  (`dmask=0077` comme archinstall), racine LUKS (phrase `corelab`, argon2id 1 s), `pacstrap` (`linux`, `linux-lts`, `grub`,
+  `plymouth`, `binutils` pour l'assemblage des UKI…), puis **les fichiers du laptop** (`files/` : presets `default_uki`,
+  `HOOKS`, `/etc/default/grub` d'origine, `15_uki`) ; `10_linux` en 644, `grub-install --removable`, compte `arch` (sudo sans
+  mot de passe), thème `spinner` comme avant le 2026-11-11.
+- Couches en lecture seule : `base.qcow2` (installation) → `laptop-state.qcow2` (ancienne version de `plymouth-setup.sh`
+  appliquée, comme le laptop ce jour-là) → essais sur un overlay jetable.
+- `vm.sh start <disque> [iso]` (VNC 127.0.0.1:17, SSH 127.0.0.1:2224, QMP), `shot`, `type corelab`, `key down|ret…`, `ssh`,
+  `wait-ssh`, `stop`. Le menu GRUB reste 5 s : capturer dès que la ligne du haut s'allume.
+- **Piège** : QEMU sans `-serial none` → systemd-stub ajoute `console=uart,io,0x3f8` à la ligne de commande d'une UKI, et
+  Plymouth passe en mode texte (le laptop n'est pas concerné). La police Inter n'est pas installée dans cette VM : texte de
+  la demande en police de secours.
+- Contenu d'une UKI : `objcopy -O binary --only-section=.initrd|.cmdline|.osrel <image>.efi <fichier>`, puis `lsinitcpio`.
+
 ## Pièges connus
 
 **Moteur JavaScript de Qt 6 / QML**

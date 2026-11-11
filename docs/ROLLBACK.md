@@ -102,31 +102,59 @@ Journal de l'écran de connexion : `journalctl -b -u greetd` (greetd, PAM) ; Qui
 
 ## Écran de démarrage Plymouth (profil travail, `docs/PLYMOUTH.md`)
 
-`scripts/plymouth-setup.sh install` (étape système d'`install.sh`, profil travail seulement) :
+`scripts/plymouth-setup.sh install` (étape système d'`install.sh`, profil travail seulement). Le script reconnaît deux modes de
+démarrage (`plymouth-setup.sh status`, ligne « démarrage ») :
 
-| Changement | Défait par `uninstall` |
-|---|---|
-| Thème dans `/usr/share/plymouth/themes/qs-corelab` (version committée) | retiré |
-| Thème par défaut `qs-corelab` (`/etc/plymouth/plymouthd.conf`) | fichier d'origine remis, ou thème précédent |
-| Hook `plymouth` avant `block` / `encrypt` dans `HOOKS` (`/etc/mkinitcpio.conf` ou `.conf.d`) | mot retiré |
-| `splash` dans `GRUB_CMDLINE_LINUX_DEFAULT` (`/etc/default/grub`) | mot retiré |
-| Surcharges `/etc/systemd/system/plymouth-quit-wait.service.d/qs-corelab.conf` et `plymouth-quit.service.d/qs-corelab.conf` | retirées |
-| Initramfs (`mkinitcpio -P`) et `/boot/grub/grub.cfg` (`grub-mkconfig`) refaits | refaits |
+- **UKI** (archinstall « Unified kernel images », le laptop) : un preset de `/etc/mkinitcpio.d` porte `default_uki=` ; GRUB
+  (`/etc/grub.d/15_uki`) ou systemd-boot lance l'image telle quelle, ligne de commande du noyau comprise (intégrée depuis
+  `/etc/kernel/cmdline` et `/etc/cmdline.d/*.conf`). GRUB n'est pas touché.
+- **GRUB classique** (initramfs à part, `/etc/grub.d/10_linux`) : la VM de l'étape 4.
+
+| Changement | Mode | Défait par `uninstall` |
+|---|---|---|
+| Thème dans `/usr/share/plymouth/themes/qs-corelab` (version committée) | les deux | retiré |
+| Thème par défaut `qs-corelab` (`/etc/plymouth/plymouthd.conf`) | les deux | fichier d'origine remis, ou thème précédent |
+| Hook `plymouth` avant `block` / `encrypt` dans `HOOKS` (`/etc/mkinitcpio.conf` ou `.conf.d`) | les deux | mot retiré |
+| Surcharges `/etc/systemd/system/plymouth-quit-wait.service.d/qs-corelab.conf` et `plymouth-quit.service.d/qs-corelab.conf` | les deux | retirées |
+| `splash` : `/etc/cmdline.d/qs-corelab.conf`, seulement s'il manque à la ligne de commande | UKI | fichier retiré |
+| **Image de secours sans Plymouth** par noyau : preset `rescue` ajouté (`-S plymouth`), `<image>~rescue.efi` | UKI | preset remis, image retirée |
+| `splash` dans `GRUB_CMDLINE_LINUX_DEFAULT` (`/etc/default/grub`) | GRUB | mot retiré |
+| Initramfs (`mkinitcpio -P`), et `/boot/grub/grub.cfg` (`grub-mkconfig`) en mode GRUB | — | refaits |
 
 Ce qui a été ajouté est noté dans `/var/lib/qs-desktop/plymouth/state` ; une copie d'origine de chaque fichier touché reste dans
 `/var/lib/qs-desktop/plymouth/backup/` (retour à la main). Le paquet `plymouth` n'est pas désinstallé. Une machine passée en profil
 jeux le perd au prochain `install.sh` (même retrait) ; `install.sh --uninstall` le retire aussi.
 
+**Mises à jour d'Arch** : rien à faire. Le hook pacman de mkinitcpio (`90-mkinitcpio-install.hook`) refait toutes les images
+(normales et de secours) à chaque mise à jour du noyau, de `plymouth`, de systemd, de cryptsetup ou des firmwares, avec ces
+réglages ; GRUB (`15_uki`) découvre les images au démarrage. Machine GRUB + UKI : `system-setup.sh install` pose aussi
+`/etc/pacman.d/hooks/90-qs-grub-uki.hook`, qui garde `/etc/grub.d/10_linux` désactivé : le paquet `grub` le réactive à chaque
+mise à jour, et un `grub-mkconfig` mettrait alors en tête du menu des entrées sans initramfs, qui ne démarrent pas (vérifié en VM).
+
 ```sh
 ~/qs-desktop/scripts/plymouth-setup.sh status      # état de chaque élément
-~/qs-desktop/scripts/plymouth-setup.sh uninstall   # tout défaire, initramfs et GRUB refaits
+~/qs-desktop/scripts/plymouth-setup.sh uninstall   # tout défaire, initramfs (et GRUB) refaits
 ```
 
 ### La machine ne démarre plus (écran figé, pas de demande de phrase de passe)
 
-archinstall ne crée pas d'image de secours (`fallback`) : le secours passe par GRUB.
+**Mode UKI (le laptop)** : entrée de secours.
 
-1. Au menu GRUB (touche `Échap` ou `Maj` au démarrage s'il est caché), sur l'entrée Arch Linux : `e`.
+1. Au menu GRUB (`Échap` ou `Maj` au démarrage s'il est caché), sous chaque « Arch Linux » : « Arch Linux (linux-lts rescue,
+   no splash) » (ou `linux`). Elle démarre la même machine sans Plymouth dans l'initramfs : la phrase de passe est demandée en
+   mode texte. Plymouth peut encore s'afficher une fois le disque ouvert (thème lancé depuis la racine) ; s'il gêne,
+   `Ctrl+Alt+F2` pour un TTY.
+2. Une fois connecté : `~/qs-desktop/scripts/plymouth-setup.sh uninstall`, puis `sudo reboot`.
+3. Sans entrée de secours (retrait déjà fait, ou image abîmée) : l'autre noyau (linux ↔ linux-lts) ; en dernier recours, clé
+   USB Arch, `cryptsetup open`, `arch-chroot`, puis le retrait ci-dessous.
+
+L'ordre du menu : GRUB range les UKI par nom décroissant, donc chaque secours juste sous son image normale ; la première entrée
+(par défaut) est une image normale. Les deux images normales sont toutes deux titrées « Arch Linux » : celle du haut est
+`linux-lts`, celle du bas `linux`.
+
+**Mode GRUB classique** : ligne de commande éditée au menu.
+
+1. Au menu GRUB, sur l'entrée Arch Linux : `e`.
 2. Sur la ligne `linux …`, retirer `splash` (et `quiet` pour voir les messages). `Ctrl+X` pour démarrer : sans `splash`,
    Plymouth reste en mode texte et la phrase de passe LUKS est demandée comme avant (`plymouth.enable=0` n'y fait rien : le
    hook de l'initramfs lance `plymouthd` sans le lire).
@@ -134,9 +162,10 @@ archinstall ne crée pas d'image de secours (`fallback`) : le secours passe par 
    puis `sudo reboot`.
 
 À la main, sans le script : remettre les copies de `/var/lib/qs-desktop/plymouth/backup/` (`etc_mkinitcpio.conf.bak-*` →
-`/etc/mkinitcpio.conf`, `etc_default_grub.bak-*` → `/etc/default/grub`, `etc_plymouth_plymouthd.conf.bak-*` →
-`/etc/plymouth/plymouthd.conf`), supprimer les deux surcharges, puis `sudo systemctl daemon-reload && sudo mkinitcpio -P &&
-sudo grub-mkconfig -o /boot/grub/grub.cfg`.
+`/etc/mkinitcpio.conf`, `etc_mkinitcpio.d_<noyau>.preset.bak-*` → `/etc/mkinitcpio.d/<noyau>.preset`, `etc_default_grub.bak-*` →
+`/etc/default/grub`, `etc_plymouth_plymouthd.conf.bak-*` → `/etc/plymouth/plymouthd.conf`), supprimer les deux surcharges et
+`/etc/cmdline.d/qs-corelab.conf` s'il existe, puis `sudo systemctl daemon-reload && sudo mkinitcpio -P` ; en mode GRUB classique
+seulement, `sudo grub-mkconfig -o /boot/grub/grub.cfg` ; en mode UKI, `sudo rm /boot/EFI/Linux/*~rescue.efi`.
 
 L'écran de connexion n'apparaît pas après l'écran de démarrage : `systemctl status plymouth-quit-wait plymouth-quit greetd` ;
 `sudo plymouth quit` libère l'écran si Plymouth est resté actif.

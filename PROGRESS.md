@@ -740,3 +740,55 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
   passage, hors du test « sans changement ») ; l'import réel se teste sur une copie de profil. `test-install.py` : 0 échec.
 - Laptop (2026-11-11) : `./install.sh` → « = Stylus : 139 styles relus (139 dans le profil) ». **Reste à vérifier à l'œil** :
   un site (GitHub, YouTube) en Catppuccin dans Chromium.
+
+## Plymouth — mises à jour du noyau et démarrage UKI du laptop (2026-11-11)
+
+- Question : une mise à jour du noyau défait-elle l'écran de démarrage ? Enquête (lecture seule, laptop) :
+  - **Non, rien à ajouter pour le noyau.** Le hook pacman de mkinitcpio (`90-mkinitcpio-install.hook`) refait les images à
+    chaque mise à jour de `linux`/`linux-lts`, `plymouth`, systemd, cryptsetup, firmwares, avec nos réglages (fichiers gardés
+    par pacman ou à aucun paquet). Preuve : `pacman.log` 2026-11-10 13:42, les deux images refaites avec `[plymouth]`.
+  - **Mais le laptop démarre en GRUB + UKI** (archinstall : `15_uki`, `10_linux` en 644, presets `default_uki=`, pas
+    d'image `fallback`), la VM de l'étape 4 en GRUB classique. Conséquences avec l'ancienne version du script : `splash` et
+    `grub-mkconfig` sans effet (le `splash` venait déjà de `/etc/kernel/cmdline`) ; procédure de secours de `ROLLBACK.md`
+    inapplicable (pas de ligne `linux`) ; aucun démarrage sans Plymouth possible hors clé USB.
+  - **Piège trouvé** : le paquet `grub` livre `10_linux` exécutable ; sa prochaine mise à jour le réactive, et un
+    `grub-mkconfig` mettrait en tête du menu « Arch Linux, with Linux linux-lts » avec le seul microcode pour initrd :
+    entrée par défaut incapable d'ouvrir LUKS. Reproduit en VM.
+  - Noyau `linux` 7.2.15 : il a démarré normalement le 2026-11-10 (15 h 01 → 19 h 50) ; aucun démarrage raté n'est
+    journalisé (échec avant l'ouverture du disque). Ton constat : écran noir, sans demande de phrase de passe. Cause non
+    déterminée (affichage de l'initramfs : KMS Intel ou Plymouth, alors avec `spinner`).
+- Correctifs (tes choix : image de secours par noyau, hook de garde) :
+  - `scripts/plymouth-setup.sh` : mode **UKI** détecté (preset `default_uki=`) : GRUB non touché ; `splash` garanti par
+    `/etc/cmdline.d/qs-corelab.conf` s'il manque ; **image de secours sans Plymouth** par noyau (preset `rescue`,
+    `-S plymouth`, `<image>~rescue.efi`, titre « Arch Linux (<noyau> rescue, no splash) ») ; reprise : le `splash` ajouté
+    dans GRUB le 2026-11-11 est défait sans `grub-mkconfig`. Mode GRUB classique inchangé. `status` affiche le mode.
+  - `dotfiles/pacman/hooks/90-qs-grub-uki.hook`, posé par `system-setup.sh install` sur une machine GRUB + UKI : remet
+    `10_linux` en non exécutable après chaque mise à jour de `grub`. Retiré par `--uninstall`.
+  - Docs : `ROLLBACK.md` (deux modes, entrée de secours, mises à jour), `PLYMOUTH.md`, `ARCHITECTURE.md` § 9.1, `README.md`,
+    `DEVELOPMENT.md` (« VM UKI »).
+- Vérifié dans une VM chiffrée construite au format du laptop (fichiers du laptop, `~/.cache/qs-desktop-vm/uki/`) :
+  - état du laptop reproduit (ancienne version appliquée) ; démarrage : logo Arch de systemd-stub, puis thème Core Lab et champ ;
+  - nouvelle version : reprise, images de secours construites (33 Mo chacune ; ESP 20 % sur 1 Go), second passage sans
+    changement ; contenu vérifié (`objcopy` + `lsinitcpio`) : Plymouth dans l'image normale, absent du secours ;
+  - menu GRUB : « Arch Linux » (linux-lts), « Arch Linux (linux-lts rescue, no splash) », « Arch Linux » (linux),
+    « … (linux rescue, no splash) » ; première entrée = LTS normal, thème affiché ; secours : phrase de passe en texte,
+    démarrage complet (`running`, aucune unité en échec) ;
+  - mise à jour simulée du noyau (`pacman -S linux`) : image normale et de secours refaites ;
+  - mise à jour simulée de `grub` : sans le hook, `10_linux` réactivé et entrées défectueuses générées ; avec, `10_linux`
+    reste en 644 et `grub-mkconfig` n'en génère aucune ;
+  - retrait : presets, `/etc/kernel/cmdline` et `/etc/default/grub` identiques aux originaux (sommes de contrôle), images de
+    secours et hook retirés, menu d'origine, thème `spinner` ; cas sans `splash` : fichier `cmdline.d` ajouté puis retiré.
+  - `test-install.py` : 0 échec.
+- **Pas encore appliqué au laptop** (étape système, sudo, avec ton accord) : `scripts/plymouth-setup.sh install` puis
+  `scripts/system-setup.sh install` (ou `./install.sh` en acceptant l'étape système). Changements prévus (`--dry-run`) : presets
+  `linux` et `linux-lts` (preset `rescue`), deux os-release de secours dans `/var/lib/qs-desktop/plymouth/`, `splash` retiré de
+  `/etc/default/grub`, `mkinitcpio -P`, hook `/etc/pacman.d/hooks/90-qs-grub-uki.hook`.
+- **À tester à la main sur le laptop**, ensuite :
+  1. menu GRUB : quatre entrées dans l'ordre ci-dessus ; démarrage normal → thème Core Lab, phrase de passe, greeter ;
+  2. entrée « linux-lts rescue » → phrase de passe en texte, puis greeter ;
+  3. diagnostic du noyau `linux` : entrée « linux rescue » ; la phrase en texte apparaît → c'était Plymouth avec ce noyau ;
+     écran noir → affichage du noyau 7.2.15 (pilote Intel), indépendant de nos réglages ; dans ce cas, taper la phrase à
+     l'aveugle puis Entrée ; selon le résultat : rester sur le LTS, ou correctif ciblé proposé avant d'agir ;
+  4. à la prochaine vraie mise à jour du noyau : `pacman.log` montre les presets `default` et `rescue` refaits.
+- Remarque : systemd-stub affiche le logo Arch (`--splash` des presets d'archinstall) avant Plymouth ; à retirer si tu le
+  souhaites (petite modification des presets, non faite).
