@@ -929,3 +929,26 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
   dalle eDP active, échelle 1 ; inhibition ciblée présente. Aucun changement système ni suspension réelle. Bancs arrêtés.
   Avertissement préexistant de vérification des espaces pendant le banc Hyprland : l’espace spécial du banc n’a pas d’id
   numérique dans l’IPC 0.57.2 ; répartition réelle correcte (espaces 1–9 sur la dalle).
+
+## Capot — série de revues de code (2026-11-11)
+
+- **Passe 1** (`/code-review high`, 10 constats ; chaque correctif contre-éprouvé sur l'ancien code) :
+  - externe **branché mais désactivé** compté comme externe : capot fermé → dalle coupée, aucun écran actif, pas de veille.
+    Seul un externe activé compte désormais (veille sinon) ;
+  - dalle désactivée **capot ouvert** (par toi, la config) rallumée à chaque changement d'écran ; sous Hyprland, `hyprctl reload`
+    en boucle si la config la désactive. Rallumage seulement à l'ouverture d'un capot vu fermé ;
+  - **délai de 30 s** comme `HoldoffTimeoutSec` de logind : pas de suspension dans les 30 s après un réveil (dock réveillé capot
+    fermé : ses écrans arrivent en quelques secondes, avant : resuspension à 500 ms) ; demande refaite après 30 s si la veille
+    n'a pas eu lieu (refus, réveil capot fermé sans `lockBeforeSleep` : avant, plus jamais de veille jusqu'à l'ouverture) ;
+  - abonnement Sway `output` retiré : chaque veille d'écran relançait le placement des espaces d'`Outputs.qml` (banc Sway : `$mod+2`
+    juste après le réveil des écrans annulé, espace 1 rendu ; corrigé : espace 2 gardé). `Lid` suit la liste des écrans actifs ;
+  - aucune lecture des sorties capot ouvert ; pont : une seule relance en attente (avant, une chaîne par échec : 5 relances
+    simultanées sur banc), arrêt (code 0, pas relancé) sur une machine **sans capot** (32 Mo de Python en moins sur `terrier`) ;
+  - `test-lid.py` réécrit (attente active du PID, contrôles nommés) : 17 contrôles OK, ancien code 11 échecs ;
+    `test-lid-bridge.py` : 11 OK, ancien pont 2 échecs ; `test-outputs.sh sway` 0 échec.
+  - Non retenu (décision à toi) : remplacer le pont par le comportement natif (logind `HandleLidSwitchDocked=ignore` + liaisons de
+    capot du compositeur). Nuancé : logind ignore les inhibiteurs de veille du même utilisateur, seul un inhibiteur d'un autre
+    compte bloque `systemctl suspend` (la nouvelle demande à 30 s couvre ce cas).
+  - **Pas encore appliqué au bureau réel** : session verrouillée, écrans en veille ; l'instance (PID 1909) ne surveillait plus que
+    la racine du dépôt (aucun rechargement à chaud à la copie, 23:02). À ton retour : `$mod+Ctrl+W`, puis `scripts/ipc.sh lid state`
+    (champ `holdoff`).

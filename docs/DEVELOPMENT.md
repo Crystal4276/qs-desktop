@@ -109,10 +109,12 @@ verrouillage).
 - `python scripts/test-idle-lock.py` : IdleMonitor, verrou Wayland et DPMS réels sur Sway headless ; politiques laptop/desktop,
   confirmation tardive, annulation, refus, inhibitions Wayland/D-Bus et délai désactivé. Aucun verrouillage de la vraie session.
 
-- `python3 scripts/test-lid.py` : vrai service Lid, bus privé et source capot / sorties / suspension factices ; fermeture,
-  externes multiples et désactivés, réouverture, retrait du dernier, erreurs et restauration après perte d’état.
+- `python3 scripts/test-lid.py` : vrai service Lid, bus privé et source capot / sorties / veille / suspension factices ;
+  fermeture, externes multiples et désactivés, dalle désactivée capot ouvert, réouverture, retrait du dernier, délai après
+  réveil et nouvelle demande, erreurs, restauration après perte d’état, aucune lecture capot ouvert.
 - `python3 scripts/test-lid-bridge.py` : vrais proxies et échange de FD sur bus privé avec faux UPower / logind ;
-  aucun accès matériel, aucune inhibition de la machine réelle.
+  refus de logind (une seule relance), libération à l'arrêt, machine sans capot (arrêt, code 0). Aucun accès matériel,
+  aucune inhibition de la machine réelle.
 
 ## VM d'installation (`install.sh` sur une machine neuve)
 
