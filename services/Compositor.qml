@@ -79,7 +79,7 @@ Singleton {
         return [];
     }
 
-    // Connected physical displays, including disabled panels and mirrors (independent of DPMS).
+    // Écrans physiques branchés, dalles désactivées et miroirs compris, indépendamment de la veille (services/Lid.qml).
     property var connectedOutputs: []
     property bool connectedDirty: false
     signal connectedOutputsReady(bool success)
@@ -116,7 +116,7 @@ Singleton {
         }
     }
 
-    // A shell crash loses the saved rule; reload the configured layout rather than guess the panel's scale.
+    // Après un plantage, la règle retenue est perdue : config native rechargée plutôt qu'une échelle de dalle devinée.
     function restoreInternalOutputs(names: var): void {
         if (isHyprland) Quickshell.execDetached(["hyprctl", "reload"]);
         else for (const name of names) setOutputEnabled(name, true, "");

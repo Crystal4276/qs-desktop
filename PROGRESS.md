@@ -949,6 +949,24 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
   - Non retenu (décision à toi) : remplacer le pont par le comportement natif (logind `HandleLidSwitchDocked=ignore` + liaisons de
     capot du compositeur). Nuancé : logind ignore les inhibiteurs de veille du même utilisateur, seul un inhibiteur d'un autre
     compte bloque `systemctl suspend` (la nouvelle demande à 30 s couvre ce cas).
-  - **Pas encore appliqué au bureau réel** : session verrouillée, écrans en veille ; l'instance (PID 1909) ne surveillait plus que
-    la racine du dépôt (aucun rechargement à chaud à la copie, 23:02). À ton retour : `$mod+Ctrl+W`, puis `scripts/ipc.sh lid state`
-    (champ `holdoff`).
+- **Passe 2** (10 constats ; retenus et contre-éprouvés sur le code de la passe 1) :
+  - délai après réveil tiré d'`Idle.preparingSleep`, muet sans `lockBeforeSleep` : le pont signale lui-même le réveil
+    (`PrepareForSleep(false)` → ligne `resumed`) ; test du délai rendu indépendant de la demande en cours ;
+  - `ready` faux dès que l'inhibiteur manquait (refus, logind relancé) : une dalle coupée n'était plus rallumée à l'ouverture.
+    `ready` = état du capot connu d'UPower ; sans inhibiteur, logind applique aussi sa politique (la même par défaut) ;
+  - pont : une ligne seulement quand l'état change (avant : à chaque propriété UPower, secteur compris) ;
+  - doc corrigée (ma passe 1 promettait l'inverse du code) : rouvrir un capot vu fermé rallume la dalle interne, y compris
+    une dalle que tu avais éteinte avant de fermer ; capot ouvert, rien n'est rallumé ; commentaires de `Compositor.qml` en français ;
+  - non retenus : délai non gardé au rechargement QML, nouvelle demande toutes les 30 s tant que la veille échoue (comme
+    logind), miroir Hyprland (l'externe garde la session, conforme à ta politique).
+  - **Trouvé sur le bureau réel** (rechargement à 23:15:55) : `PersistentProperties` ne transmet pas un objet JS d'un moteur à
+    l'autre (« JSValue can't be reassigned to another engine ») : après **tout rechargement à chaud**, les règles des dalles
+    coupées étaient `undefined`, réouverture du capot en TypeError (dalle jamais rallumée), `lid state` vide. Présent depuis
+    le commit d'origine. Règles gardées en chaîne JSON (`disabledRules`) ; `test-lid.py` fait un vrai rechargement à chaud :
+    20 contrôles OK, code précédent : avertissement et TypeError reproduits.
+  - Tests : `test-lid.py` 20 OK, `test-lid-bridge.py` 14 OK (code de la passe 1 : 6 et 3 échecs) ; banc Sway : démarrage sans
+    avertissement nouveau.
+  - **Bureau réel** : il tourne avec le code de la passe 2 (rechargé à 23:15:55, PID 1909), sans risque pour la dalle
+    (capot fermé avec externe : règles recréées ; le TypeError ne touche que `lid state` et l'ouverture après veille, sans dalle
+    à rallumer). La surveillance des fichiers de l'instance ne couvre que la racine du dépôt : copie et `touch shell.qml` sans
+    effet. **À faire** : `$mod+Ctrl+W`, puis `scripts/ipc.sh lid state` (doit répondre, champ `holdoff`).

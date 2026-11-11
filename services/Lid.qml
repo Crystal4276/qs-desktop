@@ -15,7 +15,8 @@ Singleton {
     PersistentProperties {
         id: persist
         reloadableId: "lid"
-        property var disabled: ({}) // output -> restore rule; retained across QML reloads
+        // Output -> restore rule, as JSON: a JS object does not survive a QML reload (undefined in the new engine).
+        property string disabledRules: "{}"
         property bool closedSeen: false // lid handled while closed: its opening restores the internal panels
     }
 
@@ -32,6 +33,7 @@ Singleton {
                     root.ready = s.ready;
                     root.present = s.present;
                     root.closed = s.closed;
+                    if (s.resumed === true) holdoff.restart();
                     root.refresh();
                 } catch (error) { console.warn("Lid: invalid state", error); }
             }
@@ -45,8 +47,8 @@ Singleton {
     Timer { id: retry; interval: 5000; onTriggered: bridge.running = true }
     Timer { id: settle; interval: 500; onTriggered: Compositor.requestConnectedOutputs() }
     Timer { id: readRetry; interval: 5000; onTriggered: root.refresh() }
-    // Like logind's HoldoffTimeoutSec: after a resume, a dock's displays take seconds to appear; after a request, the suspend
-    // is retried if the system did not sleep (refused, or woken with the lid still closed).
+    // Like logind's HoldoffTimeoutSec: after a resume (reported by the bridge), a dock's displays take seconds to appear;
+    // after a request, the suspend is retried if the system did not sleep (refused, or woken with the lid still closed).
     Timer { id: holdoff; interval: 30000; onTriggered: root.refresh() }
 
     // Active displays only: DPMS and other monitor refreshes do not change docking.
@@ -57,31 +59,34 @@ Singleton {
     function refresh(): void {
         if (ready && present && (closed || persist.closedSeen)) settle.restart();
     }
+    function rules(): var {
+        return JSON.parse(persist.disabledRules || "{}");
+    }
     function evaluate(): void {
         if (!ready || !present) return;
         const rows = Compositor.connectedOutputs;
+        const disabled = rules();
         if (!closed) {
             holdoff.stop();
             if (!persist.closedSeen) return; // a panel disabled with the lid open is the user's choice
-            for (const name of Object.keys(persist.disabled)) {
+            for (const name of Object.keys(disabled)) {
                 if (rows.some(o => o.name === name))
-                    Compositor.setOutputEnabled(name, true, persist.disabled[name]);
+                    Compositor.setOutputEnabled(name, true, disabled[name]);
             }
-            const orphaned = rows.filter(o => o.internal && !o.enabled && !(o.name in persist.disabled));
+            const orphaned = rows.filter(o => o.internal && !o.enabled && !(o.name in disabled));
             if (orphaned.length) Compositor.restoreInternalOutputs(orphaned.map(o => o.name));
-            persist.disabled = ({});
+            persist.disabledRules = "{}";
             persist.closedSeen = false;
             return;
         }
         persist.closedSeen = true;
         // A connected but disabled external display cannot hold the session.
         if (rows.some(o => !o.internal && o.enabled)) {
-            const saved = Object.assign({}, persist.disabled);
             for (const o of rows.filter(o => o.internal && o.enabled)) {
-                saved[o.name] = saved[o.name] ?? Compositor.lidRestoreRule(o.name);
-                Compositor.setOutputEnabled(o.name, false, saved[o.name]);
+                disabled[o.name] = disabled[o.name] ?? Compositor.lidRestoreRule(o.name);
+                Compositor.setOutputEnabled(o.name, false, disabled[o.name]);
             }
-            persist.disabled = saved;
+            persist.disabledRules = JSON.stringify(disabled);
         } else if (!holdoff.running) {
             holdoff.restart();
             Session.suspend(); // Idle's existing delay inhibitor locks before actual sleep.
@@ -96,17 +101,11 @@ Singleton {
         function onOutputsChanging() { root.refresh(); }
         function onConfigurationReloaded() { root.refresh(); }
     }
-    Connections {
-        target: Idle
-        function onPreparingSleepChanged() {
-            if (!Idle.preparingSleep) { holdoff.restart(); root.refresh(); }
-        }
-    }
     IpcHandler {
         target: "lid"
         function state(): string {
             return JSON.stringify({ready: root.ready, present: root.present, closed: root.closed, holdoff: holdoff.running,
-                disabled: Object.keys(persist.disabled), outputs: Compositor.connectedOutputs});
+                disabled: Object.keys(root.rules()), outputs: Compositor.connectedOutputs});
         }
     }
 }
