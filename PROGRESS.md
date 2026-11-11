@@ -858,6 +858,11 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
   Banc : « Deftones » à 1920 et 1500 px, « D… » à 1280 px en lecture, icônes seules en pause ; `test-bar.py` vérifie la
   règle dans tous les cas (l'ancienne version échoue : « Ru… - oo… »). Bureau réel rechargé sans erreur, capture
   `.shots/media-pill-artist.png` (« Slipknot - Prosthetics » entier, il tenait).
+- Mal compris, corrigé : retirer tout le titre décollait la pilule de sa voisine. Ta règle : **artiste entier, titre abrégé
+  dans la place restante** (« Deftones - Arou… ») ; titre retiré seulement si même une lettre ne tient pas, puis artiste
+  abrégé. La pilule remplit de nouveau la place et se cale à 10 px. Banc : 1920, 1500 et 1280 px (« D… » en lecture,
+  icônes seules en pause) ; `test-bar.py` vérifie la règle (la version « artiste seul » échoue). Bureau réel rechargé sans
+  erreur : « La Rumeur - Le coffre-fort… », calé à 10 px (`.shots/media-pill-title.png`).
 - Tests : `test-bar.py` contrôle dans tous les cas que le libellé rendu tient dans le module. S'y ajoutent le cas
   « lecteur présent au démarrage, place changée sans changer de morceau », « Deftones - Around the Fur » et 2 segments
   sans texte en pause. Contre-épreuve : l'ancien `Mpris.qml` échoue dès le démarrage (libellé de 435 px dans 388).
