@@ -818,3 +818,15 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
   Windows laissé actif sur 5 ; bureau réel PID 1910 vivant, bancs arrêtés.
 - À vérifier à la main : confort d’utilisation de Windows et lancement dans une vraie session Sway (placement déjà validé
   sur banc, aucun changement de session imposé).
+
+## Windows 11 — proportions de l’icône et espacement (2026-11-11)
+
+- Tes captures : texte trop proche du logo dans le launcher et logo disproportionné dans le menu.
+- Launcher : écart icône → texte porté de 4 à 10 px, repris du thème des panneaux et du menu ; appliqué à toutes les
+  lignes. Seule `itemTextMargin` change ; espacement de l’en-tête conservé.
+- SVG Windows : marge transparente intégrée au viewBox ; dessin centré sur les deux tiers du cadre (32 px dans un
+  emplacement de 48 px, 16 px dans celui de 24 px), comparable aux marges des icônes Papirus. Provenance complétée.
+- Copie du bureau, démarrage complet sur Sway isolé, contrôle visuel des deux composants :
+  `.shots/launcher-icon-spacing.png`, `.shots/menu-windows11-padding.png`. Aucun avertissement QML ; restent les
+  avertissements externes du banc (portails privés, rendu logiciel et icône de tray NordVPN absente). Aucune action VPN.
+- Seuls le thème et le SVG validés appliqués au bureau réel ; textes de recherche et défilement forcés du banc non repris.
