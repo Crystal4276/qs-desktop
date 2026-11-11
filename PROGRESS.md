@@ -779,10 +779,10 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
   - retrait : presets, `/etc/kernel/cmdline` et `/etc/default/grub` identiques aux originaux (sommes de contrôle), images de
     secours et hook retirés, menu d'origine, thème `spinner` ; cas sans `splash` : fichier `cmdline.d` ajouté puis retiré.
   - `test-install.py` : 0 échec.
-- **Pas encore appliqué au laptop** (étape système, sudo, avec ton accord) : `scripts/plymouth-setup.sh install` puis
-  `scripts/system-setup.sh install` (ou `./install.sh` en acceptant l'étape système). Changements prévus (`--dry-run`) : presets
-  `linux` et `linux-lts` (preset `rescue`), deux os-release de secours dans `/var/lib/qs-desktop/plymouth/`, `splash` retiré de
-  `/etc/default/grub`, `mkinitcpio -P`, hook `/etc/pacman.d/hooks/90-qs-grub-uki.hook`.
+- **Appliqué au laptop** (2026-11-11 20 h 10, ton accord ; mot de passe sudo saisi dans une fenêtre zenity, faute de
+  terminal) : `plymouth-setup.sh install` → presets `linux` et `linux-lts` avec le preset `rescue`, quatre images (ESP à
+  25 %), `splash` retiré de `/etc/default/grub`, état `previous-theme=spinner` + deux `rescue=` ; `system-setup.sh install` →
+  `/etc/pacman.d/hooks/90-qs-grub-uki.hook`. Codes 0 ; nouveau passage `--dry-run` : aucun changement. Pas encore redémarré.
 - **À tester à la main sur le laptop**, ensuite :
   1. menu GRUB : quatre entrées dans l'ordre ci-dessus ; démarrage normal → thème Core Lab, phrase de passe, greeter ;
   2. entrée « linux-lts rescue » → phrase de passe en texte, puis greeter ;
