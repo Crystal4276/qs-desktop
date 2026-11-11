@@ -238,6 +238,8 @@ ajoute à chaque preset une image de secours sans le hook `plymouth` (`rescue_op
 Vérifié dans une VM chiffrée au format du laptop (`docs/DEVELOPMENT.md`, « VM UKI ») : reprise de l'état laissé par l'ancienne
 version, menu, entrée normale (thème), entrée de secours (phrase en texte, démarrage complet), mise à jour simulée du noyau
 (les deux images refaites), retrait (fichiers identiques aux originaux, menu d'origine).
+Le logo Arch affiché avant Plymouth venait de systemd-stub (section `.splash` de l'UKI, `--splash` des presets
+d'archinstall) : retiré en mode UKI (ton choix, 2026-11-11) ; démarrage filmé en VM : menu GRUB, noir bref, thème.
 
 ### Intégration système (proposition d'origine)
 

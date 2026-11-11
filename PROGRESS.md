@@ -790,5 +790,8 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
      écran noir → affichage du noyau 7.2.15 (pilote Intel), indépendant de nos réglages ; dans ce cas, taper la phrase à
      l'aveugle puis Entrée ; selon le résultat : rester sur le LTS, ou correctif ciblé proposé avant d'agir ;
   4. à la prochaine vraie mise à jour du noyau : `pacman.log` montre les presets `default` et `rescue` refaits.
-- Remarque : systemd-stub affiche le logo Arch (`--splash` des presets d'archinstall) avant Plymouth ; à retirer si tu le
-  souhaites (petite modification des presets, non faite).
+- Logo Arch avant Plymouth : il venait de systemd-stub (section `.splash` des UKI, `--splash` mis par archinstall dans
+  `default_options`). Retiré (ton choix) par `plymouth-setup.sh` en mode UKI : option enlevée des presets, BMP noté
+  (`stub-splash=`), remis par `uninstall`. VM : plus de section `.splash` ; démarrage filmé (0,3 s) : menu GRUB, noir bref,
+  thème, aucune image du logo ; second passage sans changement ; retrait → presets identiques aux originaux.
+  Appliqué au laptop (2026-11-11, code 0, quatre images refaites ; nouveau passage : aucun changement).

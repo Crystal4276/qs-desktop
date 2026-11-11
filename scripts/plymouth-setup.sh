@@ -5,7 +5,8 @@
 # Usage : plymouth-setup.sh [--dry-run] install     thème (version committée) dans /usr/share/plymouth/themes, thème par défaut,
 #                                                  hook `plymouth` dans l'initramfs, `splash` sur la ligne de commande du noyau,
 #                                                  passage au greeter (surcharges de plymouth-quit-wait et plymouth-quit) ;
-#                                                  UKI : image de secours sans Plymouth par noyau ; initramfs (et GRUB) refaits
+#                                                  UKI : image de secours sans Plymouth par noyau, logo de systemd-stub
+#                                                  retiré ; initramfs (et GRUB) refaits
 #         plymouth-setup.sh [--dry-run] uninstall   chaque changement défait (hook, splash, secours, thème précédent, surcharges,
 #                                                  thème)
 #         plymouth-setup.sh status                  état de chaque élément
@@ -24,7 +25,8 @@ theme=qs-corelab
 dest=/usr/share/plymouth/themes/$theme
 var=/var/lib/qs-desktop/plymouth
 state="$var/state"            # ce qui a été ajouté par nous (défait par uninstall) : hooks=<fichier>, splash=1 (GRUB),
-                              # cmdline=<fichier de /etc/cmdline.d>, rescue=<preset>, previous-theme=<nom>, ou
+                              # cmdline=<fichier de /etc/cmdline.d>, rescue=<preset>, stub-splash=<preset> <bmp>,
+                              # previous-theme=<nom>, ou
                               # plymouthd-conf=<copie> (fichier d'origine sans thème explicite, remis tel quel ; « - » : absent)
 conf=/etc/plymouth/plymouthd.conf
 grub=/etc/default/grub
@@ -87,6 +89,7 @@ unnote() { run sed -i "\\|^$1=$2\$|d" "$state"; }
 # --- Mode UKI ---------------------------------------------------------------------------------------------------------
 
 uki_presets() { grep -lE '^default_uki=' "$presets_dir"/*.preset 2>/dev/null || true; }
+stub_splash() { sed -nE 's/^default_options=".*--splash[[:space:]]+([^[:space:]"]+).*/\1/p' "$1"; }   # BMP du logo de systemd-stub
 preset_value() { bash -c 'source "$1" && printf %s "${!2}"' _ "$1" "$2"; }   # $1 = preset, $2 = variable
 
 # Fichiers de la ligne de commande intégrée par mkinitcpio (sans --cmdline) : /etc/kernel/cmdline (sinon
@@ -158,6 +161,21 @@ install_uki() {
         # Dernière ligne sans saut de ligne : ajouté d'abord (le bloc se collerait sinon à la ligne précédente).
         run sh -c "[ -z \"\$(tail -c 1 '$p')\" ] || echo >> '$p'; printf '%s\n%s\n%s\n' '$mark' 'rescue_uki=\"${uki%.efi}~rescue.efi\"' 'rescue_options=(-S plymouth --osrelease $(osrel_of "$p"))' >> '$p'"
     done
+    # Logo de systemd-stub (« --splash <bmp> » mis par archinstall dans default_options) : affiché avant Plymouth, retiré ;
+    # le BMP est noté pour uninstall. Un *_splash= du preset n'est pas touché.
+    local bmp
+    for p in $(uki_presets); do
+        bmp="$(stub_splash "$p")"
+        if [[ -z "$bmp" ]]; then
+            echo "= pas de logo de systemd-stub dans $p"
+            continue
+        fi
+        rebuild initramfs
+        keep_original "$p"
+        [[ -n "$(noted_all stub-splash | grep -F "$p ")" ]] || note stub-splash "$p $bmp"
+        run sed -i -E -e 's/^(default_options=".*)--splash[[:space:]]+[^[:space:]"]+[[:space:]]?/\1/' \
+            -e '/^default_options=/s/[[:space:]]+"$/"/' "$p"
+    done
     # Reprise : « splash » ajouté dans GRUB par une version précédente, sans effet sur une UKI ; défait sans grub-mkconfig.
     if [[ -n "$(noted splash)" ]]; then
         has_splash && run sed -i -E '/^GRUB_CMDLINE_LINUX_DEFAULT="/{s/ splash\b//;s/"splash /"/;s/"splash"/""/}' "$grub"
@@ -177,6 +195,17 @@ uninstall_uki() {
         fi
         [[ -f "$(osrel_of "$p")" ]] && run rm -f "$(osrel_of "$p")"
         unnote rescue "$p"
+    done
+    local entries entry bmp
+    mapfile -t entries < <(noted_all stub-splash)
+    for entry in "${entries[@]}"; do
+        read -r p bmp <<<"$entry"
+        if [[ -f "$p" && -z "$(stub_splash "$p")" ]]; then
+            rebuild initramfs
+            run sed -i -E -e "s|^default_options=\"(.*)\"|default_options=\"--splash $bmp \\1\"|" \
+                -e '/^default_options=/s/[[:space:]]+"$/"/' "$p"
+        fi
+        unnote stub-splash "$entry"
     done
     if [[ -n "$(noted cmdline)" ]]; then
         rebuild initramfs
@@ -385,6 +414,7 @@ do_status() {
         local p
         for p in $(uki_presets); do
             echo "image de secours    : $(grep -qxF "$mark" "$p" && echo "oui ($(preset_value "$p" rescue_uki))" || echo non) ($p)"
+            echo "logo systemd-stub   : $([[ -n "$(stub_splash "$p")" ]] && echo "oui ($(stub_splash "$p"))" || echo non) ($p)"
         done
         [[ -f "$grub" ]] && has_splash && echo "splash (GRUB)       : oui, sans effet sur une UKI"
     else
@@ -406,5 +436,5 @@ case "${1:-}" in
     install) do_install ;;
     uninstall) do_uninstall ;;
     status) do_status ;;
-    *) sed -n '5,12p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 2 ;;
+    *) sed -n '5,13p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 2 ;;
 esac
