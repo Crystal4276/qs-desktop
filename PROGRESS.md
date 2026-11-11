@@ -738,4 +738,5 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
 - `test-install.py` lançait le vrai Chromium dans le dossier jetable (extensions déclarées dans `/usr/share/chromium/extensions`
   sur `terrier`) : profil complet écrit, 2 à 3 échecs. Désormais un `chromium` factice (import raté exprès, retenté à chaque
   passage, hors du test « sans changement ») ; l'import réel se teste sur une copie de profil. `test-install.py` : 0 échec.
-- **À tester sur le laptop** : `git pull`, fermer Chromium, `./install.sh` → « = Stylus : 139 styles relus ».
+- Laptop (2026-11-11) : `./install.sh` → « = Stylus : 139 styles relus (139 dans le profil) ». **Reste à vérifier à l'œil** :
+  un site (GitHub, YouTube) en Catppuccin dans Chromium.
