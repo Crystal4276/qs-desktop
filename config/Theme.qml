@@ -261,10 +261,10 @@ Singleton {
     readonly property QtObject icon: QtObject {
         // font.icons (Symbols Nerd Font Mono)
         // par numéro, 1 à 9, selon le profil de la machine (Settings.profile) ; jeux : 7 Deluge (goutte), 9 Steam ;
-        // travail : 5 libre (nf-md-circle_double), 6 Discord-WhatsApp, 7 Spotify, 9 DigitalMicrograph (nf-md-microscope)
+        // travail : 5 Windows 11 (nf-dev-windows11), 6 Discord-WhatsApp, 7 Spotify, 9 DigitalMicrograph (nf-md-microscope)
         readonly property var workspaces: ({
             jeux: ["\ue79a", "\ue78c", "\uf32e", "\u{f043e}", "\uf1ff", "\uf1bc", "\uf043", "\uf0e0", "\uf1b6"],
-            travail: ["\ue79a", "\ue78c", "\uf32e", "\u{f043e}", "\u{f0e95}", "\uf1ff", "\uf1bc", "\uf0e0", "\u{f0654}"]
+            travail: ["\ue79a", "\ue78c", "\uf32e", "\u{f043e}", "\ue8e5", "\uf1ff", "\uf1bc", "\uf0e0", "\u{f0654}"]
         })
         readonly property list<string> volume: ["\uf026", "\uf027", "\uf028"]  // 0–33, 34–66, 67–100 %
         readonly property string muted: "\uf466"
