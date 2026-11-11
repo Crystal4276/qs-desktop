@@ -928,6 +928,16 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
   initial du capot sous Sway : corrigés. Acceptés : un écran qui coupe sa connexion en veille profonde (ou un KVM basculé) vaut
   un débranchement, comme dans la version Codex ; relance de Quickshell écrans éteints capot fermé → veille (sans danger) ;
   dalle éteinte même sans externe (plan § 3.1, `Outputs.qml` gère « aucun écran »).
+- Passe 2 : liste blanche des connecteurs externes (ceux de logind : `DP`, `HDMI`, `DVI`, `VGA`) au lieu d'exclure les virtuels
+  (`WL-1` d'un Sway imbriqué passait) ; `Battery.available` remis (pas de processus inutile sur `terrier`, même notion de
+  laptop que `lockBeforeSleep`) ; doc : `LID0` propre à la machine. Négligeable : rechargement Sway capot fermé branché (la dalle
+  clignote).
+- **Décision en attente — quirk libinput.** Sans `AttrLidSwitchReliability=reliable` (absent pour ce Dell), libinput annonce
+  le capot « ouvert » au démarrage même fermé et **n'envoie rien à la première ouverture**. Session démarrée capot fermé (dock) :
+  la lecture de `/proc` éteint la dalle, l'ouverture ne la rallume pas (fermer puis rouvrir rétablit). Correctif natif : quirk
+  dans `/etc/libinput/local-overrides.quirks` par l'étape système d'`install.sh` (libinput désactive aussi clavier et pavé
+  tactile capot fermé) ; Sway reprend alors `bindswitch --reload` sans `exec_always`. Sans quirk : retirer l'extinction au
+  démarrage (dalle allumée sous le capot jusqu'au premier cycle fermeture / ouverture).
 - Règles : `CLAUDE.md` règle 6 « Natif d'abord, code minimal » (proposer avant de s'écarter d'une solution documentée ou
   d'ajouter un processus, un script ou un protocole maison) ; la revue en boucle juge aussi l'altitude (`DEVELOPMENT.md`).
 - **À faire** : `$mod+Ctrl+W` (l'instance actuelle tourne encore avec l'ancien `Lid.qml` en mémoire ; sa surveillance des

@@ -467,10 +467,10 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
   répit après un réveil ; veille aussi au retrait du dernier externe capot fermé). Verrouillage avant veille : § 7.13.
 - Un écran éteint par la veille a son connecteur détaché (sysfs `enabled`, vérifié sous Hyprland) : logind ne voit plus
   l'externe et mettrait en veille un laptop branché capot fermé. `Idle.qml` bloque donc `handle-lid-switch` tant qu'un écran
-  externe physique est **actif** dans `Compositor.outputs` (veille des écrans comprise ; sans effet sans capot ; pas sous
-  `QS_TEST`).
+  externe est **actif** dans `Compositor.outputs` (veille des écrans comprise ; connecteurs `DP`/`HDMI`/`DVI`/`VGA`, ceux que
+  compte logind ; laptop seulement, `Battery.available` comme `lockBeforeSleep` ; pas sous `QS_TEST`).
 - Dalle : éteinte capot fermé, rallumée à l'ouverture par le compositeur (§ 3.1, `dotfiles/*/hosts/<laptop>`). État du capot
-  relu à chaque chargement (`/proc/acpi/button/lid/*/state`) : libinput ne le donne au démarrage que pour les capots réputés
+  relu à chaque chargement (`/proc/acpi/button/lid/<nœud ACPI>/state`, `LID0` dans les fichiers machine) : libinput ne le donne au démarrage que pour les capots réputés
   fiables (quirk), et le `hyprctl reload` du réveil rallumerait la dalle. Espaces repris par `Outputs.qml`.
 
 ### 7.14 Agent polkit (`services/Polkit.qml`, `modules/polkit/`)
