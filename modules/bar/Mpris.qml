@@ -27,8 +27,8 @@ Item {
     readonly property real titleBudget: textBudget - advance(artist + separator)
     // Texte gardé quand le titre ne tient même pas abrégé : l'artiste, ou le titre s'il n'y a pas d'artiste.
     readonly property string mainText: artist || title
-    // Abrégé seulement s'il dépasse la place (largeurs fractionnaires : elideWidth arrondi couperait un texte qui tient) ;
-    // réduit à « … », retiré.
+    // Abrégé seulement s'il dépasse la place (largeurs fractionnaires : elideWidth arrondi couperait un texte qui tient).
+    // Titre réduit à « … » : retiré ; texte seul abrégé à moins de mediaMinLetters lettres (« D… ») : icônes seules.
     readonly property string dynamic: {
         if (advance(fullText) <= textBudget)
             return fullText;
@@ -36,7 +36,8 @@ Item {
             return artist + separator + titleMeasure.elidedText;
         if (advance(mainText) <= textBudget)
             return mainText;
-        return mainMeasure.elidedText.length > 1 ? mainMeasure.elidedText : "";
+        const elided = mainMeasure.elidedText;
+        return elided.slice(0, -1).trim().length >= Theme.bar.mediaMinLetters ? elided : "";
     }
     // Contrôle sur le libellé rendu (candidate) : un texte qui sortirait de la pilule n'est pas affiché, icônes seules.
     readonly property string shownText: dynamic && candidate.implicitWidth <= prefix.implicitWidth + extraWidth ? dynamic : ""

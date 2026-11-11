@@ -89,6 +89,16 @@ def test(work):
             for s in value['slots']:
                 if s['name'] == 'mpris' and s['wanted']: assert s['label'] + 20 <= s['width'] + 0.5, value
             return value
+        def check_text(value, artist, title):
+            media = next(s for s in value['slots'] if s['name'] == 'mpris')
+            # Whole text; else the whole artist and the title elided; else the artist alone (the title when there is no
+            # artist), elided if needed: never an elided artist next to the title. Elided alone, at least
+            # Theme.bar.mediaMinLetters (3) letters, else icons only (no bare « D… »).
+            full, main, text = ' - '.join(s for s in (artist, title) if s), artist or title, media['text']
+            rest = text[len(artist) + 3:] if artist and title and text.startswith(artist + ' - ') else None
+            assert (text in ('', full, main) or (rest and rest.endswith('…') and title.startswith(rest[:-1]))
+                    or (text.endswith('…') and main.startswith(text[:-1]) and len(text[:-1].strip()) >= 3)), value
+            return media, full, rest
         # Player already present when the bar is built, room changed without a track change (widths measured before the bar
         # font was applied stayed ~60 % too small: full text over the speaker, 2026-11-11).
         for updates in (999, 0, 999):
@@ -103,17 +113,11 @@ def test(work):
                 for paused, updates in [('true', 999), ('false', 0)]:
                     ipc('configure', artist, title, paused, updates)
                     value = state()
-                    media = next(s for s in value['slots'] if s['name'] == 'mpris')
+                    media, full, rest = check_text(value, artist, title)
                     # Text (artist - title) capped at Theme.bar.mediaTextMaxWidth (600 px).
                     assert media['textWidth'] <= 600.5, value
-                    # Whole text; else the whole artist and the title elided; else the artist alone (the title when there is
-                    # no artist), elided if needed: never an elided artist next to the title.
-                    full, main, text = ' - '.join(s for s in (artist, title) if s), artist or title, media['text']
-                    rest = text[len(artist) + 3:] if artist and title and text.startswith(artist + ' - ') else None
-                    assert (text in ('', full, main) or (rest and rest.endswith('…') and title.startswith(rest[:-1]))
-                            or (text.endswith('…') and main.startswith(text[:-1]))), value
                     # The title fills the room left by the artist (Deftones at 1920 px: whole artist, part of the title).
-                    if width == 1920 and artist == 'Deftones' and text != full: assert rest, value
+                    if width == 1920 and artist == 'Deftones' and media['text'] != full: assert rest, value
                     # No room for text: player icon only, plus the pause icon when paused.
                     if not media['text']: assert media['segments'] == (2 if paused == 'true' else 1), value
                     # A short artist and title that fit are never elided.
@@ -124,6 +128,12 @@ def test(work):
                     if width == 1480 and updates: assert value['level'] == 1, value
                     if width >= 1920: assert value['level'] == 0, value
             run('grim', '-g', f'0,0 {width}x65', str(work / f'bar-{width}.png'), env=env)
+        # Tight room, 5 px steps: the artist alone shrinks letter by letter down to icons only (never « D… » / « De… »).
+        ipc('configure', 'Deftones', 'Around the Fur', 'false', 999)
+        for width in range(1250, 1351, 5):
+            run('swaymsg', 'output', 'HEADLESS-1', 'mode', f'{width}x1200', env=env)
+            time.sleep(.2)
+            check_text(state(), 'Deftones', 'Around the Fur')
         for extra in (1, 3, 0):
             ipc('extras', extra)
             state()
@@ -132,7 +142,7 @@ def test(work):
         assert all(not s['wanted'] for s in value['slots'] if s['name'] in ('mpris', 'battery', 'backlight')), value
         log = (work / 'qs.log').read_text()
         assert 'WARN scene:' not in log and not re.search(r'^\s*ERROR\b', log, re.MULTILINE), log
-        print('PASS bar: player present at startup, 98 metadata/update/pause/resize cases, tray growth, hardware/media absence; '
+        print('PASS bar: player present at startup, 98 metadata/update/pause/resize cases, tight-room sweep, tray growth, hardware/media absence; '
               'media label always inside its module; no QML warnings')
     finally:
         if shell:
