@@ -187,9 +187,10 @@ de ce desktop n'en est pas une), rétroéclairage (`/sys/class/backlight`), GPU 
 - `profile` : `jeux` ou `travail` (défaut, `default.json`). Seule clé lue hors de Quickshell : `scripts/profile.sh` la donne à Sway
   (`include profiles/<profil>.conf`), à Hyprland (`lua/profile.lua` → `profiles/<profil>.lua`) et à `install.sh`. **jeux** : règles
   et démarrage de Steam, de ses jeux (EVE, gamescope) et de Deluge (espaces 9 et 7), Discord-WhatsApp sur 5, Spotify sur 6,
-  paquets `deps/games.txt`. **travail** : espace 5 libre, Discord-WhatsApp sur 6, Spotify sur 7, DigitalMicrograph sur 9 (Wine :
-  app_id ou classe X11 `digitalmicrograph.exe`), paquets `deps/work.txt`. Les espaces de Discord-WhatsApp et de Spotify viennent du
-  profil (`$ws_chat` / `$ws_music` sous Sway, `workspaces.chat` / `.music` sous Hyprland), leurs règles restent communes. Glyphes
+  paquets `deps/games.txt`. **travail** : DigitalMicrograph sur 5 (Wine : app_id ou classe X11 `digitalmicrograph.exe`), Windows sur 6,
+  Thunderbird sur 7, Discord-WhatsApp sur 8, Spotify sur 9 ; paquets `deps/work.txt`. Les espaces de Discord-WhatsApp et de Spotify viennent du
+  profil (`$ws_chat` / `$ws_music` sous Sway, `workspaces.chat` / `.music` sous Hyprland), leurs règles restent communes.
+  Thunderbird et la console Windows suivent aussi le profil (`$ws_mail` / `$ws_windows`, `workspaces.mail` / `.windows`). Glyphes
   des espaces : `Theme.icon.workspaces[Settings.profile]`. Changement : éditer la clé (ou `install.sh --profil …`), puis recharger le
   compositeur.
 - `primaryOutput` : écran principal, par description. `workspaceLayouts` (facultatif, absent ici : la règle générale tombe juste) :

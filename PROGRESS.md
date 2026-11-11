@@ -890,3 +890,18 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
   PipeWire inaccessible sur le runtime isolé et icône NordVPN absente). Aucune action VPN.
 - Tests des espaces Sway et Hyprland : **0 échec** chacun. Thème appliqué seul au bureau réel, rechargement sans erreur,
   même instance vivante (PID 1909), espace 1 conservé et bancs arrêtés. Capture `.shots/workspace5-windows11.png`.
+
+## Profil travail — ordre des espaces (2026-11-11)
+
+- Espaces 1–4 conservés ; nouvel ordre : **5 Microscopie (DigitalMicrograph), 6 Windows, 7 Thunderbird, 8 Discord-WhatsApp,
+  9 Spotify**. Glyphes et règles Sway / Hyprland alignés. Thunderbird et Windows prennent désormais leur espace dans le
+  profil, comme Discord et Spotify ; anciens placements du profil jeux conservés (mail 8, Windows 5).
+- Copie isolée : barre contrôlée visuellement, démarrage complet sans avertissement QML (mêmes avertissements externes
+  portails / rendu logiciel / PipeWire isolé / icône NordVPN). Capture `.shots/workspaces-work-order-bench.png`.
+  Tests des espaces Sway et Hyprland : **0 échec** chacun. Aucun appel VPN ni lancement d’application réelle sur les bancs.
+- Placement testé avec fenêtres GTK factices sur Sway pour les deux profils (Discord X11, webapps Discord/WhatsApp,
+  Spotify X11, Thunderbird, Windows, DigitalMicrograph) ; focus conservé. Chargement profil + règles communes + règles machine
+  Hyprland vérifié pour les deux profils, syntaxe Lua et `Hyprland --verify-config` OK.
+- Bureau réel : Hyprland rechargé sans erreur ; fenêtres ouvertes de Thunderbird, Discord, WhatsApp et Spotify déplacées
+  sur 7 / 8 / 8 / 9. Sondes GTK DigitalMicrograph et Windows sur 5 / 6, en mosaïque, puis fermées. Espace courant 1 conservé,
+  Quickshell PID 1909 vivant, bancs arrêtés. Capture `.shots/workspaces-work-order.png`. Aucun changement de session imposé.

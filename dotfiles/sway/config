@@ -64,7 +64,7 @@
     bindsym $mod+Right move container to output right, focus output right
 
     # Applications du profil de cette machine (jeux | travail : clé « profile » de hosts/<hostname>.json) : leurs règles, et
-    # $ws_chat / $ws_music, espaces de Discord-WhatsApp et de Spotify (5 / 6 en jeux, 6 / 7 en travail). Avant leur usage.
+    # $ws_chat / $ws_music, espaces de Discord-WhatsApp et de Spotify (5 / 6 en jeux, 8 / 9 en travail). Avant leur usage.
     include profiles/$(~/.config/quickshell/desktop/scripts/profile.sh).conf
 
     # Application assignments to workspace
@@ -74,7 +74,7 @@
     assign [app_id="whatsdesk"] $ws_chat
     assign [app_id="chrome-web.whatsapp.com__-Default"] $ws_chat
     assign [class="Spotify"] $ws_music
-    assign [app_id="org.mozilla.Thunderbird"] 8
+    assign [app_id="org.mozilla.Thunderbird"] $ws_mail
 
 # Floating rules
     floating_maximum_size -1 x -1

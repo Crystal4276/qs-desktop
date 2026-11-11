@@ -7,11 +7,12 @@ hl.monitor({
    scale = 1,
 })
 
--- Windows 11 : console SPICE sur 5, sans changer l'espace courant.
+-- Windows 11 : console SPICE sur l’espace du profil, sans changer l’espace courant.
+local profile = require("lua/profile")
 hl.window_rule({
    name = "windows11-console",
    match = { class = "^qs-windows11$" },
-   workspace = "5 silent",
+   workspace = (profile.workspaces.windows or 5) .. " silent",
    float = false,
 })
 
