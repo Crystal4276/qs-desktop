@@ -107,3 +107,7 @@ Les réglages conservés directement dans le BIOS sont documentés dans les note
 Sur Intel, les paquets GPU incluent `intel-gpu-tools`. La charge 3D de la barre et les moteurs du moniteur utilisent ses
 compteurs matériels. L'étape système demande l'autorisation ciblée `CAP_PERFMON` pour ce collecteur, conservée après les
 mises à jour du paquet. `--no-system` laisse les droits actuels ; `--uninstall` avec retrait système les restaure.
+
+Pour ajouter Windows 11 au menu et au launcher, déclarer `"windows11": {"uri": "qemu:///system", "domain": "win11"}`
+dans `hosts/<machine>.json`, puis relancer `install.sh`. Les règles machine du laptop ouvrent Virt Viewer en mosaïque sur
+l’espace 5, sans changer l’espace courant. Fermer sa fenêtre laisse Windows fonctionner.

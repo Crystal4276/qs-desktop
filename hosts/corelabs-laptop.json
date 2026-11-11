@@ -1,0 +1,7 @@
+{
+  "profile": "travail",
+  "windows11": {
+    "uri": "qemu:///system",
+    "domain": "win11"
+  }
+}

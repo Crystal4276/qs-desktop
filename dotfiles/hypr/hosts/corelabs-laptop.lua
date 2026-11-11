@@ -7,4 +7,12 @@ hl.monitor({
    scale = 1,
 })
 
+-- Windows 11 : console SPICE sur 5, sans changer l'espace courant.
+hl.window_rule({
+   name = "windows11-console",
+   match = { class = "^qs-windows11$" },
+   workspace = "5 silent",
+   float = false,
+})
+
 return {}

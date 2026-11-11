@@ -795,3 +795,26 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
   (`stub-splash=`), remis par `uninstall`. VM : plus de section `.splash` ; démarrage filmé (0,3 s) : menu GRUB, noir bref,
   thème, aucune image du logo ; second passage sans changement ; retrait → presets identiques aux originaux.
   Appliqué au laptop (2026-11-11, code 0, quatre images refaites ; nouveau passage : aucun changement).
+
+## Windows 11 — entrée native et console sur l’espace 5 (2026-11-11)
+
+- Entrée « Windows 11 » commune au menu et au launcher, catégorie Administration ; logo bleu SVG de Wikimedia embarqué
+  avec sa provenance. Configuration `windows11` (`uri`, `domain`) dans le fichier machine ; installateur sans appel libvirt,
+  simulation, second passage sans changement, sauvegarde et retrait par le registre existant. Dépendances documentées.
+- Clic : démarrage de la VM éteinte, sinon connexion à la VM active, puis Virt Viewer en fenêtre ; verrou anti-double clic,
+  erreurs notifiées, fermeture de la console sans arrêt de Windows. Aucun paquet installé.
+- Laptop : `win11` sur `qemu:///system`. Règles machine Sway / Hyprland : espace 5, mosaïque, espace courant conservé.
+  Identité GTK dédiée `qs-windows11` (`--name`, `--class`) : placement dès l’ouverture, sans attendre le titre du domaine
+  et sans déplacer les autres VM.
+- Retour du premier essai réel : accès direct au socket SPICE refusé ; corrigé avec `virt-viewer --attach`, qui utilise
+  libvirt pour ouvrir l’affichage. Permissions et définition de la VM inchangées.
+- Validations : `test-windows11.py` OK (états, erreurs, double clic, jetons, installation conditionnelle, simulation,
+  sauvegarde, espaces dans les chemins et idempotence) ; `test-install.py` 0 échec, retrait inclus ; tests des espaces
+  Sway et Hyprland : 0 échec chacun. Banc GTK avec l’identité finale : espace 5, non flottant, focus courant conservé,
+  autre VM inchangée sous les deux compositeurs. Sonde Quickshell isolée : entrée présente dans les listes du menu et
+  de recherche du launcher, image SVG chargée. Syntaxe Bash et `git diff --check` OK.
+- Déployé sur le laptop : entrée installée seule, règles Hyprland rechargées sans erreur. VM réellement démarrée,
+  console `qs-windows11`, espace 5, `floating=false`, espace 1 conservé. Capture `.shots/windows11-workspace5.png`.
+  Windows laissé actif sur 5 ; bureau réel PID 1910 vivant, bancs arrêtés.
+- À vérifier à la main : confort d’utilisation de Windows et lancement dans une vraie session Sway (placement déjà validé
+  sur banc, aucun changement de session imposé).

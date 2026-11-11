@@ -105,6 +105,9 @@ def main():
         repo = tmp / "repo"
         shutil.copytree(REPO, repo, symlinks=True, ignore=shutil.ignore_patterns(".git", ".shots", "__pycache__"))
         host_json = repo / "hosts" / (pathlib.Path("/proc/sys/kernel/hostname").read_text().strip() + ".json")
+        host_config = json.loads(host_json.read_text()) if host_json.exists() else {}
+        host_config["windows11"] = {"uri": "qemu:///system", "domain": "win11"}
+        host_json.write_text(json.dumps(host_config))
         (repo / "dotfiles/mpv/host.conf").unlink(missing_ok=True)
         home, run = tmp / "home", tmp / "run"
         run.mkdir(mode=0o700)
@@ -224,6 +227,8 @@ def main():
 
         r = install()
         check(r.returncode == 0, f"installation : code {r.returncode} {r.stderr.strip()[-300:]}")
+        desktop = home / ".local/share/applications/qs-windows11.desktop"
+        check(desktop.is_file() and "Name=Windows 11" in desktop.read_text(), "Windows 11 : entrée native installée")
         cfg = home / ".config"
         check((home / "Pictures/Wallpapers/fond.png").is_file(), "fonds d'écran clonés sans question")
         check(json.loads(host_json.read_text()).get("profile") == "jeux", "config machine : profil jeux (--profil)")
