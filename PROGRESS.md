@@ -838,3 +838,28 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
 - Démarrage complet sur copie et Sway isolé, liste de plusieurs applications contrôlée visuellement :
   `.shots/launcher-icon-spacing.png`. Aucun nouvel avertissement QML ; mêmes avertissements externes de banc.
 - Thème appliqué seul au bureau réel ; banc arrêté.
+
+## Pastille musique — texte qui débordait (2026-11-11)
+
+- Ta capture : « Deftones - Around the Fur » en entier sous le haut-parleur, l'icône Spotify sur la pilule des espaces ;
+  le repli « icônes seules » ne se déclenchait pas.
+- Cause (reproduite sur banc) : `artistWidth` et `titleWidth` appelaient `metrics.advanceWidth()` dans une liaison. À la
+  création, avant que la police de la barre soit appliquée au `FontMetrics`, elles mesuraient dans la police par défaut
+  (« Deftones » 67 px au lieu de ~110). Un appel de fonction ne dépendant pas de la police, elles n'étaient plus réévaluées
+  avant le morceau suivant. D'où un budget faux dès que le lecteur est présent au démarrage ou au rechargement. Le banc
+  changeait toujours de morceau par IPC : il ne le voyait pas.
+- Corrigé (`Mpris.qml`) : une seule mesure, `advance()`, qui lit `metrics.font` (réévaluée quand la police arrive).
+  **Contrôle sur le rendu**, comme demandé : le libellé complet est rendu hors écran (`candidate`) ; s'il sortirait de la
+  pilule, le texte est retiré (icônes seules). Ton choix : en icônes seules, l'**icône de pause** reste affichée en pause
+  (largeur minimale = icône du lecteur + pause). Abrégé gardé quand il tient (ton choix).
+- Tests : `test-bar.py` contrôle dans tous les cas que le libellé rendu tient dans le module. S'y ajoutent le cas
+  « lecteur présent au démarrage, place changée sans changer de morceau », « Deftones - Around the Fur » et 2 segments
+  sans texte en pause. Contre-épreuve : l'ancien `Mpris.qml` échoue dès le démarrage (libellé de 435 px dans 388).
+  Seuil « texte proche du plafond » à 3440 px ramené de 590 à 550 px : il échouait déjà sur le laptop avant ce
+  correctif (581 px, chaque moitié abrégée peut perdre un « W » d'environ 26 px). Passe sur copie, sans avertissement QML.
+- Captures du banc (avant / après, 1920, 1500 et 1280 px, lecture et pause) vérifiées. Bureau réel rechargé sans erreur
+  (PID 1910) ; la barre était cachée par Windows en plein écran sur l'espace 5, capture réelle à refaire.
+- Même schéma vu ailleurs, non corrigé (hors sujet) : `VolumeLine.qml:50` (largeur du bouton « Unmute », texte constant
+  mesuré par `FontMetrics.advanceWidth()` dans une liaison) ; `InfoModule.qml:83` (`tightBoundingRect`, avec un repli sur
+  `implicitWidth`, sans effet visible connu).
+- À tester à la main : pastille au démarrage avec Spotify déjà lancé, en lecture et en pause, sur le laptop.
