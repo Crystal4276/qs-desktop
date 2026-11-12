@@ -1079,7 +1079,8 @@ Lecture seule (hôte, root par pkexec, Windows par QGA ; VM démarrée puis éte
 
 - Ta demande : capot ouvert + un écran externe (quel qu'il soit) → externe principal avec 1-6 (dont microscope 5 et Windows 6),
   dalle 7-9 (mails, Discord, Spotify) ; au début de session, 1 sur l'externe (focalisé) et 7 sur la dalle. Barre de la dalle :
-  espaces, volume, performances (GPU / CPU / mémoire), heure + date + calendrier, tray.
+  espaces, volume, performances (GPU / CPU / mémoire), heure + date + calendrier, puis luminosité, batterie, tray et réglages
+  (ajout demandé après essai, même pilule que la barre principale ; banc : six icônes, aucun avertissement).
 - `workspaceLayouts` accepte une clé `"*"` (un seul autre écran, quel qu'il soit) ; l'écran de l'espace 1 d'une répartition
   imposée devient le principal (même si plus petit que la dalle : sinon une dalle 1920×1200 l'emportait sur un 1080p). Validation
   déplacée dans `Settings` (une fois par lecture de la config). Corrigé au passage : `Array.prototype.flat` n'existe pas dans ce
@@ -1095,3 +1096,5 @@ Lecture seule (hôte, root par pkexec, Windows par QGA ; VM démarrée puis éte
 - **À tester à la main** : brancher un vrai écran externe sous Hyprland puis Sway (1 / 7, barres, tray et calendrier ouverts
   depuis la dalle) ; nouvelle connexion avec l'écran branché ; écran de connexion (champ sur l'externe, à la prochaine mise
   à jour de sa copie système).
+- Git sur le laptop : identité absente (`~/.gitconfig` n'avait que l'aide `gh`), chaque commit échouait. Réglée à ta demande :
+  `user.name` / `user.email` globaux, les mêmes que tes commits précédents. Pas dans le dépôt (public, adresse privée).
