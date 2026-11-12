@@ -13,6 +13,7 @@ nemo-fileroller         # archives (extraire / compresser) dans Nemo
 nemo-share              # clic droit « Partager » : partages Samba utilisateur (échange avec les VM)
 gvfs                    # corbeille, montages, SFTP (`gio mount ssh://…`) dans Nemo
 gvfs-mtp                # téléphones Android branchés en USB
+gvfs-smb                # partages réseau Windows / Samba (smb://) dans Nemo
 
 # --- Internet, mail ---
 chromium                # navigateur principal ; web apps (dotfiles/webapps) ; liens externes (scripts/browser-link.py)
@@ -45,6 +46,7 @@ qemu-desktop            # machines virtuelles
 libvirt                 # gestion des VM (service libvirtd, groupe libvirt)
 virt-manager            # interface des VM et console de Windows 11 (entrée du menu)
 edk2-ovmf               # démarrage UEFI des VM
+swtpm                   # TPM 2.0 émulé, exigé par Windows 11
 dnsmasq                 # réseau NAT « default » de libvirt
 virtiofsd               # dossier partagé hôte → VM Linux (virtiofs)
 samba                   # partages hôte ↔ VM Windows (dotfiles/samba, étape système d'install.sh)
