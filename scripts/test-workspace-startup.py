@@ -13,7 +13,7 @@ def run(mode):
         (root/'config/Settings.qml').write_text('''pragma Singleton
 import QtQuick
 QtObject {
-    property var workspaceLayouts: []
+    function layoutFor(outs) { return null; }
     function primaryOf(outs) { return outs.find(o => o.name === "CENTER") ?? null; }
 }
 ''')

@@ -182,7 +182,7 @@ Construite sur le laptop (2026-11-11) pour `plymouth-setup.sh` en mode UKI, dans
 
 **Moteur JavaScript de Qt 6 / QML**
 - `WeakMap` : plante le moteur (`QV4::Value::sameValueZero`). Cache à clé texte à la place.
-- `flatMap`, `Object.fromEntries` : absents.
+- `flat`, `flatMap`, `Object.fromEntries` : absents (`[].concat(...listes)` à la place de `flat`).
 - `grabToImage` multiplie sa taille cible par l'échelle de l'écran (450 px → 675 en scale 1.5) : diviser.
 - Bogue de Qt 6.12 au coin des menus (raison parmi d'autres de l'abandon du menu copié de GTK).
 

@@ -17,9 +17,15 @@ Singleton {
     // Mêmes règles que scripts/profile.sh (Sway, Hyprland, install.sh) : valeur absente ou inconnue → travail.
     readonly property string profile: config.profile === "jeux" ? "jeux" : "travail"
     readonly property string primaryOutput: config.primaryOutput ?? ""
-    // Seuls les objets sont gardés : une entrée mal formée (null, liste…) ne doit pas casser la répartition.
-    readonly property var workspaceLayouts: (Array.isArray(config.workspaceLayouts) ? config.workspaceLayouts : [])
-        .filter(l => l !== null && typeof l === "object" && !Array.isArray(l))
+    // Répartitions imposées (layoutFor) : seules les entrées valides sont gardées, chaque numéro 1–9 sur un seul écran.
+    readonly property var workspaceLayouts: (Array.isArray(config.workspaceLayouts) ? config.workspaceLayouts : []).filter(l => {
+        const blocks = l !== null && typeof l === "object" && !Array.isArray(l) ? Object.values(l) : [];
+        const numbers = blocks.every(Array.isArray) ? [].concat(...blocks) : [];
+        const valid = numbers.length === 9 && numbers.every(n => Number.isInteger(n) && n >= 1 && n <= 9) && new Set(numbers).size === 9;
+        if (!valid)
+            console.warn("Settings: répartition imposée invalide (chaque numéro 1–9 une fois), ignorée :", JSON.stringify(l));
+        return valid;
+    })
     readonly property var bars: config.bars ?? ({})
     readonly property string notificationsOutput: config.notificationsOutput ?? "primary"
     // Préfixe qui lance une commande dans un terminal et attend sa fin, ex. ["gnome-terminal", "--wait", "--"].
@@ -72,9 +78,30 @@ Singleton {
         return (primary ? bars.primary : null) ?? bars[description] ?? bars.secondary ?? ({ left: [], right: [] });
     }
 
-    // Écran principal parmi les sorties actives (Compositor.outputs) : celui de la config machine s'il est actif, sinon le plus
-    // grand en surface logique (égalité : le plus à gauche). Bureau : Outputs.primary ; écran de connexion : modules/greeter.
+    // Répartition imposée pour exactement ces sorties actives (Compositor.outputs) : { "<nom de sortie>": [1, 2, 3], … }, sinon null.
+    // Clés : descriptions d'écran, plus au plus une clé "*" pour un seul autre écran, quel qu'il soit (ex. laptop + un écran externe).
+    function layoutFor(outs: var): var {
+        const layout = workspaceLayouts.find(l => {
+            const keys = Object.keys(l);
+            const others = outs.filter(o => !keys.includes(o.description)).length;
+            return keys.length === outs.length && others === (keys.includes("*") ? 1 : 0)
+                && keys.every(k => k === "*" || outs.some(o => o.description === k));
+        });
+        if (!layout)
+            return null;
+        const result = {};
+        for (const o of outs)
+            result[o.name] = [...(layout[o.description] ?? layout["*"])].sort((a, b) => a - b);
+        return result;
+    }
+
+    // Écran principal parmi les sorties actives (Compositor.outputs) : celui qui a l'espace 1 dans la répartition imposée, sinon
+    // celui de la config machine s'il est actif, sinon le plus grand en surface logique (égalité : le plus à gauche).
+    // Bureau : Outputs.primary ; écran de connexion : modules/greeter.
     function primaryOf(outs: var): var {
+        const layout = layoutFor(outs);
+        if (layout)
+            return outs.find(o => layout[o.name].includes(1));
         // Pas de principal configuré ("" par défaut) : ne surtout pas élire un écran qui ne donne ni marque ni modèle.
         const configured = primaryOutput !== "" ? outs.find(o => o.description === primaryOutput) : null;
         if (configured)
