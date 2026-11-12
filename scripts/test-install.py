@@ -290,6 +290,10 @@ def main():
         check("video/mp4=io.github.celluloid_player.Celluloid.desktop" in mime or "Celluloid" not in mime and not shutil.which("celluloid"),
               "applications par défaut")
         check(any((home / ".local/share/applications").glob("WebApp-*.desktop")), "web apps générées")
+        copilot = (home / ".local/share/applications/WebApp-Copilot.desktop").read_text()
+        copilot_icon = next(line[5:] for line in copilot.splitlines() if line.startswith("Icon="))
+        check("@WEBAPPS@" not in copilot and "@PROFILES@" not in copilot
+              and pathlib.Path(copilot_icon).is_file(), "Copilot : lanceur développé et icône embarquée présente")
         gs = home / ".local/share/applications/gammastep-indicator.desktop"
         check(gs.is_symlink() and "NoDisplay=true" in gs.read_text(), "lanceur : Gammastep Indicator masqué")
         # Barres d'état (réglées seulement si l'application est installée sur la machine de test).
