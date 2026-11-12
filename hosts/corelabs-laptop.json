@@ -18,7 +18,7 @@
     },
     "China Star Optoelectronics Technology Co. Ltd 0x1471": {
       "left": [["workspaces"], ["volume", "slider"]],
-      "right": [["gpu", "cpu", "memory"], ["clockDate"], ["tray"]]
+      "right": [["gpu", "cpu", "memory"], ["clockDate"], ["backlight", "battery", "tray", "settings"]]
     }
   }
 }
