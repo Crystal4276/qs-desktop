@@ -131,3 +131,31 @@ Correction déployée sur le laptop via l'outil transactionnel avec polkit. `gru
 EFI/initramfs/noyaux identiques avant/après ; commandes de démarrage identiques. Deuxième installation : « Horizon déjà à jour »,
 grub.cfg identique. Journal : `.shots/grub-horizon/deploy-rescue.log`. Aucun redémarrage de l'hôte déclenché ; rendu du
 firmware physique et démarrage des secours à vérifier lors d'un essai manuel.
+
+## Ordre explicite du menu et action Restart
+
+Correction après retour sur le vrai laptop : le tri natif UKI plaçait LTS avant standard, et Advanced options prenait la place
+du premier secours. Le module remet maintenant les objets natifs dans l'ordre standard, LTS, Advanced options, UEFI,
+Restart ; les entrées supplémentaires gardent leur ordre relatif à la suite. Le défaut initial est conservé par identifiant,
+y compris dans Advanced options. Restart, absent du menu du laptop, est ajouté avec la commande GRUB native `reboot` ;
+une entrée existante est réutilisée.
+
+Module reconstruit depuis les archives GRUB 2.16/Gnulib dont les empreintes sont épinglées dans le manifeste. Compilation
+sans avertissement. Tests hors VM PASS : ordre des identifiants dans le générateur après regroupement, idempotence,
+restauration et appels sudo de l'installateur. Syntaxe Python et contrôles de diff OK.
+
+GRUB réel à 800×600 et 1920×1200, entrées initialement inversées, Restart initialement absent : ordre des cinq titres
+vérifié dans la sortie série native et visuellement. Avec Restart préexistant : toujours cinq entrées, sans doublon.
+Défaut numérique, défaut par identifiant et défaut mémorisé dans le sous-menu préservés. Navigation vers les deux secours,
+retour clavier et interruption du délai validés ; aucune erreur GRUB. Le banc vérifie désormais automatiquement cet ordre
+et le nombre de lignes. Captures `*-shuffled*/menu.png` dans `.shots/grub-horizon/`.
+
+Sélection effective du nouveau bouton Restart en VM : événement QMP `RESET`, `guest=true`, `reason=guest-reset`, conservé
+dans `.shots/grub-horizon/restart-verified.json`. Aucun redémarrage de l'hôte n'est déclenché par ce test.
+
+Première tentative de déploiement de cette correction sur le laptop : authentification polkit fermée (« Request dismissed »).
+Aucun fichier système modifié par cette tentative. Après accord explicite pour relancer polkit, correction déployée :
+ordre des identifiants confirmé dans grub.cfg, module installé identique au module testé, grub-script-check PASS.
+Empreintes des dix fichiers de démarrage EFI/initramfs/noyaux et commandes de démarrage identiques avant/après.
+Second passage « Horizon déjà à jour », grub.cfg inchangé. Journal `.shots/grub-horizon/deploy-order.log`.
+Reste à vérifier visuellement le menu du firmware au prochain redémarrage manuel ; aucun redémarrage de l'hôte déclenché.
