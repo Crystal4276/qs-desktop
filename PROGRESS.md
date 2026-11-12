@@ -972,6 +972,10 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
   lecteur `L:` → `Win11Exchange` / `win11share` retiré dans ta session (tâche planifiée unique, supprimée), aucun identifiant
   enregistré pour 192.168.122.1. Port 445 joignable dans les deux sens ; pare-feu Windows : SMB entrant depuis 192.168.122.1
   seulement. Partage Windows `Win11Exchange` (`C:\Win11Exchange`, `chikhs` en modification) gardé pour Windows → laptop.
-- **À faire à la main** (mots de passe) : dans Windows, `\\192.168.122.1\` avec le compte Samba `chikhs` ; dans Nemo,
-  `smb://192.168.122.2/Win11Exchange` avec le compte Windows `chikhs`.
+- Windows → laptop : **fait par toi** (`\\192.168.122.1\`, compte Samba `chikhs`).
+- Laptop → Windows : ton compte Windows `chikhs` est désormais sans mot de passe, refusé en réseau par défaut. À ta demande
+  et avec ton autorisation explicite : `LimitBlankPasswordUse=0` dans Windows (retour : `1`). Exposition : SMB n'accepte que
+  192.168.122.1 (pare-feu Windows), réseau NAT ; `C$` refusé (filtrage UAC distant actif). Vérifié par `smbclient`, mot de
+  passe vide : liste des partages, écriture / relecture / suppression dans `Win11Exchange`, `C$` → `ACCESS_DENIED`.
+  Dans Nemo : `smb://192.168.122.2/Win11Exchange`, utilisateur `chikhs`, mot de passe vide.
 - Prochaine étape demandée : **audit de la configuration de la VM** faite par Codex (domaine, réseau, `ufw`, réglages Windows).
