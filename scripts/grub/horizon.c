@@ -8,7 +8,7 @@
 #include <grub/video.h>
 #include <grub/normal.h>
 GRUB_MOD_LICENSE ("GPLv3+");
-static grub_command_t video_cmd, entry_cmd, group_cmd, open_cmd;
+static grub_command_t video_cmd, entry_cmd, group_cmd, open_cmd, order_cmd;
 static grub_menu_t fallbacks;
 static grub_err_t video (grub_command_t cmd __attribute__((unused)), int argc __attribute__((unused)), char **argv __attribute__((unused)))
 {
@@ -87,6 +87,53 @@ static grub_menu_entry_t default_selection (grub_menu_t menu, const char *value)
   grub_errno = GRUB_ERR_NONE;
   grub_free (key);
   return e;
+}
+/* Relink native entries, retaining their boot commands and the selected entry. */
+static grub_err_t order (grub_command_t cmd __attribute__((unused)), int argc, char **argv)
+{
+  grub_menu_t menu = grub_env_get_menu ();
+  grub_menu_entry_t e, selected, first = NULL, *tail = &first, *link;
+  const char *olddefault = grub_env_get ("default"), *suffix;
+  char *newdefault = NULL;
+  int i, restart = 0;
+  grub_err_t err;
+  if (!menu || !argc) return GRUB_ERR_NONE;
+  selected = default_selection (menu, olddefault);
+  if (!selected && grub_errno) return grub_errno;
+  suffix = olddefault ? grub_strchr (olddefault, '>') : NULL;
+  if (selected)
+    {
+      if (!selected->id) return GRUB_ERR_NONE;
+      newdefault = grub_xasprintf ("%s%s", selected->id, suffix ? suffix : "");
+      if (!newdefault) return grub_errno;
+    }
+  for (e = menu->entry_list; e; e = e->next)
+    if (e->id && grub_strcmp (e->id, "restart") == 0) restart = 1;
+  if (!restart)
+    {
+      const char *args[] = {"Restart"};
+      char restart_class[] = "restart";
+      char *classes[] = {restart_class, NULL};
+      err = grub_normal_add_menu_entry (1, args, classes, "restart", NULL, NULL, NULL,
+                                       "reboot\n", 0, NULL);
+      if (err) { grub_free (newdefault); return err; }
+    }
+  if (newdefault)
+    {
+      err = grub_env_set ("default", newdefault);
+      grub_free (newdefault);
+      if (err) return err;
+    }
+  for (i = 0; i < argc; i++)
+    for (link = &menu->entry_list; *link; link = &(*link)->next)
+      if ((*link)->id && grub_strcmp ((*link)->id, argv[i]) == 0)
+        {
+          e = *link; *link = e->next; e->next = NULL;
+          *tail = e; tail = &e->next; break;
+        }
+  *tail = menu->entry_list;
+  menu->entry_list = first;
+  return GRUB_ERR_NONE;
 }
 static grub_err_t group (grub_command_t cmd __attribute__((unused)), int argc, char **argv)
 {
@@ -180,10 +227,12 @@ GRUB_MOD_INIT(horizon)
   group_cmd = grub_register_command ("qs_horizon_group", group, "ID...", "Group existing fallback entries without changing their boot commands.");
   open_cmd = grub_register_command ("qs_horizon_fallback_menu", open_fallbacks, "", "Populate native fallback submenu.");
   entry_cmd = grub_register_command ("qs_horizon_entry", entry, "ID TITLE CLASS", "Set menu presentation only.");
+  order_cmd = grub_register_command ("qs_horizon_order", order, "ID...", "Order native entries and ensure a Restart action.");
 }
 GRUB_MOD_FINI(horizon)
 {
   release_fallbacks ();
   grub_unregister_command (group_cmd); grub_unregister_command (open_cmd);
   grub_unregister_command (video_cmd); grub_unregister_command (entry_cmd);
+  grub_unregister_command (order_cmd);
 }

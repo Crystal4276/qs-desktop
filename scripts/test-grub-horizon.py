@@ -30,6 +30,8 @@ with tempfile.TemporaryDirectory(prefix='qs-horizon-test-') as td:
         assert f'qs_horizon_entry "{entry_id}" "{title}" "{cls}"' in snippet
     assert 'qs_horizon_group "arch-linux-fallback.efi" "arch-linux~rescue.efi" "arch-linux-lts~rescue.efi"\n' in snippet
     assert '"arch-linux-lts-fallback.efi"' not in snippet
+    assert 'qs_horizon_order "arch-linux.efi" "arch-linux-lts.efi" "advanced-options" "uefi-firmware" "restart"\n' in snippet
+    assert snippet.index('qs_horizon_group ')<snippet.index('qs_horizon_order ')
     assert 'menuentry ' not in snippet and 'submenu ' not in snippet
     defaults=r/'etc/default/grub';assert 'preserve-me' in defaults.read_text() and 'GRUB_TIMEOUT=2' in defaults.read_text()
     defaults.write_text(defaults.read_text()+'# user edit\n');run('uninstall',ok=False)
@@ -57,6 +59,7 @@ with tempfile.TemporaryDirectory(prefix='qs-horizon-test-') as td:
     run('uninstall')
     (r/'boot/EFI/Linux/arch-linux~rescue.efi').unlink()
     run('install');assert 'qs_horizon_group' not in (r/'etc/grub.d/99_qs_horizon').read_text()
+    assert 'qs_horizon_order "arch-linux.efi" "arch-linux-lts.efi"' in (r/'etc/grub.d/99_qs_horizon').read_text()
     run('uninstall')
 
     # Exercise all installer entry points with fake privilege tools; no actual sudo/polkit or host paths.

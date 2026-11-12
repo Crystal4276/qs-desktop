@@ -1394,3 +1394,19 @@ Choix utilisateur : réseau local rétabli **avec mot de passe** (pas d'invité 
 - **À tester à la main** : Skybox → 10.216.41.210, compte `crystal` + mot de passe Samba ; en cas d'échec,
   `/var/log/samba/log.<IP du casque>`.
 - Constaté, non modifié : usershares `Epoxidation` et `Dl_2` pointent vers des dossiers absents.
+
+### Horizon — ordre demandé et bouton Restart
+
+- Retour utilisateur sur le menu réel : imposer standard, LTS, Advanced options, UEFI Firmware Settings, Restart.
+  Le module trie les objets natifs après regroupement des secours et garde le défaut par identifiant ; les entrées
+  supplémentaires restent accessibles à la suite. Action native reboot ajoutée si Restart manque, réutilisée si elle existe.
+- Module recompilé (GRUB 2.16 et Gnulib épinglés, empreintes vérifiées), manifeste actualisé. Test-grub-horizon.py PASS ;
+  syntaxe Python et git diff --check OK. VM réelle en 800×600 et 1920×1200 : entrées inversées, Restart absent/préexistant,
+  cinq titres dans l'ordre exact, pas de doublon, défaut numérique/par ID/imbriqué conservé, sous-menu utilisable.
+  Sélection de Restart : véritable RESET de la VM confirmé par QMP ; hôte non redémarré. Détails : rapport de validation.
+- Déploiement tenté via polkit : fenêtre fermée (« Request dismissed »), pas de modification système. L'utilisateur est
+  invité à choisir une nouvelle demande polkit ou une relance d'install.sh dans son terminal.
+- L'utilisateur choisit explicitement une nouvelle demande polkit : déploiement réussi. Ordre des identifiants et module
+  installé vérifiés, grub-script-check PASS, dix fichiers de démarrage et commandes identiques avant/après ; deuxième
+  passage déjà à jour et grub.cfg inchangé. Journal `.shots/grub-horizon/deploy-order.log`. Bureau réel vivant.
+  Reste : inspection visuelle du menu physique au prochain redémarrage manuel (aucun redémarrage de l'hôte déclenché).

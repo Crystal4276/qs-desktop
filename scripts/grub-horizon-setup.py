@@ -31,6 +31,10 @@ def group_config(ids):
     return restore+('if [ -n "$theme" -a -z "$fallback" ]; then\n'
             '  qs_horizon_group '+ ' '.join('"'+i+'"' for i in ids)+'\n'
             '  source $prefix/themes/qs-horizon/select.cfg\nfi\n')
+def order_config(ids):
+    return ('if [ -n "$theme" -a -z "$fallback" ]; then\n'
+            '  qs_horizon_order '+ ' '.join('"'+i+'"' for i in ids+['advanced-options','uefi-firmware','restart'])+'\n'
+            '  source $prefix/themes/qs-horizon/select.cfg\nfi\n')
 def main():
     ap=argparse.ArgumentParser(description=__doc__);ap.add_argument('action',choices=['audit','status','install','uninstall']);ap.add_argument('--dry-run',action='store_true');ap.add_argument('--root',type=pathlib.Path,default=pathlib.Path('/'));a=ap.parse_args();root=a.root.resolve()
     def path(s):return root/s.lstrip('/')
@@ -69,6 +73,8 @@ def main():
             text+=f'if [ -n "$theme" ]; then qs_horizon_entry "{image}" "{title}" "{cls}"; fi\n'
         recovery_ids=[image for image,title,cls in sorted(labels(root),key=lambda e:'LTS' in e[1]) if '(fallback)' in title or ', fallback)' in title or '(secours sans Plymouth)' in title]
         text+=group_config(recovery_ids)
+        normal_ids=[image for image,title,cls in sorted(labels(root),key=lambda e:'LTS' in e[1]) if title in ('Arch Linux (standard)','Arch Linux LTS')]
+        text+=order_config(normal_ids)
         text+='QS_HORIZON\n'
         hooktext='''# Managed by QS Desktop Horizon
 [Trigger]

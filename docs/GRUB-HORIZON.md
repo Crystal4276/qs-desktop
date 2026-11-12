@@ -17,16 +17,24 @@ Les presets mkinitcpio sont associés aux fichiers UKI **réellement présents**
 | linux / rescue | Arch standard (secours sans Plymouth) |
 | linux-lts / rescue | Arch LTS (secours sans Plymouth) |
 
-Le module `horizon.mod` ajoute une classe `arch` et remplace uniquement le titre des identifiants UKI reconnus ; ni sourcecode,
-ni paramètres ne changent ; le choix par défaut est conservé lors du regroupement. Les images inconnues gardent leur présentation. Une nouvelle image demande de
+Le module `horizon.mod` ajoute une classe `arch` et remplace le titre des identifiants UKI reconnus ; ni sourcecode,
+ni paramètres ne changent ; le choix par défaut est conservé lors du regroupement et du tri. Les images inconnues gardent leur présentation. Une nouvelle image demande de
 relancer l'installation pour actualiser l'association ; le chargement des images reste natif et dynamique.
 Une déclaration fallback commentée n'est pas une preuve que l'image existe. Aucun fallback n'est construit par ce chantier.
 
 Les actions présentes portant les identifiants `advanced-options`, `uefi-firmware` et `restart` reçoivent respectivement
 les icônes de couches, puce et redémarrage de la référence approuvée, en couleur texte. Le générateur UEFI natif utilise
 `uefi-firmware` : l'icône s'applique aussi au menu installé. Pour une entrée personnalisée Advanced options ou Restart,
-utiliser l'identifiant correspondant ou la classe native `advanced`/`restart`. Aucun sous-menu ni redémarrage n'est ajouté
-si l'entrée n'existe pas.
+utiliser l'identifiant correspondant ou la classe native `advanced`/`restart`. L'action **Restart** est créée si elle manque,
+avec la commande native `reboot` ; une entrée existante portant cet identifiant est réutilisée. Aucun réglage UEFI n'est ajouté
+si le générateur natif n'en fournit pas.
+
+Après découverte native des UKI et regroupement des secours, le menu affiche **Arch Linux (standard)**, **Arch Linux LTS**,
+**Advanced options**, **UEFI Firmware Settings**, puis **Restart**, dans cet ordre. Les noyaux ou sous-menus absents sont
+omis ; les entrées supplémentaires restent accessibles à la suite, dans leur ordre relatif initial. Les objets natifs sont
+simplement reliés dans le nouvel ordre, sans recopier leurs commandes. Le défaut numérique est ramené à l'identifiant de
+l'entrée initialement choisie, et un défaut mémorisé dans le sous-menu reste valide. Une stratégie automatique `$fallback`
+préexistante conserve son ordre et ses index ; elle exclut ce tri et l'ajout de Restart.
 
 Les variantes de secours présentes (`fallback` et `rescue` sans Plymouth) sont regroupées sous **Advanced options**, sans
 doublons au premier niveau. Sur le laptop, cela regroupe les deux images `~rescue.efi`, en conservant leurs titres explicites
@@ -52,6 +60,7 @@ python3 scripts/grub-horizon-preview.py --modes 800x600 --entries 12
 python3 scripts/grub-horizon-preview.py --modes 1024x768 --broken
 python3 scripts/grub-horizon-preview.py --modes 1024x768 --missing-module
 python3 scripts/grub-horizon-preview.py --modes 3440x1440 --auto
+python3 scripts/grub-horizon-preview.py --modes 1920x1200 --shuffled --without-restart
 python3 scripts/grub-horizon-setup.py audit
 python3 scripts/grub-horizon-setup.py install --dry-run
 python3 scripts/test-grub-horizon.py
