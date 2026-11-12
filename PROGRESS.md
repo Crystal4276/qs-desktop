@@ -953,3 +953,24 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
   2. sous Sway : les mêmes cas ;
   3. USB-C et dock : pas de matériel pour l'instant (à refaire après achat) ;
   4. l'écran de connexion reprend les liaisons Sway à la prochaine mise à jour de sa copie système (`install.sh`, étape système).
+
+## Windows 11 — timer CPU et partage Samba de Codex retirés (2026-11-12)
+
+- Origine : projet séparé `~/Win11` (Codex, 10-11 novembre, non versionné), hors de ce dépôt. Ce dépôt ne fait pour les VM
+  que `libvirtd` activé et le réseau `default` démarré au boot (`scripts/system-setup.sh`).
+- **Timer `win11-cpu` retiré** (ton accord) : `win11-cpu.{service,timer}`, hook `/etc/libvirt/hooks/qemu.d/90-win11-cpu`,
+  `/usr/local/libexec/win11-cpu`, `/run/win11-cpu`. Il servait au profil `target` (vCPU sur 0-7, hôte limité à 8-13), écarté
+  par les mesures de Codex (plus lent) au profit de `comparison` sans restriction : il tournait toutes les 15 s pour rien
+  (1828 passages le 12 avant 8 h 30). Aucune restriction CPU active au retrait ; VM `win11`, réseau `default` et libvirtd intacts.
+  `~/Win11/scripts/win11ctl prepare` le réinstallerait.
+- **Samba : un seul mécanisme, celui du dépôt** (ton choix) : partage `[Win11Exchange]` de Codex retiré
+  (`/etc/samba/win11.conf`, comptes Samba et Linux `win11share`, `/srv/samba/win11-exchange` qui ne contenait que ses
+  scripts et un fichier de test). Il était déjà inactif : `install.sh` relancé le 11 à 18:35 avait remis `smb.conf` du dépôt,
+  sans sa ligne `include`. Restent `[homes]` et les partages Nemo (clic droit → Partager) ; partage de test créé puis retiré
+  sans root : OK. Règle `ufw` de Codex (TCP 445 depuis 192.168.122.2) et réservation DHCP `win11` → 192.168.122.2 gardées.
+- **À faire à la main** :
+  1. créer ton compte Samba dans un terminal : `sudo smbpasswd -a chikhs` (aucun compte `chikhs` jusqu'ici) ;
+  2. dans Windows : retirer l'ancien lecteur et ses identifiants (`net use L: /delete`, `cmdkey /delete:192.168.122.1`),
+     puis `\\192.168.122.1\chikhs` (dossier personnel) ou `\\192.168.122.1\<nom du partage Nemo>` avec le compte `chikhs` ;
+  3. Windows → laptop : dossier partagé dans Windows, ouvert dans Nemo par `smb://192.168.122.2/` (à vérifier pendant l'audit).
+- Prochaine étape demandée : **audit de la configuration de la VM** faite par Codex (domaine, réseau, `ufw`, réglages Windows).
