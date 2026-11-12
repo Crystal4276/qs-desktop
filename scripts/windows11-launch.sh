@@ -8,10 +8,11 @@ fail() {
 }
 [[ $# == 2 ]] || fail 'Configuration du lanceur invalide.'
 uri="$1" domain="$2"
-for program in virsh virt-viewer flock; do
+for program in virsh virt-manager flock; do
     command -v "$program" >/dev/null || fail "Commande absente : $program."
 done
 [[ -n "${XDG_RUNTIME_DIR:-}" ]] || fail 'Session utilisateur absente.'
+# Verrou le temps du démarrage : un double clic ne lance pas la VM deux fois.
 exec 9>"$XDG_RUNTIME_DIR/qs-windows11.lock"
 flock -n 9 || exit 0
 unset DESKTOP_STARTUP_ID XDG_ACTIVATION_TOKEN
@@ -22,7 +23,7 @@ case "$state" in
     running|paused|'in shutdown'|pmsuspended) ;;
     *) fail "État inattendu de la VM : $state" ;;
 esac
-# --attach passe le socket SPICE par libvirt, sans accès direct au dossier privé de QEMU.
-# Identité GTK dédiée : placement avant que le titre du domaine arrive.
-# Le shell garde le verrou même si le programme ferme ses descripteurs hérités.
-virt-viewer --name=qs-windows11 --class=qs-windows11 --attach --connect "$uri" --domain-name --wait -- "$domain" || fail 'Impossible d’ouvrir la console de la VM.'
+exec 9>&-
+# Console de virt-manager. Instance unique : un nouveau clic réaffiche la même fenêtre, d'où le verrou rendu avant.
+# Placement par les règles machine, sur le titre « <domaine> on QEMU/KVM ».
+virt-manager --connect "$uri" --show-domain-console "$domain" || fail 'Impossible d’ouvrir la console de la VM.'
