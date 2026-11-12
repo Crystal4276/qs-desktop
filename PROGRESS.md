@@ -1071,4 +1071,6 @@ Lecture seule (hôte, root par pkexec, Windows par QGA ; VM démarrée puis éte
   (9 Gio ; la copie de `/var/lib/libvirt/boot` reste branchée en CD) : 631 → 683 Go libres. `/var/lib/win11-setup` :
   sauvegardes de Codex retirées (profils CPU, anciens helpers, `services.json`, `original/`, scripts RDP) ; restent
   `inventory.json`, `win11.xml`, `ufw.json` et `files.json` réduit à `/etc/win11/config.json` (seul restauré par `rollback`).
-- **Reste** : BIOS, « SATA/NVMe Operation » RAID On → AHCI/NVMe (toi, en dernier ; UKI vérifiées avec `nvme`).
+- **BIOS fait par toi** (démarrage de 10:17) : « SATA/NVMe Operation » en AHCI/NVMe. Le SSD est maintenant en
+  `0000:01:00.0`, hors VMD, module `vmd` non chargé ; démarrage, bureau et libvirt normaux. Les blocages étant espacés
+  (7 en 3 jours), le correctif se juge sur la durée : `journalctl -k -b 0 | grep 'completion polled'` doit rester vide.
