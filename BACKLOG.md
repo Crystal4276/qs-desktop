@@ -4,6 +4,11 @@ Idées et défauts connus hors du programme des phases. Rien ici n'est implémen
 
 ## Fonctions
 
+- **Réveils spontanés capot fermé (laptop)** : le 2026-11-09, 6 réveils en 19 min capot fermé (s2idle), ~27 s éveillé à chaque
+  fois avant que logind ne rendorme (journal : `PM: suspend exit` sans ouverture du capot ; trace `tb_switch_resume` de
+  thunderbolt au premier réveil). Source de réveil à identifier (`/proc/acpi/wakeup`, `/sys/power/pm_wakeup_irq`), batterie
+  dans un sac.
+
 - **Carte batterie du laptop** : informations de recharge (puissance, durée, état / santé), présentation et choix des modes de sommeil ; développement ultérieur, sans changement de mode avec la gestion du capot.
 
 - **Autres distributions** (Fedora, Debian / Ubuntu) : correspondances de paquets et `install.sh` hors Arch, retirées de la

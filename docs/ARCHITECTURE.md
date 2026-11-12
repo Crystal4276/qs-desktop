@@ -469,11 +469,10 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
   l'externe et mettrait en veille un laptop branché capot fermé. `Idle.qml` bloque donc `handle-lid-switch` tant qu'un écran
   externe est **actif** dans `Compositor.outputs` (veille des écrans comprise ; connecteurs `DP`/`HDMI`/`DVI`/`VGA`, ceux que
   compte logind ; laptop seulement, `Battery.available` comme `lockBeforeSleep` ; pas sous `QS_TEST`).
-- Dalle : éteinte capot fermé, rallumée à l'ouverture par le compositeur (§ 3.1, `dotfiles/*/hosts/<laptop>`). libinput ne
-  transmet l'état initial du capot, et sa première ouverture, que pour un capot réputé fiable : quirk de la machine
-  (`dotfiles/libinput/hosts/<hostname>.quirks` → `/etc/libinput/local-overrides.quirks`, étape système), pris en compte au
-  démarrage suivant du compositeur. Hyprland relit en plus l'état au chargement (`/proc/acpi/button/lid/LID0/state` dans son
-  fichier machine) : le `hyprctl reload` du réveil rallumerait la dalle. Espaces repris par `Outputs.qml`.
+- Dalle : éteinte capot fermé, rallumée à l'ouverture par le compositeur (§ 3.1, `dotfiles/*/hosts/<laptop>`) ; état initial
+  du capot donné par libinput (capot réputé fiable par défaut depuis libinput 1.21 : pas de quirk). Hyprland relit en plus
+  l'état au chargement (`/proc/acpi/button/lid/LID0/state` dans son fichier machine) : le `hyprctl reload` du réveil
+  rallumerait la dalle. Espaces repris par `Outputs.qml`.
 
 ### 7.14 Agent polkit (`services/Polkit.qml`, `modules/polkit/`)
 
