@@ -38,6 +38,10 @@ Ensuite : affinage de l'interface (depuis le laptop), maintenance et idées de `
 2. **Charte graphique** : aucune couleur, police, taille, marge, arrondi ou icône inventés ; tout vient de `config/Theme.qml`
    (`docs/THEME.md`). Si une valeur manque, demander plutôt que choisir.
 3. **Pas de `sudo`, pas d'installation ni de désinstallation de paquets** sans me demander. Si un paquet manque, lister ce qu'il faut et pourquoi.
+   Commande root : lance-la toi-même avec `pkexec` (écriture : `… | pkexec tee <fichier>`), annoncée en une ligne (quoi,
+   pourquoi) ; la fenêtre polkit du bureau me la présente, mon mot de passe vaut accord. Jamais `sudo` dans un appel d'outil ni
+   dans une commande `!` : sans terminal, il échoue. Script qui appelle `sudo` lui-même (`install.sh`, `scripts/*-setup.sh`) :
+   me demander de le lancer dans un terminal.
 4. **Ne pas inventer d'API Quickshell.** Consulter la doc de la version installée (https://quickshell.org/docs/) avant d'utiliser un
    type ou une propriété dont tu n'es pas sûr ; en cas d'erreur QML, lire le log plutôt que deviner. Quickshell d'abord : pas de
    menu GTK, pas de rustine.
