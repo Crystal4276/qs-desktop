@@ -15,8 +15,7 @@ OverlayPopup {
 
     readonly property int cellWidth: Theme.wallpaperPicker.thumbWidth + 2 * Theme.wallpaperPicker.selectionPadding
     readonly property int columns: width >= Theme.wallpaperPicker.wideScreenWidth ? Theme.wallpaperPicker.wideColumns
-        : width >= Theme.wallpaperPicker.columns * cellWidth + 2 * (Theme.panel.padding + Theme.bar.marginSide)
-            ? Theme.wallpaperPicker.columns : 1
+        : Theme.wallpaperPicker.columns
 
     property string tab: "simple"
     property string target: ""   // description de l'écran visé ("" : tous)

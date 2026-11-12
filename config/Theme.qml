@@ -514,7 +514,7 @@ Singleton {
     readonly property QtObject wallpaperPicker: QtObject {
         readonly property int thumbWidth: 240
         readonly property int thumbHeight: 135      // 16:9
-        readonly property int columns: 2
+        readonly property int columns: 1
         readonly property int wideColumns: 3
         readonly property int wideScreenWidth: 2560 // largeur logique ; la hauteur disponible détermine les rangées
         readonly property int selectionPadding: root.appMenu.itemPadding
