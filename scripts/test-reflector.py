@@ -69,7 +69,7 @@ esac''',
     # La présence du vrai Reflector sur la machine ne doit pas contourner le faux amorçage.
     source = source.replace('command -v reflector >/dev/null', '[[ -x "$TEST_ROOT/bin/reflector" ]]')
     # Le vrai branchement de l'étape préliminaire ; le reste du bureau n'est pas installé dans ce test.
-    source += '\n[[ -n "$system" ]] && step_reflector\necho PACKAGES\nprintf "%s\\n" "${pending[@]}"\n'
+    source += '\nask_system\n[[ -n "$system" ]] && step_reflector\necho PACKAGES\nprintf "%s\\n" "${pending[@]}"\n'
     installer = repo / 'install.sh'
     installer.write_text(source)
     env = dict(os.environ, TEST_ROOT=str(root), HOME=str(root / 'home'), PATH=str(binaries) + ':' + os.environ['PATH'])

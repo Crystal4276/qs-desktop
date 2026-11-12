@@ -9,3 +9,6 @@ __pycache__/
 
 # Choix machine du décodage mpv (install.sh)
 dotfiles/mpv/host.conf
+
+# Provisioning privé
+hosts/zerotier-network.local

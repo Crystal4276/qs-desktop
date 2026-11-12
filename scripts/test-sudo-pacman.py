@@ -47,7 +47,7 @@ exit 0''',
     helper.write_text(source)
     helper.chmod(0o755)
     source = (REPO / 'install.sh').read_text().split('\nif [[ -n "$uninstall" ]]; then\n')[0]
-    source += '\n[[ -n "$system" ]] && step_pacman_sudo\nprintf "%s\\n" "${pending[@]}"\n'
+    source += '\nask_system\n[[ -n "$system" ]] && step_pacman_sudo\nprintf "%s\\n" "${pending[@]}"\n'
     installer = repo / 'install.sh'
     installer.write_text(source)
     env = dict(os.environ, TEST_ROOT=str(root), REAL_VISUDO=VISUDO,

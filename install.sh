@@ -1181,6 +1181,25 @@ step_plymouth() {
     fi
 }
 
+step_zerotier() {
+    local id file="$repo/hosts/zerotier-network.local" rc=0
+    if [[ ! -f "$file" ]]; then
+        later "ZeroTier : renseigner hosts/zerotier-network.local puis relancer install.sh."
+        return
+    fi
+    id="$(cat "$file")"
+    if [[ ! "$id" =~ ^[[:xdigit:]]{16}$ ]]; then
+        later "ZeroTier : Network ID invalide dans $file."
+        return 1
+    fi
+    "$repo/scripts/system-setup.sh" ${dry:+--dry-run} zerotier "${id,,}" || rc=$?
+    case "$rc" in
+        0) ;;
+        3) later "ZeroTier : réseau non opérationnel ; vérifier autorisation Central et connectivité, puis relancer." ;;
+        *) later "ZeroTier : provisioning échoué (code $rc)."; return 1 ;;
+    esac
+}
+
 step_system() {
     section "6. Système (sudo, avec confirmation)"
     # Accord donné une fois pour toutes (ask_system).
@@ -1197,6 +1216,7 @@ step_system() {
         sub "$repo/scripts/greeter-setup.sh" ${dry:+--dry-run} enable
     fi
     greeter_wallpaper
+    step_zerotier
     step_plymouth
     echo "Samba, services (réseau, Bluetooth, énergie, VM), groupes et thème Qt du système"
     sub "$repo/scripts/system-setup.sh" ${dry:+--dry-run} install
@@ -1381,6 +1401,10 @@ if [[ -n "$uninstall" ]]; then
 fi
 [[ -n "$dry" ]] && echo "Simulation : rien ne sera modifié."
 choose_profile
+if [[ -n "$system" && -f "$repo/hosts/zerotier-network.local" ]]; then
+    network_id="$(cat "$repo/hosts/zerotier-network.local")"
+    [[ "$network_id" =~ ^[[:xdigit:]]{16}$ ]] || { echo '! Network ID ZeroTier invalide' >&2; exit 2; }
+fi
 ask_system
 [[ -n "$system" ]] && step_pacman_sudo
 [[ -n "$system" ]] && step_reflector

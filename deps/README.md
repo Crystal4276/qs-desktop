@@ -286,3 +286,11 @@ respectées. Sans autorisation, température/fréquence/mémoire accessibles res
 `notify-send` (libnotify). La console seule se ferme ; la VM continue. Sur le laptop, les règles machine Sway et Hyprland
 reconnaissent la console par son titre (`win11 on QEMU/KVM`) et la placent sur l’espace du profil (6 en travail, 5 en jeux),
 en mosaïque sans changer l’espace courant ; les autres fenêtres de virt-manager restent flottantes. Logo : `assets/windows11-source.md`.
+
+### Provisioning ZeroTier et clients de partage
+
+`zerotier-one`, `smbclient`, `openssh`, `iperf3` sont déclarés dans `apps.txt` pour les deux profils.
+`gvfs` et `gvfs-smb`, déjà présents, fournissent les montages GIO de Nemo (SMB/SFTP).
+Provisioning par `install.sh`, fichier local et autorisation : voir README, « Provisioning ZeroTier ».
+`python3 scripts/test-zerotier.py` vérifie les états réseau et la conservation des adhésions sur fichiers temporaires.
+Ce banc ne remplace pas la validation en VM.
