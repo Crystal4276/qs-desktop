@@ -6,7 +6,8 @@
 #         system-setup.sh [--dry-run] install     Samba (partages utilisateur, dotfiles/samba/smb.conf), QT_QPA_PLATFORMTHEME dans
 #                                                 /etc/environment, groupes (libvirt, kvm, sambashare), services (réseau, Bluetooth,
 #                                                 profils d'énergie, Samba, libvirt), réseau « default » des VM démarré au boot,
-#                                                 hook pacman gardant 10_linux de GRUB désactivé (machine GRUB + UKI)
+#                                                 hook pacman gardant 10_linux de GRUB désactivé (machine GRUB + UKI),
+#                                                 quirks libinput de la machine (dotfiles/libinput/hosts/<hostname>.quirks)
 #         system-setup.sh [--dry-run] cursor      curseur du thème copié pour l'écran de connexion (/usr/local/share/icons)
 #         system-setup.sh [--dry-run] chromium-extensions
 #                                                 extensions de Chromium (dotfiles/chromium/extensions.txt), installées depuis le
@@ -240,6 +241,10 @@ do_install() {
         || [[ -f /etc/pacman.d/hooks/90-qs-grub-uki.hook ]]; then
         install_file dotfiles/pacman/hooks/90-qs-grub-uki.hook /etc/pacman.d/hooks/90-qs-grub-uki.hook
     fi
+
+    # Quirks libinput de la machine (capot réputé fiable : docs/ARCHITECTURE.md § 7.13.1).
+    local quirks="dotfiles/libinput/hosts/$(cat /proc/sys/kernel/hostname).quirks"
+    [[ -f "$repo/$quirks" ]] && install_file "$quirks" /etc/libinput/local-overrides.quirks
 
     getent group libvirt >/dev/null && add_group libvirt
     getent group kvm >/dev/null && add_group kvm
