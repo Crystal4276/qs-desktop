@@ -25,24 +25,14 @@ Singleton {
     readonly property int workspaceCount: 9
 
     // Bloc d'espaces de chaque écran : { "<nom de sortie>": [1, 2, 3], … }.
-    // Répartition imposée par la config machine si elle couvre exactement les écrans actifs (par description),
+    // Répartition imposée par la config machine si elle couvre exactement les écrans actifs (Settings.layoutFor),
     // sinon règle générale : blocs de floor(9 / n), le reste (+1) aux premiers écrans de `ordered`.
     readonly property var blocks: {
         const outs = ordered;
+        const imposed = Settings.layoutFor(outs);
+        if (imposed)
+            return imposed;
         const result = {};
-        const descriptions = outs.map(o => o.description).sort().join("\n");
-        const imposed = Settings.workspaceLayouts.find(l => Object.keys(l).sort().join("\n") === descriptions);
-        // Imposée : les numéros 1–9, chacun sur un seul écran ; sinon ignorée (règle générale).
-        const numbers = imposed ? Object.values(imposed).flat() : [];
-        const valid = imposed && Object.values(imposed).every(Array.isArray) && numbers.length === workspaceCount
-            && numbers.every(n => Number.isInteger(n) && n >= 1 && n <= workspaceCount) && new Set(numbers).size === numbers.length;
-        if (imposed && !valid)
-            console.warn("Outputs: répartition imposée invalide (chaque numéro 1–9 une fois), règle générale :", JSON.stringify(imposed));
-        if (valid) {
-            for (const o of outs)
-                result[o.name] = [...imposed[o.description]].sort((a, b) => a - b);
-            return result;
-        }
         const n = outs.length;
         let next = 1;
         outs.forEach((o, i) => {

@@ -133,7 +133,8 @@ sur l'écran principal, pour toutes les répartitions des 10 s suivantes, sauf s
 ### 3.3 Règle générale
 
 - Ordre des écrans : **écran principal d'abord**, puis les autres de gauche à droite (x, puis y).
-- Écran principal : celui de la config machine (`primaryOutput`), sinon le plus grand en surface logique (égalité : le plus à gauche).
+- Écran principal : celui qui a l'espace 1 si une répartition imposée s'applique (§ 4), sinon celui de la config machine
+  (`primaryOutput`), sinon le plus grand en surface logique (égalité : le plus à gauche).
   Sans compositeur reconnu : le premier écran.
 - Blocs : `floor(9 / n)` chacun, le reste (+1) aux premiers écrans dans cet ordre ; blocs contigus.
 
@@ -195,7 +196,11 @@ de ce desktop n'en est pas une), rétroéclairage (`/sys/class/backlight`), GPU 
   compositeur.
 - `primaryOutput` : écran principal, par description. `workspaceLayouts` (facultatif, absent ici : la règle générale tombe juste) :
   liste de répartitions imposées, chacune `{ "<description>": [1, 2, 3], … }`, appliquée quand l'ensemble des écrans actifs est
-  exactement celui-là.
+  exactement celui-là (la première qui correspond). Au plus une clé `"*"` : un seul autre écran, quel qu'il soit. L'écran de
+  l'espace 1 devient le principal (barre `primary`, focus de début de session, écran de connexion). Chaque numéro 1–9 une fois,
+  sinon la répartition est ignorée avec un avertissement. Laptop (`hosts/corelabs-laptop.json`) : dalle + un écran externe
+  quelconque → externe 1-6 (principal), dalle 7-9 (mails, Discord, Spotify du profil travail) ; capot fermé ou deux écrans
+  externes : règle générale.
 
 - `bars` : l'écran principal reçoit `primary` ; les autres, leur entrée par description, sinon `secondary` (un écran inconnu a
   toujours une barre ; un écran qui a sa propre entrée mais devient principal garde tray et réglages). Chaque côté est une liste de

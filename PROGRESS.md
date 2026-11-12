@@ -1074,3 +1074,24 @@ Lecture seule (hôte, root par pkexec, Windows par QGA ; VM démarrée puis éte
 - **BIOS fait par toi** (démarrage de 10:17) : « SATA/NVMe Operation » en AHCI/NVMe. Le SSD est maintenant en
   `0000:01:00.0`, hors VMD, module `vmd` non chargé ; démarrage, bureau et libvirt normaux. Les blocages étant espacés
   (7 en 3 jours), le correctif se juge sur la durée : `journalctl -k -b 0 | grep 'completion polled'` doit rester vide.
+
+## Laptop + un écran externe — espaces et barre de la dalle (2026-11-12)
+
+- Ta demande : capot ouvert + un écran externe (quel qu'il soit) → externe principal avec 1-6 (dont microscope 5 et Windows 6),
+  dalle 7-9 (mails, Discord, Spotify) ; au début de session, 1 sur l'externe (focalisé) et 7 sur la dalle. Barre de la dalle :
+  espaces, volume, performances (GPU / CPU / mémoire), heure + date + calendrier, tray.
+- `workspaceLayouts` accepte une clé `"*"` (un seul autre écran, quel qu'il soit) ; l'écran de l'espace 1 d'une répartition
+  imposée devient le principal (même si plus petit que la dalle : sinon une dalle 1920×1200 l'emportait sur un 1080p). Validation
+  déplacée dans `Settings` (une fois par lecture de la config). Corrigé au passage : `Array.prototype.flat` n'existe pas dans ce
+  moteur JS : toute répartition imposée faisait échouer le calcul (sans effet jusqu'ici : aucune machine n'en avait).
+- `hosts/corelabs-laptop.json` : répartition `"*"` 1-6 / dalle 7-9 ; `bars` complet (principal et secondaire repris de
+  `default.json`, plus l'entrée de la dalle). Capot fermé, laptop seul ou deux externes : inchangés (règle générale).
+- Vérifié : test logique isolé (11 cas : externe sans description, externe plus petit, trois écrans, doublons, entrées
+  invalides) ; banc Sway headless à deux écrans (fausses descriptions, copie du banc seulement) : début de session 1 / 7 focus
+  externe, débranchement → 1-9 sur la dalle focus gardé, rebranchement et premier branchement d'un nouvel externe → 1 externe
+  focalisé, 7 sur la dalle, aucune fenêtre perdue ; captures des deux barres conformes. `test-outputs.sh` Sway et Hyprland :
+  0 échec ; `test-workspace-startup.py` (stub mis à jour) OK ; avertissements identiques à HEAD (même test sur copie
+  intacte). Bureau réel rechargé (Hyprland, PID 1903), dalle seule inchangée (1-9, barre complète).
+- **À tester à la main** : brancher un vrai écran externe sous Hyprland puis Sway (1 / 7, barres, tray et calendrier ouverts
+  depuis la dalle) ; nouvelle connexion avec l'écran branché ; écran de connexion (champ sur l'externe, à la prochaine mise
+  à jour de sa copie système).

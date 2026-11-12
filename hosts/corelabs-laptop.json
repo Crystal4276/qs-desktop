@@ -3,5 +3,22 @@
   "windows11": {
     "uri": "qemu:///system",
     "domain": "win11"
+  },
+  "workspaceLayouts": [
+    { "*": [1, 2, 3, 4, 5, 6], "China Star Optoelectronics Technology Co. Ltd 0x1471": [7, 8, 9] }
+  ],
+  "bars": {
+    "primary": {
+      "left": [["menu"], ["workspaces"], ["mpris", "volume", "slider"]],
+      "right": [["updates"], ["gpu", "cpu", "memory"], ["clockDate"], ["backlight", "battery", "tray", "settings"]]
+    },
+    "secondary": {
+      "left": [["workspaces"], ["volume", "slider"]],
+      "right": [["clock"]]
+    },
+    "China Star Optoelectronics Technology Co. Ltd 0x1471": {
+      "left": [["workspaces"], ["volume", "slider"]],
+      "right": [["gpu", "cpu", "memory"], ["clockDate"], ["tray"]]
+    }
   }
 }
