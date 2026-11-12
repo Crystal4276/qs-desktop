@@ -514,8 +514,9 @@ Singleton {
     readonly property QtObject wallpaperPicker: QtObject {
         readonly property int thumbWidth: 240
         readonly property int thumbHeight: 135      // 16:9
-        readonly property int columns: 4
-        readonly property int rows: 3               // visibles ; au-delà, la grille défile
+        readonly property int columns: 2
+        readonly property int wideColumns: 3
+        readonly property int wideScreenWidth: 2560 // largeur logique ; la hauteur disponible détermine les rangées
         readonly property int selectionPadding: root.appMenu.itemPadding
         readonly property color selection: root.color.green      // fond actuel : un état, comme une bascule activée
         readonly property color hover: root.panel.rowHover

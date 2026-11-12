@@ -13,6 +13,11 @@ import qs.modules.bar
 OverlayPopup {
     id: root
 
+    readonly property int cellWidth: Theme.wallpaperPicker.thumbWidth + 2 * Theme.wallpaperPicker.selectionPadding
+    readonly property int columns: width >= Theme.wallpaperPicker.wideScreenWidth ? Theme.wallpaperPicker.wideColumns
+        : width >= Theme.wallpaperPicker.columns * cellWidth + 2 * (Theme.panel.padding + Theme.bar.marginSide)
+            ? Theme.wallpaperPicker.columns : 1
+
     property string tab: "simple"
     property string target: ""   // description de l'écran visé ("" : tous)
 
@@ -104,55 +109,67 @@ OverlayPopup {
     PanelFrame {
         id: frame
 
-        x: Math.round((parent.width - width) / 2)
-        y: Math.round((parent.height - height) / 2)
-        // Quatre vignettes simples de large (deux panoramas ou triptyques).
-        width: Theme.wallpaperPicker.columns * (Theme.wallpaperPicker.thumbWidth + 2 * Theme.wallpaperPicker.selectionPadding)
-            + 2 * Theme.panel.padding
+        x: parent.width - width - Theme.bar.marginSide
+        y: Theme.panel.gap
+        width: Math.min(root.columns * root.cellWidth + 2 * Theme.panel.padding,
+            parent.width - 2 * Theme.bar.marginSide)
+        height: Math.max(0, parent.height - 2 * Theme.panel.gap)
         onCloseRequested: root.close()
 
-        // Onglets ; pour les images simples, l'écran visé.
-        RowLayout {
+        // Commandes fixes ; chaque groupe passe à la ligne si nécessaire.
+        ColumnLayout {
+            id: controls
             Layout.fillWidth: true
             spacing: Theme.panel.spacing
 
-            Repeater {
-                model: root.tabs
-
-                PanelButton {
-                    required property var modelData
-                    text: modelData.name
-                    checked: root.tab === modelData.key
-                    onClicked: root.tab = modelData.key
-                }
-            }
-
-            Item {
+            Flow {
                 Layout.fillWidth: true
-            }
+                spacing: Theme.panel.spacing
 
-            Repeater {
-                model: (root.tab === "simple" || root.tab === "corelab") && root.outputs.length > 1 ? [{ description: "", name: "All screens" }, ...root.outputs] : []
+                Repeater {
+                    model: root.tabs
 
-                PanelButton {
-                    required property var modelData
-                    text: modelData.name
-                    checked: root.target === modelData.description
-                    onClicked: root.target = modelData.description
+                    PanelButton {
+                        required property var modelData
+                        text: modelData.name
+                        checked: root.tab === modelData.key
+                        onClicked: root.tab = modelData.key
+                    }
                 }
             }
-        }
 
-        // Onglet vide (dossier absent sur une nouvelle machine…) : où mettre les images, à la place de la grille.
-        PanelSection {
-            visible: root.empty
-            readonly property string dir: Wallpapers.dir.startsWith(`${Places.home}/`) ? `~${Wallpapers.dir.slice(Places.home.length)}` : Wallpapers.dir
-            text: `No wallpapers in ${dir}/${root.tab}`
+            Flow {
+                Layout.fillWidth: true
+                visible: (root.tab === "simple" || root.tab === "corelab") && root.outputs.length > 1
+                spacing: Theme.panel.spacing
+
+                Repeater {
+                    model: [{ description: "", name: "All screens" }, ...root.outputs]
+
+                    PanelButton {
+                        required property var modelData
+                        text: modelData.name
+                        checked: root.target === modelData.description
+                        onClicked: root.target = modelData.description
+                    }
+                }
+            }
         }
 
         Item {
             Layout.fillWidth: true
-            Layout.preferredHeight: root.empty ? 0 : Theme.wallpaperPicker.rows * (Theme.wallpaperPicker.thumbHeight + 2 * Theme.wallpaperPicker.selectionPadding)
+            Layout.preferredHeight: Math.max(0, frame.height - 2 * Theme.panel.padding
+                - controls.implicitHeight - Theme.panel.spacing)
+
+            // Le cadre reste haut même si la bibliothèque est vide.
+            PanelSection {
+                anchors.top: parent.top
+                width: parent.width
+                visible: root.empty
+                readonly property string dir: Wallpapers.dir.startsWith(`${Places.home}/`) ? `~${Wallpapers.dir.slice(Places.home.length)}` : Wallpapers.dir
+                text: `No wallpapers in ${dir}/${root.tab}`
+            }
+
             Repeater {
                 id: grids
                 model: ["simple", "corelab", "panorama", "triptych"]
@@ -162,7 +179,7 @@ OverlayPopup {
                     required property string modelData
                     anchors.fill: parent
                     active: !!root.visited[modelData] && root.tabs.some(t => t.key === modelData)
-                    visible: root.tab === modelData
+                    visible: !root.empty && root.tab === modelData
                     sourceComponent: Component {
                         GridView {
                             id: view
@@ -175,7 +192,7 @@ OverlayPopup {
                                 if (JSON.stringify(modelEntries) !== signature) modelEntries = next;
                             }
                             anchors.fill: parent
-                            cellWidth: (Theme.wallpaperPicker.thumbWidth + 2 * Theme.wallpaperPicker.selectionPadding) * ((kind === "panorama" || kind === "triptych") ? 2 : 1)
+                            cellWidth: kind === "panorama" || kind === "triptych" ? width : Math.min(root.cellWidth, width)
                             cellHeight: Theme.wallpaperPicker.thumbHeight + 2 * Theme.wallpaperPicker.selectionPadding
                             clip: true
                             boundsBehavior: Flickable.StopAtBounds

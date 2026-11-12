@@ -406,7 +406,10 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
   exacte (échelle comprise), sinon rapport le plus proche puis plus petite taille suffisante, ou plus grande disponible.
   Le même design s'adapte à chaque écran et aux changements de mode. Images / Panoramas / Triptychs restent disponibles.
   Profil jeux : Core Lab masqué, choix mémorisé conservé mais remplacé à l'affichage par le repli habituel.
-- Sélecteur (`PickerWindow.qml`, `qs ipc call wallpaper-picker toggle`) : onglets Images / Panoramas / Triptychs, vignettes en cache
+- Sélecteur (`PickerWindow.qml`, `qs ipc call wallpaper-picker toggle`) : panneau à droite, hauteur utile sous la barre moins les
+  marges du thème ; commandes fixes puis grille défilante. Images / Core Lab : deux colonnes, trois dès 2560 px logiques
+  (une si deux ne tiennent pas). Panoramas / Triptychs : un aperçu par rangée sur toute la largeur. Groupes de boutons
+  séparés, avec retour à la ligne. Onglets Images / Panoramas / Triptychs, vignettes en cache
   (`wallpaper-thumbs/`), appliqué au clic, rangée « All screens » / un écran. Empreintes mémorisées par version de fichier ;
   un scan identique conserve les objets du modèle et les images décodées. Les écritures pendant un scan sont fusionnées
   avec son résultat. Les réservations de capture sont annulables et les callbacks obsolètes ignorés.

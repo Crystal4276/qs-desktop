@@ -116,7 +116,10 @@ Remplace le power menu Rofi ; style des panneaux (§ 3), icônes de session de `
 
 - Menu d'applications (`Theme.appMenu`) : style de nwg-menu (fond `mantle` / `base`, Symbols Nerd Font Mono 20, recherche 24, survol
   translucide), disposition du menu Cinnamon.
-- Sélecteur de fond (`Theme.wallpaperPicker`), outil de capture (`Theme.screenshot` : voile `slurpVeil`, cadre `pink` 4 px),
+- Sélecteur de fond (`Theme.wallpaperPicker`) : panneau à droite, marges de 10 px, hauteur disponible sous la barre ;
+  vignettes 240 × 135 px, deux colonnes puis trois dès 2560 px logiques, repli à une colonne sur écran étroit.
+  Panoramas et triptyques : largeur de grille, hauteur de vignette conservée.
+- Outil de capture (`Theme.screenshot` : voile `slurpVeil`, cadre `pink` 4 px),
   statistiques (`Theme.monitor`), agent polkit (`Theme.polkit`) : style des panneaux.
 
 ## 8. Fenêtres (configs compositeur, `dotfiles/`)

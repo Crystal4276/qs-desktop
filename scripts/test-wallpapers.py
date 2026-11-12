@@ -21,7 +21,7 @@ def run(*args, **kwargs):
     return subprocess.check_output(args, text=True, timeout=40, **kwargs).strip()
 
 
-def test(work, compositor="sway", scale=1):
+def test(work, compositor="sway", scale=1, shots=None):
     root = work / 'shell'
     shutil.copytree(REPO, root, ignore=shutil.ignore_patterns('.git', '.shots', '.agents', '.codex', '__pycache__'))
     wallpapers = work / 'wallpapers'
@@ -56,6 +56,7 @@ def test(work, compositor="sway", scale=1):
     service.write_text(text)
     picker_source=root/'modules/wallpaper/PickerWindow.qml'
     t=picker_source.read_text().replace('    id: root','    id: root\n    readonly property var lifecycle: ({created:0,destroyed:0})',1)
+    t=t.replace('    id: root', '    id: root\n    readonly property alias testControls: controls', 1)
     t=t.replace('                id: cell','                id: cell\n                Component.onCompleted: root.lifecycle.created++\n                Component.onDestruction: root.lifecycle.destroyed++')
     picker_source.write_text(t)
     probe = root / 'shell.qml'
@@ -95,6 +96,17 @@ def test(work, compositor="sway", scale=1):
         }
         function cancel(): void { Wallpapers.cancelThumb(pending); }
         function tab(value: string): void { picker.tab=value; }
+        function geometry(): string {
+            const f=picker.frameItem, g=picker.grid, c=picker.testControls;
+            return JSON.stringify({width:picker.width,height:picker.height,columns:picker.columns,empty:picker.empty,
+                x:f.x,y:f.y,w:f.width,h:f.height,gridWidth:g?.width,gridHeight:g?.height,cellWidth:g?.cellWidth,
+                contentHeight:g?.contentHeight,controlsHeight:c.height,controlsImplicit:c.implicitHeight,
+                gridTop:g?.mapToItem(f,0,0).y,scrollHeight:f.children[0].contentHeight,
+                controls:c.children.filter(row=>row.visible).map(row=>({width:row.width,height:row.height,
+                    buttons:row.children.filter(b=>typeof b.text === "string").map(b=>({x:b.x,y:b.y,w:b.width,h:b.height}))}))});
+        }
+        function scrollEnd(): void { picker.grid.currentIndex=picker.items.length-1; picker.grid.positionViewAtEnd(); }
+        function screen(name: string): void { picker.open(Quickshell.screens.find(s=>s.name===name)); }
         function gridState(): string { return JSON.stringify({index:picker.grid?.currentIndex,y:picker.grid?.contentY}); }
         function reloadGrid(): void { picker.visited={}; Qt.callLater(()=>picker.visit()); }
         function imageStates(): string {
@@ -313,6 +325,80 @@ def test(work, compositor="sway", scale=1):
         shutil.rmtree(wallpapers/'corelab')
         ipc('refresh'); wait_for(lambda v: not v['lib']['corelab'])
         assert resolve(1920,1200) == 'simple/old.png'
+        # Exercise actual layer-surface dimensions, including live resize and fractional scaling.
+        def resize(width, height, output="HEADLESS-1", output_scale=scale):
+            # Hyprland requires integer logical dimensions for the requested scale.
+            if compositor == 'hyprland' and (width*output_scale != round(width*output_scale) or height*output_scale != round(height*output_scale)):
+                output_scale=1
+            if compositor == 'sway':
+                run('swaymsg', f'output {output} mode {round(width*output_scale)}x{round(height*output_scale)} scale {output_scale}', env=env)
+            else:
+                run('hyprctl','eval',f'hl.monitor({{output="{output}",mode="{round(width*output_scale)}x{round(height*output_scale)}@60",position="0x0",scale={output_scale}}})',env=env)
+            time.sleep(.7)
+        def geometry(): return json.loads(ipc('geometry'))
+        def check_layout(width, height, columns):
+            g=geometry()
+            assert abs(g['width']-width)<=1 and abs(g['height']-(height-65))<=1, g
+            assert g['columns']==columns and g['w']==columns*250+30, g
+            assert g['x']==g['width']-g['w']-10 and g['y']==10 and g['h']==g['height']-20, g
+            assert abs(g['gridTop']+g['gridHeight']-(g['h']-15))<=1, g
+            assert g['scrollHeight']<=g['h']+1, g
+            for row in g['controls']:
+                for b in row['buttons']:
+                    assert b['x']>=0 and b['y']>=0 and b['x']+b['w']<=row['width']+1 and b['y']+b['h']<=row['height']+1, g
+            return g
+        ipc('open'); time.sleep(.4)
+        assert geometry()['empty'], geometry()
+        empty_height=geometry()['h']
+        # Many images force scrolling; wide fixtures exercise actual single-row previews.
+        for i in range(60): (wallpapers/f'simple/layout-{i:02}.png').write_bytes(png)
+        for path in ('panorama/wide.png','triptych/test/left.png','triptych/test/center.png','triptych/test/right.png'):
+            dest=wallpapers/path; dest.parent.mkdir(parents=True,exist_ok=True); dest.write_bytes(png)
+        ipc('refresh'); wait_for(lambda v:len(v['lib']['simple'])>=60)
+        ipc('tab','simple'); time.sleep(.3)
+        assert geometry()['h']==empty_height
+        for width,height,columns in ((1920,1200,2),(3440,1440,3),(2559,1440,2),(2560,1440,3),(800,800,2),(540,800,1),(1280,800,2)):
+            resize(width,height)
+            g=check_layout(width,height,columns)
+            assert g['cellWidth']==250 and g['contentHeight']>g['gridHeight'], g
+            ipc('scrollEnd'); time.sleep(.15)
+            before=json.loads(ipc('gridState'))
+            ipc('tab','corelab'); ipc('tab','simple'); time.sleep(.15)
+            assert json.loads(ipc('gridState'))==before, (before,ipc('gridState'))
+        resize(1920,1200)
+        for _ in range(2):
+            if compositor=='sway': run('swaymsg','create_output',env=env)
+            else: run('hyprctl','output','create','headless',env=env)
+        wait_for(lambda v:len(v['outputs'])==3)
+        for output in ('HEADLESS-2','HEADLESS-3'): resize(1280,800,output,1)
+        ipc('screen','HEADLESS-1'); ipc('tab','simple'); time.sleep(.3)
+        check_layout(1920,1200,2)
+        resize(540,800); check_layout(540,800,1)
+        resize(1920,1200)
+        for kind in ('panorama','triptych'):
+            ipc('tab',kind); time.sleep(.4)
+            g=geometry()
+            assert g['cellWidth']==g['gridWidth']==500, g
+            assert len(state()['items'])==1, state()
+            ipc('choose',0)
+            assert state()['selection']['kind']==kind, state()
+            assert stats()['visible']
+        ipc('screen','HEADLESS-2'); ipc('tab','simple'); time.sleep(.3)
+        check_layout(1280,800,2)
+        ipc('close'); assert not stats()['visible']
+        if shots:
+            shots.mkdir(parents=True,exist_ok=True)
+            # Read the real library from the isolated shell; user selection/state is untouched.
+            real_library=Path(os.environ.get('QS_TEST_WALLPAPERS', wallpapers))
+            config=json.loads(host.read_text()); config['wallpapersDir']=str(real_library)
+            host.write_text(json.dumps(config)); time.sleep(1)
+            ipc('screen','HEADLESS-1'); ipc('tab','corelab'); time.sleep(1)
+            if state()['items']: ipc('choose',0)
+            for width,height in ((1920,1200),(3440,1440)):
+                resize(width,height); time.sleep(1)
+                run('grim','-o','HEADLESS-1',str(shots/f'wallpaper-sidebar-{width}.png'),env=env)
+            ipc('close')
+        print(f'PASS sidebar ({compositor}, scale {scale}): placement, 1/2/3 columns, threshold, fixed controls, scrolling, empty state, wide previews, screen choice')
         log = (work/'qs.log').read_text()
         unexpected='\n'.join(line for line in log.splitlines() if 'WARN scene:' in line and not ('Cannot open:' in line or 'Error decoding:' in line))
         assert not unexpected and not re.search(r'^\s*ERROR(?! quickshell.service.pipewire.loop:)\b', log, re.MULTILINE), log
@@ -330,10 +416,11 @@ if __name__ == '__main__':
     parser=argparse.ArgumentParser()
     parser.add_argument('--compositor',choices=['sway','hyprland'],default='sway')
     parser.add_argument('--scale',type=float,default=1)
+    parser.add_argument('--shots',type=Path,help='Save optional isolated screenshots; QS_TEST_WALLPAPERS selects the image library')
     args=parser.parse_args()
     with tempfile.TemporaryDirectory(prefix='qw-') as temporary:
         try:
-            test(Path(temporary),args.compositor,args.scale)
+            test(Path(temporary),args.compositor,args.scale,args.shots)
         except Exception:
             for name in ('sway.log', 'qs.log'):
                 p = Path(temporary)/name
