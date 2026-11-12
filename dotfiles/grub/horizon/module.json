@@ -1,0 +1,10 @@
+{
+  "platform": "x86_64-efi",
+  "grub_version": "grub-mkstandalone (GRUB) 2:2.16-1",
+  "sha256": "5f256c7ce67f7ea951d40a13f83c735e31047d9eee6decfd86619553efea42f6",
+  "source_url": "https://gitlab.freedesktop.org/gnu-grub/grub/-/archive/grub-2.16/grub-grub-2.16.tar.gz",
+  "source_sha256": "14a222a275971030999a3604fd6cc9403dcdb236540dce7ebaf44cd5324622b4",
+  "gnulib_revision": "9f48fb992a3d7e96610c4ce8be969cff2d61a01b",
+  "module_source_sha256": "0becfbd2a91a14d4fd9a0ee7fb4c40d7eb271e69a56409c4ce2cf44aa0fc296b",
+  "gnulib_archive_sha256": "00a25a5c3a18d9d7b0deb456344f7ab02f6f9ef8422fbe6174afafc546c8ee36"
+}

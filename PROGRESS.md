@@ -1286,3 +1286,93 @@ Pas d'installation complète en VM ni de nouvelle clé autorisée sur le vrai de
 - À faire à la main : ouvrir Copilot depuis le lanceur et se connecter au compte Microsoft. Navigation authentifiée non testée.
 - Installation locale terminée ; publication vers `Crystal4276/qs-desktop`, branche `master`, explicitement autorisée
   par toi après le refus initial du contrôle automatique.
+
+## GRUB Horizon — préparation et validation VM (2026-11-12)
+
+- Thème du kit implémenté, 14 déclinaisons générées, Inter PF2 et identité DM Sans OFL embarquées. Module minimal GPL construit
+  pour GRUB 2.16 : dimensions vidéo actives et titres/classes uniquement. `uki` natif, ordre et paramètres conservés.
+- Choix utilisateur : profil travail seulement ; noyaux standard/LTS et variantes fallback explicites. Secours sans Plymouth
+  distincts des fallback. Installation transactionnelle réversible, simulation, statut, hook neutralisant le module après
+  mise à jour de GRUB. Aucun changement de chargeur, `/boot`, `/etc`, paquet ou redémarrage sur l'hôte.
+- QEMU réel : sept résolutions correctes de 800×600 à 3840×2160. **1366×768 non validé** : GOP annonce 1366, mais framebuffer
+  QEMU de 1360 pixels, rendu déformé. Auto choisit 800×600 sur ce firmware ; mode inconnu → repli 1024×768 testé.
+- Navigation, 4/7/12 entrées, titre long, sous-menu, compte à rebours et interruption clavier, fond/module manquants testés.
+  Overlay UKI : installation réelle, second passage sans changement, menu aux noms distincts, démarrages LTS puis standard,
+  retrait réel et délai initial restauré. Images de fallback/rescue absentes de cette VM ; association des six noms testée hors VM.
+- test-grub-horizon.py PASS, test-install.py 0 échec, syntaxe et grub-script-check OK. Captures : `.shots/grub-horizon/`.
+  Documentation, limites et commandes : docs/GRUB-HORIZON.md ; preuves détaillées : docs/GRUB-HORIZON-VALIDATION.md.
+- À faire après validation : audit privilégié du vrai `/boot`, accord explicite sur le déploiement et essai du firmware physique.
+
+### Horizon — icônes des actions corrigées
+
+- À ta demande après revue des captures : ajout des trois glyphes de la référence approuvée (Advanced options, UEFI Firmware
+  Settings, Restart), SVG sources et PNG aux 14 tailles. Classes réellement associées aux entrées existantes ; aucune action
+  ni entrée de menu ajoutée. Le module GRUB n'a pas changé.
+- Aperçus GRUB réels renouvelés en 800×600, 1920×1200, 3440×1440 et 3840×2160 ; les trois icônes sont visibles. Vérification
+  séparée de l'entrée UEFI native dans un nouvel overlay UKI : installation idempotente, redémarrage et capture réussis.
+  Tests locaux de déploiement et syntaxe OK. Captures dans `.shots/grub-horizon/`, détail `action-icons-detail.png`.
+- Aucun déploiement sur l'hôte. Le commit sur master reste en attente de l'autorisation demandée après le refus automatique
+  du tour précédent ; pas de nouvelle tentative de commit ni de push pour cette correction.
+
+### Horizon — centrage et regroupement des fallback
+
+- Après revue utilisateur : liste centrée sur le symbole Core Lab (48 % de la hauteur), selon le nombre réel d'entrées,
+  sept lignes visibles au maximum. Compte à rebours abaissé sous la zone de liste maximale. Génération de 98 déclinaisons
+  techniques partageant les mêmes ressources ; module recompilé pour publier le nombre de lignes après découverte du menu.
+- Choix utilisateur confirmé : les deux fallback vont dans Advanced options, retirés du premier niveau ; noyaux normaux
+  et secours sans Plymouth restent distincts. Le module conserve les objets natifs puis copie intégralement leurs commandes,
+  arguments, identifiants et contrôles d'accès dans le sous-menu natif ; la sélection par défaut est adaptée au nouveau chemin.
+- Sans fallback réel : aucun sous-menu vide. Sans module/thème : fallback directement accessibles dans le menu texte,
+  sélection mémorisée ramenée à leur identifiant. Menus Advanced options personnalisés et stratégie automatique fallback
+  préexistante conservés sans réorganisation automatique.
+- Rendu graphique revérifié en 800×600, 1920×1200, 3440×1440 et 3840×2160 ; sous-menu à deux entrées et retour clavier,
+  défaut numérique/mémorisé, repli texte avec défaut préservé. Overlay UKI : banc temporaire sur les deux images normales
+  (fallback réels absents), démarrage standard depuis le sous-menu puis LTS automatique, SHA-256 inchangés ; retrait réussi.
+- Vérifications et captures récentes : docs/GRUB-HORIZON-VALIDATION.md. Aucun déploiement sur le chargeur de l'hôte ;
+  autorisation de commit sur master toujours en attente, aucune nouvelle tentative.
+
+### Horizon — déploiement demandé sur le laptop
+
+- Demande utilisateur : déployer par `install.sh` et contrôler le résultat. Profil travail confirmé, bureau vivant (PID 2001).
+- Simulation réelle `install.sh --dry-run --profil travail --no-packages` terminée sans échec ; journal local
+  `.shots/grub-horizon/deploy-host-dry-run.log`. Plymouth et réglages système existants déjà à jour ; Horizon prévu.
+- `test-grub-horizon.py` PASS, syntaxe Bash et contrôles de diff OK ; empreintes module/source conformes au manifeste.
+- Audit privilégié demandé via polkit, en attente d'authentification. Pas de modification système effectuée à ce stade.
+  Exécution complète à lancer par l'utilisateur dans un terminal, comme requis par CLAUDE.md pour les scripts appelant sudo.
+- Contrôle ultérieur après demande « tout est bon ? » : Horizon effectivement installé. Vérification privilégiée des 513
+  fichiers du thème et des réglages suivis : empreintes identiques au dépôt/registre ; grub-script-check PASS ; sélecteur
+  présent dans grub.cfg, commandes de démarrage et paramètres noyau identiques aux sauvegardes. Délai 2 s, gfxterm, mode auto.
+  Rapport local : `.shots/grub-horizon/deploy-verification.json`. Le journal d'exécution complète deploy-host.log est absent :
+  installation constatée sur disque, déroulement complet d'install.sh non attesté. Bureau toujours vivant (PID 2001).
+- Inventaire réel : standard, LTS et leurs secours sans Plymouth ; aucune image fallback. Donc pas de sous-menu Advanced
+  options ajouté sur ce laptop actuellement. Ne pas confondre secours sans Plymouth et fallback ; comportement conforme.
+  Reste à vérifier au prochain redémarrage manuel : rendu du thème avec le firmware physique et démarrage normal.
+
+### Horizon — clarification utilisateur et secours regroupés
+
+- L'utilisateur confirme que ses « deux fallback » désignent les deux UKI `~rescue.efi`. Correction de l'interprétation
+  précédente : ces secours sans Plymouth vont bien sous Advanced options, avec les variantes fallback classiques si présentes.
+  Titres explicites standard/LTS conservés, noyaux normaux au premier niveau ; module GRUB et images inchangés.
+- Tests de déploiement PASS (mélange fallback/rescue, secours seuls, un seul secours, aucun, retrait et idempotence).
+  GRUB réel en VM 800×600 et 1920×1200 : sous-menu, retour clavier, compte à rebours et captures vérifiés, sans erreur GRUB.
+  Captures `.shots/grub-horizon/rescue/` ; ces entrées de banc sont synthétiques, pas un boot des secours du laptop.
+- Correction déployée via polkit avec l'outil repris par install.sh. Syntaxe grub.cfg PASS, regroupement des deux identifiants
+  vérifié ; empreintes des dix fichiers de démarrage et commandes identiques avant/après. Deuxième passage déjà à jour,
+  grub.cfg identique. Journal `.shots/grub-horizon/deploy-rescue.log`. Pas de paquet ni de redémarrage de l'hôte.
+- Reste : vérifier le rendu au prochain démarrage manuel et démarrer les secours sur matériel réel. Publication Git toujours
+  en attente de l'autorisation demandée après le refus automatique initial ; aucune nouvelle tentative.
+
+### Installateur — authentification Horizon cohérente avec sudo
+
+- Après relance d'install.sh, l'utilisateur signale une fenêtre polkit malgré l'authentification sudo précédente.
+  Cause : les trois chemins Horizon (installation travail, passage en jeux, retrait global) lançaient l'outil directement,
+  qui s'élevait avec pkexec. Un petit point d'appel commun passe maintenant par sudo ; le cache du terminal est réutilisé.
+  Le mode simulation appelle seulement l'outil avec --dry-run ; son lancement autonome garde polkit.
+- Test-grub-horizon.py PASS : trois chemins d'appel, simulation sans sudo/polkit, refus sudo sans repli polkit, ainsi que
+  les contrôles existants de regroupement et de déploiement. Toutes les commandes privilégiées de ce test sont factices.
+  Contre-épreuve sur install.sh avant correction : échec attendu, appel pkexec reproduit.
+- Test-install.py : 0 échec (HOME et D-Bus jetables), journal `.shots/grub-horizon/test-install-sudo.log`.
+  Syntaxe Bash et git diff --check OK. Correction effective au prochain lancement du script depuis ce dépôt ; aucun
+  réglage système ni paquet modifié pour ce correctif.
+- L'utilisateur autorise ensuite explicitement le commit et le push de l'ensemble Horizon, corrections et validation incluses.
+  Cette autorisation remplace l'attente de publication mentionnée dans les entrées précédentes.

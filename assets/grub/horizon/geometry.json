@@ -1,0 +1,338 @@
+{
+  "800x600": {
+    "scale": 0.41667,
+    "menu": {
+      "left": 444,
+      "top": 80,
+      "width": 302,
+      "height": 342
+    },
+    "item_height": 32,
+    "item_spacing": 6,
+    "corner_radius": 12,
+    "border": 1,
+    "icon_size": 20,
+    "font_target_px": 14,
+    "timeout": {
+      "left": 444,
+      "top": 445,
+      "width": 302,
+      "height": 18
+    },
+    "footer_top": 558,
+    "timeout_seconds": 2,
+    "status": "proposed geometry; verify metrics and compatibility in target GRUB"
+  },
+  "1024x768": {
+    "scale": 0.53333,
+    "menu": {
+      "left": 568,
+      "top": 103,
+      "width": 386,
+      "height": 438
+    },
+    "item_height": 41,
+    "item_spacing": 7,
+    "corner_radius": 15,
+    "border": 1,
+    "icon_size": 26,
+    "font_target_px": 17,
+    "timeout": {
+      "left": 568,
+      "top": 570,
+      "width": 386,
+      "height": 18
+    },
+    "footer_top": 714,
+    "timeout_seconds": 2,
+    "status": "proposed geometry; verify metrics and compatibility in target GRUB"
+  },
+  "1280x720": {
+    "scale": 0.66667,
+    "menu": {
+      "left": 710,
+      "top": 96,
+      "width": 483,
+      "height": 410
+    },
+    "item_height": 51,
+    "item_spacing": 9,
+    "corner_radius": 18,
+    "border": 1,
+    "icon_size": 32,
+    "font_target_px": 21,
+    "timeout": {
+      "left": 710,
+      "top": 534,
+      "width": 483,
+      "height": 19
+    },
+    "footer_top": 670,
+    "timeout_seconds": 2,
+    "status": "proposed geometry; verify metrics and compatibility in target GRUB"
+  },
+  "1280x800": {
+    "scale": 0.66667,
+    "menu": {
+      "left": 710,
+      "top": 107,
+      "width": 483,
+      "height": 456
+    },
+    "item_height": 51,
+    "item_spacing": 9,
+    "corner_radius": 18,
+    "border": 1,
+    "icon_size": 32,
+    "font_target_px": 21,
+    "timeout": {
+      "left": 710,
+      "top": 594,
+      "width": 483,
+      "height": 19
+    },
+    "footer_top": 744,
+    "timeout_seconds": 2,
+    "status": "proposed geometry; verify metrics and compatibility in target GRUB"
+  },
+  "1366x768": {
+    "scale": 0.71111,
+    "menu": {
+      "left": 758,
+      "top": 103,
+      "width": 515,
+      "height": 438
+    },
+    "item_height": 54,
+    "item_spacing": 10,
+    "corner_radius": 20,
+    "border": 1,
+    "icon_size": 34,
+    "font_target_px": 23,
+    "timeout": {
+      "left": 758,
+      "top": 570,
+      "width": 515,
+      "height": 20
+    },
+    "footer_top": 714,
+    "timeout_seconds": 2,
+    "status": "proposed geometry; verify metrics and compatibility in target GRUB"
+  },
+  "1600x900": {
+    "scale": 0.83333,
+    "menu": {
+      "left": 888,
+      "top": 121,
+      "width": 603,
+      "height": 513
+    },
+    "item_height": 63,
+    "item_spacing": 12,
+    "corner_radius": 23,
+    "border": 1,
+    "icon_size": 40,
+    "font_target_px": 27,
+    "timeout": {
+      "left": 888,
+      "top": 668,
+      "width": 603,
+      "height": 23
+    },
+    "footer_top": 837,
+    "timeout_seconds": 2,
+    "status": "proposed geometry; verify metrics and compatibility in target GRUB"
+  },
+  "1920x1080": {
+    "scale": 1.0,
+    "menu": {
+      "left": 1066,
+      "top": 145,
+      "width": 724,
+      "height": 616
+    },
+    "item_height": 76,
+    "item_spacing": 14,
+    "corner_radius": 28,
+    "border": 1,
+    "icon_size": 48,
+    "font_target_px": 32,
+    "timeout": {
+      "left": 1066,
+      "top": 801,
+      "width": 724,
+      "height": 28
+    },
+    "footer_top": 1004,
+    "timeout_seconds": 2,
+    "status": "proposed geometry; verify metrics and compatibility in target GRUB"
+  },
+  "1920x1200": {
+    "scale": 1.0,
+    "menu": {
+      "left": 1066,
+      "top": 161,
+      "width": 724,
+      "height": 684
+    },
+    "item_height": 76,
+    "item_spacing": 14,
+    "corner_radius": 28,
+    "border": 1,
+    "icon_size": 48,
+    "font_target_px": 32,
+    "timeout": {
+      "left": 1066,
+      "top": 890,
+      "width": 724,
+      "height": 28
+    },
+    "footer_top": 1116,
+    "timeout_seconds": 2,
+    "status": "proposed geometry; verify metrics and compatibility in target GRUB"
+  },
+  "2560x1080": {
+    "scale": 1.0,
+    "menu": {
+      "left": 1421,
+      "top": 145,
+      "width": 965,
+      "height": 616
+    },
+    "item_height": 76,
+    "item_spacing": 14,
+    "corner_radius": 28,
+    "border": 1,
+    "icon_size": 48,
+    "font_target_px": 32,
+    "timeout": {
+      "left": 1421,
+      "top": 801,
+      "width": 965,
+      "height": 28
+    },
+    "footer_top": 1004,
+    "timeout_seconds": 2,
+    "status": "proposed geometry; verify metrics and compatibility in target GRUB"
+  },
+  "2560x1440": {
+    "scale": 1.33333,
+    "menu": {
+      "left": 1421,
+      "top": 193,
+      "width": 965,
+      "height": 821
+    },
+    "item_height": 101,
+    "item_spacing": 18,
+    "corner_radius": 37,
+    "border": 1,
+    "icon_size": 64,
+    "font_target_px": 43,
+    "timeout": {
+      "left": 1421,
+      "top": 1068,
+      "width": 965,
+      "height": 37
+    },
+    "footer_top": 1339,
+    "timeout_seconds": 2,
+    "status": "proposed geometry; verify metrics and compatibility in target GRUB"
+  },
+  "2560x1600": {
+    "scale": 1.33333,
+    "menu": {
+      "left": 1421,
+      "top": 214,
+      "width": 965,
+      "height": 912
+    },
+    "item_height": 101,
+    "item_spacing": 18,
+    "corner_radius": 37,
+    "border": 1,
+    "icon_size": 64,
+    "font_target_px": 43,
+    "timeout": {
+      "left": 1421,
+      "top": 1187,
+      "width": 965,
+      "height": 37
+    },
+    "footer_top": 1488,
+    "timeout_seconds": 2,
+    "status": "proposed geometry; verify metrics and compatibility in target GRUB"
+  },
+  "3440x1440": {
+    "scale": 1.33333,
+    "menu": {
+      "left": 1909,
+      "top": 193,
+      "width": 1297,
+      "height": 821
+    },
+    "item_height": 101,
+    "item_spacing": 18,
+    "corner_radius": 37,
+    "border": 1,
+    "icon_size": 64,
+    "font_target_px": 43,
+    "timeout": {
+      "left": 1909,
+      "top": 1068,
+      "width": 1297,
+      "height": 37
+    },
+    "footer_top": 1339,
+    "timeout_seconds": 2,
+    "status": "proposed geometry; verify metrics and compatibility in target GRUB"
+  },
+  "3840x1600": {
+    "scale": 1.48148,
+    "menu": {
+      "left": 2131,
+      "top": 214,
+      "width": 1448,
+      "height": 912
+    },
+    "item_height": 113,
+    "item_spacing": 20,
+    "corner_radius": 41,
+    "border": 1,
+    "icon_size": 71,
+    "font_target_px": 47,
+    "timeout": {
+      "left": 2131,
+      "top": 1187,
+      "width": 1448,
+      "height": 41
+    },
+    "footer_top": 1488,
+    "timeout_seconds": 2,
+    "status": "proposed geometry; verify metrics and compatibility in target GRUB"
+  },
+  "3840x2160": {
+    "scale": 2.0,
+    "menu": {
+      "left": 2131,
+      "top": 289,
+      "width": 1448,
+      "height": 1231
+    },
+    "item_height": 152,
+    "item_spacing": 28,
+    "corner_radius": 55,
+    "border": 2,
+    "icon_size": 96,
+    "font_target_px": 64,
+    "timeout": {
+      "left": 2131,
+      "top": 1603,
+      "width": 1448,
+      "height": 56
+    },
+    "footer_top": 2009,
+    "timeout_seconds": 2,
+    "status": "proposed geometry; verify metrics and compatibility in target GRUB"
+  }
+}
