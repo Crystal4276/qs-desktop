@@ -1093,9 +1093,9 @@ Lecture seule (hôte, root par pkexec, Windows par QGA ; VM démarrée puis éte
   focalisé, 7 sur la dalle, aucune fenêtre perdue ; captures des deux barres conformes. `test-outputs.sh` Sway et Hyprland :
   0 échec ; `test-workspace-startup.py` (stub mis à jour) OK ; avertissements identiques à HEAD (même test sur copie
   intacte). Bureau réel rechargé (Hyprland, PID 1903), dalle seule inchangée (1-9, barre complète).
-- **À tester à la main** : brancher un vrai écran externe sous Hyprland puis Sway (1 / 7, barres, tray et calendrier ouverts
-  depuis la dalle) ; nouvelle connexion avec l'écran branché ; écran de connexion (champ sur l'externe, à la prochaine mise
-  à jour de sa copie système).
+- **Validé par toi sous Hyprland** (2026-11-12) avec un vrai écran externe. **Reste à tester à la main** : la même chose sous
+  Sway (1 / 7, barres, tray et calendrier ouverts depuis la dalle, nouvelle connexion avec l'écran branché) ; écran de
+  connexion (champ sur l'externe, à la prochaine mise à jour de sa copie système).
 - Git sur le laptop : identité absente (`~/.gitconfig` n'avait que l'aide `gh`), chaque commit échouait. Réglée à ta demande :
   `user.name` / `user.email` globaux, les mêmes que tes commits précédents. Pas dans le dépôt (public, adresse privée).
 - `install.sh` (étape 2, sans question) : identité absente → prise du compte GitHub de `gh` : identifiant ; adresse publique
