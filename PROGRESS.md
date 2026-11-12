@@ -941,10 +941,13 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
 - Test du 2026-11-12, 07:40 (Hyprland, sans externe) : veille déclenchée par logind à la fermeture ; réveil spontané 11 s plus
   tard capot fermé, rendormi par logind ~27 s après (`BACKLOG.md`) ; réveil normal à l'ouverture. Liaisons de capot chargées,
   plus de pont. Avertissements Quickshell du passage à zéro écran (`FALLBACK`, layershell) sans effet visible.
+- Test du 2026-11-12, 07:44 (Hyprland, Dell AW3418DW en HDMI) : capot fermé 54 s, **pas de veille**, verrou « External display
+  active » tenu ; dalle rallumée à l'ouverture. Cas écrans éteints par la veille vérifié sur la session (extinction de 2 s) :
+  connecteur HDMI `disabled` dans sysfs (logind seul croirait l'externe débranché), verrou toujours tenu.
 - **À faire** :
   1. fermer puis rouvrir la session (le bureau actuel, PID 1909, tourne encore avec l'ancien `Lid.qml` en mémoire) ;
   2. tester à la main, sous Hyprland et Sway, sur secteur et batterie : fermer sans externe (veille, verrouillé au réveil) ;
-     fermer avec HDMI puis USB-C (dalle éteinte, pas de veille, y compris après l'extinction des écrans par la veille) ;
+     fermer avec USB-C (HDMI fait) ;
      débrancher le dernier externe capot fermé (veille) ; rouvrir (dalle rallumée, échelle 1) ; ouvrir la session capot fermé
      sur dock puis ouvrir le capot (dalle rallumée) ; réveil capot fermé avec externe sous Hyprland (dalle reste éteinte) ;
      `systemd-inhibit --list` : verrou `handle-lid-switch` seulement avec un externe actif ;
