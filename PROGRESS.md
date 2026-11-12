@@ -129,6 +129,17 @@ Ensuite (pas de phase 13) : maintenance et idées de `BACKLOG.md`, une à la foi
   `hosts/laptop-bios.md` (sans identifiant ni modèle matériel). Pas de changement QML ni de service ajouté.
 - Le BIOS signale un redémarrage nécessaire. Reste : redémarrer, attendre plus de 30 s sans activité sur
   secteur, puis débrancher et vérifier l'extinction à 30 s sur batterie, le rallumage à la frappe et au rebranchement.
+- **Exception (2026-11-12, ta demande)** : écrans en veille → clavier éteint aussi, même sur secteur ; niveau remis à la reprise.
+  `services/Idle.qml` : `brightnessctl -s set 0` à la veille, `-r` à la reprise (et au rallumage après une relance de Quickshell
+  écrans éteints), LED trouvée par le nom standard `*::kbd_backlight` (rien de propre à la machine), laptop seulement, une seule
+  sauvegarde par veille (une seconde aurait gardé 0 : vu par le test). Écriture par logind sans droits root, vérifiée sur la vraie
+  LED (`dell::kbd_backlight` : 2 → 0 → 2 en ~0,06 s). Le BIOS n'est pas touché ; il garde ses délais hors veille.
+- Tests : `test-idle-lock.py` complété (faux `brightnessctl` : extinction dès la veille, avant verrou et DPMS, rallumage à la
+  reprise, rien sans batterie) ; filtre du journal corrigé (codes couleur de Quickshell : le test échouait déjà avant).
+  Passe ; contre-épreuve : échec avec l'ancien `Idle.qml`. `test-sleep.py` passe. Bureau réel rechargé sans erreur (PID 1903).
+- **À tester à la main** : laisser la veille venir (5 min) sur secteur → clavier éteint avec les écrans ; reprise → rallumé au
+  même niveau ; idem sur batterie : clavier déjà éteint par le BIOS au moment de la veille, il doit se rallumer à la frappe
+  après la reprise (le noyau Dell lit le niveau réglé, pas l'extinction du BIOS ; non vérifiable sur secteur).
 
 ## Maintenance — Reflector (2026-11-09)
 

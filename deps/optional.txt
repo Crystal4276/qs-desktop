@@ -4,7 +4,7 @@
 openrgb         # contrôle RGB au démarrage (service système optionnel, scripts/openrgb-setup.sh)
 
 power-profiles-daemon   # profils d'énergie du panneau de réglages ; installé par install.sh sur un laptop (batterie)
-brightnessctl   # réglage du rétroéclairage (laptop) ; installé par install.sh si /sys/class/backlight existe
+brightnessctl   # réglage du rétroéclairage (laptop), clavier éteint en veille ; installé par install.sh si /sys/class/backlight existe
 paru-bin        # (AUR) commande de mise à jour lancée par le module updates ; construit par install.sh (seule exception AUR) ; sinon yay ou pacman
 nordvpn-bin     # (AUR) module NordVPN (connexion, pays, pause) ; masqué si absent ; pas installé par install.sh (README.md)
 tailscale       # onglet Tailscale du panneau réseau (état, appareils, nœud de sortie, options) ; masqué si absent. Actions : `sudo tailscale set --operator=$USER` une fois (install.sh, phase 11)

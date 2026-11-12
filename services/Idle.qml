@@ -84,6 +84,7 @@ Singleton {
     property bool waitingIdleLock: false
 
     function screensOff(): void {
+        root.keyboardLight(false);
         if (root.lockOnIdle && !Session.locked) {
             root.waitingIdleLock = true;
             if (!Session.lockActive)
@@ -100,17 +101,33 @@ Singleton {
     function screensOn(): void {
         root.waitingIdleLock = false;
         Compositor.setPower([], true);
+        root.keyboardLight(true);
+    }
+
+    // Rétroéclairage du clavier (laptop) éteint avec la veille, même sur secteur, et remis à son niveau à la reprise : brightnessctl
+    // (écriture par logind, comme Brightness.qml) garde le niveau dans $XDG_RUNTIME_DIR. LED au nom standard du noyau ; absente : sans effet.
+    // Une seule sauvegarde par veille : une seconde, faite clavier éteint, garderait 0 et il ne se rallumerait plus.
+    property bool keyboardDark: false
+
+    function keyboardLight(on: bool): void {
+        if (!Battery.available || root.keyboardDark !== on)
+            return;
+        root.keyboardDark = !on;
+        Quickshell.execDetached(["brightnessctl", "-q", "-d", "*::kbd_backlight"].concat(on ? ["-r"] : ["-s", "set", "0"]));
     }
 
     // Quickshell relancé écrans éteints (rechargement, plantage) : le nouveau suivi n'est pas en veille, rien ne les rallumerait
     // avant une veille complète (`timeout` s sans activité). Vérifié 2 s après le démarrage : écrans connus, et au rechargement
-    // à chaud ancienne génération détruite (rallumer pendant sa destruction faisait planter Quickshell 0.3.2, vu).
+    // à chaud ancienne génération détruite (rallumer pendant sa destruction faisait planter Quickshell 0.3.2, vu). Le clavier,
+    // éteint par l'ancienne génération, est rallumé avec eux.
     Timer {
         running: true
         interval: 2000
         onTriggered: {
-            if (!monitor.isIdle && Compositor.outputs.some(o => !o.powered))
+            if (!monitor.isIdle && Compositor.outputs.some(o => !o.powered)) {
+                root.keyboardDark = true;
                 root.screensOn();
+            }
         }
     }
 

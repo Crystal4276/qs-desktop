@@ -443,6 +443,9 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
 - `IdleMonitor` (inhibitions du compositeur, « Keep Screen On », vidéos Wayland respectées) : après `idle.timeout`, écrans éteints
   (`Compositor.setPower` : Sway `output * power off` ; Hyprland `hl.dsp.dpms({ action = … })`), tous rallumés d'un coup à la reprise
   (un rallumage par écran refait un modeset sous Sway). Quickshell relancé écrans éteints : rallumés 2 s après le démarrage.
+- Laptop : rétroéclairage du clavier éteint dès la veille, même sur secteur, et remis à son niveau à la reprise
+  (`brightnessctl -s` / `-r` sur `*::kbd_backlight`, écriture par logind ; une seule sauvegarde par veille). Les délais du BIOS
+  restent en place hors veille (`hosts/laptop-bios.md`).
 - Sur laptop, `idle.lockOnIdle` demande le verrouillage et attend la confirmation du compositeur avant extinction.
   Une reprise d’activité annule l’extinction différée, sans annuler le verrouillage ; un verrou refusé laisse les écrans allumés.
   Le délai reste de 300 s, sur secteur comme sur batterie ; les inhibitions ci-dessous restent respectées.
