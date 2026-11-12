@@ -1,7 +1,0 @@
-# Quirks libinput de cette machine : /etc/libinput/local-overrides.quirks (scripts/system-setup.sh install).
-# Capot réputé fiable : sinon libinput tait l'état initial d'un capot fermé et sa première ouverture, et le compositeur ne
-# rallume pas la dalle (docs/ARCHITECTURE.md § 7.13.1). Pris en compte au démarrage suivant du compositeur.
-[Dell Pro 14 PC14250 Lid Switch]
-MatchName=*Lid Switch*
-MatchDMIModalias=dmi:*:svnDellInc.:pnDellPro14PC14250:*
-AttrLidSwitchReliability=reliable
