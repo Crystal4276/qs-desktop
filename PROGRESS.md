@@ -1003,3 +1003,24 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
 - `virt-viewer` retiré de `deps/apps.txt` (plus utilisé) et désinstallé du laptop à ta demande (`pacman -Rns` : avec
   `libgovirt` et `librest`, ses seules dépendances propres ; virt-manager n'en dépend pas).
 - À vérifier à la main : plein écran de virt-manager (barre du haut) ; même lancement sous Sway.
+
+## Projet `~/Win11` (Codex) mis à jour (2026-11-12)
+
+- Ton choix : doc et code tout de suite. Sauvegarde des sources d'avant dans le scratchpad de la session ; publié sur le
+  dépôt privé `Crystal4276/win11-kvm-arch` par son `publish-github.sh` (`1e82a46`). Ce commit publie aussi le travail de
+  Codex du 11 au soir jamais poussé (`compare-power.py`, `console-trial.py`, leurs tests et docs).
+- Retiré : profil `target` et bail CPU (`cpu-lease.py`, hook, timer, `set-profile`, `restore-host`, banc `compare-cpu.py` /
+  `summarize-cpu.py`, contrôle de topologie), partage `Win11Exchange` (hôte : `setup_samba`, `set-samba-password.py` ;
+  Windows : partage, compte et règles SMB de `Setup-Win11.ps1`, `Connect-LinuxShare.ps1`), `Remove-RdpPreparation.ps1`
+  (exécuté, aurait échoué sans le partage), sous-commande `viewer` de `console-trial.py` (virt-viewer). `prepare` n'exige
+  plus `gvfs-smb`, `wimlib`, `smbclient`, `turbostat`, `virt-viewer` ; ses règles UFW (dont TCP 445 VM → partages de
+  qs-desktop) gardées, sautées sans UFW actif.
+- `rollback` ne restaure plus que `/etc/win11/config.json` : il aurait remis la `smb.conf` d'avant Codex par-dessus celle de
+  qs-desktop (test ajouté, qui échoue sur l'ancien code). README, AGENTS.md (à ne pas réintroduire), docs mis à jour.
+- Tests du projet : 29 OK ; XML de `render` valide (`virt-xml-validate`). Pas de PowerShell sur l'hôte : scripts Windows
+  modifiés par retrait de blocs seulement, encodage d'origine gardé ; non exécutés.
+- Incident de test : la contre-épreuve sur l'ancien code a lancé un vrai `systemctl disable --now win11-cpu.timer` (unité
+  absente) → demande polkit sur ton écran vers 09:29, sans effet. Contre-épreuves de code système : commandes simulées.
+- Pour l'audit : `Restore-Win11.ps1` à passer dans la VM (règles SMB Win11-* et config serveur SMB de l'ancien Setup) ;
+  paquets installés pour Codex et plus utilisés (`gvfs-smb`, `wimlib`, `turbostat` ; `7zip`, `virt-firmware` seulement pour
+  `prepare`) ; `swtpm` (TPM de Windows 11) absent de `deps/` ; état root `/var/lib/win11-setup` (sauvegardes, `files.json`).
