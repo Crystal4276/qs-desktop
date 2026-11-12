@@ -224,9 +224,20 @@ virsh_sys() {
 do_samba() {
     local changed="" rules
     if command -v smbd >/dev/null; then
-        testparm -s "$repo/dotfiles/samba/smb.conf" >/dev/null || return 1
+        # Ajouts propres à la machine (réseau local de terrier…), inclus par smb.conf : validés avec lui.
+        local host_conf="dotfiles/samba/hosts/$(cat /proc/sys/kernel/hostname).conf" check
+        [[ -f "$repo/$host_conf" ]] || host_conf=""
+        check="$(mktemp)"
+        sed "s|^\( *include = \).*/smb\.host\.conf$|\1${host_conf:+$repo/$host_conf}|" \
+            "$repo/dotfiles/samba/smb.conf" >"$check"
+        testparm -s "$check" >/dev/null || { rm -f "$check"; return 1; }
+        rm -f "$check"
         cmp -s "$repo/dotfiles/samba/smb.conf" /etc/samba/smb.conf || changed=1
         install_file dotfiles/samba/smb.conf /etc/samba/smb.conf
+        if [[ -n "$host_conf" ]]; then
+            cmp -s "$repo/$host_conf" /etc/samba/smb.host.conf || changed=1
+            install_file "$host_conf" /etc/samba/smb.host.conf
+        fi
         local source target systemd_changed=""
         for source in dotfiles/samba/zerotier-order.conf scripts/samba-wait-zerotier.sh; do
             if [[ "$source" == *.conf ]]; then
@@ -474,6 +485,7 @@ do_uninstall() {
     [[ -f "$registry" ]] || { echo "= rien à défaire ($registry absent)"; return; }
     local kind target backup samba_changed="" systemd_changed=""
     recorded file /etc/samba/smb.conf && samba_changed=1
+    recorded file /etc/samba/smb.host.conf && samba_changed=1
     recorded file /etc/systemd/system/smb.service.d/50-qs-zerotier.conf && systemd_changed=1
     # Ordre inverse de l'installation.
     while read -r kind target backup <&3; do

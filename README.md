@@ -161,7 +161,9 @@ Les ajouts n'activent ni sshd, ni Avahi, ni serveur iperf3.
 
 L'étape système configure les partages personnels et Nemo sur les interfaces locales, les ponts
 libvirt (`virbr*`) et ZeroTier (`zt*`) uniquement. Aucune adresse de machine n'est codée en dur.
-Les interfaces Wi-Fi et Ethernet ne servent pas SMB.
+Les interfaces Wi-Fi et Ethernet ne servent pas SMB, sauf ajout par la machine :
+`dotfiles/samba/hosts/<machine>.conf` (installé en `/etc/samba/smb.host.conf`, inclus par `smb.conf` ;
+`terrier` y ajoute son réseau local filaire `bridge0`, compte Samba obligatoire).
 Un complément systemd attend l'adresse ZeroTier au démarrage de Samba (30 s maximum),
 et propage les arrêts et redémarrages du service ZeroTier à Samba. Les changements d'adresse
 sur une interface déjà connue sont suivis nativement par Samba sous Linux.
