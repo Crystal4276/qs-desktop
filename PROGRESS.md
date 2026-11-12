@@ -1067,6 +1067,8 @@ Lecture seule (hôte, root par pkexec, Windows par QGA ; VM démarrée puis éte
 - **Paquets** désinstallés : `wimlib`, `turbostat`, `7zip`, `virt-firmware` (et `ntfsprogs`, `libntfs-3g`, dépendances
   Python). `file-roller` n'ouvre plus les `.7z`. `deps/apps.txt` : `gvfs-smb` (gardé, partages dans Nemo) et `swtpm`
   ajoutés ; `test-install.py` 0 échec.
-- **En attente** : suppressions refusées par le garde-fou de Claude Code faute d'accord explicite (copie de disque du 11,
-  44 Gio ; ISO de `~/Win11`, 9 Gio, une copie reste dans `/var/lib/libvirt/boot`) et sauvegardes obsolètes de
-  `/var/lib/win11-setup` ; BIOS VMD → AHCI/NVMe (toi, en dernier).
+- **Place récupérée** (ton accord explicite) : copie de disque du 11 (44 Gio, `virsh vol-delete`) et ISO de `~/Win11`
+  (9 Gio ; la copie de `/var/lib/libvirt/boot` reste branchée en CD) : 631 → 683 Go libres. `/var/lib/win11-setup` :
+  sauvegardes de Codex retirées (profils CPU, anciens helpers, `services.json`, `original/`, scripts RDP) ; restent
+  `inventory.json`, `win11.xml`, `ufw.json` et `files.json` réduit à `/etc/win11/config.json` (seul restauré par `rollback`).
+- **Reste** : BIOS, « SATA/NVMe Operation » RAID On → AHCI/NVMe (toi, en dernier ; UKI vérifiées avec `nvme`).
