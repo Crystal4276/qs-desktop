@@ -980,3 +980,25 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
   Windows `Win11Exchange` retiré, `C:\Win11Exchange` supprimé (seul le fichier de test de Codex). Échanges dans les deux
   sens par les partages du laptop. Règles du pare-feu Windows pour SMB entrant (Codex) laissées pour l'audit.
 - Prochaine étape demandée : **audit de la configuration de la VM** faite par Codex (domaine, réseau, `ufw`, réglages Windows).
+
+## Windows 11 — console de virt-manager au lieu de Virt Viewer (2026-11-12)
+
+- Demande : la barre de Virt Viewer en plein écran gênait en haut de Windows ; la console de virt-manager suffit.
+- `scripts/windows11-launch.sh` : VM démarrée si éteinte, puis `virt-manager --connect URI --show-domain-console DOMAINE`.
+  Instance unique : un nouveau clic réaffiche la même console. Verrou rendu avant la console (sinon un virt-manager resté
+  ouvert bloquerait les clics suivants) ; il évite toujours un double démarrage.
+- Règles machine : virt-manager n'a pas d'identité par fenêtre (`app_id` / classe `virt-manager` pour toutes) → console
+  reconnue par son titre `win11 on QEMU/KVM`, présent dès l'ouverture (`initialTitle`) ; le préfixe « Press … to release
+  pointer. » d'une capture arrive après. Sous Sway, le `move position center` de la règle flottante commune ramenait la
+  fenêtre sur l'espace visible : `for_window` la renvoie sur `$ws_windows` après coup.
+- Bancs (fausse fenêtre GTK `virt-manager`) : Sway headless et Hyprland imbriqué → console sur l'espace Windows, en
+  mosaïque, même après changement de titre ; gestionnaire et console d'une autre VM flottants sur l'espace courant ; focus
+  conservé. `sway --validate`, `Hyprland --verify-config` (contre-épreuve : erreur volontaire détectée dans le fichier machine
+  de la copie). `test-windows11.py` réécrit (contre-épreuve : échoue sur l'ancien lanceur), `test-install.py` 0 échec.
+- Réel (Hyprland, profil travail) : config rechargée sans erreur ; lanceur → VM démarrée, console sur l'espace **6** (espace
+  Windows du profil travail, confirmé par toi), `floating=false`, espace 2 conservé. VM ensuite éteinte (arrêt normal par
+  l'agent invité, l'ACPI ignoré juste après le démarrage), comme avant l'essai.
+- Incident de test : une première contre-épreuve sans faux `virt-viewer` a lancé le vrai pendant ~1 min (VM éteinte : il
+  attendait), arrêté. Refaite avec un faux en tête du `PATH`.
+- `virt-viewer` retiré de `deps/apps.txt` (plus utilisé) ; toujours installé sur le laptop, désinstallation à ta décision.
+- À vérifier à la main : plein écran de virt-manager (barre du haut) ; même lancement sous Sway.

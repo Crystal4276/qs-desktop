@@ -19,11 +19,13 @@ end
 hl.bind("switch:on:Lid Switch", function() panel(true) end, { locked = true })
 hl.bind("switch:off:Lid Switch", function() panel(false) end, { locked = true })
 
--- Windows 11 : console SPICE sur l’espace du profil, sans changer l’espace courant.
+-- Windows 11 : console de virt-manager (domaine `win11` de hosts/corelabs-laptop.json), reconnue par son titre dès
+-- l’ouverture, toutes ses fenêtres ayant la classe virt-manager ; sur l’espace du profil, en mosaïque (après la règle
+-- flottante commune), sans changer l’espace courant.
 local profile = require("lua/profile")
 hl.window_rule({
    name = "windows11-console",
-   match = { class = "^qs-windows11$" },
+   match = { class = "^virt-manager$", title = "^win11 on QEMU/KVM$" },
    workspace = (profile.workspaces.windows or 5) .. " silent",
    float = false,
 })

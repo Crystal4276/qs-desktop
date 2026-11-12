@@ -282,6 +282,7 @@ respectées. Sans autorisation, température/fréquence/mémoire accessibles res
 ### Windows 11
 
 `windows11` dans `hosts/<machine>.json` (`uri`, `domain`) active une entrée native commune au menu et au lanceur.
-`scripts/windows11-launch.sh URI DOMAINE` utilise `virsh` (libvirt), `virt-viewer`, `flock` (util-linux) et
+`scripts/windows11-launch.sh URI DOMAINE` utilise `virsh` (libvirt), `virt-manager` (sa console), `flock` (util-linux) et
 `notify-send` (libnotify). La console seule se ferme ; la VM continue. Sur le laptop, les règles machine Sway et Hyprland
-placent sa console sur l’espace du profil (6 en travail, 5 en jeux), en mosaïque sans changer l’espace courant. Logo : `assets/windows11-source.md`.
+reconnaissent la console par son titre (`win11 on QEMU/KVM`) et la placent sur l’espace du profil (6 en travail, 5 en jeux),
+en mosaïque sans changer l’espace courant ; les autres fenêtres de virt-manager restent flottantes. Logo : `assets/windows11-source.md`.

@@ -43,8 +43,7 @@ spotify-launcher|spotify   # Spotify : lanceur officiel des dépôts ; un paquet
 wine                    # programmes Windows (sans wine-mono / wine-gecko : Wine les propose à la demande)
 qemu-desktop            # machines virtuelles
 libvirt                 # gestion des VM (service libvirtd, groupe libvirt)
-virt-manager            # interface des VM
-virt-viewer             # console épurée de Windows 11
+virt-manager            # interface des VM et console de Windows 11 (entrée du menu)
 edk2-ovmf               # démarrage UEFI des VM
 dnsmasq                 # réseau NAT « default » de libvirt
 virtiofsd               # dossier partagé hôte → VM Linux (virtiofs)
