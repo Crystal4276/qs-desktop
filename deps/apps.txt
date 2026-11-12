@@ -18,6 +18,7 @@ gvfs-smb                # partages réseau Windows / Samba (smb://) dans Nemo
 # --- Internet, mail ---
 chromium                # navigateur principal ; web apps (dotfiles/webapps) ; liens externes (scripts/browser-link.py)
 thunderbird             # mail
+gnome-online-accounts-gtk # interface « Comptes en ligne » ; installe gnome-online-accounts comme dépendance
 
 # --- Édition, documents ---
 geany                   # éditeur de texte ($EDITOR, fichiers texte par défaut)

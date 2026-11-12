@@ -1261,3 +1261,13 @@ test-samba.py, test-reflector.py et test-sudo-pacman.py PASS ; syntaxe Bash et g
 Vrai laptop : nouvelle étape exécutée seule avec --yes, accès SSH au desktop réussi ; empreintes de
 la clé privée, de sa clé publique et de la configuration SSH identiques avant/après. Bureau réel vivant.
 Pas d'installation complète en VM ni de nouvelle clé autorisée sur le vrai desktop : l'accès existait.
+
+## Dépendances — comptes en ligne (2026-11-12)
+
+- Ajout de `gnome-online-accounts-gtk` aux applications communes aux deux profils (`deps/apps.txt`) : interface autonome
+  « Comptes en ligne », disponible dans le dépôt officiel Extra ; `gnome-online-accounts` installé comme dépendance.
+  `install.sh` lit déjà cette liste : aucune nouvelle étape nécessaire. Documentation des dépendances et de l'ajout manuel
+  des comptes mise à jour ; aucun compte ni jeton versionné.
+- Vérifié : paquet et dépendance confirmés dans le catalogue officiel Arch, présence dans la sortie de `pkg_list`,
+  `python3 scripts/test-install.py` : 0 échec ; syntaxe Bash et `git diff --check` OK.
+  Aucun paquet installé, aucune modification QML ni action sur le bureau réel. Connexion à un compte à vérifier après installation.
