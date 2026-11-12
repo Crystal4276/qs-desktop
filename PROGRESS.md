@@ -1115,3 +1115,17 @@ Lecture seule (hôte, root par pkexec, Windows par QGA ; VM démarrée puis éte
   `~/.gitconfig` sauvegardé et remis par `--uninstall` (mécanisme `edit` existant). Vérifié : fonction seule dans un dossier
   jetable avec ton vrai `gh` (Crystal4276 + ton adresse, second passage sans rien, `gh` absent → rappel) ;
   `test-install.py` avec un `gh` factice (adresse noreply, idempotence, retrait à l'identique).
+
+## Barre — molette de la luminosité (2026-11-12)
+
+- Ta demande : la molette sur l'icône de luminosité avançait trop peu. Pas porté de 1 % à **5 % par cran** (comme les touches de
+  luminosité et la molette du volume).
+- Corrigé au passage dans `services/Brightness.qml` : un cran arrivé pendant la commande `brightnessctl` en cours était ignoré,
+  et un cran arrivé juste après repartait de l'ancienne valeur (la relecture de `FileView.reload()` est asynchrone, doc vérifiée).
+  Molette, touches et curseur passent maintenant par une seule valeur demandée, gardée jusqu'à la relecture du fichier :
+  chaque cran compte. Les touches ne peuvent plus descendre à 0 % (écran noir) : minimum 1 %, comme le curseur.
+- Vérifié : banc Sway headless (faux `/sys`, faux `brightnessctl` lent puis rapide, jamais la vraie dalle). Ancien code :
+  4 crans rapides = +1 %, touches jusqu'à 0 %. Première version de la correction : 2 crans perdus sur 20. Version finale :
+  0 sur 20, minimum 1 %, 100 % sans dépassement. Avertissements identiques à HEAD. Bureau réel (Hyprland, PID 1903) : 0 cran
+  perdu sur 10 séries de deux appuis, luminosité remise à sa valeur de départ.
+- **À tester à la main** : la vraie molette sur l'icône (crans lents et rapides), en vérifiant que le pas de 5 % te convient.

@@ -3,7 +3,8 @@ import qs.config
 import qs.services
 
 // Rétroéclairage (Waybar `backlight`, pour le laptop) : 9 paliers (getIcon de Waybar), pêche.
-// Molette : ±1 %. Masqué sans rétroéclairage. Taille : celle du texte GTK par défaut (THEME.md § 3).
+// Molette : ±5 % par cran (comme les touches et la molette du volume). Masqué sans rétroéclairage. Taille : celle du texte
+// GTK par défaut (THEME.md § 3).
 Item {
     readonly property bool shown: Brightness.available
 
@@ -20,6 +21,6 @@ Item {
     }
 
     WheelSteps {
-        onStep: direction => Brightness.step(direction)
+        onStep: direction => Brightness.step(5 * direction)
     }
 }
