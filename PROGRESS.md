@@ -1098,3 +1098,9 @@ Lecture seule (hôte, root par pkexec, Windows par QGA ; VM démarrée puis éte
   à jour de sa copie système).
 - Git sur le laptop : identité absente (`~/.gitconfig` n'avait que l'aide `gh`), chaque commit échouait. Réglée à ta demande :
   `user.name` / `user.email` globaux, les mêmes que tes commits précédents. Pas dans le dépôt (public, adresse privée).
+- `install.sh` (étape 2, sans question) : identité absente → prise du compte GitHub de `gh` : identifiant ; adresse publique
+  du profil, sinon celle des commits de ce compte dans le dépôt (la tienne : adresse privée côté GitHub, jeton sans portée
+  `user`), sinon `<id>+<identifiant>@users.noreply.github.com`. `gh` non connecté : rappel en fin d'installation.
+  `~/.gitconfig` sauvegardé et remis par `--uninstall` (mécanisme `edit` existant). Vérifié : fonction seule dans un dossier
+  jetable avec ton vrai `gh` (Crystal4276 + ton adresse, second passage sans rien, `gh` absent → rappel) ;
+  `test-install.py` avec un `gh` factice (adresse noreply, idempotence, retrait à l'identique).

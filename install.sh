@@ -13,7 +13,7 @@
 #
 # Deux questions au plus : le profil (si hosts/<machine>.json n'en a pas) et les étapes système (toutes ou aucune).
 # Étapes : miroirs Reflector · 1 paquets (dépôts officiels, multilib, paru-bin, Claude Code) · 2 configs du compte (liens, sauvegardes
-# `<x>.bak-<date>`) · 3 thème · 4 réglages (dconf, applications par défaut, barres d'état de Claude Code et Codex, web apps,
+# `<x>.bak-<date>`, identité Git) · 3 thème · 4 réglages (dconf, applications par défaut, barres d'état de Claude Code et Codex, web apps,
 # liens Chromium) · 5 config machine · 6 système (sudo).
 set -euo pipefail
 
@@ -486,12 +486,33 @@ step_configs() {
     fi
     seed dotfiles/viewnior/viewnior.conf "$config/viewnior/viewnior.conf"
     touch_bashrc
+    git_identity
     # Dunst (ancien démon de notifications) masqué : Quickshell fait les notifications.
     if [[ -f /usr/lib/systemd/user/dunst.service ]] && systemctl --user show-environment >/dev/null 2>&1 \
         && [[ "$(systemctl --user is-enabled dunst.service 2>/dev/null)" != masked ]]; then
         run systemctl --user mask dunst.service
         record unit-mask dunst.service -
     fi
+}
+
+# Identité Git (sans elle, chaque commit échoue), sans question : compte GitHub connecté à gh. Nom : identifiant GitHub ;
+# adresse : celle du profil si elle est publique, sinon celle des commits de ce compte dans ce dépôt, sinon l'adresse
+# « noreply » de GitHub (commits rattachés au compte). Déjà réglée : rien ; --uninstall remet ~/.gitconfig d'origine.
+git_identity() {
+    local file="$HOME/.gitconfig" name email user login id public
+    name="$(git config --global user.name || true)"
+    email="$(git config --global user.email || true)"
+    if [[ -n "$name" && -n "$email" ]]; then echo "= identité Git : $name <$email>"; return; fi
+    if ! user="$(gh api user --jq '[.login, .id, .email // ""] | @tsv' 2>/dev/null)" || [[ -z "$user" ]]; then
+        later "identité Git absente : gh auth login, puis relancer install.sh (ou git config --global user.name / user.email)"
+        return
+    fi
+    IFS=$'\t' read -r login id public <<< "$user"
+    [[ -n "$email" ]] || email="${public:-$(git -C "$repo" log -1 --format=%ae --author="^$login <" 2>/dev/null || true)}"
+    backup_once edit "$file" cp
+    run git config --file "$file" user.name "${name:-$login}"
+    run git config --file "$file" user.email "${email:-$id+$login@users.noreply.github.com}"
+    written "$file"
 }
 
 touch_bashrc() {

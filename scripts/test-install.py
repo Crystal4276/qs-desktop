@@ -148,11 +148,14 @@ def main():
         env = {k: v for k, v in os.environ.items() if not k.startswith(("XDG_", "DBUS_", "SWAYSOCK", "I3SOCK", "HYPRLAND", "WAYLAND", "DISPLAY"))}
         # Chromium factice si le vrai est là : lancé par l'import de nightTab et Stylus, il écrirait un profil complet dans le
         # dossier jetable (l'import est testé à part, scripts/extension-import.py sur une copie de profil).
+        (tmp / "bin").mkdir()
         if shutil.which("chromium"):
-            (tmp / "bin").mkdir()
             (tmp / "bin/chromium").write_text('#!/bin/sh\n[ "$1" = --version ] && echo "Chromium 0.0.0.0" && exit 0\nexit 1\n')
             (tmp / "bin/chromium").chmod(0o755)
-            env["PATH"] = f"{tmp / 'bin'}:{env['PATH']}"
+        # gh factice : compte GitHub connecté, adresse privée (identité Git : identifiant + adresse noreply).
+        (tmp / "bin/gh").write_text('#!/bin/sh\n[ "$1 $2" = "api user" ] && printf \'test-login\\t42\\t\\n\' && exit 0\nexit 1\n')
+        (tmp / "bin/gh").chmod(0o755)
+        env["PATH"] = f"{tmp / 'bin'}:{env['PATH']}"
         # Import raté exprès (Chromium factice) : retenté à chaque passage, hors du test « sans changement ».
         IMPORTS = ("+ nightTab : ", "+ Stylus : ") if shutil.which("chromium") else ()
         env.update(HOME=str(home), XDG_RUNTIME_DIR=str(run), XDG_CACHE_HOME=str(cache), LANG="C.UTF-8", QS_INSTALL_ASSUME_CLOSED="1",
@@ -234,6 +237,9 @@ def main():
         check(json.loads(host_json.read_text()).get("profile") == "jeux", "config machine : profil jeux (--profil)")
         check(not (home / "GMSFreeAnalysis17").exists(), "profil jeux : dépôt de DigitalMicrograph non cloné")
         check(os.readlink(cfg / "quickshell/desktop") == str(repo), "lien quickshell/desktop")
+        ident = [subprocess.run(["git", "config", "--file", str(home / ".gitconfig"), k], capture_output=True, text=True).stdout.strip()
+                 for k in ("user.name", "user.email")]
+        check(ident == ["test-login", "42+test-login@users.noreply.github.com"], f"identité Git prise du compte gh {ident}")
         check(os.readlink(cfg / "mpv") == str(repo / "dotfiles/mpv"), "lien mpv")
         check(any(p.name.startswith("mpv.bak-") for p in cfg.iterdir()), "ancien ~/.config/mpv sauvegardé")
         check(os.readlink(repo / "dotfiles/mpv/host.conf").startswith("hosts/"), "mpv : host.conf choisi")
