@@ -12,7 +12,8 @@ Réglages appliqués et relus le 2026-11-09 :
 | Keyboard Backlight Timeout on AC | Never |
 | Keyboard Backlight Timeout on Battery | 30s |
 
-Extinction après 30 secondes sans activité sur batterie ; toujours allumé sur secteur.
+Extinction après 30 secondes sans activité sur batterie ; toujours allumé sur secteur, **sauf écrans en veille** : le bureau
+l'éteint alors et remet son niveau à la reprise (`services/Idle.qml`, 2026-11-12).
 
 Le BIOS signale un redémarrage nécessaire : à faire par l'utilisateur, puis essai réel sur batterie et secteur.
 

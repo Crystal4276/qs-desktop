@@ -108,7 +108,8 @@ verrouillage).
   confirmation tardive du verrouillage, libération volontaire, réveil et relance des processus. Aucune suspension ni authentification.
 
 - `python scripts/test-idle-lock.py` : IdleMonitor, verrou Wayland et DPMS réels sur Sway headless ; politiques laptop/desktop,
-  confirmation tardive, annulation, refus, inhibitions Wayland/D-Bus et délai désactivé. Aucun verrouillage de la vraie session.
+  confirmation tardive, annulation, refus, inhibitions Wayland/D-Bus et délai désactivé ; clavier éteint / rallumé par un faux
+  `brightnessctl`. Aucun verrouillage de la vraie session, aucune écriture sur la vraie LED.
 
 ## VM d'installation (`install.sh` sur une machine neuve)
 

@@ -85,7 +85,13 @@ ShellRoot {
 ''')
     runtime = work / 'runtime'
     runtime.mkdir(mode=0o700)
+    # Fake brightnessctl: records the keyboard backlight requests, never touches the real LED.
+    (work / 'bin').mkdir()
+    fake = work / 'bin/brightnessctl'
+    fake.write_text('#!/bin/sh\necho "$*" >> "$KBD_LOG"\n')
+    fake.chmod(0o755)
     env = dict(os.environ, XDG_RUNTIME_DIR=str(runtime), WLR_BACKENDS='headless', WLR_RENDERER='pixman',
+        PATH=f"{work / 'bin'}:{os.environ['PATH']}", KBD_LOG=str(work / 'kbd.log'),
         WLR_LIBINPUT_NO_DEVICES='1', QS_TEST='1', GIO_USE_VFS='local', GVFS_DISABLE_FUSE='1',
         XDG_STATE_HOME=str(work / 'state'), XDG_CACHE_HOME=str(work / 'cache'))
     for key in ('SWAYSOCK', 'I3SOCK', 'HYPRLAND_INSTANCE_SIGNATURE', 'WAYLAND_DISPLAY', 'DISPLAY', 'QS_IDLE_SOCKET', 'QS_LOCK_STATE'):
@@ -126,16 +132,24 @@ ShellRoot {
             ipc('reset'); until(lambda: not state()['locked'] and not state()['waiting'] and powered())
         def configure(battery=True, policy='null', seconds=1):
             ipc('configure', str(battery).lower(), policy, seconds)
+        def kbd():
+            log = work / 'kbd.log'
+            return log.read_text().splitlines() if log.exists() else []
+        KBD_OFF, KBD_ON = '-q -d *::kbd_backlight -s set 0', '-q -d *::kbd_backlight -r'
         until(state)
         configure()
         until(lambda: state()['waiting'])
+        # Keyboard backlight off as soon as idle (before the lock and DPMS), level restored on activity.
+        until(lambda: kbd() == [KBD_OFF])
         assert state()['requests'] == 1 and state()['off'] == 0 and powered(), state()
         ipc('retry')
         assert state()['requests'] == 1, 'duplicate lock request'
         time.sleep(2.2)
         assert powered() and state()['off'] == 0, 'powered off before confirmation'
         ipc('confirm'); until(lambda: state()['locked'] and not powered())
+        assert kbd() == [KBD_OFF], kbd()
         reset()
+        until(lambda: kbd() == [KBD_OFF, KBD_ON])
         # Input while waiting must cancel deferred DPMS, while preserving the requested lock.
         configure(); until(lambda: state()['waiting'])
         off = state()['off']
@@ -157,10 +171,12 @@ ShellRoot {
         reset()
         # Desktop default and explicit opt-out: DPMS without a lock request.
         for battery, policy in ((False, 'null'), (True, 'false')):
-            before = state()['requests']; configure(battery, policy)
+            before, calls = state()['requests'], kbd(); configure(battery, policy)
             until(lambda: not powered())
             assert state()['requests'] == before and not state()['locked'], state()
             reset()
+            # No laptop (no battery): keyboard backlight untouched.
+            until(lambda: kbd() == calls + ([KBD_OFF, KBD_ON] if battery else []))
         configure(False, 'true'); until(lambda: state()['waiting'])
         assert json.loads(ipc('state', target='idle'))['lockOnIdle'] is True
         ipc('confirm'); until(lambda: state()['locked'] and not powered())
@@ -177,11 +193,11 @@ ShellRoot {
             reset()
         before = state()['requests']; time.sleep(1.2)
         assert state()['requests'] == before and powered(), 'zero timeout locked'
-        log = (work / 'qs.log').read_text()
+        log = re.sub(r'\x1b\[[0-9;]*m', '', (work / 'qs.log').read_text())   # Quickshell colours its log levels
         unexpected = [line for line in log.splitlines() if re.search(r'\b(?:WARN|ERROR)\b', line)
             and 'qt.qpa.services: Failed to register with host portal' not in line]
         assert not unexpected, '\n'.join(unexpected)
-        print('PASS idle lock: native inactivity/secure lock/DPMS, policies, cancellation, failure, inhibitors, zero timeout')
+        print('PASS idle lock: native inactivity/secure lock/DPMS, keyboard backlight, policies, cancellation, failure, inhibitors, zero timeout')
     finally:
         if shell:
             try: os.killpg(shell.pid, signal.SIGTERM)
