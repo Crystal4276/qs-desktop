@@ -271,6 +271,7 @@ ask_system() {
     echo "Étapes système (sudo) : pacman et paru sans mot de passe (wheel), miroirs Reflector,"
     [[ "$profile" == jeux ]] && echo "  dépôt multilib (Steam, jeux 32 bits),"
     echo "  écran de connexion greetd + greeter Quickshell, Samba, services (réseau, Bluetooth, énergie, VM), groupes, thème Qt,"
+    echo "  ZeroTier (jonction automatique au réseau configuré dans hosts/zerotier-network),"
     echo "  extensions de Chromium, thème de Thunderbird, sonde de connectivité NetworkManager, mesures GPU Intel (s'il y en a un)."
     [[ "$profile" == travail ]] && echo "  écran de démarrage Plymouth Core Lab (initramfs, ligne de commande du noyau, image de secours : docs/PLYMOUTH.md)."
     ask "Faire ces étapes système ?" oui || { system=""; echo "- étapes système non faites (relancer install.sh pour les faire)"; }
@@ -1181,8 +1182,17 @@ step_plymouth() {
     fi
 }
 
+zerotier_network_file() {
+    if [[ -f "$repo/hosts/zerotier-network.local" ]]; then
+        echo "$repo/hosts/zerotier-network.local"
+    else
+        echo "$repo/hosts/zerotier-network"
+    fi
+}
+
 step_zerotier() {
-    local id file="$repo/hosts/zerotier-network.local" rc=0
+    local id file rc=0
+    file="$(zerotier_network_file)"
     if [[ ! -f "$file" ]]; then
         later "ZeroTier : renseigner hosts/zerotier-network.local puis relancer install.sh."
         return
@@ -1401,8 +1411,8 @@ if [[ -n "$uninstall" ]]; then
 fi
 [[ -n "$dry" ]] && echo "Simulation : rien ne sera modifié."
 choose_profile
-if [[ -n "$system" && -f "$repo/hosts/zerotier-network.local" ]]; then
-    network_id="$(cat "$repo/hosts/zerotier-network.local")"
+if [[ -n "$system" ]]; then
+    network_id="$(cat "$(zerotier_network_file)")"
     [[ "$network_id" =~ ^[[:xdigit:]]{16}$ ]] || { echo '! Network ID ZeroTier invalide' >&2; exit 2; }
 fi
 ask_system

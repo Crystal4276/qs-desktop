@@ -76,3 +76,30 @@ cat "$TEST_ROOT/response"''',
     settings = (root / 'networks.d' / (NETWORK + '.local.conf')).read_text()
     assert all(setting in settings for setting in ['allowDefault=0', 'allowDNS=0', 'allowGlobal=0'])
 print('PASS ZeroTier : simulation, validation, états réseau, autorisation, persistance et idempotence isolées')
+
+# Le même chemin de provisioning qu'install.sh doit fonctionner après un clone sans fichier local.
+with tempfile.TemporaryDirectory(prefix='qs-zerotier-provisioning-') as tmp:
+    root = Path(tmp)
+    (root / 'hosts').mkdir()
+    (root / 'scripts').mkdir()
+    default = (REPO / 'hosts/zerotier-network').read_text().strip()
+    (root / 'hosts/zerotier-network').write_text(default + '\n')
+    helper = root / 'scripts/system-setup.sh'
+    helper.write_text('#!/bin/sh\nprintf "%s\\n" "$*"\n')
+    helper.chmod(0o755)
+    source = (REPO / 'install.sh').read_text().split('\nif [[ -n "$uninstall" ]]; then\n')[0]
+    installer = root / 'install.sh'
+    installer.write_text(source + '\nstep_zerotier\n')
+
+    def provision():
+        return subprocess.run(['bash', str(installer), '--dry-run'], capture_output=True, text=True)
+
+    result = provision()
+    assert result.returncode == 0 and f'--dry-run zerotier {default}' in result.stdout, result.stdout + result.stderr
+    local = root / 'hosts/zerotier-network.local'
+    local.write_text(NETWORK + '\n')
+    result = provision()
+    assert result.returncode == 0 and f'--dry-run zerotier {NETWORK}' in result.stdout
+    local.write_text('invalid\n')
+    assert provision().returncode != 0
+print('PASS provisioning : réseau fourni après clone, surcharge locale prioritaire, ID invalide refusé')

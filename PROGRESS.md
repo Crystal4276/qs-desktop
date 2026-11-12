@@ -1184,3 +1184,14 @@ Syntaxe Bash et git diff --check OK. Rapport : docs/ZEROTIER-VALIDATION.md.
 Preuves brutes non versionnées : .shots/zerotier-validation/. VM arrêtée ; autres VM intactes.
 Desktop : instance QS Desktop inchangée, ZeroTier toujours ONLINE / OK, route Internet inchangée.
 Le retrait du bureau conserve volontairement le service et les adhésions ZeroTier, documenté dans README.
+
+## ZeroTier — réseau fourni dès le clone
+
+À ta demande, le Network ID non secret est désormais versionné dans hosts/zerotier-network.
+install.sh utilise automatiquement ce réseau ; hosts/zerotier-network.local reste une surcharge
+optionnelle. Plus de préparation manuelle du fichier après clonage. L'autorisation Central de
+chaque nouvelle identité reste nécessaire ; elle ne peut pas être fournie par le Network ID.
+
+Validation de cette correction : test-zerotier.py (dont clone sans fichier local),
+test-reflector.py, test-sudo-pacman.py, syntaxe Bash et git diff --check passent.
+Pas de nouvelle exécution VM : seul le choix du fichier de provisioning change.
