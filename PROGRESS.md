@@ -1049,3 +1049,24 @@ Lecture seule (hôte, root par pkexec, Windows par QGA ; VM démarrée puis éte
 - **Ménage hôte** : copie de disque du 11 avant maintenance (44 Gio, état de crash) ; ISO Windows en double (9 Gio dans
   `~/Win11` et `/var/lib/libvirt/boot`), encore branchée en CD ; sauvegardes obsolètes de `/var/lib/win11-setup` ;
   règle UFW 67/udp IPv6 sans objet ; paquets `gvfs-smb`, `wimlib`, `turbostat` ; `swtpm` à ajouter à `deps/apps.txt`.
+
+## Windows 11 — suite de l'audit appliquée (2026-11-12)
+
+- **Windows** (QGA, SYSTEM) : règles `Win11-*` retirées ; les 3 règles d'origine coupées par l'ancien Setup réactivées
+  (découverte réseau NetBIOS en Privé, SMB-In restreint en Public : VM derrière le NAT, compte sans mot de passe refusé
+  en réseau). `VioGpuSrv` désinstallé (MSI `REMOVE=FE_viogpudo_service`, code 0) et sa tâche retirée. Supprimés :
+  `SoftwareDistribution.win11-backup-*` (1,9 Gio), `ProgramData\Win11Setup`, `LOCALAPPDATA\Win11Setup`. Chiffrement :
+  `PreventDeviceEncryption=1`, disque déchiffré (`ConversionStatus` 0). Veille et extinction d'écran Windows : gardées off.
+- **QXL** : `vgamem` 16 → 64 Mio (`ram` 128 Mio, QEMU exige le double), compression d'images SPICE off. Modes du pilote :
+  2560 × 1600 au plus avant, jusqu'à 3840 × 2160 et 4096 × 2160 après ; adaptateur OK, aucun périphérique en erreur.
+  À juger par toi : fluidité dans la console, écran 4K.
+- **Projet Win11** (`c51572b`, dépôt privé) : `render` en QXL + compression off ; supprimés `console-trial.py` (et test,
+  doc), `Enable-VioGpuResize.ps1`, `Repair-ResizeAtLogon.ps1`, `Restore-Win11.ps1` ; `Initialize-Win11.ps1` bloque et
+  défait BitLocker (bloc exécuté dans la VM) ; `verify-host.py` contrôle QXL et tolère l'absence de `virt-fw-vars`.
+  20 tests OK, XML valide, 3 scripts PowerShell analysés par Windows, `Verify-Win11.ps1` exécuté.
+- **Paquets** désinstallés : `wimlib`, `turbostat`, `7zip`, `virt-firmware` (et `ntfsprogs`, `libntfs-3g`, dépendances
+  Python). `file-roller` n'ouvre plus les `.7z`. `deps/apps.txt` : `gvfs-smb` (gardé, partages dans Nemo) et `swtpm`
+  ajoutés ; `test-install.py` 0 échec.
+- **En attente** : suppressions refusées par le garde-fou de Claude Code faute d'accord explicite (copie de disque du 11,
+  44 Gio ; ISO de `~/Win11`, 9 Gio, une copie reste dans `/var/lib/libvirt/boot`) et sauvegardes obsolètes de
+  `/var/lib/win11-setup` ; BIOS VMD → AHCI/NVMe (toi, en dernier).
