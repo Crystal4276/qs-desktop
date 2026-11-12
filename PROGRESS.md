@@ -1000,5 +1000,6 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
   l'agent invité, l'ACPI ignoré juste après le démarrage), comme avant l'essai.
 - Incident de test : une première contre-épreuve sans faux `virt-viewer` a lancé le vrai pendant ~1 min (VM éteinte : il
   attendait), arrêté. Refaite avec un faux en tête du `PATH`.
-- `virt-viewer` retiré de `deps/apps.txt` (plus utilisé) ; toujours installé sur le laptop, désinstallation à ta décision.
+- `virt-viewer` retiré de `deps/apps.txt` (plus utilisé) et désinstallé du laptop à ta demande (`pacman -Rns` : avec
+  `libgovirt` et `librest`, ses seules dépendances propres ; virt-manager n'en dépend pas).
 - À vérifier à la main : plein écran de virt-manager (barre du haut) ; même lancement sous Sway.
