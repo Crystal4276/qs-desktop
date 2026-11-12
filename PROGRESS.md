@@ -1129,3 +1129,24 @@ Lecture seule (hôte, root par pkexec, Windows par QGA ; VM démarrée puis éte
   0 sur 20, minimum 1 %, 100 % sans dépassement. Avertissements identiques à HEAD. Bureau réel (Hyprland, PID 1903) : 0 cran
   perdu sur 10 séries de deux appuis, luminosité remise à sa valeur de départ.
 - **Validé par toi** (2026-11-12) : vraie molette, pas de 5 % retenu.
+
+
+## Sélecteur de wallpapers — panneau latéral droit (2026-11-12)
+
+- Choix validés : panneau à droite sous la barre, hauteur disponible moins les marges de 10 px ; style des panneaux conservé.
+  Images / Core Lab : vignettes 240 × 135 px, deux colonnes (cadre 530 px), trois dès 2560 px logiques (780 px), une si deux
+  ne tiennent pas. Panoramas / Triptychs : un aperçu pleine largeur par rangée, hauteur conservée.
+- Commandes fixes en deux groupes (catégories puis écran visé), retour à la ligne si nécessaire ; seule la grille défile.
+  Hauteur conservée à vide. Services, IPC et choix enregistrés inchangés ; grilles visitées et caches conservés.
+- Préparé sur copie isolée. `test-wallpapers.py` étendu : vrais placements à 1920 / 3440, seuil 2559/2560, écrans étroits,
+  commandes sans débordement à trois écrans, grille défilante, état vide, aperçu large, choix immédiat et ouverture sur un
+  autre écran. Les assertions existantes de caches, profils, persistance et résolutions restent exécutées.
+- Sway échelles 1 et 1,5 et Hyprland échelle 1,25 : passent, aucun avertissement QML inattendu. Au seuil 2559 px, Hyprland exige un
+  mode divisible par l'échelle : ce cas limite est testé à l'échelle 1 (le panneau n'est pas en cause).
+- Captures isolées avec les vrais fonds : `.shots/wallpaper-sidebar-1920.png`, `.shots/wallpaper-sidebar-3440.png` ;
+  option reproductible `--shots` documentée. Application groupée : bureau Hyprland réel vivant (même PID 1903), sélection
+  `corelab/06-lockup-filet` conservée, ouverture / capture / fermeture vérifiées (`.shots/wallpaper-sidebar-live.png`).
+  Aucun avertissement QML depuis le rechargement ; avertissements textinput Qt habituels à la fermeture. Aucun paquet ajouté,
+  aucune action VPN. Bancs arrêtés et aucun écran virtuel sur la vraie session.
+- À vérifier à la main : appréciation du panneau et du wallpaper dégagé, clics, flèches / Entrée / Échap et molette sur la vraie
+  session, puis utilisation avec les écrans externes sous Sway et Hyprland.

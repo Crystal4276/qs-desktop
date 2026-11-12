@@ -90,10 +90,14 @@ verrouillage).
 - `python3 scripts/test-wallpapers.py` : service et sélecteur réels sur Sway isolé ; regroupement Core Lab, résolution physique,
   échelle fractionnaire, replis, choix par écran, persistance et changement de profil, dossier ou variante absents.
   `--compositor hyprland` utilise un Hyprland imbriqué et un écran headless 1920×1200 ; aucun autostart réel.
-  Les deux bancs vérifient aussi les scans inchangés sans empreinte supplémentaire ni remplacement du modèle,
+  Les deux bancs vérifient aussi le panneau latéral (placement, seuil 2559/2560 px, repli étroit, commandes fixes,
+  défilement, catégorie vide, panoramas/triptyques et ouverture sur un autre écran), les scans inchangés sans empreinte
+  supplémentaire ni remplacement du modèle,
   les fichiers ajoutés / modifiés / supprimés, les écritures de vignettes en cours et le changement de dossier.
-  `--scale 1.25|1.5|2` garde un écran logique 1920×1200 ; contrôle des dimensions PNG, callbacks périmés, fermeture
+  `--scale 1.25|1.5|2` démarre avec un écran logique 1920×1200 ; contrôle des dimensions PNG, callbacks périmés, fermeture
   pendant une capture et régénération d’un cache corrompu. Les bascules chaudes conservent les cellules existantes.
+  `--shots .shots` enregistre les vues laptop et ultra-large ; `QS_TEST_WALLPAPERS` peut désigner une bibliothèque existante
+  lue seulement depuis le banc (sélection et caches isolés).
 
 - `python3 scripts/test-bar.py` : barre réelle sur Sway headless isolé, services média/audio/batterie factices ;
   1280–3440 px, ellipse artiste/titre, mises à jour, tray, replis et restauration, curseur conservé, absence de matériel.
