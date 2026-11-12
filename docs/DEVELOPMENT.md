@@ -90,7 +90,7 @@ verrouillage).
 - `python3 scripts/test-wallpapers.py` : service et sélecteur réels sur Sway isolé ; regroupement Core Lab, résolution physique,
   échelle fractionnaire, replis, choix par écran, persistance et changement de profil, dossier ou variante absents.
   `--compositor hyprland` utilise un Hyprland imbriqué et un écran headless 1920×1200 ; aucun autostart réel.
-  Les deux bancs vérifient aussi le panneau latéral (placement, seuil 2559/2560 px, repli étroit, commandes fixes,
+  Les deux bancs vérifient aussi le panneau latéral (placement, seuil 2559/2560 px, écrans étroits, commandes fixes,
   défilement, catégorie vide, panoramas/triptyques et ouverture sur un autre écran), les scans inchangés sans empreinte
   supplémentaire ni remplacement du modèle,
   les fichiers ajoutés / modifiés / supprimés, les écritures de vignettes en cours et le changement de dossier.

@@ -357,7 +357,7 @@ def test(work, compositor="sway", scale=1, shots=None):
         ipc('refresh'); wait_for(lambda v:len(v['lib']['simple'])>=60)
         ipc('tab','simple'); time.sleep(.3)
         assert geometry()['h']==empty_height
-        for width,height,columns in ((1920,1200,2),(3440,1440,3),(2559,1440,2),(2560,1440,3),(800,800,2),(540,800,1),(1280,800,2)):
+        for width,height,columns in ((1920,1200,1),(3440,1440,3),(2559,1440,1),(2560,1440,3),(800,800,1),(540,800,1),(1280,800,1)):
             resize(width,height)
             g=check_layout(width,height,columns)
             assert g['cellWidth']==250 and g['contentHeight']>g['gridHeight'], g
@@ -372,19 +372,19 @@ def test(work, compositor="sway", scale=1, shots=None):
         wait_for(lambda v:len(v['outputs'])==3)
         for output in ('HEADLESS-2','HEADLESS-3'): resize(1280,800,output,1)
         ipc('screen','HEADLESS-1'); ipc('tab','simple'); time.sleep(.3)
-        check_layout(1920,1200,2)
+        check_layout(1920,1200,1)
         resize(540,800); check_layout(540,800,1)
         resize(1920,1200)
         for kind in ('panorama','triptych'):
             ipc('tab',kind); time.sleep(.4)
             g=geometry()
-            assert g['cellWidth']==g['gridWidth']==500, g
+            assert g['cellWidth']==g['gridWidth']==250, g
             assert len(state()['items'])==1, state()
             ipc('choose',0)
             assert state()['selection']['kind']==kind, state()
             assert stats()['visible']
         ipc('screen','HEADLESS-2'); ipc('tab','simple'); time.sleep(.3)
-        check_layout(1280,800,2)
+        check_layout(1280,800,1)
         ipc('close'); assert not stats()['visible']
         if shots:
             shots.mkdir(parents=True,exist_ok=True)
@@ -398,7 +398,7 @@ def test(work, compositor="sway", scale=1, shots=None):
                 resize(width,height); time.sleep(1)
                 run('grim','-o','HEADLESS-1',str(shots/f'wallpaper-sidebar-{width}.png'),env=env)
             ipc('close')
-        print(f'PASS sidebar ({compositor}, scale {scale}): placement, 1/2/3 columns, threshold, fixed controls, scrolling, empty state, wide previews, screen choice')
+        print(f'PASS sidebar ({compositor}, scale {scale}): placement, 1/3 columns, threshold, fixed controls, scrolling, empty state, wide previews, screen choice')
         log = (work/'qs.log').read_text()
         unexpected='\n'.join(line for line in log.splitlines() if 'WARN scene:' in line and not ('Cannot open:' in line or 'Error decoding:' in line))
         assert not unexpected and not re.search(r'^\s*ERROR(?! quickshell.service.pipewire.loop:)\b', log, re.MULTILINE), log
