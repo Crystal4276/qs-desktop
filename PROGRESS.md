@@ -938,6 +938,9 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
   chaque fois avant que logind ne le rendorme (sa revérification du capot fermé marche). Cause non cherchée : `BACKLOG.md`.
 - Règles : `CLAUDE.md` règle 6 « Natif d'abord, code minimal » (proposer avant de s'écarter d'une solution documentée ou
   d'ajouter un processus, un script ou un protocole maison) ; la revue en boucle juge aussi l'altitude (`DEVELOPMENT.md`).
+- Test du 2026-11-12, 07:40 (Hyprland, sans externe) : veille déclenchée par logind à la fermeture ; réveil spontané 11 s plus
+  tard capot fermé, rendormi par logind ~27 s après (`BACKLOG.md`) ; réveil normal à l'ouverture. Liaisons de capot chargées,
+  plus de pont. Avertissements Quickshell du passage à zéro écran (`FALLBACK`, layershell) sans effet visible.
 - **À faire** :
   1. fermer puis rouvrir la session (le bureau actuel, PID 1909, tourne encore avec l'ancien `Lid.qml` en mémoire) ;
   2. tester à la main, sous Hyprland et Sway, sur secteur et batterie : fermer sans externe (veille, verrouillé au réveil) ;

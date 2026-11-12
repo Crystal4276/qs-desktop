@@ -6,8 +6,9 @@ Idées et défauts connus hors du programme des phases. Rien ici n'est implémen
 
 - **Réveils spontanés capot fermé (laptop)** : le 2026-11-09, 6 réveils en 19 min capot fermé (s2idle), ~27 s éveillé à chaque
   fois avant que logind ne rendorme (journal : `PM: suspend exit` sans ouverture du capot ; trace `tb_switch_resume` de
-  thunderbolt au premier réveil). Source de réveil à identifier (`/proc/acpi/wakeup`, `/sys/power/pm_wakeup_irq`), batterie
-  dans un sac.
+  thunderbolt au premier réveil). Revu le 2026-11-12 (noyau LTS 6.18) : réveil 11 s après la fermeture, IRQ 9 (ACPI : contrôleur
+  embarqué, batterie, charge…), le timer `win11-cpu` démarré au réveil est une conséquence (pas de `WakeSystem`). Source exacte
+  à identifier en root (`/sys/power/pm_debug_messages`, `/sys/kernel/debug/wakeup_sources`) ; batterie dans un sac.
 
 - **Carte batterie du laptop** : informations de recharge (puissance, durée, état / santé), présentation et choix des modes de sommeil ; développement ultérieur, sans changement de mode avec la gestion du capot.
 
