@@ -1271,3 +1271,18 @@ Pas d'installation complète en VM ni de nouvelle clé autorisée sur le vrai de
 - Vérifié : paquet et dépendance confirmés dans le catalogue officiel Arch, présence dans la sortie de `pkg_list`,
   `python3 scripts/test-install.py` : 0 échec ; syntaxe Bash et `git diff --check` OK.
   Aucun paquet installé, aucune modification QML ni action sur le bureau réel. Connexion à un compte à vérifier après installation.
+
+## Webapp Copilot (2026-11-12)
+
+- À ta demande : lanceur **Copilot** vers `https://copilot.cloud.microsoft/chat`, profil Chromium isolé `Copilot`,
+  liens externes via l'extension existante. Ajout repris automatiquement par `install.sh` sur les prochaines machines.
+- Icône officielle Microsoft embarquée dans `dotfiles/webapps/icons/copilot.png` (image PNG 48 × 48 extraite sans retouche
+  du favicon du site officiel ; provenance documentée à côté). Aucune nouvelle dépendance.
+- Installation ciblée sur le laptop avec les fonctions existantes de l'installateur : lanceur, manifeste de l'hôte natif,
+  thème GTK, barre de titre système et refus des extensions externes du navigateur, changements suivis dans le registre de retrait.
+- Vérifications : `test-install.py` sur copie isolée et dossier personnel jetable, **0 échec**, dont lanceur Copilot et icône ;
+  `desktop-file-validate` sur le lanceur développé, lecture par Gio et préférences Chromium OK ; `git diff --check` OK.
+  Bureau réel inchangé et vivant (PID 2001), aucun banc ni écran virtuel créé. Aucune modification QML ni action NordVPN.
+- À faire à la main : ouvrir Copilot depuis le lanceur et se connecter au compte Microsoft. Navigation authentifiée non testée.
+- Installation locale terminée ; publication vers `Crystal4276/qs-desktop`, branche `master`, explicitement autorisée
+  par toi après le refus initial du contrôle automatique.

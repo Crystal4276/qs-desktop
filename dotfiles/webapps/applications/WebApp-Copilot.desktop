@@ -1,0 +1,12 @@
+[Desktop Entry]
+Version=1.0
+Name=Copilot
+Comment=Microsoft Copilot - Web App
+Exec=chromium --app="https://copilot.cloud.microsoft/chat" --class=WebApp-Copilot --name=WebApp-Copilot --user-data-dir=@PROFILES@/Copilot --load-extension=@WEBAPPS@/open-links
+Terminal=false
+X-MultipleArgs=false
+Type=Application
+Icon=@WEBAPPS@/icons/copilot.png
+Categories=Office;
+StartupWMClass=WebApp-Copilot
+StartupNotify=true
