@@ -23,6 +23,8 @@ Celle de `CLAUDE.md`, plus :
   `nighttab.json`, styles de Stylus `stylus.json`), `dconf` (clés GSettings, + `hosts/<machine>.ini`), `mime`
   (applications par défaut), `bash` (bloc ajouté au `~/.bashrc`), `viewnior`, `samba` (fichier système, `scripts/system-setup.sh`).
 - `dotfiles/wireplumber/` : règle dont dépend la coupure des sons pendant « ne pas déranger » (§ 4, `doNotDisturb.muteApps`).
+  `scripts/stream-full-volume.lua` (+ `60-stream-full-volume.conf`) garde à 100 % le volume principal des flux de lecture,
+  invisible dans Quickshell, pactl et wpctl (avertissement dans le journal de WirePlumber s'il est corrigé).
 - `dotfiles/webapps/` : extension Chromium `open-links/` et son hôte natif `open-link`, lanceurs des web apps (`applications/`),
   manifeste de l'hôte (`qs_desktop.open_link.json`) ; développés par `install.sh` (procédure : `deps/README.md`, « Web apps ») (§ 7.10).
 - `scripts/desktop.sh` : lancé par l'autostart des deux compositeurs (§ 8.2) ; `scripts/ipc.sh` : `qs ipc call` des raccourcis vers

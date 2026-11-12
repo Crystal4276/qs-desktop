@@ -65,3 +65,5 @@ Idées et défauts connus hors du programme des phases. Rien ici n'est implémen
   inutilisable pour tester sous Hyprland).
 - Hyprland 0.57 : un contrôle gamma refusé reste enregistré (`protocols/GammaControl.cpp`) et l'écran est refusé à tout client
   jusqu'au redémarrage (contourné : jamais deux gammastep à la fois).
+- Quickshell : exposer le volume principal (`SPA_PROP_volume`) des nœuds, pour afficher le volume réel ; rendrait
+  `dotfiles/wireplumber/scripts/stream-full-volume.lua` inutile (proposition en amont).
