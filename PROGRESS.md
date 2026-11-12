@@ -973,9 +973,10 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
   enregistré pour 192.168.122.1. Port 445 joignable dans les deux sens ; pare-feu Windows : SMB entrant depuis 192.168.122.1
   seulement. Partage Windows `Win11Exchange` (`C:\Win11Exchange`, `chikhs` en modification) gardé pour Windows → laptop.
 - Windows → laptop : **fait par toi** (`\\192.168.122.1\`, compte Samba `chikhs`).
-- Laptop → Windows : ton compte Windows `chikhs` est désormais sans mot de passe, refusé en réseau par défaut. À ta demande
-  et avec ton autorisation explicite : `LimitBlankPasswordUse=0` dans Windows (retour : `1`). Exposition : SMB n'accepte que
-  192.168.122.1 (pare-feu Windows), réseau NAT ; `C$` refusé (filtrage UAC distant actif). Vérifié par `smbclient`, mot de
-  passe vide : liste des partages, écriture / relecture / suppression dans `Win11Exchange`, `C$` → `ACCESS_DENIED`.
-  Dans Nemo : `smb://192.168.122.2/Win11Exchange`, utilisateur `chikhs`, mot de passe vide.
+- Laptop → Windows : **abandonné, un seul sens suffit** (ton choix). Ton compte Windows est sans mot de passe ; Nemo ne peut
+  pas s'y connecter même avec `LimitBlankPasswordUse=0` : gvfs force le cache d'identifiants de `libsmbclient`
+  (`GENSEC_FEATURE_NTLM_CCACHE`), où un mot de passe vide veut dire « identifiants en cache » → « Invalid argument »
+  (reproduit avec `smbclient --use-krb5-ccache`, qui passe sans cette option). `LimitBlankPasswordUse` remis à `1`, partage
+  Windows `Win11Exchange` retiré, `C:\Win11Exchange` supprimé (seul le fichier de test de Codex). Échanges dans les deux
+  sens par les partages du laptop. Règles du pare-feu Windows pour SMB entrant (Codex) laissées pour l'audit.
 - Prochaine étape demandée : **audit de la configuration de la VM** faite par Codex (domaine, réseau, `ufw`, réglages Windows).
