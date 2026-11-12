@@ -927,8 +927,10 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
   chargées par ta session Hyprland (`hyprctl binds`), vérification jetable de l'inhibiteur (externe, virtuels exclus, veille
   DPMS, dalle éteinte, retrait, reprise après arrêt, rien sans batterie), `test-sleep.py` OK, `test-outputs.sh sway` 0 échec,
   `test-install.py` 0 échec (contrôle du quirk ajouté), banc Sway sans avertissement. `test-idle-lock.py` échoue sur un
-  avertissement de portail, **déjà avant** ce travail (environnement). Syntaxe du quirk non validée par libinput (`libinput
-  quirks validate` est dans `libinput-tools`, non installé).
+  avertissement de portail, **déjà avant** ce travail (environnement). Quirk validé avec `libinput-tools` (outil de diagnostic,
+  installé le 2026-11-12, hors `deps/`) : `libinput quirks validate` OK ; `libinput quirks list` : `AttrLidSwitchReliability=reliable`
+  sur le seul « Lid Switch » (`event0`), rien avant, pavé tactile inchangé. Simulation de `system-setup.sh install` : seul le
+  quirk change.
 - Revues de la version native (3 passes) : virtuels comptés comme externes, liste blanche des connecteurs, `Battery.available`,
   état initial du capot (quirk) : corrigés. Acceptés : écran qui coupe sa connexion en veille profonde ou KVM basculé =
   débranchement (comme la version Codex) ; relance de Quickshell écrans éteints capot fermé → veille ; dalle éteinte même sans
