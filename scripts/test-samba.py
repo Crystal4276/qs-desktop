@@ -16,6 +16,8 @@ with tempfile.TemporaryDirectory(prefix='qs-samba-test-') as tmp:
     source = (REPO / 'scripts/system-setup.sh').read_text()
     for old, new in [('/var/lib/qs-desktop/system-setup', str(root / 'state')),
                      ('/etc/samba/smb.conf', str(root / 'smb.conf')),
+                     ('/etc/samba/smb.host.conf', str(root / 'smb.host.conf')),
+                     ('/proc/sys/kernel/hostname', str(root / 'hostname')),
                      ('/var/lib/samba/usershares', str(root / 'usershares')),
                      ('/etc/ufw/ufw.conf', str(root / 'ufw.conf')),
                      ('/etc/systemd/system/smb.service.d/50-qs-zerotier.conf', str(root / 'unit.conf')),
@@ -25,6 +27,7 @@ with tempfile.TemporaryDirectory(prefix='qs-samba-test-') as tmp:
     helper.write_text(source)
     (root / 'smb.conf').write_text('[global]\nserver string = original\n')
     original = (root / 'smb.conf').read_bytes()
+    (root / 'hostname').write_text('sans-fichier\n')
     (root / 'ufw.conf').write_text('ENABLED=yes\n')
     (root / 'rules').write_text('ufw allow 22/tcp\n')
     (root / 'active').touch()
@@ -119,8 +122,26 @@ fi""",
     result = subprocess.run(['bash', str(waiter)], env=env, capture_output=True, text=True)
     assert result.returncode == 0 and '30 s' in result.stderr
     assert len((root / 'ticks').read_text().splitlines()) == 30
+    # Fichier machine (terrier : réseau local) installé, validé avec smb.conf, retiré au retrait.
+    (root / 'hostname').write_text('terrier\n')
+    run('samba')
+    host = root / 'smb.host.conf'
+    assert 'bridge0' in host.read_text()
+    assert 'include = /etc/samba/smb.host.conf' in target.read_text()
+    (root / 'calls').unlink()
+    run('samba')
+    assert 'systemctl restart' not in (root / 'calls').read_text()
+    host.write_text('# ancien\n')
+    run('samba')
+    assert 'bridge0' in host.read_text() and 'systemctl restart' in (root / 'calls').read_text()
+    run('uninstall')
+    assert not host.exists() and target.read_bytes() == original
+    (root / 'dotfiles/samba/hosts/terrier.conf').write_text('interfaces = lo\nserver role = invalid-role\n')
+    run('samba', success=False)
+    assert not host.exists() and target.read_bytes() == original
+    (root / 'hostname').write_text('sans-fichier\n')
     # Une configuration invalide ne remplace jamais l'original.
     (root / 'dotfiles/samba/smb.conf').write_text('[global]\nserver role = invalid-role\n')
     run('samba', success=False)
     assert target.read_bytes() == original
-print('PASS Samba : validation, simulation, idempotence, service arrêté, UFW actif/inactif et retrait isolés')
+print('PASS Samba : validation, fichier machine, simulation, idempotence, service arrêté, UFW actif/inactif et retrait isolés')

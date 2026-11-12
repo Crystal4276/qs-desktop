@@ -293,7 +293,8 @@ en mosaïque sans changer l’espace courant ; les autres fenêtres de virt-mana
 
 `scripts/system-setup.sh samba` configure `[homes]` et les usershares Nemo, valide avec `testparm`
 et utilise `pdbedit` pour signaler un compte manquant (outils du paquet `samba`). Interfaces dynamiques
-natives de Samba sous Linux : loopback, `virbr*`, `zt*` (changements d'adresse sur interface connue).
+natives de Samba sous Linux : loopback, `virbr*`, `zt*` (changements d'adresse sur interface connue),
+plus celles de `dotfiles/samba/hosts/<machine>.conf` (`/etc/samba/smb.host.conf`).
 Drop-in systemd : ordre et propagation des arrêts/redémarrages de ZeroTier ; attente bornée via
 `samba-wait-zerotier.sh` (`bash`, `ip` d'`iproute2`, `awk` de `gawk`, `sleep` de `coreutils`).
 UFW, optionnel et jamais installé ici,

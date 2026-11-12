@@ -1376,3 +1376,21 @@ Pas d'installation complète en VM ni de nouvelle clé autorisée sur le vrai de
   réglage système ni paquet modifié pour ce correctif.
 - L'utilisateur autorise ensuite explicitement le commit et le push de l'ensemble Horizon, corrections et validation incluses.
   Cette autorisation remplace l'attente de publication mentionnée dans les entrées précédentes.
+
+## Samba — régression réseau local de terrier corrigée (2026-11-12)
+
+Régression signalée : le casque VR (Skybox) n'accédait plus aux partages par 10.216.41.210. Cause : jusqu'à
+l'étape `samba` du jour (14 h 55), `/etc/samba/smb.conf` était la config de 2022 (écoute partout, invités
+autorisés) ; celle du dépôt n'écoute que sur lo, virbr* et zt*, donc plus sur `bridge0` (réseau local filaire).
+Choix utilisateur : réseau local rétabli **avec mot de passe** (pas d'invité ; les usershares créés avec
+`guest_ok=y` demandent désormais le compte Samba).
+
+- `dotfiles/samba/smb.conf` inclut `/etc/samba/smb.host.conf` (absent = rien de plus) ; `dotfiles/samba/hosts/terrier.conf`
+  ajoute `bridge0`. `system-setup.sh samba` installe le fichier de la machine, valide la config combinée avec `testparm`,
+  redémarre smb s'il change ; le retrait le supprime.
+- Validations : test-samba.py PASS (fichier machine présent/absent, invalide refusé, idempotence, retrait),
+  test-install.py 0 échec. Appliqué par pkexec : 445 écoute sur 10.216.41.210, 10.147.17.171 (ZeroTier),
+  192.168.122.1, 127.0.0.1 ; anonyme sur 10.216.41.210 : `NT_STATUS_ACCESS_DENIED`.
+- **À tester à la main** : Skybox → 10.216.41.210, compte `crystal` + mot de passe Samba ; en cas d'échec,
+  `/var/log/samba/log.<IP du casque>`.
+- Constaté, non modifié : usershares `Epoxidation` et `Dl_2` pointent vers des dossiers absents.
