@@ -8,7 +8,10 @@ Idées et défauts connus hors du programme des phases. Rien ici n'est implémen
   fois avant que logind ne rendorme (journal : `PM: suspend exit` sans ouverture du capot ; trace `tb_switch_resume` de
   thunderbolt au premier réveil). Revu le 2026-11-12 (noyau LTS 6.18) : réveil 11 s après la fermeture, IRQ 9 (ACPI : contrôleur
   embarqué, batterie, charge…), le timer `win11-cpu` démarré au réveil est une conséquence (pas de `WakeSystem`). Source exacte
-  à identifier en root (`/sys/power/pm_debug_messages`, `/sys/kernel/debug/wakeup_sources`) ; batterie dans un sac.
+  à identifier : `echo 1 | pkexec tee /sys/power/pm_debug_messages` (jusqu'au redémarrage), puis lire au réveil suivant les
+  lignes `PM:` / `ACPI: EC:` du journal. Essai du 2026-11-12 (21 min capot fermé, secteur, batterie 100 % « Not charging »,
+  charge BIOS « Adaptive ») : aucun réveil, seuls l'événement EC de la fermeture (réarmé) et l'ouverture ; compteurs de réveil
+  des alimentations à 0. À reprendre à la prochaine occurrence (piste : notifications de charge du contrôleur embarqué).
 
 - **Carte batterie du laptop** : informations de recharge (puissance, durée, état / santé), présentation et choix des modes de sommeil ; développement ultérieur, sans changement de mode avec la gestion du capot.
 
