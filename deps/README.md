@@ -317,3 +317,10 @@ sans modifier les réglages existants. Clé privée et destination uniquement da
 au retrait. Voir README, « Accès SSH au desktop ». Aucun service ajouté.
 `python3 scripts/test-ssh-desktop.py` : vrais fichiers SSH jetables, pseudo-terminal Python et
 connexions distantes simulées ; aucun accès réseau réel ni privilège requis.
+
+### GRUB Horizon (profil travail)
+
+Intégration GRUB + UKI existant seulement : aucun paquet de chargeur installé automatiquement. Ressources et module 2.16
+prêts à utiliser. Reconstruction : Python, python-pillow, librsvg, grub (grub-mkfont) ; module : chaîne GCC/Make/Autotools,
+bison/flex/gettext/patch/gawk et sources GRUB/Gnulib de la version cible. Aperçus : qemu-system-x86, edk2-ovmf ; pas de libvirt.
+Polices Inter et DM Sans OFL embarquées. Voir `docs/GRUB-HORIZON.md` pour commandes, compatibilité et retour arrière.

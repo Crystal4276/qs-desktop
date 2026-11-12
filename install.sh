@@ -273,7 +273,7 @@ ask_system() {
     echo "  écran de connexion greetd + greeter Quickshell, Samba, services (réseau, Bluetooth, énergie, VM), groupes, thème Qt,"
     echo "  ZeroTier (jonction automatique au réseau configuré dans hosts/zerotier-network),"
     echo "  extensions de Chromium, thème de Thunderbird, sonde de connectivité NetworkManager, mesures GPU Intel (s'il y en a un)."
-    [[ "$profile" == travail ]] && echo "  écran de démarrage Plymouth Core Lab (initramfs, ligne de commande du noyau, image de secours : docs/PLYMOUTH.md)."
+    [[ "$profile" == travail ]] && echo "  menu GRUB Horizon (UKI, délai 2 s) ; écran de démarrage Plymouth Core Lab (initramfs, ligne de commande du noyau, image de secours : docs/PLYMOUTH.md)."
     ask "Faire ces étapes système ?" oui || { system=""; echo "- étapes système non faites (relancer install.sh pour les faire)"; }
 }
 
@@ -1182,6 +1182,26 @@ step_plymouth() {
     fi
 }
 
+# Horizon : profil travail, transaction séparée et réversible (docs/GRUB-HORIZON.md).
+grub_horizon_setup() {
+    if [[ -n "$dry" ]]; then
+        "$repo/scripts/grub-horizon-setup.py" --dry-run "$@"
+    else
+        sudo "$repo/scripts/grub-horizon-setup.py" "$@"
+    fi
+}
+
+step_grub_horizon() {
+    if [[ "$profile" == travail ]]; then
+        if [[ -f /etc/grub.d/15_uki && -f /etc/default/grub ]]; then
+            echo "Menu GRUB Horizon (2 s, noyaux standard/LTS et variantes identifiés)"
+            grub_horizon_setup install || later "Horizon non installé : voir docs/GRUB-HORIZON.md."
+        fi
+    elif [[ -f /var/lib/qs-desktop/grub-horizon/state.json ]]; then
+        sub grub_horizon_setup uninstall
+    fi
+}
+
 zerotier_network_file() {
     if [[ -f "$repo/hosts/zerotier-network.local" ]]; then
         echo "$repo/hosts/zerotier-network.local"
@@ -1228,6 +1248,7 @@ step_system() {
     greeter_wallpaper
     step_zerotier
     step_plymouth
+    step_grub_horizon
     echo "Samba (dossier personnel via ZeroTier et VM), services, groupes et thème Qt du système"
     sub "$repo/scripts/system-setup.sh" ${dry:+--dry-run} install
     if command -v chromium >/dev/null; then
@@ -1344,7 +1365,8 @@ EOF
     if command -v chromium >/dev/null; then
         python3 "$repo/scripts/browser-links-setup.py" ${dry:+--dry-run} uninstall 2>/dev/null || echo "= liens Chromium : rien à retirer"
     fi
-    if [[ -n "$system" ]] && ask "Défaire aussi les étapes système (GPU Intel, sudo pacman, Reflector, greeter → ancien gestionnaire, écran de démarrage Plymouth, sonde réseau, Samba, services, groupes, extensions Chromium, thème Thunderbird) ?"; then
+    if [[ -n "$system" ]] && ask "Défaire aussi les étapes système (GPU Intel, sudo pacman, Reflector, greeter → ancien gestionnaire, écran de démarrage Plymouth, menu GRUB Horizon, sonde réseau, Samba, services, groupes, extensions Chromium, thème Thunderbird) ?"; then
+        [[ -f /var/lib/qs-desktop/grub-horizon/state.json ]] && sub grub_horizon_setup uninstall
         plymouth_installed && sub "$repo/scripts/plymouth-setup.sh" ${dry:+--dry-run} uninstall
         sub "$repo/scripts/system-setup.sh" ${dry:+--dry-run} uninstall
         sub "$repo/scripts/network-setup.sh" ${dry:+--dry-run} uninstall

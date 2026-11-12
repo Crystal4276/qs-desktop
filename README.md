@@ -185,3 +185,7 @@ réapplique celle-ci au service actif et retire uniquement la règle UFW ajouté
 Validation réelle Arch en VM : installation, relances, redémarrage et panne réseau vérifiés.
 Autorisation Central non accordée : aucune IP privée ni connectivité de bout en bout validées.
 Détails : [rapport de validation](docs/ZEROTIER-VALIDATION.md).
+
+Le profil travail prépare aussi le **menu GRUB Horizon**, sur les installations GRUB + UKI compatibles : noyaux standard/LTS
+et variantes identifiés, menu deux secondes, adaptation au mode vidéo de démarrage. Installation système réversible ; aucun
+chargeur installé sur une machine qui n'utilise pas GRUB. Aperçu VM, limites et déploiement : [GRUB Horizon](docs/GRUB-HORIZON.md).

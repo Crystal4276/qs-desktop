@@ -12,3 +12,9 @@ tailscale       # onglet Tailscale du panneau réseau (état, appareils, nœud d
 xorg-xinit      # startx : sessions X11 proposées par l'écran de connexion (scripts/greeter-session.sh) ; sans lui, elles sont masquées
 xorg-server     # serveur X des sessions X11 de l'écran de connexion (avec xorg-xinit)
 socat           # transmission au Chromium déjà lancé ; absent : lancement normal (scripts/chromium-launch.sh)
+
+# GRUB Horizon (construction/VM uniquement ; ne pas remplacer un autre chargeur)
+# grub : outils de construction et fontes PF2, GRUB 2.16 x86_64-efi ciblé
+# python-pillow, librsvg : génération déterministe des ressources
+# qemu-system-x86, edk2-ovmf : aperçu réel en VM ; aucun besoin de libvirt
+# gcc, make, autoconf, automake, bison, flex, gettext, patch, gawk : reconstruction du module depuis les sources GRUB

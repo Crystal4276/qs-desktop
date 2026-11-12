@@ -170,3 +170,8 @@ seulement, `sudo grub-mkconfig -o /boot/grub/grub.cfg` ; en mode UKI, `sudo rm /
 
 L'écran de connexion n'apparaît pas après l'écran de démarrage : `systemctl status plymouth-quit-wait plymouth-quit greetd` ;
 `sudo plymouth quit` libère l'écran si Plymouth est resté actif.
+
+## GRUB Horizon
+
+`python3 scripts/grub-horizon-setup.py uninstall` restaure les réglages suivis et régénère GRUB, sans retirer d'image UKI.
+Procédure depuis un support de secours et copie originale de grub.cfg : [GRUB Horizon](GRUB-HORIZON.md).

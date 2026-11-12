@@ -1,0 +1,27 @@
+title-text: ""
+desktop-image: "background.png"
+desktop-image-scale-method: "padding"
+desktop-color: "#11111b"
++ boot_menu {
+ left = "55%+8"
+ top = "48%-144"
+ width = "37%+11"
+ height = 288
+ item_font = "Inter Regular 26"
+ item_color = "#cdd6f4"
+ selected_item_color = "#cdd6f4"
+ icon_width = 40
+ icon_height = 40
+ item_height = 61
+ item_padding = 0
+ item_icon_space = 42
+ item_spacing = 14
+ item_pixmap_style = "normal_*.png"
+ selected_item_pixmap_style = "selected_*.png"
+ scrollbar = false
+}
++ label { id = "__timeout__" left = "55%+8" top = 722 width = "37%+11" height = 33 font = "Inter Regular 22" color = "#a6e3a1" text = "Booting in %d s" }
++ progress_bar { id = "__timeout__" left = "67%+5" top = 722 width = 26% height = 28 font = "Inter Regular 14" fg_color = "#a6e3a1" bg_color = "#181825" border_color = "#6c7086" text = "" }
++ label { left = "2%+13" top = 93% width = 45% height = 29 font = "Inter Regular 16" color = "#cdd6f4" text = "↑ ↓ Select   Enter Boot   E Edit   C Console" }
++ image { left = 1140 top = 93% width = 32 height = 32 file = "kaust.png" }
++ image { left = 1184 top = 843 width = 320 height = 19 file = "identity.png" }
