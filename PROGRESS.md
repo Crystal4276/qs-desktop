@@ -944,11 +944,10 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
 - Test du 2026-11-12, 07:44 (Hyprland, Dell AW3418DW en HDMI) : capot fermé 54 s, **pas de veille**, verrou « External display
   active » tenu ; dalle rallumée à l'ouverture. Cas écrans éteints par la veille vérifié sur la session (extinction de 2 s) :
   connecteur HDMI `disabled` dans sysfs (logind seul croirait l'externe débranché), verrou toujours tenu.
-- **À faire** :
-  1. fermer puis rouvrir la session (le bureau actuel, PID 1909, tourne encore avec l'ancien `Lid.qml` en mémoire) ;
-  2. tester à la main, sous Hyprland et Sway, sur secteur et batterie : fermer sans externe (veille, verrouillé au réveil) ;
-     fermer avec USB-C (HDMI fait) ;
-     débrancher le dernier externe capot fermé (veille) ; rouvrir (dalle rallumée, échelle 1) ; ouvrir la session capot fermé
-     sur dock puis ouvrir le capot (dalle rallumée) ; réveil capot fermé avec externe sous Hyprland (dalle reste éteinte) ;
-     `systemd-inhibit --list` : verrou `handle-lid-switch` seulement avec un externe actif ;
+- **Fait** sous Hyprland : fermer sans externe (veille, verrouillage confirmé en 1 s) ; fermer avec HDMI (pas de veille, verrou
+  tenu même écrans éteints) ; rouvrir (dalle rallumée, échelle 1).
+- **À faire** (à la main) :
+  1. sous Hyprland : fermer avec USB-C ; débrancher le dernier externe capot fermé (veille) ; ouvrir la session capot fermé sur
+     dock puis ouvrir le capot (dalle rallumée) ; réveil capot fermé avec externe (dalle reste éteinte) ; sur batterie ;
+  2. sous Sway : les mêmes cas ;
   3. l'écran de connexion reprend les liaisons Sway à la prochaine mise à jour de sa copie système (`install.sh`, étape système).
