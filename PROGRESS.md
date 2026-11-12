@@ -968,9 +968,10 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
   scripts et un fichier de test). Il était déjà inactif : `install.sh` relancé le 11 à 18:35 avait remis `smb.conf` du dépôt,
   sans sa ligne `include`. Restent `[homes]` et les partages Nemo (clic droit → Partager) ; partage de test créé puis retiré
   sans root : OK. Règle `ufw` de Codex (TCP 445 depuis 192.168.122.2) et réservation DHCP `win11` → 192.168.122.2 gardées.
-- **À faire à la main** :
-  1. créer ton compte Samba dans un terminal : `sudo smbpasswd -a chikhs` (aucun compte `chikhs` jusqu'ici) ;
-  2. dans Windows : retirer l'ancien lecteur et ses identifiants (`net use L: /delete`, `cmdkey /delete:192.168.122.1`),
-     puis `\\192.168.122.1\chikhs` (dossier personnel) ou `\\192.168.122.1\<nom du partage Nemo>` avec le compte `chikhs` ;
-  3. Windows → laptop : dossier partagé dans Windows, ouvert dans Nemo par `smb://192.168.122.2/` (à vérifier pendant l'audit).
+- Compte Samba `chikhs` créé par toi. VM démarrée par `virsh`, commandes Windows par l'agent invité (SYSTEM) : ancien
+  lecteur `L:` → `Win11Exchange` / `win11share` retiré dans ta session (tâche planifiée unique, supprimée), aucun identifiant
+  enregistré pour 192.168.122.1. Port 445 joignable dans les deux sens ; pare-feu Windows : SMB entrant depuis 192.168.122.1
+  seulement. Partage Windows `Win11Exchange` (`C:\Win11Exchange`, `chikhs` en modification) gardé pour Windows → laptop.
+- **À faire à la main** (mots de passe) : dans Windows, `\\192.168.122.1\` avec le compte Samba `chikhs` ; dans Nemo,
+  `smb://192.168.122.2/Win11Exchange` avec le compte Windows `chikhs`.
 - Prochaine étape demandée : **audit de la configuration de la VM** faite par Codex (domaine, réseau, `ufw`, réglages Windows).
