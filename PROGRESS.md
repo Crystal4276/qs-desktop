@@ -928,8 +928,8 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
   chargées par ta session Hyprland (`hyprctl binds`), vérification jetable de l'inhibiteur (externe, virtuels exclus, veille
   DPMS, dalle éteinte, retrait, reprise après arrêt, rien sans batterie), `test-sleep.py` OK, `test-outputs.sh sway` 0 échec,
   `test-install.py` 0 échec (contrôle du quirk ajouté), banc Sway sans avertissement. `test-idle-lock.py` échoue sur un
-  avertissement de portail, **déjà avant** ce travail (environnement). `libinput-tools` installé le 2026-11-12 (diagnostic : `libinput
-  debug-events`, `libinput quirks list`) ; place dans `deps/` à décider.
+  avertissement de portail, **déjà avant** ce travail (environnement). `libinput-tools` installé le temps de cette vérification
+  puis désinstallé avec ses dépendances (ton choix : aucun paquet inutile ; hors `deps/`).
 - Revues de la version native (3 passes) : virtuels comptés comme externes, liste blanche des connecteurs, `Battery.available`,
   état initial du capot (quirk) : corrigés. Acceptés : écran qui coupe sa connexion en veille profonde ou KVM basculé =
   débranchement (comme la version Codex) ; relance de Quickshell écrans éteints capot fermé → veille ; dalle éteinte même sans
