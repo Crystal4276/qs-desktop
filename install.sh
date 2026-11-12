@@ -1228,7 +1228,7 @@ step_system() {
     greeter_wallpaper
     step_zerotier
     step_plymouth
-    echo "Samba, services (réseau, Bluetooth, énergie, VM), groupes et thème Qt du système"
+    echo "Samba (dossier personnel via ZeroTier et VM), services, groupes et thème Qt du système"
     sub "$repo/scripts/system-setup.sh" ${dry:+--dry-run} install
     if command -v chromium >/dev/null; then
         echo "Extensions de Chromium (dotfiles/chromium/extensions.txt : Dark Reader, Stylus, nightTab…)"
@@ -1403,6 +1403,7 @@ step_check() {
     echo "Terminé. À faire soi-même (README.md) : mot de passe Samba (sudo smbpasswd -a ${USER:-$(id -un)}), première connexion des web apps,"
     echo "thème Catppuccin dans Obsidian, logiciels hors dépôts (NordVPN, Plex, RustDesk), connexion de Claude Code et de Codex."
     echo "Nouveaux groupes et thème Qt : effectifs à la prochaine connexion."
+    echo "Partages Nemo : smb://<IP ZeroTier de la machine distante>/<compte distant> (compte et mot de passe Samba)."
 }
 
 if [[ -n "$uninstall" ]]; then
