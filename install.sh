@@ -482,6 +482,8 @@ step_configs() {
         run ln -sfn "${mpv_host#dotfiles/mpv/}" "$repo/dotfiles/mpv/host.conf"
     fi
     link "$(host_file dotfiles/chromium conf dotfiles/chromium/chromium-flags.conf)" "$config/chromium-flags.conf"
+    link dotfiles/wireplumber/wireplumber.conf.d/60-stream-full-volume.conf "$config/wireplumber/wireplumber.conf.d/60-stream-full-volume.conf"
+    link dotfiles/wireplumber/scripts/stream-full-volume.lua "$data/wireplumber/scripts/stream-full-volume.lua"
     if dnd_mutes; then
         link dotfiles/wireplumber/wireplumber.conf.d/50-dnd-no-restore.conf "$config/wireplumber/wireplumber.conf.d/50-dnd-no-restore.conf"
     fi
