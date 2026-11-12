@@ -65,6 +65,7 @@ Thème d'icônes des applications (tray, lanceur, menu d'applications, notificat
 |---|---|---|---|---|
 | Notifications | — (natif) | `libnotify` (tests `notify-send`) | Inter | — |
 | Lanceur | — (natif, `DesktopEntries`) | terminal pour les applis `Terminal=true` | Inter, Symbols Nerd Font Mono | — |
+| Comptes en ligne (application) | `gnome-online-accounts-gtk` (interface autonome, `deps/apps.txt` ; installe `gnome-online-accounts`) | — | — | — |
 | Menu d'applications (modèle Cinnamon, remplace nwg-menu) | — (natif, `DesktopEntries`) ; `xdg-user-dirs` (dossiers), `xdg-utils` (ouvrir dossiers et fichiers) | — | Inter, Symbols Nerd Font Mono | icônes de session `assets/*.svg` |
 | Verrouillage | — (natif, `WlSessionLock` + `PamContext`, `pam` installé avec `quickshell`) ; `systemd` (éteindre, redémarrer, veille) | — | Inter | `assets/{shutdown,restart,suspend}.svg` |
 | Écran de connexion (greetd, `ARCHITECTURE.md` § 9) | `greetd` (natif, `Services.Greetd`), `sway` (compositeur du greeter), `git` + `tar` (copie système par `scripts/greeter-setup.sh`), `sudo` (mise en place) | `greetd-agreety` (secours console) ; `xorg-xinit` + `xorg-server` (sessions X11, par `startx`) ; `gnome-keyring` (trousseau déverrouillé par PAM) | Inter, Symbols Nerd Font Mono | `greeter.qml`, `dotfiles/greetd/`, `scripts/greeter*.sh` |
