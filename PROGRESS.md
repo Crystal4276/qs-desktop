@@ -1128,4 +1128,4 @@ Lecture seule (hôte, root par pkexec, Windows par QGA ; VM démarrée puis éte
   4 crans rapides = +1 %, touches jusqu'à 0 %. Première version de la correction : 2 crans perdus sur 20. Version finale :
   0 sur 20, minimum 1 %, 100 % sans dépassement. Avertissements identiques à HEAD. Bureau réel (Hyprland, PID 1903) : 0 cran
   perdu sur 10 séries de deux appuis, luminosité remise à sa valeur de départ.
-- **À tester à la main** : la vraie molette sur l'icône (crans lents et rapides), en vérifiant que le pas de 5 % te convient.
+- **Validé par toi** (2026-11-12) : vraie molette, pas de 5 % retenu.
