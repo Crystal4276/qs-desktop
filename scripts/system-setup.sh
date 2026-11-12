@@ -359,6 +359,45 @@ do_thunderbird_theme() {
     rm -f "$tmp"
 }
 
+do_zerotier() {
+    local id="${1:-}" dir=/var/lib/zerotier-one/networks.d ready="" output deadline
+    [[ "$id" =~ ^[0-9a-f]{16}$ ]] || return 2
+    if [[ -n "$dry" ]]; then
+        echo "+ ZeroTier : réseau $id, service activé et démarré ; DNS et route par défaut désactivés"
+        return
+    fi
+    command -v zerotier-cli >/dev/null || { echo '! zerotier-one absent' >&2; return 1; }
+    # Ne jamais tronquer une adhésion existante ni toucher à son identité.
+    if ! sudo test -e "$dir/$id.conf"; then
+        run install -d -m 700 "$dir"
+        printf 'allowManaged=1\nallowGlobal=0\nallowDefault=0\nallowDNS=0\n' | sudo tee "$dir/$id.local.conf" >/dev/null
+        run touch "$dir/$id.conf"
+    fi
+    systemctl is-enabled --quiet zerotier-one.service || run systemctl enable zerotier-one.service || return 1
+    systemctl is-active --quiet zerotier-one.service || run systemctl start zerotier-one.service || return 1
+    deadline=$((SECONDS + 60))
+    while (( SECONDS < deadline )); do
+        if output="$(sudo timeout 5 zerotier-cli -j listnetworks)"; then
+            ready="$(printf '%s' "$output" | python3 -c 'import json,sys; n=next((n for n in json.load(sys.stdin) if n.get("nwid",n.get("id"))==sys.argv[1]),{}); print(n.get("status","ABSENT")); print(",".join(n.get("assignedAddresses",[])))' "$id")" || return 1
+            echo "ZeroTier $id : $ready"
+            case "${ready%%$'\n'*}" in
+                OK)
+                    if [[ -n "${ready#*$'\n'}" ]] && sudo timeout 5 zerotier-cli -j info | python3 -c 'import json,sys; sys.exit(0 if json.load(sys.stdin).get("online") is True else 1)'; then
+                        return 0
+                    fi ;;
+                ACCESS_DENIED|AUTHENTICATION_REQUIRED)
+                    sudo timeout 5 zerotier-cli status || true
+                    echo '! Autoriser ce Node ID dans ZeroTier Central (Members).'; return 3 ;;
+                NOT_FOUND|PORT_ERROR|CLIENT_TOO_OLD) return 1 ;;
+                ABSENT) sudo timeout 5 zerotier-cli join "$id" || true ;;
+            esac
+        fi
+        sleep 2
+    done
+    echo '! ZeroTier indisponible ou configuration en attente ; adhésion conservée, nouvelle tentative native après rétablissement.'
+    return 3
+}
+
 do_uninstall() {
     if [[ -x "$repo/scripts/intel-gpu-setup.sh" ]]; then
         "$repo/scripts/intel-gpu-setup.sh" ${dry:+--dry-run} uninstall || echo "! Retrait des droits GPU Intel incomplet ; poursuite des autres étapes" >&2
@@ -393,6 +432,7 @@ case "${1:-}" in
     multilib) do_multilib ;;
     reflector) do_reflector ;;
     cursor) do_cursor ;;
+    zerotier) do_zerotier "${2:-}" ;;
     install) do_install ;;
     chromium-extensions) do_chromium_extensions ;;
     thunderbird-theme) do_thunderbird_theme "${2:-}" ;;

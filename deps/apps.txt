@@ -62,3 +62,9 @@ gnome-keyring           # trousseau, déverrouillé à la connexion par PAM (gre
 htop                    # moniteur en terminal
 man-db                  # pages de manuel
 nano                    # éditeur en terminal
+
+# Réseau privé et clients de partage (dépôts officiels)
+zerotier-one
+smbclient
+openssh
+iperf3

@@ -1154,3 +1154,33 @@ Lecture seule (hôte, root par pkexec, Windows par QGA ; VM démarrée puis éte
   session, puis utilisation avec les écrans externes sous Sway et Hyprland.
 - Git : commits locaux ; push vers `Crystal4276/qs-desktop`, branche `master`, bloqué par le contrôle automatique
   (autorisation explicite de cette destination demandée), en attente de ton accord.
+
+## Provisioning ZeroTier — validation VM (2026-11-12)
+
+Ajouts communs aux profils jeux/travail, conformément au périmètre confirmé : zerotier-one,
+smbclient, openssh, iperf3 ; GVfs et son backend SMB étaient déjà déclarés. Provisioning par
+install.sh et system-setup.sh, Network ID dans hosts/zerotier-network.local ignoré par Git.
+Comportements historiques Samba et paru conservés. Aucun secret du desktop transféré.
+
+VM Arch officielle basic du 2026-11-01, empreinte officielle vérifiée, overlay jetable,
+QEMU/KVM 4 vCPU / 8 Gio / 40 Gio, réseau utilisateur isolé, accès SSH localhost de bootstrap.
+Quatre passages réels de install.sh --yes --profil travail : codes 0. Redémarrage réel,
+greeter puis connexion Sway et bureau QS Desktop vérifiés. Adhésion et identité ZeroTier
+conservées, service actif et activé. Réexécutions sans changement du provisioning ZeroTier.
+Image de base : permissions sudoers corrigées et compte ajouté à wheel (prérequis du projet).
+Le dépôt privé DigitalMicrograph reste inaccessible dans la VM ; rappel attendu, sans secret copié.
+
+Coupure réelle du lien invité et démarrage à froid du service : REQUESTING_CONFIGURATION,
+expiration bornée, code 3, configuration conservée ; reconnexion -> ONLINE et ACCESS_DENIED.
+Autorisation manquante explicitement détectée. Choix utilisateur : continuer sans autorisation.
+Donc aucune IP ZeroTier attribuée et connectivité de bout en bout NON validée.
+Clients GVfs/SMB, SSH et iperf3 présents ; sshd de bootstrap désactivé au démarrage,
+non réactivé par le quatrième passage ; Avahi et serveur iperf3 également désactivés.
+Profil jeux et --no-system : simulations réelles réussies (pas d'installation complète du profil jeux).
+
+Tests test-install.py : 0 échec ; test-zerotier.py, test-reflector.py et test-sudo-pacman.py : PASS.
+Les deux derniers bancs ont été corrigés pour appeler la question système centralisée.
+Syntaxe Bash et git diff --check OK. Rapport : docs/ZEROTIER-VALIDATION.md.
+Preuves brutes non versionnées : .shots/zerotier-validation/. VM arrêtée ; autres VM intactes.
+Desktop : instance QS Desktop inchangée, ZeroTier toujours ONLINE / OK, route Internet inchangée.
+Le retrait du bureau conserve volontairement le service et les adhésions ZeroTier, documenté dans README.

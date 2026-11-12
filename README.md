@@ -111,3 +111,24 @@ mises à jour du paquet. `--no-system` laisse les droits actuels ; `--uninstall`
 Pour ajouter Windows 11 au menu et au launcher, déclarer `"windows11": {"uri": "qemu:///system", "domain": "win11"}`
 dans `hosts/<machine>.json`, puis relancer `install.sh`. Les règles machine du laptop ouvrent la console de virt-manager en
 mosaïque sur l’espace du profil (6 en travail, 5 en jeux), sans changer l’espace courant. Fermer sa fenêtre laisse Windows fonctionner.
+
+## Provisioning ZeroTier
+
+Les deux profils installent ZeroTier, les clients SMB/SFTP et iperf3 depuis les dépôts officiels.
+Avant installation, écrire le Network ID (16 chiffres hexadécimaux, sans commentaire) dans
+`hosts/zerotier-network.local`, ignoré par Git, puis lancer `./install.sh` normalement.
+Ce fichier doit être préparé sur chaque nouvelle machine ; aucun accès au desktop n'est nécessaire.
+Pour changer de réseau, remplacer cet ID et relancer ; l'ancien réseau n'est pas quitté automatiquement.
+
+L'étape système active ZeroTier et conserve l'adhésion dans son répertoire natif.
+Une nouvelle adhésion refuse DNS, routes publiques et route Internet par défaut.
+Les adhésions préexistantes sont conservées. Autoriser le Node ID affiché dans les membres du réseau
+sur ZeroTier Central ; service actif et requête de jonction ne prouvent pas la connectivité.
+Sans autorisation ou réseau disponible, l'installateur affiche un rappel et conserve la configuration.
+`--no-system` ignore le provisioning ; `--no-packages` nécessite un ZeroTier déjà installé.
+Le retrait du bureau conserve actuellement les adhésions et le service ZeroTier.
+Les ajouts n'activent ni sshd, ni Avahi, ni serveur iperf3 ; l'étape Samba historique reste inchangée.
+
+Validation réelle Arch en VM : installation, relances, redémarrage et panne réseau vérifiés.
+Autorisation Central non accordée : aucune IP privée ni connectivité de bout en bout validées.
+Détails : [rapport de validation](docs/ZEROTIER-VALIDATION.md).
