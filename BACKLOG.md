@@ -7,7 +7,7 @@ Idées et défauts connus hors du programme des phases. Rien ici n'est implémen
 - **Réveils spontanés capot fermé (laptop)** : le 2026-11-09, 6 réveils en 19 min capot fermé (s2idle), ~27 s éveillé à chaque
   fois avant que logind ne rendorme (journal : `PM: suspend exit` sans ouverture du capot ; trace `tb_switch_resume` de
   thunderbolt au premier réveil). Revu le 2026-11-12 (noyau LTS 6.18) : réveil 11 s après la fermeture, IRQ 9 (ACPI : contrôleur
-  embarqué, batterie, charge…), le timer `win11-cpu` démarré au réveil est une conséquence (pas de `WakeSystem`). Source exacte
+  embarqué, batterie, charge…), le timer `win11-cpu` démarré au réveil était une conséquence (pas de `WakeSystem` ; retiré le 2026-11-12). Source exacte
   à identifier : `echo 1 | pkexec tee /sys/power/pm_debug_messages` (jusqu'au redémarrage), puis lire au réveil suivant les
   lignes `PM:` / `ACPI: EC:` du journal. Essai du 2026-11-12 (21 min capot fermé, secteur, batterie 100 % « Not charging »,
   charge BIOS « Adaptive ») : aucun réveil, seuls l'événement EC de la fermeture (réarmé) et l'ouverture ; compteurs de réveil
