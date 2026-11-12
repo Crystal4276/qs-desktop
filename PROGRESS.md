@@ -1225,9 +1225,12 @@ Syntaxe Bash et git diff --check OK.
 
 Application réelle : configuration Samba sur les deux machines ; comptes existants conservés, aucune
 écoute SMB sur leur réseau physique, accès anonyme au home du desktop refusé.
-Coordination systemd appliquée au laptop par pkexec. Desktop sans agent polkit : terminal SSH avec sudo
-ouvert à la demande de l'utilisateur, application du complément systemd en attente d'authentification.
-Fenêtre de test aller-retour dans les deux sens ouverte ; en attente des mots de passe Samba saisis
-par l'utilisateur. Aucun secret écrit dans le journal du test. La session QS Desktop du laptop reste vivante.
-Reste : constater l'application du complément sur le desktop, achever les transferts authentifiés,
-puis tester une vraie reconnexion après redémarrage de ZeroTier. Pas de nouvelle installation complète en VM.
+Coordination systemd appliquée au laptop par pkexec et au desktop depuis son dépôt à jour par SSH,
+avec sudo dans un terminal et saisie du mot de passe par l'utilisateur (desktop sans agent polkit).
+Vérification réelle sur les deux machines : smb actif, PartOf=zerotier-one.service, ordre de démarrage
+correct ; script installé sur le desktop identique au dépôt.
+Transferts dans les deux sens avec Nemo validés par l'utilisateur. Aucun secret écrit dans le journal
+du test. Ancien test interactif arrêté et dossier de déploiement temporaire du desktop retiré.
+La session QS Desktop du laptop reste vivante. Changements publiés et dépôt du desktop mis à jour.
+À vérifier lors d'un prochain redémarrage réel : reconnexion Samba par ZeroTier (coordination et retour
+d'adresse déjà testés en réseau isolé). Pas de nouvelle installation complète en VM.
