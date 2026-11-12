@@ -271,7 +271,8 @@ ask_system() {
     echo "Étapes système (sudo) : pacman et paru sans mot de passe (wheel), miroirs Reflector,"
     [[ "$profile" == jeux ]] && echo "  dépôt multilib (Steam, jeux 32 bits),"
     echo "  écran de connexion greetd + greeter Quickshell, Samba, services (réseau, Bluetooth, énergie, VM), groupes, thème Qt,"
-    echo "  extensions de Chromium, thème de Thunderbird, sonde de connectivité NetworkManager, mesures GPU Intel (s'il y en a un)."
+    echo "  extensions de Chromium, thème de Thunderbird, sonde de connectivité NetworkManager, mesures GPU Intel (s'il y en a un),"
+    echo "  quirks libinput de la machine (capot du laptop, dotfiles/libinput/hosts/)."
     [[ "$profile" == travail ]] && echo "  écran de démarrage Plymouth Core Lab (initramfs, ligne de commande du noyau, image de secours : docs/PLYMOUTH.md)."
     ask "Faire ces étapes système ?" oui || { system=""; echo "- étapes système non faites (relancer install.sh pour les faire)"; }
 }
@@ -1177,7 +1178,7 @@ step_system() {
     fi
     greeter_wallpaper
     step_plymouth
-    echo "Samba, services (réseau, Bluetooth, énergie, VM), groupes et thème Qt du système"
+    echo "Samba, services (réseau, Bluetooth, énergie, VM), groupes, thème Qt du système, quirks libinput de la machine"
     sub "$repo/scripts/system-setup.sh" ${dry:+--dry-run} install
     if command -v chromium >/dev/null; then
         echo "Extensions de Chromium (dotfiles/chromium/extensions.txt : Dark Reader, Stylus, nightTab…)"
@@ -1293,7 +1294,7 @@ EOF
     if command -v chromium >/dev/null; then
         python3 "$repo/scripts/browser-links-setup.py" ${dry:+--dry-run} uninstall 2>/dev/null || echo "= liens Chromium : rien à retirer"
     fi
-    if [[ -n "$system" ]] && ask "Défaire aussi les étapes système (GPU Intel, sudo pacman, Reflector, greeter → ancien gestionnaire, écran de démarrage Plymouth, sonde réseau, Samba, services, groupes, extensions Chromium, thème Thunderbird) ?"; then
+    if [[ -n "$system" ]] && ask "Défaire aussi les étapes système (GPU Intel, sudo pacman, Reflector, greeter → ancien gestionnaire, écran de démarrage Plymouth, sonde réseau, Samba, services, groupes, quirks libinput, extensions Chromium, thème Thunderbird) ?"; then
         plymouth_installed && sub "$repo/scripts/plymouth-setup.sh" ${dry:+--dry-run} uninstall
         sub "$repo/scripts/system-setup.sh" ${dry:+--dry-run} uninstall
         sub "$repo/scripts/network-setup.sh" ${dry:+--dry-run} uninstall

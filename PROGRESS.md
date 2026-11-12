@@ -932,18 +932,11 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
   (`WL-1` d'un Sway imbriqué passait) ; `Battery.available` remis (pas de processus inutile sur `terrier`, même notion de
   laptop que `lockBeforeSleep`) ; doc : `LID0` propre à la machine. Négligeable : rechargement Sway capot fermé branché (la dalle
   clignote).
-- **Décision en attente — quirk libinput.** Sans `AttrLidSwitchReliability=reliable` (absent pour ce Dell), libinput annonce
-  le capot « ouvert » au démarrage même fermé et **n'envoie rien à la première ouverture**. Session démarrée capot fermé (dock) :
-  la lecture de `/proc` éteint la dalle, l'ouverture ne la rallume pas (fermer puis rouvrir rétablit). Correctif natif : quirk
-  dans `/etc/libinput/local-overrides.quirks` par l'étape système d'`install.sh` (libinput désactive aussi clavier et pavé
-  tactile capot fermé) ; Sway reprend alors `bindswitch --reload` sans `exec_always`. Sans quirk : retirer l'extinction au
-  démarrage (dalle allumée sous le capot jusqu'au premier cycle fermeture / ouverture).
-- Règles : `CLAUDE.md` règle 6 « Natif d'abord, code minimal » (proposer avant de s'écarter d'une solution documentée ou
-  d'ajouter un processus, un script ou un protocole maison) ; la revue en boucle juge aussi l'altitude (`DEVELOPMENT.md`).
-- **À faire** : `$mod+Ctrl+W` (l'instance actuelle tourne encore avec l'ancien `Lid.qml` en mémoire ; sa surveillance des
-  fichiers ne couvrait plus que la racine du dépôt). Puis tester à la main, sous Hyprland et Sway, sur secteur et batterie :
-  fermer sans externe (veille, verrouillé au réveil) ; fermer avec HDMI puis USB-C (dalle éteinte, pas de veille, y compris
-  après l'extinction des écrans par la veille) ; débrancher le dernier externe capot fermé (veille) ; rouvrir (dalle rallumée,
-  échelle 1) ; réveil capot fermé avec externe sous Hyprland (dalle reste éteinte). `systemd-inhibit --list` : verrou
-  `handle-lid-switch` seulement avec un externe actif. L'écran de connexion reprend les liaisons Sway à la prochaine mise à
-  jour de sa copie système (`install.sh`, étape système).
+- **Quirk libinput** (ta décision, 2026-11-12) : sans `AttrLidSwitchReliability=reliable` (absent pour ce Dell), libinput
+  annonçait le capot « ouvert » au démarrage même fermé et taisait sa première ouverture (session démarrée capot fermé : dalle
+  jamais rallumée). `dotfiles/libinput/hosts/corelabs-laptop.quirks` (correspondance DMI du modèle) posé dans
+  `/etc/libinput/local-overrides.quirks` par `system-setup.sh install` (sauvegarde et retrait par son registre). Sway reprend
+  `bindswitch --reload`, sans `exec_always` ; Hyprland garde la lecture de `/proc` (reload du réveil). `test-install.py` :
+  0 échec (contrôle ajouté). **À faire** : `./install.sh` (étapes système) ou `scripts/system-setup.sh install`, puis
+  redémarrer la session (libinput lit les quirks au démarrage du compositeur), puis les tests physiques ci-dessus, dont une
+  session ouverte capot fermé sur dock suivie d'une ouverture.

@@ -215,6 +215,11 @@ def main():
                   f"plymouth-setup.sh --dry-run install (code {r.returncode}) {r.stderr.strip()[-300:]}")
             r = subprocess.run([str(REPO / "scripts/plymouth-setup.sh"), "--dry-run", "uninstall"], capture_output=True, text=True)
             check(r.returncode == 0, f"plymouth-setup.sh --dry-run uninstall (code {r.returncode}) {r.stderr.strip()[-300:]}")
+        # Quirks libinput de la machine (étape système) : posés si dotfiles/libinput/hosts/<hostname>.quirks existe.
+        if (REPO / f"dotfiles/libinput/hosts/{pathlib.Path('/proc/sys/kernel/hostname').read_text().strip()}.quirks").exists():
+            r = subprocess.run([str(REPO / "scripts/system-setup.sh"), "--dry-run", "install"], capture_output=True, text=True)
+            check(r.returncode == 0 and "/etc/libinput/local-overrides.quirks" in r.stdout,
+                  f"system-setup.sh --dry-run install : quirks libinput de la machine (code {r.returncode})")
 
         r = install("--dry-run")
         check(r.returncode == 0, f"simulation : code {r.returncode} {r.stderr.strip()[-300:]}")
