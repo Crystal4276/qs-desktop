@@ -21,36 +21,36 @@ Singleton {
     // Changement fait au clavier (IPC ci-dessous) : affiché par l'OSD (modules/osd).
     signal changedByKey
 
-    // Molette : ±1 %, pas par défaut du module `backlight` de Waybar. Valeur relue dès la fin de la commande (OSD à jour).
+    // Dernière valeur demandée en % (-1 : aucune en cours) et dernière envoyée. Pendant une commande, seule la dernière demandée
+    // est appliquée ensuite ; elle sert de base aux pas jusqu'à la relecture du fichier (asynchrone), faite dès la fin (OSD à jour).
+    property int target: -1
+    property int applied: -1
+
+    // Molette et touches : ±points % depuis la dernière valeur demandée (des crans rapprochés s'additionnent, aucun n'est perdu).
     function step(points: int): void {
-        if (!available || setter.running)
-            return;
-        setter.command = ["brightnessctl", "--device", device, "set", `${Math.abs(points)}%${points > 0 ? "+" : "-"}`];
-        setter.running = true;
+        setPercent((target >= 0 ? target : percent) + points);
     }
 
-    // Curseur du panneau de réglages : valeur absolue en %. Pendant un glissement, seule la dernière valeur demandée est appliquée.
-    property int pending: -1
-
+    // Curseur du panneau de réglages : valeur absolue en %.
     function setPercent(p: int): void {
         if (!available)
             return;
-        pending = Math.max(1, Math.min(100, p));   // jamais 0 : écran noir
+        target = Math.max(1, Math.min(100, p));   // jamais 0 : écran noir
         if (!setter.running)
-            applyPending();
+            apply();
     }
 
-    function applyPending(): void {
-        setter.command = ["brightnessctl", "--device", device, "set", `${pending}%`];
-        pending = -1;
+    function apply(): void {
+        applied = target;
+        setter.command = ["brightnessctl", "--device", device, "set", `${target}%`];
         setter.running = true;
     }
 
     Process {
         id: setter
         onExited: {
-            if (root.pending >= 0)
-                root.applyPending();
+            if (root.target !== root.applied)
+                root.apply();
             else
                 currentFile.reload();
         }
@@ -94,7 +94,11 @@ Singleton {
         id: currentFile
         path: root.device ? `${root.sysfs}/class/backlight/${root.device}/brightness` : ""
         blockLoading: true
-        onLoaded: root.current = parseInt(text()) || 0
+        onLoaded: {
+            root.current = parseInt(text()) || 0;
+            if (!setter.running)
+                root.target = -1;
+        }
     }
 
     Timer {
