@@ -968,9 +968,10 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
   scripts et un fichier de test). Il était déjà inactif : `install.sh` relancé le 11 à 18:35 avait remis `smb.conf` du dépôt,
   sans sa ligne `include`. Restent `[homes]` et les partages Nemo (clic droit → Partager) ; partage de test créé puis retiré
   sans root : OK. Règle `ufw` de Codex (TCP 445 depuis 192.0.2.14) et réservation DHCP `win11` → 192.0.2.14 gardées.
-- **À faire à la main** :
-  1. créer ton compte Samba dans un terminal : `sudo smbpasswd -a utilisateur` (aucun compte `utilisateur` jusqu'ici) ;
-  2. dans Windows : retirer l'ancien lecteur et ses identifiants (`net use L: /delete`, `cmdkey /delete:192.0.2.13`),
-     puis `\\192.0.2.13\utilisateur` (dossier personnel) ou `\\192.0.2.13\<nom du partage Nemo>` avec le compte `utilisateur` ;
-  3. Windows → laptop : dossier partagé dans Windows, ouvert dans Nemo par `smb://192.0.2.14/` (à vérifier pendant l'audit).
+- Compte Samba `utilisateur` créé par toi. VM démarrée par `virsh`, commandes Windows par l'agent invité (SYSTEM) : ancien
+  lecteur `L:` → `Win11Exchange` / `compte-test` retiré dans ta session (tâche planifiée unique, supprimée), aucun identifiant
+  enregistré pour 192.168.122.1. Port 445 joignable dans les deux sens ; pare-feu Windows : SMB entrant depuis 192.0.2.13
+  seulement. Partage Windows `Win11Exchange` (`C:\Win11Exchange`, `utilisateur` en modification) gardé pour Windows → laptop.
+- **À faire à la main** (mots de passe) : dans Windows, `\\192.0.2.13\` avec le compte Samba `utilisateur` ; dans Nemo,
+  `smb://192.0.2.14/Win11Exchange` avec le compte Windows `utilisateur`.
 - Prochaine étape demandée : **audit de la configuration de la VM** faite par Codex (domaine, réseau, `ufw`, réglages Windows).
