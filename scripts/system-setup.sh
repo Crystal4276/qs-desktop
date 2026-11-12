@@ -18,19 +18,30 @@
 #         system-setup.sh [--dry-run] intel-gpu   CAP_PERFMON pour intel_gpu_top, hook de mise à jour et retrait
 #         system-setup.sh [--dry-run] pacman-sudo accès pacman sans mot de passe pour wheel (paru reste lancé en utilisateur)
 #         system-setup.sh [--dry-run] reflector   miroirs Arch rapides et récents, renouvelés chaque semaine
+#         system-setup.sh [--dry-run] samba       partages personnels et Nemo via libvirt et ZeroTier ; UFW si actif
 set -euo pipefail
 
 repo="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
 state=/var/lib/qs-desktop/system-setup
 registry="$state/registry"    # une ligne par changement : file <cible> <sauvegarde|->, group <groupe>, unit <service>, net <réseau>
-[[ $EUID -ne 0 ]] || { echo "À lancer en utilisateur, sans sudo (sudo est appelé pour chaque commande)." >&2; exit 1; }
 user="${USER:-$(id -un)}"
+if [[ $EUID -eq 0 ]]; then
+    # Commande ciblée également utilisable avec pkexec (une seule authentification).
+    [[ -n "${PKEXEC_UID:-}" && ( "${1:-}" == samba || ( "${1:-}" == --dry-run && "${2:-}" == samba ) ) ]] || {
+        echo 'À lancer en utilisateur ; seul samba accepte une exécution directe par pkexec.' >&2; exit 1;
+    }
+    user="$(id -un "$PKEXEC_UID")"
+fi
 stamp="$(date +%Y%m%d-%H%M%S)"
 dry=""
 
+as_root() {
+    if [[ $EUID -eq 0 ]]; then "$@"; else sudo "$@"; fi
+}
+
 run() {
     printf '+ %s\n' "$*"
-    [[ -n "$dry" ]] || sudo "$@"
+    [[ -n "$dry" ]] || as_root "$@"
 }
 
 recorded() {    # $1 = genre, $2 = cible : ligne déjà notée ?
@@ -210,9 +221,26 @@ virsh_sys() {
     if [[ -n "$dry" ]]; then LC_ALL=C virsh -c qemu:///system "$@"; else sudo LC_ALL=C virsh -c qemu:///system "$@"; fi
 }
 
-do_install() {
+do_samba() {
+    local changed="" rules
     if command -v smbd >/dev/null; then
+        testparm -s "$repo/dotfiles/samba/smb.conf" >/dev/null || return 1
+        cmp -s "$repo/dotfiles/samba/smb.conf" /etc/samba/smb.conf || changed=1
         install_file dotfiles/samba/smb.conf /etc/samba/smb.conf
+        local source target systemd_changed=""
+        for source in dotfiles/samba/zerotier-order.conf scripts/samba-wait-zerotier.sh; do
+            if [[ "$source" == *.conf ]]; then
+                target=/etc/systemd/system/smb.service.d/50-qs-zerotier.conf
+            else
+                target=/usr/local/libexec/qs-samba-wait-zerotier
+            fi
+            cmp -s "$repo/$source" "$target" || systemd_changed=1
+            install_file "$source" "$target"
+        done
+        if [[ -n "$systemd_changed" ]]; then
+            run systemctl daemon-reload
+            changed=1
+        fi
         add_group sambashare
         # Dossier des partages utilisateur (Arch wiki, Samba « usershares ») : écrit par les membres du groupe, sticky.
         if [[ "$(stat -c '%a %G' /var/lib/samba/usershares 2>/dev/null)" == "1770 sambashare" ]]; then
@@ -223,7 +251,48 @@ do_install() {
         fi
     else
         echo "- samba absent : partages ignorés (deps/apps.txt)"
+        return
     fi
+
+    # Ne pas activer un pare-feu ni modifier les règles des VM ou d'autres services.
+    if command -v ufw >/dev/null && grep -qx 'ENABLED=yes' /etc/ufw/ufw.conf; then
+        if [[ -n "$dry" ]]; then
+            echo '+ UFW actif : autoriser TCP 445 entrant sur zt+ si la règle manque'
+        else
+            rules="$(as_root env LC_ALL=C ufw show added)" || return 1
+            if ! grep -Eq '^ufw allow in on zt\+ to any port 445 proto tcp( comment .*)?$' <<<"$rules"; then
+                run ufw allow in on zt+ to any port 445 proto tcp comment qs-desktop-samba-zerotier
+                recorded ufw-samba zt+ || record ufw-samba zt+
+            else
+                echo '= UFW : accès SMB ZeroTier déjà autorisé'
+            fi
+        fi
+    fi
+    if ! systemctl is-enabled --quiet smb.service; then
+        run systemctl enable smb.service
+        recorded unit-enable smb.service || record unit-enable smb.service
+    fi
+    # Réessai après autorisation tardive : la config peut être identique mais l'écoute manquer.
+    local address
+    for address in $(ip -o -4 addr show scope global | awk '$2 ~ /^zt/ { split($4,a,"/"); print a[1] }'); do
+        if ! ss -H -ltn 'sport = :445' | awk -v endpoint="$address:445" '$4 == endpoint { found=1 } END { exit !found }'; then
+            changed=1
+        fi
+    done
+    if ! systemctl is-active --quiet smb.service; then
+        run systemctl start smb.service
+        recorded unit-start smb.service || record unit-start smb.service
+    elif [[ -n "$changed" ]]; then
+        run systemctl restart smb.service
+    fi
+    if [[ -z "$dry" ]] && ! as_root pdbedit -L -u "$user" 2>/dev/null | grep -q "^$user:"; then
+        echo "! Compte Samba absent : lancer dans un terminal : sudo smbpasswd -a $user"
+    fi
+    echo '= Accès Nemo : smb://<IP ZeroTier de cette machine>/'"$user"
+}
+
+do_install() {
+    do_samba
 
     # Thème des applications Qt (Kvantum + Papirus via qt6ct) : lu à l'ouverture de session, Quickshell en hérite.
     if grep -qx 'QT_QPA_PLATFORMTHEME=qt6ct' /etc/environment 2>/dev/null; then
@@ -403,7 +472,9 @@ do_uninstall() {
         "$repo/scripts/intel-gpu-setup.sh" ${dry:+--dry-run} uninstall || echo "! Retrait des droits GPU Intel incomplet ; poursuite des autres étapes" >&2
     fi
     [[ -f "$registry" ]] || { echo "= rien à défaire ($registry absent)"; return; }
-    local kind target backup
+    local kind target backup samba_changed="" systemd_changed=""
+    recorded file /etc/samba/smb.conf && samba_changed=1
+    recorded file /etc/systemd/system/smb.service.d/50-qs-zerotier.conf && systemd_changed=1
     # Ordre inverse de l'installation.
     while read -r kind target backup <&3; do
         case "$kind" in
@@ -416,11 +487,16 @@ do_uninstall() {
             group) run gpasswd -d "$user" "$target" || true ;;
             unit) run systemctl disable "$target" || true ;;
             unit-off) run systemctl enable "$target" || true ;;
-            timer-start) run systemctl stop "$target" || true ;;
-            timer-enable) run systemctl disable "$target" || true ;;
+            timer-start|unit-start) run systemctl stop "$target" || true ;;
+            timer-enable|unit-enable) run systemctl disable "$target" || true ;;
+            ufw-samba) run ufw --force delete allow in on "$target" to any port 445 proto tcp || return 1 ;;
             net) run virsh -c qemu:///system net-autostart --disable "$target" || true ;;
         esac
     done 3< <(tac "$registry")
+    [[ -z "$systemd_changed" ]] || run systemctl daemon-reload
+    if [[ -n "$samba_changed" ]] && systemctl is-active --quiet smb.service; then
+        run systemctl restart smb.service
+    fi
     run rm -f "$registry"
     run rm -f "$state/reflector-ready"
 }
@@ -433,6 +509,7 @@ case "${1:-}" in
     reflector) do_reflector ;;
     cursor) do_cursor ;;
     zerotier) do_zerotier "${2:-}" ;;
+    samba) do_samba ;;
     install) do_install ;;
     chromium-extensions) do_chromium_extensions ;;
     thunderbird-theme) do_thunderbird_theme "${2:-}" ;;

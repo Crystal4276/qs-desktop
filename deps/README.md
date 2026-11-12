@@ -289,6 +289,19 @@ en mosaïque sans changer l’espace courant ; les autres fenêtres de virt-mana
 
 ### Provisioning ZeroTier et clients de partage
 
+`scripts/system-setup.sh samba` configure `[homes]` et les usershares Nemo, valide avec `testparm`
+et utilise `pdbedit` pour signaler un compte manquant (outils du paquet `samba`). Interfaces dynamiques
+natives de Samba sous Linux : loopback, `virbr*`, `zt*` (changements d'adresse sur interface connue).
+Drop-in systemd : ordre et propagation des arrêts/redémarrages de ZeroTier ; attente bornée via
+`samba-wait-zerotier.sh` (`bash`, `ip` d'`iproute2`, `awk` de `gawk`, `sleep` de `coreutils`).
+UFW, optionnel et jamais installé ici,
+reçoit seulement une règle TCP 445 sur `zt+` s'il est actif ; elle est suivie par le registre système.
+Le compte Samba se crée dans un terminal ; aucun mot de passe n'est stocké dans le dépôt.
+`python3 scripts/test-samba.py` teste la configuration et le provisioning isolés sans privilèges.
+`pkexec unshare --net python3 scripts/test-samba-network.py` teste le vrai Samba dans un espace
+réseau jetable (`unshare` de `util-linux`, `ip` et `smbd`) : attente d'une interface retardée,
+accès libvirt, retour d'adresse ZeroTier et refus d'une interface physique. Refuse le réseau réel.
+
 `zerotier-one`, `smbclient`, `openssh`, `iperf3` sont déclarés dans `apps.txt` pour les deux profils.
 `gvfs` et `gvfs-smb`, déjà présents, fournissent les montages GIO de Nemo (SMB/SFTP).
 Provisioning par `install.sh`, fichier local et autorisation : voir README, « Provisioning ZeroTier ».

@@ -1195,3 +1195,39 @@ chaque nouvelle identité reste nécessaire ; elle ne peut pas être fournie par
 Validation de cette correction : test-zerotier.py (dont clone sans fichier local),
 test-reflector.py, test-sudo-pacman.py, syntaxe Bash et git diff --check passent.
 Pas de nouvelle exécution VM : seul le choix du fichier de provisioning change.
+
+## Samba par ZeroTier — laptop et desktop (2026-11-12)
+
+Choix utilisateur : dossiers personnels en lecture/écriture, comptes Samba propres à chaque machine,
+SSH pour le desktop ; clé Ed25519 locale sans phrase secrète, autorisée par l'utilisateur.
+Aucune clé ni adresse privée ajoutée au dépôt. Aucun réglage NordVPN ni paquet modifié.
+
+`system-setup.sh samba` extrait le provisioning commun et accepte aussi une exécution ciblée par
+pkexec (compte d'origine via PKEXEC_UID). `install.sh` le reprend dans son étape système pour les deux
+profils. Configuration validée avant copie et sauvegardée ; écoute limitée à loopback, virbr* et zt*,
+comptes obligatoires, homes limité au propriétaire. Règle UFW TCP 445 sur zt+ seulement si UFW actif ;
+retrait des seuls ajouts suivis dans le registre. Service activé mais arrêté correctement démarré.
+Relance sans changement : ni réécriture ni redémarrage, sauf écoute ZeroTier manquante.
+
+Limite native découverte par le test réel isolé et confirmée dans le code officiel Samba : une nouvelle
+interface créée après smbd n'est pas connue de son suivi dynamique. Coordination systemd approuvée
+explicitement : After/PartOf zerotier-one, attente d'adresse au démarrage bornée à 30 s. Les arrêts et
+redémarrages de ZeroTier sont propagés à Samba ; une autorisation tardive sans adresse en cache nécessite
+une relance de la commande samba. Aucun processus permanent ajouté.
+
+Validations : test-samba.py PASS (simulation, validation avant écriture, idempotence, états du service,
+règle UFW préexistante, pare-feu inactif, retrait, délai borné). Vrai smbd 4.25.1 dans un namespace réseau
+jetable : attente ZeroTier retardée, accès libvirt, retrait/retour d'adresse, refus d'une interface physique PASS.
+L'essai initial en namespace utilisateur a échoué (setgroups non permis par Samba) ; essai root dans un
+namespace réseau séparé réussi. Aucun test n'a modifié les interfaces réelles.
+Test-install.py : 0 échec ; test-zerotier.py, test-reflector.py et test-sudo-pacman.py PASS.
+Syntaxe Bash et git diff --check OK.
+
+Application réelle : configuration Samba sur les deux machines ; comptes existants conservés, aucune
+écoute SMB sur leur réseau physique, accès anonyme au home du desktop refusé.
+Coordination systemd appliquée au laptop par pkexec. Desktop sans agent polkit : terminal SSH avec sudo
+ouvert à la demande de l'utilisateur, application du complément systemd en attente d'authentification.
+Fenêtre de test aller-retour dans les deux sens ouverte ; en attente des mots de passe Samba saisis
+par l'utilisateur. Aucun secret écrit dans le journal du test. La session QS Desktop du laptop reste vivante.
+Reste : constater l'application du complément sur le desktop, achever les transferts authentifiés,
+puis tester une vraie reconnexion après redémarrage de ZeroTier. Pas de nouvelle installation complète en VM.

@@ -57,7 +57,7 @@ Autre distribution qu'Arch : pas encore prévue (paquets à installer soi-même 
 
 ## À faire soi-même ensuite
 
-- Mot de passe Samba (demandé par Windows pour les partages avec les VM) : `sudo smbpasswd -a $USER`. Partager un dossier :
+- Mot de passe Samba (VM et accès par ZeroTier) : `sudo smbpasswd -a $USER`, dans un terminal, une fois par machine. Partager un dossier :
   clic droit dans Nemo → Partager.
 - Web apps (WhatsApp, Discord, Word, Excel, PowerPoint, Notion) : se connecter une fois dans chacune.
 - Thème d'Obsidian (rangé dans son profil) : choisir Catppuccin Mocha dans ses réglages. Chromium suit le thème GTK (réglé
@@ -130,7 +130,32 @@ sur ZeroTier Central ; service actif et requête de jonction ne prouvent pas la 
 Sans autorisation ou réseau disponible, l'installateur affiche un rappel et conserve la configuration.
 `--no-system` ignore le provisioning ; `--no-packages` nécessite un ZeroTier déjà installé.
 Le retrait du bureau conserve actuellement les adhésions et le service ZeroTier.
-Les ajouts n'activent ni sshd, ni Avahi, ni serveur iperf3 ; l'étape Samba historique reste inchangée.
+Les ajouts n'activent ni sshd, ni Avahi, ni serveur iperf3.
+
+### Partages Samba par ZeroTier
+
+L'étape système configure les partages personnels et Nemo sur les interfaces locales, les ponts
+libvirt (`virbr*`) et ZeroTier (`zt*`) uniquement. Aucune adresse de machine n'est codée en dur.
+Les interfaces Wi-Fi et Ethernet ne servent pas SMB.
+Un complément systemd attend l'adresse ZeroTier au démarrage de Samba (30 s maximum),
+et propage les arrêts et redémarrages du service ZeroTier à Samba. Les changements d'adresse
+sur une interface déjà connue sont suivis nativement par Samba sous Linux.
+Si un nouveau réseau reste sans autorisation au-delà de ce délai, relancer la commande `samba`
+après autorisation dans Central : une écoute manquante déclenche alors le redémarrage nécessaire.
+L'accès exige le compte Samba de la machine distante ; `[homes]` limite chaque dossier à son propriétaire.
+Si UFW est déjà actif, TCP 445 est autorisé uniquement sur les interfaces ZeroTier (`zt+`).
+L'installateur n'installe ni n'active UFW ; un autre pare-feu doit autoriser ce même accès.
+
+Sur chaque machine, créer le compte avec `sudo smbpasswd -a $USER` dans un terminal s'il manque.
+Les comptes et mots de passe existants sont conservés. Dans Nemo, saisir
+`smb://<IP ZeroTier distante>/<compte distant>` (Ctrl+L), puis les identifiants Samba distants.
+Le mot de passe Samba est indépendant de l'authentification SSH.
+
+Pour appliquer uniquement ces réglages depuis un clone à jour, sans relancer l'installation complète :
+`scripts/system-setup.sh samba` dans un terminal (`--dry-run samba` pour simuler).
+La commande ciblée accepte aussi `pkexec /chemin/vers/scripts/system-setup.sh samba`.
+`install.sh --no-system` les ignore. Le retrait système restaure la configuration sauvegardée,
+réapplique celle-ci au service actif et retire uniquement la règle UFW ajoutée par cette installation.
 
 Validation réelle Arch en VM : installation, relances, redémarrage et panne réseau vérifiés.
 Autorisation Central non accordée : aucune IP privée ni connectivité de bout en bout validées.

@@ -2,6 +2,7 @@
 # Le module correspondant se masque si la dépendance est absente.
 
 openrgb         # contrôle RGB au démarrage (service système optionnel, scripts/openrgb-setup.sh)
+ufw             # si déjà actif : autoriser SMB entrant sur ZeroTier ; jamais installé ni activé par install.sh
 
 power-profiles-daemon   # profils d'énergie du panneau de réglages ; installé par install.sh sur un laptop (batterie)
 brightnessctl   # réglage du rétroéclairage (laptop), clavier éteint en veille ; installé par install.sh si /sys/class/backlight existe
