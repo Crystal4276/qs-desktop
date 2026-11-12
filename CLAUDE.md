@@ -94,7 +94,7 @@ un rapport court + captures. Je valide, puis on passe à la suite.
 ### `install.sh`
 
 À la racine, **idempotent** (relancé, il ne refait que ce qui manque), `--dry-run`, `--uninstall`, `--profil jeux|travail`,
-`--no-system`, `--yes` ; deux questions au plus (profil, étapes système d'un bloc) : paquets, liens des configs (sauvegardes `<x>.bak-<date>`), thème, réglages des applications, fonds d'écran, config machine,
+`--no-system`, `--yes` ; questions profil et étapes système d'un bloc, plus destination SSH facultative si `terrier-zt` manque : paquets, liens des configs (sauvegardes `<x>.bak-<date>`), thème, réglages des applications, fonds d'écran, config machine,
 étape système (sudo, avec confirmation : greeter, sonde réseau, `scripts/system-setup.sh`). Détail : `README.md`.
 Tests : `python3 scripts/test-install.py` (dossier personnel jetable), puis VM Arch vierge (`docs/DEVELOPMENT.md`, « VM d'installation »).
 Toute nouvelle config d'application ou étape système passe par `install.sh` et son test.

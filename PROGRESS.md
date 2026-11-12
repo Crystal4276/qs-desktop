@@ -1234,3 +1234,30 @@ du test. Ancien test interactif arrêté et dossier de déploiement temporaire d
 La session QS Desktop du laptop reste vivante. Changements publiés et dépôt du desktop mis à jour.
 À vérifier lors d'un prochain redémarrage réel : reconnexion Samba par ZeroTier (coordination et retour
 d'adresse déjà testés en réseau isolé). Pas de nouvelle installation complète en VM.
+
+## Installateur — accès SSH au desktop (2026-11-12)
+
+À ta demande et selon tes choix : question de destination utilisateur@hôte lors d'une première
+installation interactive, puis mémorisation locale via l'alias terrier-zt. Cette question facultative
+s'ajoute au profil et aux étapes système ; CLAUDE.md reflète cette exception approuvée.
+Étape du compte pour les deux profils, après le provisioning système/ZeroTier ; --no-system la permet.
+
+Paire Ed25519 sans phrase secrète si absente, clé et alias existants réutilisés. Paire incomplète,
+chemins inhabituels ou autre identité sur l'alias : rappel sans remplacement. Permissions privées,
+ajout de l'alias atomique avec sauvegarde de l'ancienne configuration et conservation des autres
+réglages SSH. Autorisation avec ssh-copy-id dans le terminal, confirmation de l'identité du serveur,
+vérification de l'accès ensuite. Aucun serveur, service, pare-feu ou réglage NordVPN ajouté ou modifié.
+Aucune destination ni clé versionnée ; openssh était déjà dans les dépendances.
+
+Simulation : aucun fichier créé ni contact distant. --yes ou sans terminal : destination existante
+réutilisée ; sinon rappel, aucune question ni autorisation interactive. Erreur réseau/authentification :
+configuration locale conservée et suite de l'installation. --uninstall garde clés, alias et accès distant.
+
+Tests : test-ssh-desktop.py PASS (vraies clés jetables, pseudo-terminal pour première question,
+SSH distant simulé, permissions, ancien fichier SSH conservé, relance sans réécriture, autorisation
+initiale et déjà faite, absence de terminal, --yes, --dry-run, panne réseau, paire incomplète et retrait).
+Test-install.py : 0 échec, dont contrôle de présence de l'étape avec --no-system. Test-zerotier.py,
+test-samba.py, test-reflector.py et test-sudo-pacman.py PASS ; syntaxe Bash et git diff --check OK.
+Vrai laptop : nouvelle étape exécutée seule avec --yes, accès SSH au desktop réussi ; empreintes de
+la clé privée, de sa clé publique et de la configuration SSH identiques avant/après. Bureau réel vivant.
+Pas d'installation complète en VM ni de nouvelle clé autorisée sur le vrai desktop : l'accès existait.

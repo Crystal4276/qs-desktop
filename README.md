@@ -112,6 +112,30 @@ Pour ajouter Windows 11 au menu et au launcher, déclarer `"windows11": {"uri": 
 dans `hosts/<machine>.json`, puis relancer `install.sh`. Les règles machine du laptop ouvrent la console de virt-manager en
 mosaïque sur l’espace du profil (6 en travail, 5 en jeux), sans changer l’espace courant. Fermer sa fenêtre laisse Windows fonctionner.
 
+
+## Accès SSH au desktop
+
+Après les étapes système, l'installateur prépare l'accès SSH pour les deux profils. Si l'alias
+`terrier-zt` est absent, une question facultative demande `utilisateur@hôte` (adresse ZeroTier ou nom,
+port SSH standard) ; Entrée ignore cette étape. Elle s'ajoute aux questions du profil et des étapes système.
+La destination reste dans `~/.ssh/config`, hors du dépôt ; elle n'est plus redemandée aux relances.
+
+Une paire Ed25519 sans phrase secrète est créée dans `~/.ssh/id_ed25519_terrier` si elle manque.
+La clé existante est conservée ; une paire incomplète ou un alias utilisant une autre identité est
+signalé sans remplacement. Les autres réglages SSH sont préservés, et la configuration existante est
+sauvegardée avant ajout de l'alias. Aucun mot de passe ni clé privée n'est copié vers le desktop.
+
+Si nécessaire, `ssh-copy-id` autorise la clé publique sur le compte distant depuis le terminal :
+confirmer l'identité du serveur et saisir son mot de passe SSH. L'accès est ensuite vérifié et s'utilise
+avec `ssh terrier-zt`. Un échec réseau ou d'authentification est rappelé en fin d'installation ; la suite
+continue. Le desktop doit déjà accepter les connexions SSH ; cette étape n'active ni serveur ni pare-feu.
+
+`--dry-run` ne génère rien et ne contacte pas le desktop. Avec `--yes` ou sans terminal, une destination
+existante est réutilisée, sinon l'étape est signalée comme non configurée. La clé locale peut être
+préparée, mais aucune autorisation interactive n'est lancée : la commande `ssh-copy-id` est rappelée.
+`--no-system` permet cette étape du compte si ses outils sont déjà installés.
+`--uninstall` conserve les clés, l'alias et l'autorisation distante.
+
 ## Provisioning ZeroTier
 
 Les deux profils installent ZeroTier, les clients SMB/SFTP et iperf3 depuis les dépôts officiels.
