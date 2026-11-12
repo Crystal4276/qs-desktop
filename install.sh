@@ -11,10 +11,10 @@
 #   --uninstall        retire les liens et copies, remet les sauvegardes et les réglages d'origine, étapes système comprises ;
 #                      les paquets installés restent
 #
-# Deux questions au plus : le profil (si hosts/<machine>.json n'en a pas) et les étapes système (toutes ou aucune).
+# Profil et étapes système ; destination SSH facultative demandée si terrier-zt est absent.
 # Étapes : miroirs Reflector · 1 paquets (dépôts officiels, multilib, paru-bin, Claude Code) · 2 configs du compte (liens, sauvegardes
 # `<x>.bak-<date>`, identité Git) · 3 thème · 4 réglages (dconf, applications par défaut, barres d'état de Claude Code et Codex, web apps,
-# liens Chromium) · 5 config machine · 6 système (sudo).
+# liens Chromium) · 5 config machine · 6 système (sudo) · SSH vers le desktop (compte).
 set -euo pipefail
 
 repo="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
@@ -1060,7 +1060,7 @@ sync_repo() {   # source (propriétaire/dépôt, ou chemin / adresse git) dossie
         elif [[ -n "$dry" ]]; then
             echo "+ git -C $dir pull --ff-only"
         else
-            GIT_TERMINAL_PROMPT=0 GIT_SSH_COMMAND="ssh -o BatchMode=yes" git -C "$dir" pull -q --ff-only 2>/dev/null && echo "= $dir à jour" || echo "! $dir : mise à jour impossible (réseau ou accès GitHub), gardé tel quel"
+            GIT_TERMINAL_PROMPT=0 GIT_SSH_COMMAND="ssh -F "$dir/config" -o BatchMode=yes" git -C "$dir" pull -q --ff-only 2>/dev/null && echo "= $dir à jour" || echo "! $dir : mise à jour impossible (réseau ou accès GitHub), gardé tel quel"
         fi
         return
     fi
@@ -1077,7 +1077,7 @@ sync_repo() {   # source (propriétaire/dépôt, ou chemin / adresse git) dossie
         # Dépôt public : HTTPS sans compte ; sinon clé SSH. Jamais de question de mot de passe (échec immédiat).
         GIT_TERMINAL_PROMPT=0 git clone --progress "$@" "https://github.com/$src.git" "$dir" \
             || { echo "! HTTPS impossible : essai par SSH"
-                 GIT_SSH_COMMAND="ssh -o BatchMode=yes" git clone --progress "$@" "git@github.com:$src.git" "$dir"; }
+                 GIT_SSH_COMMAND="ssh -F "$dir/config" -o BatchMode=yes" git clone --progress "$@" "git@github.com:$src.git" "$dir"; }
     fi || { later "clonage de $src impossible (réseau, ou dépôt privé : gh auth login / clé SSH GitHub) ; relancer install.sh ensuite"; return 1; }
 }
 
@@ -1384,6 +1384,99 @@ extension_import() {    # clé (fichier dotfiles/chromium/<clé>.json) nom ident
     esac
 }
 
+# SSH du compte : les clés et l'alias survivent au retrait du bureau, comme l'autorisation distante.
+step_ssh_desktop() {
+    section "SSH vers le desktop"
+    local alias=terrier-zt dir="$HOME/.ssh" key="$HOME/.ssh/id_ed25519_terrier"
+    local ssh_config=/dev/null
+    [[ ! -f "$dir/config" ]] || ssh_config="$dir/config"
+    local settings destination="" remote_user="" remote_host="" configured="" program
+    for program in ssh ssh-keygen ssh-copy-id python3; do
+        command -v "$program" >/dev/null || { later "SSH desktop : $program absent ; relancer après installation d'openssh et python."; return; }
+    done
+    settings="$(ssh -G -F "$ssh_config" "$alias" 2>/dev/null)" || { later 'SSH desktop : configuration SSH illisible ; corriger avant de relancer.'; return; }
+    remote_host="$(awk '$1 == "hostname" { print $2; exit }' <<<"$settings")"
+    remote_user="$(awk '$1 == "user" { print $2; exit }' <<<"$settings")"
+    if [[ -n "$remote_host" && "$remote_host" != "$alias" ]]; then
+        configured=1
+        # Ne pas remplacer silencieusement une identité choisie pour cet alias.
+        if ! awk -v key="$key" '$1 == "identityfile" && ($2 == key || $2 == "~/.ssh/id_ed25519_terrier") { found=1 } END { exit !found }' <<<"$settings"; then
+            later 'SSH desktop : terrier-zt utilise une autre identité ; configuration existante conservée.'; return
+        fi
+    elif [[ -n "$dry" ]]; then
+        echo '? Destination SSH du desktop : utilisateur@hôte, vide pour ignorer (simulation).'
+        echo '+ Si renseignée : clé Ed25519 locale sans phrase secrète, alias terrier-zt et autorisation par ssh-copy-id.'
+        return
+    elif [[ -n "$yes" ]] || ! { : </dev/tty; } 2>/dev/null; then
+        later 'SSH desktop : destination absente ; relancer install.sh dans un terminal sans --yes pour la renseigner.'; return
+    else
+        printf '? Destination SSH du desktop (utilisateur@IP ZeroTier ou nom, vide pour ignorer) : ' >/dev/tty
+        read -r destination </dev/tty || destination=""
+        [[ -n "$destination" ]] || { echo '- SSH desktop ignoré'; return; }
+        if [[ ! "$destination" =~ ^[a-zA-Z0-9_][a-zA-Z0-9_.-]*@[a-zA-Z0-9][a-zA-Z0-9.:-]*$ ]]; then
+            later 'SSH desktop : destination invalide (utilisateur@hôte, port SSH standard).'; return
+        fi
+        remote_user="${destination%%@*}" remote_host="${destination#*@}"
+    fi
+    if [[ -L "$dir" || ( -e "$dir" && ! -d "$dir" ) || -L "$key" || -L "$key.pub" ]]; then
+        later 'SSH desktop : chemins de clé inhabituels ; fichiers existants conservés.'; return
+    fi
+    if [[ -z "$configured" && ( -L "$dir/config" || ( -e "$dir/config" && ! -f "$dir/config" ) ) ]]; then
+        later 'SSH desktop : configuration non ordinaire ; fichier existant conservé.'; return
+    fi
+    if [[ ( -e "$key" && ! -e "$key.pub" ) || ( ! -e "$key" && -e "$key.pub" ) ]]; then
+        later 'SSH desktop : paire de clés incomplète ; aucun remplacement automatique.'; return
+    fi
+    if [[ -n "$dry" ]]; then
+        echo '+ SSH desktop : conserver la clé existante ou créer une paire Ed25519 sans phrase secrète ; vérifier les permissions.'
+        echo '= Simulation : aucune connexion distante ni autorisation.'
+        return
+    fi
+    run install -d -m 700 "$dir"
+    if [[ ! -e "$key" ]]; then
+        if ! ssh-keygen -q -t ed25519 -N '' -f "$key" -C "${USER:-$(id -un)}@$host-to-desktop"; then
+            later 'SSH desktop : génération de clé échouée.'; return
+        fi
+    fi
+    if [[ ! -f "$key" || ! -f "$key.pub" ]] || ! ssh-keygen -l -f "$key.pub" >/dev/null 2>&1; then
+        later 'SSH desktop : paire de clés invalide ; fichiers conservés.'; return
+    fi
+    run chmod 600 "$key"
+    run chmod 644 "$key.pub"
+    if [[ -z "$configured" ]]; then
+        [[ ! -e "$dir/config" ]] || run cp -p "$dir/config" "$dir/config.bak-$stamp"
+        if ! python3 -I - "$dir/config" "$remote_user" "$remote_host" <<'SSHCONFIG'
+import os, pathlib, sys, tempfile
+path = pathlib.Path(sys.argv[1])
+old = path.read_bytes() if path.exists() else b''
+block = ("# QS Desktop : accès au desktop\nHost terrier-zt\n"
+         f"    HostName {sys.argv[3]}\n    User {sys.argv[2]}\n"
+         "    IdentityFile ~/.ssh/id_ed25519_terrier\n    IdentitiesOnly yes\n\nHost *\n").encode()
+fd, tmp = tempfile.mkstemp(prefix='.qs-desktop-', dir=path.parent)
+try:
+    with os.fdopen(fd, 'wb') as out:
+        out.write(block + old)
+    os.replace(tmp, path)
+finally:
+    if os.path.exists(tmp):
+        os.unlink(tmp)
+SSHCONFIG
+        then later 'SSH desktop : configuration de l’alias échouée.'; return; fi
+    fi
+    [[ -L "$dir/config" ]] || run chmod 600 "$dir/config"
+    # BatchMode ne demande ni mot de passe ni confirmation de clé du serveur.
+    if ssh -F "$dir/config" -o BatchMode=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=5 -o ConnectionAttempts=1 "$alias" true </dev/null; then
+        echo '= SSH desktop opérationnel : ssh terrier-zt'
+    elif [[ -n "$yes" ]] || ! { : </dev/tty; } 2>/dev/null; then
+        later 'SSH desktop : autoriser la clé dans un terminal : ssh-copy-id -i ~/.ssh/id_ed25519_terrier.pub terrier-zt'
+    elif ssh-copy-id -F "$dir/config" -i "$key.pub" -o StrictHostKeyChecking=ask -o ConnectTimeout=5 -o ConnectionAttempts=1 "$alias" </dev/tty >/dev/tty 2>&1 \
+        && ssh -F "$dir/config" -o BatchMode=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=5 -o ConnectionAttempts=1 "$alias" true </dev/null; then
+        echo '= SSH desktop opérationnel : ssh terrier-zt'
+    else
+        later 'SSH desktop : autorisation inachevée ; relancer ssh-copy-id -i ~/.ssh/id_ed25519_terrier.pub terrier-zt dans un terminal.'
+    fi
+}
+
 step_check() {
     section "Vérifications"
     local c missing=()
@@ -1430,5 +1523,6 @@ step_wallpapers
 [[ "$profile" == travail ]] && step_dm
 step_host
 [[ -n "$system" ]] && is_arch && step_system
+step_ssh_desktop
 step_extensions
 step_check

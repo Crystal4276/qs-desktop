@@ -66,5 +66,5 @@ nano                    # éditeur en terminal
 # Réseau privé et clients de partage (dépôts officiels)
 zerotier-one
 smbclient
-openssh
+openssh                 # client SSH, ssh-keygen et ssh-copy-id (accès au desktop par install.sh)
 iperf3

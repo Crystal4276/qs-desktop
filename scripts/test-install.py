@@ -230,6 +230,8 @@ def main():
 
         r = install()
         check(r.returncode == 0, f"installation : code {r.returncode} {r.stderr.strip()[-300:]}")
+        check("== SSH vers le desktop" in r.stdout and not (home / ".ssh").exists(),
+              "SSH : étape du compte incluse avec --no-system, sans destination ni création implicite")
         desktop = home / ".local/share/applications/qs-windows11.desktop"
         check(desktop.is_file() and "Name=Windows 11" in desktop.read_text(), "Windows 11 : entrée native installée")
         cfg = home / ".config"

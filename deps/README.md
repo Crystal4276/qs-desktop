@@ -307,3 +307,11 @@ accès libvirt, retour d'adresse ZeroTier et refus d'une interface physique. Ref
 Provisioning par `install.sh`, fichier local et autorisation : voir README, « Provisioning ZeroTier ».
 `python3 scripts/test-zerotier.py` vérifie les états réseau et la conservation des adhésions sur fichiers temporaires.
 Ce banc ne remplace pas la validation en VM.
+
+### Accès SSH au desktop
+
+`install.sh` : `ssh`, `ssh-keygen`, `ssh-copy-id` du paquet `openssh`, `python` pour ajouter l'alias
+sans modifier les réglages existants. Clé privée et destination uniquement dans `~/.ssh`, conservées
+au retrait. Voir README, « Accès SSH au desktop ». Aucun service ajouté.
+`python3 scripts/test-ssh-desktop.py` : vrais fichiers SSH jetables, pseudo-terminal Python et
+connexions distantes simulées ; aucun accès réseau réel ni privilège requis.
