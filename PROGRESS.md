@@ -1024,3 +1024,28 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
 - Pour l'audit : `Restore-Win11.ps1` à passer dans la VM (règles SMB Win11-* et config serveur SMB de l'ancien Setup) ;
   paquets installés pour Codex et plus utilisés (`gvfs-smb`, `wimlib`, `turbostat` ; `7zip`, `virt-firmware` seulement pour
   `prepare`) ; `swtpm` (TPM de Windows 11) absent de `deps/` ; état root `/var/lib/win11-setup` (sauvegardes, `files.json`).
+
+## Audit de la VM Windows 11 (2026-11-12)
+
+Lecture seule (hôte, root par pkexec, Windows par QGA ; VM démarrée puis éteinte). Rien n'est changé ; décisions en attente.
+
+- **SSD du laptop (cause probable des plantages)** : 7 `nvme … timeout, completion polled` (E/S bloquée 30 s) du 9 au 11,
+  dont 2 avant la création de la VM. KIOXIA EG6 derrière Intel VMD (`10000:e1:00.0`) : interruptions perdues, cas connu
+  (bugzilla 217871, 219220 ; erratum MTL016). Les écrans bleus Windows du 11 (`0x1E`, E/S `0xc0000185`) collent avec ce
+  défaut, sans preuve. Correctif usuel : BIOS, « SATA/NVMe Operation » RAID On → AHCI/NVMe. Vérifié : les 4 UKI contiennent
+  `nvme`, fstab par UUID, pas de Windows natif sur le disque. Action à faire par toi dans le BIOS.
+- **Sain** : `qemu-img check` sans erreur ; aucun hook libvirt, règle polkit ou sudoers de Codex ; `qemu.conf` d'origine ;
+  UFW = les 4 règles `win11-managed`. Windows : activé, Secure Boot et TPM, Defender actif sans exclusion, Windows Update de
+  nouveau fonctionnel, TRIM, heure juste, RDP fermé, profil réseau Public, aucun plantage depuis le 11 à 14 h 34. Split
+  locks : 0 en 60 s au repos (sonde kprobe temporaire).
+- **Reliquats Codex dans Windows** : règles `Win11-Host-SMB`, `Win11-SMB-BlockOthers`, `Win11-NetBIOS-BlockOthers` (445
+  ouvert au laptop alors que Windows ne partage plus rien) ; tâche `Win11Setup-VioGpuResizeAtLogon` et service `VioGpuSrv`
+  (carte virtio, inutiles avec QXL) ; `SoftwareDistribution.win11-backup-*` (1,9 Gio) ; `C:\ProgramData\Win11Setup` (6,5 Mo).
+- **Chiffrement Windows** : BitLocker automatique « Protection Off », sans protecteur (clé en clair). À décider :
+  déchiffrer et bloquer l'activation automatique (le laptop est déjà en LUKS ; une activation lierait la clé au TPM émulé).
+- **QXL (ton choix du 11, réglages par défaut)** : 64 Mio ram/vram, `vgamem` 16 Mio (assez pour 1920 × 1200, pas pour
+  un écran 4K). Pistes à essayer : compression d'images et flux vidéo SPICE désactivés (connexion locale), `vgamem` 64 Mio.
+  Le projet Win11 génère encore `virtio` : `prepare` annulerait QXL.
+- **Ménage hôte** : copie de disque du 11 avant maintenance (44 Gio, état de crash) ; ISO Windows en double (9 Gio dans
+  `~/Win11` et `/var/lib/libvirt/boot`), encore branchée en CD ; sauvegardes obsolètes de `/var/lib/win11-setup` ;
+  règle UFW 67/udp IPv6 sans objet ; paquets `gvfs-smb`, `wimlib`, `turbostat` ; `swtpm` à ajouter à `deps/apps.txt`.
