@@ -115,10 +115,13 @@ mosaïque sur l’espace du profil (6 en travail, 5 en jeux), sans changer l’e
 ## Provisioning ZeroTier
 
 Les deux profils installent ZeroTier, les clients SMB/SFTP et iperf3 depuis les dépôts officiels.
-Avant installation, écrire le Network ID (16 chiffres hexadécimaux, sans commentaire) dans
-`hosts/zerotier-network.local`, ignoré par Git, puis lancer `./install.sh` normalement.
-Ce fichier doit être préparé sur chaque nouvelle machine ; aucun accès au desktop n'est nécessaire.
-Pour changer de réseau, remplacer cet ID et relancer ; l'ancien réseau n'est pas quitté automatiquement.
+Le Network ID est fourni par `hosts/zerotier-network`, versionné : un nouveau clone puis
+`./install.sh` suffisent pour demander automatiquement la jonction, en acceptant les étapes système.
+Cet identifiant n'est ni une clé ni un jeton ; chaque machine génère sa propre identité.
+Pour changer le réseau commun, modifier ce fichier. Pour remplacer le réseau sur une seule installation,
+créer `hosts/zerotier-network.local` (prioritaire, ignoré par Git), avec seulement le Network ID
+sur une ligne (16 chiffres hexadécimaux). Aucun accès au desktop n'est nécessaire.
+L'ancien réseau n'est pas quitté automatiquement lors d'un changement d'ID.
 
 L'étape système active ZeroTier et conserve l'adhésion dans son répertoire natif.
 Une nouvelle adhésion refuse DNS, routes publiques et route Internet par défaut.
