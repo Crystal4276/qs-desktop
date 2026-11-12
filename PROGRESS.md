@@ -945,9 +945,11 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
   active » tenu ; dalle rallumée à l'ouverture. Cas écrans éteints par la veille vérifié sur la session (extinction de 2 s) :
   connecteur HDMI `disabled` dans sysfs (logind seul croirait l'externe débranché), verrou toujours tenu.
 - **Fait** sous Hyprland : fermer sans externe (veille, verrouillage confirmé en 1 s) ; fermer avec HDMI (pas de veille, verrou
-  tenu même écrans éteints) ; rouvrir (dalle rallumée, échelle 1).
+  tenu même écrans éteints) ; rouvrir (dalle rallumée, échelle 1) ; débrancher le HDMI capot fermé (veille dans la seconde,
+  07:50:59, tenue 78 s sans réveil spontané).
 - **À faire** (à la main) :
-  1. sous Hyprland : fermer avec USB-C ; débrancher le dernier externe capot fermé (veille) ; ouvrir la session capot fermé sur
-     dock puis ouvrir le capot (dalle rallumée) ; réveil capot fermé avec externe (dalle reste éteinte) ; sur batterie ;
+  1. sous Hyprland, avec le HDMI : ouvrir la session capot fermé puis ouvrir le capot (dalle rallumée) ; réveil capot fermé
+     avec l'écran branché (dalle reste éteinte) ; les essais sur batterie ;
   2. sous Sway : les mêmes cas ;
-  3. l'écran de connexion reprend les liaisons Sway à la prochaine mise à jour de sa copie système (`install.sh`, étape système).
+  3. USB-C et dock : pas de matériel pour l'instant (à refaire après achat) ;
+  4. l'écran de connexion reprend les liaisons Sway à la prochaine mise à jour de sa copie système (`install.sh`, étape système).
