@@ -906,7 +906,7 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
   sur 7 / 8 / 8 / 9. Sondes GTK DigitalMicrograph et Windows sur 5 / 6, en mosaïque, puis fermées. Espace courant 1 conservé,
   Quickshell PID 1909 vivant, bancs arrêtés. Capture `.shots/workspaces-work-order.png`. Aucun changement de session imposé.
 
-## Laptop — fermeture du capot (2026-11-11)
+## Laptop — fermeture du capot (2026-11-11 → 2026-11-12)
 
 - Cahier des charges (ton choix) : capot fermé sans écran externe → veille, sur secteur comme batterie ; avec un externe (USB-C,
   dock, HDMI) → dalle éteinte, session sur les externes ; retrait du dernier externe capot fermé → veille.
@@ -914,29 +914,35 @@ après reconnexion, puis terminer le rapport de phase 12. Affinage de l’interf
   sorties, règles de restauration, ~600 lignes avec tests, 32 Mo de Python en permanence, et 4 défauts réels trouvés en revue,
   dont des règles perdues à chaque rechargement à chaud) :
   - veille : logind par défaut (`/etc/systemd/logind.conf` inchangé) ; verrouillage avant veille : `Idle.qml`, inchangé ;
-  - dalle : `bindswitch` Sway et `hl.bind("switch:on|off:Lid Switch")` Hyprland dans les fichiers machine du laptop, comme
-    prévu dès le départ par `ARCHITECTURE.md` § 3.1 ; Hyprland relit l'état du capot au chargement (reload du réveil) ;
-  - seul code : un `systemd-inhibit --what=handle-lid-switch` dans `Idle.qml` tant qu'un externe physique est actif (8 lignes).
-    Raison mesurée sur ce laptop : écran en veille DPMS → connecteur `disabled` dans sysfs, donc logind ne verrait plus l'externe ;
-  - état du capot relu au chargement par les deux compositeurs : libinput ne le donne au démarrage que pour un capot réputé
-    fiable (quirk absent pour ce Dell), une session ouverte capot fermé garderait sinon la dalle allumée.
-- Validé : `Hyprland --verify-config`, `sway --validate` (commande liée avec la description entre guillemets), liaisons chargées
-  par ta session Hyprland (`hyprctl binds`), vérification jetable de l'inhibiteur (externe, veille DPMS, dalle éteinte,
-  retrait, reprise après arrêt), `test-sleep.py` OK, `test-outputs.sh sway` 0 échec, banc Sway sans avertissement.
-  `test-idle-lock.py` échoue sur un avertissement de portail, **déjà avant** le travail du capot (environnement).
-- Revue de la version native, passe 1 : écrans virtuels comptés comme externes, condition `Battery.available` superflue, état
-  initial du capot sous Sway : corrigés. Acceptés : un écran qui coupe sa connexion en veille profonde (ou un KVM basculé) vaut
-  un débranchement, comme dans la version Codex ; relance de Quickshell écrans éteints capot fermé → veille (sans danger) ;
-  dalle éteinte même sans externe (plan § 3.1, `Outputs.qml` gère « aucun écran »).
-- Passe 2 : liste blanche des connecteurs externes (ceux de logind : `DP`, `HDMI`, `DVI`, `VGA`) au lieu d'exclure les virtuels
-  (`WL-1` d'un Sway imbriqué passait) ; `Battery.available` remis (pas de processus inutile sur `terrier`, même notion de
-  laptop que `lockBeforeSleep`) ; doc : `LID0` propre à la machine. Négligeable : rechargement Sway capot fermé branché (la dalle
-  clignote).
-- **Quirk libinput** (ta décision, 2026-11-12) : sans `AttrLidSwitchReliability=reliable` (absent pour ce Dell), libinput
-  annonçait le capot « ouvert » au démarrage même fermé et taisait sa première ouverture (session démarrée capot fermé : dalle
-  jamais rallumée). `dotfiles/libinput/hosts/corelabs-laptop.quirks` (correspondance DMI du modèle) posé dans
-  `/etc/libinput/local-overrides.quirks` par `system-setup.sh install` (sauvegarde et retrait par son registre). Sway reprend
-  `bindswitch --reload`, sans `exec_always` ; Hyprland garde la lecture de `/proc` (reload du réveil). `test-install.py` :
-  0 échec (contrôle ajouté). **À faire** : `./install.sh` (étapes système) ou `scripts/system-setup.sh install`, puis
-  redémarrer la session (libinput lit les quirks au démarrage du compositeur), puis les tests physiques ci-dessus, dont une
-  session ouverte capot fermé sur dock suivie d'une ouverture.
+  - dalle : `bindswitch --reload` Sway et `hl.bind("switch:on|off:Lid Switch")` Hyprland dans les fichiers machine du laptop,
+    comme prévu dès le départ par `ARCHITECTURE.md` § 3.1 ; Hyprland relit aussi l'état du capot au chargement (`/proc`, pour le
+    `hyprctl reload` du réveil) ;
+  - capot réputé fiable pour libinput (ta décision) : sans ce quirk, absent pour ce Dell, libinput annonçait le capot « ouvert »
+    au démarrage même fermé et taisait sa première ouverture. `dotfiles/libinput/hosts/corelabs-laptop.quirks` (correspondance
+    DMI) → `/etc/libinput/local-overrides.quirks` par `system-setup.sh install` (sauvegarde et retrait par son registre) ;
+  - seul code : un `systemd-inhibit --what=handle-lid-switch` dans `Idle.qml` (8 lignes), laptop seulement, tant qu'un écran
+    `DP`/`HDMI`/`DVI`/`VGA` est actif. Raison mesurée ici : écran en veille DPMS → connecteur `disabled` dans sysfs, donc
+    logind ne verrait plus l'externe.
+- Validé : `Hyprland --verify-config`, `sway --validate` (commandes liées avec la description entre guillemets), liaisons
+  chargées par ta session Hyprland (`hyprctl binds`), vérification jetable de l'inhibiteur (externe, virtuels exclus, veille
+  DPMS, dalle éteinte, retrait, reprise après arrêt, rien sans batterie), `test-sleep.py` OK, `test-outputs.sh sway` 0 échec,
+  `test-install.py` 0 échec (contrôle du quirk ajouté), banc Sway sans avertissement. `test-idle-lock.py` échoue sur un
+  avertissement de portail, **déjà avant** ce travail (environnement). Syntaxe du quirk non validée par libinput (`libinput
+  quirks validate` est dans `libinput-tools`, non installé).
+- Revues de la version native (3 passes) : virtuels comptés comme externes, liste blanche des connecteurs, `Battery.available`,
+  état initial du capot (quirk) : corrigés. Acceptés : écran qui coupe sa connexion en veille profonde ou KVM basculé =
+  débranchement (comme la version Codex) ; relance de Quickshell écrans éteints capot fermé → veille ; dalle éteinte même sans
+  externe (plan § 3.1, `Outputs.qml` gère « aucun écran ») ; rechargement Sway capot fermé branché : la dalle clignote ; sans
+  étape système (pas de quirk), session ouverte capot fermé : dalle allumée sous le capot jusqu'au premier cycle.
+- Règles : `CLAUDE.md` règle 6 « Natif d'abord, code minimal » (proposer avant de s'écarter d'une solution documentée ou
+  d'ajouter un processus, un script ou un protocole maison) ; la revue en boucle juge aussi l'altitude (`DEVELOPMENT.md`).
+- **À faire** :
+  1. `scripts/system-setup.sh install` (ou `./install.sh`, étapes système) : pose le quirk ;
+  2. fermer puis rouvrir la session (libinput lit les quirks au démarrage du compositeur ; le bureau actuel, PID 1909, tourne
+     encore avec l'ancien `Lid.qml` en mémoire) ;
+  3. tester à la main, sous Hyprland et Sway, sur secteur et batterie : fermer sans externe (veille, verrouillé au réveil) ;
+     fermer avec HDMI puis USB-C (dalle éteinte, pas de veille, y compris après l'extinction des écrans par la veille) ;
+     débrancher le dernier externe capot fermé (veille) ; rouvrir (dalle rallumée, échelle 1) ; ouvrir la session capot fermé
+     sur dock puis ouvrir le capot (dalle rallumée) ; réveil capot fermé avec externe sous Hyprland (dalle reste éteinte) ;
+     `systemd-inhibit --list` : verrou `handle-lid-switch` seulement avec un externe actif ;
+  4. l'écran de connexion reprend les liaisons Sway à la prochaine mise à jour de sa copie système (`install.sh`, étape système).
