@@ -117,7 +117,7 @@ démarrage (`plymouth-setup.sh status`, ligne « démarrage ») :
 | Hook `plymouth` avant `block` / `encrypt` dans `HOOKS` (`/etc/mkinitcpio.conf` ou `.conf.d`) | les deux | mot retiré |
 | Surcharges `/etc/systemd/system/plymouth-quit-wait.service.d/qs-corelab.conf` et `plymouth-quit.service.d/qs-corelab.conf` | les deux | retirées |
 | `splash` : `/etc/cmdline.d/qs-corelab.conf`, seulement s'il manque à la ligne de commande | UKI | fichier retiré |
-| **Image de secours sans Plymouth** par noyau : preset `rescue` ajouté (`-S plymouth`), `<image>~rescue.efi` | UKI | preset remis, image retirée |
+| **Image de secours sans Plymouth** par noyau : preset `rescue` ajouté (`-S plymouth`), `<image>.bak.efi` | UKI | preset remis, image retirée |
 | Logo Arch de systemd-stub retiré (`--splash <bmp>` de `default_options`, mis par archinstall) | UKI | option remise |
 | `splash` dans `GRUB_CMDLINE_LINUX_DEFAULT` (`/etc/default/grub`) | GRUB | mot retiré |
 | Initramfs (`mkinitcpio -P`), et `/boot/grub/grub.cfg` (`grub-mkconfig`) en mode GRUB | — | refaits |
@@ -166,7 +166,8 @@ L'ordre du menu : GRUB range les UKI par nom décroissant, donc chaque secours j
 `/etc/mkinitcpio.conf`, `etc_mkinitcpio.d_<noyau>.preset.bak-*` → `/etc/mkinitcpio.d/<noyau>.preset`, `etc_default_grub.bak-*` →
 `/etc/default/grub`, `etc_plymouth_plymouthd.conf.bak-*` → `/etc/plymouth/plymouthd.conf`), supprimer les deux surcharges et
 `/etc/cmdline.d/qs-corelab.conf` s'il existe, puis `sudo systemctl daemon-reload && sudo mkinitcpio -P` ; en mode GRUB classique
-seulement, `sudo grub-mkconfig -o /boot/grub/grub.cfg` ; en mode UKI, `sudo rm /boot/EFI/Linux/*~rescue.efi`.
+seulement, `sudo grub-mkconfig -o /boot/grub/grub.cfg` ; en mode UKI, retirer uniquement les images indiquées par `rescue_uki=` dans les presets avant leur restauration
+(noms actuels `.bak.efi`, anciens noms `~rescue.efi`).
 
 L'écran de connexion n'apparaît pas après l'écran de démarrage : `systemctl status plymouth-quit-wait plymouth-quit greetd` ;
 `sudo plymouth quit` libère l'écran si Plymouth est resté actif.

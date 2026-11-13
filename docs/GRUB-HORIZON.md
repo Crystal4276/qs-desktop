@@ -37,7 +37,7 @@ l'entrée initialement choisie, et un défaut mémorisé dans le sous-menu reste
 préexistante conserve son ordre et ses index ; elle exclut ce tri et l'ajout de Restart.
 
 Les variantes de secours présentes (`fallback` et `rescue` sans Plymouth) sont regroupées sous **Advanced options**, sans
-doublons au premier niveau. Sur le laptop, cela regroupe les deux images `~rescue.efi`, en conservant leurs titres explicites
+doublons au premier niveau. Sur le laptop, cela regroupe les deux images `.bak.efi`, en conservant leurs titres explicites
 standard/LTS et « secours sans Plymouth ». Les noyaux normaux restent au premier niveau. Le module
 conserve les objets natifs d'origine et en copie intégralement commandes, arguments, identifiants, droits et raccourcis à
 l'ouverture du sous-menu natif. La sélection par défaut est adaptée à son nouveau chemin, y compris si elle était numérique
@@ -184,3 +184,22 @@ Critères : démarrage UKI complet sous 56 Kio, mesures UKI/SMBIOS présentes, p
 allers-retours dans Advanced options et 100 déplacements clavier sans saturation du
 budget 64 Kio. Le moteur graphique peut relire les PNG quand le chemin du thème change :
 le cache des fontes ne dispense pas de mesurer ce scénario. Tout échec bloque le déploiement.
+
+## Noms des secours compatibles avec systemd
+
+Les secours QS utilisent `<image>.bak.efi`. Le caractère `~` des anciens noms était
+accepté par GRUB mais refusé par le lecteur BLS de systemd. La restriction de noms
+est définie dans la [Boot Loader Specification](https://uapi-group.org/specifications/specs/boot_loader_specification/).
+Le suffixe `.bak.efi` garde l'image normale avant son secours dans le tri décroissant
+filevercmp, y compris sans le module Horizon.
+
+À l'installation d'Horizon, les anciens secours dont le preset porte notre marqueur
+sont migrés dans la même transaction que grub.cfg : copie vérifiée par empreinte,
+mise à jour des presets et des identifiants, validation de la configuration, puis
+retrait des anciens noms. Aucun noyau ni initramfs n'est reconstruit. Une destination
+différente est refusée ; tout échec restaure les noms et les réglages précédents.
+Les anciennes sélections explicites ou mémorisées sont traduites par le menu Horizon
+vers les nouveaux identifiants. Les images ne sont pas supprimées au retrait d'Horizon :
+elles appartiennent à l'étape Plymouth, qui lit leur chemin courant dans le preset.
+`install.sh` exécute cette migration après l'étape Plymouth ; un appel isolé à l'ancien
+installateur Plymouth ne migre pas les noms déjà gérés.

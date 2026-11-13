@@ -325,3 +325,8 @@ Intégration GRUB + UKI existant seulement : aucun paquet de chargeur installé 
 prêts à utiliser. Reconstruction : Python, python-pillow, librsvg, grub (grub-mkfont) ; module : chaîne GCC/Make/Autotools,
 bison/flex/gettext/patch/gawk et sources GRUB/Gnulib de la version cible. Aperçus : qemu-system-x86, edk2-ovmf ; pas de libvirt.
 Polices Inter et DM Sans OFL embarquées. Voir `docs/GRUB-HORIZON.md` pour commandes, compatibilité et retour arrière.
+
+`dmidecode` (deps/apps.txt) fournit les informations DMI demandées par libvirt.
+Sans lui, libvirtd signale un exécutable absent au démarrage et ne fournit pas les
+informations SMBIOS de l'hôte. Le paquet est optionnel pour libvirt mais fait partie
+du profil d'applications QS qui installe la virtualisation.

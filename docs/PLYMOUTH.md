@@ -233,13 +233,18 @@ commande du noyau y est intégrée à l'image (`/etc/kernel/cmdline`, `/etc/cmdl
 `grub-mkconfig` n'y servaient à rien, et la procédure de secours « GRUB `e`, retirer `splash` » n'existe pas (pas de ligne
 `linux`). En mode UKI, le script ne touche plus GRUB, garantit `splash` par `/etc/cmdline.d/qs-corelab.conf` s'il manque, et
 ajoute à chaque preset une image de secours sans le hook `plymouth` (`rescue_options=(-S plymouth --osrelease …)`, titre
-« Arch Linux (<noyau> rescue, no splash) », nom `<image>~rescue.efi` : GRUB trie par nom décroissant avec `filevercmp`, le
+« Arch Linux (<noyau> rescue, no splash) », nom d’origine `<image>~rescue.efi` : GRUB trie par nom décroissant avec `filevercmp`, le
 `~` range chaque secours sous son image normale et la première entrée reste normale). Mode GRUB classique inchangé.
 Vérifié dans une VM chiffrée au format du laptop (`docs/DEVELOPMENT.md`, « VM UKI ») : reprise de l'état laissé par l'ancienne
 version, menu, entrée normale (thème), entrée de secours (phrase en texte, démarrage complet), mise à jour simulée du noyau
 (les deux images refaites), retrait (fichiers identiques aux originaux, menu d'origine).
 Le logo Arch affiché avant Plymouth venait de systemd-stub (section `.splash` de l'UKI, `--splash` des presets
 d'archinstall) : retiré en mode UKI (ton choix, 2026-11-11) ; démarrage filmé en VM : menu GRUB, noir bref, thème.
+
+**Correction du 2026-11-13** : les nouveaux secours s'appellent `<image>.bak.efi`,
+pour respecter les noms BLS lus par systemd sans modifier l'ordre normal/secours.
+`install.sh` fait migrer les anciens noms par l'étape Horizon, avec vérification des
+empreintes et restauration sur échec ; le contenu des UKI reste identique.
 
 ### Intégration système (proposition d'origine)
 

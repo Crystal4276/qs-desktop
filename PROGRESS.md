@@ -1436,3 +1436,30 @@ Choix utilisateur : réseau local rétabli **avec mot de passe** (pas d'invité 
   Vrai secours LTS démarré depuis une sélection mémorisée dans Advanced options :
   invite texte, déverrouillage et stub ~rescue confirmés ; UKI normales inchangées.
   Bancs arrêtés. Déploiement laptop séparé après validation ; essai physique à faire.
+
+## Validation réelle TPM et erreurs de démarrage (2026-11-13)
+
+- Après installation du correctif Horizon et redémarrage par l'utilisateur : journal
+  TPM **51 951 octets**, soit **13 585 octets de marge** ; SMBIOS types 1/2/11,
+  noyau et initramfs mesurés, quatre fontes lues une fois ; Measured UKI/OS=yes.
+  Aucun service en échec et bureau vivant (PID 1937).
+- Erreur libvirt : `dmidecode` 3.7-1 installé depuis extra après accord explicite.
+  Ajout à deps/apps.txt pour les prochaines installations. Libvirtd redémarré après
+  vérification d'absence de VM en cours ; requête sysinfo désormais réussie. Aucun
+  identifiant matériel ni contenu DMI publié dans le dépôt.
+- Erreurs logind : `~` n'appartient pas aux noms BLS autorisés. Nouveaux secours
+  `.bak.efi`, même ordre filevercmp (normale puis secours). Migration des seuls
+  presets marqués QS lors d'install.sh/Horizon : copie vérifiée par empreinte,
+  presets et menu adaptés, retrait des anciens noms après validation. Destinations
+  différentes refusées, rollback et reprise testés. Anciennes sélections traduites
+  vers les nouveaux identifiants ; contenu UKI inchangé, aucun initramfs reconstruit.
+- Tests : test-grub-rescue-names.py et test-grub-horizon.py PASS ; test-install.py
+  0 échec ; syntaxe Python/Bash et git diff --check OK. VM UKI jetable : avertissement
+  reproduit avant migration, disparu de bootctl après ; images comparées octet par
+  octet ; démarrage par l'ancien choix mémorisé confirmé vers arch-linux-lts.bak.efi.
+  Les images servant à simuler les secours dans ce test sont des copies d'UKI normales.
+- Application réelle via polkit réussie. Bootctl et logind reconnaissent les quatre
+  images (deux normales, deux .bak), anciens noms absents, GRUB valide, deuxième
+  passage déjà à jour. VM arrêtée, bureau vivant et aucun service en échec. Les
+  anciens messages restent dans le journal historique. Prochain boot réel : confirmer
+  le menu et la marge TPM après cette migration ; aucun redémarrage de l'hôte lancé.
