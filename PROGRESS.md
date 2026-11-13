@@ -1543,3 +1543,20 @@ Choix utilisateur : réseau local rétabli **avec mot de passe** (pas d'invité 
   lecture audio et Wi-Fi fonctionnels ; réglages clavier Never/30s conservés,
   absence de nouvelle panique/BERT et marge TPM. Le plantage initial reste inexpliqué ;
   trousseau, Samba, pilotes et paramètres BIOS gardent leur état actuel.
+
+### Validation après redémarrage — audio et Wi-Fi (2026-11-13)
+
+- Retour sur le noyau standard **7.2.15-arch1-1** et l'UKI normale reconstruite.
+  RTKit activé automatiquement par D-Bus ; threads `data-loop.0` de PipeWire,
+  PipeWire-Pulse et WirePlumber en **SCHED_RR, priorité 20**. Erreurs RTKit absentes,
+  sortie audio par défaut disponible et non muette ; écoute à confirmer à l'usage.
+- Base `regulatory.db` et signature présentes, `iw reg get` réussi, Wi-Fi connecté ;
+  erreurs de chargement de la base absentes de ce nouveau boot.
+- Aucun service système ou utilisateur en échec, bureau vivant (PID 1957), aucune
+  nouvelle panique/Oops, erreur BERT ou trace pstore. TPM **52 335 octets**, marge
+  **13 201 octets** ; fontes chargées une fois, mesures noyau/initramfs et SMBIOS
+  présentes, Measured UKI/OS=yes.
+- BIOS clavier : **Never sur secteur, 30s sur batterie**, `pending_reboot=0`.
+  Délais physiques à confirmer à l'usage. Messages TDX, multicast Wi-Fi et Samba
+  encore présents ; le message initial gkr-pam est suivi du déverrouillage réussi
+  du trousseau. Le plantage initial reste inexpliqué. Contrôles en lecture seule.
