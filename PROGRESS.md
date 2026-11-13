@@ -1560,3 +1560,19 @@ Choix utilisateur : réseau local rétabli **avec mot de passe** (pas d'invité 
   Délais physiques à confirmer à l'usage. Messages TDX, multicast Wi-Fi et Samba
   encore présents ; le message initial gkr-pam est suivi du déverrouillage réussi
   du trousseau. Le plantage initial reste inexpliqué. Contrôles en lecture seule.
+
+### Complément de lecture des journaux (2026-11-13)
+
+- Trois plantages applicatifs **Spotify / SIGSEGV** à 09:15:41, 09:15:46 et 09:19:05,
+  avec dépôts mémoire ; début de trace dans `pthread_mutex_lock`,
+  `wl_proxy_create_wrapper` et `libEGL_mesa`. Diagnostic applicatif prioritaire ;
+  origine précise non établie, aucun lien démontré avec la panique noyau antérieure.
+- Avertissement udev supplémentaire après installation de wireless-regdb :
+  `set-wireless-regdom` termine avec le code 1 lorsque `WIRELESS_REGDOM` n'est pas
+  défini dans sa configuration facultative (dernier test du script faux). Aucun
+  pays forcé, base et signature présentes, Wi-Fi connecté ; cet avertissement
+  subsiste malgré la disparition de l'erreur de chargement de regulatory.db.
+- Samba continue de signaler un échec d'ouverture de socket, avec écoute active
+  sur les interfaces prévues. Aucun service système/utilisateur en échec ni nouvelle
+  panique/Oops, erreur BERT ou GPU hang dans ce boot au contrôle. Aucune correction
+  de Spotify, du script fourni par le paquet ou de Samba effectuée à ce stade.
