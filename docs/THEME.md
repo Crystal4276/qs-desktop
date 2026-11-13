@@ -72,7 +72,8 @@ Règles pour Qt :
 
 **Barre** (`Theme.bar`) : zone exclusive 65 px (10 de marge haute + pilule de 55 bordure comprise) ; pilules fond `mantle`, bordure
 1 px `overlay0`, rayon 20 ; 10 px entre pilules et sur les côtés ; padding des modules 10 ; une seule bordure arrondie autour de chaque
-groupe de modules (pilule de la config machine). Espaces de travail : glyphes 34 px, neuf couleurs Catppuccin par position :
+groupe de modules (pilule de la config machine). Horloge : heure à largeur fixe ; date ajustée à son texte, précédée
+d’une seule espace Inter après le glyphe du calendrier. Espaces de travail : glyphes 34 px, neuf couleurs Catppuccin par position :
 `green`, `teal`, `sapphire`, `blue`, `lavender`, `mauve`, `pink`, `peach`, `red`. Chaque barre recommence au début et utilise les
 N premières couleurs pour ses N espaces, sans interpolation ni espacement dans la palette. Espace affiché avec un halo
 (ombre floue d'un `Canvas`), vide en `surface1` ; un glyphe par numéro selon le

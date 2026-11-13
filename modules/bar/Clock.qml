@@ -6,7 +6,7 @@ import qs.services
 // Horloge (Waybar) : `U+E385␣HH:mm`, et sur la barre principale, 10 px puis `U+F274␣ddd-dd` (une espace après
 // l'icône et un padding de module avant le calendrier, comme les pilules système et réseau : ta demande du 2026-10-20).
 // Texte en Inter ; horloge en Hack Nerd Font, calendrier en Font Awesome 7 (THEME.md § 2).
-// Largeur fixe et minimale (ta demande du 2026-10-20) : l'heure et la date prennent la largeur de la plus large de leurs valeurs.
+// Heure à largeur fixe ; date ajustée au texte, avec une seule espace Inter après le calendrier.
 // Locale et fuseau : ceux du système. Survol : aperçu du calendrier ; clic : calendrier épinglé (CalendarPanel.qml, comme le tray).
 // Survol ou calendrier épinglé : contrastes inversés, fond `yellow` et texte `mantle`, comme le bouton Arch (ta demande du 2026-10-21).
 InfoModule {
@@ -40,7 +40,7 @@ InfoModule {
         [Theme.font.text, " " + clock.date.toLocaleString(Qt.locale(), "HH:mm"), WidthTexts.times],
         ...(root.showDate ? [
             [Theme.font.awesome, Theme.icon.calendar, [], Theme.bar.modulePadding],
-            [Theme.font.text, " " + clock.date.toLocaleString(Qt.locale(), "ddd-dd"), WidthTexts.dates]
+            [Theme.font.text, " " + clock.date.toLocaleString(Qt.locale(), "ddd-dd")]
         ] : [])
     ]
 
