@@ -34,7 +34,7 @@ presets_dir=/etc/mkinitcpio.d
 dropin=/etc/cmdline.d/qs-corelab.conf
 # Image de secours (UKI) : preset « rescue » ajouté à chaque preset UKI, sans le hook plymouth (phrase de passe LUKS en mode
 # texte). Titre propre dans le menu (GRUB : PRETTY_NAME de l'os-release intégré, $var/os-release-rescue-<noyau>). Nom
-# <image>~rescue.efi : GRUB range les UKI par nom décroissant (filevercmp, « ~ » avant la fin du nom), chaque secours
+# <image>.bak.efi : nom compatible BLS ; filevercmp place .bak.efi après .efi en ordre décroissant, chaque secours
 # juste sous son image normale ; la première entrée (par défaut) reste une image normale. Lignes repérées par $mark.
 mark="# qs-corelab : image de secours sans Plymouth (scripts/plymouth-setup.sh)"
 dropins=(
@@ -159,7 +159,7 @@ install_uki() {
         [[ -n "$(noted_all rescue | grep -xF "$p")" ]] || note rescue "$p"
         run sed -i -E "s/^PRESETS=\(([^)]*)\)/PRESETS=(\1 'rescue')/" "$p"
         # Dernière ligne sans saut de ligne : ajouté d'abord (le bloc se collerait sinon à la ligne précédente).
-        run sh -c "[ -z \"\$(tail -c 1 '$p')\" ] || echo >> '$p'; printf '%s\n%s\n%s\n' '$mark' 'rescue_uki=\"${uki%.efi}~rescue.efi\"' 'rescue_options=(-S plymouth --osrelease $(osrel_of "$p"))' >> '$p'"
+        run sh -c "[ -z \"\$(tail -c 1 '$p')\" ] || echo >> '$p'; printf '%s\n%s\n%s\n' '$mark' 'rescue_uki=\"${uki%.efi}.bak.efi\"' 'rescue_options=(-S plymouth --osrelease $(osrel_of "$p"))' >> '$p'"
     done
     # Logo de systemd-stub (« --splash <bmp> » mis par archinstall dans default_options) : affiché avant Plymouth, retiré ;
     # le BMP est noté pour uninstall. Un *_splash= du preset n'est pas touché.

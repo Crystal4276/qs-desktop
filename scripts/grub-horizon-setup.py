@@ -9,7 +9,48 @@ ACTION_ENTRIES=[('advanced-options','Advanced options','advanced'),
                 ('uefi-firmware','UEFI Firmware Settings','uefi-firmware'),
                 ('restart','Restart','restart')]
 def digest(p):return hashlib.sha256(p.read_bytes()).hexdigest()
-def labels(root):
+RESCUE_MARK='# qs-corelab : image de secours sans Plymouth (scripts/plymouth-setup.sh)'
+def rescue_migrations(root,validate=True):
+    """Only migrate the legacy names owned by our Plymouth installer."""
+    result=[]; destinations=set()
+    for preset in sorted((root/'etc/mkinitcpio.d').glob('*.preset')):
+        text=preset.read_text()
+        if RESCUE_MARK not in text.splitlines():continue
+        values=dict(re.findall(r'^([a-z]+)_uki=[\'"]([^\'"]+)[\'"]\s*$',text,re.M))
+        normal=values.get('default','');current=values.get('rescue','')
+        if pathlib.PurePosixPath(normal).parent!=pathlib.PurePosixPath('/boot/EFI/Linux') or not re.fullmatch(r'[A-Za-z0-9_.+-]+\.efi',pathlib.PurePosixPath(normal).name):
+            continue
+        legacy=normal[:-4]+'~rescue.efi';valid=normal[:-4]+'.bak.efi'
+        if current not in (legacy,valid):continue
+        source=root/legacy.lstrip('/');target=root/valid.lstrip('/')
+        if current==valid and not source.exists():continue
+        if target in destinations:raise RuntimeError('Plusieurs presets désignent la même image de secours')
+        destinations.add(target)
+        if validate:
+            if source.is_symlink() or target.is_symlink() or not source.is_file():
+                raise RuntimeError(f'Image de secours attendue, sans lien : {source}')
+            if target.exists() and (not target.is_file() or digest(source)!=digest(target)):
+                raise RuntimeError(f'Destination de secours différente : {target} ; rien remplacé')
+        updated=re.sub(r'^rescue_uki=.*$',lambda m:f'rescue_uki="{valid}"',text,flags=re.M)
+        result.append((preset,source,target,updated))
+    return result
+
+def rescue_aliases(root,migrations):
+    # Keep old explicit/saved selections working without writing to grubenv.
+    aliases={}
+    for preset in sorted((root/'etc/mkinitcpio.d').glob('*.preset')):
+        values=dict(re.findall(r'^([a-z]+)_uki=[\'"]([^\'"]+)[\'"]\s*$',preset.read_text(),re.M))
+        normal=values.get('default','');current=values.get('rescue','')
+        if RESCUE_MARK not in preset.read_text().splitlines():continue
+        if current==normal[:-4]+'.bak.efi' and re.fullmatch(r'[A-Za-z0-9_.+-]+\.efi',pathlib.PurePosixPath(normal).name):
+            aliases[pathlib.PurePosixPath(normal[:-4]+'~rescue.efi').name]=pathlib.PurePosixPath(current).name
+    aliases.update({old.name:new.name for p,old,new,text in migrations})
+    return ''.join(f'if [ "$default" = "{prefix}{old}" ]; then set default="{prefix}{new}"; fi\n'
+                   for old,new in sorted(aliases.items()) for prefix in ('','advanced-options>'))
+
+def labels(root,migrations=()):
+    renamed={old:new for preset,old,new,text in migrations}
+    future={new for preset,old,new,text in migrations}
     result=[]
     for p in sorted((root/'etc/mkinitcpio.d').glob('*.preset')):
         kernel=p.stem
@@ -17,12 +58,12 @@ def labels(root):
         kind='standard' if kernel=='linux' else 'LTS'
         for variant,path in re.findall(r'^([a-z]+)_uki=[\'\"]([^\'\"]+)[\'\"]\s*$',p.read_text(),re.M):
             image=root/path.lstrip('/')
-            if not image.is_file():continue
+            if not image.is_file() and image not in future:continue
             if variant=='default':title='Arch Linux (standard)' if kind=='standard' else 'Arch Linux LTS'
             elif variant=='fallback':title='Arch Linux (standard, fallback)' if kind=='standard' else 'Arch Linux LTS (fallback)'
             elif variant=='rescue':title=f'Arch {kind} (secours sans Plymouth)'
             else:continue
-            result.append((image.name,title,'arch'))
+            result.append((renamed.get(image,image).name,title,'arch'))
     return result
 def group_config(ids):
     if not ids:return ''
@@ -42,12 +83,15 @@ def main():
     if a.action in ('audit','status'):
         print(json.dumps({'installed':(state/'state.json').exists(),'grub_config_readable':os.access(cfg,os.R_OK),'images':[{'id':i,'title':t,'class':c} for i,t,c in labels(root)],'module_present':(dest/'horizon.mod').exists()},indent=2));return
     if a.dry_run:
+        migrations=rescue_migrations(root,validate=False) if a.action=='install' else []
+        for preset,source,target,content in migrations: print(f'Secours : {source} → {target} ; preset {preset}')
         print(f'{a.action}: {dest}, {defaults}, {snippet}, {hook}; validation grub-script-check, génération grub-mkconfig, sauvegarde/restauration dans {state}');return
     if root==pathlib.Path('/') and os.geteuid()!=0:
         os.execvp('pkexec',['pkexec',sys.executable,str(pathlib.Path(__file__).resolve()),a.action]);return
     # A synthetic root may only be used for offline tests. No probing the host in that case.
     real=root==pathlib.Path('/')
     if not real and not (root/'.horizon-test-root').exists():raise RuntimeError('Synthetic root requires .horizon-test-root')
+    migrations=rescue_migrations(root) if a.action=='install' else []
     old=json.loads((state/'state.json').read_text()) if (state/'state.json').exists() else None
     if a.action=='uninstall' and not old:print('Horizon absent');return
     if a.action=='install':
@@ -68,12 +112,13 @@ def main():
         # Avoid loading any previous theme from 00_header; restore it on uninstall.
         changed=re.sub(r'^GRUB_THEME=.*$', '# Previous theme suspended by QS Desktop Horizon',changed,flags=re.M)
         text='#!/bin/sh\n'+MARK+'\ncat <<\'QS_HORIZON\'\nsource $prefix/themes/qs-horizon/select.cfg\n'
-        for image,title,cls in labels(root)+ACTION_ENTRIES:
+        text+=rescue_aliases(root,migrations)
+        for image,title,cls in labels(root,migrations)+ACTION_ENTRIES:
             if not re.fullmatch(r'[A-Za-z0-9_.~+-]+',image):raise RuntimeError('Unsupported UKI filename')
             text+=f'if [ -n "$theme" ]; then qs_horizon_entry "{image}" "{title}" "{cls}"; fi\n'
-        recovery_ids=[image for image,title,cls in sorted(labels(root),key=lambda e:'LTS' in e[1]) if '(fallback)' in title or ', fallback)' in title or '(secours sans Plymouth)' in title]
+        recovery_ids=[image for image,title,cls in sorted(labels(root,migrations),key=lambda e:'LTS' in e[1]) if '(fallback)' in title or ', fallback)' in title or '(secours sans Plymouth)' in title]
         text+=group_config(recovery_ids)
-        normal_ids=[image for image,title,cls in sorted(labels(root),key=lambda e:'LTS' in e[1]) if title in ('Arch Linux (standard)','Arch Linux LTS')]
+        normal_ids=[image for image,title,cls in sorted(labels(root,migrations),key=lambda e:'LTS' in e[1]) if title in ('Arch Linux (standard)','Arch Linux LTS')]
         text+=order_config(normal_ids)
         text+='source $prefix/themes/qs-horizon/select.cfg\n'
         text+='QS_HORIZON\n'
@@ -88,7 +133,7 @@ Description = Disabling Horizon module until rebuilt for updated GRUB
 When = PostTransaction
 Exec = /usr/bin/rm -f /boot/grub/themes/qs-horizon/horizon.mod
 '''
-        if old and all(p.is_file() and digest(p)==old['installed'].get(str(p.relative_to(root))) for p in [defaults,snippet,hook]) and dest.exists() and {p.relative_to(dest) for p in dest.rglob('*') if p.is_file()} == {p.relative_to(THEME) for p in THEME.rglob('*') if p.is_file()} and all((dest/p.relative_to(THEME)).is_file() and digest(dest/p.relative_to(THEME))==digest(p) for p in THEME.rglob('*') if p.is_file()):
+        if not migrations and old and all(p.is_file() and digest(p)==old['installed'].get(str(p.relative_to(root))) for p in [defaults,snippet,hook]) and dest.exists() and {p.relative_to(dest) for p in dest.rglob('*') if p.is_file()} == {p.relative_to(THEME) for p in THEME.rglob('*') if p.is_file()} and all((dest/p.relative_to(THEME)).is_file() and digest(dest/p.relative_to(THEME))==digest(p) for p in THEME.rglob('*') if p.is_file()):
             # Recheck image inventory: updates may add a fallback after the initial install.
             if snippet.read_text()==text:print('Horizon déjà à jour');return
         if old:
@@ -96,6 +141,7 @@ Exec = /usr/bin/rm -f /boot/grub/themes/qs-horizon/horizon.mod
                 if not p.is_file() or digest(p)!=old['installed'].get(str(p.relative_to(root))):raise RuntimeError(f'Réglage modifié depuis installation : {p} ; examiner avant mise à jour')
         if not old and (dest.exists() or snippet.exists() or hook.exists()):raise RuntimeError('Destination existante non gérée ; rien remplacé')
         writes={defaults:changed,snippet:text,hook:hooktext}
+        writes.update({preset:content for preset,source,target,content in migrations})
     else:
         for name,expected in old['installed'].items():
             p=path(name)
@@ -103,7 +149,8 @@ Exec = /usr/bin/rm -f /boot/grub/themes/qs-horizon/horizon.mod
         writes={}
     # Keep first originals for removal, plus a separate rollback snapshot of every transaction.
     state.mkdir(parents=True,exist_ok=True)
-    targets=[defaults,snippet,hook,cfg]
+    targets=[defaults,snippet,hook,cfg,state/'state.json']+[p for p,source,target,content in migrations]
+    created=set()
     with tempfile.TemporaryDirectory(prefix='transaction-',dir=state) as td:
         rollback=pathlib.Path(td)
         for i,p in enumerate(targets):
@@ -115,6 +162,11 @@ Exec = /usr/bin/rm -f /boot/grub/themes/qs-horizon/horizon.mod
                 if p.exists():shutil.copy2(p,state/'original'/str(i))
         try:
             if a.action=='install':
+                # Keep the old files until config generation/validation commits.
+                for preset,source,target,content in migrations:
+                    if not target.exists():
+                        created.add(target);shutil.copy2(source,target)
+                    if digest(source)!=digest(target):raise RuntimeError('Copie du secours différente')
                 if dest.exists():shutil.rmtree(dest)
                 shutil.copytree(THEME,dest)
                 for p,text in writes.items():p.parent.mkdir(parents=True,exist_ok=True);p.write_text(text)
@@ -137,7 +189,12 @@ Exec = /usr/bin/rm -f /boot/grub/themes/qs-horizon/horizon.mod
                 pending=state/'state.json.new'
                 pending.write_text(json.dumps(data,indent=2)+'\n');pending.replace(state/'state.json')
             else:(state/'state.json').unlink()
+            for preset,source,target,content in migrations:source.unlink()
         except BaseException:
+            for preset,source,target,content in migrations:
+                if not source.exists() and target.is_file():shutil.copy2(target,source)
+            for target in created:target.unlink(missing_ok=True)
+            (state/'state.json.new').unlink(missing_ok=True)
             for i,p in enumerate(targets):
                 saved=rollback/str(i)
                 if saved.exists():shutil.copy2(saved,p)
