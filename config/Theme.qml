@@ -333,6 +333,7 @@ Singleton {
 
     // § 12 — Images embarquées
     readonly property QtObject image: QtObject {
+        readonly property url avatar: Quickshell.shellPath("assets/avatar.png")
         readonly property url archGreen: Quickshell.shellPath("assets/arch_linux_icon_green.svg")
         readonly property url archMantle: Quickshell.shellPath("assets/arch_linux_icon_mantle.svg")
         readonly property url lock: Quickshell.shellPath("assets/lock.svg")
@@ -556,7 +557,7 @@ Singleton {
     }
 
     // Écran de verrouillage (nouveau design, ARCHITECTURE § 7.12) : fond d'écran de chaque écran flouté et assombri, horloge, date ;
-    // sur l'écran principal, initiale et nom de l'utilisateur, champ du mot de passe. Maquette validée le 2026-10-17.
+    // sur l'écran principal, avatar et nom de l'utilisateur, champ du mot de passe. Maquette validée le 2026-10-17.
     readonly property QtObject lock: QtObject {
         readonly property int blur: 64                            // rayon max du flou (MultiEffect)
         readonly property color dim: Qt.alpha(root.color.crust, 0.45)

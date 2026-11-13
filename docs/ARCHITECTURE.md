@@ -432,7 +432,7 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
 ### 7.12 Verrouillage (`modules/lock/`)
 
 - `WlSessionLock` (ext-session-lock) + `PamContext` (config `login`). Fond de chaque écran flouté et assombri, horloge, date ;
-  initiale, nom et champ sur l'écran principal ; saisie prise quel que soit l'écran qui a le clavier ; majuscules verrouillées
+  avatar, nom et champ sur l'écran principal ; saisie prise quel que soit l'écran qui a le clavier ; majuscules verrouillées
   déduites des lettres tapées ; Entrée valide, Échap efface, Ctrl+Retour arrière efface tout (`PasswordEntry.qml`, commun avec
   l'écran de connexion) ; messages de PAM (faillock). Sous le champ : éteindre, redémarrer, veille (`PowerRow.qml`, sans confirmation).
 - Vue (`LockContent.qml`) partagée avec l'écran de connexion (§ 9), qui y ajoute la pastille de session et son propre fond.
@@ -601,7 +601,7 @@ Dépôt privé séparé `Crystal4276/fonts-ms` (polices propriétaires, jamais d
   rendu Vulkan si c'est la seule carte) → `qs -p greeter.qml` → session choisie lancée par greetd, Quickshell s'arrête, Sway aussi.
 - **Écran** (`modules/greeter/GreeterScreen.qml`, `LockContent.qml`) : une surface par écran (couche Overlay), clavier à l'écran principal
   (`Settings.primaryOf`, sans `Outputs` qui placerait des espaces de travail). Fond flouté : la copie du bureau (§ 7.11), sinon uni.
-  Sur l'écran principal : horloge, date, initiale et nom (clic : compte suivant s'il y en a plusieurs), champ, message, **pastille de
+  Sur l'écran principal : horloge, date, avatar et nom (clic : compte suivant s'il y en a plusieurs), champ, message, **pastille de
   session** (clic : liste au style des panneaux ; ↑/↓ : précédente, suivante), éteindre / redémarrer / veille.
 - **Service** (`services/Greeter.qml`) : comptes de `/etc/passwd` (UID 1000–59999, shell de connexion) ; sessions des fichiers
   `.desktop` de `wayland-sessions` puis `xsessions` (`XDG_DATA_DIRS`), sans ceux dont `TryExec` manque, X11 suffixées « (X11) » ; dernier

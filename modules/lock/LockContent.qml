@@ -2,12 +2,13 @@ import QtQuick
 import QtQuick.Effects
 import QtQuick.Layouts
 import Quickshell
+import Quickshell.Widgets
 import qs.config
 import qs.services
 import qs.modules.wallpaper
 
 // Contenu d'un écran verrouillé (design refait, ARCHITECTURE § 7.12) : fond d'écran de l'écran, flouté et assombri ; horloge et
-// date ; sur l'écran principal (`primary`), initiale et nom de l'utilisateur, champ du mot de passe (points), message (vérification,
+// date ; sur l'écran principal (`primary`), avatar et nom de l'utilisateur, champ du mot de passe (points), message (vérification,
 // erreur, majuscules verrouillées), boutons éteindre / redémarrer / veille (`showPower`). L'état vient de LockScreen.qml, ou de
 // modules/greeter pour l'écran de connexion : fond exporté par le bureau (`background`), choix de la session (`sessions`).
 Item {
@@ -122,7 +123,7 @@ Item {
             Layout.preferredHeight: Theme.lock.gap - 2 * Theme.lock.spacing
         }
 
-        Rectangle {
+        ClippingRectangle {
             visible: root.primary
             Layout.alignment: Qt.AlignHCenter
             implicitWidth: Theme.lock.avatarSize
@@ -130,7 +131,15 @@ Item {
             radius: width / 2
             color: Theme.lock.avatar
 
+            Image {
+                id: avatar
+                anchors.fill: parent
+                source: Theme.image.avatar
+                fillMode: Image.PreserveAspectCrop
+            }
+
             Text {
+                visible: avatar.status !== Image.Ready
                 anchors.centerIn: parent
                 text: root.user.charAt(0).toUpperCase()
                 font.family: Theme.font.text
