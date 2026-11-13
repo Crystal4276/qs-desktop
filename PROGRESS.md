@@ -1611,3 +1611,20 @@ Choix utilisateur : réseau local rétabli **avec mot de passe** (pas d'invité 
   de piste pendant au moins cinq minutes sans nouveau dépôt mémoire. Restaurer la
   configuration précédente si ce mode échoue ou perturbe MPRIS. Ce changement
   ne constitue pas une résolution de la panique noyau initiale.
+
+### Validation en session réelle — Spotify Wayland (2026-11-13)
+
+- Après relancement manuel à 09:45:44, Spotify (PID 27807) utilise Wayland natif
+  (`xwayland=false`) et reste sur l'espace 9. Lecture active via MPRIS ; l'utilisateur
+  confirme que lecture/pause et plusieurs changements de piste depuis la pastille
+  fonctionnent normalement.
+- Contrôle jusqu'à **305 s après le lancement** : même processus vivant, fenêtre
+  native et lecture active, aucun nouveau dépôt mémoire Spotify depuis le lancement.
+  Bureau vivant (PID 1957), aucun service système ou utilisateur en échec.
+  Relevés privés dans `.shots/spotify-wayland-2026-11-13/live-validation.json`.
+- Pour interpréter le journal historique : deux SIGTRAP des clients de banc
+  (PID 16385 à 09:39:06 et PID 17098 à 09:40:37) coïncident avec leur arrêt en fin
+  d'essai. Cause de ces SIGTRAP non établie ; ils ne concernent pas la nouvelle
+  session réelle ni les trois SIGSEGV GPU initiaux. Bancs et clients de test arrêtés.
+- Essai réel validé sur cette période ; l'absence durable de récidive reste à
+  observer à l'usage. La cause de la panique noyau initiale reste indéterminée.
