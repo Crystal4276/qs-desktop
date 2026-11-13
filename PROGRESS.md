@@ -1463,3 +1463,32 @@ Choix utilisateur : réseau local rétabli **avec mot de passe** (pas d'invité 
   passage déjà à jour. VM arrêtée, bureau vivant et aucun service en échec. Les
   anciens messages restent dans le journal historique. Prochain boot réel : confirmer
   le menu et la marge TPM après cette migration ; aucun redémarrage de l'hôte lancé.
+
+## Incident noyau, contrôle LTS et restauration clavier (2026-11-13)
+
+- Photo utilisateur : fin d'une trace de plantage du noyau vers 32 s, avec gestion
+  de faute de page ; premières lignes et version du noyau de l'échec absentes.
+  Cause non établie, aucun lien démontré avec Horizon. Au démarrage suivant : rapport
+  firmware BERT classé fatal, potentiellement lié aussi à l'arrêt forcé ; cela ne
+  prouve pas une panne matérielle. Pstore EFI désactivé, aucun rapport pstore archivé.
+  Photo et traces conservées localement sous `.shots/boot-incident-2026-11-13-7503f870/`,
+  dossier privé ignoré par Git ; aucune donnée brute publiée.
+- Après l'appui très long sur Power, perte de l'heure et de réglages signalée par
+  l'utilisateur : réinitialisation RTC plausible. Réglages clavier finalement
+  restaurés et relus conformément au choix confirmé : **Never sur secteur, 30s sur
+  batterie**. Le délai batterie Never appliqué temporairement a été corrigé.
+  `hosts/laptop-bios.md` précise les deux valeurs et le contrôle après redémarrage ;
+  BIOS `pending_reboot=1`, validation physique restante. Veille Quickshell à 300 s
+  et extinction du clavier avec les écrans conservées ; aucun QML modifié.
+- Démarrage réel LTS **6.18.62-1-lts**, UKI normale LTS : bureau vivant (PID 1955),
+  aucun service système en échec, aucune nouvelle panique/Oops ni erreur BERT dans
+  ce boot. Journal TPM **52 351 octets**, **13 185 octets libres** sur 65 536 ;
+  fontes chargées une fois, marqueurs noyau/initramfs et SMBIOS présents,
+  Measured UKI/OS=yes. Erreurs dmidecode et noms d'entrées invalides absentes ;
+  requête DMI libvirt réussie. Ce seul boot réussi ne résout pas le plantage antérieur.
+- Erreurs restantes : i915/GSC (délai de liaison dépassé, proxy lié ensuite),
+  télémétrie Intel PMC (endpoint DMU absent), Wi-Fi multicast RX non pris en charge,
+  socket Samba et gkr-pam au greeter. Avertissements RTKit indisponible dans l'audio,
+  regulatory.db manquant et autres avertissements firmware/D-Bus encore présents.
+  Aucun de ces messages n'est attribué au plantage sur la seule photo ; audit en
+  lecture seule, aucune correction de pilote/service ni installation de paquet.
