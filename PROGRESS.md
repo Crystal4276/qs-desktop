@@ -1659,3 +1659,20 @@ Choix utilisateur : réseau local rétabli **avec mot de passe** (pas d'invité 
   Bureau vivant après relance ; aucun avertissement de calcul CPU. Avertissements d’icône NordVPN et de focus
   textinput déjà connus. Verrou rétabli par Quickshell ; écrans rallumés par sa reprise puis remis en veille
   pour retrouver l’état initial. Aucun banc Quickshell/Sway résiduel.
+
+## Barre — espace entre calendrier et date (2026-11-13)
+
+- Choix utilisateur : largeur de date ajustée au texte, même si la pilule change de largeur selon le jour.
+  Réserve du jour le plus long retirée : elle alignait les dates à droite et ajoutait jusqu’à 30 px de blanc après le calendrier.
+  Une seule espace Inter conservée après le glyphe ; heure toujours à largeur fixe. Liste `WidthTexts.dates` devenue inutile
+  supprimée ; mesures naturelles et mode compact existants conservés, charte documentée.
+- Copie isolée puis comparaison des sept jours sur Sway headless : largeur naturelle de chaque date, largeur horaire inchangée,
+  mode compact et restauration validés. Pilules avant : 259 px ; après : 229–258 px, dont vendredi 229 px. Aucune erreur ni
+  avertissement QML de la sonde ; avertissement de portail du banc déjà connu. Capture et mesures privées :
+  `.shots/calendar-spacing/comparison.png`, `measurements.json` ; sonde temporaire conservée avec les captures.
+- `test-bar.py` exécuté sur code corrigé et code d’origine : même échec préexistant à 1280 px, date déjà masquée (niveau 2),
+  écart entre groupes −5 px au lieu des 10 px attendus. La suite générale s’arrête sur ce cas ; pas de correction hors périmètre.
+  Démarrage complet de la barre sans erreur QML ; avertissements d’icône NordVPN et de portail identiques sur les deux versions.
+  Aucune action NordVPN. `git diff --check` conforme.
+- Déploiement validé : rechargement automatique confirmé par le journal, même instance réelle vivante (PID 33800), sans nouvel
+  avertissement QML au rechargement. Captures réelles avant/après dans `.shots/calendar-spacing/`. Bancs arrêtés.
