@@ -462,6 +462,12 @@ dnd_mutes() {   # la machine coupe-t-elle des applications la nuit ? (doNotDistu
     [[ -n "$(host_setting doNotDisturb.muteApps)" ]]
 }
 
+step_spotify() {
+    if command -v spotify-launcher >/dev/null 2>&1; then
+        link dotfiles/spotify/spotify-launcher.conf "$config/spotify-launcher.conf"
+    fi
+}
+
 step_configs() {
     section "2. Configs du compte"
     link . "$config/quickshell/desktop"
@@ -482,6 +488,7 @@ step_configs() {
         run ln -sfn "${mpv_host#dotfiles/mpv/}" "$repo/dotfiles/mpv/host.conf"
     fi
     link "$(host_file dotfiles/chromium conf dotfiles/chromium/chromium-flags.conf)" "$config/chromium-flags.conf"
+    step_spotify
     link dotfiles/wireplumber/wireplumber.conf.d/60-stream-full-volume.conf "$config/wireplumber/wireplumber.conf.d/60-stream-full-volume.conf"
     link dotfiles/wireplumber/scripts/stream-full-volume.lua "$data/wireplumber/scripts/stream-full-volume.lua"
     if dnd_mutes; then

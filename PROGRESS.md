@@ -1576,3 +1576,38 @@ Choix utilisateur : réseau local rétabli **avec mot de passe** (pas d'invité 
   sur les interfaces prévues. Aucun service système/utilisateur en échec ni nouvelle
   panique/Oops, erreur BERT ou GPU hang dans ce boot au contrôle. Aucune correction
   de Spotify, du script fourni par le paquet ou de Samba effectuée à ce stade.
+
+## Spotify — essai Wayland natif (2026-11-13)
+
+- Diagnostic précisé : les trois SIGSEGV concernent le **sous-processus GPU** avec
+  backend X11 ; l'application principale reste active. Trace Wayland/EGL/CEF,
+  incompatibilité d'initialisation suspectée, cause exacte non prouvée. Usage
+  utilisateur : pilotage via la pastille MPRIS, fenêtre sur l'espace 9.
+- Choix utilisateur : essayer Wayland natif. Configuration de spotify-launcher
+  versionnée (`dotfiles/spotify/spotify-launcher.conf`) : options Wayland et
+  décorations, `DISPLAY` vidé pour le client seulement, accélération conservée.
+  Étape ciblée intégrée aux configs du compte dans install.sh lorsque le lanceur
+  existe ; lien, sauvegarde, registre et retrait standards. Client AUR hors de ce
+  réglage ; retour à X11 décrit dans deps/README.md. Aucun paquet ajouté.
+- Préparation sur copie isolée et revues de configuration, installation/retour
+  arrière et déploiement. Test-install.py enrichi : **0 échec**, profils jeux/travail,
+  simulation sans écriture, config préexistante sauvegardée puis restaurée, création
+  puis retrait, idempotence et lanceur absent. Le vrai lanceur exécutant un faux
+  client confirme les options, l'URI et la portée de DISPLAY. Syntaxe Bash/Python
+  et contrôle du diff conformes.
+- Banc réel : Sway headless et D-Bus privés, profils vierges, aucune connexion au
+  compte ni lecture audio. Contrôle XWayland puis Wayland natif, **90 s chacun** :
+  fenêtres visibles, clients actifs, aucun plantage GPU enregistré. En natif :
+  `app_id=spotify`, protocole `xdg_shell`. Le témoin vierge ne reproduit pas le
+  plantage initial : ces essais valident le lancement natif, pas sa résolution en
+  lecture authentifiée. Rapports, journal de test et captures privés dans
+  `.shots/spotify-wayland-2026-11-13/`, ignorés par Git ; bancs arrêtés.
+- Déploiement ciblé du lien avec l'étape validée de l'installateur, second passage
+  sans changement du registre. Spotify initial (PID 1943) toujours ouvert en
+  XWayland sur l'espace 9, service MPRIS présent ; bureau vivant (PID 1957), aucun
+  service système ou utilisateur en échec. L'instance en cours n'est pas relancée.
+- **À vérifier au prochain lancement après fermeture complète de Spotify** :
+  backend Wayland, espace 9 et pastille MPRIS, lecture/pause et plusieurs changements
+  de piste pendant au moins cinq minutes sans nouveau dépôt mémoire. Restaurer la
+  configuration précédente si ce mode échoue ou perturbe MPRIS. Ce changement
+  ne constitue pas une résolution de la panique noyau initiale.

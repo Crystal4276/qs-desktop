@@ -100,6 +100,7 @@ def git_repo(path, name):
 
 
 def main():
+    native_spotify_launcher = shutil.which("spotify-launcher")
     tmp = pathlib.Path(tempfile.mkdtemp(prefix="qs-install-test-"))
     try:
         repo = tmp / "repo"
@@ -128,6 +129,8 @@ def main():
             '{"extensions":{"external_uninstalls":["' + "a" * 32 + '"]}}')
         (home / ".config/mpv").mkdir()
         (home / ".config/mpv/mpv.conf").write_text("volume=50\n")
+        spotify_original = '[spotify]\ndownload_attempts = 7\nextra_arguments = ["--force-device-scale-factor=1.5"]\n'
+        (home / ".config/spotify-launcher.conf").write_text(spotify_original)
         (home / ".bashrc").write_text("alias ll='ls -l'\n")
         # Claude Code et Codex déjà utilisés : leurs autres réglages (et la mise en forme de settings.json) sont à garder.
         (home / ".claude").mkdir()
@@ -149,6 +152,9 @@ def main():
         # Chromium factice si le vrai est là : lancé par l'import de nightTab et Stylus, il écrirait un profil complet dans le
         # dossier jetable (l'import est testé à part, scripts/extension-import.py sur une copie de profil).
         (tmp / "bin").mkdir()
+        # Présence déterministe du lanceur ; l'installateur ne doit pas l'exécuter.
+        (tmp / "bin/spotify-launcher").write_text('#!/bin/sh\nexit 99\n')
+        (tmp / "bin/spotify-launcher").chmod(0o755)
         if shutil.which("chromium"):
             (tmp / "bin/chromium").write_text('#!/bin/sh\n[ "$1" = --version ] && echo "Chromium 0.0.0.0" && exit 0\nexit 1\n')
             (tmp / "bin/chromium").chmod(0o755)
@@ -227,6 +233,7 @@ def main():
         now = snapshot(home)
         written = sorted(set(before) ^ set(now)) + sorted(k for k in before if k in now and before[k] != now[k])
         check(not written and (tmp / "dconf.ini").read_text() == dconf_before, f"simulation : rien d'écrit {written[:8]}")
+        check("spotify-launcher.conf" in r.stdout, "Spotify : configuration prévue en simulation")
 
         r = install()
         check(r.returncode == 0, f"installation : code {r.returncode} {r.stderr.strip()[-300:]}")
@@ -235,6 +242,29 @@ def main():
         desktop = home / ".local/share/applications/qs-windows11.desktop"
         check(desktop.is_file() and "Name=Windows 11" in desktop.read_text(), "Windows 11 : entrée native installée")
         cfg = home / ".config"
+        import tomllib
+        spotify = cfg / "spotify-launcher.conf"
+        spotify_config = tomllib.loads(spotify.read_text())["spotify"]
+        check(spotify.is_symlink() and spotify.resolve() == repo / "dotfiles/spotify/spotify-launcher.conf"
+              and spotify_config["extra_env_vars"] == ["DISPLAY="]
+              and "--ozone-platform=wayland" in spotify_config["extra_arguments"],
+              "Spotify : configuration native Wayland liée (profil jeux)")
+        backups = list(cfg.glob("spotify-launcher.conf.bak-*"))
+        check(len(backups) == 1 and backups[0].read_text() == spotify_original,
+              "Spotify : configuration préexistante sauvegardée sans altération")
+        if native_spotify_launcher:
+            # Le vrai lanceur exécute un faux client : ni téléchargement ni processus Spotify réel.
+            fake_client = tmp / "spotify-install/usr/bin/spotify"
+            fake_client.parent.mkdir(parents=True)
+            fake_client.write_text('#!/usr/bin/python3\nimport json,os,sys\nprint(json.dumps({"display":os.environ.get("DISPLAY"),"wayland":os.environ.get("WAYLAND_DISPLAY"),"args":sys.argv[1:]}))\n')
+            fake_client.chmod(0o755)
+            child = subprocess.run([native_spotify_launcher, "--skip-update", "--install-dir", str(tmp / "spotify-install"),
+                                    "spotify:track:test"], env=dict(env, DISPLAY=":test", WAYLAND_DISPLAY="wayland-test"),
+                                   capture_output=True, text=True, timeout=10)
+            result = json.loads(child.stdout) if child.returncode == 0 else {}
+            check(child.returncode == 0 and result.get("display") == "" and result.get("wayland") == "wayland-test"
+                  and "--ozone-platform=wayland" in result.get("args", []) and "--uri=spotify:track:test" in result.get("args", []),
+                  "Spotify : lanceur natif, environnement et URI transmis au seul faux client")
         check((home / "Pictures/Wallpapers/fond.png").is_file(), "fonds d'écran clonés sans question")
         check(json.loads(host_json.read_text()).get("profile") == "jeux", "config machine : profil jeux (--profil)")
         check(not (home / "GMSFreeAnalysis17").exists(), "profil jeux : dépôt de DigitalMicrograph non cloné")
@@ -360,6 +390,9 @@ def main():
         check(not webapp.exists(), "retrait : profil de web app créé pour ses réglages retiré")
         check("font-name='Cantarell 11'" in (tmp / "dconf.ini").read_text()
               and "accent-color" not in (tmp / "dconf.ini").read_text(), "retrait : dconf comme avant")
+        check(not spotify.is_symlink() and spotify.read_text() == spotify_original,
+              "Spotify : configuration d'origine restaurée au retrait")
+        spotify.unlink()   # Second scénario : aucune configuration avant installation.
 
         # Profil absent de la config machine : question (sans terminal, réponse « non » → travail), écrit en tête du fichier.
         conf = json.loads(host_json.read_text())
@@ -371,11 +404,31 @@ def main():
         check(r.returncode == 0 and rest.pop("profile", None) == "travail" and rest == conf and text.startswith('{\n  "profile": "travail"'),
               f"profil travail par défaut, écrit dans la config machine, reste gardé {r.stderr.strip()[-200:]}")
         check(not (cfg / "deluge/gtk3ui.conf").exists(), "profil travail : Deluge non réglé")
+        check(spotify.is_symlink() and not list(cfg.glob("spotify-launcher.conf.bak-*")),
+              "Spotify : création sans sauvegarde superflue (profil travail)")
         check((home / "GMSFreeAnalysis17/install-all.sh").is_file() and "DigitalMicrograph : copier le kit Gatan" in r.stdout,
               "profil travail : dépôt de DigitalMicrograph cloné, installation rappelée")
         r = install(profile=())
         changes = [l for l in r.stdout.splitlines() if l.startswith("+ ") and not l.startswith(IMPORTS)]
         check(r.returncode == 0 and not changes and "Profil : travail (hosts/" in r.stdout, f"profil travail : second passage sans changement {changes[:5]}")
+        r = install("--uninstall", profile=())
+        check(r.returncode == 0 and not spotify.exists() and not spotify.is_symlink(),
+              "Spotify : configuration créée retirée sans reste")
+        # Exercer l'étape ciblée avec le lanceur indisponible, même si le vrai est installé sur l'hôte.
+        spotify.write_text(spotify_original)
+        prefix = (repo / "install.sh").read_text().split('\nif [[ -n "$uninstall" ]]; then\n', 1)[0]
+        command = '''
+command() {
+    if [[ "$1" == -v && "${2:-}" == spotify-launcher ]]; then return 1; fi
+    builtin command "$@"
+}
+step_spotify
+'''
+        r = subprocess.run(["bash", "-c", prefix + command, str(repo / "install.sh"), "--no-system", "--no-packages"],
+                           env=env, capture_output=True, text=True)
+        check(r.returncode == 0 and not spotify.is_symlink() and spotify.read_text() == spotify_original
+              and not list(cfg.glob("spotify-launcher.conf.bak-*")),
+              "Spotify : lanceur absent, configuration conservée")
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
     print(f"\n{len(failures)} échec(s)")
