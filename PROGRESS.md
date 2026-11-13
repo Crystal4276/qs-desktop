@@ -1676,3 +1676,21 @@ Choix utilisateur : réseau local rétabli **avec mot de passe** (pas d'invité 
   Aucune action NordVPN. `git diff --check` conforme.
 - Déploiement validé : rechargement automatique confirmé par le journal, même instance réelle vivante (PID 33800), sans nouvel
   avertissement QML au rechargement. Captures réelles avant/après dans `.shots/calendar-spacing/`. Bancs arrêtés.
+
+## Connexion et verrouillage — avatar nébuleuse (2026-11-13)
+
+- Choix utilisateur : remplacer le disque avec l’initiale sur les deux écrans, en conservant le cercle de 72 px.
+  Image fournie (453 × 454 px), recadrée au centre puis réduite à 216 × 216 px ; asset embarqué via `Theme.image.avatar`,
+  commun aux comptes. Découpe native `ClippingRectangle` ; initiale conservée si l’image manque ou ne se charge pas.
+- Préparation sur copie isolée puis banc Sway headless : captures du vrai greeter aux échelles 1 / 1,5 / 2 / 3,
+  repli sur l’initiale avec fichier temporairement absent, démarrage complet du bureau et véritable verrou Wayland du banc.
+  Contrôle visuel du greeter, du verrou et du repli conforme. Aucune authentification ni action NordVPN ; commandes système
+  neutralisées sur le banc. Captures et journaux privés dans `.shots/avatar-nebula/` ; bancs arrêtés.
+- Journaux de démarrage comparés au code d’origine sur le même banc : mêmes avertissements de portail et d’icône NordVPN,
+  même absence de PipeWire sur le bus isolé ; aucun nouvel avertissement QML avec l’image présente.
+  Avertissement d’image absente attendu uniquement dans l’essai de repli. `git diff --check` conforme.
+- Fichiers validés déployés dans le dépôt ; rechargement réel confirmé, même bureau vivant (PID 33800),
+  aucun nouvel avertissement au rechargement, seule l’instance réelle reste active.
+- **Reste système** : actualiser la copie du greeter avec `scripts/greeter-setup.sh install`, à lancer dans un terminal
+  par l’utilisateur conformément à CLAUDE.md (ce script appelle sudo). Aucun fichier système ni service greetd modifié ici.
+  À vérifier ensuite à la main : avatar à la prochaine connexion et au prochain verrouillage réels.
