@@ -18,13 +18,16 @@ def build():
         timeout_font=min([14,16,18,20,22,24,26,28,32,36,40,48,56,64],key=lambda n:abs(n-max(14,round(28*s))))
         for size in {font,small,timeout_font,14}: shutil.copy(KIT/f'assets/fonts/inter-{size}.pf2',dest)
         shutil.copy(KIT/f'assets/backgrounds/horizon-{mode}.png',dest/'background.png')
-        # Exact nine-slice dimensions at this scale, rather than stretching a rounded sample.
+        # Native W/C/E slicing preserves the exact SVG geometry while requiring
+        # six measured files per view instead of eighteen. No top/bottom padding.
         h=g['item_height']; radius=g['corner_radius']; border=g['border']; cut=radius+border+1
+        for old in dest.glob('normal_*.png'): old.unlink()
+        for old in dest.glob('selected_*.png'): old.unlink()
         for name,color in [('normal','#45475a'),('selected','#6c7086')]:
             svg=mod.svg_root(400,h,f'<rect x="{border/2}" y="{border/2}" width="{400-border}" height="{h-border}" rx="{radius}" fill="#181825" stroke="{color}" stroke-width="{border}"/>')
-            mod.raster(svg,dest/'sample.png'); im=Image.open(dest/'sample.png'); xs=[0,cut,400-cut,400];ys=[0,border,h-border,h]
-            for y,row in enumerate([['nw','n','ne'],['w','c','e'],['sw','s','se']]):
-                for x,n in enumerate(row): im.crop((xs[x],ys[y],xs[x+1],ys[y+1])).save(dest/f'{name}_{n}.png')
+            mod.raster(svg,dest/'sample.png'); im=Image.open(dest/'sample.png')
+            for part,left,right in [('w',0,cut),('c',cut,400-cut),('e',400-cut,400)]:
+                im.crop((left,0,right,h)).save(dest/f'{name}_{part}.png')
         (dest/'sample.png').unlink()
         (dest/'icons').mkdir(exist_ok=True)
         mod.raster((KIT/'assets/source/arch_linux_icon_green.svg').read_text(),dest/'icons/arch.png',g['icon_size'],g['icon_size'])
@@ -59,10 +62,10 @@ desktop-color: "#11111b"
  selected_item_color = "#cdd6f4"
  icon_width = {icon}
  icon_height = {icon}
- item_height = {h-2*border}
+ item_height = {h}
  item_padding = {padding}
  item_icon_space = {space}
- item_spacing = {g['item_spacing']+2*border}
+ item_spacing = {g['item_spacing']}
  item_pixmap_style = "normal_*.png"
  selected_item_pixmap_style = "selected_*.png"
  scrollbar = false
@@ -75,18 +78,28 @@ desktop-color: "#11111b"
 '''
             (dest/f'theme-{rows}.txt').write_text(theme_text)
         (dest/'theme.txt').write_text(theme_text)
-    # Bootstrap is sourced after normal GRUB header, without changing root or prefix.
-    cfg=['insmod png','insmod gfxmenu','unset theme', 'if [ -z "$qs_horizon_loaded" ]; then', '  if insmod $prefix/themes/qs-horizon/horizon.mod; then set qs_horizon_loaded=1; export qs_horizon_loaded; fi', 'fi', 'if [ "$qs_horizon_loaded" = 1 ]; then', '  if qs_horizon_video; then', '    set qs_horizon_theme=$prefix/themes/qs-horizon/$qs_horizon_mode/theme-$qs_horizon_rows.txt', '    if [ ! -f $qs_horizon_theme ]; then', '      terminal_output console', '      set gfxmode=1024x768,800x600', '      terminal_output gfxterm', '      qs_horizon_video', '      set qs_horizon_theme=$prefix/themes/qs-horizon/$qs_horizon_mode/theme-$qs_horizon_rows.txt', '    fi', '    if [ -f $qs_horizon_theme ]; then', '      set qs_horizon_ok=1']
+    # Resource lists are read once by the native module, without per-file shell commands.
     for mode in geometries:
         d=OUT/mode
-        cfg+= [f'      if [ "$qs_horizon_mode" = "{mode}" ]; then']
-        for p in sorted(d.rglob('*')):
-            if p.is_file():
-                rel=p.relative_to(OUT)
-                cfg += [f'        if [ ! -f $prefix/themes/qs-horizon/{rel} ]; then set qs_horizon_ok=0; fi']
-                if p.suffix=='.pf2': cfg += [f'        if ! loadfont $prefix/themes/qs-horizon/{rel}; then set qs_horizon_ok=0; fi']
-        cfg+=['      fi']
-    cfg+=['      if [ "$qs_horizon_ok" = 1 ]; then set theme=$qs_horizon_theme; export theme; fi', '    fi', '  fi','fi','if [ -z "$theme" ]; then if ! terminal_output gfxterm; then terminal_output console; fi; fi']
+        names=sorted(str(p.relative_to(d)) for p in d.rglob('*')
+                     if p.is_file() and p.suffix in ('.png', '.pf2'))
+        (d/'resources.lst').write_text('\n'.join(names)+'\n')
+    cfg = ['insmod png', 'insmod gfxmenu', 'unset theme',
+           'if [ -z "$qs_horizon_loaded" ]; then',
+           '  if insmod $prefix/themes/qs-horizon/horizon.mod; then set qs_horizon_loaded=1; export qs_horizon_loaded; fi',
+           'fi', 'if [ "$qs_horizon_loaded" = 1 ]; then',
+           '  if qs_horizon_video; then',
+           '    set qs_horizon_dir=$prefix/themes/qs-horizon/$qs_horizon_mode',
+           '    set qs_horizon_theme=$qs_horizon_dir/theme-$qs_horizon_rows.txt',
+           '    if [ ! -f $qs_horizon_theme ]; then',
+           '      terminal_output console', '      set gfxmode=1024x768,800x600',
+           '      terminal_output gfxterm', '      qs_horizon_video',
+           '      set qs_horizon_dir=$prefix/themes/qs-horizon/$qs_horizon_mode',
+           '      set qs_horizon_theme=$qs_horizon_dir/theme-$qs_horizon_rows.txt', '    fi',
+           '    if [ -f $qs_horizon_theme ]; then',
+           '      if qs_horizon_prepare $qs_horizon_dir; then set theme=$qs_horizon_theme; export theme; fi',
+           '    fi', '  fi', 'fi',
+           'if [ -z "$theme" ]; then if ! terminal_output gfxterm; then terminal_output console; fi; fi']
     (OUT/'select.cfg').write_text('\n'.join(cfg)+'\n')
 if __name__=='__main__':
     ap=argparse.ArgumentParser(description=__doc__);ap.add_argument('--grub-build',type=pathlib.Path);a=ap.parse_args();build()

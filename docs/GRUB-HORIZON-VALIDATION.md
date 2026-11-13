@@ -159,3 +159,106 @@ ordre des identifiants confirmé dans grub.cfg, module installé identique au mo
 Empreintes des dix fichiers de démarrage EFI/initramfs/noyaux et commandes de démarrage identiques avant/après.
 Second passage « Horizon déjà à jour », grub.cfg inchangé. Journal `.shots/grub-horizon/deploy-order.log`.
 Reste à vérifier visuellement le menu du firmware au prochain redémarrage manuel ; aucun redémarrage de l'hôte déclenché.
+
+## Saturation du journal TPM — correction du 12 novembre 2026
+
+Travail sur copie isolée ; aucune écriture dans /boot ou /etc du laptop. Le sélecteur
+généré passe de 609 à 24 lignes : préparation native des ressources communes,
+cache par résolution dans le module, fontes chargées une seule fois après succès.
+Deux appels légers sont conservés au menu principal (précontrôle et hauteur finale),
+contre trois préparations complètes auparavant. Les sous-menus réutilisent la préparation.
+
+Validations locales : test-grub-horizon.py PASS ; test-install.py 0 échec ;
+test-tpm-eventlog.py PASS (preuves positives/négatives, banques et troncatures).
+Compilation native GRUB 2.16 depuis les archives et Gnulib épinglés, sans avertissement
+sur le module Horizon ; empreintes source/binaire actualisées ensemble.
+
+Rendu réel QEMU : 1920×1200, 2560×1440, 3440×1440 et 3840×2160 ; ordre initial inversé,
+Restart initialement absent, regroupement, sous-menu et retour clavier : PASS.
+Pannes natives en 1920×1200 : liste vide, non terminée, NUL incorporé, fonte absente,
+dernière ressource absente ; deux tentatives échouent sans activer le thème : PASS.
+Module absent, fond absent et PNG corrompu : repli texte utilisable. Défilement 12 entrées : PASS.
+Aperçu avec swtpm réellement raccordé : PASS ; résultats séparés et nettoyage des deux processus.
+
+### Trois revues indépendantes
+
+1. **TPM / cause racine** : contrôle de présence des PNG corrigé vers le type natif
+   GET_SIZE, pour éviter une mesure supplémentaire avant le vrai rendu. Les lectures
+   réelles restent mesurées. Sélection finale de l'aperçu réalignée sur le générateur.
+2. **Sûreté / C** : rejet des NUL incorporés avant tout chargement ; allocations,
+   erreurs, cache de module et contrats de regroupement examinés. Correction revérifiée.
+3. **Tests / livraison** : marqueurs d'analyse limités aux PCR/types/tags attendus,
+   lectures de fontes comptées en PCR9 ; contre-exemples ajoutés et vérifiés. Nettoyage
+   QEMU/swtpm renforcé par ExitStack, terminate/wait/kill bornés ; résultats TPM distincts.
+   Dernière passe sur le diff après corrections : aucun défaut statique ouvert.
+
+Le budget du démarrage complet et la navigation prolongée font l'objet d'une validation
+UKI séparée : un aperçu synthétique qui exécute halt ne les prouve pas.
+
+Complément après revue TPM : les pilules utilisent trois tranches verticales W/C/E
+natives au lieu de neuf. Même SVG, mêmes caps, même pas et même centre du texte/icône ;
+les anciennes tranches sont supprimées. Comparaison pixel à pixel en 1920×1200 : zéro
+pixel différent dans la zone du menu principal et du sous-menu, hors compte à rebours.
+Matrice 2560×1440, 3440×1440 et 3840×2160 repassée avec ces ressources : PASS.
+Les revues TPM et sûreté ont revérifié le découpage, les 98 géométries et l'absence
+physique des tranches inutilisées. L'installation vérifie aussi l'inventaire exact pour
+ne pas laisser une ancienne tranche rajoutée rétablir silencieusement les lectures.
+
+Calibration UKI : swtpm SHA-256 seul, 247 commandes bénignes de fixture avant
+Horizon ; le journal témoin contient 41 178 octets avant le premier sélecteur,
+65 372 octets au total et seulement deux des trois lectures de chaque fonte
+attendues. Le premier essai libtpms à quatre banques a été écarté : il saturait
+avant Horizon. Sur la même surcharge SHA-256, la première correction (avant
+optimisation des pilules) démarre complètement à 52 424 octets, avec une seule
+lecture de chaque fonte, les mesures .linux/.initrd en PCR11 et SMBIOS type1
+en PCR1. OVMF ne fournit pas les mêmes tables SMBIOS que le laptop.
+Deux vrais UKI de secours ont ensuite été construits avec mkinitcpio -S plymouth
+dans l'overlay uniquement ; les empreintes des deux UKI normales restent identiques.
+
+Contrôle du banc : un premier stress après transfert tar a été écarté car le
+paquet source dans la VM conservait les anciennes tranches malgré leur suppression
+dans le dépôt. Les noms des lectures PCR9 ont révélé cette erreur de transfert.
+Le transfert remplace maintenant le dossier source complet, et les fichiers déployés
+sont vérifiés avant redémarrage. `check-grub-horizon-tpm.py` rejette automatiquement
+un journal provenant d'anciennes tranches, des mauvaises banques ou d'un démarrage
+sans les mesures UKI/SMBIOS réelles. Une petite taille de journal seule n'est pas une preuve.
+
+Raffinement final : les sous-menus choisissent leur thème directement depuis le module
+avec les API natives (résolution, nombre de lignes, préparation déjà réussie, contrôle
+de présence, set/export theme), sans relire select.cfg. Le parent garde son contexte
+et ses entrées ; thème enfant absent ou corrompu → texte utilisable, Échap → parent
+graphique. Ces deux pannes ont été exécutées en GRUB réel. Les trois revues ont examiné
+ce chemin, la libération mémoire et les mesures conservées.
+Le stress avec trois tranches mais encore le bootstrap shell passait à 65 458 octets ;
+la marge de 78 octets était insuffisante, d'où ce dernier retrait de commandes répétées.
+
+### Résultats finaux acceptés (13 novembre 2026)
+
+- Démarrage standard après trois allers-retours, 100 déplacements et 60 secondes
+  d'attente : **60 676 octets**, budget 65 536, marge 4 860 octets.
+- Démarrage normal LTS : **52 235 octets**, budget 57 344 ; marge au plafond
+  firmware 13 301 octets. Dans les deux cas : préfixe 41 178 octets, SHA-256 seul,
+  toutes les fontes attendues mesurées une fois, .linux/.initrd et SMBIOS type1
+  présents ; bootctl confirme Measured UKI=yes et Measured OS=yes.
+- Le stress contient exactement deux lectures de select.cfg sur tout le boot,
+  trois invocations de sous-menu et 42 lectures des tranches de pilules (6×7 vues).
+- Les sous-menus absents/corrompus sont maintenant capturés après deux frames
+  identiques et présence des lignes de texte. Les deux entrées sont visibles ;
+  bande des entrées : 67 908 pixels non noirs dans chaque cas. Échap restaure
+  le menu graphique. L'ancienne capture de corruption, prise pendant le redessin,
+  a été écartée puis remplacée.
+- Dans la vraie VM : échec grub-mkconfig injecté (code 99), restauration vérifiée
+  par empreintes des quatre fichiers suivis, deuxième installation sans changement,
+  retrait puis second retrait réussis ; UKI normales inchangées.
+- Dernière matrice avec le module final et captures stables : les quatre résolutions
+  passent. Aucun écran virtuel ni processus d'aperçu n'est laissé sur le bureau réel.
+
+Ces résultats valident les parcours ci-dessus sous OVMF ; ils ne remplacent pas
+l'essai du firmware physique après déploiement séparément autorisé.
+
+Dernier essai : sélection mémorisée `advanced-options>arch-linux-lts~rescue.efi`,
+invite LUKS en texte, déverrouillage puis démarrage LTS 6.18.62-1-lts. bootctl
+confirme le stub `/EFI/Linux/arch-linux-lts~rescue.efi` et les mesures UKI/OS ; les
+deux UKI normales gardent leurs empreintes. La VM est ensuite retirée du banc.
+Le firmware physique du laptop reste inchangé et son essai reste à faire après
+validation du déploiement.

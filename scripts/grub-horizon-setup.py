@@ -30,11 +30,11 @@ def group_config(ids):
     restore=''.join(f'if [ "$default" = "advanced-options>{i}" ]; then set default="{i}"; fi\n' for i in ids)
     return restore+('if [ -n "$theme" -a -z "$fallback" ]; then\n'
             '  qs_horizon_group '+ ' '.join('"'+i+'"' for i in ids)+'\n'
-            '  source $prefix/themes/qs-horizon/select.cfg\nfi\n')
+            'fi\n')
 def order_config(ids):
     return ('if [ -n "$theme" -a -z "$fallback" ]; then\n'
             '  qs_horizon_order '+ ' '.join('"'+i+'"' for i in ids+['advanced-options','uefi-firmware','restart'])+'\n'
-            '  source $prefix/themes/qs-horizon/select.cfg\nfi\n')
+            'fi\n')
 def main():
     ap=argparse.ArgumentParser(description=__doc__);ap.add_argument('action',choices=['audit','status','install','uninstall']);ap.add_argument('--dry-run',action='store_true');ap.add_argument('--root',type=pathlib.Path,default=pathlib.Path('/'));a=ap.parse_args();root=a.root.resolve()
     def path(s):return root/s.lstrip('/')
@@ -75,6 +75,7 @@ def main():
         text+=group_config(recovery_ids)
         normal_ids=[image for image,title,cls in sorted(labels(root),key=lambda e:'LTS' in e[1]) if title in ('Arch Linux (standard)','Arch Linux LTS')]
         text+=order_config(normal_ids)
+        text+='source $prefix/themes/qs-horizon/select.cfg\n'
         text+='QS_HORIZON\n'
         hooktext='''# Managed by QS Desktop Horizon
 [Trigger]
@@ -87,7 +88,7 @@ Description = Disabling Horizon module until rebuilt for updated GRUB
 When = PostTransaction
 Exec = /usr/bin/rm -f /boot/grub/themes/qs-horizon/horizon.mod
 '''
-        if old and all(p.is_file() and digest(p)==old['installed'].get(str(p.relative_to(root))) for p in [defaults,snippet,hook]) and dest.exists() and all((dest/p.relative_to(THEME)).is_file() and digest(dest/p.relative_to(THEME))==digest(p) for p in THEME.rglob('*') if p.is_file()):
+        if old and all(p.is_file() and digest(p)==old['installed'].get(str(p.relative_to(root))) for p in [defaults,snippet,hook]) and dest.exists() and {p.relative_to(dest) for p in dest.rglob('*') if p.is_file()} == {p.relative_to(THEME) for p in THEME.rglob('*') if p.is_file()} and all((dest/p.relative_to(THEME)).is_file() and digest(dest/p.relative_to(THEME))==digest(p) for p in THEME.rglob('*') if p.is_file()):
             # Recheck image inventory: updates may add a fallback after the initial install.
             if snippet.read_text()==text:print('Horizon déjà à jour');return
         if old:
