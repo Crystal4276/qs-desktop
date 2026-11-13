@@ -157,12 +157,12 @@ de la config (fondu des panneaux gardé) ; changement d'espace sans fondu ; `fad
 Design propre (pas celui de swaylock) : `Theme.lock` — fond de l'écran flouté et assombri, horloge et date, avatar rond de 72 px, nom et champ
 sur l'écran principal, palette et polices de la charte. Sous le champ, boutons ronds éteindre / redémarrer / veille (style du champ,
 bordure `green` au survol ; validés le 2026-11-04). Le même design sert d'écran de connexion (§ 9 d'`ARCHITECTURE.md`).
-L’avatar utilise l’image fournie de la nébuleuse (`Theme.image.avatar`, PNG 216 × 216 px, cadrage centré) ;
+L’avatar utilise l’image fournie de la montagne sous un ciel étoilé (`Theme.image.avatar`, PNG 216 × 216 px, cadrage centré) ;
 l’initiale reste affichée si l’image ne peut pas être chargée. Cette image est commune aux comptes.
 
 ## 12. Images et icônes
 
-- Fichiers (`assets/`, `Theme.image`) : avatar nébuleuse fourni par l’utilisateur (`avatar.png`), logo Arch vert et `mantle` (bouton du menu), 5 icônes de session (verrouiller, se
+- Fichiers (`assets/`, `Theme.image`) : avatar montagne fourni par l’utilisateur (`avatar.png`), logo Arch vert et `mantle` (bouton du menu), 5 icônes de session (verrouiller, se
   déconnecter, redémarrer, éteindre ; SVG avec dégradés et flou ; veille : croissant au trait `teal` → `sapphire`, dessiné le
   2026-11-04 à la suite des quatre), `tailscale.svg` (BSD-3).
 - Glyphes : `Theme.icon` (code et police de chaque glyphe ; planche : `docs/reference/glyphs.png`).

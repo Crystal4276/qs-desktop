@@ -1694,3 +1694,18 @@ Choix utilisateur : réseau local rétabli **avec mot de passe** (pas d'invité 
 - **Reste système** : actualiser la copie du greeter avec `scripts/greeter-setup.sh install`, à lancer dans un terminal
   par l’utilisateur conformément à CLAUDE.md (ce script appelle sudo). Aucun fichier système ni service greetd modifié ici.
   À vérifier ensuite à la main : avatar à la prochaine connexion et au prochain verrouillage réels.
+
+### Choix final de l’avatar — montagne (2026-11-13)
+
+- Après aperçus seuls du personnage puis de la montagne, choix utilisateur validé : montagne sous un ciel étoilé.
+  PNG fourni de 825 × 588 px, carré centré de 588 × 588 px puis réduction à 216 × 216 px ; remplacement de `assets/avatar.png`
+  par le fichier exact de l’aperçu accepté. Cercle de 72 px et repli sur l’initiale conservés pour connexion et verrouillage.
+- Aperçu du vrai greeter sur Sway headless isolé, contrôlé visuellement : `.shots/avatar-mountain-preview/preview.png`
+  (capture complète `login.png`, journaux à côté). Aucun nouvel avertissement QML ; portail du banc déjà connu.
+  Banc arrêté, aucune action NordVPN ni authentification réelle. Pas de changement de logique QML.
+- Asset déployé ; Quickshell relancé avec `scripts/dev.sh` pour renouveler son cache d’image. Bureau vivant (PID 50803),
+  seule instance réelle active ; avertissements d’icône NordVPN préexistants, aucune erreur signalée au démarrage.
+  `git diff --check` conforme. Documentation du thème actualisée.
+- **Reste système** : lancer `scripts/greeter-setup.sh install` dans un terminal (script appelant sudo, consigne CLAUDE.md)
+  pour actualiser la copie système du login manager. Aucun service ou fichier système modifié ici.
+  Vérifier ensuite le rendu à la prochaine connexion et au prochain verrouillage réels.
