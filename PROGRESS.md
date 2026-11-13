@@ -1628,3 +1628,34 @@ Choix utilisateur : réseau local rétabli **avec mot de passe** (pas d'invité 
   session réelle ni les trois SIGSEGV GPU initiaux. Bancs et clients de test arrêtés.
 - Essai réel validé sur cette période ; l'absence durable de récidive reste à
   observer à l'usage. La cause de la panique noyau initiale reste indéterminée.
+
+## Moniteur CPU — compteurs VM et enquête sur les jauges (2026-11-13)
+
+- Signalement : total et jauges individuelles jugés trop faibles pendant une charge VM prolongée, température à 105 °C.
+  VM arrêtée au diagnostic, 8 vCPU configurés ; configuration et état de la VM conservés.
+- Défaut reproduit puis corrigé dans SystemStats, Monitor et le collecteur de processus : guest/guest_nice comptés deux fois
+  alors qu’ils sont déjà inclus dans user/nice. Ancien total VM **surestimé**, dénominateur des processus trop grand donc
+  processus **sous-estimés**. Ce défaut n’explique pas à lui seul les jauges individuelles signalées trop basses.
+- Calcul QML partagé dans `services/CpuUsage.js`, compteurs appariés par identifiant CPU ; premiers relevés, remises à zéro
+  et deltas incohérents protégés. Interfaces et apparence conservées ; total pour tous les processeurs logiques,
+  processus à 100 % pour un processeur logique. Barre à 5 s, panneau à 1 s : fenêtres de moyenne distinctes.
+- Tests : `test-monitor.py` **11 tests, 1 optionnel ignoré**, dont compteur VM : ancien code 1420 ticks au lieu de 1260,
+  corrigé 1260. `test-cpu.py` : fixture VM 50 % sur barre, total, chaque jauge et largeur rendue ; fermeture/réouverture,
+  relevés invalides, remise à zéro et changement d’identifiant. Échec sur les anciens services, succès sur les nouveaux.
+  `test-gpu-qml.py` : Intel avec/sans PMU, AMD et NVIDIA passent.
+- Mesures sur fenêtre complète Sway isolée : **30 s sur CPU logique 4**, jauge à 100 % ; trois cœurs simultanés
+  **4, 5, 6 pendant 30 s**, trois jauges à 100 %, total **23–25 %**, cohérent avec 3/14 + activité de fond.
+  Chaque relevé/rendu comparé au delta des compteurs ; maximum 59 °C (un cœur), 75 °C (trois). Ancien code aussi
+  validé sur un cœur hors VM (30 s, maximum 60 °C) : aucune sous-estimation individuelle reproduite dans ce scénario.
+  Essai CPU avec SMT interrompu automatiquement à **80 °C**, travailleurs arrêtés ; pas de recherche des 105 °C.
+  Tests matériels facultatifs avec surveillance à 100 ms, arrêt à 80 °C, documentés dans DEVELOPMENT.
+- Démarrage complet du bureau modifié sur banc : aucun nouvel avertissement QML ; avertissements d’icône NordVPN et
+  de portail reproduits sur le code d’origine dans le même environnement isolé. Aucune action NordVPN effectuée.
+  Captures/relevés privés : `.shots/cpu-validation/`.
+- **Reste à reproduire avec l’utilisateur** : même travail prolongé dans Windows, comparaison des jauges et du total aux
+  compteurs hôte pendant l’épisode. Pas de nouvelle télémétrie permanente ni de réglage thermique ajouté. Le défaut de
+  comptage VM est corrigé ; la cause du symptôme individuel initial n’est pas démontrée.
+- Déploiement des fichiers validés, puis relance explicite par `scripts/dev.sh` (rechargement automatique non confirmé).
+  Bureau vivant après relance ; aucun avertissement de calcul CPU. Avertissements d’icône NordVPN et de focus
+  textinput déjà connus. Verrou rétabli par Quickshell ; écrans rallumés par sa reprise puis remis en veille
+  pour retrouver l’état initial. Aucun banc Quickshell/Sway résiduel.

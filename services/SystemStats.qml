@@ -3,6 +3,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import "CpuUsage.js" as CpuUsage
 
 // Processeur et mémoire (modules Waybar `cpu` et `memory`), toutes les 5 s comme Waybar.
 // Calculs repris de Waybar 0.15 (cpu_usage/linux.cpp, memory/common.cpp).
@@ -24,12 +25,9 @@ Singleton {
 
     // Première ligne de /proc/stat : temps cumulés de tous les cœurs ; inactif = idle + iowait.
     function parseCpu(text: string): void {
-        const times = text.split("\n")[0].trim().split(/\s+/).slice(1).map(Number);
-        const cpu = { idle: times[3] + times[4], total: times.reduce((a, b) => a + b, 0) };
-        if (isNaN(cpu.total))
-            return;
-        if (previousCpu && cpu.total > previousCpu.total)
-            cpuUsage = Math.floor(100 * (1 - (cpu.idle - previousCpu.idle) / (cpu.total - previousCpu.total)));
+        const cpu = CpuUsage.parse(text).find(row => row.id === "cpu");
+        if (!cpu) return;
+        cpuUsage = CpuUsage.usage(cpu, previousCpu);
         previousCpu = cpu;
     }
 
