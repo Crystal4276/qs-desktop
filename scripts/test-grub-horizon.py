@@ -25,6 +25,11 @@ with tempfile.TemporaryDirectory(prefix='qs-horizon-test-') as td:
     run('install');before={str(p.relative_to(r)):p.read_bytes() for p in r.rglob('*') if p.is_file()}
     assert 'déjà à jour' in run('install').stdout
     assert before=={str(p.relative_to(r)):p.read_bytes() for p in r.rglob('*') if p.is_file()}
+    # A stale slice would be loaded by GRUB's wildcard and silently restore TPM overhead.
+    stale=r/'boot/grub/themes/qs-horizon/1920x1200/normal_nw.png'
+    stale.write_bytes(b'obsolete slice')
+    run('install');assert not stale.exists()
+    before={str(p.relative_to(r)):p.read_bytes() for p in r.rglob('*') if p.is_file()}
     snippet=(r/'etc/grub.d/99_qs_horizon').read_text()
     for entry_id,title,cls in m.ACTION_ENTRIES:
         assert f'qs_horizon_entry "{entry_id}" "{title}" "{cls}"' in snippet

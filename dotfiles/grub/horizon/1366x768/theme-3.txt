@@ -12,10 +12,10 @@ desktop-color: "#11111b"
  selected_item_color = "#cdd6f4"
  icon_width = 34
  icon_height = 34
- item_height = 52
+ item_height = 54
  item_padding = 0
  item_icon_space = 36
- item_spacing = 12
+ item_spacing = 10
  item_pixmap_style = "normal_*.png"
  selected_item_pixmap_style = "selected_*.png"
  scrollbar = false

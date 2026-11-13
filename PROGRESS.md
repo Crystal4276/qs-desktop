@@ -1410,3 +1410,29 @@ Choix utilisateur : réseau local rétabli **avec mot de passe** (pas d'invité 
   installé vérifiés, grub-script-check PASS, dix fichiers de démarrage et commandes identiques avant/après ; deuxième
   passage déjà à jour et grub.cfg inchangé. Journal `.shots/grub-horizon/deploy-order.log`. Bureau réel vivant.
   Reste : inspection visuelle du menu physique au prochain redémarrage manuel (aucun redémarrage de l'hôte déclenché).
+
+## GRUB Horizon — saturation TPM (2026-11-12 → 2026-11-13)
+
+- Diagnostic : disques disponibles ; journal TPM firmware rempli pendant Horizon.
+  Travail sur copie isolée ; aucun changement du démarrage du laptop.
+- Préparation native des ressources, cache privé au module, fontes chargées une fois
+  après succès ; deux appels légers au sélecteur préservent le précontrôle et le centrage
+  final. Les pilules utilisent trois tranches natives W/C/E au lieu de neuf, avec le
+  même rendu (comparaison pixel identique en 1920×1200). Anciennes tranches retirées,
+  inventaire exact contrôlé à la réinstallation ; contre-épreuve du résidu reproduite.
+- Trois revues indépendantes terminées, corrections revérifiées : contrôles de présence
+  natifs sans mesure inutile, rejet NUL, aperçu conforme au générateur, analyse TPM
+  structurée, nettoyage borné des processus. Références et résultats détaillés dans
+  docs/GRUB-HORIZON-VALIDATION.md.
+- Tests Horizon, analyseur et installation (0 échec), matrice réelle 1920×1200,
+  2560×1440, 3440×1440 et 3840×2160, pannes de ressources et repli : passent.
+- VM UKI chiffrée + swtpm SHA-256, surcharge ~40 Kio avant Horizon ; vrais secours
+  générés dans l'overlay, empreintes des UKI normales conservées. Témoin 65 372 octets ;
+  première correction avant optimisation des pilules 52 424 octets avec mesures complètes.
+- Validation finale : normal LTS **52 235 octets**, stress standard **60 676 octets**
+  (3 allers-retours, 100 touches, 60 s). Mesures UKI/SMBIOS présentes, bootctl
+  Measured UKI/OS=yes ; 2 lectures du sélecteur, fontes 1× chacune. Rollback réel
+  après génération en échec (code 99), idempotence et double retrait : vérifiés.
+  Vrai secours LTS démarré depuis une sélection mémorisée dans Advanced options :
+  invite texte, déverrouillage et stub ~rescue confirmés ; UKI normales inchangées.
+  Bancs arrêtés. Déploiement laptop séparé après validation ; essai physique à faire.

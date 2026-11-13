@@ -7,9 +7,68 @@
 #include <grub/misc.h>
 #include <grub/video.h>
 #include <grub/normal.h>
+#include <grub/file.h>
+#include <grub/font.h>
 GRUB_MOD_LICENSE ("GPLv3+");
-static grub_command_t video_cmd, entry_cmd, group_cmd, open_cmd, order_cmd;
+static grub_command_t video_cmd, entry_cmd, group_cmd, open_cmd, order_cmd, prepare_cmd;
+static char *prepared_directory;
 static grub_menu_t fallbacks;
+/* Keep successful preparation in module state: submenu environments are temporary.
+ * Normal GRUB file opens and font loads retain all registered verifiers. */
+static grub_err_t prepare (grub_command_t cmd __attribute__((unused)), int argc, char **argv)
+{
+  grub_file_t file;
+  char *path, *list, *name, *next, *saved;
+  grub_ssize_t length;
+  if (argc != 1) return grub_error (GRUB_ERR_BAD_ARGUMENT, "expected resource directory");
+  if (prepared_directory && grub_strcmp (prepared_directory, argv[0]) == 0)
+    return GRUB_ERR_NONE;
+  grub_free (prepared_directory); prepared_directory = NULL;
+  path = grub_xasprintf ("%s/resources.lst", argv[0]);
+  if (!path) return grub_errno;
+  file = grub_file_open (path, GRUB_FILE_TYPE_CONFIG);
+  grub_free (path);
+  if (!file) return grub_errno;
+  length = grub_file_size (file);
+  if (length <= 0 || length > 16384)
+    { grub_file_close (file); return grub_error (GRUB_ERR_BAD_FILE_TYPE, "invalid resource list"); }
+  list = grub_malloc (length + 1);
+  if (!list) { grub_file_close (file); return grub_errno; }
+  if (grub_file_read (file, list, length) != length)
+    { grub_file_close (file); grub_free (list); return grub_error (GRUB_ERR_READ_ERROR, "short resource list"); }
+  grub_file_close (file);
+  if (grub_memchr (list, 0, length))
+    { grub_free (list); return grub_error (GRUB_ERR_BAD_FILE_TYPE, "NUL in resource list"); }
+  list[length] = 0;
+  for (name = list; *name; name = next)
+    {
+      grub_size_t n;
+      next = grub_strchr (name, '\n');
+      if (!next) { grub_free (list); return grub_error (GRUB_ERR_BAD_FILE_TYPE, "unterminated resource list"); }
+      *next++ = 0; n = grub_strlen (name);
+      if (!n || name[0] == '/' || grub_strstr (name, "..") || grub_strchr (name, '('))
+        { grub_free (list); return grub_error (GRUB_ERR_BAD_FILE_TYPE, "invalid resource name"); }
+      path = grub_xasprintf ("%s/%s", argv[0], name);
+      if (!path) { grub_free (list); return grub_errno; }
+      if (n > 4 && grub_strcmp (name + n - 4, ".pf2") == 0)
+        {
+          if (!grub_font_load (path))
+            { grub_free (path); grub_free (list); return grub_error (GRUB_ERR_BAD_FONT, "cannot load Horizon font"); }
+        }
+      else
+        {
+          file = grub_file_open (path, GRUB_FILE_TYPE_GET_SIZE | GRUB_FILE_TYPE_NO_DECOMPRESS);
+          if (!file) { grub_free (path); grub_free (list); return grub_errno; }
+          grub_file_close (file);
+        }
+      grub_free (path);
+    }
+  grub_free (list);
+  saved = grub_strdup (argv[0]);
+  if (!saved) return grub_errno;
+  prepared_directory = saved;
+  return GRUB_ERR_NONE;
+}
 static grub_err_t video (grub_command_t cmd __attribute__((unused)), int argc __attribute__((unused)), char **argv __attribute__((unused)))
 {
   struct grub_video_mode_info info;
@@ -27,6 +86,39 @@ static grub_err_t video (grub_command_t cmd __attribute__((unused)), int argc __
   if (menu && menu->size > 0 && menu->size < 7)
     rows[0] = '0' + menu->size;
   return grub_env_set ("qs_horizon_rows", rows);
+}
+/* The child menu already owns copied entries. Select only its view, without
+ * replaying the shell bootstrap. Failure keeps those entries in the text menu. */
+static grub_err_t select_child_theme (void)
+{
+  char *directory = NULL, *path = NULL;
+  const char *prefix;
+  grub_file_t file;
+  char *args[1];
+  grub_err_t err;
+  if (video (NULL, 0, NULL)) goto plain;
+  prefix = grub_env_get ("prefix");
+  if (!prefix) goto plain;
+  directory = grub_xasprintf ("%s/themes/qs-horizon/%s", prefix,
+                              grub_env_get ("qs_horizon_mode"));
+  if (!directory) goto plain;
+  args[0] = directory;
+  if (prepare (NULL, 1, args)) goto plain;
+  path = grub_xasprintf ("%s/theme-%s.txt", directory, grub_env_get ("qs_horizon_rows"));
+  if (!path) goto plain;
+  file = grub_file_open (path, GRUB_FILE_TYPE_GET_SIZE | GRUB_FILE_TYPE_NO_DECOMPRESS);
+  if (!file) goto plain;
+  grub_file_close (file);
+  err = grub_env_set ("theme", path);
+  if (!err) err = grub_env_export ("theme");
+  if (err) goto plain;
+  grub_free (path); grub_free (directory);
+  return GRUB_ERR_NONE;
+plain:
+  grub_free (path); grub_free (directory);
+  grub_env_unset ("theme");
+  grub_errno = GRUB_ERR_NONE;
+  return GRUB_ERR_NONE;
 }
 static grub_err_t entry (grub_command_t cmd __attribute__((unused)), int argc, char **argv)
 {
@@ -169,7 +261,7 @@ static grub_err_t group (grub_command_t cmd __attribute__((unused)), int argc, c
   if (!kept || (selected && !newdefault))
     { grub_free (kept); grub_free (newdefault); return grub_errno; }
   err = grub_normal_add_menu_entry (1, args, classes, "advanced-options", NULL, NULL, NULL,
-        "qs_horizon_fallback_menu\nsource $prefix/themes/qs-horizon/select.cfg\n", 1, NULL);
+        "qs_horizon_fallback_menu\n", 1, NULL);
   if (err) { grub_free (kept); grub_free (newdefault); return err; }
   /* The native constructor appends: move that new submenu to the first fallback slot. */
   for (link = &menu->entry_list; (*link)->next; link = &(*link)->next);
@@ -219,10 +311,11 @@ static grub_err_t open_fallbacks (grub_command_t cmd __attribute__((unused)),
       grub_free ((void *) copy->title); copy->title = title;
       copy->hotkey = e->hotkey; copy->restricted = e->restricted;
     }
-  return GRUB_ERR_NONE;
+  return select_child_theme ();
 }
 GRUB_MOD_INIT(horizon)
 {
+  prepare_cmd = grub_register_command ("qs_horizon_prepare", prepare, "DIRECTORY", "Prepare Horizon resources once per video mode.");
   video_cmd = grub_register_command ("qs_horizon_video", video, "", "Read active video dimensions.");
   group_cmd = grub_register_command ("qs_horizon_group", group, "ID...", "Group existing fallback entries without changing their boot commands.");
   open_cmd = grub_register_command ("qs_horizon_fallback_menu", open_fallbacks, "", "Populate native fallback submenu.");
@@ -232,6 +325,8 @@ GRUB_MOD_INIT(horizon)
 GRUB_MOD_FINI(horizon)
 {
   release_fallbacks ();
+  grub_free (prepared_directory);
+  grub_unregister_command (prepare_cmd);
   grub_unregister_command (group_cmd); grub_unregister_command (open_cmd);
   grub_unregister_command (video_cmd); grub_unregister_command (entry_cmd);
   grub_unregister_command (order_cmd);
