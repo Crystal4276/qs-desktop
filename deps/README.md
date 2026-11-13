@@ -109,6 +109,18 @@ Les applications personnelles lancées au démarrage (Steam, Spotify, Thunderbir
 Portails captifs : `scripts/network-setup.sh [--dry-run] install|uninstall` (`sudo`, `nmcli`, `coreutils`, `diffutils`, `flock` de `util-linux`).
 Configuration et sauvegarde système, à reprendre par `install.sh` en phase 12 : [NETWORK.md](../docs/NETWORK.md).
 
+### Spotify en Wayland natif
+
+Si `spotify-launcher` est installé, `install.sh` lie `dotfiles/spotify/spotify-launcher.conf` dans le dossier de configuration
+du compte. Ce réglage cible Sway et Hyprland : backend Wayland, décorations Wayland et `DISPLAY` vidé par le lanceur pour son
+client seulement. L'accélération graphique reste active. Il s'applique aux lancements par le menu et par l'autostart ; une
+instance déjà ouverte garde ses réglages jusqu'à sa fermeture. Le client alternatif `spotify` (AUR) garde sa configuration.
+
+Configuration native du lanceur : [source spotify-launcher](https://github.com/kpcyrd/spotify-launcher/blob/main/src/config.rs).
+Un fichier préexistant est sauvegardé par le mécanisme habituel d'installation ; le retrait restaure l'original ou retire
+le lien créé. Pour revenir à X11, retirer uniquement le lien `spotify-launcher.conf` pointant vers ce dépôt et remettre
+l'éventuelle sauvegarde d'origine avant le prochain lancement. Les données du compte Spotify restent dans leur profil.
+
 ### Web apps et « ne pas déranger »
 
 Web apps du dépôt : WhatsApp, Discord, Word, Excel, PowerPoint, Notion, Copilot (`dotfiles/webapps/applications/`).
