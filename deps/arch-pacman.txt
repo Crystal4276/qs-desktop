@@ -53,11 +53,13 @@ papirus-icon-theme      # thème d'icônes Papirus-Dark (notifications, lanceur,
 pipewire                # serveur audio (Quickshell.Services.Pipewire) ; pw-dump : profils audio des casques Bluetooth
 wireplumber             # gestionnaire de session PipeWire, wpctl (dont le choix du profil audio Bluetooth)
 pipewire-pulse          # compatibilité PulseAudio (pavucontrol)
+rtkit                   # priorité temps réel des threads audio PipeWire, activation native par D-Bus
 pavucontrol             # clic droit sur le volume
 
 # --- Système ---
 upower                  # batterie (Quickshell.Services.UPower), utile sur laptop
 networkmanager          # réseau (Quickshell.Networking s'appuie sur NetworkManager)
+wireless-regdb           # base réglementaire Wi-Fi signée (regulatory.db) ; iw installé comme dépendance
 nm-connection-editor    # édition des connexions, ouverte depuis le panneau réseau (repli, ARCHITECTURE § 7.6)
 bluez                   # Bluetooth (Quickshell.Bluetooth s'appuie sur BlueZ)
 bluez-utils             # bluetoothctl : agent d'appairage piloté par Quickshell (ARCHITECTURE § 7.7)

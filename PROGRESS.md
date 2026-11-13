@@ -1511,3 +1511,35 @@ Choix utilisateur : réseau local rétabli **avec mot de passe** (pas d'invité 
   et libvirtd actifs.
   Lecture seule du système : aucune correction supplémentaire. Le plantage initial
   n'est pas reproduit sur ce boot, sa cause reste indéterminée.
+
+## Dépendances audio temps réel et base Wi-Fi (2026-11-13)
+
+- Plan demandé puis mise en œuvre autorisée : ajout de `rtkit` et `wireless-regdb`
+  aux dépendances communes des profils travail/jeux ; `iw` arrive comme dépendance
+  de wireless-regdb. Documentation des modules et de l'activation D-Bus native mise
+  à jour. Les mécanismes existants de PipeWire et du réseau sont utilisés.
+- Trois passes de vérification : résolution des paquets et présence unique dans
+  `pkg_list` pour les deux profils ; revue du diff et `test-install.py` sur copie,
+  HOME et D-Bus jetables (**0 échec**) ; contrôle réel des paquets, des processus et
+  des images après installation. `git diff --check` OK. Journal de test local :
+  `.shots/boot-deps-2026-11-13/test-install.log`.
+- Installation ciblée via polkit : **rtkit 0.14-2**, **wireless-regdb 2026.09.03-1**,
+  **iw 6.17-1**, tous des dépôts officiels. Trois paquets ajoutés, intégrité vérifiée
+  (`pacman -Qkk` : aucun fichier altéré). RTKit chargé mais inactif avant son prochain
+  appel D-Bus ; base réglementaire et signature présentes sur le système principal.
+- L'ajout du firmware déclenche le hook Arch `90-mkinitcpio-install` : quatre UKI
+  reconstruites avec succès, standard/LTS et leurs secours `.bak.efi`. Contrôles PE,
+  empreintes des sections noyau comparées aux vmlinuz, versions et paramètres
+  conformes ; initramfs lisibles, Plymouth présent seulement dans les images normales,
+  GRUB valide et quatre entrées reconnues. Les pilotes Wi-Fi sont chargés après
+  l'initramfs, depuis le système principal. Avertissement `qat_6xxx` déjà présent
+  dans les constructions du 11 novembre, encore affiché par ce hook.
+- Choix utilisateur respecté : activation et validation complète au prochain
+  redémarrage manuel. Même bureau vivant (PID 1942), processus audio et NetworkManager
+  inchangés (PID, invocation et date d'activation), Wi-Fi connecté, aucun service
+  système ou utilisateur en échec. Aucun redémarrage de session ou du réseau lancé.
+- **À contrôler après redémarrage** : threads audio de traitement en temps réel,
+  accès RTKit et disparition de ses erreurs ; chargement réussi de regulatory.db,
+  lecture audio et Wi-Fi fonctionnels ; réglages clavier Never/30s conservés,
+  absence de nouvelle panique/BERT et marge TPM. Le plantage initial reste inexpliqué ;
+  trousseau, Samba, pilotes et paramètres BIOS gardent leur état actuel.

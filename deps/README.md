@@ -41,7 +41,7 @@ Chaque commande a été rattachée à son paquet sur cette machine avec `pacman 
 | Bouton Arch | natif (ouvre le menu d'applications maison) | — | — | — | `assets/arch_linux_icon_green.svg`, `arch_linux_icon_mantle.svg` |
 | Espaces de travail | natif (`Quickshell.I3` / `Quickshell.Hyprland`) | — | — | Symbols Nerd Font Mono | — |
 | Média (mpris) | natif (`Services.Mpris`, D-Bus) | — | un lecteur MPRIS (Spotify via `spotify-launcher` ou le paquet AUR `spotify`, n'est pas une dépendance du bureau) ; choix du lecteur à la molette natif (plus de `playerctl`) | Inter, Font Awesome 7 Brands, FontAwesome 4.7 | — |
-| Volume (icône + curseur) | natif (`Services.Pipewire`) | `pipewire`, `wireplumber` (services utilisateur actifs) | `pavucontrol` (réglages avancés du panneau audio ; `pipewire-pulse`) | Symbols Nerd Font Mono | — |
+| Volume (icône + curseur) | natif (`Services.Pipewire`) | `pipewire`, `wireplumber` (services utilisateur actifs), `rtkit` (priorité temps réel) | `pavucontrol` (réglages avancés du panneau audio ; `pipewire-pulse`) | Symbols Nerd Font Mono | — |
 | Sortie audio suivante (ex-`audio-toggle.sh`) | natif (`Services.Pipewire`) + `notify-send` | `libnotify` | — | — | — |
 | Mises à jour | `checkupdates` | `pacman-contrib`, **`fakeroot`** (`checkupdates` échoue sans lui ; non déclaré par `pacman-contrib`) | `paru` ou `yay` (clic) ; terminal | Inter, Hack Nerd Font | — |
 | GPU | NVIDIA : `nvidia-smi` ; AMD : sysfs (natif) ; Intel : `intel_gpu_top` (PMU, un seul processus à 5 s) | — | `nvidia-utils` (NVIDIA) ; `intel-gpu-tools`, `libcap` (Intel), `polkit` pour accorder CAP_PERFMON ; module masqué sans charge lisible | Inter, Hack Nerd Font | — |
@@ -73,12 +73,17 @@ Thème d'icônes des applications (tray, lanceur, menu d'applications, notificat
 | Veille des écrans | natif (`IdleMonitor` + commande DPMS au compositeur) ; `python`, `python-gobject` (service D-Bus ScreenSaver) ; `systemd` (`systemd-inhibit`), `glib2` (`gdbus` : mise en veille du système) | — | — | — |
 | Agent polkit | — (natif, `PolkitAgent` ; `polkit` installé avec `quickshell`) | — | Inter | — |
 | Réseau (tray) | `networkmanager` (natif, `Networking` ; `nmcli` pour les détails filaires), `wl-clipboard` (copies) | `nm-connection-editor` pour l'édition des connexions ; onglets `tailscale` (actions : `tailscale set --operator=$USER`) et `zerotier-one` (jeton copié dans `~/.zeroTierOneAuthToken`), masqués si absents | icônes Papirus-Dark (`nm-*`, `network-vpn`, `zerotier-gui`, `computer`, `smartphone`) | — |
-| Wi-Fi (tray) | `networkmanager` (natif ; `nmcli` pour bande, canal, débit, adresse), `xdg-utils` (portail captif dans le navigateur par défaut) | — | glyphe dessiné (géométrie Papirus) | — |
+| Wi-Fi (tray) | `networkmanager` (natif ; `nmcli` pour bande, canal, débit, adresse), `wireless-regdb` (base réglementaire signée ; dépendance `iw`), `xdg-utils` (portail captif dans le navigateur par défaut) | — | glyphe dessiné (géométrie Papirus) | — |
 | Bluetooth (tray) | `bluez` (natif, `Bluetooth`), `bluez-utils` (agent d'appairage) | — | icônes Papirus-Dark (`blueman-tray*`) | — |
 | Disques amovibles (tray) | `udisks2`, `glib2` (`gdbus`), `systemd` (`busctl`), `xdg-utils` (ouvrir), `libnotify` (notifications), `util-linux` (`setpriv`) | — | icônes Papirus-Dark | — |
 | NordVPN (tray) | — | `nordvpn-bin` (AUR) + service `nordvpnd` + compte connecté (sinon module masqué) ; icônes `nordvpn-tray-*` du paquet | — | historique des pays : `~/.local/state/quickshell/by-shell/desktop/vpn.json` |
 | Outil de capture | natif (`ScreencopyView`) ; `wl-clipboard` (presse-papiers), `xdg-user-dirs` (dossier Images) | — | Inter, Symbols Nerd Font Mono | — |
 | Événements Thunderbird (backlog) | `sqlite` | — | — | — |
+
+Le [module temps réel de PipeWire](https://docs.pipewire.org/page_module_rt.html) utilise RTKit par D-Bus lorsque les limites
+de la session ne permettent pas d'obtenir directement une priorité temps réel. Le paquet `rtkit` fournit ce service natif.
+`wireless-regdb` fournit la base Wi-Fi signée `regulatory.db` et sa signature ; `iw`, installé comme dépendance, permet
+notamment de consulter le domaine réglementaire. Ces paquets communs sont repris par les deux profils d'`install.sh`.
 
 ### Hors barre (configs compositeur)
 
@@ -144,6 +149,7 @@ Ce que `install.sh` (phase 12) devra installer, activer ou vérifier — relevé
 | `upower`, `udisks2` | batterie, disques | activés à la demande par D-Bus | rien |
 | `polkit` | agent polkit natif, montage des disques sans mot de passe | actif (statique) | rien |
 | Services utilisateur `pipewire.socket`, `pipewire-pulse.socket`, `wireplumber` | audio | activés | `systemctl --user enable --now …` |
+| Service `rtkit-daemon` | priorité temps réel des threads audio | activation native par D-Bus | paquet `rtkit` ; activation à la demande |
 | Fichier PAM du verrouillage | `WlSessionLock` + `PamContext` vérifient le mot de passe | configuration `login` de `/etc/pam.d` (présente partout) | rien : un fichier propre au dépôt ne marche pas (`include` se résout dans son propre dossier) ; rien n'est écrit dans `/etc` |
 | Polices d'icônes (Symbols Nerd Font Mono, Hack Nerd Font, Font Awesome 7 Free / Brands, FontAwesome 4.7) | icônes de la barre (`THEME.md` § 2) | paquets (`ttf-nerd-fonts-symbols-mono`, `ttf-hack-nerd`, `otf-font-awesome`, `awesome-terminal-fonts`) | paquets officiels (`deps/arch-pacman.txt`) ; Quickshell charge en plus ses copies de `assets/fonts/` (`FontLoader`) |
 | Images `assets/*.svg` | bouton Arch, icônes de session | dans le dépôt | rien (`THEME.md` § 12) |
