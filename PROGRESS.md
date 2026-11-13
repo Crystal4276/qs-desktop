@@ -1492,3 +1492,22 @@ Choix utilisateur : réseau local rétabli **avec mot de passe** (pas d'invité 
   regulatory.db manquant et autres avertissements firmware/D-Bus encore présents.
   Aucun de ces messages n'est attribué au plantage sur la seule photo ; audit en
   lecture seule, aucune correction de pilote/service ni installation de paquet.
+
+### Contrôle après retour au noyau standard (2026-11-13)
+
+- Démarrage réel **7.2.15-arch1-1**, UKI normale standard : aucune nouvelle
+  panique/Oops, erreur BERT ou trace pstore ; bureau vivant (PID 1942), aucun service
+  système ou utilisateur en échec. Erreurs GSC/i915 et PMC observées sous LTS absentes
+  de ce boot ; proxy GSC lié et pilote PMC initialisé.
+- TPM **52 335 octets**, **13 201 octets libres** ; mesures noyau/initramfs et SMBIOS
+  présentes, fontes chargées une fois, Measured UKI/OS=yes. Les quatre entrées UKI
+  sont reconnues, erreurs de noms d'entrées et dmidecode toujours absentes.
+- Clavier : **Never sur secteur, 30s sur batterie** conservés après redémarrage,
+  BIOS `pending_reboot=0`. Documentation machine actualisée ; comportement physique
+  toujours à vérifier par l'utilisateur.
+- Messages restants : TDX non pris en charge, multicast RX Wi-Fi non pris en charge,
+  socket Samba (`Invalid argument`), gkr-pam au greeter ; avertissements RTKit,
+  regulatory.db, firmware et D-Bus encore présents. Samba, NetworkManager, greetd
+  et libvirtd actifs.
+  Lecture seule du système : aucune correction supplémentaire. Le plantage initial
+  n'est pas reproduit sur ce boot, sa cause reste indéterminée.

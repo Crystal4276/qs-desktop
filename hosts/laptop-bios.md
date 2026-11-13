@@ -16,9 +16,10 @@ Extinction après 30 secondes sans activité sur batterie ; toujours allumé sur
 l'éteint alors et remet son niveau à la reprise (`services/Idle.qml`, 2026-11-12).
 Le délai de **30s sur batterie est volontaire** ; une frappe rallume le clavier.
 
-Au contrôle du 2026-11-13, le BIOS signale encore un redémarrage nécessaire (`pending_reboot=1`). Après celui-ci : vérifier
-que le clavier reste allumé sur secteur plus de 30 secondes, puis qu'il s'éteint après 30 secondes sans activité sur batterie
-et se rallume à la frappe. La veille des écrans reste une exception à ces délais.
+Après le redémarrage du 2026-11-13 sur le noyau standard, les deux valeurs du tableau sont toujours enregistrées et le BIOS
+ne demande plus de redémarrage (`pending_reboot=0`). Reste à vérifier le comportement physique : clavier allumé sur secteur
+plus de 30 secondes, extinction après 30 secondes sans activité sur batterie et rallumage à la frappe.
+La veille des écrans reste une exception à ces délais.
 
 Une [réinitialisation RTC Dell](https://www.dell.com/support/kbdoc/en-us/000125880/) peut restaurer les réglages BIOS par défaut,
 dont les délais observés à **10s** après l'incident. Recontrôler alors séparément les valeurs secteur et batterie du tableau.
