@@ -238,6 +238,11 @@ def windows(request):
     return request.get('windows', [])
 
 
+def cpu_total(text):
+    # guest/guest_nice are subsets of user/nice, not additional elapsed time.
+    return sum(map(int, text.splitlines()[0].split()[1:9]))
+
+
 def main():
     request = json.load(sys.stdin)
     rows = snapshot()
@@ -245,7 +250,7 @@ def main():
     if request.get('action') == 'stop':
         print(json.dumps(dict(errors=stop(request, rows, groups))))
     else:
-        total = sum(map(int, Path('/proc/stat').read_text().splitlines()[0].split()[1:]))
+        total = cpu_total(Path('/proc/stat').read_text())
         # Raw arguments never leave the helper.
         print(json.dumps(dict(total=total, processes=[{k:v for k,v in p.items() if k != 'args'} for p in rows], applications=groups)))
 

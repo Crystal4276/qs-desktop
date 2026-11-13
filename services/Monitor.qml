@@ -3,6 +3,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import "CpuUsage.js" as CpuUsage
 import Quickshell.Hyprland
 
 // Statistiques système détaillées (ARCHITECTURE § 7.16 « moniteur système », panneau modules/monitor/) : relevées seulement tant que
@@ -255,14 +256,11 @@ Singleton {
         onLoaded: {
             if (!root.active)   // relevé fini après la fermeture : ignoré (relevés précédents remis à zéro)
                 return;
-            const rows = text().split("\n").filter(l => /^cpu\d* /.test(l)).map(l => {
-                const t = l.trim().split(/\s+/).slice(1).map(Number);
-                return { idle: t[3] + t[4], total: t.reduce((a, b) => a + b, 0) };
-            });
-            const usage = rows.map((r, i) => {
-                const p = root.previousCores[i];
-                return p && r.total > p.total ? Math.floor(100 * (1 - (r.idle - p.idle) / (r.total - p.total))) : 0;
-            });
+            const rows = CpuUsage.parse(text());
+            if (!rows.length || rows[0].id !== "cpu") return;
+            const previous = {};
+            for (const row of root.previousCores) previous[row.id] = row;
+            const usage = rows.map(row => CpuUsage.usage(row, previous[row.id]));
             root.previousCores = rows;
             root.cpuTotal = usage[0] ?? 0;
             root.cores = usage.slice(1);

@@ -245,3 +245,15 @@ Construite sur le laptop (2026-11-11) pour `plymouth-setup.sh` en mode UKI, dans
 **Sway**
 - `swaymsg` et `Quickshell.I3` lisent `I3SOCK` avant `SWAYSOCK` (voir Bancs).
 - `GIO_USE_VFS=local` dans tout banc : sinon son `gvfsd` tente de monter à côté du vrai.
+
+## Vérification des mesures CPU
+
+`python3 scripts/test-monitor.py` vérifie notamment le temps total du collecteur de processus avec des temps VM.
+`python3 scripts/test-cpu.py` lance un Sway headless isolé : compteurs factices, valeurs des vrais services,
+largeur réelle des jauges et fermeture/réouverture du moniteur. Aucun changement du bureau actif.
+
+Tests matériels facultatifs : `python3 scripts/test-cpu.py --live` (30 s, un processeur logique sans SMT),
+`--live --multi` (jusqu’à trois cœurs physiques simultanés), `--live --smt` (premier processeur logique).
+Ils vérifient le total et les jauges et arrêtent les travailleurs dès 80 °C ; une sonde CPU lisible est requise.
+Captures et relevés, y compris en cas d’arrêt thermique : `.shots/cpu-validation/` (privés, ignorés par Git).
+Ces tests ne reproduisent pas à eux seuls une application dans une VM.

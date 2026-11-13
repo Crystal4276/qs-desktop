@@ -1,5 +1,8 @@
 """Membership fixtures and real signals against disposable children only."""
 import importlib.util
+import io
+import json
+from unittest.mock import patch
 from pathlib import Path
 import os
 import signal
@@ -26,6 +29,14 @@ class MonitorTests(unittest.TestCase):
 
     def groups(self, rows=None, previous=None):
         return {g['id']: g for g in m.identify(self.rows if rows is None else rows, self.entries, previous or {})}
+
+    def test_cpu_total_includes_guest_once(self):
+        output = io.StringIO()
+        with patch.object(m, 'snapshot', return_value=[]), patch.object(m, 'windows', return_value=[]), \
+                patch.object(m.Path, 'read_text', return_value='cpu 200 20 30 1000 5 2 3 0 150 10\ncpu0 0'), \
+                patch('sys.stdin', io.StringIO('{}')), patch('sys.stdout', output):
+            m.main()
+        self.assertEqual(json.loads(output.getvalue())['total'], 1260)
 
     def test_groups_and_boundaries(self):
         groups = self.groups()

@@ -516,6 +516,10 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
   `Compositor` vise seulement le PID Quickshell courant + titre `System Monitor — Quickshell`, puis l’identifiant natif exact :
   Sway via événement de fenêtre, Hyprland via attente bornée de la liste native. Recentrage après changement de dimensions,
   sans reprendre le focus ; aucun changement de raccourci ni règle globale de fenêtres. Fermeture au verrouillage.
+  Calcul CPU commun à la barre et au moniteur (`services/CpuUsage.js`) : deltas des huit premiers compteurs
+  `/proc/stat`, `idle + iowait` exclus de la charge ; `guest` et `guest_nice` déjà inclus dans user/nice.
+  Total sur 0–100 % pour tous les processeurs logiques, jauges individuelles par processeur logique (pas par cœur physique).
+  Barre à 5 s, moniteur à 1 s : leurs moyennes ne couvrent pas nécessairement le même intervalle.
   Relevés chaque seconde panneau ouvert ; CPU (total, température coretemp / k10temp / zenpower, cœurs), mémoire et swap, réseau, GPU (NVIDIA : charge, VRAM,
   température, consommation, ventilateur, fréquence, VRAM par processus via `nvidia-smi pmon` ; AMD : sysfs ; Intel :
   compteurs PMU ci-dessous ou sysfs en repli). `Gpu.cardPath` identifie la carte indépendamment d'un capteur de température.
