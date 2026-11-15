@@ -3,6 +3,22 @@
 État courant seulement. Historique figé : phases 0 à 10 dans `docs/archive/PROGRESS.md`, maintenance du 2026-11-05 au 2026-11-09
 et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de besoin).
 
+## Webapp Outlook (2026-11-15)
+
+- Lanceur **Outlook** sur le modèle des applications Office : Chromium, profil isolé `Outlook`, extension `open-links`,
+  icône Papirus `ms-outlook`, catégorie Office. Pris en charge automatiquement par l'installateur ; aucune nouvelle dépendance.
+- Installation locale ciblée avec les fonctions existantes : URL exacte fournie par l'utilisateur, manifeste natif, thème GTK,
+  barre de titre système et refus des extensions externes ; changements enregistrés pour le retrait. Adresse personnelle
+  conservée uniquement dans le lanceur local. Le modèle public ouvre la messagerie sans paramètres personnels ; une relance
+  d'`install.sh` remet cette URL générique, mais conserve le profil et la connexion Microsoft.
+- Vérifications dans un dossier personnel jetable : génération réelle par `step_webapps`, préférences via `chromium_profiles`,
+  validation desktop Outlook, manifeste natif et second passage idempotent OK. Installation locale relue : URL exacte,
+  préférences, manifeste et lecture par Gio OK. `git diff --check` conforme. Aucun changement QML ni action NordVPN.
+- Essai supplémentaire avec espace dans HOME : défaut préexistant de `fill_template` (expression `[^ ]*` traversant les
+  sauts de ligne et fermant un guillemet après la ligne Exec) ; non corrigé dans cet ajout de lanceur.
+- Aucun compositeur ni processus Quickshell visible dans l'environnement de travail ; aucun banc créé, aucune relance.
+  À vérifier à la main : ouvrir Outlook depuis le lanceur, se connecter et vérifier la navigation authentifiée.
+
 ## Machines
 
 - **`terrier`** (desktop, référence) : Arch, i9-9900K, RTX 2080 (pilote propriétaire) ; trois écrans : DP-1 (LG 27GN950, gauche,

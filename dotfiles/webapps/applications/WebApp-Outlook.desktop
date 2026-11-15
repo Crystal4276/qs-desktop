@@ -1,0 +1,12 @@
+[Desktop Entry]
+Version=1.0
+Name=Outlook
+Comment=Microsoft Outlook - Web App
+Exec=chromium --app="https://outlook.cloud.microsoft/mail/" --class=WebApp-Outlook --name=WebApp-Outlook --user-data-dir=@PROFILES@/Outlook --load-extension=@WEBAPPS@/open-links
+Terminal=false
+X-MultipleArgs=false
+Type=Application
+Icon=ms-outlook
+Categories=GTK;Office;Email;
+StartupWMClass=WebApp-Outlook
+StartupNotify=true
