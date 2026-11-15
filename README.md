@@ -59,7 +59,7 @@ Autre distribution qu'Arch : pas encore prévue (paquets à installer soi-même 
 
 - Mot de passe Samba (VM et accès par ZeroTier) : `sudo smbpasswd -a $USER`, dans un terminal, une fois par machine. Partager un dossier :
   clic droit dans Nemo → Partager.
-- Web apps (WhatsApp, Discord, Word, Excel, PowerPoint, Notion) : se connecter une fois dans chacune.
+- Web apps (WhatsApp, Discord, Word, Excel, PowerPoint, Notion, Copilot, Outlook) : se connecter une fois dans chacune.
 - Comptes en ligne : ouvrir « Comptes en ligne » depuis le lanceur (`gnome-online-accounts-gtk`), puis ajouter ses comptes.
 - Thème d'Obsidian (rangé dans son profil) : choisir Catppuccin Mocha dans ses réglages. Chromium suit le thème GTK (réglé
   par `install.sh` dans chaque profil) ; Thunderbird reçoit Catppuccin Mocha Green par l'étape système (politique

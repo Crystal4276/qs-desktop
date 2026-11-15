@@ -388,7 +388,7 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
 
 ### 7.10 Web apps
 
-- WhatsApp, Discord, Word, Excel, PowerPoint, Notion : `chromium --app … --user-data-dir=<profil isolé> --load-extension=…/open-links`.
+- WhatsApp, Discord, Word, Excel, PowerPoint, Notion, Copilot, Outlook : `chromium --app … --user-data-dir=<profil isolé> --load-extension=…/open-links`.
 - Un lien ouvert dans un nouvel onglet ou une nouvelle fenêtre part dans le profil Chromium principal (onglet ajouté, navigateur
   démarré s'il ne tourne pas), sauf s'il reste dans les domaines de l'app (liste `SITES` de l'extension : Microsoft 365, Notion) ; les
   popups (OAuth) restent dans la web app. L'hôte `open-link` appelle `qs ipc call compositor focusNextWindowOf chromium` avant Chromium, après nettoyage de l'environnement :

@@ -123,13 +123,14 @@ l'éventuelle sauvegarde d'origine avant le prochain lancement. Les données du 
 
 ### Web apps et « ne pas déranger »
 
-Web apps du dépôt : WhatsApp, Discord, Word, Excel, PowerPoint, Notion, Copilot (`dotfiles/webapps/applications/`).
+Web apps du dépôt : WhatsApp, Discord, Word, Excel, PowerPoint, Notion, Copilot, Outlook (`dotfiles/webapps/applications/`).
 
 | Composant | Comment | Paquets requis | Fichiers du dépôt |
 |---|---|---|---|
 | Sons coupés pendant « ne pas déranger » | natif (`Services.Pipewire`, `services/Audio.qml`) ; flux repérés par `application.id` (web apps) ou binaire (application Discord) | `wireplumber` | règle `dotfiles/wireplumber/wireplumber.conf.d/50-dnd-no-restore.conf` ; liste `doNotDisturb.muteApps` de `hosts/<machine>.json` |
 | Web apps WhatsApp et Discord | `chromium --app` dans un profil isolé ; `PULSE_PROP_OVERRIDE=application.id=…` dans le lanceur (coupure de nuit) | `chromium` | modèles de lanceurs `dotfiles/webapps/applications/*.desktop` |
 | Web apps Word, Excel, PowerPoint, Notion, Copilot | `chromium --app` dans un profil isolé (pas de coupure de nuit : pas de sons de notification) | `chromium` | modèles de lanceurs `dotfiles/webapps/applications/*.desktop` |
+| Web app Outlook | `chromium --app` dans un profil isolé, liens externes via l'extension existante | `chromium`, `papirus-icon-theme` (icône `ms-outlook`) | modèle `dotfiles/webapps/applications/WebApp-Outlook.desktop` ; aucune nouvelle dépendance |
 | Extensions du navigateur | extensions externes : `/usr/share/chromium/extensions/<id>.json` (étape système), installées depuis le Chrome Web Store au démarrage ; refusées dans les profils des web apps (`extensions.external_uninstalls`) ; réglages de nightTab importés par `install.sh` (Chromium sans fenêtre, `scripts/nighttab-import.py`) | `chromium`, `python`, accès au Chrome Web Store | `dotfiles/chromium/extensions.txt`, `external-extension.json`, `nighttab.json` |
 | Thème de Thunderbird | Catppuccin Mocha Green (`deps/themes.txt`, `.xpi` vérifié) installé par une politique `ExtensionSettings` (`/etc/thunderbird/policies/policies.json`, étape système, `scripts/system-setup.sh thunderbird-theme`) | `thunderbird` (`deps/apps.txt`) | — |
 | Lancement Chromium à chaud | transmission au navigateur existant ; repli natif | `socat` (optionnel) | `scripts/chromium-launch.sh`, raccourcis et lanceur |
@@ -176,7 +177,7 @@ Ce que `install.sh` (phase 12) devra installer, activer ou vérifier — relevé
 | Polices CJK | titres et notifications en japonais/chinois/coréen | polices MS copiées à la main | `noto-fonts-cjk` (repli du bureau) |
 | Polices Microsoft (optionnel) | documents Word, repli CJK | `/usr/share/fonts/MS_Fonts` (363 Mo) | dépôt privé `Crystal4276/fonts-ms`, cloné à la demande dans `~/.local/share/fonts/fonts-ms` + `fc-cache -f` (clé SSH GitHub nécessaire) |
 | Règle WirePlumber « ne pas déranger » | les flux coupés la nuit ne sont pas retenus par WirePlumber (sinon coupés le lendemain) | copiée dans `~/.config/wireplumber/wireplumber.conf.d/` | lien vers `dotfiles/wireplumber/wireplumber.conf.d/50-dnd-no-restore.conf`, puis `systemctl --user restart wireplumber` ; voir « Web apps » ci-dessous |
-| Web apps (WhatsApp, Discord, Word, Excel, PowerPoint, Notion, Copilot) | lanceurs, coupure de nuit (WhatsApp, Discord), liens vers le navigateur | créées avec `webapp-manager`, puis lanceurs modifiés à la main | générées par `install.sh` depuis `dotfiles/webapps/` : voir « Web apps » ci-dessous |
+| Web apps (WhatsApp, Discord, Word, Excel, PowerPoint, Notion, Copilot, Outlook) | lanceurs, coupure de nuit (WhatsApp, Discord), liens vers le navigateur | créées avec `webapp-manager`, puis lanceurs modifiés à la main | générées par `install.sh` depuis `dotfiles/webapps/` : voir « Web apps » ci-dessous |
 | Utilisateur dans le groupe `video` ou règles udev | `brightnessctl` sans `sudo` (laptop) | sans objet (pas de rétroéclairage) | fourni par le paquet `brightnessctl` (règles udev) ; à vérifier sur le laptop |
 
 Réglages dconf de cette machine (`org.gnome.desktop.interface`) : `gtk-theme` `catppuccin-mocha-green-standard+default`,
@@ -229,7 +230,7 @@ s'il y en a. `WEBAPPS` = dossier
 les profils et sessions déjà connectées de cette machine sont repris tels quels).
 
 1. Paquets : `chromium` (`deps/optional.txt`), `python` (`deps/arch-pacman.txt`), `wireplumber`, `papirus-icon-theme` (icônes `whatsapp`, `discord`,
-   `notion`, `solstice-microsoft-365-{word,excel,powerpoint}`). Copilot utilise son icône officielle embarquée
+   `notion`, `ms-outlook`, `solstice-microsoft-365-{word,excel,powerpoint}`). Copilot utilise son icône officielle embarquée
    (`dotfiles/webapps/icons/copilot.png`, source documentée à côté), sans paquet supplémentaire.
 2. Règle WirePlumber, seulement si `doNotDisturb.muteApps` de la machine n'est pas vide (sinon elle ne sert à rien et les web
    apps perdent la mémoire de leur volume) : lien `~/.config/wireplumber/wireplumber.conf.d/50-dnd-no-restore.conf` →
@@ -240,7 +241,7 @@ les profils et sessions déjà connectées de cette machine sont repris tels que
    `update-desktop-database ~/.local/share/applications` s'il existe. Chemin avec espace : argument entier entre guillemets
    dans `Exec` (`"--load-extension=…"`) ; chemin contenant `"`, `` ` ``, `$`, `\` ou `%` : refusé avec un message (deux
    niveaux d'échappement dans `Exec`, pas la peine pour un cas improbable).
-4. Pour chaque profil (`Whatsapp8699`, `DiscordWeb2996`, `Word9053`, `Excel7169`, `Powerpoint0904`, `Notion5106`, `Copilot`, lus dans
+4. Pour chaque profil (`Whatsapp8699`, `DiscordWeb2996`, `Word9053`, `Excel7169`, `Powerpoint0904`, `Notion5106`, `Copilot`, `Outlook`, lus dans
    `--user-data-dir` des modèles) : créer
    `PROFILES/<profil>/NativeMessagingHosts/` et y écrire `qs_desktop.open_link.json` depuis `dotfiles/webapps/qs_desktop.open_link.json`
    (`@WEBAPPS@` remplacé, échappé pour JSON : Chromium exige un chemin absolu). Vérifier que `dotfiles/webapps/open-link`
@@ -249,6 +250,9 @@ les profils et sessions déjà connectées de cette machine sont repris tels que
    par défaut d'une nouvelle machine laisse la liste vide.
 6. Message de fin : relancer les web apps si elles tournent ; nouvelle machine : se connecter une fois dans chacune (WhatsApp
    par QR code, Discord, compte Microsoft 365, Notion).
+
+Outlook : le modèle public utilise `https://outlook.cloud.microsoft/mail/`. Les paramètres personnels `realm` et `login_hint`
+restent dans le lanceur local ; une relance d'`install.sh` remet l'URL publique, sans effacer la session du profil Outlook.
 
 Contrôle après installation : `pw-dump` montre `application.id` `whatsapp` / `discord` sur les clients des web apps lancées ; un
 lien cliqué dans une web app s'ouvre dans le navigateur principal.
