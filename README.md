@@ -137,9 +137,17 @@ préparée, mais aucune autorisation interactive n'est lancée : la commande `ss
 `--no-system` permet cette étape du compte si ses outils sont déjà installés.
 `--uninstall` conserve les clés, l'alias et l'autorisation distante.
 
+Une machine où `terrier-zt` est configuré est cliente du desktop : avec les étapes système, l'installateur y active
+aussi `sshd` (`scripts/system-setup.sh ssh-server`). Mots de passe acceptés, mais le port 22 n'est ouvert que sur
+ZeroTier (`zt+`), par UFW. UFW inactif : l'installateur l'active d'abord, entrant refusé, en ouvrant SSH (22) et SMB (445)
+sur `zt+` et tout l'entrant des VM libvirt (`virbr+` : DHCP, DNS, partages) ; un service entrant hors ZeroTier (jeu en
+réseau local, par exemple) demande alors sa propre règle UFW. UFW déjà actif : seule la règle TCP 22 sur `zt+` s'ajoute.
+sshd n'est jamais activé sans UFW. `--uninstall` avec retrait système remet UFW (état, politique, règles) et sshd dans
+leur état d'origine. Le desktop n'est pas concerné : son sshd reste réglé à la main.
+
 Dans bash, `desktop` lance `ssh terrier-zt` et `laptop` lance `ssh laptop-zt`. L'alias `laptop-zt` s'écrit
 à la main dans `~/.ssh/config` du desktop (`Host laptop-zt`, `HostName <IP ZeroTier>`, `User <compte>`) ;
-le laptop doit alors accepter SSH (`sshd` actif, clé du desktop dans `~/.ssh/authorized_keys`).
+`ssh-copy-id laptop-zt` y autorise ensuite la clé du desktop (mot de passe du laptop, une fois).
 
 ## Provisioning ZeroTier
 
@@ -159,7 +167,7 @@ sur ZeroTier Central ; service actif et requête de jonction ne prouvent pas la 
 Sans autorisation ou réseau disponible, l'installateur affiche un rappel et conserve la configuration.
 `--no-system` ignore le provisioning ; `--no-packages` nécessite un ZeroTier déjà installé.
 Le retrait du bureau conserve actuellement les adhésions et le service ZeroTier.
-Les ajouts n'activent ni sshd, ni Avahi, ni serveur iperf3.
+Les ajouts n'activent ni Avahi ni serveur iperf3 ; sshd seulement sur une machine cliente, par ZeroTier (ci-dessus).
 
 ### Partages Samba par ZeroTier
 
@@ -174,8 +182,9 @@ sur une interface déjà connue sont suivis nativement par Samba sous Linux.
 Si un nouveau réseau reste sans autorisation au-delà de ce délai, relancer la commande `samba`
 après autorisation dans Central : une écoute manquante déclenche alors le redémarrage nécessaire.
 L'accès exige le compte Samba de la machine distante ; `[homes]` limite chaque dossier à son propriétaire.
-Si UFW est déjà actif, TCP 445 est autorisé uniquement sur les interfaces ZeroTier (`zt+`).
-L'installateur n'installe ni n'active UFW ; un autre pare-feu doit autoriser ce même accès.
+Si UFW est actif, TCP 445 est autorisé uniquement sur les interfaces ZeroTier (`zt+`).
+L'installateur n'active UFW que sur une machine cliente du desktop (« Accès SSH au desktop ») ;
+ailleurs, un autre pare-feu doit autoriser ce même accès.
 
 Sur chaque machine, créer le compte avec `sudo smbpasswd -a $USER` dans un terminal s'il manque.
 Les comptes et mots de passe existants sont conservés. Dans Nemo, saisir
