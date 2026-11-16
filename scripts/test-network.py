@@ -141,7 +141,7 @@ def form_test(ipc, nmcli_log, work):
     def new_calls(before): return calls()[len(before):]
     created_args = ['connection', 'add', 'type', 'wifi', 'con-name', 'Campus', 'ssid', 'Campus', 'connection.autoconnect', 'no',
                     'wifi-sec.key-mgmt', 'wpa-eap', '802-1x.eap', 'ttls', '802-1x.phase2-auth', 'pap',
-                    '802-1x.identity', 'alice@campus.example', '802-1x.system-ca-certs', 'yes',
+                    '802-1x.identity', 'alice@campus.example', '802-1x.auth-timeout', '10', '802-1x.system-ca-certs', 'yes',
                     '802-1x.domain-suffix-match', 'radius.campus.example']
     profile = json.dumps({'802-1x': {'eap': ['ttls'], 'identity': 'alice@campus.example', 'phase2-auth': 'pap'},
                           'connection': {'autoconnect': False}})

@@ -230,8 +230,9 @@ Singleton {
     // Connexion suivie jusqu'au bout, panneau ouvert ou non. Réussie : le profil créé reçoit la connexion automatique (écriture
     // sans secret : NetworkManager garde le mot de passe, vérifié). Échec ou annulation : un mot de passe saisi n'est jamais
     // gardé (profil créé supprimé, sinon secrets effacés) ; l'échec attend le panneau (`signInFailure`). Mauvais identifiant ou
-    // mot de passe : le serveur refuse aussitôt, mais NetworkManager ne conclut qu'au bout de 25 s (`802-1x.auth-timeout`), par
-    // `NoSecrets` (aucun agent pour redemander).
+    // mot de passe : le serveur refuse aussitôt, mais NetworkManager ne conclut qu'à la fin du délai d'authentification, par
+    // `NoSecrets` (aucun agent pour redemander) : 10 s pour les profils créés ici (`802-1x.auth-timeout`, 25 s par défaut ;
+    // ta demande du 2026-11-16).
     // Création : { network, form, uuid, password } ; écriture : { network, form, settings, created, typed } ; puis `connecting`.
     // `form` : { identity, method, domain } saisis, repris par le panneau après un échec.
     property var signInRequest: null
@@ -267,7 +268,8 @@ Singleton {
         signInRequest = { network: network, form: form, uuid: "", password: password };
         signInAdd.command = ["nmcli", "connection", "add", "type", "wifi", "con-name", network.name, "ssid", network.name,
             "connection.autoconnect", "no", "wifi-sec.key-mgmt", "wpa-eap", "802-1x.eap", method,
-            "802-1x.phase2-auth", method === "ttls" ? "pap" : "mschapv2", "802-1x.identity", identity].concat(domain === ""
+            "802-1x.phase2-auth", method === "ttls" ? "pap" : "mschapv2", "802-1x.identity", identity,
+            "802-1x.auth-timeout", "10"].concat(domain === ""
             ? [] : ["802-1x.system-ca-certs", "yes", "802-1x.domain-suffix-match", domain]);
         signInAdd.running = true;
     }
