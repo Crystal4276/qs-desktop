@@ -2,5 +2,6 @@
 # finit en mémoire (« terminé » dans Nemo) alors que l'écriture continue pendant des minutes ; comme KDE Frameworks 6.32
 # (sync_file_range), la progression et la fin suivent alors l'écriture réelle. 64 Mio : aucune perte de débit mesurée jusqu'à
 # ~3,5 Go/s (16 Mio : 25 à 40 % de moins), ~6 s d'avance au plus sur une clé à 10 Mo/s. Installé par scripts/system-setup.sh.
-ACTION=="add|change", SUBSYSTEM=="block", ENV{DEVTYPE}=="disk", ENV{ID_BUS}=="usb", ATTR{bdi/strict_limit}="1", ATTR{bdi/max_bytes}="67108864"
+# USB : par le parent (SUBSYSTEMS), pas ID_BUS, que systemd met à « ata » pour les boîtiers SATA (disques et SSD externes).
+ACTION=="add|change", SUBSYSTEM=="block", ENV{DEVTYPE}=="disk", SUBSYSTEMS=="usb", ATTR{bdi/strict_limit}="1", ATTR{bdi/max_bytes}="67108864"
 ACTION=="add|change", SUBSYSTEM=="block", ENV{DEVTYPE}=="disk", SUBSYSTEMS=="mmc", ATTRS{type}=="SD", ATTR{bdi/strict_limit}="1", ATTR{bdi/max_bytes}="67108864"

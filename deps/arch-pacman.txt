@@ -68,6 +68,7 @@ xdg-utils               # xdg-open (liens HTTP/HTTPS via le lanceur desktop Chro
 pacman-contrib          # checkupdates (module mises à jour) ; paccache (cache pacman des machines clientes)
 fakeroot                # requis par checkupdates (non déclaré par pacman-contrib)
 gnome-terminal          # terminal lancé par les modules (configurable par machine)
+gettext                 # traduction de Nemo lue par services/FileOps.qml (titre de sa boîte de conflit)
 libnotify               # notify-send (sortie audio suivante, connexions et batterie Bluetooth, disques amovibles, fichier ouvert dans une web app Office, Wi-Fi entreprise refusé, tests)
 
 # --- Installation (install.sh) ---

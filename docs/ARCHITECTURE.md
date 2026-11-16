@@ -250,7 +250,7 @@ Singletons de `services/`. Les widgets ne lisent que les services ; aucun `Proce
 | `Bluez` | Bluetooth | `Quickshell.Bluetooth` ; `bluetoothctl` (appairage) |
 | `Disks` | disques amovibles | `busctl`, `gdbus monitor`, `udisksctl` |
 | `Notifs` | serveur de notifications | `Quickshell.Services.Notifications` |
-| `FileOps` | fin et questions des copies de Nemo, notifiées | `ToplevelManager` (titres des fenêtres de Nemo), `notify-send` |
+| `FileOps` | fin et questions des copies de Nemo, notifiées | `ToplevelManager` (titres des fenêtres de Nemo), `notify-send`, `gettext` (traduction de Nemo) |
 | `Updates` | mises à jour en attente | `checkupdates` |
 | `Battery`, `Brightness` | laptop | `UPower` ; `/sys/class/backlight` + `brightnessctl` |
 | `Profiles` | profils d'énergie | `PowerProfiles` (power-profiles-daemon) |
