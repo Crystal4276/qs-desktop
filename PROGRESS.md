@@ -20,6 +20,10 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
   suivante (« Wrong username or password for X » en rouge, saisie reprise, mot de passe vide) ; mot de passe saisi jamais gardé
   après un échec ou une annulation (profil créé supprimé, sinon secrets effacés). Réseau enregistré refusé : son mot de passe
   (non saisi) reste, le formulaire propose d'en taper un autre.
+- Mot de passe renouvelé périodiquement (ta remarque) : quand le mot de passe enregistré n'est plus bon, la connexion
+  automatique échoue hors panneau (`NoSecrets`) ; notification « Uni-Fi refused the saved password — It may have expired »
+  (panneau fermé) et formulaire rouge à l'ouverture du panneau, identifiant repris ; rien d'effacé. Autres causes hors panneau
+  (signal, réseau perdu) : rien. Toute notification seulement panneau Wi-Fi fermé.
 - Délai avant le refus : 10 s au lieu de 25 (ta demande) : `802-1x.auth-timeout 10` dans les profils créés par le panneau
   (accepté par `nmcli`, vérifié hors ligne) ; un profil créé avant garde 25 s.
 - Petit changement : Entrée sur un mot de passe WPA vide ne ferme plus le formulaire (il reste ouvert).
@@ -34,7 +38,8 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
   avertissement. Bureau réel rechargé sans erreur.
 - **À tester à la main** : Forget sur Uni-Fi (le profil de ton essai garde le mauvais mot de passe), puis un mauvais mot de
   passe : ~10 s de « Connecting… », puis formulaire rouge (aussi en fermant le panneau pendant l'attente puis en le rouvrant) et
-  Uni-Fi non enregistré ; puis le bon, avec « Connect » ; domaine du serveur (nom du certificat, donné en session) ; eduroam
+  Uni-Fi non enregistré ; puis le bon, avec « Connect » ; plus tard, au renouvellement du mot de passe : notification et
+  formulaire rouge ; domaine du serveur (nom du certificat, donné en session) ; eduroam
   (`identifiant@établissement`) ; Tab, Entrée.
 
 ## Word, Excel, PowerPoint dans « Ouvrir avec » (2026-11-16)

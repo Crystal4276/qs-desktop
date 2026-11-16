@@ -233,13 +233,30 @@ Singleton {
     // mot de passe : le serveur refuse aussitôt, mais NetworkManager ne conclut qu'à la fin du délai d'authentification, par
     // `NoSecrets` (aucun agent pour redemander) : 10 s pour les profils créés ici (`802-1x.auth-timeout`, 25 s par défaut ;
     // ta demande du 2026-11-16).
+    // Hors panneau (connexion automatique, autre application), un refus du mot de passe enregistré (renouvelé par
+    // l'établissement, donc expiré) passerait inaperçu : NetworkManager échoue sans agent pour le redemander (nm-applet ouvrirait
+    // une fenêtre ; Quickshell n'a pas d'agent de secrets). Il est signalé comme un échec du panneau.
     // Création : { network, form, uuid, password } ; écriture : { network, form, settings, created, typed } ; puis `connecting`.
     // `form` : { identity, method, domain } saisis, repris par le panneau après un échec.
     property var signInRequest: null
     readonly property bool signingIn: signInRequest !== null
     property bool signInStarted: false   // « Connecting » vu : le retour à « Disconnected » met fin à la connexion
-    // Échec à montrer : { network, kind: "refused" | "failed" | "profile", identity, method, domain }.
+    // Échec à montrer : { network, kind, identity, method, domain } ; `kind` : "refused" (identifiant ou mot de passe saisi
+    // refusé), "expired" (mot de passe enregistré refusé hors panneau), "failed" (autre échec), "profile" (`nmcli` en échec).
+    // Panneau Wi-Fi fermé : notification en plus, le formulaire attend son ouverture.
     property var signInFailure: null
+
+    function reportSignInFailure(failure: var): void {
+        signInFailure = failure;
+        if (wifiPanelOpen)
+            return;
+        const name = failure.network.name;
+        const [summary, body] = failure.kind === "expired"
+            ? [`${name} refused the saved password`, "It may have expired: open the Wi-Fi panel to enter the new one."]
+            : failure.kind === "refused" ? [`Wrong username or password for ${name}`, "Open the Wi-Fi panel to try again."]
+            : [`Could not connect to ${name}`, "Open the Wi-Fi panel to try again."];
+        Quickshell.execDetached(["notify-send", "--app-name=Wi-Fi", "--icon=network-wireless-offline", summary, body]);
+    }
 
     // Profil PEAP ou TTLS enregistré du réseau (identifiant et mot de passe), sinon null.
     function passwordProfile(network: var): var {
@@ -304,7 +321,17 @@ Singleton {
         else if (request.typed)
             request.settings.clearSecrets();
         if (kind !== "")
-            signInFailure = Object.assign({ network: request.network, kind: kind }, request.form);
+            reportSignInFailure(Object.assign({ network: request.network, kind: kind }, request.form));
+    }
+
+    // Échec d'un réseau entreprise : celui de la connexion suivie y met fin ; hors suivi, seul le refus d'un profil à mot de
+    // passe est signalé (mot de passe expiré) ; une autre cause (signal, réseau perdu) ne demande rien.
+    function enterpriseFailed(network: var, reason: int): void {
+        const refused = reason === ConnectionFailReason.NoSecrets;
+        if (signInRequest?.connecting && signInRequest.network === network)
+            endSignIn(refused ? "refused" : "failed");
+        else if (refused && signInRequest?.network !== network && passwordProfile(network) !== null)
+            reportSignInFailure({ network: network, kind: "expired", identity: savedIdentity(network), method: "", domain: "" });
     }
 
     // Profil créé : il apparaît dans `nmSettings` déjà lu (vérifié le 2026-11-16).
@@ -331,7 +358,7 @@ Singleton {
                 const uuid = /\(([0-9a-f-]{36})\) successfully added/.exec(text)?.[1] ?? "";
                 if (uuid === "") {
                     root.signInRequest = null;
-                    root.signInFailure = Object.assign({ network: request.network, kind: "profile" }, request.form);
+                    root.reportSignInFailure(Object.assign({ network: request.network, kind: "profile" }, request.form));
                     return;
                 }
                 root.signInRequest = Object.assign({}, request, { uuid: uuid });
@@ -365,9 +392,6 @@ Singleton {
             if (request.created)
                 request.settings.write({ connection: { autoconnect: true } });
         }
-        function onConnectionFailed(reason) {
-            root.endSignIn(reason === ConnectionFailReason.NoSecrets ? "refused" : "failed");
-        }
         function onStateChanged() {
             const state = root.signInRequest?.network.state;
             if (state === ConnectionState.Connecting) {
@@ -375,6 +399,24 @@ Singleton {
                 signInEnd.stop();
             } else if (root.signInStarted && state === ConnectionState.Disconnected)
                 signInEnd.restart();
+        }
+    }
+
+    // Échecs des réseaux entreprise, suivis ou non : ceux de la liste, plus celui de la connexion suivie (il peut en sortir
+    // pendant la tentative, signal faible).
+    Variants {
+        model: {
+            const list = root.wifiNetworks.filter(n => root.isEnterprise(n.security));
+            const tracked = root.signInRequest?.network;
+            return tracked && !list.includes(tracked) ? list.concat([tracked]) : list;
+        }
+
+        Connections {
+            required property var modelData
+            target: modelData
+            function onConnectionFailed(reason) {
+                root.enterpriseFailed(modelData, reason);
+            }
         }
     }
 

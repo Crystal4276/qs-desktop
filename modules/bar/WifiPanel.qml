@@ -115,17 +115,20 @@ Panel {
         }
     }
 
-    // Échec d'une connexion entreprise (même survenu panneau fermé) : formulaire repris avec ce qui avait été saisi, mot de passe
-    // vide ; refus en rouge dans le titre, autre échec en message.
+    // Échec d'une connexion entreprise (même survenu panneau fermé, ou mot de passe enregistré refusé hors panneau) : formulaire
+    // repris avec ce qui avait été saisi, mot de passe vide ; refus en rouge dans le titre, autre échec en message. Formulaire
+    // d'un autre réseau en cours : l'échec attend.
     function showSignInFailure(): void {
         const failure = Network.signInFailure;
-        if (!visible || !failure)
+        if (!visible || !failure || (passwordFor !== null && passwordFor !== failure.network))
             return;
         Network.signInFailure = null;
+        const name = failure.network.name;
         passwordFor = failure.network;
-        passwordRefused = failure.kind === "refused";
-        failText = failure.kind === "failed" ? `Could not connect to ${failure.network.name} — weak signal or wrong username or password`
-            : failure.kind === "profile" ? `Could not connect to ${failure.network.name}` : "";
+        passwordRefused = failure.kind === "refused" || failure.kind === "expired";
+        failText = failure.kind === "expired" ? `${name} refused the saved password: it may have expired`
+            : failure.kind === "failed" ? `Could not connect to ${name} — weak signal or wrong username or password`
+            : failure.kind === "profile" ? `Could not connect to ${name}` : "";
         identity.text = failure.identity;
         method = failure.method || "peap";
         domain.text = failure.domain;

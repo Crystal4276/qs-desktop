@@ -131,9 +131,12 @@ exec ''' + real_install + ' "$@"\n')
 UUID = '0f1e2d3c-4b5a-6978-8796-a5b4c3d2e1f0'
 
 
-def form_test(ipc, nmcli_log, work):
+def form_test(ipc, nmcli_log, notify_log, work):
     """Formulaires du panneau Wi-Fi : réseau entreprise (création sans secret sur la ligne de commande, mot de passe écrit, refus,
-    nouvelle saisie, réseau enregistré, panneau fermé, annulation, échec sans raison, échec de `nmcli`) et réseau WPA."""
+    nouvelle saisie, mot de passe enregistré refusé hors panneau, réseau enregistré, panneau fermé, annulation, échec sans raison,
+    échec de `nmcli`) et réseau WPA."""
+    def notified(): return notify_log.read_text() if notify_log.exists() else ''
+
     def form(): return json.loads(ipc('form'))
     def calls(): return json.loads(ipc('calls'))
     def settle(seconds=0.1): time.sleep(seconds)
@@ -146,6 +149,7 @@ def form_test(ipc, nmcli_log, work):
     profile = json.dumps({'802-1x': {'eap': ['ttls'], 'identity': 'alice@campus.example', 'phase2-auth': 'pap'},
                           'connection': {'autoconnect': False}})
 
+    ipc('panels', 'false', '0')   # faux panneaux du test du portail : seul le vrai panneau compte ici
     ipc('openForm', 'enterprise'); settle()
     f = form()
     assert f['title'] == ['Sign in to Campus'] and f['passwordFor'] == 'Campus', f
@@ -189,6 +193,23 @@ def form_test(ipc, nmcli_log, work):
     assert not form()['signingIn']
     ipc('setState', 'enterprise', 'Disconnected'); settle()
     nmcli_log.unlink()
+    assert notified() == '', 'no notification while the panel is open'
+
+    # Mot de passe enregistré refusé hors panneau (renouvelé par l'établissement) : notification panneau fermé, formulaire rouge
+    # à l'ouverture, rien d'effacé ; autre cause hors panneau (réseau perdu) : rien.
+    ipc('closePanel'); settle()
+    before = calls()
+    ipc('background', 'enterprise', 'WifiNetworkLost'); settle()
+    assert notified() == ''
+    ipc('background', 'enterprise', 'NoSecrets'); settle()
+    assert new_calls(before) == [] and notified().splitlines() == ['--app-name=Wi-Fi', '--icon=network-wireless-offline',
+        'Campus refused the saved password', 'It may have expired: open the Wi-Fi panel to enter the new one.'], notified()
+    ipc('reopenPanel'); settle()
+    f = form()
+    assert f['title'] == ['Wrong username or password for Campus'], f
+    assert f['failText'] == 'Campus refused the saved password: it may have expired', f
+    assert f['username']['text'] == 'alice@campus.example' and not f['tabs']['visible'] and not f['domain']['visible'], f
+    notify_log.unlink()
 
     # Réseau enregistré cliqué puis refusé : son mot de passe (non saisi) est gardé ; identifiant repris du profil.
     before = calls()
@@ -215,6 +236,7 @@ def form_test(ipc, nmcli_log, work):
     before = calls()
     ipc('fail', 'enterprise', 'NoSecrets', 'true'); settle(1.2)
     assert new_calls(before) == [['clear', UUID]], calls()
+    assert notified().splitlines()[2:] == ['Wrong username or password for Campus', 'Open the Wi-Fi panel to try again.'], notified()
     ipc('reopenPanel'); settle()
     f = form()
     assert f['title'] == ['Wrong username or password for Campus'] and f['username']['text'] == 'alice', f
@@ -284,6 +306,10 @@ case " $* " in *" bogus "*) echo "Error: failed" >&2; exit 1 ;; esac
 echo "Connection '$6' ({UUID}) successfully added."
 ''')
     (bindir / 'nmcli').chmod(0o755)
+    # `notify-send` : arguments enregistrés (aucune notification réelle sur la session).
+    notify_log = work / 'notify.log'
+    (bindir / 'notify-send').write_text(f"#!/bin/sh\nprintf '%s\\n' \"$@\" >> {shlex.quote(str(notify_log))}\n")
+    (bindir / 'notify-send').chmod(0o755)
     # Rendu logiciel direct : sur un banc sans GPU, Mesa essaie d'abord Zink et journalise son échec.
     env = dict(os.environ, QS_TEST='1', XDG_STATE_HOME=str(work / 'state'), XDG_CACHE_HOME=str(work / 'cache'),
                GIO_USE_VFS='local', GVFS_DISABLE_FUSE='1', LIBGL_ALWAYS_SOFTWARE='1',
@@ -353,7 +379,7 @@ echo "Connection '$6' ({UUID}) successfully added."
             config(connectivity=2)
             before = snap()['checks']; time.sleep(0.32)
             assert 2 <= snap()['checks'] - before <= 4, 'one timer across multiple panels'
-            form_test(ipc, nmcli_log, work)
+            form_test(ipc, nmcli_log, notify_log, work)
             config(wifiEnabled=False)
             assert not snap()['portal']
             before = snap()['checks']; time.sleep(0.25)
