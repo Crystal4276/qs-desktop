@@ -44,6 +44,8 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
   fenêtres Nemo par `ScriptModel` essayé puis retiré (avertissement au démarrage).
 - Revue, passe 4 : règle udev annoncée dans les étapes système d'`install.sh` (liste, progression, retrait). Rechargement
   pendant une question non reproduit (une seule notification, retirée à la réponse) ; le reste est négligeable.
+- Revue, passe 5 : rien que du négligeable (fenêtre Nemo sans titre pendant un chargement lent, jamais vue sur banc ;
+  SSD USB de travail limité aussi, sans perte de débit mesurée) : **revue close**.
 - **À tester** : vraie copie Nemo sur un autre espace → notification de fin ; copie vers un dossier où le fichier existe →
   « Waiting for your answer », clic ; quand l'occasion se présente, une vraie clé (exFAT surtout).
 
