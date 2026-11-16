@@ -165,6 +165,8 @@ Singleton {
     onWifiPanelPinnedChanged: {
         if (wifiPanelPinned)
             Qt.callLater(checkConnectivity);
+        else if (signInFailure && !signInFailure.notified)
+            notifySignInFailure(signInFailure);   // attendait derrière un autre formulaire, panneau refermé sans le montrer
     }
 
     // Unique pour toutes les barres ; continue pendant l'identification, panneau fermé. Au repos, NetworkManager s'en charge.
@@ -232,7 +234,8 @@ Singleton {
     readonly property bool signingIn: signInRequest !== null
     property bool signInStarted: false   // « Connecting » vu : le retour à « Disconnected » met fin à la connexion
     // Échec à montrer : { network, name, kind, identity, method, domain } ; `kind` : "refused" (identifiant ou mot de passe
-    // saisi refusé), "expired" (mot de passe enregistré refusé), "failed" (autre échec), "profile" (`nmcli` en échec). Pris par
+    // saisi refusé), "expired" (mot de passe enregistré refusé), "failed" (échec de la connexion), "profile" (création ou
+    // préparation en échec, avant toute connexion). Pris par
     // le panneau épinglé (takeSignInFailure) ; aucun panneau Wi-Fi épinglé (fermé, ou simple aperçu) : notification en plus.
     property var signInFailure: null
 
@@ -253,9 +256,14 @@ Singleton {
     function reportSignInFailure(failure: var): void {
         signInFailure = failure;
         if (!wifiPanelPinned)
-            Quickshell.execDetached(["notify-send", "--app-name=Wi-Fi", "--icon=network-wireless-offline", "--",
-                failureText(failure), failure.kind === "expired" ? "Open the Wi-Fi panel to enter the new one."
-                : "Open the Wi-Fi panel to try again."]);
+            notifySignInFailure(failure);
+    }
+
+    function notifySignInFailure(failure: var): void {
+        failure.notified = true;
+        Quickshell.execDetached(["notify-send", "--app-name=Wi-Fi", "--icon=network-wireless-offline", "--",
+            failureText(failure), failure.kind === "expired" ? "Open the Wi-Fi panel to enter the new one."
+            : "Open the Wi-Fi panel to try again."]);
     }
 
     function takeSignInFailure(): var {
@@ -401,10 +409,10 @@ Singleton {
                     if (code === 0)
                         root.deleteProfile(uuid);
                 } else if (request?.uuid === uuid && !request.settings) {
+                    root.signInRequest = Object.assign({}, request, { added: true });
                     if (code !== 0) {
-                        root.finishSignIn("profile");
+                        root.finishSignIn("profile");   // supprime aussi un profil créé malgré l'échec
                     } else {
-                        root.signInRequest = Object.assign({}, request, { added: true });
                         root.findCreatedProfile();
                     }
                 }
@@ -422,9 +430,13 @@ Singleton {
 
     Connections {
         target: root.signInRequest?.settings && !root.signInRequest.connecting ? root.signInRequest.settings : null
+        // Réseau disparu entre-temps (objet détruit : propriétés indéfinies) : rien à connecter.
         function onSettingsChanged() {
-            if (root.signInRequest.network)
-                root.startSignIn(root.signInRequest);
+            const request = root.signInRequest;
+            if (request.network?.name === request.name)
+                root.startSignIn(request);
+            else
+                root.finishSignIn("profile");
         }
     }
 
@@ -481,7 +493,7 @@ Singleton {
     // éventuelle autorisation polkit ; pendant : délai d'authentification (10 s) et DHCP (45 s par défaut) compris.
     Timer {
         id: signInTimeout
-        onTriggered: root.finishSignIn("failed")
+        onTriggered: root.finishSignIn(root.signInRequest?.connecting ? "failed" : "profile")
     }
     // Chaque nouvelle valeur de la requête est une nouvelle étape.
     onSignInRequestChanged: {
@@ -551,9 +563,13 @@ Singleton {
         value: root.wifiPanelPinned
     }
 
+    // Wi-Fi coupé (interrupteur, mode avion, `nmcli radio`) : la connexion suivie s'arrête, ce n'est pas un échec à annoncer.
+    onWifiUsableChanged: {
+        if (!wifiUsable)
+            abandonSignIn();
+    }
+
     function setWifiEnabled(enabled: bool): void {
-        if (!enabled)
-            abandonSignIn();   // Wi-Fi coupé par l'utilisateur : pas un échec à annoncer
         Networking.wifiEnabled = enabled;
     }
 

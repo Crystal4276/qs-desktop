@@ -62,6 +62,13 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
   message mène à la bonne action, le mot de passe tapé est alors gardé par le système), `connectionFailed` plus d'1 s après la
   déconnexion. Idée notée dans `BACKLOG.md` : un seul suivi des connexions pour tous les réseaux. Contre-épreuve : échec sur le
   code de la passe 3 (panneau retenu).
+- Passe 5 (10 constats, 8 retenus, tous mineurs) : mode avion, interrupteur ou `nmcli radio` pendant la tentative (abandon
+  sans message, comme l'interrupteur du panneau) ; formulaire d'échec resté ouvert (et clavier pris) en recliquant son réseau ;
+  réseau disparu entre l'écriture et la connexion (sans erreur) ; « Forget » du réseau suivi annoncé comme un échec ; formulaire
+  d'échec resté affiché après une connexion réussie ; échec en attente derrière un autre formulaire jamais notifié si le panneau
+  se refermait (notifié à la fermeture) ; `nmcli` en échec (profil éventuel supprimé, plus d'entrée laissée) ; garde-fou avant
+  la connexion annoncé « weak signal or wrong password » (message générique). Déjà traités : mot de passe tapé qui remplace un
+  bon (règle de la passe 3), suivi WPA séparé (`BACKLOG.md`). Contre-épreuve : échec sur le code de la passe 4.
 - Délai avant le refus : 10 s au lieu de 25 (ta demande) : `802-1x.auth-timeout 10` dans les profils créés par le panneau
   (accepté par `nmcli`, vérifié hors ligne) ; un profil créé avant garde 25 s.
 - Petit changement : Entrée sur un mot de passe WPA vide ne ferme plus le formulaire (il reste ouvert).
