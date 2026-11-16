@@ -12,8 +12,9 @@ import Quickshell.Wayland
 //  - progression : titre « NN% statut » (« %d%% %s ») ; finie (ou annulée), elle perd son pourcentage juste avant de se
 //    fermer ; fermée à la main, elle disparaît avec, et Nemo notifie lui-même à la vraie fin. Hyprland perd ce dernier titre
 //    (fermeture sans rendu entre les deux) : toute fermeture y compte comme une fin (ton choix du 2026-11-16, BACKLOG) ;
-//  - question : titre vide (boîtes de run_simple_dialog : erreurs, confirmations) ou « File conflict » (titre de Nemo dans la
-//    langue de la session) ; notifiée si elle attend encore après questionDelay (une confirmation à laquelle on répond aussitôt
+//  - question : titre vide (boîtes de run_simple_dialog : erreurs, confirmations) ou celui de la boîte de conflit (« File
+//    conflict » dans la langue de Nemo : sa traduction) ; Nemo traite ses opérations l'une après l'autre, une seule attend donc
+//    à la fois ; notifiée si elle attend encore après questionDelay (une confirmation à laquelle on répond aussitôt
 //    ne l'est pas) ; critique pour rester affichée jusqu'à la réponse (Notifs : 4 s au plus sinon ; ton choix du 2026-11-16),
 //    retirée à la fermeture de la question ; clic sur la notification : la fenêtre de la question.
 Singleton {
@@ -22,6 +23,18 @@ Singleton {
     readonly property int questionDelay: 3000
     readonly property var notify: ["notify-send", "--app-name=nemo", "--hint=string:desktop-entry:org.Nemo"]
     readonly property string summary: "File Operations"
+    property string conflictTitle: "File conflict"
+
+    Process {
+        running: true
+        command: ["gettext", "-d", "nemo", "File conflict"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                if (text !== "")
+                    root.conflictTitle = text;
+            }
+        }
+    }
 
     Instantiator {
         model: ToplevelManager.toplevels
@@ -31,9 +44,9 @@ Singleton {
 
             required property Toplevel modelData
             readonly property bool nemo: modelData.appId === "nemo"
-            readonly property string title: modelData.title
+            readonly property string title: modelData?.title ?? ""   // indéfini au démontage d'un rechargement
             property bool progress: false
-            readonly property bool question: nemo && (title === "" || title === "File conflict")
+            readonly property bool question: nemo && (title === "" || title === root.conflictTitle)
             property Process notifier: null
 
             function percent(): bool {

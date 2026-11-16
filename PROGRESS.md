@@ -29,6 +29,10 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
   l'écriture) ; avec, progression régulière, 100 % à 10,8 s, écrite à 11,0 s.
 - Valeur portée à 64 Mio (ta remarque : clés rapides, SSD USB) : disque loop en mémoire (~3,5 Go/s), 16 Mio y perd 25 à 40 %
   du débit, 64 et 128 Mio aucun. **À refaire par toi** : `./system-setup.sh removable-writeback` (sans `sudo`).
+- Revue, passe 1 : disques et SSD externes en boîtier SATA ratés par la règle (systemd y met `ID_BUS=ata`, vu dans le code
+  d'`usb_id`) : USB reconnu par le parent ; conflit Nemo en français non reconnu (titre lu dans la traduction de Nemo,
+  `gettext`) ; avertissement de `FileOps` à chaque rechargement. Écartés : rechargement et double question non reproduits
+  (Nemo traite une opération à la fois), annulation et fermeture à la main sous Hyprland (ton choix), dossier « NN% … ».
 - **À tester** : vraie copie Nemo sur un autre espace → notification de fin ; copie vers un dossier où le fichier existe →
   « Waiting for your answer », clic ; quand l'occasion se présente, une vraie clé (exFAT surtout).
 
