@@ -343,6 +343,8 @@ activé après UFW (paquet `ufw`) : port 22 ouvert sur `zt+` seulement ; journal
 (`dotfiles/journald/`, rétention native de journald) et cache pacman limité à une version précédente (hook
 `dotfiles/pacman/hooks/90-qs-paccache.hook`, `paccache` de `pacman-contrib`).
 `python3 scripts/test-ssh-server.py` : provisioning isolé, services, UFW, journal et cache pacman simulés, sans privilège.
+Toute machine : règle udev du cache d'écriture des disques amovibles (`dotfiles/udev/`, `udevadm` de `systemd`) ;
+`python3 scripts/test-removable-writeback.py` (syntaxe par `udevadm verify`, installation simulée, sans privilège).
 `python3 scripts/test-ssh-desktop.py` : vrais fichiers SSH jetables, pseudo-terminal Python et
 connexions distantes simulées ; aucun accès réseau réel ni privilège requis.
 
