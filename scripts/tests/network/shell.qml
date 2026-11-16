@@ -22,8 +22,9 @@ ShellRoot {
         for (const child of item.children ?? []) root.findAll(child, match, found);
         return found;
     }
+    // Champ par le début de son texte indicatif (« Server domain » : optionnel ou requis).
     function field(placeholder) {
-        return root.findAll(root.panel.contentItem, item => item.placeholder === placeholder, [])[0];
+        return root.findAll(root.panel.contentItem, item => item.placeholder?.startsWith(placeholder), [])[0];
     }
     function button(text) {
         return root.findAll(root.panel.contentItem, item => item.text === text && item.clicked !== undefined, [])[0];
@@ -97,11 +98,13 @@ ShellRoot {
             const titles = root.findAll(content, item => item.visible && /^(Sign in|Wrong|Password for)/.test(item.text ?? ""), []);
             const tabs = root.findAll(content, item => item.current !== undefined && item.picked !== undefined, [])[0];
             const connect = root.button("Connect");
+            const domain = root.field("Server domain");
             return JSON.stringify({ title: titles.map(item => item.text), username: shown(root.field("Username")),
-                password: shown(root.field("Password")), domain: shown(root.field("Server domain (optional)")),
+                password: shown(root.field("Password")), domain: Object.assign(shown(domain), { placeholder: domain.placeholder }),
                 tabs: { visible: tabs.visible, current: tabs.current }, connect: { visible: connect.visible, enabled: connect.enabled },
                 passwordFor: root.panel.passwordFor?.name ?? "", pending: root.panel.pending?.name ?? "",
-                failText: root.panel.failText, holdOpen: root.panel.holdOpen, signingIn: Network.signingIn });
+                failText: root.panel.failText, holdOpen: root.panel.holdOpen, signingIn: Network.signingIn,
+                failurePending: Network.signInFailure !== null });
         }
         function fill(json: string): void {
             const values = JSON.parse(json);
@@ -129,7 +132,20 @@ ShellRoot {
         function setState(name: string, state: string): void { Backend[name].state = NM.ConnectionState[state]; }
         function cancel(): void { Network.cancelWifi(); }
         function closePanel(): void { root.panel.close(); }
-        function reopenPanel(): void { root.panel.toggle(anchor, Qt.LeftButton); }
+        // Ouvert (épinglé) : créé s'il n'existe plus ; sinon clic sur le bouton (ouvre, ou épingle un aperçu).
+        function reopenPanel(): void {
+            if (root.panel) root.panel.toggle(anchor, Qt.LeftButton);
+            else root.openPanelOnce();
+        }
+        function previewPanel(): void { root.panel.preview(anchor, Qt.LeftButton); }
+        function destroyPanel(): void { root.panel.destroy(); root.panel = null; }
+        // Échec signalé par le réseau lui-même (connexion automatique) ; liste surveillée par le service.
+        function emitFail(name: string, reason: string): void { Backend[name].connectionFailed(NM.ConnectionFailReason[reason]); }
+        function list(names: string): void { Backend.listed = names === "" ? [] : names.split(",").map(n => Backend[n]); }
+        function failurePending(): bool { return Network.signInFailure !== null; }
+        function silent(on: bool): void { Backend.silentWrites = on; }
+        function makeTemp(name: string): void { Backend.temp = Backend.wifiComponent.createObject(null, { name: name }); }
+        function destroyTemp(): void { Backend.temp.destroy(); }
         function profile(name: string, uuid: string, json: string): void { Backend.addProfile(Backend[name], uuid, JSON.parse(json)); }
         function reset(name: string): void { Backend[name].nmSettings = []; }
         function calls(): string { return JSON.stringify(Backend.calls); }

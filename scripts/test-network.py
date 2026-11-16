@@ -128,26 +128,31 @@ exec ''' + real_install + ' "$@"\n')
     print('PASS concurrent installs: original restored / new file removed')
 
 
-UUID = '0f1e2d3c-4b5a-6978-8796-a5b4c3d2e1f0'
-
-
 def form_test(ipc, nmcli_log, notify_log, work):
-    """Formulaires du panneau Wi-Fi : réseau entreprise (création sans secret sur la ligne de commande, mot de passe écrit, refus,
-    nouvelle saisie, mot de passe enregistré refusé hors panneau, réseau enregistré, panneau fermé, annulation, échec sans raison,
-    échec de `nmcli`) et réseau WPA."""
-    def notified(): return notify_log.read_text() if notify_log.exists() else ''
-
+    """Formulaires du panneau Wi-Fi : réseau entreprise et réseau WPA. Création sans secret sur la ligne de commande (sortie de
+    `nmcli` traduite), TTLS sans domaine refusé, mot de passe refusé jamais gardé, saisie reprise, mot de passe enregistré
+    refusé hors panneau (vraie liste surveillée), réseau enregistré, échec de signal sans effacement, panneau fermé ou en aperçu,
+    annulation, autre connexion demandée, deux créations rapprochées, garde-fou, réseau disparu, échec de `nmcli`."""
     def form(): return json.loads(ipc('form'))
     def calls(): return json.loads(ipc('calls'))
     def settle(seconds=0.1): time.sleep(seconds)
     def fill(**values): ipc('fill', json.dumps({PLACEHOLDERS[k]: v for k, v in values.items()}))
     def new_calls(before): return calls()[len(before):]
+    def notified(): return notify_log.read_text().splitlines() if notify_log.exists() else []
+    def invocations(): return [line.split('\x1f') for line in nmcli_log.read_text().splitlines()] if nmcli_log.exists() else []
+    def added(): return [inv[inv.index('connection.uuid') + 1] for inv in invocations() if inv[1] == 'add']
+    def deleted(): return [inv[-1] for inv in invocations() if inv[1] == 'delete']
+    def profile(name, uuid, method='ttls', identity='alice@campus.example'):
+        ipc('profile', name, uuid, json.dumps({'802-1x': {'eap': [method], 'identity': identity, 'phase2-auth': 'pap'},
+                                               'connection': {'autoconnect': False}}))
+        settle()
     created_args = ['connection', 'add', 'type', 'wifi', 'con-name', 'Campus', 'ssid', 'Campus', 'connection.autoconnect', 'no',
                     'wifi-sec.key-mgmt', 'wpa-eap', '802-1x.eap', 'ttls', '802-1x.phase2-auth', 'pap',
                     '802-1x.identity', 'alice@campus.example', '802-1x.auth-timeout', '10', '802-1x.system-ca-certs', 'yes',
                     '802-1x.domain-suffix-match', 'radius.campus.example']
-    profile = json.dumps({'802-1x': {'eap': ['ttls'], 'identity': 'alice@campus.example', 'phase2-auth': 'pap'},
-                          'connection': {'autoconnect': False}})
+    def without_uuid(inv):
+        i = inv.index('connection.uuid')
+        return inv[:i] + inv[i + 2:]
 
     ipc('panels', 'false', '0')   # faux panneaux du test du portail : seul le vrai panneau compte ici
     ipc('openForm', 'enterprise'); settle()
@@ -155,26 +160,32 @@ def form_test(ipc, nmcli_log, notify_log, work):
     assert f['title'] == ['Sign in to Campus'] and f['passwordFor'] == 'Campus', f
     assert all(f[k]['visible'] for k in ('username', 'password', 'domain')) and f['tabs'] == {'visible': True, 'current': 'peap'}, f
     assert f['connect'] == {'visible': True, 'enabled': False} and not f['holdOpen'], f
-    # Identifiant manquant : ni Entrée ni bouton.
+    # Identifiant manquant : ni Entrée ni bouton. TTLS sans domaine : refusé (PAP en clair vers un faux point d'accès).
     fill(password='pa ss'); ipc('enter', 'Password'); ipc('click', 'Connect'); settle()
     f = form()
-    assert f['passwordFor'] == 'Campus' and f['holdOpen'] and not f['connect']['enabled'] and not nmcli_log.exists(), f
-    fill(username=' alice@campus.example ', domain=' radius.campus.example '); ipc('pick', 'ttls'); settle()
+    assert f['passwordFor'] == 'Campus' and f['holdOpen'] and not f['connect']['enabled'] and not invocations(), f
+    fill(username=' alice@campus.example '); ipc('pick', 'ttls'); settle()
+    f = form()
+    assert not f['connect']['enabled'] and f['domain']['placeholder'] == 'Server domain (required with TTLS)', f
+    ipc('enter', 'Password'); settle()
+    assert form()['passwordFor'] == 'Campus' and not invocations()
+    fill(domain=' radius.campus.example '); settle()
     assert form()['connect']['enabled']
     ipc('capturePanel', str(work / 'enterprise-form.png')); settle()
-    ipc('click', 'Connect'); settle()
+    ipc('click', 'Connect'); settle(0.5)
     f = form()
     assert f['passwordFor'] == '' and f['signingIn'] and f['holdOpen'] and f['failText'] == '', f
-    assert nmcli_log.read_text().splitlines() == created_args, nmcli_log.read_text()
+    # Sortie de `nmcli` traduite (« ajoutée avec succès ») : l'UUID vient de la commande, pas de sa sortie.
+    assert [without_uuid(inv) for inv in invocations()] == [created_args], invocations()
+    uuid = added()[0]
     assert calls() == [], 'nothing written before the profile appears'
-    nmcli_log.unlink()
-    ipc('profile', 'enterprise', UUID, profile); settle()
-    assert calls() == [['write', {'802-1x': {'password': 'pa ss'}}], ['connect', UUID]], calls()
+    profile('enterprise', uuid)
+    assert calls() == [['write', {'802-1x': {'password': 'pa ss'}}], ['connect', uuid]], calls()
 
     # Refus : profil créé supprimé (mot de passe jamais gardé), formulaire rouge avec ce qui avait été saisi.
     before = calls()
     ipc('fail', 'enterprise', 'NoSecrets', 'false'); settle()
-    assert new_calls(before) == [['forget', UUID]], calls()
+    assert new_calls(before) == [['forget', uuid]], calls()
     f = form()
     assert f['title'] == ['Wrong username or password for Campus'] and not f['signingIn'] and f['failText'] == '', f
     assert f['username'] == {'visible': True, 'text': 'alice@campus.example', 'error': True}, f
@@ -183,28 +194,26 @@ def form_test(ipc, nmcli_log, notify_log, work):
     ipc('capturePanel', str(work / 'enterprise-refused.png')); settle()
 
     # Nouvelle saisie : profil recréé ; connecté, il reçoit la connexion automatique.
-    fill(password='good'); ipc('enter', 'Password'); settle()
-    assert nmcli_log.read_text().splitlines() == created_args
+    fill(password='good'); ipc('enter', 'Password'); settle(0.5)
+    uuid = added()[-1]
     before = calls()
-    ipc('profile', 'enterprise', UUID, profile); settle()
+    profile('enterprise', uuid)
     ipc('setState', 'enterprise', 'Connected'); settle()
-    assert new_calls(before) == [['write', {'802-1x': {'password': 'good'}}], ['connect', UUID],
+    assert new_calls(before) == [['write', {'802-1x': {'password': 'good'}}], ['connect', uuid],
                                  ['write', {'connection': {'autoconnect': True}}]], calls()
-    assert not form()['signingIn']
+    assert not form()['signingIn'] and notified() == [], 'no notification while the panel is pinned'
     ipc('setState', 'enterprise', 'Disconnected'); settle()
-    nmcli_log.unlink()
-    assert notified() == '', 'no notification while the panel is open'
 
-    # Mot de passe enregistré refusé hors panneau (renouvelé par l'établissement) : notification panneau fermé, formulaire rouge
-    # à l'ouverture, rien d'effacé ; autre cause hors panneau (réseau perdu) : rien.
-    ipc('closePanel'); settle()
+    # Mot de passe enregistré refusé hors panneau (renouvelé par l'établissement), par la vraie liste surveillée : notification
+    # panneau fermé, formulaire rouge à l'ouverture, rien d'effacé ; autre cause hors panneau (réseau perdu) : rien.
+    ipc('closePanel'); ipc('destroyPanel'); ipc('list', 'enterprise'); settle()
     before = calls()
-    ipc('background', 'enterprise', 'WifiNetworkLost'); settle()
-    assert notified() == ''
-    ipc('background', 'enterprise', 'NoSecrets'); settle()
-    assert new_calls(before) == [] and notified().splitlines() == ['--app-name=Wi-Fi', '--icon=network-wireless-offline',
+    ipc('emitFail', 'enterprise', 'WifiNetworkLost'); settle()
+    assert notified() == [] and not form_pending(ipc)
+    ipc('emitFail', 'enterprise', 'NoSecrets'); settle()
+    assert new_calls(before) == [] and notified() == ['--app-name=Wi-Fi', '--icon=network-wireless-offline', '--',
         'Campus refused the saved password', 'It may have expired: open the Wi-Fi panel to enter the new one.'], notified()
-    ipc('reopenPanel'); settle()
+    ipc('list', ''); ipc('reopenPanel'); settle()
     f = form()
     assert f['title'] == ['Wrong username or password for Campus'], f
     assert f['failText'] == 'Campus refused the saved password: it may have expired', f
@@ -215,53 +224,110 @@ def form_test(ipc, nmcli_log, notify_log, work):
     before = calls()
     ipc('openForm', 'enterprise'); settle()
     ipc('fail', 'enterprise', 'NoSecrets', 'false'); settle()
-    assert new_calls(before) == [['connect', UUID]], calls()
+    assert new_calls(before) == [['connect', uuid]], calls()
     f = form()
     assert f['title'] == ['Wrong username or password for Campus'] and f['username']['text'] == 'alice@campus.example', f
-    assert not f['tabs']['visible'] and not f['domain']['visible'], f
 
-    # Nouveau mot de passe, autre échec : secrets effacés, profil gardé, message.
+    # Nouveau mot de passe, échec de signal : rien d'effacé (il est peut-être bon), message.
     before = calls()
     fill(username='alice', password='new'); ipc('click', 'Connect'); settle()
     ipc('fail', 'enterprise', 'WifiClientFailed', 'false'); settle()
-    assert new_calls(before) == [['write', {'802-1x': {'identity': 'alice', 'password': 'new'}}], ['connect', UUID],
-                                 ['clear', UUID]], calls()
+    assert new_calls(before) == [['write', {'802-1x': {'identity': 'alice', 'password': 'new'}}], ['connect', uuid]], calls()
     f = form()
     assert f['title'] == ['Sign in to Campus'] and f['username']['text'] == 'alice', f
     assert f['failText'] == 'Could not connect to Campus — weak signal or wrong username or password', f
 
-    # Panneau fermé pendant la connexion (état avant le signal) : l'échec attend la réouverture.
+    # Refusé : secrets effacés ; l'échec de la connexion automatique qui suit (profil sans secret) n'est pas « expiré ».
+    before = calls()
+    fill(password='wrong'); ipc('enter', 'Password'); settle()
+    ipc('fail', 'enterprise', 'NoSecrets', 'false'); settle()
+    assert new_calls(before)[2:] == [['clear', uuid]], calls()
+    ipc('background', 'enterprise', 'NoSecrets'); settle()
+    assert form()['failText'] == '' and not form()['failurePending'], form()
+
+    # Panneau fermé, puis simple aperçu au survol pendant la connexion (état avant le signal) : notification, l'aperçu ne
+    # consomme pas l'échec ; montré une fois le panneau épinglé.
     fill(password='again'); ipc('enter', 'Password'); settle()
-    ipc('closePanel'); settle()
+    ipc('closePanel'); settle(); ipc('previewPanel'); settle()
     before = calls()
     ipc('fail', 'enterprise', 'NoSecrets', 'true'); settle(1.2)
-    assert new_calls(before) == [['clear', UUID]], calls()
-    assert notified().splitlines()[2:] == ['Wrong username or password for Campus', 'Open the Wi-Fi panel to try again.'], notified()
-    ipc('reopenPanel'); settle()
+    assert new_calls(before) == [['clear', uuid]], calls()
+    assert notified()[3:] == ['Wrong username or password for Campus', 'Open the Wi-Fi panel to try again.'], notified()
+    f = form()
+    assert f['passwordFor'] == '' and f['failurePending'], f
+    ipc('closePanel'); settle(); ipc('reopenPanel'); settle()
     f = form()
     assert f['title'] == ['Wrong username or password for Campus'] and f['username']['text'] == 'alice', f
+    notify_log.unlink()
 
     # Annulation : secret saisi effacé, rien à montrer.
     fill(password='x'); ipc('enter', 'Password'); settle()
     before = calls()
     ipc('cancel'); ipc('setState', 'enterprise', 'Disconnected'); settle(1.2)
-    assert new_calls(before) == [['clear', UUID]], calls()
+    assert new_calls(before) == [['clear', uuid]], calls()
     f = form()
     assert f['passwordFor'] == '' and f['failText'] == '' and not f['signingIn'], f
 
-    # Retour à « Disconnected » sans échec traduit : message après une seconde.
+    # Retour à « Disconnected » sans échec traduit : message après une seconde, mot de passe (non saisi) gardé.
+    before = calls()
     ipc('openForm', 'enterprise'); settle()
     ipc('setState', 'enterprise', 'Disconnected'); settle(0.3)
     assert form()['signingIn'] and form()['passwordFor'] == ''
     settle(1.0)
     f = form()
     assert not f['signingIn'] and f['passwordFor'] == 'Campus' and f['failText'].startswith('Could not connect to Campus —'), f
+    assert new_calls(before) == [['connect', uuid]], calls()
 
-    # `nmcli` en échec (réseau de nouveau sans profil) : message, saisie reprise, rien d'écrit.
+    # Autre connexion demandée pendant la tentative (réseau WPA) : abandon sans message, mot de passe saisi effacé.
+    fill(password='y'); ipc('enter', 'Password'); settle()
+    ipc('openForm', 'personal'); settle(); fill(password='wpa key'); before = calls(); ipc('click', 'Connect'); settle()
+    assert new_calls(before) == [['clear', uuid], ['psk', 'wpa key']], calls()
+    ipc('setState', 'enterprise', 'Disconnected'); settle(1.2)
+    f = form()
+    assert not f['signingIn'] and f['failText'] == '' and f['passwordFor'] == '' and not f['failurePending'], f
+
+    # Deux créations rapprochées (nouveau réseau, puis un autre pendant `nmcli`) : la première est abandonnée et son profil
+    # supprimé à la fin de `nmcli` ; la seconde suit son cours.
+    ipc('reset', 'enterprise'); settle()
+    ipc('openForm', 'enterprise'); settle(); fill(username='alice', password='p1'); ipc('enter', 'Password')
+    ipc('openForm', 'library'); settle(); fill(username='alice', password='p2'); ipc('enter', 'Password'); settle(0.8)
+    first, second = added()[-2:]
+    assert first in deleted() and second not in deleted(), invocations()
+    before = calls()
+    profile('library', second, 'peap')
+    assert new_calls(before) == [['write', {'802-1x': {'password': 'p2'}}], ['connect', second]], calls()
+    ipc('setState', 'library', 'Connected'); settle(); ipc('setState', 'library', 'Disconnected'); settle()
+
+    # Garde-fou : profil jamais apparu (créé : supprimé), puis écriture sans réponse (mot de passe d'un profil existant gardé).
+    ipc('openForm', 'enterprise'); settle(); fill(username='alice', password='p3'); ipc('enter', 'Password'); settle(0.5)
+    stuck = added()[-1]
+    settle(2.6)
+    f = form()
+    assert not f['signingIn'] and f['passwordFor'] == 'Campus' and f['failText'].startswith('Could not connect'), f
+    assert stuck in deleted(), invocations()
+    before = calls()
+    ipc('openForm', 'library'); settle(); ipc('fail', 'library', 'NoSecrets', 'false'); settle()
+    ipc('silent', 'true'); fill(password='p4'); ipc('enter', 'Password'); settle(2.9)
+    f = form()
+    assert not f['signingIn'] and f['passwordFor'] == 'Library' and f['failText'].startswith('Could not connect'), f
+    assert new_calls(before) == [['connect', second],
+                                 ['write', {'802-1x': {'identity': 'alice@campus.example', 'password': 'p4'}}]], calls()
+    ipc('silent', 'false')
+
+    # Réseau disparu (hors de portée) avant l'ouverture du panneau : message seul, sans erreur.
+    ipc('makeTemp', 'Lab'); profile('temp', 'lab-uuid', 'peap')
+    ipc('openForm', 'temp'); settle(); ipc('closePanel'); settle()
+    ipc('fail', 'temp', 'NoSecrets', 'false'); settle(); ipc('destroyTemp'); settle()
+    ipc('reopenPanel'); settle()
+    f = form()
+    assert f['failText'] == 'Wrong username or password for Lab' and f['passwordFor'] == '', f
+    notify_log.unlink()
+
+    # `nmcli` en échec (réseau sans profil) : message, saisie reprise, rien d'écrit.
     ipc('reset', 'enterprise'); settle()
     ipc('openForm', 'enterprise'); settle()
     before = calls()
-    fill(username='bogus', password='x'); ipc('enter', 'Password'); settle(0.3)
+    fill(username='bogus', password='x'); ipc('enter', 'Password'); settle(0.6)
     f = form()
     assert f['failText'] == 'Could not connect to Campus' and f['username']['text'] == 'bogus' and calls() == before, f
 
@@ -272,11 +338,16 @@ def form_test(ipc, nmcli_log, notify_log, work):
     assert not f['tabs']['visible'] and f['connect'] == {'visible': True, 'enabled': False}, f
     fill(password='wpa key'); ipc('click', 'Connect'); settle()
     assert calls()[-1] == ['psk', 'wpa key'] and form()['pending'] == 'Home', calls()
-    print('PASS QML: enterprise form (Connect button, no secret on argv, refused password never kept, retry, saved network, '
-          'closed panel, cancel, unknown failure, nmcli failure), WPA form')
+    print('PASS QML: enterprise form (Connect button, TTLS needs a domain, translated nmcli, refused password never kept, '
+          'retry, expired saved password via the watched list, weak signal keeps it, closed or previewed panel, cancel, '
+          'other connection, overlapping creations, watchdog, vanished network, nmcli failure), WPA form')
 
 
-PLACEHOLDERS = {'username': 'Username', 'password': 'Password', 'domain': 'Server domain (optional)'}
+def form_pending(ipc):
+    return ipc('failurePending') == 'true'
+
+
+PLACEHOLDERS = {'username': 'Username', 'password': 'Password', 'domain': 'Server domain'}
 
 
 def qml_test(work):
@@ -288,6 +359,8 @@ def qml_test(work):
     network = (stage / 'services/Network.qml').read_text().replace('Networking.', 'Backend.')
     # Accelerate the ten-second timer; disable /proc sampling so route changes are deterministic.
     network = network.replace('interval: 10000', 'interval: 100')
+    # Garde-fou de la connexion entreprise : 2,5 s avant la connexion, 6 s pendant.
+    network = network.replace('signInRequest.connecting ? 90000 : 15000', 'signInRequest.connecting ? 6000 : 2500')
     network = network.replace('running: true\n        repeat: true\n        triggeredOnStart: true',
                               'running: false\n        repeat: true\n        triggeredOnStart: false', 1)
     (stage / 'services/Network.qml').write_text(network)
@@ -297,13 +370,16 @@ def qml_test(work):
     (stage / 'services/Launch.qml').write_text('pragma Singleton\nimport QtQuick\nQtObject { property var commands: []; function exec(args) { commands = commands.concat([args]); } }\n')
     bindir = work / 'bin'
     bindir.mkdir()
-    # `nmcli connection add` : arguments enregistrés, profil annoncé (échec si l'identifiant est « bogus »).
-    nmcli_log = work / 'nmcli-add.log'
+    # `nmcli connection …` : arguments enregistrés (séparés par \x1f) ; `add` lent (0,3 s), sortie traduite, échec si
+    # l'identifiant est « bogus ».
+    nmcli_log = work / 'nmcli.log'
     (bindir / 'nmcli').write_text(f'''#!/bin/sh
-[ "$1 $2" = "connection add" ] || exit 0
-printf '%s\\n' "$@" >> {shlex.quote(str(nmcli_log))}
-case " $* " in *" bogus "*) echo "Error: failed" >&2; exit 1 ;; esac
-echo "Connection '$6' ({UUID}) successfully added."
+[ "$1" = "connection" ] || exit 0
+(IFS=$(printf '\\037'); echo "$*") >> {shlex.quote(str(nmcli_log))}
+[ "$2" = "add" ] || exit 0
+sleep 0.3
+case " $* " in *" bogus "*) echo "Erreur : échec" >&2; exit 1 ;; esac
+echo "Connexion « Campus » ajoutée avec succès."
 ''')
     (bindir / 'nmcli').chmod(0o755)
     # `notify-send` : arguments enregistrés (aucune notification réelle sur la session).

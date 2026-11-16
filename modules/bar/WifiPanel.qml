@@ -26,10 +26,13 @@ Panel {
     readonly property bool enterprise: passwordFor !== null && Network.isEnterprise(passwordFor.security)
     readonly property bool newProfile: enterprise && !passwordFor.known
     property string method: "peap"
+    // TTLS (PAP) sans domaine vérifié livrerait le mot de passe en clair à un faux point d'accès : domaine exigé.
+    readonly property bool domainRequired: newProfile && method === "ttls"
     // Champs requis remplis : bouton « Connect » actif, Entrée acceptée.
     readonly property bool formReady: password.text !== "" && (!enterprise || identity.text.trim() !== "")
-    // Texte tapé, même si le focus a quitté le champ, ou connexion entreprise en cours (son issue s'affiche ici) : pas de
-    // fermeture automatique.
+        && (!domainRequired || domain.text.trim() !== "")
+    // Texte tapé (ou identifiant repris : formulaire d'un échec, à laisser affiché), même si le focus a quitté le champ, ou
+    // connexion entreprise en cours (son issue s'affiche ici) : pas de fermeture automatique.
     holdOpen: [identity, password, domain].some(field => field.text !== "") || Network.signingIn
     // Dernier réseau dont la connexion a été demandée ici, et message de son échec.
     property var pending: null
@@ -38,7 +41,8 @@ Panel {
     readonly property var others: Network.wifiNetworks.filter(n => n !== Network.currentWifi)
 
     // Fermé : demandes en cours oubliées (un échec plus tard, panneau fermé, n'est pas annoncé à la réouverture), sauf l'échec
-    // d'une connexion entreprise, gardé par le service et montré à l'ouverture.
+    // d'une connexion entreprise, gardé par le service et montré une fois le panneau épinglé (pas pendant un aperçu au survol,
+    // qui le perdrait en se refermant).
     onVisibleChanged: {
         Network.setPanelOpen("wifi", root, visible);
         if (!visible) {
@@ -46,10 +50,9 @@ Panel {
             passwordRefused = false;
             pending = null;
             failText = "";
-        } else {
-            showSignInFailure();
         }
     }
+    onPinnedChanged: showSignInFailure()
     Component.onDestruction: Network.setPanelOpen("wifi", root, false)
 
     function stateText(network): string {
@@ -93,6 +96,7 @@ Panel {
             Network.connectEnterprise(network);   // suivie par le service, échec repris par showSignInFailure
             return;
         }
+        Network.abandonSignIn();   // une autre connexion remplace celle qui était suivie
         pending = network;
         network.connect();
     }
@@ -110,6 +114,7 @@ Panel {
         if (isEnterprise) {
             Network.signInEnterprise(network, ...values);
         } else {
+            Network.abandonSignIn();
             pending = network;
             network.connectWithPsk(values[1]);
         }
@@ -120,12 +125,20 @@ Panel {
     // d'un autre réseau en cours : l'échec attend.
     function showSignInFailure(): void {
         const failure = Network.signInFailure;
-        if (!visible || !failure || (passwordFor !== null && passwordFor !== failure.network))
+        if (!pinned || !failure || (passwordFor !== null && passwordFor !== failure.network))
             return;
         Network.signInFailure = null;
-        const name = failure.network.name;
+        const name = failure.name;
+        const refused = failure.kind === "refused" || failure.kind === "expired";
+        // Réseau disparu depuis (hors de portée) : message seul, plus de formulaire possible. Objet détruit : la référence
+        // reste, mais ses propriétés sont indéfinies (vérifié sur banc).
+        if (failure.network?.name !== name) {
+            failText = failure.kind === "expired" ? `${name} refused the saved password: it may have expired`
+                : refused ? `Wrong username or password for ${name}` : `Could not connect to ${name}`;
+            return;
+        }
         passwordFor = failure.network;
-        passwordRefused = failure.kind === "refused" || failure.kind === "expired";
+        passwordRefused = refused;
         failText = failure.kind === "expired" ? `${name} refused the saved password: it may have expired`
             : failure.kind === "failed" ? `Could not connect to ${name} — weak signal or wrong username or password`
             : failure.kind === "profile" ? `Could not connect to ${name}` : "";
@@ -296,7 +309,7 @@ Panel {
     PanelField {
         id: domain
         visible: root.newProfile
-        placeholder: "Server domain (optional)"
+        placeholder: root.domainRequired ? "Server domain (required with TTLS)" : "Server domain (optional)"
         onAccepted: root.submit()
     }
 
