@@ -62,6 +62,9 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
   reprend la même fenêtre, et plus du tout sans noms dans le titre (corbeille, suppression).
 - Revue du bouton, passe 2 : copie vers gvfs (partage réseau, téléphone), écrite par gvfsd et non par Nemo : dossier jamais
   trouvé, recherche relancée à chaque titre pendant toute la copie ; 20 essais au plus par opération (trouvé au 5e sur banc).
+- Revue du bouton, passe 3 : rien que du négligeable (rechargement du bureau pendant une copie : fin annoncée ; plusieurs
+  éléments sélectionnés : un seul nom dans le titre, statut de Nemo et pas de bouton ; copie vers gvfs : pas de bouton) :
+  **revue close**.
 ## Aperçu Wi-Fi au survol (2026-11-16)
 
 - Ton constat : au survol de l'icône Wi-Fi, « Networks · searching… » sans réseau ; au clic, la liste apparaît. Cause : l'aperçu
