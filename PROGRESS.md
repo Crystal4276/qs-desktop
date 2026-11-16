@@ -38,6 +38,10 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
   seulement si la boîte n'a pas le focus, titre « Nemo » ; Hyprland : fenêtre tout juste ouverte jamais focalisée (carte
   Steam), liste relue jusqu'à 2 s. Documenté : limite convertie par le noyau en part de la mémoire, btrfs non couvert.
   **À refaire par toi** : `./system-setup.sh removable-writeback` (la règle a changé).
+- Revue, passe 3 : notification de question fermée sans répondre renvoyée toutes les 3 s (elle ne revient plus qu'après
+  être repassé par la question) ; relance du focus Hyprland arrêtée dès le focus donné et jamais sans cible (attente sur
+  événement essayée : Hyprland lie la fenêtre sans nouvel événement de liste, relecture bornée gardée). Filtre des
+  fenêtres Nemo par `ScriptModel` essayé puis retiré (avertissement au démarrage).
 - **À tester** : vraie copie Nemo sur un autre espace → notification de fin ; copie vers un dossier où le fichier existe →
   « Waiting for your answer », clic ; quand l'occasion se présente, une vraie clé (exFAT surtout).
 
