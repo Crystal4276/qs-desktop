@@ -49,6 +49,13 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
 - **À tester** : vraie copie Nemo sur un autre espace → notification de fin ; copie vers un dossier où le fichier existe →
   « Waiting for your answer », clic ; quand l'occasion se présente, une vraie clé (exFAT surtout).
 
+- Retour de ton test : notification de fin détaillée (« src → dst » : nom de la source et du dossier d'arrivée, sans
+  chemin ; sinon le statut de Nemo, « Moving files to trash »…), icône de Nemo (`system-file-manager`), bouton « Open
+  folder » qui ouvre le dossier d'arrivée (`Places.open`) ; son chemin vient des fichiers que Nemo écrit pendant la copie
+  (`/proc/<pid>/fd`, ton choix), sans bouton s'il n'a pas été trouvé. Le titre sans pourcentage se perd aussi sous Sway
+  (vu sur banc) : toute fermeture de la fenêtre de progression y compte désormais comme une fin, comme sous Hyprland.
+  Vérifié sur banc Sway (corps, bouton, dossier ouvert au premier plan ; extraction testée sur les statuts anglais et
+  français, nom avec `&`). Rappel : le bouton ne sert que pendant l'affichage (4 s, suspendu au survol).
 ## Aperçu Wi-Fi au survol (2026-11-16)
 
 - Ton constat : au survol de l'icône Wi-Fi, « Networks · searching… » sans réseau ; au clic, la liste apparaît. Cause : l'aperçu
