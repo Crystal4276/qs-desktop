@@ -137,6 +137,10 @@ préparée, mais aucune autorisation interactive n'est lancée : la commande `ss
 `--no-system` permet cette étape du compte si ses outils sont déjà installés.
 `--uninstall` conserve les clés, l'alias et l'autorisation distante.
 
+Dans bash, `desktop` lance `ssh terrier-zt` et `laptop` lance `ssh laptop-zt`. L'alias `laptop-zt` s'écrit
+à la main dans `~/.ssh/config` du desktop (`Host laptop-zt`, `HostName <IP ZeroTier>`, `User <compte>`) ;
+le laptop doit alors accepter SSH (`sshd` actif, clé du desktop dans `~/.ssh/authorized_keys`).
+
 ## Provisioning ZeroTier
 
 Les deux profils installent ZeroTier, les clients SMB/SFTP et iperf3 depuis les dépôts officiels.
