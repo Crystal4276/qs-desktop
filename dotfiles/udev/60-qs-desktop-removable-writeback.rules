@@ -1,5 +1,6 @@
-# Disques USB et cartes SD : cache d'écriture borné à 16 Mio par périphérique (bdi, noyau 6.2+). Sinon, une copie vers une clé
+# Disques USB et cartes SD : cache d'écriture borné à 64 Mio par périphérique (bdi, noyau 6.2+). Sinon, une copie vers une clé
 # finit en mémoire (« terminé » dans Nemo) alors que l'écriture continue pendant des minutes ; comme KDE Frameworks 6.32
-# (sync_file_range), la progression et la fin suivent alors l'écriture réelle. Installé par scripts/system-setup.sh.
-ACTION=="add|change", SUBSYSTEM=="block", ENV{DEVTYPE}=="disk", ENV{ID_BUS}=="usb", ATTR{bdi/strict_limit}="1", ATTR{bdi/max_bytes}="16777216"
-ACTION=="add|change", SUBSYSTEM=="block", ENV{DEVTYPE}=="disk", SUBSYSTEMS=="mmc", ATTRS{type}=="SD", ATTR{bdi/strict_limit}="1", ATTR{bdi/max_bytes}="16777216"
+# (sync_file_range), la progression et la fin suivent alors l'écriture réelle. 64 Mio : aucune perte de débit mesurée jusqu'à
+# ~3,5 Go/s (16 Mio : 25 à 40 % de moins), ~6 s d'avance au plus sur une clé à 10 Mo/s. Installé par scripts/system-setup.sh.
+ACTION=="add|change", SUBSYSTEM=="block", ENV{DEVTYPE}=="disk", ENV{ID_BUS}=="usb", ATTR{bdi/strict_limit}="1", ATTR{bdi/max_bytes}="67108864"
+ACTION=="add|change", SUBSYSTEM=="block", ENV{DEVTYPE}=="disk", SUBSYSTEMS=="mmc", ATTRS{type}=="SD", ATTR{bdi/strict_limit}="1", ATTR{bdi/max_bytes}="67108864"
