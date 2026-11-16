@@ -54,6 +54,14 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
   échec (`failureText`). Négligeables : deux échecs simultanés sur deux réseaux (un seul montré), ancienne activation imputée
   à la nouvelle si l'on soumet pendant une reconnexion automatique, mot de passe tapé gardé après un échec de signal puis
   annoncé « expiré ». Contre-épreuve : échec sur le code de la passe 2 (texte de notification, premier contrôle modifié).
+- Passe 4 (10 constats, 5 retenus) : panneau retenu pendant la connexion (jusqu'à 90 s, clavier pris : plus retenu, l'échec
+  est notifié puis montré) ; nouveau clic sur le réseau suivi pendant sa création (ignoré) ; Wi-Fi coupé pendant la tentative
+  (abandon sans message) ; liste surveillée reconstruite à chaque variation de signal (liste non triée). Écartés après
+  vérification : écriture identique sans `settingsChanged` (NetworkManager le signale aussi, vérifié) ; formulaire d'un réseau
+  disparu (Qt remet `passwordFor` à null, testé). Négligeables : profil « demander à chaque fois » annoncé « expiré » (le
+  message mène à la bonne action, le mot de passe tapé est alors gardé par le système), `connectionFailed` plus d'1 s après la
+  déconnexion. Idée notée dans `BACKLOG.md` : un seul suivi des connexions pour tous les réseaux. Contre-épreuve : échec sur le
+  code de la passe 3 (panneau retenu).
 - Délai avant le refus : 10 s au lieu de 25 (ta demande) : `802-1x.auth-timeout 10` dans les profils créés par le panneau
   (accepté par `nmcli`, vérifié hors ligne) ; un profil créé avant garde 25 s.
 - Petit changement : Entrée sur un mot de passe WPA vide ne ferme plus le formulaire (il reste ouvert).

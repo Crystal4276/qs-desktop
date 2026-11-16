@@ -175,7 +175,8 @@ def form_test(ipc, nmcli_log, notify_log, work):
     ipc('capturePanel', str(work / 'enterprise-form.png')); settle()
     ipc('click', 'Connect'); settle(0.5)
     f = form()
-    assert f['passwordFor'] == '' and f['signingIn'] and f['holdOpen'] and f['failText'] == '', f
+    # Connexion en cours : le panneau n'est pas retenu (il garderait le clavier) ; l'échec sera notifié puis montré.
+    assert f['passwordFor'] == '' and f['signingIn'] and not f['holdOpen'] and f['failText'] == '', f
     # Sortie de `nmcli` traduite (« ajoutée avec succès ») : l'UUID vient de la commande, pas de sa sortie.
     assert [without_uuid(inv) for inv in invocations()] == [created_args], invocations()
     uuid = added()[0]
@@ -325,6 +326,21 @@ def form_test(ipc, nmcli_log, notify_log, work):
     assert not form()['signingIn'] and form()['failText'] == '', form()
     ipc('setState', 'enterprise', 'Disconnected'); settle()
 
+    # Profil tout juste créé, écriture en cours : un nouveau clic sur le réseau ne l'abandonne pas ; Wi-Fi coupé : abandon sans
+    # message (profil créé supprimé).
+    ipc('reset', 'enterprise'); ipc('silent', 'true'); settle()
+    ipc('openForm', 'enterprise'); settle(); fill(username='alice', password='w'); ipc('enter', 'Password'); settle(0.5)
+    pending_uuid = added()[-1]
+    profile('enterprise', pending_uuid)
+    before = calls()
+    ipc('openForm', 'enterprise'); settle()
+    assert new_calls(before) == [] and form()['signingIn'], calls()
+    ipc('wifiOff'); settle()
+    f = form()
+    assert new_calls(before) == [['forget', pending_uuid]] and not f['signingIn'] and not f['failurePending'], (f, calls())
+    assert f['failText'] == '' and notified() == [], f
+    ipc('configure', json.dumps({'wifiEnabled': True})); ipc('silent', 'false'); settle()
+
     # Deux créations rapprochées (nouveau réseau, puis un autre pendant `nmcli`) : la première est abandonnée et son profil
     # supprimé à la fin de `nmcli` ; la seconde suit son cours.
     ipc('reset', 'enterprise'); settle()
@@ -380,6 +396,15 @@ def form_test(ipc, nmcli_log, notify_log, work):
     f = form()
     assert f['failText'] == 'Lab refused the saved password: it may have expired' and f['passwordFor'] == '', f
     notify_log.unlink()
+
+    # Formulaire d'un réseau qui disparaît (objet détruit) : Qt remet `passwordFor` (propriété `var`) à null, le formulaire se
+    # ferme et se vide, rien n'est lancé.
+    ipc('makeTemp', 'Annex'); ipc('openForm', 'temp'); settle(); fill(username='alice', password='gone')
+    before = invocations()
+    ipc('destroyTemp'); settle(); ipc('enter', 'Password'); settle(0.5)
+    f = form()
+    assert invocations() == before and f['passwordFor'] == '' and not f['password']['visible'], f
+    assert f['password']['text'] == '' and not f['holdOpen'], f
 
     # `nmcli` en échec (réseau sans profil) : message, saisie reprise, rien d'écrit.
     ipc('reset', 'enterprise'); settle()

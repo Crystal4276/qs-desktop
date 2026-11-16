@@ -31,9 +31,10 @@ Panel {
     // Champs requis remplis : bouton « Connect » actif, Entrée acceptée.
     readonly property bool formReady: password.text !== "" && (!enterprise || identity.text.trim() !== "")
         && (!domainRequired || domain.text.trim() !== "")
-    // Texte tapé (ou identifiant repris : formulaire d'un échec, à laisser affiché), même si le focus a quitté le champ, ou
-    // connexion entreprise en cours (son issue s'affiche ici) : pas de fermeture automatique.
-    holdOpen: [identity, password, domain].some(field => field.text !== "") || Network.signingIn
+    // Texte tapé (ou identifiant repris : formulaire d'un échec, à laisser affiché), même si le focus a quitté le champ : pas de
+    // fermeture automatique. (Pas pendant une connexion entreprise : le clavier resterait pris ; son échec est notifié, puis
+    // montré à l'ouverture suivante.)
+    holdOpen: [identity, password, domain].some(field => field.text !== "")
     // Dernier réseau dont la connexion a été demandée ici, et message de son échec.
     property var pending: null
     property string failText: ""
@@ -76,7 +77,9 @@ Panel {
     }
 
     function activate(network): void {
-        if (network.connected || network.stateChanging)
+        // Réseau dont la connexion entreprise est suivie (profil tout juste créé, pas encore « Connecting ») : le clic
+        // l'abandonnerait.
+        if (network.connected || network.stateChanging || Network.signInRequest?.network === network)
             return;
         failText = "";
         if (passwordFor !== network) {   // demande de mot de passe d'un autre réseau : abandonnée

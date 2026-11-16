@@ -27,6 +27,8 @@ Idées et défauts connus hors du programme des phases. Rien ici n'est implémen
   derrière n'apparaîtraient pas (Sway ne floute pas). Valeurs de transparence à choisir ensemble.
 - Partage d'écran : choix de l'écran par une fenêtre Quickshell au lieu de `slurp` (`chooser_cmd` de `xdg-desktop-portal-wlr`).
 - Confirmation avant Reboot / Shutdown (absente, comme Rofi).
+- Wi-Fi : un seul suivi des connexions dans `Network` pour tous les réseaux (WPA et ouverts compris, comme l'entreprise) au lieu
+  du `pending` du panneau, perdu à sa fermeture ; supprimerait les cas particuliers entre les deux (revue du 2026-11-16, passe 4).
 - Notifications : raccourcis clavier pour le centre et « ne pas déranger » ; historique conservé après un redémarrage de Quickshell ;
   choix parmi plusieurs liens d'une notification ; couleurs par notification (`fgcolor`, `bgcolor`).
 - Fonctions des applets non reprises : nm-applet (« Enable Networking », VPN NetworkManager — `NMSettings`, Wi-Fi caché, point
