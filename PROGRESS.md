@@ -33,6 +33,11 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
   d'`usb_id`) : USB reconnu par le parent ; conflit Nemo en français non reconnu (titre lu dans la traduction de Nemo,
   `gettext`) ; avertissement de `FileOps` à chaque rechargement. Écartés : rechargement et double question non reproduits
   (Nemo traite une opération à la fois), annulation et fermeture à la main sous Hyprland (ton choix), dossier « NN% … ».
+- Revue, passe 2 : clé chiffrée (LUKS) non limitée, ses écritures passant par `dm-N` (clé virtuelle chiffrée : 0 → 64 Mio
+  avec la nouvelle ligne) ; boîte d'erreur Nemo sans rapport avec une copie notifiée comme une question : notification
+  seulement si la boîte n'a pas le focus, titre « Nemo » ; Hyprland : fenêtre tout juste ouverte jamais focalisée (carte
+  Steam), liste relue jusqu'à 2 s. Documenté : limite convertie par le noyau en part de la mémoire, btrfs non couvert.
+  **À refaire par toi** : `./system-setup.sh removable-writeback` (la règle a changé).
 - **À tester** : vraie copie Nemo sur un autre espace → notification de fin ; copie vers un dossier où le fichier existe →
   « Waiting for your answer », clic ; quand l'occasion se présente, une vraie clé (exFAT surtout).
 

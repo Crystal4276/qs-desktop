@@ -442,17 +442,38 @@ Singleton {
     // dans la même commande (exécutée d'un bloc ; rétabli à `output`, défaut de Sway, que ta config ne change pas — à reprendre
     // de dotfiles/sway en phase 10) ; fenêtre désignée par app_id, ou classe sous
     // XWayland, et titre. Hyprland : dispatcher focus sur son adresse (ta config a no_warps) ; Toplevel.activate y est ignoré
-    // (ni focus ni urgence, vu sur banc le 2026-11-16).
+    // (ni focus ni urgence, vu sur banc le 2026-11-16). Fenêtre qui vient de s'ouvrir : Hyprland ne la lie pas encore à son
+    // Toplevel (vu sur banc) ; liste relue toutes les 100 ms, 2 s au plus.
+    property Toplevel hyprFocusTarget: null
+    property int hyprFocusTries: 0
+
     function focusWindow(toplevel: Toplevel): void {
         if (!isSway) {
-            const window = Hyprland.toplevels.values.find(t => t.wayland === toplevel && t.address !== "");
-            if (window)
-                hyprlandBatch([`hl.dsp.focus({ window = "address:0x${window.address}" })`], "focus d'une fenêtre");
+            hyprFocusTarget = toplevel;
+            hyprFocusTries = 0;
+            hyprFocus();
             return;
         }
         const quote = text => `"^${text.replace(/[\\^$.*+?()[\]{}|]/g, "\\$&").replace(/"/g, '\\"')}$"`;
         const match = `${quote(toplevel.appId)} title=${quote(toplevel.title)}`;
         I3.dispatch(`mouse_warping none; [app_id=${match}] focus; [class=${match}] focus; mouse_warping output`);
+    }
+
+    function hyprFocus(): void {
+        const window = Hyprland.toplevels.values.find(t => t.wayland === hyprFocusTarget && t.address !== "");
+        if (window) {
+            hyprFocusTarget = null;
+            hyprlandBatch([`hl.dsp.focus({ window = "address:0x${window.address}" })`], "focus d'une fenêtre");
+        } else if (hyprFocusTarget && ++hyprFocusTries <= 20) {
+            Hyprland.refreshToplevels();
+            hyprFocusRetry.restart();
+        }
+    }
+
+    Timer {
+        id: hyprFocusRetry
+        interval: 100
+        onTriggered: root.hyprFocus()
     }
 
     function appWindows(appId: string): var {
