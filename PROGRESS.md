@@ -3,6 +3,29 @@
 État courant seulement. Historique figé : phases 0 à 10 dans `docs/archive/PROGRESS.md`, maintenance du 2026-11-05 au 2026-11-09
 et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de besoin).
 
+## Copies Nemo : fin, questions, clé USB (2026-11-16)
+
+- Ta demande (article Phoronix sur KDE Frameworks 6.32) : savoir quand une copie est finie ou bloquée sur une question. Nemo
+  6.8 ne notifie la fin que si sa fenêtre de progression a été fermée, et n'expose aucune progression par D-Bus.
+  Nouveau service `services/FileOps.qml` (`ToplevelManager`, `notify-send`, système de notifications existant) :
+  - **fin** : « File Operations / All file operations are finished » quand la fenêtre de progression (titre `NN% …`) se ferme ;
+    fermée à la main sous Sway, rien (Nemo notifie lui-même à la vraie fin) ; sous Hyprland, toute fermeture compte (le dernier
+    titre y est perdu, ton choix ; `BACKLOG.md`, à signaler en amont) ;
+  - **question** (conflit « File conflict », erreurs et confirmations au titre vide) encore ouverte après 3 s : « Waiting for
+    your answer », **critique** (reste affichée, ton choix), clic → la fenêtre de la question ; retirée dès la réponse.
+- `Compositor.focusWindow` sous Hyprland : `hl.dsp.focus` sur l'adresse ; `Toplevel.activate` y était ignoré (carte Steam du
+  tray comprise).
+- Clé USB : règle udev `dotfiles/udev/60-qs-desktop-removable-writeback.rules` (disques USB et cartes SD : cache d'écriture
+  borné à 16 Mio, `strict_limit`) : la fin d'une copie suit l'écriture réelle, comme KDE 6.32. Étape `install` de
+  `system-setup.sh`, ou seule : `removable-writeback`. Test : `scripts/test-removable-writeback.py`.
+- Vérifié sur bancs Sway et Hyprland (Nemo réel, copies lancées par `org.Nemo.FileOperations`, Nemo bridé en CPU) : fin
+  fenêtre ouverte, fermeture à la main, conflit, erreur, réponse en moins de 3 s (rien), clic (focus sur la question),
+  question répondue (notification retirée) ; démarrage complet sans nouvel avertissement ; `test-install.py` 0 échec.
+- **À faire par toi** (sudo, dans un terminal) : `scripts/system-setup.sh removable-writeback` sur `terrier` (et le laptop).
+- **À tester** : vraie copie Nemo sur un autre espace → notification de fin ; copie vers un dossier où le fichier existe →
+  « Waiting for your answer », clic ; clé USB : gros fichier, la fin de Nemo arrive quand la clé a fini d'écrire
+  (`grep Dirty /proc/meminfo` ≈ 0, éjection immédiate) ; `cat /sys/block/sdX/bdi/{strict_limit,max_bytes}` → `1`, `16777216`.
+
 ## Aperçu Wi-Fi au survol (2026-11-16)
 
 - Ton constat : au survol de l'icône Wi-Fi, « Networks · searching… » sans réseau ; au clic, la liste apparaît. Cause : l'aperçu
