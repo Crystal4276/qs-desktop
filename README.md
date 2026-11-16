@@ -145,6 +145,10 @@ réseau local, par exemple) demande alors sa propre règle UFW. UFW déjà actif
 sshd n'est jamais activé sans UFW. `--uninstall` avec retrait système remet UFW (état, politique, règles) et sshd dans
 leur état d'origine. Le desktop n'est pas concerné : son sshd reste réglé à la main.
 
+Sur une machine cliente, le journal systemd est gardé jusqu'à la veille, pas plus (`system-setup.sh client-journal`,
+`/etc/systemd/journald.conf.d/60-qs-desktop-client.conf` : fichiers d'une heure, effacés au-delà de 2 jours). Le retrait
+système retire ce fichier ; les entrées déjà effacées ne reviennent pas.
+
 Dans bash, `desktop` lance `ssh terrier-zt` et `laptop` lance `ssh laptop-zt`. L'alias `laptop-zt` s'écrit
 à la main dans `~/.ssh/config` du desktop (`Host laptop-zt`, `HostName <IP ZeroTier>`, `User <compte>`) ;
 `ssh-copy-id laptop-zt` y autorise ensuite la clé du desktop (mot de passe du laptop, une fois).

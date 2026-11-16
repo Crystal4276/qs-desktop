@@ -20,6 +20,8 @@
 #         system-setup.sh [--dry-run] reflector   miroirs Arch rapides et récents, renouvelés chaque semaine
 #         system-setup.sh [--dry-run] samba       partages personnels et Nemo via libvirt et ZeroTier ; UFW si actif
 #         system-setup.sh [--dry-run] ssh-server  sshd activé, port 22 ouvert par UFW sur ZeroTier seulement (UFW activé si besoin)
+#         system-setup.sh [--dry-run] client-journal
+#                                                 journal systemd gardé jusqu'à la veille, pas plus (machine cliente)
 set -euo pipefail
 
 repo="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
@@ -519,15 +521,25 @@ do_ssh_server() {
     fi
 }
 
+# Journal des machines clientes : la veille gardée, pas plus (rétention native de journald).
+journal_conf=/etc/systemd/journald.conf.d/60-qs-desktop-client.conf
+do_client_journal() {
+    local changed=""
+    cmp -s "$repo/dotfiles/journald/60-qs-desktop-client.conf" "$journal_conf" || changed=1
+    install_file dotfiles/journald/60-qs-desktop-client.conf "$journal_conf"
+    [[ -z "$changed" ]] || run systemctl reload systemd-journald.service
+}
+
 do_uninstall() {
     if [[ -x "$repo/scripts/intel-gpu-setup.sh" ]]; then
         "$repo/scripts/intel-gpu-setup.sh" ${dry:+--dry-run} uninstall || echo "! Retrait des droits GPU Intel incomplet ; poursuite des autres étapes" >&2
     fi
     [[ -f "$registry" ]] || { echo "= rien à défaire ($registry absent)"; return; }
-    local kind target backup samba_changed="" systemd_changed=""
+    local kind target backup samba_changed="" systemd_changed="" journal_changed=""
     recorded file /etc/samba/smb.conf && samba_changed=1
     recorded file /etc/samba/smb.host.conf && samba_changed=1
     recorded file /etc/systemd/system/smb.service.d/50-qs-zerotier.conf && systemd_changed=1
+    recorded file "$journal_conf" && journal_changed=1
     # Ordre inverse de l'installation.
     while read -r kind target backup <&3; do
         case "$kind" in
@@ -549,6 +561,7 @@ do_uninstall() {
         esac
     done 3< <(tac "$registry")
     [[ -z "$systemd_changed" ]] || run systemctl daemon-reload
+    [[ -z "$journal_changed" ]] || run systemctl reload systemd-journald.service
     if [[ -n "$samba_changed" ]] && systemctl is-active --quiet smb.service; then
         run systemctl restart smb.service
     fi
@@ -566,9 +579,10 @@ case "${1:-}" in
     zerotier) do_zerotier "${2:-}" ;;
     samba) do_samba ;;
     ssh-server) do_ssh_server ;;
+    client-journal) do_client_journal ;;
     install) do_install ;;
     chromium-extensions) do_chromium_extensions ;;
     thunderbird-theme) do_thunderbird_theme "${2:-}" ;;
     uninstall) do_uninstall ;;
-    *) sed -n '5,22p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 2 ;;
+    *) sed -n '5,24p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 2 ;;
 esac

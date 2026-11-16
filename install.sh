@@ -14,7 +14,7 @@
 # Profil et étapes système ; destination SSH facultative demandée si terrier-zt est absent.
 # Étapes : miroirs Reflector · 1 paquets (dépôts officiels, multilib, paru-bin, Claude Code) · 2 configs du compte (liens, sauvegardes
 # `<x>.bak-<date>`, identité Git) · 3 thème · 4 réglages (dconf, applications par défaut, barres d'état de Claude Code et Codex, web apps,
-# liens Chromium) · 5 config machine · 6 système (sudo) · SSH vers le desktop (compte ; UFW et sshd par ZeroTier, sudo).
+# liens Chromium) · 5 config machine · 6 système (sudo) · SSH vers le desktop (compte ; machine cliente : UFW, sshd, journal, sudo).
 set -euo pipefail
 
 repo="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
@@ -1418,10 +1418,12 @@ extension_import() {    # clé (fichier dotfiles/chromium/<clé>.json) nom ident
 }
 
 # SSH du compte : les clés et l'alias survivent au retrait du bureau, comme l'autorisation distante.
-# Machine cliente du desktop : son propre sshd, joignable par ZeroTier seulement (alias « laptop » du desktop).
-ssh_server() {
+# Machine cliente du desktop : son propre sshd, joignable par ZeroTier seulement (alias « laptop » du desktop) ;
+# journal systemd gardé jusqu'à la veille, pas plus.
+client_system() {
     [[ -n "$system" ]] && is_arch || return 0
     sub "$repo/scripts/system-setup.sh" ${dry:+--dry-run} ssh-server
+    sub "$repo/scripts/system-setup.sh" ${dry:+--dry-run} client-journal
 }
 
 step_ssh_desktop() {
@@ -1445,7 +1447,8 @@ step_ssh_desktop() {
     elif [[ -n "$dry" ]]; then
         echo '? Destination SSH du desktop : utilisateur@hôte, vide pour ignorer (simulation).'
         echo '+ Si renseignée : clé Ed25519 locale sans phrase secrète, alias terrier-zt et autorisation par ssh-copy-id ;'
-        echo '  UFW et sshd de cette machine activés, port 22 ouvert sur ZeroTier seulement (sauf --no-system).'
+        echo '  UFW et sshd de cette machine activés, port 22 ouvert sur ZeroTier seulement ;'
+        echo '  journal systemd gardé jusqu’à la veille (sauf --no-system).'
         return
     elif [[ -n "$yes" ]] || ! { : </dev/tty; } 2>/dev/null; then
         later 'SSH desktop : destination absente ; relancer install.sh dans un terminal sans --yes pour la renseigner.'; return
@@ -1470,7 +1473,7 @@ step_ssh_desktop() {
     if [[ -n "$dry" ]]; then
         echo '+ SSH desktop : conserver la clé existante ou créer une paire Ed25519 sans phrase secrète ; vérifier les permissions.'
         echo '= Simulation : aucune connexion distante ni autorisation.'
-        ssh_server
+        client_system
         return
     fi
     run install -d -m 700 "$dir"
@@ -1505,7 +1508,7 @@ SSHCONFIG
         then later 'SSH desktop : configuration de l’alias échouée.'; return; fi
     fi
     [[ -L "$dir/config" ]] || run chmod 600 "$dir/config"
-    ssh_server
+    client_system
     # BatchMode ne demande ni mot de passe ni confirmation de clé du serveur.
     if ssh -F "$dir/config" -o BatchMode=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=5 -o ConnectionAttempts=1 "$alias" true </dev/null; then
         echo '= SSH desktop opérationnel : ssh terrier-zt'

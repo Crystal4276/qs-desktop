@@ -1876,3 +1876,15 @@ Choix utilisateur : réseau local rétabli **avec mot de passe** (pas d'invité 
 - **À faire sur le laptop** : `git pull`, puis `./install.sh` (étape système : installe et active UFW) ; vérifier que les VM
   libvirt gardent réseau et partages ; sur le desktop, `ssh-copy-id laptop-zt`, puis `laptop` ; vérifier que le port 22
   du laptop reste fermé sur le Wi-Fi (depuis une autre machine du réseau local).
+
+## Journal des machines clientes : la veille, pas plus (2026-11-16)
+
+- Demande utilisateur : sur une machine cliente (là où `terrier-zt` est configuré), le journal systemd garde la veille,
+  rien de plus ancien. Natif : drop-in `dotfiles/journald/60-qs-desktop-client.conf` (`Storage=persistent`,
+  `MaxRetentionSec=2day`, `MaxFileSec=1h` : la veille entière jusqu'à minuit, effacement à l'heure près), installé par
+  `system-setup.sh client-journal` (registre, `systemctl reload systemd-journald` si le fichier change), appelé par
+  l'étape SSH d'`install.sh` après `ssh-server` (sauf `--no-system`). Retrait : fichier supprimé, journald relu.
+- Le desktop n'est pas concerné ; son `90-debug-retention.conf` (hors dépôt, 1 jour) reste tel quel.
+- Tests : `test-ssh-server.py` (cas journal ajouté), `test-ssh-desktop.py`, `test-samba.py`, `test-install.py` : 0 échec.
+- **À faire sur le laptop** : `git pull`, `./install.sh` ; vérifier `systemd-analyze cat-config systemd/journald.conf`
+  et, le surlendemain, `journalctl --list-boots` / `journalctl | head -1` (rien d'antérieur à la veille).
