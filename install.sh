@@ -271,6 +271,7 @@ ask_system() {
     echo "Étapes système (sudo) : pacman et paru sans mot de passe (wheel), miroirs Reflector,"
     [[ "$profile" == jeux ]] && echo "  dépôt multilib (Steam, jeux 32 bits),"
     echo "  écran de connexion greetd + greeter Quickshell, Samba, services (réseau, Bluetooth, énergie, VM), groupes, thème Qt,"
+    echo "  cache d'écriture borné des clés USB et cartes SD (règle udev : la fin d'une copie suit l'écriture réelle),"
     echo "  ZeroTier (jonction automatique au réseau configuré dans hosts/zerotier-network),"
     echo "  extensions de Chromium, thème de Thunderbird, sonde de connectivité NetworkManager, mesures GPU Intel (s'il y en a un)."
     [[ "$profile" == travail ]] && echo "  menu GRUB Horizon (UKI, délai 2 s) ; écran de démarrage Plymouth Core Lab (initramfs, ligne de commande du noyau, image de secours : docs/PLYMOUTH.md)."
@@ -1260,7 +1261,7 @@ step_system() {
     step_zerotier
     step_plymouth
     step_grub_horizon
-    echo "Samba (dossier personnel via ZeroTier et VM), services, groupes et thème Qt du système"
+    echo "Samba (dossier personnel via ZeroTier et VM), services, groupes, thème Qt et cache d'écriture des clés USB"
     sub "$repo/scripts/system-setup.sh" ${dry:+--dry-run} install
     if command -v chromium >/dev/null; then
         echo "Extensions de Chromium (dotfiles/chromium/extensions.txt : Dark Reader, Stylus, nightTab…)"
@@ -1376,7 +1377,7 @@ EOF
     if command -v chromium >/dev/null; then
         python3 "$repo/scripts/browser-links-setup.py" ${dry:+--dry-run} uninstall 2>/dev/null || echo "= liens Chromium : rien à retirer"
     fi
-    if [[ -n "$system" ]] && ask "Défaire aussi les étapes système (GPU Intel, sudo pacman, Reflector, greeter → ancien gestionnaire, écran de démarrage Plymouth, menu GRUB Horizon, sonde réseau, Samba, services, groupes, extensions Chromium, thème Thunderbird) ?"; then
+    if [[ -n "$system" ]] && ask "Défaire aussi les étapes système (GPU Intel, sudo pacman, Reflector, greeter → ancien gestionnaire, écran de démarrage Plymouth, menu GRUB Horizon, sonde réseau, Samba, services, groupes, cache des clés USB, extensions Chromium, thème Thunderbird) ?"; then
         [[ -f /var/lib/qs-desktop/grub-horizon/state.json ]] && sub grub_horizon_setup uninstall
         plymouth_installed && sub "$repo/scripts/plymouth-setup.sh" ${dry:+--dry-run} uninstall
         sub "$repo/scripts/system-setup.sh" ${dry:+--dry-run} uninstall
