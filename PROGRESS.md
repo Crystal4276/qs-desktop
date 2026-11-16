@@ -1856,3 +1856,23 @@ Choix utilisateur : réseau local rétabli **avec mot de passe** (pas d'invité 
 - **Reste système** : lancer `scripts/greeter-setup.sh install` dans un terminal (script appelant sudo, consigne CLAUDE.md)
   pour actualiser la copie système du login manager. Aucun service ou fichier système modifié ici.
   Vérifier ensuite le rendu à la prochaine connexion et au prochain verrouillage réels.
+
+## SSH entre machines — alias bash et sshd du laptop par ZeroTier (2026-11-16)
+
+- Alias bash du dépôt (`dotfiles/bash/qs-desktop.bash`) : `desktop` → `ssh terrier-zt`, `laptop` → `ssh laptop-zt` ;
+  adresses seulement dans `~/.ssh/config` (hors dépôt). Sur terrier : bloc qs-desktop ajouté au `~/.bashrc` (sauvegarde
+  `~/.bashrc.bak-2026-11-16`, `EDITOR` devient `geany -i`) et `Host laptop-zt` créé dans `~/.ssh/config`
+  (192.0.2.11, seul pair ZeroTier visible, **à confirmer**).
+- Décision utilisateur : sshd activé sur les machines clientes (là où `terrier-zt` est configuré), mots de passe permis,
+  port 22 par ZeroTier seulement ; le desktop garde son sshd réglé à la main. Remplace la décision du 2026-11-12
+  (« aucun sshd »).
+- Filtrage par UFW seulement (décision utilisateur ; une première version nftables, non poussée, a été abandonnée).
+  `system-setup.sh ssh-server` : UFW inactif → sauvegarde de sa config, `default deny incoming`, 22 et 445 sur `zt+`,
+  `virbr+` ouvert (VM libvirt : DHCP, DNS, partages), `ufw enable` + `ufw.service` ; UFW déjà actif → règle 22 sur `zt+`
+  seulement. sshd activé ensuite, jamais sans UFW. Retrait complet par `uninstall`. Appelé par l'étape SSH
+  d'`install.sh` (sauf `--no-system`). `ufw` passe de `deps/optional.txt` à `deps/apps.txt` (installé, activé sur client).
+- Tests : `test-ssh-server.py` (provisioning isolé, UFW et services simulés), `test-ssh-desktop.py`, `test-samba.py`,
+  `test-install.py` : 0 échec.
+- **À faire sur le laptop** : `git pull`, puis `./install.sh` (étape système : installe et active UFW) ; vérifier que les VM
+  libvirt gardent réseau et partages ; sur le desktop, `ssh-copy-id laptop-zt`, puis `laptop` ; vérifier que le port 22
+  du laptop reste fermé sur le Wi-Fi (depuis une autre machine du réseau local).

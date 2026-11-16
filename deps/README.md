@@ -320,7 +320,7 @@ natives de Samba sous Linux : loopback, `virbr*`, `zt*` (changements d'adresse s
 plus celles de `dotfiles/samba/hosts/<machine>.conf` (`/etc/samba/smb.host.conf`).
 Drop-in systemd : ordre et propagation des arrêts/redémarrages de ZeroTier ; attente bornée via
 `samba-wait-zerotier.sh` (`bash`, `ip` d'`iproute2`, `awk` de `gawk`, `sleep` de `coreutils`).
-UFW, optionnel et jamais installé ici,
+UFW (`apps.txt`, activé seulement sur une machine cliente du desktop, voir « Accès SSH au desktop »)
 reçoit seulement une règle TCP 445 sur `zt+` s'il est actif ; elle est suivie par le registre système.
 Le compte Samba se crée dans un terminal ; aucun mot de passe n'est stocké dans le dépôt.
 `python3 scripts/test-samba.py` teste la configuration et le provisioning isolés sans privilèges.
@@ -338,7 +338,9 @@ Ce banc ne remplace pas la validation en VM.
 
 `install.sh` : `ssh`, `ssh-keygen`, `ssh-copy-id` du paquet `openssh`, `python` pour ajouter l'alias
 sans modifier les réglages existants. Clé privée et destination uniquement dans `~/.ssh`, conservées
-au retrait. Voir README, « Accès SSH au desktop ». Aucun service ajouté.
+au retrait. Voir README, « Accès SSH au desktop ». Machine cliente (alias présent), avec étapes système : `sshd`
+activé après UFW (paquet `ufw`) : port 22 ouvert sur `zt+` seulement.
+`python3 scripts/test-ssh-server.py` : provisioning isolé, services et UFW simulés, sans privilège.
 `python3 scripts/test-ssh-desktop.py` : vrais fichiers SSH jetables, pseudo-terminal Python et
 connexions distantes simulées ; aucun accès réseau réel ni privilège requis.
 

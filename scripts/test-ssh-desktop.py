@@ -112,6 +112,18 @@ touch "$TEST_ROOT/authorized"
     assert not (home / '.local/state/qs-desktop/install/registry').exists()
     run('--uninstall')
     assert before == {p: (p.read_bytes(), p.stat().st_mtime_ns) for p in before}
+    # Machine cliente : son sshd (ZeroTier seulement) par system-setup.sh, jamais avec --no-system.
+    assert 'ssh-server' not in (root / 'calls').read_text()
+    (root / 'scripts').mkdir()
+    fake_setup = root / 'scripts/system-setup.sh'
+    fake_setup.write_text('#!/bin/bash\necho "setup $*" >> "$TEST_ROOT/calls"\n')
+    fake_setup.chmod(0o755)
+    for args in (['--yes'], ['--yes', '--dry-run']):
+        result = subprocess.run(['bash', str(installer), '--no-packages', *args], env=env,
+                                capture_output=True, text=True, start_new_session=True, timeout=15)
+        assert result.returncode == 0, result.stdout + result.stderr
+    setup = [line for line in (root / 'calls').read_text().splitlines() if line.startswith('setup')]
+    assert setup == ['setup ssh-server', 'setup --dry-run ssh-server'], setup
     public.unlink()
     assert 'incomplète' in run('--yes')
     assert key.read_bytes() == before[key][0]

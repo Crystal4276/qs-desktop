@@ -19,6 +19,7 @@
 #         system-setup.sh [--dry-run] pacman-sudo accès pacman sans mot de passe pour wheel (paru reste lancé en utilisateur)
 #         system-setup.sh [--dry-run] reflector   miroirs Arch rapides et récents, renouvelés chaque semaine
 #         system-setup.sh [--dry-run] samba       partages personnels et Nemo via libvirt et ZeroTier ; UFW si actif
+#         system-setup.sh [--dry-run] ssh-server  sshd activé, port 22 ouvert par UFW sur ZeroTier seulement (UFW activé si besoin)
 set -euo pipefail
 
 repo="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
@@ -478,6 +479,46 @@ do_zerotier() {
     return 3
 }
 
+# Serveur SSH des machines clientes (alias « laptop » du desktop) : mots de passe permis, port 22 ouvert par UFW sur
+# ZeroTier seulement. UFW inactif : activé ici (entrant refusé), avec ZeroTier (SSH, SMB) et les VM libvirt (virbr+) ouverts.
+do_ssh_server() {
+    local rules file
+    systemctl cat sshd.service >/dev/null 2>&1 || { echo "- openssh absent : serveur SSH ignoré (deps/apps.txt)"; return; }
+    command -v ufw >/dev/null || { echo "! ufw absent : sshd non activé (deps/apps.txt)" >&2; return 1; }
+    # Pare-feu d'abord : sshd n'écoute jamais sur le Wi-Fi ou l'Ethernet sans lui.
+    if grep -qx 'ENABLED=yes' /etc/ufw/ufw.conf; then
+        if [[ -n "$dry" ]]; then
+            echo '+ UFW actif : autoriser TCP 22 entrant sur zt+ si la règle manque'
+        else
+            rules="$(as_root env LC_ALL=C ufw show added)" || return 1
+            if ! grep -Eq '^ufw allow in on zt\+ to any port 22 proto tcp( comment .*)?$' <<<"$rules"; then
+                run ufw allow in on zt+ to any port 22 proto tcp comment qs-desktop-ssh-zerotier
+                recorded ufw-ssh zt+ || record ufw-ssh zt+
+            else
+                echo '= UFW : accès SSH ZeroTier déjà autorisé'
+            fi
+        fi
+    else
+        # Règles et politique d'origine sauvegardées : le retrait les remet telles quelles.
+        for file in /etc/default/ufw /etc/ufw/ufw.conf /etc/ufw/user.rules /etc/ufw/user6.rules; do backup_once "$file"; done
+        run ufw default deny incoming
+        run ufw allow in on zt+ to any port 22 proto tcp comment qs-desktop-ssh-zerotier
+        run ufw allow in on zt+ to any port 445 proto tcp comment qs-desktop-samba-zerotier
+        run ufw allow in on virbr+ comment qs-desktop-libvirt
+        run ufw --force enable
+        record ufw-enable -
+        enable_unit ufw.service
+    fi
+    if ! systemctl is-enabled --quiet sshd.service; then
+        run systemctl enable sshd.service
+        recorded unit-enable sshd.service || record unit-enable sshd.service
+    fi
+    if ! systemctl is-active --quiet sshd.service; then
+        run systemctl start sshd.service
+        recorded unit-start sshd.service || record unit-start sshd.service
+    fi
+}
+
 do_uninstall() {
     if [[ -x "$repo/scripts/intel-gpu-setup.sh" ]]; then
         "$repo/scripts/intel-gpu-setup.sh" ${dry:+--dry-run} uninstall || echo "! Retrait des droits GPU Intel incomplet ; poursuite des autres étapes" >&2
@@ -502,6 +543,8 @@ do_uninstall() {
             timer-start|unit-start) run systemctl stop "$target" || true ;;
             timer-enable|unit-enable) run systemctl disable "$target" || true ;;
             ufw-samba) run ufw --force delete allow in on "$target" to any port 445 proto tcp || return 1 ;;
+            ufw-ssh) run ufw --force delete allow in on "$target" to any port 22 proto tcp || return 1 ;;
+            ufw-enable) run ufw --force disable || return 1 ;;
             net) run virsh -c qemu:///system net-autostart --disable "$target" || true ;;
         esac
     done 3< <(tac "$registry")
@@ -522,9 +565,10 @@ case "${1:-}" in
     cursor) do_cursor ;;
     zerotier) do_zerotier "${2:-}" ;;
     samba) do_samba ;;
+    ssh-server) do_ssh_server ;;
     install) do_install ;;
     chromium-extensions) do_chromium_extensions ;;
     thunderbird-theme) do_thunderbird_theme "${2:-}" ;;
     uninstall) do_uninstall ;;
-    *) sed -n '5,19p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 2 ;;
+    *) sed -n '5,22p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 2 ;;
 esac
