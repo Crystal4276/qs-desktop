@@ -433,18 +433,21 @@ Singleton {
     }
 
     // Fenêtre de l'application `appId` affichée, son espace de travail avec (carte du tray : Steam) : la plus ancienne déjà là
-    // (fenêtre principale) aussitôt, puis celle qu'elle ouvre dans les 3 s (Friends, Settings…). Focus par focusWindow (Sway :
-    // commande sans déplacement du pointeur ; Hyprland : Toplevel.activate).
+    // (fenêtre principale) aussitôt, puis celle qu'elle ouvre dans les 3 s (Friends, Settings…). Focus par focusWindow (sans
+    // déplacement du pointeur).
     property string pendingApp: ""
     property var pendingKnown: []
 
     // Focus sur `toplevel` sans déplacer le pointeur (ta demande du 2026-10-28). Sway : mouse_warping coupé le temps du focus,
     // dans la même commande (exécutée d'un bloc ; rétabli à `output`, défaut de Sway, que ta config ne change pas — à reprendre
     // de dotfiles/sway en phase 10) ; fenêtre désignée par app_id, ou classe sous
-    // XWayland, et titre. Hyprland : Toplevel.activate (ta config a no_warps).
+    // XWayland, et titre. Hyprland : dispatcher focus sur son adresse (ta config a no_warps) ; Toplevel.activate y est ignoré
+    // (ni focus ni urgence, vu sur banc le 2026-11-16).
     function focusWindow(toplevel: Toplevel): void {
         if (!isSway) {
-            toplevel.activate();
+            const window = Hyprland.toplevels.values.find(t => t.wayland === toplevel && t.address !== "");
+            if (window)
+                hyprlandBatch([`hl.dsp.focus({ window = "address:0x${window.address}" })`], "focus d'une fenêtre");
             return;
         }
         const quote = text => `"^${text.replace(/[\\^$.*+?()[\]{}|]/g, "\\$&").replace(/"/g, '\\"')}$"`;
