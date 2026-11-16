@@ -16,7 +16,7 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
 - `Compositor.focusWindow` sous Hyprland : `hl.dsp.focus` sur l'adresse ; `Toplevel.activate` y était ignoré (carte Steam du
   tray comprise).
 - Clé USB : règle udev `dotfiles/udev/60-qs-desktop-removable-writeback.rules` (disques USB et cartes SD : cache d'écriture
-  borné à 16 Mio, `strict_limit`) : la fin d'une copie suit l'écriture réelle, comme KDE 6.32. Étape `install` de
+  borné à 64 Mio, `strict_limit`) : la fin d'une copie suit l'écriture réelle, comme KDE 6.32. Étape `install` de
   `system-setup.sh`, ou seule : `removable-writeback`. Test : `scripts/test-removable-writeback.py`.
 - Vérifié sur bancs Sway et Hyprland (Nemo réel, copies lancées par `org.Nemo.FileOperations`, Nemo bridé en CPU) : fin
   fenêtre ouverte, fermeture à la main, conflit, erreur, réponse en moins de 3 s (rien), clic (focus sur la question),
@@ -27,6 +27,8 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
   l'ajout et sur « change » (`strict_limit=1`, `max_bytes` ≈ 16 Mio) ; copie de 1,5 Gio : sans la règle, écritures finies
   (100 %) à 1,2 s puis 11 s bloquées à la fermeture (option `flush` d'udisks pour FAT ; en exFAT, fin annoncée avant
   l'écriture) ; avec, progression régulière, 100 % à 10,8 s, écrite à 11,0 s.
+- Valeur portée à 64 Mio (ta remarque : clés rapides, SSD USB) : disque loop en mémoire (~3,5 Go/s), 16 Mio y perd 25 à 40 %
+  du débit, 64 et 128 Mio aucun. **À refaire par toi** : `./system-setup.sh removable-writeback` (sans `sudo`).
 - **À tester** : vraie copie Nemo sur un autre espace → notification de fin ; copie vers un dossier où le fichier existe →
   « Waiting for your answer », clic ; quand l'occasion se présente, une vraie clé (exFAT surtout).
 

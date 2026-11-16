@@ -150,7 +150,7 @@ Sur une machine cliente (`system-setup.sh client-retention`), le journal systemd
 pacman ne garde que la version installée et une seule précédente de chaque paquet (hook `/etc/pacman.d/hooks/90-qs-paccache.hook`,
 `paccache -rk2` après chaque transaction). Le retrait système retire ces fichiers ; ce qui a été effacé ne revient pas.
 
-Sur toute machine (étape système `install`, ou seule : `system-setup.sh removable-writeback`), une règle udev borne à 16 Mio le
+Sur toute machine (étape système `install`, ou seule : `system-setup.sh removable-writeback`), une règle udev borne à 64 Mio le
 cache d'écriture des disques USB et des cartes SD (`/etc/udev/rules.d/60-qs-desktop-removable-writeback.rules`) : la fin d'une
 copie vers une clé suit alors l'écriture réelle, comme dans KDE Frameworks 6.32. Retirée par le retrait système.
 
