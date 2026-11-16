@@ -149,6 +149,10 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
   sauts de ligne et fermant un guillemet après la ligne Exec) ; corrigé le 2026-11-16 (ci-dessus).
 - Aucun compositeur ni processus Quickshell visible dans l'environnement de travail ; aucun banc créé, aucune relance.
   À vérifier à la main : ouvrir Outlook depuis le lanceur, se connecter et vérifier la navigation authentifiée.
+- `terrier` (2026-11-16, sans `install.sh`, comme ses autres lanceurs) : modèle développé à la main dans
+  `~/.local/share/applications/WebApp-Outlook.desktop` (URL générique du dépôt), profil `ice/profiles/Outlook` créé avec le
+  manifeste natif et les réglages de `chromium_profiles` (thème GTK, barre de titre système, extensions du navigateur refusées).
+  `desktop-file-validate` OK, lu par Gio. **À tester sur `terrier`** : lancer Outlook, se connecter, lien externe → Chromium principal.
 
 ## Machines
 
