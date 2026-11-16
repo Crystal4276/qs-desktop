@@ -232,22 +232,36 @@ Singleton {
     readonly property bool signingIn: signInRequest !== null
     property bool signInStarted: false   // « Connecting » vu : le retour à « Disconnected » met fin à la connexion
     // Échec à montrer : { network, name, kind, identity, method, domain } ; `kind` : "refused" (identifiant ou mot de passe
-    // saisi refusé), "expired" (mot de passe enregistré refusé hors panneau), "failed" (autre échec), "profile" (`nmcli` en
-    // échec). Aucun panneau Wi-Fi épinglé (fermé, ou simple aperçu au survol) : notification en plus.
+    // saisi refusé), "expired" (mot de passe enregistré refusé), "failed" (autre échec), "profile" (`nmcli` en échec). Pris par
+    // le panneau épinglé (takeSignInFailure) ; aucun panneau Wi-Fi épinglé (fermé, ou simple aperçu) : notification en plus.
     property var signInFailure: null
-    // Profils dont un mot de passe refusé a été effacé ici : leur échec hors panneau (connexion automatique sans secret) n'est pas
-    // un mot de passe expiré.
-    property var clearedProfiles: ({})
+
+    // Message d'un échec (panneau, notification).
+    function failureText(failure: var): string {
+        switch (failure.kind) {
+        case "expired":
+            return `${failure.name} refused the saved password: it may have expired`;
+        case "refused":
+            return `Wrong username or password for ${failure.name}`;
+        case "failed":
+            return `Could not connect to ${failure.name} — weak signal or wrong username or password`;
+        default:
+            return `Could not connect to ${failure.name}`;
+        }
+    }
 
     function reportSignInFailure(failure: var): void {
         signInFailure = failure;
-        if (wifiPanelPinned)
-            return;
-        const [summary, body] = failure.kind === "expired"
-            ? [`${failure.name} refused the saved password`, "It may have expired: open the Wi-Fi panel to enter the new one."]
-            : failure.kind === "refused" ? [`Wrong username or password for ${failure.name}`, "Open the Wi-Fi panel to try again."]
-            : [`Could not connect to ${failure.name}`, "Open the Wi-Fi panel to try again."];
-        Quickshell.execDetached(["notify-send", "--app-name=Wi-Fi", "--icon=network-wireless-offline", "--", summary, body]);
+        if (!wifiPanelPinned)
+            Quickshell.execDetached(["notify-send", "--app-name=Wi-Fi", "--icon=network-wireless-offline", "--",
+                failureText(failure), failure.kind === "expired" ? "Open the Wi-Fi panel to enter the new one."
+                : "Open the Wi-Fi panel to try again."]);
+    }
+
+    function takeSignInFailure(): var {
+        const failure = signInFailure;
+        signInFailure = null;
+        return failure;
     }
 
     // Profil PEAP ou TTLS enregistré du réseau (identifiant et mot de passe), sinon null.
@@ -314,46 +328,30 @@ Singleton {
         request.network.connectWithSettings(request.settings);
     }
 
-    // `kind` : "" (annulation, abandon : rien à montrer), "refused", "failed" ou "profile". Profil oublié entre-temps (bouton
-    // Forget) : objet détruit, propriétés indéfinies.
+    // `kind` : "" (annulation, abandon : rien à montrer), "refused", "failed" ou "profile". Profil créé pour cette connexion :
+    // supprimé (aucun mot de passe non vérifié gardé) ; profil existant : gardé avec le dernier mot de passe tapé (l'ancien est
+    // déjà remplacé ; s'il est faux, l'échec de la connexion automatique le signalera). Mot de passe enregistré refusé (rien de
+    // tapé) : "expired". Profil oublié entre-temps (bouton Forget) : objet détruit, propriétés indéfinies.
     function finishSignIn(kind: string): void {
         const request = signInRequest;
         if (!request)
             return;
         signInRequest = null;
-        const settings = request.settings?.uuid ? request.settings : null;
         if (request.created) {
-            if (settings)
-                settings.forget();
+            if (request.settings?.uuid)
+                request.settings.forget();
             else if (request.added)
                 deleteProfile(request.uuid);
             else if (!request.settings)
                 abandonedProfiles[request.uuid] = true;   // supprimé à la fin de `nmcli` (profileCreator)
-        } else if (request.typed && kind !== "failed" && settings) {
-            clearedProfiles[settings.uuid] = true;
-            // Écriture encore en cours : effacer avant qu'elle n'arrive laisserait le mot de passe saisi.
-            if (request.connecting)
-                settings.clearSecrets();
-            else
-                clearAfterWrite = settings;
         }
         if (kind !== "")
-            reportSignInFailure(Object.assign({ network: request.network, name: request.name, kind: kind }, request.form));
+            reportSignInFailure(Object.assign({ network: request.network, name: request.name,
+                kind: kind === "refused" && !request.typed ? "expired" : kind }, request.form));
     }
 
-    // Créations abandonnées avant la fin de `nmcli` (UUID) ; profil dont l'écriture en cours doit être suivie d'un effacement.
+    // Créations abandonnées avant la fin de `nmcli` (UUID).
     property var abandonedProfiles: ({})
-    property var clearAfterWrite: null
-
-    Connections {
-        target: root.clearAfterWrite
-        function onSettingsChanged() {
-            const settings = root.clearAfterWrite;
-            root.clearAfterWrite = null;
-            if (settings.uuid)
-                settings.clearSecrets();
-        }
-    }
 
     function deleteProfile(uuid: string): void {
         Quickshell.execDetached(["nmcli", "connection", "delete", "uuid", uuid]);
@@ -367,9 +365,9 @@ Singleton {
             finishSignIn(refused ? "refused" : "failed");
         } else if (refused && signInRequest?.network !== network) {
             const saved = passwordProfile(network);
-            if (saved && !clearedProfiles[saved.uuid])
-                reportSignInFailure({ network: network, name: network.name, kind: "expired", identity: savedIdentity(network),
-                    method: "", domain: "" });
+            if (saved)
+                reportSignInFailure({ network: network, name: network.name, kind: "expired",
+                    identity: saved.read()["802-1x"].identity ?? "", method: "", domain: "" });
         }
     }
 
@@ -438,11 +436,8 @@ Singleton {
             if (!request?.network?.connected)
                 return;
             root.signInRequest = null;
-            const settings = request.settings?.uuid ? request.settings : null;
-            if (settings)
-                delete root.clearedProfiles[settings.uuid];
-            if (request.created && settings)
-                settings.write({ connection: { autoconnect: true } });
+            if (request.created && request.settings?.uuid)
+                request.settings.write({ connection: { autoconnect: true } });
         }
         function onStateChanged() {
             const state = root.signInRequest?.network?.state;
@@ -482,8 +477,8 @@ Singleton {
     }
 
     // Garde-fou : une étape qui ne conclut pas (profil jamais apparu, écriture sans réponse, connexion déjà en cours chez
-    // NetworkManager, réseau sorti de la liste) termine la connexion comme un échec. Connexion : délai d'authentification (10 s)
-    // et DHCP (45 s par défaut) compris.
+    // NetworkManager, réseau sorti de la liste) termine la connexion comme un échec. Avant la connexion : 60 s, le temps d'une
+    // éventuelle autorisation polkit ; pendant : délai d'authentification (10 s) et DHCP (45 s par défaut) compris.
     Timer {
         id: signInTimeout
         onTriggered: root.finishSignIn("failed")
@@ -494,7 +489,7 @@ Singleton {
         if (!signInRequest) {
             signInTimeout.stop();
         } else {
-            signInTimeout.interval = signInRequest.connecting ? 90000 : 15000;
+            signInTimeout.interval = signInRequest.connecting ? 90000 : 60000;
             signInTimeout.restart();
         }
     }
@@ -616,7 +611,8 @@ Singleton {
     // `Device.Disconnect` qui bloquerait ensuite la connexion automatique de l'appareil (documentation de NetworkManager),
     // ni `WifiNetwork.disconnect()` que Quickshell refuse avant la connexion.
     function cancelWifi(): void {
-        abandonSignIn();
+        if (signInRequest?.network?.state === ConnectionState.Connecting)   // annulation de la connexion suivie, pas d'une autre
+            abandonSignIn();
         if (wifi)
             Quickshell.execDetached(["sh", "-c", 'u=$(nmcli -t -g GENERAL.CON-UUID device show "$1") && [ -n "$u" ] && nmcli connection down uuid "$u"', "sh", wifi.name]);
     }

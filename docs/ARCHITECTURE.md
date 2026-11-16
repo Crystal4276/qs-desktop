@@ -354,21 +354,25 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
   système reproductible et retour arrière : `docs/NETWORK.md`. Sondes désactivées : résultats périmés ignorés.
 - Wi-Fi entreprise (WPA / WPA2 802.1X) : formulaire du panneau (PEAP + MSCHAPv2 ou TTLS + PAP, identifiant, mot de passe,
   domaine du serveur : autorités du système + `domain-suffix-match` ; facultatif avec PEAP, exigé avec TTLS dont PAP livrerait le
-  mot de passe en clair à un faux point d'accès). Quickshell ne crée que des profils WPA-PSK : profil créé par
-  `nmcli connection add` (UUID choisi par le service, un processus par connexion), sans secret ni connexion automatique ; mot de
-  passe écrit par `NMSettings.write` dès que le profil apparaît dans `nmSettings` (déjà lu), avec `password-flags` 0 sur un profil
-  existant (« pour cet utilisateur » : sans agent, NetworkManager jetterait le mot de passe), connexion par `connectWithSettings`
-  après `settingsChanged`. Connexion suivie par `Network` jusqu'au bout, panneau ouvert ou non, avec un garde-fou par étape
-  (15 s, 90 s pendant la connexion) ; une autre connexion demandée l'abandonne. Réussie : connexion automatique écrite (écriture
-  sans secret : le mot de passe est gardé). Refus, annulation, abandon : un mot de passe saisi n'est pas gardé (profil créé
-  supprimé, sinon `clearSecrets`) ; échec de signal : mot de passe d'un profil existant gardé. L'échec (`signInFailure`) rouvre
-  le formulaire, rempli de la saisie, une fois le panneau épinglé (pas en aperçu) et sans autre formulaire ouvert ; notification
-  sans panneau épinglé ; oublié si le réseau se connecte entre-temps. Hors panneau (connexion automatique), un refus du mot de passe enregistré (renouvelé
-  par l'établissement) est signalé de même, sans rien effacer : `connectionFailed` des réseaux entreprise, suivis ou non
-  (nm-applet ouvrirait une fenêtre de mot de passe ; Quickshell n'a pas d'agent de secrets).
-  Mauvais identifiant : `NoSecrets` à la fin du délai d'authentification (le serveur refuse aussitôt, mais sans agent
-  NetworkManager attend) : `802-1x.auth-timeout` à 10 s dans les profils créés (25 s par défaut). Profil existant : identifiant et mot de passe réécrits. `802-1x.eap` (liste) n'est pas converti par
-  `write` : méthode fixée à la création. WPA3 192 bits, LEAP, WEP : éditeur.
+  mot de passe en clair à un faux point d'accès). WPA3 192 bits, LEAP, WEP : éditeur.
+  - Création : Quickshell ne crée que des profils WPA-PSK. Profil créé par `nmcli connection add` (UUID choisi par le service,
+    un processus par création), sans secret ni connexion automatique, `802-1x.auth-timeout` à 10 s (25 s par défaut) ; mot de
+    passe écrit par `NMSettings.write` dès que le profil apparaît dans `nmSettings` (déjà lu) ; connexion par
+    `connectWithSettings` après `settingsChanged`. `802-1x.eap` (liste) n'est pas converti par `write` : méthode fixée à la
+    création. Profil existant : identifiant, mot de passe et `password-flags` 0 réécrits (profil « pour cet utilisateur » :
+    sans agent, NetworkManager jetterait le mot de passe).
+  - Suivi par `Network` jusqu'au bout, panneau ouvert ou non, avec un garde-fou par étape (60 s avant la connexion, le temps
+    d'une autorisation polkit ; 90 s pendant). Une autre connexion demandée, ou « Cancel » de la connexion suivie,
+    l'abandonne. Réussie : connexion automatique écrite (écriture sans secret : le mot de passe est gardé). Échec ou abandon :
+    profil créé pour l'occasion supprimé (aucun mot de passe non vérifié gardé) ; profil existant gardé avec le dernier mot de
+    passe tapé (l'ancien est déjà remplacé ; s'il est faux, l'échec de la connexion automatique le signalera).
+  - Mauvais identifiant : `NoSecrets` à la fin du délai d'authentification (le serveur refuse aussitôt, mais sans agent
+    NetworkManager attend). Hors panneau (connexion automatique, mot de passe renouvelé par l'établissement), le refus du mot
+    de passe enregistré est signalé de même : `connectionFailed` des réseaux entreprise, suivis ou non (nm-applet ouvrirait
+    une fenêtre de mot de passe ; Quickshell n'a pas d'agent de secrets).
+  - Échec (`signInFailure`, texte par `failureText`) : pris par le panneau épinglé (`takeSignInFailure`, pas en aperçu, sans
+    autre formulaire ouvert), qui rouvre le formulaire rempli de la saisie ; notification sans panneau épinglé ; oublié si le
+    réseau se connecte entre-temps.
 - Panneau réseau : onglets Wired (détails `nmcli`, graphe du trafic) / Tailscale (`status --json`, `debug prefs` ; actions grâce à
   `--operator=$USER`, à faire à la main) / ZeroTier (`zerotier-cli -j` avec le jeton copié dans `~/.zeroTierOneAuthToken`,
   à la main ; sinon interfaces `zt*` en lecture seule). Relus toutes les 5 s onglet affiché ; 60 s sinon, sans câble.
