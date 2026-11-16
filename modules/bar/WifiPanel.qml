@@ -8,7 +8,8 @@ import qs.services
 // Panneau Wi-Fi (ta demande du 2026-10-19 : sorti du panneau réseau ; THEME.md § 3 « Module Wi-Fi », ARCHITECTURE § 7.6) :
 // interrupteur ; carte du réseau courant (WifiCard.qml : qualité du signal et détails, comme KDE) ; autres réseaux visibles
 // avec force, bande et état (GNOME, Cinnamon) ; mot de passe demandé sous la liste pour un réseau protégé inconnu, redemandé en
-// rouge s'il est refusé ; échec de connexion signalé ; édition des connexions.
+// rouge s'il est refusé (réseau entreprise : identifiant aussi, méthode et domaine à la création) ; échec de connexion signalé ;
+// édition des connexions.
 // Quickshell.Networking importé sous `NM` : son type `Network` masquerait le service du même nom.
 Panel {
     id: root
@@ -21,7 +22,12 @@ Panel {
     // Réseau protégé inconnu en attente de mot de passe ; `passwordRefused` : le précédent a été refusé.
     property var passwordFor: null
     property bool passwordRefused: false
-    holdOpen: password.text !== ""   // mot de passe tapé, même si le focus a quitté le champ : pas de fermeture automatique
+    // Réseau entreprise : identifiant demandé ; profil à créer (`newProfile`) : méthode (PEAP / TTLS) et domaine aussi.
+    readonly property bool enterprise: passwordFor !== null && Network.isEnterprise(passwordFor.security)
+    readonly property bool newProfile: enterprise && !passwordFor.known
+    property string method: "peap"
+    // Texte tapé, même si le focus a quitté le champ : pas de fermeture automatique.
+    holdOpen: [identity, password, domain].some(field => field.text !== "")
     // Dernier réseau dont la connexion a été demandée ici, et message de son échec.
     property var pending: null
     property string failText: ""
@@ -69,16 +75,44 @@ Panel {
             passwordRefused = false;
         }
         if (!network.known && Network.needsEditor(network.security)) {
-            failText = `${network.name} needs an enterprise or WEP setup: use Network settings…`;
+            failText = `${network.name} needs a certificate, LEAP or WEP setup: use Network settings…`;
             return;
         }
-        if (!network.known && Network.needsPsk(network.security)) {
+        if (!network.known && (Network.needsPsk(network.security) || Network.isEnterprise(network.security))) {
             passwordRefused = false;
             passwordFor = network;
             return;
         }
         pending = network;
         network.connect();
+    }
+
+    // Entrée dans un champ du formulaire : rien tant que le mot de passe (et l'identifiant d'un réseau entreprise) manque.
+    function submit(): void {
+        const network = passwordFor;
+        const values = [identity.text.trim(), password.text, method, domain.text.trim()];
+        if (!network || values[1] === "" || (enterprise && values[0] === ""))
+            return;
+        const isEnterprise = enterprise;
+        passwordFor = null;
+        passwordRefused = false;
+        failText = "";
+        pending = network;
+        if (isEnterprise)
+            Network.signInEnterprise(network, ...values);
+        else
+            network.connectWithPsk(values[1]);
+    }
+
+    // Profil entreprise non créé (`nmcli` en échec).
+    Connections {
+        target: Network
+        function onSignInFailed(network) {
+            if (network === root.pending) {
+                root.pending = null;
+                root.failText = `Could not connect to ${network.name}`;
+            }
+        }
     }
 
     Connections {
@@ -97,8 +131,10 @@ Panel {
             // Clé refusée : NetworkManager le signale par l'absence de secrets (« Wrong password ») ; une déconnexion ou un délai
             // pendant l'authentification peut venir de la clé ou du signal : message neutre et mot de passe proposé. La saisie
             // met à jour le profil enregistré (Quickshell, connectWithPsk), sans en créer un autre.
-            // Clé WPA attendue, ou sécurité non reconnue (drapeaux inhabituels) : le mot de passe peut être proposé.
-            const secured = !Network.isOpen(network.security) && !Network.needsEditor(network.security);
+            // Clé WPA attendue, réseau entreprise à identifiant et mot de passe (PEAP, TTLS), ou sécurité non reconnue (drapeaux
+            // inhabituels) : le mot de passe peut être proposé.
+            const secured = !Network.isOpen(network.security) && !Network.needsEditor(network.security)
+                && (!Network.isEnterprise(network.security) || Network.passwordProfile(network) !== null);
             if (secured && reason === NM.ConnectionFailReason.NoSecrets) {
                 root.passwordRefused = true;
                 root.passwordFor = network;
@@ -185,11 +221,41 @@ Panel {
         }
     }
 
-    // Mot de passe d'un réseau protégé inconnu (ou refusé).
+    // Mot de passe d'un réseau protégé inconnu (ou refusé) ; réseau entreprise : identifiant, et à la création méthode et
+    // domaine du serveur (facultatif : certificat vérifié s'il est rempli).
     PanelSection {
+        readonly property string name: root.passwordFor?.name ?? ""
+
         visible: root.passwordFor !== null
-        text: root.passwordRefused ? `Wrong password for ${root.passwordFor?.name ?? ""}` : `Password for ${root.passwordFor?.name ?? ""}`
+        text: root.enterprise ? (root.passwordRefused ? `Wrong username or password for ${name}` : `Sign in to ${name}`)
+            : root.passwordRefused ? `Wrong password for ${name}` : `Password for ${name}`
         color: root.passwordRefused ? Theme.panel.warning : Theme.panel.secondaryText
+    }
+
+    // Autre réseau demandé : champs vidés (le texte tapé n'est pas pour lui), identifiant enregistré repris, focus au premier
+    // champ à remplir une fois le formulaire affiché.
+    onPasswordForChanged: {
+        identity.text = Network.savedIdentity(passwordFor);
+        password.text = "";
+        domain.text = "";
+        method = "peap";
+        if (passwordFor !== null)
+            Qt.callLater(() => (identity.visible && identity.text === "" ? identity : password).focusInput());
+    }
+
+    PanelTabs {
+        visible: root.newProfile
+        model: [{ key: "peap", text: "PEAP" }, { key: "ttls", text: "TTLS" }]
+        current: root.method
+        onPicked: key => root.method = key
+    }
+
+    PanelField {
+        id: identity
+        visible: root.enterprise
+        error: root.passwordRefused
+        placeholder: "Username"
+        onAccepted: root.submit()
     }
 
     PanelField {
@@ -198,28 +264,14 @@ Panel {
         password: true
         error: root.passwordRefused
         placeholder: "Password"
-        onVisibleChanged: {
-            text = "";
-            if (visible)
-                focusInput();
-        }
-        // Autre réseau demandé pendant la saisie : le texte tapé n'est pas pour lui.
-        Connections {
-            target: root
-            function onPasswordForChanged() {
-                password.text = "";
-            }
-        }
-        onAccepted: text => {
-            const network = root.passwordFor;
-            root.passwordFor = null;
-            root.passwordRefused = false;
-            root.failText = "";
-            if (text !== "" && network) {
-                root.pending = network;
-                network.connectWithPsk(text);
-            }
-        }
+        onAccepted: root.submit()
+    }
+
+    PanelField {
+        id: domain
+        visible: root.newProfile
+        placeholder: "Server domain (optional)"
+        onAccepted: root.submit()
     }
 
     NetworkSettingsButton {

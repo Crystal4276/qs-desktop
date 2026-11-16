@@ -128,6 +128,66 @@ exec ''' + real_install + ' "$@"\n')
     print('PASS concurrent installs: original restored / new file removed')
 
 
+UUID = '0f1e2d3c-4b5a-6978-8796-a5b4c3d2e1f0'
+
+
+def form_test(ipc, nmcli_log, work):
+    """Formulaires du panneau Wi-Fi : réseau entreprise (création, mot de passe écrit hors ligne de commande, refus, échec de
+    `nmcli`) et réseau WPA (non-régression)."""
+    def form(): return json.loads(ipc('form'))
+    def calls(): return json.loads(ipc('calls'))
+    def settle(): time.sleep(0.1)
+    ipc('openForm', 'enterprise'); settle()
+    f = form()
+    assert f['title'] == ['Sign in to Campus'] and f['passwordFor'] == 'Campus', f
+    assert all(f[k]['visible'] for k in ('username', 'password', 'domain')) and f['tabs'] == {'visible': True, 'current': 'peap'}, f
+    assert not f['holdOpen']
+    ipc('capturePanel', str(work / 'enterprise-form.png'))
+    # Entrée sans identifiant : rien.
+    ipc('fill', json.dumps({'Password': 'pa ss'})); ipc('enter', 'Password'); settle()
+    assert form()['passwordFor'] == 'Campus' and form()['holdOpen'] and not nmcli_log.exists()
+    ipc('fill', json.dumps({'Username': ' alice@campus.example ', 'Server domain (optional)': ' radius.campus.example '}))
+    ipc('pick', 'ttls'); ipc('enter', 'Server domain (optional)'); settle()
+    f = form()
+    assert f['passwordFor'] == '' and f['pending'] == 'Campus' and f['failText'] == '', f
+    args = nmcli_log.read_text().splitlines()
+    assert args == ['connection', 'add', 'type', 'wifi', 'con-name', 'Campus', 'ssid', 'Campus', 'connection.autoconnect', 'no',
+                    'wifi-sec.key-mgmt', 'wpa-eap', '802-1x.eap', 'ttls', '802-1x.phase2-auth', 'pap',
+                    '802-1x.identity', 'alice@campus.example', '802-1x.system-ca-certs', 'yes',
+                    '802-1x.domain-suffix-match', 'radius.campus.example'], args
+    assert calls() == [], 'nothing written before the profile appears'
+    nmcli_log.unlink()
+    ipc('profile', 'enterprise', UUID, json.dumps({'802-1x': {'eap': ['ttls'], 'identity': 'alice@campus.example',
+        'phase2-auth': 'pap'}, 'connection': {'autoconnect': False}})); settle()
+    assert calls() == [['write', {'802-1x': {'password': 'pa ss'}, 'connection': {'autoconnect': True}}], ['connect', UUID]], calls()
+    # Refus : formulaire rouge, identifiant repris, ni méthode ni domaine ; seuls identifiant et mot de passe réécrits.
+    ipc('fail', 'enterprise', 'NoSecrets'); settle()
+    f = form()
+    assert f['title'] == ['Wrong username or password for Campus'] and f['pending'] == '', f
+    assert f['username'] == {'visible': True, 'text': 'alice@campus.example', 'error': True}, f
+    assert f['password']['text'] == '' and f['password']['error'] and not f['domain']['visible'] and not f['tabs']['visible'], f
+    ipc('capturePanel', str(work / 'enterprise-refused.png'))
+    ipc('fill', json.dumps({'Username': 'alice', 'Password': 'new'})); ipc('enter', 'Username'); settle()
+    assert calls()[2:] == [['write', {'802-1x': {'identity': 'alice', 'password': 'new'}}], ['connect', UUID]], calls()
+    assert not nmcli_log.exists(), 'existing profile must not be recreated'
+    # Autre échec : message, pas de formulaire.
+    ipc('fail', 'enterprise', 'Unknown'); settle()
+    assert form()['passwordFor'] == '' and form()['failText'] == 'Could not connect to Campus', form()
+    # `nmcli` en échec (réseau de nouveau sans profil) : message, rien d'écrit.
+    ipc('reset', 'enterprise'); settle()
+    before = calls()
+    ipc('openForm', 'enterprise'); settle()
+    ipc('fill', json.dumps({'Username': 'bogus', 'Password': 'x'})); ipc('enter', 'Password'); settle()
+    assert form()['failText'] == 'Could not connect to Campus' and form()['pending'] == '' and calls() == before, form()
+    # WPA : mot de passe seul, connectWithPsk.
+    ipc('openForm', 'personal'); settle()
+    f = form()
+    assert f['title'] == ['Password for Home'] and not f['username']['visible'] and not f['domain']['visible'] and not f['tabs']['visible'], f
+    ipc('fill', json.dumps({'Password': 'wpa key'})); ipc('enter', 'Password'); settle()
+    assert calls()[-1] == ['psk', 'wpa key'] and form()['pending'] == 'Home', calls()
+    print('PASS QML: enterprise form (create without secret on argv, password write, autoconnect, refusal and retry, nmcli failure), WPA form')
+
+
 def qml_test(work):
     stage = work / 'shell'
     # Actual code, with only the native backend and external effects substituted.
@@ -140,15 +200,25 @@ def qml_test(work):
     network = network.replace('running: true\n        repeat: true\n        triggeredOnStart: true',
                               'running: false\n        repeat: true\n        triggeredOnStart: false', 1)
     (stage / 'services/Network.qml').write_text(network)
-    shutil.copy2(REPO / 'scripts/tests/network/Backend.qml', stage / 'services/Backend.qml')
+    for name in ('Backend', 'FakeWifi', 'FakeProfile'):
+        shutil.copy2(REPO / f'scripts/tests/network/{name}.qml', stage / f'services/{name}.qml')
     shutil.copy2(REPO / 'scripts/tests/network/shell.qml', stage / 'shell.qml')
     (stage / 'services/Launch.qml').write_text('pragma Singleton\nimport QtQuick\nQtObject { property var commands: []; function exec(args) { commands = commands.concat([args]); } }\n')
     bindir = work / 'bin'
     bindir.mkdir()
-    (bindir / 'nmcli').write_text('#!/bin/sh\nexit 0\n')
+    # `nmcli connection add` : arguments enregistrés, profil annoncé (échec si l'identifiant est « bogus »).
+    nmcli_log = work / 'nmcli-add.log'
+    (bindir / 'nmcli').write_text(f'''#!/bin/sh
+[ "$1 $2" = "connection add" ] || exit 0
+printf '%s\\n' "$@" >> {shlex.quote(str(nmcli_log))}
+case " $* " in *" bogus "*) echo "Error: failed" >&2; exit 1 ;; esac
+echo "Connection '$6' ({UUID}) successfully added."
+''')
     (bindir / 'nmcli').chmod(0o755)
+    # Rendu logiciel direct : sur un banc sans GPU, Mesa essaie d'abord Zink et journalise son échec.
     env = dict(os.environ, QS_TEST='1', XDG_STATE_HOME=str(work / 'state'), XDG_CACHE_HOME=str(work / 'cache'),
-               GIO_USE_VFS='local', GVFS_DISABLE_FUSE='1', PATH=str(bindir) + ':' + os.environ['PATH'])
+               GIO_USE_VFS='local', GVFS_DISABLE_FUSE='1', LIBGL_ALWAYS_SOFTWARE='1',
+               PATH=str(bindir) + ':' + os.environ['PATH'])
     log = work / 'qml.log'
     with log.open('w') as output:
         proc = subprocess.Popen(['qs', '-p', str(stage)], env=env, stdout=output, stderr=subprocess.STDOUT,
@@ -214,18 +284,22 @@ def qml_test(work):
             config(connectivity=2)
             before = snap()['checks']; time.sleep(0.32)
             assert 2 <= snap()['checks'] - before <= 4, 'one timer across multiple panels'
+            form_test(ipc, nmcli_log, work)
             config(wifiEnabled=False)
             assert not snap()['portal']
             before = snap()['checks']; time.sleep(0.25)
             assert snap()['checks'] == before
-            errors = [line for line in log.read_text().splitlines() if ('WARN' in line or 'ERROR' in line)
+            # Journal en couleurs : codes ANSI retirés avant le filtre des catégories.
+            lines = [re.sub(r'\x1b\[[0-9;]*m', '', line) for line in log.read_text().splitlines()]
+            errors = [line for line in lines if ('WARN' in line or 'ERROR' in line)
                       and 'qt.qpa.services:' not in line and 'qt.qpa.wayland.textinput:' not in line]
             assert not errors, '\n'.join(errors)
             print('PASS QML: portal/full/limited, guarded click, browser argv, polling, disabled checks/radio, route attribution, reconnect, preview/pinned, multiple panels')
-            if (work / 'portal.png').exists():
-                print('Capture:', work / 'portal.png')
-            else:
-                print('Capture indisponible : banc sans rendu ou fenêtre masquée.')
+            for name in ('portal', 'enterprise-form', 'enterprise-refused'):
+                if (work / f'{name}.png').exists():
+                    print('Capture:', work / f'{name}.png')
+                else:
+                    print(f'Capture {name} indisponible : banc sans rendu ou fenêtre masquée.')
         finally:
             stop_group(proc)
 

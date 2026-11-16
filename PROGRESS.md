@@ -3,6 +3,30 @@
 État courant seulement. Historique figé : phases 0 à 10 dans `docs/archive/PROGRESS.md`, maintenance du 2026-11-05 au 2026-11-09
 et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de besoin).
 
+## Wi-Fi entreprise depuis le panneau (2026-11-16)
+
+- Ta demande : Uni-Fi et eduroam (WPA2 802.1X) renvoyaient vers « Network settings… ». Tes choix : formulaire dans le panneau,
+  PEAP ou TTLS (PEAP par défaut), domaine du serveur facultatif (certificat vérifié s'il est rempli, sinon aucune vérification).
+- Clic sur un réseau entreprise inconnu : « Sign in to X », onglets PEAP / TTLS, Username, Password, « Server domain
+  (optional) » ; Entrée dans un champ dès que Username et Password sont remplis, Tab d'un champ à l'autre (`PanelField`).
+  Refus (`NoSecrets`) : « Wrong username or password for X » en rouge, Username repris du profil, sans méthode ni domaine
+  (pour en changer : Forget). WPA3 192 bits, LEAP et WEP : toujours l'éditeur.
+- Mécanisme (`ARCHITECTURE.md` § 7.6) : `nmcli connection add` sans secret ni connexion automatique (sinon NetworkManager
+  l'active aussitôt et l'échec ressemblerait à un refus), puis `NMSettings.write` du mot de passe et de la connexion
+  automatique, puis `connectWithSettings`. Le mot de passe ne passe jamais par une ligne de commande.
+- Petit changement : Entrée sur un mot de passe WPA vide ne ferme plus le formulaire (il reste ouvert).
+- Vérifications : comportement de Quickshell 0.3.2 sur un profil d'essai jamais activé (`autoconnect no`, supprimé ensuite) :
+  profil apparu déjà lu dans `nmSettings`, `write` fusionne clé par clé (méthode, phase 2, identifiant gardés), `settingsChanged`
+  ~40 ms après une écriture du seul secret, mot de passe enregistré (drapeaux 0). Chaîne complète sur le vrai NetworkManager
+  non jouée (refusée par le contrôle de permissions : elle aurait laissé un profil Uni-Fi à connexion automatique) : couverte
+  par `test-network.py` sur réseaux factices (nouveau test, ci-dessous). `test-network.py` complet OK sur Sway headless, sans
+  avertissement ; deux défauts préexistants du test corrigés : filtre des avertissements trompé par les couleurs du journal,
+  erreur Zink de Mesa sur banc sans GPU (`LIBGL_ALWAYS_SOFTWARE=1`). Démarrage complet de la copie sur banc : aucun nouvel
+  avertissement. Bureau réel rechargé sans erreur.
+- **À tester à la main** : Uni-Fi avec tes identifiants (PEAP ; si refus, Forget puis TTLS) ; un mauvais mot de passe d'abord
+  (formulaire rouge, Username prérempli, puis le bon) ; eduroam (`identifiant@établissement`) ; le domaine du serveur si ton
+  service informatique le donne ; Tab et Entrée au clavier.
+
 ## Word, Excel, PowerPoint dans « Ouvrir avec » (2026-11-16)
 
 - Ton choix : **import guidé**. Les lanceurs Word / Excel / PowerPoint déclarent leurs formats (docx, docm, doc, odt ; xlsx,

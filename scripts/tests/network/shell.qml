@@ -17,6 +17,19 @@ ShellRoot {
         target: Launch
         function onCommandsChanged() { root.closedBeforeLaunch = root.panel !== null && !root.panel.visible; }
     }
+    function findAll(item, match, found) {
+        if (match(item)) found.push(item);
+        for (const child of item.children ?? []) root.findAll(child, match, found);
+        return found;
+    }
+    function field(placeholder) {
+        return root.findAll(root.panel.contentItem, item => item.placeholder === placeholder, [])[0];
+    }
+    function openPanelOnce() {
+        if (root.panel) return;
+        root.panel = panelComponent.createObject(root);
+        root.panel.toggle(anchor, Qt.LeftButton);
+    }
     function findPortal(item) {
         if (item.text === "Open Captive Portal") return item;
         for (const child of item.children ?? []) {
@@ -70,6 +83,37 @@ ShellRoot {
             root.panel.destroy();
             root.panel = null;
         }
+        // Formulaires (WifiPanel) : réseau `enterprise` ou `personal` du faux backend.
+        function openForm(name: string): void {
+            root.openPanelOnce();
+            root.panel.activate(Backend[name]);
+        }
+        function form(): string {
+            const content = root.panel.contentItem;
+            const shown = item => item ? { visible: item.visible, text: item.text, error: item.error } : null;
+            const titles = root.findAll(content, item => item.visible && /^(Sign in|Wrong|Password for)/.test(item.text ?? ""), []);
+            const tabs = root.findAll(content, item => item.current !== undefined && item.picked !== undefined, [])[0];
+            return JSON.stringify({ title: titles.map(item => item.text), username: shown(root.field("Username")),
+                password: shown(root.field("Password")), domain: shown(root.field("Server domain (optional)")),
+                tabs: { visible: tabs.visible, current: tabs.current }, passwordFor: root.panel.passwordFor?.name ?? "",
+                pending: root.panel.pending?.name ?? "", failText: root.panel.failText, holdOpen: root.panel.holdOpen });
+        }
+        function fill(json: string): void {
+            const values = JSON.parse(json);
+            for (const key of Object.keys(values)) root.field(key).text = values[key];
+        }
+        function pick(key: string): void {
+            root.findAll(root.panel.contentItem, item => item.current !== undefined && item.picked !== undefined, [])[0].picked(key);
+        }
+        function enter(placeholder: string): void {
+            const item = root.field(placeholder);
+            item.accepted(item.text);
+        }
+        function fail(name: string, reason: string): void { Backend[name].connectionFailed(NM.ConnectionFailReason[reason]); }
+        function profile(name: string, uuid: string, json: string): void { Backend.addProfile(Backend[name], uuid, JSON.parse(json)); }
+        function reset(name: string): void { Backend[name].nmSettings = []; }
+        function calls(): string { return JSON.stringify(Backend.calls); }
+        function capturePanel(path: string): void { root.panel.frameItem.grabToImage(result => result.saveToFile(path)); }
         function stale(): void { Network.openCaptivePortal(null); }
         function capture(path: string): void { column.grabToImage(result => result.saveToFile(path)); }
     }
