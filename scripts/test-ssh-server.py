@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""sshd des machines clientes, filtré par UFW, et rétention de leur journal : provisioning isolé, aucun service,
+"""sshd des machines clientes, filtré par UFW, et rétention de leur journal et de leur cache pacman : provisioning isolé, aucun service,
 pare-feu ni journal réel modifié."""
 import os
 from pathlib import Path
@@ -15,11 +15,14 @@ with tempfile.TemporaryDirectory(prefix='qs-sshd-test-') as tmp:
     (root / 'scripts').mkdir()
     (root / 'bin').mkdir()
     shutil.copytree(REPO / 'dotfiles/journald', root / 'dotfiles/journald')
+    shutil.copytree(REPO / 'dotfiles/pacman', root / 'dotfiles/pacman')
     source = (REPO / 'scripts/system-setup.sh').read_text().replace('/var/lib/qs-desktop/system-setup', str(root / 'state'))
     for old, new in UFW_FILES.items():
         source = source.replace(old, str(root / new))
     journal = root / 'journald.conf.d/60-qs-desktop-client.conf'
+    hook = root / 'hooks/90-qs-paccache.hook'
     source = source.replace('/etc/systemd/journald.conf.d/60-qs-desktop-client.conf', str(journal))
+    source = source.replace('/etc/pacman.d/hooks/90-qs-paccache.hook', str(hook))
     helper = root / 'scripts/system-setup.sh'
     helper.write_text(source)
     # Fichiers UFW simulés : ufw.conf porte l'état, user.rules les règles ajoutées.
@@ -120,17 +123,18 @@ esac""",
     env['PATH'] = ':'.join([str(root / 'bin')] + [d for d in os.environ['PATH'].split(':') if not Path(d, 'ufw').exists()])
     run('ssh-server', success=False)
     assert not list(root.glob('enabled-*')) and not list(root.glob('active-*'))
-    # Journal : la veille gardée, pas plus ; journald relu seulement si le fichier change, retrait complet.
+    # Journal (la veille gardée, pas plus) et cache pacman (une version précédente) ; journald relu seulement si le fichier change, retrait complet.
     calls()
-    run('--dry-run', 'client-journal')
-    assert 'sudo ' not in calls() and not journal.exists()
-    run('client-journal')
+    run('--dry-run', 'client-retention')
+    assert 'sudo ' not in calls() and not journal.exists() and not hook.exists()
+    run('client-retention')
     conf = journal.read_text()
     assert 'MaxRetentionSec=2day' in conf and 'MaxFileSec=1h' in conf and 'Storage=persistent' in conf
     assert 'systemctl reload systemd-journald.service' in calls()
-    run('client-journal')
+    assert 'Exec = /usr/bin/paccache -rk2' in hook.read_text()
+    run('client-retention')
     assert 'reload' not in calls()
     run('uninstall')
-    assert not journal.exists() and 'systemctl reload systemd-journald.service' in calls()
+    assert not journal.exists() and not hook.exists() and 'systemctl reload systemd-journald.service' in calls()
 print('PASS sshd : simulation, UFW activé avant sshd (ZeroTier, VM), idempotence, retrait, UFW déjà actif, sshd préexistant, ufw absent ;'
-      ' journal : simulation, la veille gardée, idempotence, retrait')
+      ' journal et cache pacman : simulation, la veille gardée, une version précédente, idempotence, retrait')

@@ -340,8 +340,9 @@ Ce banc ne remplace pas la validation en VM.
 sans modifier les réglages existants. Clé privée et destination uniquement dans `~/.ssh`, conservées
 au retrait. Voir README, « Accès SSH au desktop ». Machine cliente (alias présent), avec étapes système : `sshd`
 activé après UFW (paquet `ufw`) : port 22 ouvert sur `zt+` seulement ; journal systemd gardé jusqu'à la veille
-(`dotfiles/journald/`, rétention native de journald, aucun paquet ajouté).
-`python3 scripts/test-ssh-server.py` : provisioning isolé, services, UFW et journal simulés, sans privilège.
+(`dotfiles/journald/`, rétention native de journald) et cache pacman limité à une version précédente (hook
+`dotfiles/pacman/hooks/90-qs-paccache.hook`, `paccache` de `pacman-contrib`).
+`python3 scripts/test-ssh-server.py` : provisioning isolé, services, UFW, journal et cache pacman simulés, sans privilège.
 `python3 scripts/test-ssh-desktop.py` : vrais fichiers SSH jetables, pseudo-terminal Python et
 connexions distantes simulées ; aucun accès réseau réel ni privilège requis.
 

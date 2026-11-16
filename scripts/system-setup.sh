@@ -20,8 +20,9 @@
 #         system-setup.sh [--dry-run] reflector   miroirs Arch rapides et récents, renouvelés chaque semaine
 #         system-setup.sh [--dry-run] samba       partages personnels et Nemo via libvirt et ZeroTier ; UFW si actif
 #         system-setup.sh [--dry-run] ssh-server  sshd activé, port 22 ouvert par UFW sur ZeroTier seulement (UFW activé si besoin)
-#         system-setup.sh [--dry-run] client-journal
-#                                                 journal systemd gardé jusqu'à la veille, pas plus (machine cliente)
+#         system-setup.sh [--dry-run] client-retention
+#                                                 machine cliente : journal systemd gardé jusqu'à la veille, cache pacman
+#                                                 limité à la version installée et à une précédente (paccache)
 set -euo pipefail
 
 repo="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
@@ -521,13 +522,15 @@ do_ssh_server() {
     fi
 }
 
-# Journal des machines clientes : la veille gardée, pas plus (rétention native de journald).
+# Machines clientes : journal gardé jusqu'à la veille (rétention native de journald) ; cache pacman réduit à la version
+# installée et à une précédente après chaque transaction (hook paccache).
 journal_conf=/etc/systemd/journald.conf.d/60-qs-desktop-client.conf
-do_client_journal() {
+do_client_retention() {
     local changed=""
     cmp -s "$repo/dotfiles/journald/60-qs-desktop-client.conf" "$journal_conf" || changed=1
     install_file dotfiles/journald/60-qs-desktop-client.conf "$journal_conf"
     [[ -z "$changed" ]] || run systemctl reload systemd-journald.service
+    install_file dotfiles/pacman/hooks/90-qs-paccache.hook /etc/pacman.d/hooks/90-qs-paccache.hook
 }
 
 do_uninstall() {
@@ -579,10 +582,10 @@ case "${1:-}" in
     zerotier) do_zerotier "${2:-}" ;;
     samba) do_samba ;;
     ssh-server) do_ssh_server ;;
-    client-journal) do_client_journal ;;
+    client-retention) do_client_retention ;;
     install) do_install ;;
     chromium-extensions) do_chromium_extensions ;;
     thunderbird-theme) do_thunderbird_theme "${2:-}" ;;
     uninstall) do_uninstall ;;
-    *) sed -n '5,24p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 2 ;;
+    *) sed -n '5,25p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 2 ;;
 esac
