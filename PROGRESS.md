@@ -23,6 +23,13 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
   la web app seule. Installation locale ciblée (3 lanceurs identiques à l'ancien modèle, Outlook non touché ; empreintes du
   registre mises à jour) : même résultat sur ta session. Bureau réel vivant, aucun QML modifié.
 - Testé à la main par toi (2026-11-16) : OK (Ouvrir avec → web app, import guidé).
+- `terrier` (ton choix : garder ses lanceurs, `install.sh` n'y a jamais tourné) : relais et formats ajoutés à la main par SSH à
+  Word9053, Excel7169 et Powerpoint7635 (`text/html` remplacé), sauvegardes `.bak-2026-11-16` ; `%7B`, `%7D`, `%2C` des adresses
+  SharePoint écrits `{`, `}`, `,` : GIO supprime les codes `%` inconnus même entre guillemets (adresse cassée, vérifié), pas
+  Quickshell ; Chromium envoie l'adresse telle quelle (vérifié). Défauts : LibreOffice pour ces types (avant, ChatGPT pour docx,
+  pptx, csv ; xlsx déjà à Calc), `mimeapps.list.bak-2026-11-16`. `gio launch` (outils remplacés par un enregistreur) : fichier
+  à espace intact, adresse intacte. **À tester sur `terrier`** : Ouvrir avec Word / Excel / PowerPoint ; Word et Excel ouvrent
+  ton document SharePoint et non l'accueil : voir où se trouve « Upload » (Fichier → Ouvrir, sans doute).
 - À examiner : pendant l'essai, le lien de connexion de rclone, ouvert par Ctrl+clic dans GNOME Terminal, est parti dans une
   web app au lieu du Chromium principal.
 
