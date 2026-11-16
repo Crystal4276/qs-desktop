@@ -132,6 +132,22 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
 - Revue du bouton, passe 3 : rien que du négligeable (rechargement du bureau pendant une copie : fin annoncée ; plusieurs
   éléments sélectionnés : un seul nom dans le titre, statut de Nemo et pas de bouton ; copie vers gvfs : pas de bouton) :
   **revue close**.
+
+## Bulle de téléchargements des web apps (2026-11-16)
+
+- Ton constat : dans la web app Outlook, après un téléchargement, un panneau s'ouvre à gauche de la fenêtre et sort de
+  l'écran. C'est la bulle de téléchargements de Chromium (vue partielle, ouverte d'elle-même à la fin d'un téléchargement) ;
+  toutes les web apps `chromium --app` sont concernées, pas le navigateur principal.
+- Cause : bogue de Chromium. Sans barre d'outils, la bulle reste accrochée au bouton « Téléchargements » jamais dessiné, à
+  l'origine de la fenêtre, flèche `TOP_RIGHT` : elle s'ouvre à gauche de la fenêtre, et Linux ne la recadre pas (X11 comme
+  Wayland). Rien à corriger dans Hyprland, Sway ou Quickshell. Corrigé en amont le 2026-11-11 (commit `76b11cb59d`, « Anchor
+  the download bubble inside windows without a toolbar », bulle au coin haut droit du contenu), après la branche de 159 :
+  **Chromium 160**, stable prévue le 2027-01-05 (installé : 157.0.8103.38).
+- Ton choix : attendre Chromium 160. Écarté : couper « Show downloads when they're done »
+  (`download_bubble.partial_view_enabled`) dans les profils des web apps. Aucun code ni réglage modifié, `terrier` compris.
+- **À tester** après la mise à jour vers Chromium 160 : télécharger une pièce jointe dans Outlook → bulle dans la fenêtre,
+  coin haut droit.
+
 ## Aperçu Wi-Fi au survol (2026-11-16)
 
 - Ton constat : au survol de l'icône Wi-Fi, « Networks · searching… » sans réseau ; au clic, la liste apparaît. Cause : l'aperçu
