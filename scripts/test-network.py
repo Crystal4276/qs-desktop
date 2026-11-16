@@ -213,6 +213,13 @@ def form_test(ipc, nmcli_log, notify_log, work):
     ipc('emitFail', 'enterprise', 'NoSecrets'); settle()
     assert new_calls(before) == [] and notified() == ['--app-name=Wi-Fi', '--icon=network-wireless-offline', '--',
         'Campus refused the saved password', 'It may have expired: open the Wi-Fi panel to enter the new one.'], notified()
+    # Connecté depuis (autre moyen) : l'échec en attente est dépassé, rien à montrer. (Réseau du portail retiré : une carte
+    # n'a qu'un réseau connecté.)
+    ipc('configure', json.dumps({'joined': False})); ipc('setState', 'enterprise', 'Connected'); settle()
+    assert not form_pending(ipc)
+    ipc('setState', 'enterprise', 'Disconnected'); ipc('configure', json.dumps({'joined': True}))
+    ipc('emitFail', 'enterprise', 'NoSecrets'); settle()
+    assert form_pending(ipc)
     ipc('list', ''); ipc('reopenPanel'); settle()
     f = form()
     assert f['title'] == ['Wrong username or password for Campus'], f
@@ -227,12 +234,17 @@ def form_test(ipc, nmcli_log, notify_log, work):
     assert new_calls(before) == [['connect', uuid]], calls()
     f = form()
     assert f['title'] == ['Wrong username or password for Campus'] and f['username']['text'] == 'alice@campus.example', f
+    # Échec hors panneau du même réseau, formulaire déjà ouvert et mot de passe commencé : vidé, message mis à jour.
+    fill(password='partial'); ipc('background', 'enterprise', 'NoSecrets'); settle()
+    f = form()
+    assert f['password']['text'] == '' and f['failText'] == 'Campus refused the saved password: it may have expired', f
 
     # Nouveau mot de passe, échec de signal : rien d'effacé (il est peut-être bon), message.
     before = calls()
     fill(username='alice', password='new'); ipc('click', 'Connect'); settle()
     ipc('fail', 'enterprise', 'WifiClientFailed', 'false'); settle()
-    assert new_calls(before) == [['write', {'802-1x': {'identity': 'alice', 'password': 'new'}}], ['connect', uuid]], calls()
+    assert new_calls(before) == [['write', {'802-1x': {'identity': 'alice', 'password': 'new', 'password-flags': 0}}],
+                                 ['connect', uuid]], calls()
     f = form()
     assert f['title'] == ['Sign in to Campus'] and f['username']['text'] == 'alice', f
     assert f['failText'] == 'Could not connect to Campus — weak signal or wrong username or password', f
@@ -286,6 +298,30 @@ def form_test(ipc, nmcli_log, notify_log, work):
     f = form()
     assert not f['signingIn'] and f['failText'] == '' and f['passwordFor'] == '' and not f['failurePending'], f
 
+    # Réseau WPA enregistré en cours, puis réseau entreprise enregistré : l'échec du premier ne se mêle pas au second.
+    profile('personal', 'home-uuid', 'none')
+    before = calls()
+    ipc('openForm', 'personal'); settle(); ipc('openForm', 'enterprise'); settle()
+    ipc('fail', 'personal', 'WifiClientDisconnected', 'false'); settle()
+    f = form()
+    assert f['failText'] == '' and f['passwordFor'] == '' and new_calls(before) == [['connect', ''], ['connect', uuid]], (f, calls())
+    # Échec en attente derrière le formulaire d'un autre réseau (panneau épinglé, pas de notification) : montré à sa fermeture.
+    ipc('reset', 'personal'); ipc('openForm', 'personal'); settle()
+    ipc('fail', 'enterprise', 'NoSecrets', 'false'); settle()
+    f = form()
+    assert f['title'] == ['Password for Home'] and f['failurePending'] and notified() == [], f
+    fill(password='wpa'); ipc('click', 'Connect'); settle()
+    f = form()
+    assert f['title'] == ['Wrong username or password for Campus'] and calls()[-1] == ['psk', 'wpa'], (f, calls())
+    # Abandon pendant l'écriture : effacement seulement une fois l'écriture arrivée (sinon elle remettrait le mot de passe).
+    ipc('silent', 'true'); fill(password='late'); ipc('enter', 'Password'); settle()
+    before = calls()
+    ipc('cancel'); settle()
+    assert new_calls(before) == [], calls()
+    ipc('landWrite', 'enterprise'); settle()
+    assert new_calls(before) == [['clear', uuid]], calls()
+    ipc('silent', 'false')
+
     # Deux créations rapprochées (nouveau réseau, puis un autre pendant `nmcli`) : la première est abandonnée et son profil
     # supprimé à la fin de `nmcli` ; la seconde suit son cours.
     ipc('reset', 'enterprise'); settle()
@@ -311,8 +347,27 @@ def form_test(ipc, nmcli_log, notify_log, work):
     f = form()
     assert not f['signingIn'] and f['passwordFor'] == 'Library' and f['failText'].startswith('Could not connect'), f
     assert new_calls(before) == [['connect', second],
-                                 ['write', {'802-1x': {'identity': 'alice@campus.example', 'password': 'p4'}}]], calls()
+                                 ['write', {'802-1x': {'identity': 'alice@campus.example', 'password': 'p4',
+                                                    'password-flags': 0}}]], calls()
     ipc('silent', 'false')
+
+    # Profil oublié par un autre moyen pendant la tentative (objet détruit) : échec signalé, sans erreur.
+    fill(password='p5'); ipc('enter', 'Password'); settle()
+    ipc('destroyProfile', 'library'); settle()
+    ipc('fail', 'library', 'NoSecrets', 'false'); settle()
+    f = form()
+    assert f['title'] == ['Wrong username or password for Library'] and not f['signingIn'], f
+
+    # Connexion réussie avant la fin de `nmcli` : profil gardé.
+    (work / 'nmcli-delay').write_text('1.0')
+    ipc('reset', 'enterprise'); ipc('openForm', 'enterprise'); settle()
+    fill(username='alice', password='fast'); ipc('enter', 'Password'); settle(0.2)
+    fast = added()[-1]
+    profile('enterprise', fast)
+    ipc('setState', 'enterprise', 'Connected'); settle(1.2)
+    assert fast not in deleted() and calls()[-1] == ['write', {'connection': {'autoconnect': True}}], (invocations(), calls())
+    ipc('setState', 'enterprise', 'Disconnected'); settle()
+    (work / 'nmcli-delay').write_text('0.3')
 
     # Réseau disparu (hors de portée) avant l'ouverture du panneau : message seul, sans erreur.
     ipc('makeTemp', 'Lab'); profile('temp', 'lab-uuid', 'peap')
@@ -361,6 +416,8 @@ def qml_test(work):
     network = network.replace('interval: 10000', 'interval: 100')
     # Garde-fou de la connexion entreprise : 2,5 s avant la connexion, 6 s pendant.
     network = network.replace('signInRequest.connecting ? 90000 : 15000', 'signInRequest.connecting ? 6000 : 2500')
+    assert 'signInRequest.connecting ? 6000 : 2500' in network, 'sign-in watchdog not shortened'
+    assert 'interval: 100\n' in network, 'portal timer not shortened'
     network = network.replace('running: true\n        repeat: true\n        triggeredOnStart: true',
                               'running: false\n        repeat: true\n        triggeredOnStart: false', 1)
     (stage / 'services/Network.qml').write_text(network)
@@ -377,7 +434,7 @@ def qml_test(work):
 [ "$1" = "connection" ] || exit 0
 (IFS=$(printf '\\037'); echo "$*") >> {shlex.quote(str(nmcli_log))}
 [ "$2" = "add" ] || exit 0
-sleep 0.3
+sleep "$(cat {shlex.quote(str(work / 'nmcli-delay'))} 2>/dev/null || echo 0.3)"
 case " $* " in *" bogus "*) echo "Erreur : échec" >&2; exit 1 ;; esac
 echo "Connexion « Campus » ajoutée avec succès."
 ''')

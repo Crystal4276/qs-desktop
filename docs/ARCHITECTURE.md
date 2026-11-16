@@ -356,12 +356,14 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
   domaine du serveur : autorités du système + `domain-suffix-match` ; facultatif avec PEAP, exigé avec TTLS dont PAP livrerait le
   mot de passe en clair à un faux point d'accès). Quickshell ne crée que des profils WPA-PSK : profil créé par
   `nmcli connection add` (UUID choisi par le service, un processus par connexion), sans secret ni connexion automatique ; mot de
-  passe écrit par `NMSettings.write` dès que le profil apparaît dans `nmSettings` (déjà lu), connexion par `connectWithSettings`
+  passe écrit par `NMSettings.write` dès que le profil apparaît dans `nmSettings` (déjà lu), avec `password-flags` 0 sur un profil
+  existant (« pour cet utilisateur » : sans agent, NetworkManager jetterait le mot de passe), connexion par `connectWithSettings`
   après `settingsChanged`. Connexion suivie par `Network` jusqu'au bout, panneau ouvert ou non, avec un garde-fou par étape
   (15 s, 90 s pendant la connexion) ; une autre connexion demandée l'abandonne. Réussie : connexion automatique écrite (écriture
   sans secret : le mot de passe est gardé). Refus, annulation, abandon : un mot de passe saisi n'est pas gardé (profil créé
   supprimé, sinon `clearSecrets`) ; échec de signal : mot de passe d'un profil existant gardé. L'échec (`signInFailure`) rouvre
-  le formulaire, rempli de la saisie, une fois le panneau épinglé (pas en aperçu) ; notification sans panneau épinglé. Hors panneau (connexion automatique), un refus du mot de passe enregistré (renouvelé
+  le formulaire, rempli de la saisie, une fois le panneau épinglé (pas en aperçu) et sans autre formulaire ouvert ; notification
+  sans panneau épinglé ; oublié si le réseau se connecte entre-temps. Hors panneau (connexion automatique), un refus du mot de passe enregistré (renouvelé
   par l'établissement) est signalé de même, sans rien effacer : `connectionFailed` des réseaux entreprise, suivis ou non
   (nm-applet ouvrirait une fenêtre de mot de passe ; Quickshell n'a pas d'agent de secrets).
   Mauvais identifiant : `NoSecrets` à la fin du délai d'authentification (le serveur refuse aussitôt, mais sans agent
