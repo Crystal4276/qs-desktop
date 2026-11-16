@@ -58,10 +58,11 @@ dbus-run-session -- python3 scripts/test-network.py --keep /tmp/qs-network-resul
 Le test copie le code courant, remplace le backend et les lancements par des objets factices et accélère la minuterie. Il teste
 la détection, le vrai gestionnaire du bouton dans `WifiPanel`, la commande du navigateur, la reprise de connectivité, les sondes
 désactivées, la radio coupée, le changement de route, la reconnexion, aperçu / panneau épinglé et plusieurs panneaux. Il teste
-aussi les formulaires du panneau sur des réseaux factices : Wi-Fi entreprise (bouton « Connect », arguments de `nmcli connection
-add` sans mot de passe, secret écrit une fois le profil apparu, connexion automatique après réussite, mot de passe refusé jamais
-gardé, saisie reprise, réseau enregistré, panneau fermé pendant la connexion, annulation, échec sans raison, échec de `nmcli`)
-et WPA. Journaux et captures sont gardés avec `--keep` (destination nouvelle). Les sondes système et connexions réelles ne sont pas sollicitées.
+aussi les formulaires du panneau sur des réseaux factices : Wi-Fi entreprise (bouton « Connect », TTLS sans domaine refusé,
+arguments de `nmcli connection add` sans mot de passe et sortie traduite, secret écrit une fois le profil apparu, connexion
+automatique après réussite, mot de passe refusé jamais gardé, saisie reprise, mot de passe enregistré refusé hors panneau par la
+vraie liste surveillée, échec de signal sans effacement, panneau fermé ou en aperçu, annulation, autre connexion demandée, deux
+créations rapprochées, garde-fou, réseau disparu, échec de `nmcli`) et WPA ; `nmcli` et `notify-send` y sont factices. Journaux et captures sont gardés avec `--keep` (destination nouvelle). Les sondes système et connexions réelles ne sont pas sollicitées.
 Les tests d'installation couvrent aussi deux lancements simultanés, avec et sans fichier initial. Les processus de test sont
 arrêtés avec leurs enfants, même si une assertion échoue.
 

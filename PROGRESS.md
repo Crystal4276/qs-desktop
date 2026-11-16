@@ -24,6 +24,18 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
   automatique échoue hors panneau (`NoSecrets`) ; notification « Uni-Fi refused the saved password — It may have expired »
   (panneau fermé) et formulaire rouge à l'ouverture du panneau, identifiant repris ; rien d'effacé. Autres causes hors panneau
   (signal, réseau perdu) : rien. Toute notification seulement panneau Wi-Fi fermé.
+- Revue en boucle (ta demande), passe 1 (`/code-review high`, 10 constats, 9 retenus) : connexion qui pouvait rester bloquée
+  avant « Connecting » (garde-fou par étape) ; autre connexion demandée pendant la tentative (abandon propre) ; échec consommé
+  par un simple aperçu au survol puis perdu (montré une fois le panneau épinglé, notification sans panneau épinglé) ; UUID lu
+  dans la sortie traduite de `nmcli` (UUID choisi par le service) ; TTLS + PAP sans domaine (mot de passe en clair vers un faux
+  point d'accès : domaine exigé) ; échec de signal qui effaçait un bon mot de passe puis annonçait un mot de passe « expiré »
+  (gardé ; effacé seulement sur refus ou annulation, et ces profils ne sont plus annoncés « expirés ») ; réseau disparu
+  (référence d'objet détruit : ni `null` ni erreur, propriétés indéfinies) ; deux créations rapprochées (un processus par
+  connexion, profil abandonné supprimé) ; liaison réelle de la surveillance hors panneau non testée (testée). Écarté : panneau
+  gardé ouvert par l'identifiant prérempli (voulu : formulaire d'échec). En plus : `--` avant le texte de `notify-send` (un SSID
+  commençant par `-` serait lu comme une option). Contre-épreuve : le nouveau test échoue sur l'ancien code (TTLS sans domaine
+  accepté, premier contrôle). Pendant la mise au point, un plantage de Quickshell propre au banc (`createObject` d'un faux réseau
+  avec un singleton pour parent, depuis un `IpcHandler`) : faux réseau créé sans parent.
 - Délai avant le refus : 10 s au lieu de 25 (ta demande) : `802-1x.auth-timeout 10` dans les profils créés par le panneau
   (accepté par `nmcli`, vérifié hors ligne) ; un profil créé avant garde 25 s.
 - Petit changement : Entrée sur un mot de passe WPA vide ne ferme plus le formulaire (il reste ouvert).

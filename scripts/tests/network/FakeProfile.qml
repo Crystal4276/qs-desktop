@@ -15,7 +15,8 @@ QtObject {
         if (next["802-1x"])
             delete next["802-1x"].password;
         map = next;
-        Qt.callLater(() => settingsChanged(next));
+        if (!Backend.silentWrites)   // écriture sans réponse (garde-fou)
+            Qt.callLater(() => settingsChanged(next));
     }
     function forget() {
         Backend.calls = Backend.calls.concat([["forget", uuid]]);
