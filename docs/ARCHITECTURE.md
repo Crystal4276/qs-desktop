@@ -362,8 +362,9 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
     création. Profil existant : identifiant, mot de passe et `password-flags` 0 réécrits (profil « pour cet utilisateur » :
     sans agent, NetworkManager jetterait le mot de passe).
   - Suivi par `Network` jusqu'au bout, panneau ouvert ou non, avec un garde-fou par étape (60 s avant la connexion, le temps
-    d'une autorisation polkit ; 90 s pendant). Une autre connexion demandée, ou « Cancel » de la connexion suivie,
-    l'abandonne. Réussie : connexion automatique écrite (écriture sans secret : le mot de passe est gardé). Échec ou abandon :
+    d'une autorisation polkit ; 90 s pendant). Une autre connexion demandée, « Cancel » de la connexion suivie ou le Wi-Fi coupé
+    l'abandonne ; un clic sur le réseau suivi est ignoré. Le panneau n'est pas retenu pendant la tentative (il garderait le
+    clavier). Réussie : connexion automatique écrite (écriture sans secret : le mot de passe est gardé). Échec ou abandon :
     profil créé pour l'occasion supprimé (aucun mot de passe non vérifié gardé) ; profil existant gardé avec le dernier mot de
     passe tapé (l'ancien est déjà remplacé ; s'il est faux, l'échec de la connexion automatique le signalera).
   - Mauvais identifiant : `NoSecrets` à la fin du délai d'authentification (le serveur refuse aussitôt, mais sans agent
@@ -372,7 +373,8 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
     une fenêtre de mot de passe ; Quickshell n'a pas d'agent de secrets).
   - Échec (`signInFailure`, texte par `failureText`) : pris par le panneau épinglé (`takeSignInFailure`, pas en aperçu, sans
     autre formulaire ouvert), qui rouvre le formulaire rempli de la saisie ; notification sans panneau épinglé ; oublié si le
-    réseau se connecte entre-temps.
+    réseau se connecte entre-temps. Formulaire d'un réseau qui disparaît : Qt remet `passwordFor` (propriété `var`) à null, le
+    formulaire se ferme (une référence d'objet détruit rangée dans un objet JS, elle, reste, propriétés indéfinies).
 - Panneau réseau : onglets Wired (détails `nmcli`, graphe du trafic) / Tailscale (`status --json`, `debug prefs` ; actions grâce à
   `--operator=$USER`, à faire à la main) / ZeroTier (`zerotier-cli -j` avec le jeton copié dans `~/.zeroTierOneAuthToken`,
   à la main ; sinon interfaces `zt*` en lecture seule). Relus toutes les 5 s onglet affiché ; 60 s sinon, sans câble.

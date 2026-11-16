@@ -451,10 +451,10 @@ Singleton {
     }
 
     // Échecs des réseaux entreprise, suivis ou non : ceux de la liste, plus celui de la connexion suivie (il peut en sortir
-    // pendant la tentative, signal faible).
+    // pendant la tentative, signal faible). Liste non triée : `wifiNetworks` se retrie à chaque variation de signal.
     Variants {
         model: {
-            const list = root.wifiNetworks.filter(n => root.isEnterprise(n.security));
+            const list = (root.wifi?.networks.values ?? []).filter(n => root.isEnterprise(n.security));
             const tracked = root.signInRequest?.network;
             return tracked && !list.includes(tracked) ? list.concat([tracked]) : list;
         }
@@ -552,6 +552,8 @@ Singleton {
     }
 
     function setWifiEnabled(enabled: bool): void {
+        if (!enabled)
+            abandonSignIn();   // Wi-Fi coupé par l'utilisateur : pas un échec à annoncer
         Networking.wifiEnabled = enabled;
     }
 

@@ -148,6 +148,7 @@ ShellRoot {
             Backend[name].nmSettings = [];
             p.destroy();
         }
+        function wifiOff(): void { Network.setWifiEnabled(false); }
         function failurePending(): bool { return Network.signInFailure !== null; }
         function silent(on: bool): void { Backend.silentWrites = on; }
         function makeTemp(name: string): void { Backend.temp = Backend.wifiComponent.createObject(null, { name: name }); }
