@@ -101,10 +101,15 @@ Singleton {
                 if (names !== copied) {
                     copied = names;
                     destination = "";
+                    searches = 0;
                 }
-                if (names !== "" && destination === "" && !openFiles.running)
+                if (names !== "" && destination === "" && searches < 20 && !openFiles.running) {
+                    searches++;
                     openFiles.running = true;
+                }
             }
+            // Recherche bornée (trouvé au 5e essai sur banc, 30 000 petits fichiers) : copie vers gvfs (réseau, téléphone), écrite par gvfsd et non par Nemo, jamais trouvée.
+            property int searches: 0
 
             // Fichiers ouverts en écriture par Nemo pendant la copie (pas la source, qui peut être dans un dossier du même nom) :
             // le titre ne donne que le nom du dossier d'arrivée.
