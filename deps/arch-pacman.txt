@@ -68,7 +68,7 @@ xdg-utils               # xdg-open (liens HTTP/HTTPS via le lanceur desktop Chro
 pacman-contrib          # checkupdates (module mises à jour)
 fakeroot                # requis par checkupdates (non déclaré par pacman-contrib)
 gnome-terminal          # terminal lancé par les modules (configurable par machine)
-libnotify               # notify-send (sortie audio suivante, connexions et batterie Bluetooth, disques amovibles, fichier ouvert dans une web app Office, tests)
+libnotify               # notify-send (sortie audio suivante, connexions et batterie Bluetooth, disques amovibles, fichier ouvert dans une web app Office, Wi-Fi entreprise refusé, tests)
 
 # --- Installation (install.sh) ---
 base-devel              # makepkg : construction de paru-bin (seul paquet AUR, installé par install.sh)

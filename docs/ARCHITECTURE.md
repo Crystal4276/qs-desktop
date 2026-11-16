@@ -358,7 +358,10 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
   que le profil apparaît dans `nmSettings` (déjà lu), connexion par `connectWithSettings` après `settingsChanged`. Connexion
   suivie par `Network` jusqu'au bout, panneau ouvert ou non : réussie, connexion automatique écrite (écriture sans secret : le
   mot de passe est gardé) ; échec ou annulation, un mot de passe saisi n'est jamais gardé (profil créé supprimé, sinon
-  `clearSecrets`) et l'échec (`signInFailure`) rouvre le formulaire, rempli de la saisie, à l'ouverture suivante du panneau.
+  `clearSecrets`) et l'échec (`signInFailure`) rouvre le formulaire, rempli de la saisie, à l'ouverture suivante du panneau
+  (notification si le panneau est fermé). Hors panneau (connexion automatique), un refus du mot de passe enregistré (renouvelé
+  par l'établissement) est signalé de même, sans rien effacer : `connectionFailed` des réseaux entreprise, suivis ou non
+  (nm-applet ouvrirait une fenêtre de mot de passe ; Quickshell n'a pas d'agent de secrets).
   Mauvais identifiant : `NoSecrets` à la fin du délai d'authentification (le serveur refuse aussitôt, mais sans agent
   NetworkManager attend) : `802-1x.auth-timeout` à 10 s dans les profils créés (25 s par défaut). Profil existant : identifiant et mot de passe réécrits. `802-1x.eap` (liste) n'est pas converti par
   `write` : méthode fixée à la création. WPA3 192 bits, LEAP, WEP : éditeur.

@@ -122,6 +122,10 @@ ShellRoot {
             network.connectionFailed(NM.ConnectionFailReason[reason]);
             network.state = NM.ConnectionState.Disconnected;
         }
+        // Échec hors connexion suivie (connexion automatique) : le faux réseau n'est pas dans la liste surveillée.
+        function background(name: string, reason: string): void {
+            Network.enterpriseFailed(Backend[name], NM.ConnectionFailReason[reason]);
+        }
         function setState(name: string, state: string): void { Backend[name].state = NM.ConnectionState[state]; }
         function cancel(): void { Network.cancelWifi(); }
         function closePanel(): void { root.panel.close(); }
