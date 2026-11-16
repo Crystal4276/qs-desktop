@@ -231,7 +231,6 @@ Singleton {
     // Requête : { network, name, form, created, typed } ; création : `uuid`, `password`, puis `added` (`nmcli` fini) ; profil
     // trouvé : `settings` (écriture) ; puis `connecting`. `form` : { identity, method, domain } saisis, repris après un échec.
     property var signInRequest: null
-    readonly property bool signingIn: signInRequest !== null
     property bool signInStarted: false   // « Connecting » vu : le retour à « Disconnected » met fin à la connexion
     // Échec à montrer : { network, name, kind, identity, method, domain } ; `kind` : "refused" (identifiant ou mot de passe
     // saisi refusé), "expired" (mot de passe enregistré refusé), "failed" (échec de la connexion), "profile" (création ou
@@ -325,6 +324,20 @@ Singleton {
         finishSignIn("");
     }
 
+    // Réseau dont la connexion entreprise est suivie (le panneau ignore un clic dessus, qui l'abandonnerait).
+    function isSigningIn(network: var): bool {
+        return signInRequest !== null && signInRequest.network === network;
+    }
+
+    // Oubli voulu d'un réseau (bouton Forget) : sa connexion suivie et son échec en attente partent avec lui, sans annonce.
+    function forgetNetwork(network: var): void {
+        if (isSigningIn(network))
+            abandonSignIn();
+        if (signInFailure?.network === network)
+            signInFailure = null;
+        network.forget();
+    }
+
     function writeSignIn(request: var, values: var): void {
         signInRequest = request;
         request.settings.write(values);
@@ -406,8 +419,7 @@ Singleton {
                 const request = root.signInRequest;
                 if (root.abandonedProfiles[uuid]) {
                     delete root.abandonedProfiles[uuid];
-                    if (code === 0)
-                        root.deleteProfile(uuid);
+                    root.deleteProfile(uuid);   // même en échec : un profil a pu être créé ; sinon sans effet
                 } else if (request?.uuid === uuid && !request.settings) {
                     root.signInRequest = Object.assign({}, request, { added: true });
                     if (code !== 0) {

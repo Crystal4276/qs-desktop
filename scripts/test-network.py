@@ -425,9 +425,19 @@ def form_test(ipc, nmcli_log, notify_log, work):
     assert invocations() == before and f['passwordFor'] == '' and not f['password']['visible'], f
     assert f['password']['text'] == '' and not f['holdOpen'], f
 
+    # « Forget » d'un réseau dont l'échec attend (panneau fermé) : l'échec part avec lui.
+    ipc('closePanel'); settle(); ipc('background', 'enterprise', 'NoSecrets'); settle()
+    assert form_pending(ipc)
+    ipc('forget', 'enterprise'); settle()
+    assert not form_pending(ipc)
+    ipc('reopenPanel'); settle()
+    assert form()['passwordFor'] == '' and form()['failText'] == '', form()
+    notify_log.unlink()
+    profile('enterprise', fast)
+
     # « Forget » du réseau suivi : abandon voulu, pas un échec.
     before = calls()
-    ipc('openForm', 'enterprise'); settle(); ipc('panelForget', 'enterprise'); settle(1.2)
+    ipc('openForm', 'enterprise'); settle(); ipc('forget', 'enterprise'); settle(1.2)
     f = form()
     assert new_calls(before) == [['connect', fast], ['forgetNetwork', 'Campus']] and not f['signingIn'], (f, calls())
     assert f['failText'] == '' and not f['failurePending'], f

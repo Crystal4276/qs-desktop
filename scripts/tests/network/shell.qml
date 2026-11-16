@@ -103,7 +103,7 @@ ShellRoot {
                 password: shown(root.field("Password")), domain: Object.assign(shown(domain), { placeholder: domain.placeholder }),
                 tabs: { visible: tabs.visible, current: tabs.current }, connect: { visible: connect.visible, enabled: connect.enabled },
                 passwordFor: root.panel.passwordFor?.name ?? "", pending: root.panel.pending?.name ?? "",
-                failText: root.panel.failText, holdOpen: root.panel.holdOpen, signingIn: Network.signingIn,
+                failText: root.panel.failText, holdOpen: root.panel.holdOpen, signingIn: Network.signInRequest !== null,
                 failurePending: Network.signInFailure !== null });
         }
         function fill(json: string): void {
@@ -148,7 +148,7 @@ ShellRoot {
             Backend[name].nmSettings = [];
             p.destroy();
         }
-        function panelForget(name: string): void { root.panel.forget(Backend[name]); }
+        function forget(name: string): void { Network.forgetNetwork(Backend[name]); }
         function wifiOff(): void { Network.setWifiEnabled(false); }
         function failurePending(): bool { return Network.signInFailure !== null; }
         function silent(on: bool): void { Backend.silentWrites = on; }
