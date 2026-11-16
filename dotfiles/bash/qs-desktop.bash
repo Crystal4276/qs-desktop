@@ -7,3 +7,6 @@ case ":$PATH:" in *":$HOME/.local/bin:"*) ;; *) export PATH="$HOME/.local/bin:$P
 export EDITOR="geany -i"
 export BROWSER=chromium
 command -v starship >/dev/null && eval "$(starship init bash)"
+# SSH entre machines : alias de ~/.ssh/config (adresses hors du dépôt ; README.md, « Accès SSH au desktop »)
+alias desktop='ssh terrier-zt'
+alias laptop='ssh laptop-zt'
