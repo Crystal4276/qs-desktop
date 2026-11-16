@@ -38,28 +38,39 @@ Singleton {
     }
 
     Instantiator {
-        model: ScriptModel {
-            values: ToplevelManager.toplevels.values.filter(t => t.appId === "nemo")
-        }
+        model: ToplevelManager.toplevels
 
         delegate: QtObject {
             id: watch
 
             required property Toplevel modelData
+            readonly property bool nemo: modelData?.appId === "nemo"
             readonly property string title: modelData?.title ?? ""   // indéfini au démontage d'un rechargement
             property bool progress: false
-            readonly property bool question: title === "" || title === root.conflictTitle
+            readonly property bool question: nemo && (title === "" || title === root.conflictTitle)
             property Process notifier: null
+            readonly property bool active: modelData?.activated ?? false
+            // Notification fermée (par toi, ou par « Show ») : pas de nouvelle avant que tu repasses par la question.
+            property bool notified: false
+
+            onNotifierChanged: {
+                if (!notifier)
+                    notified = true;
+            }
+            onActiveChanged: {
+                if (active)
+                    notified = false;
+            }
 
             function percent(): bool {
                 return /^\d+\s?%/.test(title);
             }
 
             onTitleChanged: {
-                if (percent())
+                if (nemo && percent())
                     progress = true;
             }
-            Component.onCompleted: progress = percent()
+            Component.onCompleted: progress = nemo && percent()
             onQuestionChanged: {
                 if (!question)
                     notifier?.signal(2);   // SIGINT : notify-send ferme sa notification
@@ -71,7 +82,7 @@ Singleton {
             }
 
             readonly property Timer wait: Timer {
-                running: watch.question && !watch.modelData.activated && !watch.notifier
+                running: watch.question && !watch.active && !watch.notifier && !watch.notified
                 interval: root.questionDelay
                 onTriggered: {
                     watch.notifier = questionNotifier.createObject(root, { window: watch.modelData });

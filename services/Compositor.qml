@@ -442,8 +442,8 @@ Singleton {
     // dans la même commande (exécutée d'un bloc ; rétabli à `output`, défaut de Sway, que ta config ne change pas — à reprendre
     // de dotfiles/sway en phase 10) ; fenêtre désignée par app_id, ou classe sous
     // XWayland, et titre. Hyprland : dispatcher focus sur son adresse (ta config a no_warps) ; Toplevel.activate y est ignoré
-    // (ni focus ni urgence, vu sur banc le 2026-11-16). Fenêtre qui vient de s'ouvrir : Hyprland ne la lie pas encore à son
-    // Toplevel (vu sur banc) ; liste relue toutes les 100 ms, 2 s au plus.
+    // (ni focus ni urgence, vu sur banc le 2026-11-16). Fenêtre qui vient de s'ouvrir : Hyprland ne la lie à son Toplevel
+    // qu'un peu plus tard, sans nouvel événement de liste (vu sur banc) ; liste relue toutes les 100 ms, 2 s au plus.
     property Toplevel hyprFocusTarget: null
     property int hyprFocusTries: 0
 
@@ -460,13 +460,18 @@ Singleton {
     }
 
     function hyprFocus(): void {
+        if (!hyprFocusTarget)
+            return;
         const window = Hyprland.toplevels.values.find(t => t.wayland === hyprFocusTarget && t.address !== "");
         if (window) {
             hyprFocusTarget = null;
+            hyprFocusRetry.stop();
             hyprlandBatch([`hl.dsp.focus({ window = "address:0x${window.address}" })`], "focus d'une fenêtre");
-        } else if (hyprFocusTarget && ++hyprFocusTries <= 20) {
+        } else if (++hyprFocusTries <= 20) {
             Hyprland.refreshToplevels();
             hyprFocusRetry.restart();
+        } else {
+            hyprFocusTarget = null;
         }
     }
 
