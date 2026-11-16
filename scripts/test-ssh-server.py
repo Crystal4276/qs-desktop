@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
-"""sshd des machines clientes, filtré par UFW : provisioning isolé, aucun service ni pare-feu réel modifié."""
+"""sshd des machines clientes, filtré par UFW, et rétention de leur journal : provisioning isolé, aucun service,
+pare-feu ni journal réel modifié."""
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import tempfile
 
@@ -12,9 +14,12 @@ with tempfile.TemporaryDirectory(prefix='qs-sshd-test-') as tmp:
     root = Path(tmp)
     (root / 'scripts').mkdir()
     (root / 'bin').mkdir()
+    shutil.copytree(REPO / 'dotfiles/journald', root / 'dotfiles/journald')
     source = (REPO / 'scripts/system-setup.sh').read_text().replace('/var/lib/qs-desktop/system-setup', str(root / 'state'))
     for old, new in UFW_FILES.items():
         source = source.replace(old, str(root / new))
+    journal = root / 'journald.conf.d/60-qs-desktop-client.conf'
+    source = source.replace('/etc/systemd/journald.conf.d/60-qs-desktop-client.conf', str(journal))
     helper = root / 'scripts/system-setup.sh'
     helper.write_text(source)
     # Fichiers UFW simulés : ufw.conf porte l'état, user.rules les règles ajoutées.
@@ -35,6 +40,9 @@ start) touch "$TEST_ROOT/active-$unit";;
 disable) rm -f "$TEST_ROOT/enabled-$unit";;
 stop) rm -f "$TEST_ROOT/active-$unit";;
 esac""",
+        # Propriétaire root ignoré : le test tourne sans privilège.
+        'install': 'args=()\nwhile (( $# )); do case "$1" in -o|-g) shift 2;; *) args+=("$1"); shift;; esac; done\n'
+                   'exec /usr/bin/install "${args[@]}"',
         'ufw': """echo "ufw $*" >> "$TEST_ROOT/calls"
 case "$1" in
 show) cat "$TEST_ROOT/user.rules";;
@@ -112,4 +120,17 @@ esac""",
     env['PATH'] = ':'.join([str(root / 'bin')] + [d for d in os.environ['PATH'].split(':') if not Path(d, 'ufw').exists()])
     run('ssh-server', success=False)
     assert not list(root.glob('enabled-*')) and not list(root.glob('active-*'))
-print('PASS sshd : simulation, UFW activé avant sshd (ZeroTier, VM), idempotence, retrait, UFW déjà actif, sshd préexistant, ufw absent')
+    # Journal : la veille gardée, pas plus ; journald relu seulement si le fichier change, retrait complet.
+    calls()
+    run('--dry-run', 'client-journal')
+    assert 'sudo ' not in calls() and not journal.exists()
+    run('client-journal')
+    conf = journal.read_text()
+    assert 'MaxRetentionSec=2day' in conf and 'MaxFileSec=1h' in conf and 'Storage=persistent' in conf
+    assert 'systemctl reload systemd-journald.service' in calls()
+    run('client-journal')
+    assert 'reload' not in calls()
+    run('uninstall')
+    assert not journal.exists() and 'systemctl reload systemd-journald.service' in calls()
+print('PASS sshd : simulation, UFW activé avant sshd (ZeroTier, VM), idempotence, retrait, UFW déjà actif, sshd préexistant, ufw absent ;'
+      ' journal : simulation, la veille gardée, idempotence, retrait')
