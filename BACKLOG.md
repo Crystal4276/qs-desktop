@@ -67,5 +67,8 @@ Idées et défauts connus hors du programme des phases. Rien ici n'est implémen
   inutilisable pour tester sous Hyprland).
 - Hyprland 0.57 : un contrôle gamma refusé reste enregistré (`protocols/GammaControl.cpp`) et l'écran est refusé à tout client
   jusqu'au redémarrage (contourné : jamais deux gammastep à la fois).
+- Hyprland 0.57 : un titre posé juste avant que la fenêtre se cache est perdu (ni `windowtitlev2` ni foreign-toplevel : vu avec
+  la fenêtre de progression de Nemo, qui perd son pourcentage en finissant) ; `FileOps` y compte donc toute fermeture comme une
+  fin. `Toplevel.activate` (foreign-toplevel) y est ignoré, `Compositor.focusWindow` passe par `hl.dsp.focus`.
 - Quickshell : exposer le volume principal (`SPA_PROP_volume`) des nœuds, pour afficher le volume réel ; rendrait
   `dotfiles/wireplumber/scripts/stream-full-volume.lua` inutile (proposition en amont).
