@@ -56,6 +56,10 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
   (vu sur banc) : toute fermeture de la fenêtre de progression y compte désormais comme une fin, comme sous Hyprland.
   Vérifié sur bancs Sway et Hyprland (corps, bouton, dossier ouvert au premier plan ; question hors focus, clic, réponse,
   notification fermée sans relance ; extraction testée sur les statuts anglais et français, nom avec `&`). Rappel : le bouton ne sert que pendant l'affichage (4 s, suspendu au survol).
+- Revue du bouton, passe 1 : source et arrivée dans des dossiers du même nom (`a/X/Music` → `b/X`, ou `Music` → `Music` d'une
+  clé) : « Open folder » ouvrait la source (lue la première parmi les fichiers de Nemo) ; seuls les fichiers ouverts en
+  écriture comptent désormais (vérifié sur banc Sway : `b/X`). Dossier cherché à nouveau quand une opération suivante
+  reprend la même fenêtre, et plus du tout sans noms dans le titre (corbeille, suppression).
 ## Aperçu Wi-Fi au survol (2026-11-16)
 
 - Ton constat : au survol de l'icône Wi-Fi, « Networks · searching… » sans réseau ; au clic, la liste apparaît. Cause : l'aperçu

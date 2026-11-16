@@ -72,6 +72,7 @@ Singleton {
             readonly property bool nemo: modelData?.appId === "nemo"
             readonly property string title: modelData?.title ?? ""   // indéfini au démontage d'un rechargement
             property bool progress: false
+            property string copied: ""   // noms du titre ; d'autres (opération suivante, même fenêtre) : dossier cherché à nouveau
             property string destination: ""   // chemin du dossier d'arrivée, si trouvé (bouton « Open folder »)
             readonly property bool question: nemo && (title === "" || title === root.conflictTitle)
             property Process notifier: null
@@ -93,16 +94,22 @@ Singleton {
             }
 
             onTitleChanged: {
-                if (nemo && percent()) {
-                    progress = true;
-                    if (destination === "" && !openFiles.running)
-                        openFiles.running = true;
+                if (!nemo || !percent())
+                    return;
+                progress = true;
+                const names = root.names(title).join("\n");
+                if (names !== copied) {
+                    copied = names;
+                    destination = "";
                 }
+                if (names !== "" && destination === "" && !openFiles.running)
+                    openFiles.running = true;
             }
 
-            // Fichiers ouverts par Nemo pendant la copie : le titre ne donne que le nom du dossier d'arrivée.
+            // Fichiers ouverts en écriture par Nemo pendant la copie (pas la source, qui peut être dans un dossier du même nom) :
+            // le titre ne donne que le nom du dossier d'arrivée.
             readonly property Process openFiles: Process {
-                command: ["sh", "-c", "find /proc/$(pgrep -xo nemo)/fd -type l -printf '%l\\n' 2>/dev/null"]
+                command: ["sh", "-c", "cd /proc/$(pgrep -xo nemo)/fdinfo && awk '/^flags:/ && /[12]$/ { print \"../fd/\" FILENAME }' * 2>/dev/null | xargs -r readlink 2>/dev/null"]
                 stdout: StdioCollector {
                     onStreamFinished: watch.destination = root.destinationIn(text.split("\n"), watch.title)
                 }
