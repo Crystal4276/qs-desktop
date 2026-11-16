@@ -21,7 +21,8 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
 - Vérifié sur bancs Sway et Hyprland (Nemo réel, copies lancées par `org.Nemo.FileOperations`, Nemo bridé en CPU) : fin
   fenêtre ouverte, fermeture à la main, conflit, erreur, réponse en moins de 3 s (rien), clic (focus sur la question),
   question répondue (notification retirée) ; démarrage complet sans nouvel avertissement ; `test-install.py` 0 échec.
-- **À faire par toi** (sudo, dans un terminal) : `scripts/system-setup.sh removable-writeback` sur `terrier` (et le laptop).
+- Règle installée sur `terrier` (`system-setup.sh removable-writeback`, 2026-11-16) ; **à faire par toi** sur le laptop (même
+  commande, sans `sudo` : le script l'appelle lui-même).
 - **À tester** : vraie copie Nemo sur un autre espace → notification de fin ; copie vers un dossier où le fichier existe →
   « Waiting for your answer », clic ; clé USB : gros fichier, la fin de Nemo arrive quand la clé a fini d'écrire
   (`grep Dirty /proc/meminfo` ≈ 0, éjection immédiate) ; `cat /sys/block/sdX/bdi/{strict_limit,max_bytes}` → `1`, `16777216`.
