@@ -324,6 +324,12 @@ def main():
         copilot_icon = next(line[5:] for line in copilot.splitlines() if line.startswith("Icon="))
         check("@WEBAPPS@" not in copilot and "@PROFILES@" not in copilot
               and pathlib.Path(copilot_icon).is_file(), "Copilot : lanceur développé et icône embarquée présente")
+        word = (home / ".local/share/applications/WebApp-Word9053.desktop").read_text()
+        docx = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        check(f"Exec={repo}/dotfiles/webapps/open-file %f -- chromium " in word and f"MimeType={docx};" in word
+              and os.access(repo / "dotfiles/webapps/open-file", os.X_OK), "Word : « Ouvrir avec » par le relais open-file")
+        check(f"{docx}=libreoffice-writer.desktop" in mime or not pathlib.Path("/usr/share/applications/libreoffice-writer.desktop").exists(),
+              "docx : LibreOffice reste l'application par défaut")
         gs = home / ".local/share/applications/gammastep-indicator.desktop"
         check(gs.is_symlink() and "NoDisplay=true" in gs.read_text(), "lanceur : Gammastep Indicator masqué")
         # Barres d'état (réglées seulement si l'application est installée sur la machine de test).

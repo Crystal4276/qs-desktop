@@ -3,6 +3,29 @@
 État courant seulement. Historique figé : phases 0 à 10 dans `docs/archive/PROGRESS.md`, maintenance du 2026-11-05 au 2026-11-09
 et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de besoin).
 
+## Word, Excel, PowerPoint dans « Ouvrir avec » (2026-11-16)
+
+- Ton choix : **import guidé**. Les lanceurs Word / Excel / PowerPoint déclarent leurs formats (docx, docm, doc, odt ; xlsx,
+  xlsm, xlsb, xls, ods, csv ; pptx, pptm, ppsx, ppt, odp ; noms MIME tels que GIO les rend, `macroEnabled` compris) et passent
+  par `dotfiles/webapps/open-file %f -- chromium …` : chemin copié (`wl-copy`), rappel « Upload, then Ctrl+L, Ctrl+V, Enter »
+  (`notify-send`), web app lancée **sans** le fichier (sinon GLib l'ajoute même sans `%f` et Chromium le télécharge, vérifié).
+- LibreOffice reste par défaut, écrit pour ces types dans `dotfiles/mime/defaults.list` : sans cela, un lanceur de
+  `~/.local/share/applications` passe avant `/usr/share` et devient le défaut (vérifié avec GIO).
+- `fill_template` : guillemets sur tout argument de la ligne `Exec` qui contient un chemin (relais compris), ligne `Exec` seule :
+  corrige le défaut du 2026-11-15 (expression qui traversait les sauts de ligne). Moniteur : relais sauté comme `env`, la web
+  app garde son nom (test ajouté, contre-épreuve : l'ancien code voyait `open-file`).
+- Écarté : envoi automatique dans OneDrive par rclone. Essai avec le binaire officiel (empreinte vérifiée, sans paquet) :
+  l'organisation exige l'approbation d'un administrateur. Binaire, config et fichiers d'essai supprimés ; aucun jeton créé.
+- Vérifications : suite de l'installateur 0 échec (2 contrôles ajoutés : relais du lanceur Word, docx par défaut à LibreOffice) ;
+  `test-monitor.py` OK ; environnement XDG jetable avec dépôt sous un chemin à espace : `desktop-file-validate` OK, 15 types
+  avec LibreOffice par défaut et la web app proposée, lancement par `gio launch` (outils remplacés par des enregistreurs) : chemin
+  avec espaces et parenthèses copié intact, Chromium sans fichier, chemins entre guillemets d'un seul tenant, sans fichier
+  la web app seule. Installation locale ciblée (3 lanceurs identiques à l'ancien modèle, Outlook non touché ; empreintes du
+  registre mises à jour) : même résultat sur ta session. Bureau réel vivant, aucun QML modifié.
+- Testé à la main par toi (2026-11-16) : OK (Ouvrir avec → web app, import guidé).
+- À examiner : pendant l'essai, le lien de connexion de rclone, ouvert par Ctrl+clic dans GNOME Terminal, est parti dans une
+  web app au lieu du Chromium principal.
+
 ## Webapp Outlook (2026-11-15)
 
 - Lanceur **Outlook** sur le modèle des applications Office : Chromium, profil isolé `Outlook`, extension `open-links`,
@@ -15,7 +38,7 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
   validation desktop Outlook, manifeste natif et second passage idempotent OK. Installation locale relue : URL exacte,
   préférences, manifeste et lecture par Gio OK. `git diff --check` conforme. Aucun changement QML ni action NordVPN.
 - Essai supplémentaire avec espace dans HOME : défaut préexistant de `fill_template` (expression `[^ ]*` traversant les
-  sauts de ligne et fermant un guillemet après la ligne Exec) ; non corrigé dans cet ajout de lanceur.
+  sauts de ligne et fermant un guillemet après la ligne Exec) ; corrigé le 2026-11-16 (ci-dessus).
 - Aucun compositeur ni processus Quickshell visible dans l'environnement de travail ; aucun banc créé, aucune relance.
   À vérifier à la main : ouvrir Outlook depuis le lanceur, se connecter et vérifier la navigation authentifiée.
 

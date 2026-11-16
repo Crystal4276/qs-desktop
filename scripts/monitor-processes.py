@@ -32,6 +32,9 @@ def options(args):
 
 def executable(args):
     args = list(args)
+    # Office web apps: dotfiles/webapps/open-file [file] -- <command>.
+    if args and os.path.basename(args[0]) == 'open-file' and '--' in args:
+        args = args[args.index('--') + 1:]
     if args and os.path.basename(args[0]) == 'env':
         args.pop(0)
         while args and ('=' in args[0] or args[0].startswith('-')):

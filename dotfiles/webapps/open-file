@@ -1,0 +1,10 @@
+#!/bin/sh
+# Web app Office choisie dans « Ouvrir avec » (lanceur : open-file %f -- <commande de la web app>). Office web ne lit pas un
+# fichier local : son chemin est copié pour « Upload » (Ctrl+L, Ctrl+V dans le sélecteur de fichiers) et seule la web app est
+# lancée (Chromium recevrait sinon le fichier et le téléchargerait). Sans fichier : la web app seule.
+if [ "$1" != -- ]; then
+    wl-copy -- "$1" && notify-send "${1##*/}" "Path copied: Upload, then Ctrl+L, Ctrl+V, Enter"
+    shift
+fi
+shift
+exec "$@"

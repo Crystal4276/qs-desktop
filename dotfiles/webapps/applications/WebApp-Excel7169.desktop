@@ -2,11 +2,12 @@
 Version=1.0
 Name=Excel
 Comment=Web App
-Exec=chromium --app="https://www.office.com/launch/excel" --class=WebApp-Excel7169 --name=WebApp-Excel7169 --user-data-dir=@PROFILES@/Excel7169 --load-extension=@WEBAPPS@/open-links
+Exec=@WEBAPPS@/open-file %f -- chromium --app="https://www.office.com/launch/excel" --class=WebApp-Excel7169 --name=WebApp-Excel7169 --user-data-dir=@PROFILES@/Excel7169 --load-extension=@WEBAPPS@/open-links
 Terminal=false
 X-MultipleArgs=false
 Type=Application
 Icon=solstice-microsoft-365-excel
 Categories=GTK;Office;
+MimeType=application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;application/vnd.ms-excel.sheet.macroEnabled.12;application/vnd.ms-excel.sheet.binary.macroEnabled.12;application/vnd.ms-excel;application/vnd.oasis.opendocument.spreadsheet;text/csv;
 StartupWMClass=chrome-www.office.com__launch_excel-Default
 StartupNotify=true

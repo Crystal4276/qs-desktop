@@ -130,6 +130,7 @@ Web apps du dépôt : WhatsApp, Discord, Word, Excel, PowerPoint, Notion, Copilo
 | Sons coupés pendant « ne pas déranger » | natif (`Services.Pipewire`, `services/Audio.qml`) ; flux repérés par `application.id` (web apps) ou binaire (application Discord) | `wireplumber` | règle `dotfiles/wireplumber/wireplumber.conf.d/50-dnd-no-restore.conf` ; liste `doNotDisturb.muteApps` de `hosts/<machine>.json` |
 | Web apps WhatsApp et Discord | `chromium --app` dans un profil isolé ; `PULSE_PROP_OVERRIDE=application.id=…` dans le lanceur (coupure de nuit) | `chromium` | modèles de lanceurs `dotfiles/webapps/applications/*.desktop` |
 | Web apps Word, Excel, PowerPoint, Notion, Copilot | `chromium --app` dans un profil isolé (pas de coupure de nuit : pas de sons de notification) | `chromium` | modèles de lanceurs `dotfiles/webapps/applications/*.desktop` |
+| Word, Excel, PowerPoint dans « Ouvrir avec » | `MimeType` des lanceurs ; relais `open-file %f -- <web app>` : Office web ne lit pas un fichier local, son chemin est copié (« Upload », Ctrl+L, Ctrl+V) et Chromium ne reçoit pas le fichier ; LibreOffice reste par défaut (`dotfiles/mime/defaults.list`). Envoi automatique dans OneDrive écarté : rclone refusé par l'organisation (approbation d'un administrateur) | `wl-clipboard`, `libnotify` | `dotfiles/webapps/open-file`, modèles Word / Excel / PowerPoint |
 | Web app Outlook | `chromium --app` dans un profil isolé, liens externes via l'extension existante | `chromium`, `papirus-icon-theme` (icône `ms-outlook`) | modèle `dotfiles/webapps/applications/WebApp-Outlook.desktop` ; aucune nouvelle dépendance |
 | Extensions du navigateur | extensions externes : `/usr/share/chromium/extensions/<id>.json` (étape système), installées depuis le Chrome Web Store au démarrage ; refusées dans les profils des web apps (`extensions.external_uninstalls`) ; réglages de nightTab importés par `install.sh` (Chromium sans fenêtre, `scripts/nighttab-import.py`) | `chromium`, `python`, accès au Chrome Web Store | `dotfiles/chromium/extensions.txt`, `external-extension.json`, `nighttab.json` |
 | Thème de Thunderbird | Catppuccin Mocha Green (`deps/themes.txt`, `.xpi` vérifié) installé par une politique `ExtensionSettings` (`/etc/thunderbird/policies/policies.json`, étape système, `scripts/system-setup.sh thunderbird-theme`) | `thunderbird` (`deps/apps.txt`) | — |
@@ -238,8 +239,8 @@ les profils et sessions déjà connectées de cette machine sont repris tels que
    vient d'être créé ou changé (le redémarrage coupe le son un instant).
 3. Pour chaque modèle `dotfiles/webapps/applications/<lanceur>.desktop` : remplacer `@PROFILES@` et `@WEBAPPS@`, écrire le
    résultat dans `~/.local/share/applications/<lanceur>.desktop` (copie, pas lien : les chemins y sont développés), puis
-   `update-desktop-database ~/.local/share/applications` s'il existe. Chemin avec espace : argument entier entre guillemets
-   dans `Exec` (`"--load-extension=…"`) ; chemin contenant `"`, `` ` ``, `$`, `\` ou `%` : refusé avec un message (deux
+   `update-desktop-database ~/.local/share/applications` s'il existe. Chemin avec espace : tout argument de la ligne `Exec`
+   qui contient un chemin, entre guillemets (`"--load-extension=…"`, relais `open-file`) ; chemin contenant `"`, `` ` ``, `$`, `\` ou `%` : refusé avec un message (deux
    niveaux d'échappement dans `Exec`, pas la peine pour un cas improbable).
 4. Pour chaque profil (`Whatsapp8699`, `DiscordWeb2996`, `Word9053`, `Excel7169`, `Powerpoint0904`, `Notion5106`, `Copilot`, `Outlook`, lus dans
    `--user-data-dir` des modèles) : créer
