@@ -142,6 +142,13 @@ ShellRoot {
         // Échec signalé par le réseau lui-même (connexion automatique) ; liste surveillée par le service.
         function emitFail(name: string, reason: string): void { Backend[name].connectionFailed(NM.ConnectionFailReason[reason]); }
         function list(names: string): void { Backend.listed = names === "" ? [] : names.split(",").map(n => Backend[n]); }
+        // Écriture en attente qui arrive (faux NMSettings) ; profil oublié par un autre moyen (objet détruit).
+        function landWrite(name: string): void { const p = Backend[name].nmSettings[0]; p.settingsChanged(p.map); }
+        function destroyProfile(name: string): void {
+            const p = Backend[name].nmSettings[0];
+            Backend[name].nmSettings = [];
+            p.destroy();
+        }
         function failurePending(): bool { return Network.signInFailure !== null; }
         function silent(on: bool): void { Backend.silentWrites = on; }
         function makeTemp(name: string): void { Backend.temp = Backend.wifiComponent.createObject(null, { name: name }); }

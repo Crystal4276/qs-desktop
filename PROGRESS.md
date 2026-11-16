@@ -36,6 +36,15 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
   commençant par `-` serait lu comme une option). Contre-épreuve : le nouveau test échoue sur l'ancien code (TTLS sans domaine
   accepté, premier contrôle). Pendant la mise au point, un plantage de Quickshell propre au banc (`createObject` d'un faux réseau
   avec un singleton pour parent, depuis un `IpcHandler`) : faux réseau créé sans parent.
+- Passe 2 (10 constats, 8 retenus + 3 des écartés) : profil « mot de passe pour cet utilisateur » (nm-connection-editor) dont
+  le mot de passe écrit était jeté faute d'agent, boucle de refus (reproduit sur NetworkManager ; `password-flags` 0 écrit avec
+  lui, vérifié) ; suivi `pending` d'un réseau WPA mêlé à une connexion entreprise ; échec en attente derrière le formulaire d'un
+  autre réseau jamais montré (montré à sa fermeture) ; échec dépassé gardé après une connexion réussie (oublié) ; abandon
+  pendant l'écriture (effacement après son arrivée) ; profil oublié pendant la tentative (sans erreur) ; fin de `nmcli` après
+  une connexion réussie qui aurait supprimé le profil (seul un abandon marqué supprime) ; même réseau déjà affiché (mot de passe
+  tapé vidé). Aussi : alias `wifiScanning` retiré, commentaire de tête raccourci (renvoi ici), contrôle que le test raccourcit
+  bien les délais. Gardés (tes choix) : 10 s (`auth-timeout` ; eduroam loin de chez soi peut dépasser) et domaine facultatif
+  avec PEAP (MSCHAPv2 attaquable hors ligne sans vérification du certificat). Contre-épreuve : échec sur le code de la passe 1.
 - Délai avant le refus : 10 s au lieu de 25 (ta demande) : `802-1x.auth-timeout 10` dans les profils créés par le panneau
   (accepté par `nmcli`, vérifié hors ligne) ; un profil créé avant garde 25 s.
 - Petit changement : Entrée sur un mot de passe WPA vide ne ferme plus le formulaire (il reste ouvert).

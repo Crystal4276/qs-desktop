@@ -162,8 +162,8 @@ Singleton {
     }
 
     onConnectivityChecksEnabledChanged: Qt.callLater(checkConnectivity)
-    onWifiScanningChanged: {
-        if (wifiScanning)
+    onWifiPanelPinnedChanged: {
+        if (wifiPanelPinned)
             Qt.callLater(checkConnectivity);
     }
 
@@ -187,6 +187,8 @@ Singleton {
     // liaison est réévaluée à chaque variation de signal.
     property var lastConnectedWifi: null
     onConnectedWifiChanged: {
+        if (connectedWifi !== null && signInFailure?.network === connectedWifi)
+            signInFailure = null;   // échec dépassé : le réseau s'est connecté depuis
         if (connectedWifi === lastConnectedWifi)
             return;
         lastConnectedWifi = connectedWifi;
@@ -221,24 +223,9 @@ Singleton {
     }
 
     // --- Réseaux entreprise : connexion par identifiant et mot de passe (PEAP + MSCHAPv2 ou TTLS + PAP) ---
-    // Quickshell ne crée que des profils WPA-PSK : le profil est créé par `nmcli` (UUID choisi ici : rien à lire dans sa sortie
-    // traduite), sans secret et sans connexion automatique (sinon NetworkManager l'active aussitôt, échoue faute de mot de passe
-    // et le panneau croirait à un refus) ; Quickshell y écrit ensuite le mot de passe (NMSettings.write, jamais sur une ligne de
-    // commande), puis la connexion part du profil une fois l'écriture faite (`settingsChanged`). Profil existant : seuls
-    // l'identifiant et le mot de passe sont réécrits, le reste est gardé. `802-1x.eap` n'est pas écrit par Quickshell (liste
-    // non convertie en `as`) : méthode fixée à la création. Domaine du serveur : certificat vérifié (autorités du système +
-    // domaine) ; vide : aucune vérification (refusé avec TTLS, dont PAP livrerait le mot de passe en clair à un faux point
-    // d'accès : le panneau l'exige).
-    // Connexion suivie jusqu'au bout, panneau ouvert ou non ; une autre connexion demandée entre-temps l'abandonne. Réussie : le
-    // profil créé reçoit la connexion automatique (écriture sans secret : NetworkManager garde le mot de passe, vérifié). Refus,
-    // annulation ou abandon : un mot de passe saisi n'est pas gardé (profil créé supprimé, sinon secrets effacés) ; autre échec
-    // (signal) : profil créé supprimé, mot de passe d'un profil existant gardé. L'échec attend le panneau (`signInFailure`).
-    // Mauvais identifiant ou mot de passe : le serveur refuse aussitôt, mais NetworkManager ne conclut qu'à la fin du délai
-    // d'authentification, par `NoSecrets` (aucun agent pour redemander) : 10 s pour les profils créés ici
-    // (`802-1x.auth-timeout`, 25 s par défaut ; ta demande du 2026-11-16).
-    // Hors panneau (connexion automatique, autre application), un refus du mot de passe enregistré (renouvelé par
-    // l'établissement, donc expiré) passerait inaperçu : NetworkManager échoue sans agent pour le redemander (nm-applet ouvrirait
-    // une fenêtre ; Quickshell n'a pas d'agent de secrets). Il est signalé comme un échec du panneau.
+    // Mécanisme et règles : ARCHITECTURE § 7.6. Quickshell ne crée que des profils WPA-PSK : profil créé par `nmcli` (UUID choisi
+    // ici), sans secret ni connexion automatique ; mot de passe écrit par NMSettings.write, jamais sur une ligne de commande ;
+    // connexion suivie jusqu'au bout, panneau ouvert ou non. Échecs hors panneau (mot de passe enregistré expiré) signalés aussi.
     // Requête : { network, name, form, created, typed } ; création : `uuid`, `password`, puis `added` (`nmcli` fini) ; profil
     // trouvé : `settings` (écriture) ; puis `connecting`. `form` : { identity, method, domain } saisis, repris après un échec.
     property var signInRequest: null
@@ -285,7 +272,10 @@ Singleton {
         const request = { network: network, name: network.name, form: { identity: identity, method: method, domain: domain },
             created: saved === null, typed: true };
         if (saved) {
-            writeSignIn(Object.assign(request, { settings: saved }), { "802-1x": { identity: identity, password: password } });
+            // Mot de passe gardé par le système (drapeaux 0) : un profil « pour cet utilisateur » (nm-connection-editor) le
+            // confierait à un agent de secrets, absent, et NetworkManager le jetterait (vérifié).
+            writeSignIn(Object.assign(request, { settings: saved }),
+                { "802-1x": { identity: identity, password: password, "password-flags": 0 } });
             return;
         }
         const uuid = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, c => {
@@ -324,23 +314,45 @@ Singleton {
         request.network.connectWithSettings(request.settings);
     }
 
-    // `kind` : "" (annulation, abandon : rien à montrer), "refused", "failed" ou "profile".
+    // `kind` : "" (annulation, abandon : rien à montrer), "refused", "failed" ou "profile". Profil oublié entre-temps (bouton
+    // Forget) : objet détruit, propriétés indéfinies.
     function finishSignIn(kind: string): void {
         const request = signInRequest;
         if (!request)
             return;
         signInRequest = null;
+        const settings = request.settings?.uuid ? request.settings : null;
         if (request.created) {
-            if (request.settings)
-                request.settings.forget();
+            if (settings)
+                settings.forget();
             else if (request.added)
-                deleteProfile(request.uuid);   // sinon supprimé à la fin de `nmcli` (profileCreator)
-        } else if (request.typed && kind !== "failed") {
-            request.settings.clearSecrets();
-            clearedProfiles[request.settings.uuid] = true;
+                deleteProfile(request.uuid);
+            else if (!request.settings)
+                abandonedProfiles[request.uuid] = true;   // supprimé à la fin de `nmcli` (profileCreator)
+        } else if (request.typed && kind !== "failed" && settings) {
+            clearedProfiles[settings.uuid] = true;
+            // Écriture encore en cours : effacer avant qu'elle n'arrive laisserait le mot de passe saisi.
+            if (request.connecting)
+                settings.clearSecrets();
+            else
+                clearAfterWrite = settings;
         }
         if (kind !== "")
             reportSignInFailure(Object.assign({ network: request.network, name: request.name, kind: kind }, request.form));
+    }
+
+    // Créations abandonnées avant la fin de `nmcli` (UUID) ; profil dont l'écriture en cours doit être suivie d'un effacement.
+    property var abandonedProfiles: ({})
+    property var clearAfterWrite: null
+
+    Connections {
+        target: root.clearAfterWrite
+        function onSettingsChanged() {
+            const settings = root.clearAfterWrite;
+            root.clearAfterWrite = null;
+            if (settings.uuid)
+                settings.clearSecrets();
+        }
     }
 
     function deleteProfile(uuid: string): void {
@@ -382,16 +394,21 @@ Singleton {
         Process {
             property string uuid
 
+            // Profil déjà trouvé (apparu avant la fin de `nmcli`) : rien à faire ; connexion finie entre-temps (réussie
+            // comprise) : seul un abandon marqué supprime le profil.
             onExited: code => {
                 const request = root.signInRequest;
-                if (request?.uuid !== uuid) {
+                if (root.abandonedProfiles[uuid]) {
+                    delete root.abandonedProfiles[uuid];
                     if (code === 0)
                         root.deleteProfile(uuid);
-                } else if (code !== 0) {
-                    root.finishSignIn("profile");
-                } else {
-                    root.signInRequest = Object.assign({}, request, { added: true });
-                    root.findCreatedProfile();
+                } else if (request?.uuid === uuid && !request.settings) {
+                    if (code !== 0) {
+                        root.finishSignIn("profile");
+                    } else {
+                        root.signInRequest = Object.assign({}, request, { added: true });
+                        root.findCreatedProfile();
+                    }
                 }
                 destroy();
             }
@@ -421,9 +438,11 @@ Singleton {
             if (!request?.network?.connected)
                 return;
             root.signInRequest = null;
-            delete root.clearedProfiles[request.settings.uuid];
-            if (request.created)
-                request.settings.write({ connection: { autoconnect: true } });
+            const settings = request.settings?.uuid ? request.settings : null;
+            if (settings)
+                delete root.clearedProfiles[settings.uuid];
+            if (request.created && settings)
+                settings.write({ connection: { autoconnect: true } });
         }
         function onStateChanged() {
             const state = root.signInRequest?.network?.state;
@@ -521,9 +540,9 @@ Singleton {
     // Onglet affiché du panneau réseau (NetworkPanel) : Tailscale et ZeroTier ne sont relus toutes les 5 s que sur le leur.
     property string networkTab: ""
     readonly property bool wifiPanelOpen: openPanels.some(p => p.kind === "wifi")
-    // Recherche des réseaux : panneau Wi-Fi épinglé seulement, pas pendant un aperçu au survol (Panel.qml, `pinned`).
+    // Panneau Wi-Fi épinglé, pas un simple aperçu au survol (Panel.qml, `pinned`) : recherche des réseaux ; échec entreprise
+    // montré sans notification.
     readonly property bool wifiPanelPinned: openPanels.some(p => p.kind === "wifi" && p.panel.pinned === true)
-    readonly property bool wifiScanning: wifiPanelPinned
 
     function setPanelOpen(kind: string, panel: QtObject, open: bool): void {
         const others = openPanels.filter(p => p.panel !== panel);
@@ -534,7 +553,7 @@ Singleton {
         when: root.wifi !== null
         target: root.wifi
         property: "scannerEnabled"
-        value: root.wifiScanning
+        value: root.wifiPanelPinned
     }
 
     function setWifiEnabled(enabled: bool): void {

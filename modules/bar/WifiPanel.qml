@@ -93,7 +93,8 @@ Panel {
             return;
         }
         if (Network.isEnterprise(network.security) && Network.passwordProfile(network) !== null) {
-            Network.connectEnterprise(network);   // suivie par le service, échec repris par showSignInFailure
+            pending = null;   // suivie par le service (échec repris par showSignInFailure), plus par le panneau
+            Network.connectEnterprise(network);
             return;
         }
         Network.abandonSignIn();   // une autre connexion remplace celle qui était suivie
@@ -112,6 +113,7 @@ Panel {
         passwordRefused = false;
         failText = "";
         if (isEnterprise) {
+            pending = null;
             Network.signInEnterprise(network, ...values);
         } else {
             Network.abandonSignIn();
@@ -138,6 +140,7 @@ Panel {
             return;
         }
         passwordFor = failure.network;
+        resetForm();   // même réseau déjà affiché : pas de passwordForChanged
         passwordRefused = refused;
         failText = failure.kind === "expired" ? `${name} refused the saved password: it may have expired`
             : failure.kind === "failed" ? `Could not connect to ${name} — weak signal or wrong username or password`
@@ -272,8 +275,14 @@ Panel {
     }
 
     // Autre réseau demandé : champs vidés (le texte tapé n'est pas pour lui), identifiant enregistré repris, focus au premier
-    // champ à remplir une fois le formulaire affiché.
+    // champ à remplir une fois le formulaire affiché. Formulaire fermé : un échec qui attendait derrière lui s'affiche.
     onPasswordForChanged: {
+        resetForm();
+        if (passwordFor === null)
+            Qt.callLater(showSignInFailure);
+    }
+
+    function resetForm(): void {
         identity.text = Network.savedIdentity(passwordFor);
         password.text = "";
         domain.text = "";
