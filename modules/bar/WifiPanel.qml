@@ -126,25 +126,22 @@ Panel {
     // repris avec ce qui avait été saisi, mot de passe vide ; refus en rouge dans le titre, autre échec en message. Formulaire
     // d'un autre réseau en cours : l'échec attend.
     function showSignInFailure(): void {
-        const failure = Network.signInFailure;
-        if (!pinned || !failure || (passwordFor !== null && passwordFor !== failure.network))
+        const waiting = Network.signInFailure;
+        if (!pinned || !waiting || (passwordFor !== null && passwordFor !== waiting.network))
             return;
-        Network.signInFailure = null;
-        const name = failure.name;
-        const refused = failure.kind === "refused" || failure.kind === "expired";
+        const failure = Network.takeSignInFailure();
+        // Identifiant ou mot de passe tapé refusé : titre et champs en rouge ; autre échec (mot de passe enregistré refusé,
+        // peut-être expiré, compris) : message.
+        failText = failure.kind === "refused" ? "" : Network.failureText(failure);
         // Réseau disparu depuis (hors de portée) : message seul, plus de formulaire possible. Objet détruit : la référence
         // reste, mais ses propriétés sont indéfinies (vérifié sur banc).
-        if (failure.network?.name !== name) {
-            failText = failure.kind === "expired" ? `${name} refused the saved password: it may have expired`
-                : refused ? `Wrong username or password for ${name}` : `Could not connect to ${name}`;
+        if (failure.network?.name !== failure.name) {
+            failText = Network.failureText(failure);
             return;
         }
         passwordFor = failure.network;
         resetForm();   // même réseau déjà affiché : pas de passwordForChanged
-        passwordRefused = refused;
-        failText = failure.kind === "expired" ? `${name} refused the saved password: it may have expired`
-            : failure.kind === "failed" ? `Could not connect to ${name} — weak signal or wrong username or password`
-            : failure.kind === "profile" ? `Could not connect to ${name}` : "";
+        passwordRefused = failure.kind === "refused";
         identity.text = failure.identity;
         method = failure.method || "peap";
         domain.text = failure.domain;

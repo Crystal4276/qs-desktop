@@ -17,9 +17,8 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
   rien affiché, et le mot de passe restait enregistré. Cause (journal) : le serveur refuse aussitôt (erreur 691), mais
   NetworkManager n'abandonne qu'au bout de 25 s (`NoSecrets`) ; le panneau ne suivait la connexion que s'il restait ouvert.
   Corrigé : connexion suivie par le service, panneau maintenu ouvert pendant ce temps ; échec gardé et montré à l'ouverture
-  suivante (« Wrong username or password for X » en rouge, saisie reprise, mot de passe vide) ; mot de passe saisi jamais gardé
-  après un échec ou une annulation (profil créé supprimé, sinon secrets effacés). Réseau enregistré refusé : son mot de passe
-  (non saisi) reste, le formulaire propose d'en taper un autre.
+  suivante (« Wrong username or password for X » en rouge, saisie reprise, mot de passe vide) ; nouveau réseau : profil
+  supprimé après un échec ou une annulation (règle des réseaux enregistrés : passe 3 ci-dessous).
 - Mot de passe renouvelé périodiquement (ta remarque) : quand le mot de passe enregistré n'est plus bon, la connexion
   automatique échoue hors panneau (`NoSecrets`) ; notification « Uni-Fi refused the saved password — It may have expired »
   (panneau fermé) et formulaire rouge à l'ouverture du panneau, identifiant repris ; rien d'effacé. Autres causes hors panneau
@@ -45,6 +44,16 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
   tapé vidé). Aussi : alias `wifiScanning` retiré, commentaire de tête raccourci (renvoi ici), contrôle que le test raccourcit
   bien les délais. Gardés (tes choix) : 10 s (`auth-timeout` ; eduroam loin de chez soi peut dépasser) et domaine facultatif
   avec PEAP (MSCHAPv2 attaquable hors ligne sans vérification du certificat). Contre-épreuve : échec sur le code de la passe 1.
+- Passe 3 (10 constats, 7 retenus) : **changement de règle** — l'effacement du mot de passe tapé sur un réseau déjà enregistré
+  pouvait effacer le seul bon (l'ancien est déjà remplacé), demandait une mécanique fragile (effacer après l'écriture) et
+  rendait muette la connexion automatique suivante. Désormais : profil d'un nouveau réseau supprimé après un échec ou un
+  abandon (inchangé) ; profil existant gardé avec le dernier mot de passe tapé, son échec suivant est signalé. Aussi : garde-fou
+  porté à 60 s avant la connexion (autorisation polkit) ; mot de passe enregistré refusé au clic annoncé « expiré », pas
+  « Wrong username or password » (titre non rouge, message rouge) ; « Cancel » d'un autre réseau n'abandonne plus la connexion
+  suivie ; le panneau prend l'échec par `takeSignInFailure()` (les widgets n'écrivent pas les services) ; un seul texte par
+  échec (`failureText`). Négligeables : deux échecs simultanés sur deux réseaux (un seul montré), ancienne activation imputée
+  à la nouvelle si l'on soumet pendant une reconnexion automatique, mot de passe tapé gardé après un échec de signal puis
+  annoncé « expiré ». Contre-épreuve : échec sur le code de la passe 2 (texte de notification, premier contrôle modifié).
 - Délai avant le refus : 10 s au lieu de 25 (ta demande) : `802-1x.auth-timeout 10` dans les profils créés par le panneau
   (accepté par `nmcli`, vérifié hors ligne) ; un profil créé avant garde 25 s.
 - Petit changement : Entrée sur un mot de passe WPA vide ne ferme plus le formulaire (il reste ouvert).

@@ -1,6 +1,6 @@
 import QtQuick
 // Profil NetworkManager factice (NMSettings) : écriture fusionnée groupe par groupe, secrets jamais relus, `settingsChanged`
-// après coup comme la relecture D-Bus ; suppression et effacement des secrets enregistrés.
+// après coup comme la relecture D-Bus ; suppression enregistrée.
 QtObject {
     property QtObject network
     property string uuid
@@ -22,5 +22,4 @@ QtObject {
         Backend.calls = Backend.calls.concat([["forget", uuid]]);
         network.nmSettings = network.nmSettings.filter(s => s !== this);
     }
-    function clearSecrets() { Backend.calls = Backend.calls.concat([["clear", uuid]]); }
 }

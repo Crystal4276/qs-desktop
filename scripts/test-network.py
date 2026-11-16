@@ -130,9 +130,10 @@ exec ''' + real_install + ' "$@"\n')
 
 def form_test(ipc, nmcli_log, notify_log, work):
     """Formulaires du panneau Wi-Fi : réseau entreprise et réseau WPA. Création sans secret sur la ligne de commande (sortie de
-    `nmcli` traduite), TTLS sans domaine refusé, mot de passe refusé jamais gardé, saisie reprise, mot de passe enregistré
-    refusé hors panneau (vraie liste surveillée), réseau enregistré, échec de signal sans effacement, panneau fermé ou en aperçu,
-    annulation, autre connexion demandée, deux créations rapprochées, garde-fou, réseau disparu, échec de `nmcli`."""
+    `nmcli` traduite), TTLS sans domaine refusé, profil d'un nouveau réseau supprimé après un échec, saisie reprise, mot de passe
+    enregistré refusé hors panneau (vraie liste surveillée) ou au clic (« expiré »), profil existant gardé, panneau fermé ou en
+    aperçu, annulation (de la seule connexion suivie), autre connexion demandée, deux créations rapprochées, garde-fou, réseau
+    disparu, échec de `nmcli`."""
     def form(): return json.loads(ipc('form'))
     def calls(): return json.loads(ipc('calls'))
     def settle(seconds=0.1): time.sleep(seconds)
@@ -212,7 +213,7 @@ def form_test(ipc, nmcli_log, notify_log, work):
     assert notified() == [] and not form_pending(ipc)
     ipc('emitFail', 'enterprise', 'NoSecrets'); settle()
     assert new_calls(before) == [] and notified() == ['--app-name=Wi-Fi', '--icon=network-wireless-offline', '--',
-        'Campus refused the saved password', 'It may have expired: open the Wi-Fi panel to enter the new one.'], notified()
+        'Campus refused the saved password: it may have expired', 'Open the Wi-Fi panel to enter the new one.'], notified()
     # Connecté depuis (autre moyen) : l'échec en attente est dépassé, rien à montrer. (Réseau du portail retiré : une carte
     # n'a qu'un réseau connecté.)
     ipc('configure', json.dumps({'joined': False})); ipc('setState', 'enterprise', 'Connected'); settle()
@@ -222,18 +223,19 @@ def form_test(ipc, nmcli_log, notify_log, work):
     assert form_pending(ipc)
     ipc('list', ''); ipc('reopenPanel'); settle()
     f = form()
-    assert f['title'] == ['Wrong username or password for Campus'], f
+    assert f['title'] == ['Sign in to Campus'] and not f['password']['error'], f
     assert f['failText'] == 'Campus refused the saved password: it may have expired', f
     assert f['username']['text'] == 'alice@campus.example' and not f['tabs']['visible'] and not f['domain']['visible'], f
     notify_log.unlink()
 
-    # Réseau enregistré cliqué puis refusé : son mot de passe (non saisi) est gardé ; identifiant repris du profil.
+    # Réseau enregistré cliqué puis refusé (rien de tapé) : mot de passe enregistré refusé, « expiré » ; identifiant repris.
     before = calls()
     ipc('openForm', 'enterprise'); settle()
     ipc('fail', 'enterprise', 'NoSecrets', 'false'); settle()
     assert new_calls(before) == [['connect', uuid]], calls()
     f = form()
-    assert f['title'] == ['Wrong username or password for Campus'] and f['username']['text'] == 'alice@campus.example', f
+    assert f['title'] == ['Sign in to Campus'] and f['username']['text'] == 'alice@campus.example', f
+    assert f['failText'] == 'Campus refused the saved password: it may have expired', f
     # Échec hors panneau du même réseau, formulaire déjà ouvert et mot de passe commencé : vidé, message mis à jour.
     fill(password='partial'); ipc('background', 'enterprise', 'NoSecrets'); settle()
     f = form()
@@ -249,13 +251,14 @@ def form_test(ipc, nmcli_log, notify_log, work):
     assert f['title'] == ['Sign in to Campus'] and f['username']['text'] == 'alice', f
     assert f['failText'] == 'Could not connect to Campus — weak signal or wrong username or password', f
 
-    # Refusé : secrets effacés ; l'échec de la connexion automatique qui suit (profil sans secret) n'est pas « expiré ».
+    # Refusé : profil existant gardé avec ce mot de passe (l'ancien est déjà remplacé) ; l'échec de la connexion automatique qui
+    # suit est signalé, pas ignoré.
     before = calls()
     fill(password='wrong'); ipc('enter', 'Password'); settle()
     ipc('fail', 'enterprise', 'NoSecrets', 'false'); settle()
-    assert new_calls(before)[2:] == [['clear', uuid]], calls()
+    assert len(new_calls(before)) == 2 and form()['title'] == ['Wrong username or password for Campus'], calls()
     ipc('background', 'enterprise', 'NoSecrets'); settle()
-    assert form()['failText'] == '' and not form()['failurePending'], form()
+    assert form()['failText'] == 'Campus refused the saved password: it may have expired', form()
 
     # Panneau fermé, puis simple aperçu au survol pendant la connexion (état avant le signal) : notification, l'aperçu ne
     # consomme pas l'échec ; montré une fois le panneau épinglé.
@@ -263,7 +266,7 @@ def form_test(ipc, nmcli_log, notify_log, work):
     ipc('closePanel'); settle(); ipc('previewPanel'); settle()
     before = calls()
     ipc('fail', 'enterprise', 'NoSecrets', 'true'); settle(1.2)
-    assert new_calls(before) == [['clear', uuid]], calls()
+    assert new_calls(before) == [], calls()
     assert notified()[3:] == ['Wrong username or password for Campus', 'Open the Wi-Fi panel to try again.'], notified()
     f = form()
     assert f['passwordFor'] == '' and f['failurePending'], f
@@ -272,11 +275,11 @@ def form_test(ipc, nmcli_log, notify_log, work):
     assert f['title'] == ['Wrong username or password for Campus'] and f['username']['text'] == 'alice', f
     notify_log.unlink()
 
-    # Annulation : secret saisi effacé, rien à montrer.
+    # Annulation : rien à montrer (profil existant gardé).
     fill(password='x'); ipc('enter', 'Password'); settle()
     before = calls()
     ipc('cancel'); ipc('setState', 'enterprise', 'Disconnected'); settle(1.2)
-    assert new_calls(before) == [['clear', uuid]], calls()
+    assert new_calls(before) == [], calls()
     f = form()
     assert f['passwordFor'] == '' and f['failText'] == '' and not f['signingIn'], f
 
@@ -290,10 +293,10 @@ def form_test(ipc, nmcli_log, notify_log, work):
     assert not f['signingIn'] and f['passwordFor'] == 'Campus' and f['failText'].startswith('Could not connect to Campus —'), f
     assert new_calls(before) == [['connect', uuid]], calls()
 
-    # Autre connexion demandée pendant la tentative (réseau WPA) : abandon sans message, mot de passe saisi effacé.
+    # Autre connexion demandée pendant la tentative (réseau WPA) : abandon sans message.
     fill(password='y'); ipc('enter', 'Password'); settle()
     ipc('openForm', 'personal'); settle(); fill(password='wpa key'); before = calls(); ipc('click', 'Connect'); settle()
-    assert new_calls(before) == [['clear', uuid], ['psk', 'wpa key']], calls()
+    assert new_calls(before) == [['psk', 'wpa key']], calls()
     ipc('setState', 'enterprise', 'Disconnected'); settle(1.2)
     f = form()
     assert not f['signingIn'] and f['failText'] == '' and f['passwordFor'] == '' and not f['failurePending'], f
@@ -312,15 +315,15 @@ def form_test(ipc, nmcli_log, notify_log, work):
     assert f['title'] == ['Password for Home'] and f['failurePending'] and notified() == [], f
     fill(password='wpa'); ipc('click', 'Connect'); settle()
     f = form()
-    assert f['title'] == ['Wrong username or password for Campus'] and calls()[-1] == ['psk', 'wpa'], (f, calls())
-    # Abandon pendant l'écriture : effacement seulement une fois l'écriture arrivée (sinon elle remettrait le mot de passe).
-    ipc('silent', 'true'); fill(password='late'); ipc('enter', 'Password'); settle()
-    before = calls()
-    ipc('cancel'); settle()
-    assert new_calls(before) == [], calls()
-    ipc('landWrite', 'enterprise'); settle()
-    assert new_calls(before) == [['clear', uuid]], calls()
-    ipc('silent', 'false')
+    assert f['title'] == ['Sign in to Campus'] and f['failText'].startswith('Campus refused the saved password'), f
+    assert calls()[-1] == ['psk', 'wpa'], calls()
+    # « Cancel » d'un autre réseau en cours (pas celui suivi) : la connexion suivie continue.
+    fill(password='z'); ipc('enter', 'Password'); settle()
+    ipc('setState', 'enterprise', 'Disconnected'); ipc('setState', 'personal', 'Connecting'); ipc('cancel'); settle()
+    assert form()['signingIn'], form()
+    ipc('setState', 'personal', 'Disconnected'); ipc('setState', 'enterprise', 'Connecting'); ipc('cancel'); settle()
+    assert not form()['signingIn'] and form()['failText'] == '', form()
+    ipc('setState', 'enterprise', 'Disconnected'); settle()
 
     # Deux créations rapprochées (nouveau réseau, puis un autre pendant `nmcli`) : la première est abandonnée et son profil
     # supprimé à la fin de `nmcli` ; la seconde suit son cours.
@@ -375,7 +378,7 @@ def form_test(ipc, nmcli_log, notify_log, work):
     ipc('fail', 'temp', 'NoSecrets', 'false'); settle(); ipc('destroyTemp'); settle()
     ipc('reopenPanel'); settle()
     f = form()
-    assert f['failText'] == 'Wrong username or password for Lab' and f['passwordFor'] == '', f
+    assert f['failText'] == 'Lab refused the saved password: it may have expired' and f['passwordFor'] == '', f
     notify_log.unlink()
 
     # `nmcli` en échec (réseau sans profil) : message, saisie reprise, rien d'écrit.
@@ -393,9 +396,10 @@ def form_test(ipc, nmcli_log, notify_log, work):
     assert not f['tabs']['visible'] and f['connect'] == {'visible': True, 'enabled': False}, f
     fill(password='wpa key'); ipc('click', 'Connect'); settle()
     assert calls()[-1] == ['psk', 'wpa key'] and form()['pending'] == 'Home', calls()
-    print('PASS QML: enterprise form (Connect button, TTLS needs a domain, translated nmcli, refused password never kept, '
-          'retry, expired saved password via the watched list, weak signal keeps it, closed or previewed panel, cancel, '
-          'other connection, overlapping creations, watchdog, vanished network, nmcli failure), WPA form')
+    print('PASS QML: enterprise form (Connect button, TTLS needs a domain, translated nmcli, new profile removed on failure, '
+          'retry, expired saved password via the watched list or a click, existing profile kept, closed or previewed panel, '
+          'cancel of the tracked attempt only, other connection, overlapping creations, watchdog, vanished network, nmcli '
+          'failure), WPA form')
 
 
 def form_pending(ipc):
@@ -415,7 +419,7 @@ def qml_test(work):
     # Accelerate the ten-second timer; disable /proc sampling so route changes are deterministic.
     network = network.replace('interval: 10000', 'interval: 100')
     # Garde-fou de la connexion entreprise : 2,5 s avant la connexion, 6 s pendant.
-    network = network.replace('signInRequest.connecting ? 90000 : 15000', 'signInRequest.connecting ? 6000 : 2500')
+    network = network.replace('signInRequest.connecting ? 90000 : 60000', 'signInRequest.connecting ? 6000 : 2500')
     assert 'signInRequest.connecting ? 6000 : 2500' in network, 'sign-in watchdog not shortened'
     assert 'interval: 100\n' in network, 'portal timer not shortened'
     network = network.replace('running: true\n        repeat: true\n        triggeredOnStart: true',
