@@ -97,12 +97,20 @@ Panel {
         }
         if (Network.isEnterprise(network.security) && Network.passwordProfile(network) !== null) {
             pending = null;   // suivie par le service (échec repris par showSignInFailure), plus par le panneau
+            passwordFor = null;   // formulaire d'un échec précédent de ce réseau : refermé
             Network.connectEnterprise(network);
             return;
         }
         Network.abandonSignIn();   // une autre connexion remplace celle qui était suivie
         pending = network;
         network.connect();
+    }
+
+    // Oubli voulu du réseau dont la connexion est suivie : abandon, pas un échec à annoncer.
+    function forget(network): void {
+        if (Network.signInRequest?.network === network)
+            Network.abandonSignIn();
+        network.forget();
     }
 
     // « Connect » ou Entrée dans un champ du formulaire, une fois les champs requis remplis.
@@ -148,6 +156,18 @@ Panel {
         identity.text = failure.identity;
         method = failure.method || "peap";
         domain.text = failure.domain;
+    }
+
+    // Réseau du formulaire connecté entre-temps (connexion automatique, autre outil) : formulaire et message dépassés.
+    Connections {
+        target: root.passwordFor
+        ignoreUnknownSignals: true
+        function onConnectedChanged() {
+            if (root.passwordFor?.connected) {
+                root.passwordFor = null;
+                root.failText = "";
+            }
+        }
     }
 
     Connections {
@@ -257,7 +277,7 @@ Panel {
                 PanelButton {
                     visible: modelData.known
                     text: "Forget"
-                    onClicked: modelData.forget()
+                    onClicked: root.forget(modelData)
                 }
             }
         }

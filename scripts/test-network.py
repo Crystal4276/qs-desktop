@@ -232,6 +232,8 @@ def form_test(ipc, nmcli_log, notify_log, work):
     # Réseau enregistré cliqué puis refusé (rien de tapé) : mot de passe enregistré refusé, « expiré » ; identifiant repris.
     before = calls()
     ipc('openForm', 'enterprise'); settle()
+    f = form()   # formulaire d'échec affiché, réseau recliqué : refermé, panneau non retenu
+    assert f['passwordFor'] == '' and f['signingIn'] and not f['holdOpen'], f
     ipc('fail', 'enterprise', 'NoSecrets', 'false'); settle()
     assert new_calls(before) == [['connect', uuid]], calls()
     f = form()
@@ -260,6 +262,13 @@ def form_test(ipc, nmcli_log, notify_log, work):
     assert len(new_calls(before)) == 2 and form()['title'] == ['Wrong username or password for Campus'], calls()
     ipc('background', 'enterprise', 'NoSecrets'); settle()
     assert form()['failText'] == 'Campus refused the saved password: it may have expired', form()
+    # Réseau du formulaire connecté entre-temps : formulaire et message refermés ; puis un nouvel échec le rouvre.
+    ipc('setState', 'enterprise', 'Connected'); settle()
+    f = form()
+    assert f['passwordFor'] == '' and f['failText'] == '', f
+    ipc('setState', 'enterprise', 'Disconnected'); ipc('openForm', 'enterprise'); settle()
+    ipc('fail', 'enterprise', 'NoSecrets', 'false'); settle()
+    assert form()['passwordFor'] == 'Campus', form()
 
     # Panneau fermé, puis simple aperçu au survol pendant la connexion (état avant le signal) : notification, l'aperçu ne
     # consomme pas l'échec ; montré une fois le panneau épinglé.
@@ -318,6 +327,16 @@ def form_test(ipc, nmcli_log, notify_log, work):
     f = form()
     assert f['title'] == ['Sign in to Campus'] and f['failText'].startswith('Campus refused the saved password'), f
     assert calls()[-1] == ['psk', 'wpa'], calls()
+    # Même attente, puis panneau refermé sans soumettre : notification à la fermeture, formulaire à la réouverture.
+    ipc('openForm', 'enterprise'); settle(); ipc('openForm', 'personal'); settle()
+    ipc('fail', 'enterprise', 'NoSecrets', 'false'); settle()
+    assert form()['title'] == ['Password for Home'] and notified() == [], form()
+    ipc('closePanel'); settle()
+    assert notified()[3:] == ['Campus refused the saved password: it may have expired',
+                              'Open the Wi-Fi panel to enter the new one.'], notified()
+    ipc('reopenPanel'); settle()
+    assert form()['title'] == ['Sign in to Campus'], form()
+    notify_log.unlink()
     # « Cancel » d'un autre réseau en cours (pas celui suivi) : la connexion suivie continue.
     fill(password='z'); ipc('enter', 'Password'); settle()
     ipc('setState', 'enterprise', 'Disconnected'); ipc('setState', 'personal', 'Connecting'); ipc('cancel'); settle()
@@ -358,7 +377,7 @@ def form_test(ipc, nmcli_log, notify_log, work):
     stuck = added()[-1]
     settle(2.6)
     f = form()
-    assert not f['signingIn'] and f['passwordFor'] == 'Campus' and f['failText'].startswith('Could not connect'), f
+    assert not f['signingIn'] and f['passwordFor'] == 'Campus' and f['failText'] == 'Could not connect to Campus', f
     assert stuck in deleted(), invocations()
     before = calls()
     ipc('openForm', 'library'); settle(); ipc('fail', 'library', 'NoSecrets', 'false'); settle()
@@ -406,13 +425,21 @@ def form_test(ipc, nmcli_log, notify_log, work):
     assert invocations() == before and f['passwordFor'] == '' and not f['password']['visible'], f
     assert f['password']['text'] == '' and not f['holdOpen'], f
 
-    # `nmcli` en échec (réseau sans profil) : message, saisie reprise, rien d'écrit.
+    # « Forget » du réseau suivi : abandon voulu, pas un échec.
+    before = calls()
+    ipc('openForm', 'enterprise'); settle(); ipc('panelForget', 'enterprise'); settle(1.2)
+    f = form()
+    assert new_calls(before) == [['connect', fast], ['forgetNetwork', 'Campus']] and not f['signingIn'], (f, calls())
+    assert f['failText'] == '' and not f['failurePending'], f
+
+    # `nmcli` en échec (réseau sans profil) : message, saisie reprise, rien d'écrit ; profil éventuellement créé supprimé.
     ipc('reset', 'enterprise'); settle()
     ipc('openForm', 'enterprise'); settle()
     before = calls()
     fill(username='bogus', password='x'); ipc('enter', 'Password'); settle(0.6)
     f = form()
     assert f['failText'] == 'Could not connect to Campus' and f['username']['text'] == 'bogus' and calls() == before, f
+    assert added()[-1] in deleted(), invocations()
 
     # WPA : mot de passe seul, bouton compris.
     ipc('openForm', 'personal'); settle()

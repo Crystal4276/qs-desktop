@@ -18,4 +18,8 @@ QtObject {
         state = ConnectionState.Connecting;
     }
     function connectWithPsk(psk) { Backend.calls = Backend.calls.concat([["psk", psk]]); }
+    function forget() {
+        Backend.calls = Backend.calls.concat([["forgetNetwork", name]]);
+        nmSettings = [];
+    }
 }

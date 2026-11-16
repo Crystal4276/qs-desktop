@@ -148,6 +148,7 @@ ShellRoot {
             Backend[name].nmSettings = [];
             p.destroy();
         }
+        function panelForget(name: string): void { root.panel.forget(Backend[name]); }
         function wifiOff(): void { Network.setWifiEnabled(false); }
         function failurePending(): bool { return Network.signInFailure !== null; }
         function silent(on: bool): void { Backend.silentWrites = on; }
