@@ -3,6 +3,16 @@
 État courant seulement. Historique figé : phases 0 à 10 dans `docs/archive/PROGRESS.md`, maintenance du 2026-11-05 au 2026-11-09
 et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de besoin).
 
+## Aperçu Wi-Fi au survol (2026-11-16)
+
+- Ton constat : au survol de l'icône Wi-Fi, « Networks · searching… » sans réseau ; au clic, la liste apparaît. Cause : l'aperçu
+  « léger » (phase 8, archive) ne lançait la recherche Wi-Fi qu'une fois le panneau épinglé ; sans elle, Quickshell ne liste que
+  les réseaux enregistrés à portée (aucun depuis que tu as oublié Uni-Fi Guest et Uni-Fi). Corrigé : recherche dès l'aperçu
+  (liste remplie aussitôt depuis celle de NetworkManager, ~30 ms mesurés) ; la vérification de connectivité reste à
+  l'épinglage, la recherche Bluetooth inchangée. Test : scanner actif en aperçu, coupé à la fermeture (contre-épreuve : échec
+  sur l'ancien code).
+- **À tester** : survol de l'icône Wi-Fi → liste des réseaux.
+
 ## Wi-Fi entreprise depuis le panneau (2026-11-16)
 
 - Ta demande : Uni-Fi et eduroam (WPA2 802.1X) renvoyaient vers « Network settings… ». Tes choix : formulaire dans le panneau,

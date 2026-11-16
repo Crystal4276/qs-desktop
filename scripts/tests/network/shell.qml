@@ -76,7 +76,8 @@ ShellRoot {
             const button = root.findPortal(card);
             return JSON.stringify({portal: Network.wifiCaptivePortal, limited: Network.wifiLimited,
                 connectivity: Network.connectivity, checks: Backend.checks, commands: Launch.commands,
-                buttonVisible: button !== null && button.visible, closedBeforeLaunch: root.closedBeforeLaunch});
+                buttonVisible: button !== null && button.visible, closedBeforeLaunch: root.closedBeforeLaunch,
+                scanner: Backend.wifi.scannerEnabled});
         }
         function openPanel(): void {
             root.panel = panelComponent.createObject(root);
