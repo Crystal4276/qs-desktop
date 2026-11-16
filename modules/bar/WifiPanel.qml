@@ -26,15 +26,19 @@ Panel {
     readonly property bool enterprise: passwordFor !== null && Network.isEnterprise(passwordFor.security)
     readonly property bool newProfile: enterprise && !passwordFor.known
     property string method: "peap"
-    // Texte tapé, même si le focus a quitté le champ : pas de fermeture automatique.
-    holdOpen: [identity, password, domain].some(field => field.text !== "")
+    // Champs requis remplis : bouton « Connect » actif, Entrée acceptée.
+    readonly property bool formReady: password.text !== "" && (!enterprise || identity.text.trim() !== "")
+    // Texte tapé, même si le focus a quitté le champ, ou connexion entreprise en cours (son issue s'affiche ici) : pas de
+    // fermeture automatique.
+    holdOpen: [identity, password, domain].some(field => field.text !== "") || Network.signingIn
     // Dernier réseau dont la connexion a été demandée ici, et message de son échec.
     property var pending: null
     property string failText: ""
 
     readonly property var others: Network.wifiNetworks.filter(n => n !== Network.currentWifi)
 
-    // Fermé : demandes en cours oubliées (un échec plus tard, panneau fermé, n'est pas annoncé à la réouverture).
+    // Fermé : demandes en cours oubliées (un échec plus tard, panneau fermé, n'est pas annoncé à la réouverture), sauf l'échec
+    // d'une connexion entreprise, gardé par le service et montré à l'ouverture.
     onVisibleChanged: {
         Network.setPanelOpen("wifi", root, visible);
         if (!visible) {
@@ -42,6 +46,8 @@ Panel {
             passwordRefused = false;
             pending = null;
             failText = "";
+        } else {
+            showSignInFailure();
         }
     }
     Component.onDestruction: Network.setPanelOpen("wifi", root, false)
@@ -83,35 +89,52 @@ Panel {
             passwordFor = network;
             return;
         }
+        if (Network.isEnterprise(network.security) && Network.passwordProfile(network) !== null) {
+            Network.connectEnterprise(network);   // suivie par le service, échec repris par showSignInFailure
+            return;
+        }
         pending = network;
         network.connect();
     }
 
-    // Entrée dans un champ du formulaire : rien tant que le mot de passe (et l'identifiant d'un réseau entreprise) manque.
+    // « Connect » ou Entrée dans un champ du formulaire, une fois les champs requis remplis.
     function submit(): void {
         const network = passwordFor;
-        const values = [identity.text.trim(), password.text, method, domain.text.trim()];
-        if (!network || values[1] === "" || (enterprise && values[0] === ""))
+        if (!network || !formReady)
             return;
+        const values = [identity.text.trim(), password.text, method, domain.text.trim()];
         const isEnterprise = enterprise;
         passwordFor = null;
         passwordRefused = false;
         failText = "";
-        pending = network;
-        if (isEnterprise)
+        if (isEnterprise) {
             Network.signInEnterprise(network, ...values);
-        else
+        } else {
+            pending = network;
             network.connectWithPsk(values[1]);
+        }
     }
 
-    // Profil entreprise non créé (`nmcli` en échec).
+    // Échec d'une connexion entreprise (même survenu panneau fermé) : formulaire repris avec ce qui avait été saisi, mot de passe
+    // vide ; refus en rouge dans le titre, autre échec en message.
+    function showSignInFailure(): void {
+        const failure = Network.signInFailure;
+        if (!visible || !failure)
+            return;
+        Network.signInFailure = null;
+        passwordFor = failure.network;
+        passwordRefused = failure.kind === "refused";
+        failText = failure.kind === "failed" ? `Could not connect to ${failure.network.name} — weak signal or wrong username or password`
+            : failure.kind === "profile" ? `Could not connect to ${failure.network.name}` : "";
+        identity.text = failure.identity;
+        method = failure.method || "peap";
+        domain.text = failure.domain;
+    }
+
     Connections {
         target: Network
-        function onSignInFailed(network) {
-            if (network === root.pending) {
-                root.pending = null;
-                root.failText = `Could not connect to ${network.name}`;
-            }
+        function onSignInFailureChanged() {
+            root.showSignInFailure();
         }
     }
 
@@ -131,10 +154,10 @@ Panel {
             // Clé refusée : NetworkManager le signale par l'absence de secrets (« Wrong password ») ; une déconnexion ou un délai
             // pendant l'authentification peut venir de la clé ou du signal : message neutre et mot de passe proposé. La saisie
             // met à jour le profil enregistré (Quickshell, connectWithPsk), sans en créer un autre.
-            // Clé WPA attendue, réseau entreprise à identifiant et mot de passe (PEAP, TTLS), ou sécurité non reconnue (drapeaux
-            // inhabituels) : le mot de passe peut être proposé.
+            // Clé WPA attendue, ou sécurité non reconnue (drapeaux inhabituels) : le mot de passe peut être proposé. Réseau
+            // entreprise ici : profil sans mot de passe (certificats, éditeur) ; ceux à mot de passe passent par le service.
             const secured = !Network.isOpen(network.security) && !Network.needsEditor(network.security)
-                && (!Network.isEnterprise(network.security) || Network.passwordProfile(network) !== null);
+                && !Network.isEnterprise(network.security);
             if (secured && reason === NM.ConnectionFailReason.NoSecrets) {
                 root.passwordRefused = true;
                 root.passwordFor = network;
@@ -272,6 +295,21 @@ Panel {
         visible: root.newProfile
         placeholder: "Server domain (optional)"
         onAccepted: root.submit()
+    }
+
+    RowLayout {
+        visible: root.passwordFor !== null
+        Layout.fillWidth: true
+
+        Item {
+            Layout.fillWidth: true
+        }
+
+        PanelButton {
+            text: "Connect"
+            enabled: root.formReady
+            onClicked: root.submit()
+        }
     }
 
     NetworkSettingsButton {

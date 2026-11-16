@@ -223,14 +223,22 @@ Singleton {
     // --- Réseaux entreprise : connexion par identifiant et mot de passe (PEAP + MSCHAPv2 ou TTLS + PAP) ---
     // Quickshell ne crée que des profils WPA-PSK : le profil est créé par `nmcli`, sans secret et sans connexion automatique
     // (sinon NetworkManager l'active aussitôt, échoue faute de mot de passe et le panneau croirait à un refus) ; Quickshell y
-    // écrit ensuite le mot de passe (NMSettings.write, jamais sur une ligne de commande) et la connexion automatique, puis la
-    // connexion part du profil une fois l'écriture faite (`settingsChanged`). Profil existant (identifiant ou mot de passe
-    // refusé) : seuls ces deux champs sont réécrits, le reste est gardé. `802-1x.eap` n'est pas écrit par Quickshell (liste non
-    // convertie en `as`) : méthode fixée à la création. Domaine du serveur : certificat vérifié (autorités du système +
-    // domaine) ; vide : aucune vérification.
-    signal signInFailed(var network)
-    // Connexion en cours : { network, uuid, password } pendant la création, puis { network, settings } pendant l'écriture.
+    // écrit ensuite le mot de passe (NMSettings.write, jamais sur une ligne de commande), puis la connexion part du profil une
+    // fois l'écriture faite (`settingsChanged`). Profil existant : seuls l'identifiant et le mot de passe sont réécrits, le
+    // reste est gardé. `802-1x.eap` n'est pas écrit par Quickshell (liste non convertie en `as`) : méthode fixée à la création.
+    // Domaine du serveur : certificat vérifié (autorités du système + domaine) ; vide : aucune vérification.
+    // Connexion suivie jusqu'au bout, panneau ouvert ou non. Réussie : le profil créé reçoit la connexion automatique (écriture
+    // sans secret : NetworkManager garde le mot de passe, vérifié). Échec ou annulation : un mot de passe saisi n'est jamais
+    // gardé (profil créé supprimé, sinon secrets effacés) ; l'échec attend le panneau (`signInFailure`). Mauvais identifiant ou
+    // mot de passe : le serveur refuse aussitôt, mais NetworkManager ne conclut qu'au bout de 25 s (`802-1x.auth-timeout`), par
+    // `NoSecrets` (aucun agent pour redemander).
+    // Création : { network, form, uuid, password } ; écriture : { network, form, settings, created, typed } ; puis `connecting`.
+    // `form` : { identity, method, domain } saisis, repris par le panneau après un échec.
     property var signInRequest: null
+    readonly property bool signingIn: signInRequest !== null
+    property bool signInStarted: false   // « Connecting » vu : le retour à « Disconnected » met fin à la connexion
+    // Échec à montrer : { network, kind: "refused" | "failed" | "profile", identity, method, domain }.
+    property var signInFailure: null
 
     // Profil PEAP ou TTLS enregistré du réseau (identifiant et mot de passe), sinon null.
     function passwordProfile(network: var): var {
@@ -248,12 +256,15 @@ Singleton {
     }
 
     function signInEnterprise(network: var, identity: string, password: string, method: string, domain: string): void {
+        const form = { identity: identity, method: method, domain: domain };
         const saved = passwordProfile(network);
+        signInFailure = null;
         if (saved) {
-            writeSignIn(network, saved, { "802-1x": { identity: identity, password: password } });
+            writeSignIn({ network: network, form: form, settings: saved, created: false, typed: true },
+                { "802-1x": { identity: identity, password: password } });
             return;
         }
-        signInRequest = { network: network, uuid: "", password: password };
+        signInRequest = { network: network, form: form, uuid: "", password: password };
         signInAdd.command = ["nmcli", "connection", "add", "type", "wifi", "con-name", network.name, "ssid", network.name,
             "connection.autoconnect", "no", "wifi-sec.key-mgmt", "wpa-eap", "802-1x.eap", method,
             "802-1x.phase2-auth", method === "ttls" ? "pap" : "mschapv2", "802-1x.identity", identity].concat(domain === ""
@@ -261,9 +272,37 @@ Singleton {
         signInAdd.running = true;
     }
 
-    function writeSignIn(network: var, settings: var, values: var): void {
-        signInRequest = { network: network, settings: settings };
-        settings.write(values);
+    // Réseau entreprise enregistré (clic dans la liste) : connexion suivie ; son mot de passe est gardé en cas d'échec.
+    function connectEnterprise(network: var): void {
+        signInFailure = null;
+        startSignIn({ network: network, form: { identity: savedIdentity(network), method: "", domain: "" },
+            settings: passwordProfile(network), created: false, typed: false });
+    }
+
+    function writeSignIn(request: var, values: var): void {
+        signInRequest = request;
+        request.settings.write(values);
+    }
+
+    function startSignIn(request: var): void {
+        signInEnd.stop();
+        signInStarted = false;
+        signInRequest = Object.assign({}, request, { connecting: true });
+        request.network.connectWithSettings(request.settings);
+    }
+
+    // `kind` : "" pour une annulation (rien à montrer).
+    function endSignIn(kind: string): void {
+        const request = signInRequest;
+        if (!request?.connecting)
+            return;
+        signInRequest = null;
+        if (request.created)
+            request.settings.forget();
+        else if (request.typed)
+            request.settings.clearSecrets();
+        if (kind !== "")
+            signInFailure = Object.assign({ network: request.network, kind: kind }, request.form);
     }
 
     // Profil créé : il apparaît dans `nmSettings` déjà lu (vérifié le 2026-11-16).
@@ -272,7 +311,8 @@ Singleton {
         const list = request?.uuid ? request.network.nmSettings : [];
         for (let i = 0; i < list.length; i++) {
             if (list[i].uuid === request.uuid && list[i].read()?.["802-1x"]) {
-                writeSignIn(request.network, list[i], { "802-1x": { password: request.password }, connection: { autoconnect: true } });
+                writeSignIn({ network: request.network, form: request.form, settings: list[i], created: true, typed: true },
+                    { "802-1x": { password: request.password } });
                 return;
             }
         }
@@ -289,7 +329,7 @@ Singleton {
                 const uuid = /\(([0-9a-f-]{36})\) successfully added/.exec(text)?.[1] ?? "";
                 if (uuid === "") {
                     root.signInRequest = null;
-                    root.signInFailed(request.network);
+                    root.signInFailure = Object.assign({ network: request.network, kind: "profile" }, request.form);
                     return;
                 }
                 root.signInRequest = Object.assign({}, request, { uuid: uuid });
@@ -306,12 +346,42 @@ Singleton {
     }
 
     Connections {
-        target: root.signInRequest?.settings ?? null
+        target: root.signInRequest?.settings && !root.signInRequest.connecting ? root.signInRequest.settings : null
         function onSettingsChanged() {
-            const request = root.signInRequest;
-            root.signInRequest = null;
-            request.network.connectWithSettings(request.settings);
+            root.startSignIn(root.signInRequest);
         }
+    }
+
+    // Les deux changements (connecté, état) arrivent ensemble : le premier traité peut avoir déjà conclu.
+    Connections {
+        target: root.signInRequest?.connecting ? root.signInRequest.network : null
+        function onConnectedChanged() {
+            const request = root.signInRequest;
+            if (!request?.network.connected)
+                return;
+            root.signInRequest = null;
+            if (request.created)
+                request.settings.write({ connection: { autoconnect: true } });
+        }
+        function onConnectionFailed(reason) {
+            root.endSignIn(reason === ConnectionFailReason.NoSecrets ? "refused" : "failed");
+        }
+        function onStateChanged() {
+            const state = root.signInRequest?.network.state;
+            if (state === ConnectionState.Connecting) {
+                root.signInStarted = true;
+                signInEnd.stop();
+            } else if (root.signInStarted && state === ConnectionState.Disconnected)
+                signInEnd.restart();
+        }
+    }
+
+    // Retour à « Disconnected » sans échec signalé (raison que Quickshell ne traduit pas) : échec sans détail, après un délai
+    // qui laisse passer `connectionFailed` s'il arrive juste après.
+    Timer {
+        id: signInEnd
+        interval: 1000
+        onTriggered: root.endSignIn("failed")
     }
 
     // Sans mot de passe : ouvert, ou OWE (chiffré, sans clé).
@@ -430,6 +500,8 @@ Singleton {
     // `Device.Disconnect` qui bloquerait ensuite la connexion automatique de l'appareil (documentation de NetworkManager),
     // ni `WifiNetwork.disconnect()` que Quickshell refuse avant la connexion.
     function cancelWifi(): void {
+        if (signInRequest?.connecting)
+            endSignIn("");
         if (wifi)
             Quickshell.execDetached(["sh", "-c", 'u=$(nmcli -t -g GENERAL.CON-UUID device show "$1") && [ -n "$u" ] && nmcli connection down uuid "$u"', "sh", wifi.name]);
     }
