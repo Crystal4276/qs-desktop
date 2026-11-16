@@ -79,7 +79,7 @@ Panel {
     function activate(network): void {
         // Réseau dont la connexion entreprise est suivie (profil tout juste créé, pas encore « Connecting ») : le clic
         // l'abandonnerait.
-        if (network.connected || network.stateChanging || Network.signInRequest?.network === network)
+        if (network.connected || network.stateChanging || Network.isSigningIn(network))
             return;
         failText = "";
         if (passwordFor !== network) {   // demande de mot de passe d'un autre réseau : abandonnée
@@ -104,13 +104,6 @@ Panel {
         Network.abandonSignIn();   // une autre connexion remplace celle qui était suivie
         pending = network;
         network.connect();
-    }
-
-    // Oubli voulu du réseau dont la connexion est suivie : abandon, pas un échec à annoncer.
-    function forget(network): void {
-        if (Network.signInRequest?.network === network)
-            Network.abandonSignIn();
-        network.forget();
     }
 
     // « Connect » ou Entrée dans un champ du formulaire, une fois les champs requis remplis.
@@ -277,7 +270,7 @@ Panel {
                 PanelButton {
                     visible: modelData.known
                     text: "Forget"
-                    onClicked: root.forget(modelData)
+                    onClicked: Network.forgetNetwork(modelData)
                 }
             }
         }

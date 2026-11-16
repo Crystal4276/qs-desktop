@@ -69,6 +69,13 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
   se refermait (notifié à la fermeture) ; `nmcli` en échec (profil éventuel supprimé, plus d'entrée laissée) ; garde-fou avant
   la connexion annoncé « weak signal or wrong password » (message générique). Déjà traités : mot de passe tapé qui remplace un
   bon (règle de la passe 3), suivi WPA séparé (`BACKLOG.md`). Contre-épreuve : échec sur le code de la passe 4.
+- Passe 6 : **arrêt de la revue**, plus que du négligeable. Retouches faites : « Forget » retire aussi l'échec en attente de son
+  réseau, la règle « réseau suivi » passe dans le service (`forgetNetwork`, `isSigningIn`), propriété `signingIn` (tests
+  seulement) retirée, création abandonnée nettoyée même si `nmcli` échoue. Négligeables ou déjà décidés : mot de passe tapé qui
+  remplace un bon (passe 3), PEAP sans domaine ni identité anonyme (ton choix), soumission pendant une reconnexion automatique
+  du même réseau (message générique après 90 s), profil créé visible avant d'être lu (vérifié : il apparaît lu), saisie effacée
+  par un nouvel échec du même réseau (rare ; la passe 2 demandait l'inverse), nettoyage des profils créés en trois chemins
+  (forme ; testé).
 - Délai avant le refus : 10 s au lieu de 25 (ta demande) : `802-1x.auth-timeout 10` dans les profils créés par le panneau
   (accepté par `nmcli`, vérifié hors ligne) ; un profil créé avant garde 25 s.
 - Petit changement : Entrée sur un mot de passe WPA vide ne ferme plus le formulaire (il reste ouvert).

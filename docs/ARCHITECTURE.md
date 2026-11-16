@@ -363,8 +363,8 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
     sans agent, NetworkManager jetterait le mot de passe).
   - Suivi par `Network` jusqu'au bout, panneau ouvert ou non, avec un garde-fou par étape (60 s avant la connexion, le temps
     d'une autorisation polkit ; 90 s pendant). Une autre connexion demandée, « Cancel » de la connexion suivie, « Forget » de
-    son réseau ou le Wi-Fi inutilisable (interrupteur, mode avion, `nmcli radio`) l'abandonne ; un clic sur le réseau suivi est
-    ignoré. Le panneau n'est pas retenu pendant la tentative (il garderait le
+    son réseau (`forgetNetwork`, qui retire aussi son échec en attente) ou le Wi-Fi inutilisable (interrupteur, mode avion,
+    `nmcli radio`) l'abandonne ; un clic sur le réseau suivi (`isSigningIn`) est ignoré. Le panneau n'est pas retenu pendant la tentative (il garderait le
     clavier). Réussie : connexion automatique écrite (écriture sans secret : le mot de passe est gardé). Échec ou abandon :
     profil créé pour l'occasion supprimé (aucun mot de passe non vérifié gardé) ; profil existant gardé avec le dernier mot de
     passe tapé (l'ancien est déjà remplacé ; s'il est faux, l'échec de la connexion automatique le signalera).
