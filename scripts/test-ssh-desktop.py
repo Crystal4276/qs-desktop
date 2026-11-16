@@ -112,7 +112,7 @@ touch "$TEST_ROOT/authorized"
     assert not (home / '.local/state/qs-desktop/install/registry').exists()
     run('--uninstall')
     assert before == {p: (p.read_bytes(), p.stat().st_mtime_ns) for p in before}
-    # Machine cliente : son sshd (ZeroTier seulement) et son journal par system-setup.sh, jamais avec --no-system.
+    # Machine cliente : son sshd (ZeroTier seulement), son journal et son cache pacman par system-setup.sh, jamais avec --no-system.
     assert 'ssh-server' not in (root / 'calls').read_text()
     (root / 'scripts').mkdir()
     fake_setup = root / 'scripts/system-setup.sh'
@@ -123,8 +123,8 @@ touch "$TEST_ROOT/authorized"
                                 capture_output=True, text=True, start_new_session=True, timeout=15)
         assert result.returncode == 0, result.stdout + result.stderr
     setup = [line for line in (root / 'calls').read_text().splitlines() if line.startswith('setup')]
-    assert setup == ['setup ssh-server', 'setup client-journal',
-                     'setup --dry-run ssh-server', 'setup --dry-run client-journal'], setup
+    assert setup == ['setup ssh-server', 'setup client-retention',
+                     'setup --dry-run ssh-server', 'setup --dry-run client-retention'], setup
     public.unlink()
     assert 'incomplète' in run('--yes')
     assert key.read_bytes() == before[key][0]

@@ -1,0 +1,14 @@
+# Machine cliente du desktop (install.sh) : cache pacman limité à la version installée et à une seule version précédente
+# de chaque paquet (retour arrière sans téléchargement). Posé par scripts/system-setup.sh client-retention.
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Operation = Remove
+Type = Package
+Target = *
+
+[Action]
+Description = Keeping the installed and one previous version of each package in the pacman cache
+When = PostTransaction
+Depends = pacman-contrib
+Exec = /usr/bin/paccache -rk2

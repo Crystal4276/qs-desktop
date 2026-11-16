@@ -1882,9 +1882,20 @@ Choix utilisateur : réseau local rétabli **avec mot de passe** (pas d'invité 
 - Demande utilisateur : sur une machine cliente (là où `terrier-zt` est configuré), le journal systemd garde la veille,
   rien de plus ancien. Natif : drop-in `dotfiles/journald/60-qs-desktop-client.conf` (`Storage=persistent`,
   `MaxRetentionSec=2day`, `MaxFileSec=1h` : la veille entière jusqu'à minuit, effacement à l'heure près), installé par
-  `system-setup.sh client-journal` (registre, `systemctl reload systemd-journald` si le fichier change), appelé par
+  `system-setup.sh client-journal` (devenu `client-retention`, ci-dessous ; registre, `systemctl reload systemd-journald` si le fichier change), appelé par
   l'étape SSH d'`install.sh` après `ssh-server` (sauf `--no-system`). Retrait : fichier supprimé, journald relu.
 - Le desktop n'est pas concerné ; son `90-debug-retention.conf` (hors dépôt, 1 jour) reste tel quel.
 - Tests : `test-ssh-server.py` (cas journal ajouté), `test-ssh-desktop.py`, `test-samba.py`, `test-install.py` : 0 échec.
 - **À faire sur le laptop** : `git pull`, `./install.sh` ; vérifier `systemd-analyze cat-config systemd/journald.conf`
   et, le surlendemain, `journalctl --list-boots` / `journalctl | head -1` (rien d'antérieur à la veille).
+
+## Cache pacman des machines clientes : une version précédente (2026-11-16)
+
+- Demande utilisateur, machines clientes seulement : hook `dotfiles/pacman/hooks/90-qs-paccache.hook`
+  (`paccache -rk2` après chaque transaction : version installée + une précédente, retour arrière sans téléchargement).
+  `system-setup.sh client-journal` devient `client-retention` (journal + cache), même appel depuis l'étape SSH d'`install.sh`.
+  Retrait : hook supprimé. `pacman-contrib` déjà dans `arch-pacman.txt` (commentaire mis à jour).
+- Terrier non concerné : son hook fait main `/etc/pacman.d/hooks/clean_package_cache.hook` (`paccache -rk 1`) reste tel quel.
+- Tests : `test-ssh-server.py` (hook ajouté au cas rétention), `test-ssh-desktop.py`, `test-install.py` : 0 échec.
+- **À faire sur le laptop** : après `./install.sh`, une mise à jour (`paru`) doit afficher « Keeping the installed and one
+  previous version… » ; `ls /var/cache/pacman/pkg/` : au plus deux versions par paquet.
