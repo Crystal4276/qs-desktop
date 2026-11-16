@@ -20,6 +20,8 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
   suivante (« Wrong username or password for X » en rouge, saisie reprise, mot de passe vide) ; mot de passe saisi jamais gardé
   après un échec ou une annulation (profil créé supprimé, sinon secrets effacés). Réseau enregistré refusé : son mot de passe
   (non saisi) reste, le formulaire propose d'en taper un autre.
+- Délai avant le refus : 10 s au lieu de 25 (ta demande) : `802-1x.auth-timeout 10` dans les profils créés par le panneau
+  (accepté par `nmcli`, vérifié hors ligne) ; un profil créé avant garde 25 s.
 - Petit changement : Entrée sur un mot de passe WPA vide ne ferme plus le formulaire (il reste ouvert).
 - Vérifications : comportement de Quickshell 0.3.2 sur un profil d'essai jamais activé (`autoconnect no`, supprimé ensuite) :
   profil apparu déjà lu dans `nmSettings`, `write` fusionne clé par clé (méthode, phase 2, identifiant gardés), `settingsChanged`
@@ -31,7 +33,7 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
   erreur Zink de Mesa sur banc sans GPU (`LIBGL_ALWAYS_SOFTWARE=1`). Démarrage complet de la copie sur banc : aucun nouvel
   avertissement. Bureau réel rechargé sans erreur.
 - **À tester à la main** : Forget sur Uni-Fi (le profil de ton essai garde le mauvais mot de passe), puis un mauvais mot de
-  passe : ~25 s de « Connecting… », puis formulaire rouge (aussi en fermant le panneau pendant l'attente puis en le rouvrant) et
+  passe : ~10 s de « Connecting… », puis formulaire rouge (aussi en fermant le panneau pendant l'attente puis en le rouvrant) et
   Uni-Fi non enregistré ; puis le bon, avec « Connect » ; domaine du serveur (nom du certificat, donné en session) ; eduroam
   (`identifiant@établissement`) ; Tab, Entrée.
 
