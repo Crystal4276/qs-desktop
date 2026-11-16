@@ -347,7 +347,8 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
 
 - Deux icônes : **réseau** (filaire et réseaux privés ; visible si un câble est branché, sans Wi-Fi, ou avec Tailscale / ZeroTier) et
   **Wi-Fi**. Connexion limitée signalée (`Networking.connectivity`).
-- Wi-Fi (`WifiPanel.qml`) : `Quickshell.Networking` (interrupteur, réseaux, mot de passe, oubli), réseau courant déplié, niveaux de
+- Wi-Fi (`WifiPanel.qml`) : `Quickshell.Networking` (interrupteur, réseaux, mot de passe, oubli ; recherche des réseaux dès
+  l'aperçu au survol : sans elle, seuls les réseaux enregistrés à portée sont listés), réseau courant déplié, niveaux de
   signal GNOME (20 / 40 / 50 / 80 %), glyphe animé dessiné en QML (`WifiIcon.qml`). Détails absents de l'API (bande, canal, débit,
   IPv4) : `nmcli`, toutes les 5 s panneau ouvert. Portail captif : bouton vers le navigateur par défaut ; sonde native relancée
   toutes les 10 s pendant un accès limité, même panneau fermé. Sonde et navigateur partagent une adresse HTTP ; configuration

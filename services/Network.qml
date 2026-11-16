@@ -558,9 +558,11 @@ Singleton {
     readonly property bool networkPanelOpen: openPanels.some(p => p.kind === "network")
     // Onglet affiché du panneau réseau (NetworkPanel) : Tailscale et ZeroTier ne sont relus toutes les 5 s que sur le leur.
     property string networkTab: ""
+    // Panneau Wi-Fi ouvert, aperçu au survol compris : recherche des réseaux (sans elle, Quickshell ne liste que les réseaux
+    // enregistrés à portée : aperçu vide, « searching… » ; liste remplie aussitôt depuis celle que NetworkManager garde).
     readonly property bool wifiPanelOpen: openPanels.some(p => p.kind === "wifi")
-    // Panneau Wi-Fi épinglé, pas un simple aperçu au survol (Panel.qml, `pinned`) : recherche des réseaux ; échec entreprise
-    // montré sans notification.
+    // Panneau Wi-Fi épinglé, pas un simple aperçu (Panel.qml, `pinned`) : vérification de connectivité ; échec entreprise montré
+    // sans notification.
     readonly property bool wifiPanelPinned: openPanels.some(p => p.kind === "wifi" && p.panel.pinned === true)
 
     function setPanelOpen(kind: string, panel: QtObject, open: bool): void {
@@ -572,7 +574,7 @@ Singleton {
         when: root.wifi !== null
         target: root.wifi
         property: "scannerEnabled"
-        value: root.wifiPanelPinned
+        value: root.wifiPanelOpen
     }
 
     // Wi-Fi coupé (interrupteur, mode avion, `nmcli radio`) : la connexion suivie s'arrête, ce n'est pas un échec à annoncer.

@@ -572,6 +572,10 @@ echo "Connexion « Campus » ajoutée avec succès."
             before = snap()['checks']
             ipc('panels', 'false', '1'); time.sleep(0.04)
             assert snap()['checks'] == before, 'hover preview must not request a check'
+            assert snap()['scanner'], 'hover preview must list the networks (scanner on)'
+            ipc('panels', 'false', '0'); time.sleep(0.04)
+            assert not snap()['scanner'], 'scanner off once the panel is closed'
+            ipc('panels', 'false', '1'); time.sleep(0.04)
             ipc('panels', 'true', '1'); time.sleep(0.04)
             assert snap()['checks'] > before
             ipc('panels', 'true', '2')
