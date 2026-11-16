@@ -23,9 +23,12 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
   question répondue (notification retirée) ; démarrage complet sans nouvel avertissement ; `test-install.py` 0 échec.
 - Règle installée sur `terrier` (`system-setup.sh removable-writeback`, 2026-11-16) ; **à faire par toi** sur le laptop (même
   commande, sans `sudo` : le script l'appelle lui-même).
+- Règle vérifiée sur `terrier` avec une clé USB virtuelle (`dummy_hcd` + `g_mass_storage`, FAT montée par le bureau) : appliquée à
+  l'ajout et sur « change » (`strict_limit=1`, `max_bytes` ≈ 16 Mio) ; copie de 1,5 Gio : sans la règle, écritures finies
+  (100 %) à 1,2 s puis 11 s bloquées à la fermeture (option `flush` d'udisks pour FAT ; en exFAT, fin annoncée avant
+  l'écriture) ; avec, progression régulière, 100 % à 10,8 s, écrite à 11,0 s.
 - **À tester** : vraie copie Nemo sur un autre espace → notification de fin ; copie vers un dossier où le fichier existe →
-  « Waiting for your answer », clic ; clé USB : gros fichier, la fin de Nemo arrive quand la clé a fini d'écrire
-  (`grep Dirty /proc/meminfo` ≈ 0, éjection immédiate) ; `cat /sys/block/sdX/bdi/{strict_limit,max_bytes}` → `1`, `16777216`.
+  « Waiting for your answer », clic ; quand l'occasion se présente, une vraie clé (exFAT surtout).
 
 ## Aperçu Wi-Fi au survol (2026-11-16)
 
