@@ -54,8 +54,8 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
   folder » qui ouvre le dossier d'arrivée (`Places.open`) ; son chemin vient des fichiers que Nemo écrit pendant la copie
   (`/proc/<pid>/fd`, ton choix), sans bouton s'il n'a pas été trouvé. Le titre sans pourcentage se perd aussi sous Sway
   (vu sur banc) : toute fermeture de la fenêtre de progression y compte désormais comme une fin, comme sous Hyprland.
-  Vérifié sur banc Sway (corps, bouton, dossier ouvert au premier plan ; extraction testée sur les statuts anglais et
-  français, nom avec `&`). Rappel : le bouton ne sert que pendant l'affichage (4 s, suspendu au survol).
+  Vérifié sur bancs Sway et Hyprland (corps, bouton, dossier ouvert au premier plan ; question hors focus, clic, réponse,
+  notification fermée sans relance ; extraction testée sur les statuts anglais et français, nom avec `&`). Rappel : le bouton ne sert que pendant l'affichage (4 s, suspendu au survol).
 ## Aperçu Wi-Fi au survol (2026-11-16)
 
 - Ton constat : au survol de l'icône Wi-Fi, « Networks · searching… » sans réseau ; au clic, la liste apparaît. Cause : l'aperçu
