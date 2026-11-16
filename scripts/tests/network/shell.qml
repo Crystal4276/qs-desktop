@@ -25,6 +25,9 @@ ShellRoot {
     function field(placeholder) {
         return root.findAll(root.panel.contentItem, item => item.placeholder === placeholder, [])[0];
     }
+    function button(text) {
+        return root.findAll(root.panel.contentItem, item => item.text === text && item.clicked !== undefined, [])[0];
+    }
     function openPanelOnce() {
         if (root.panel) return;
         root.panel = panelComponent.createObject(root);
@@ -93,10 +96,12 @@ ShellRoot {
             const shown = item => item ? { visible: item.visible, text: item.text, error: item.error } : null;
             const titles = root.findAll(content, item => item.visible && /^(Sign in|Wrong|Password for)/.test(item.text ?? ""), []);
             const tabs = root.findAll(content, item => item.current !== undefined && item.picked !== undefined, [])[0];
+            const connect = root.button("Connect");
             return JSON.stringify({ title: titles.map(item => item.text), username: shown(root.field("Username")),
                 password: shown(root.field("Password")), domain: shown(root.field("Server domain (optional)")),
-                tabs: { visible: tabs.visible, current: tabs.current }, passwordFor: root.panel.passwordFor?.name ?? "",
-                pending: root.panel.pending?.name ?? "", failText: root.panel.failText, holdOpen: root.panel.holdOpen });
+                tabs: { visible: tabs.visible, current: tabs.current }, connect: { visible: connect.visible, enabled: connect.enabled },
+                passwordFor: root.panel.passwordFor?.name ?? "", pending: root.panel.pending?.name ?? "",
+                failText: root.panel.failText, holdOpen: root.panel.holdOpen, signingIn: Network.signingIn });
         }
         function fill(json: string): void {
             const values = JSON.parse(json);
@@ -109,7 +114,18 @@ ShellRoot {
             const item = root.field(placeholder);
             item.accepted(item.text);
         }
-        function fail(name: string, reason: string): void { Backend[name].connectionFailed(NM.ConnectionFailReason[reason]); }
+        function click(text: string): void { root.button(text).clicked(); }
+        // Échec : signal puis retour à « Disconnected », ou l'inverse (`stateFirst`).
+        function fail(name: string, reason: string, stateFirst: bool): void {
+            const network = Backend[name];
+            if (stateFirst) network.state = NM.ConnectionState.Disconnected;
+            network.connectionFailed(NM.ConnectionFailReason[reason]);
+            network.state = NM.ConnectionState.Disconnected;
+        }
+        function setState(name: string, state: string): void { Backend[name].state = NM.ConnectionState[state]; }
+        function cancel(): void { Network.cancelWifi(); }
+        function closePanel(): void { root.panel.close(); }
+        function reopenPanel(): void { root.panel.toggle(anchor, Qt.LeftButton); }
         function profile(name: string, uuid: string, json: string): void { Backend.addProfile(Backend[name], uuid, JSON.parse(json)); }
         function reset(name: string): void { Backend[name].nmSettings = []; }
         function calls(): string { return JSON.stringify(Backend.calls); }

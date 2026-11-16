@@ -41,6 +41,6 @@ QtObject {
     property Component profileComponent: Component { FakeProfile {} }
     // Profil apparu (NetworkManager après `nmcli connection add`).
     function addProfile(network, uuid, map) {
-        network.nmSettings = network.nmSettings.concat([profileComponent.createObject(network, { uuid: uuid, map: map })]);
+        network.nmSettings = network.nmSettings.concat([profileComponent.createObject(network, { network: network, uuid: uuid, map: map })]);
     }
 }

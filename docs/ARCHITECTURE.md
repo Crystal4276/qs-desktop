@@ -354,10 +354,14 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
   système reproductible et retour arrière : `docs/NETWORK.md`. Sondes désactivées : résultats périmés ignorés.
 - Wi-Fi entreprise (WPA / WPA2 802.1X) : formulaire du panneau (PEAP + MSCHAPv2 ou TTLS + PAP, identifiant, mot de passe,
   domaine du serveur facultatif : autorités du système + `domain-suffix-match`). Quickshell ne crée que des profils WPA-PSK :
-  profil créé par `nmcli connection add`, sans secret ni connexion automatique ; mot de passe et connexion automatique écrits par
-  `NMSettings.write` dès que le profil apparaît dans `nmSettings` (déjà lu), connexion par `connectWithSettings` après
-  `settingsChanged`. Refus : identifiant et mot de passe réécrits dans le profil existant. `802-1x.eap` (liste) n'est pas converti
-  par `write` : méthode fixée à la création. WPA3 192 bits, LEAP, WEP : éditeur.
+  profil créé par `nmcli connection add`, sans secret ni connexion automatique ; mot de passe écrit par `NMSettings.write` dès
+  que le profil apparaît dans `nmSettings` (déjà lu), connexion par `connectWithSettings` après `settingsChanged`. Connexion
+  suivie par `Network` jusqu'au bout, panneau ouvert ou non : réussie, connexion automatique écrite (écriture sans secret : le
+  mot de passe est gardé) ; échec ou annulation, un mot de passe saisi n'est jamais gardé (profil créé supprimé, sinon
+  `clearSecrets`) et l'échec (`signInFailure`) rouvre le formulaire, rempli de la saisie, à l'ouverture suivante du panneau.
+  Mauvais identifiant : `NoSecrets` au bout de 25 s (`802-1x.auth-timeout` ; le serveur refuse aussitôt, mais sans agent
+  NetworkManager attend). Profil existant : identifiant et mot de passe réécrits. `802-1x.eap` (liste) n'est pas converti par
+  `write` : méthode fixée à la création. WPA3 192 bits, LEAP, WEP : éditeur.
 - Panneau réseau : onglets Wired (détails `nmcli`, graphe du trafic) / Tailscale (`status --json`, `debug prefs` ; actions grâce à
   `--operator=$USER`, à faire à la main) / ZeroTier (`zerotier-cli -j` avec le jeton copié dans `~/.zeroTierOneAuthToken`,
   à la main ; sinon interfaces `zt*` en lecture seule). Relus toutes les 5 s onglet affiché ; 60 s sinon, sans câble.

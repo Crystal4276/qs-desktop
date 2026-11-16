@@ -8,24 +8,32 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
 - Ta demande : Uni-Fi et eduroam (WPA2 802.1X) renvoyaient vers « Network settings… ». Tes choix : formulaire dans le panneau,
   PEAP ou TTLS (PEAP par défaut), domaine du serveur facultatif (certificat vérifié s'il est rempli, sinon aucune vérification).
 - Clic sur un réseau entreprise inconnu : « Sign in to X », onglets PEAP / TTLS, Username, Password, « Server domain
-  (optional) » ; Entrée dans un champ dès que Username et Password sont remplis, Tab d'un champ à l'autre (`PanelField`).
-  Refus (`NoSecrets`) : « Wrong username or password for X » en rouge, Username repris du profil, sans méthode ni domaine
-  (pour en changer : Forget). WPA3 192 bits, LEAP et WEP : toujours l'éditeur.
+  (optional) », bouton « Connect » (aussi sous le mot de passe WPA) actif une fois les champs requis remplis ; Entrée dans un
+  champ fait de même, Tab d'un champ à l'autre (`PanelField`). WPA3 192 bits, LEAP et WEP : toujours l'éditeur.
 - Mécanisme (`ARCHITECTURE.md` § 7.6) : `nmcli connection add` sans secret ni connexion automatique (sinon NetworkManager
-  l'active aussitôt et l'échec ressemblerait à un refus), puis `NMSettings.write` du mot de passe et de la connexion
-  automatique, puis `connectWithSettings`. Le mot de passe ne passe jamais par une ligne de commande.
+  l'active aussitôt et l'échec ressemblerait à un refus), puis `NMSettings.write` du mot de passe, puis `connectWithSettings` ;
+  connexion automatique écrite seulement après réussite. Le mot de passe ne passe jamais par une ligne de commande.
+- Ton essai (2026-11-16) : première connexion à Uni-Fi réussie (PEAP, certificat du serveur signé par une autorité publique). Mauvais mot de passe :
+  rien affiché, et le mot de passe restait enregistré. Cause (journal) : le serveur refuse aussitôt (erreur 691), mais
+  NetworkManager n'abandonne qu'au bout de 25 s (`NoSecrets`) ; le panneau ne suivait la connexion que s'il restait ouvert.
+  Corrigé : connexion suivie par le service, panneau maintenu ouvert pendant ce temps ; échec gardé et montré à l'ouverture
+  suivante (« Wrong username or password for X » en rouge, saisie reprise, mot de passe vide) ; mot de passe saisi jamais gardé
+  après un échec ou une annulation (profil créé supprimé, sinon secrets effacés). Réseau enregistré refusé : son mot de passe
+  (non saisi) reste, le formulaire propose d'en taper un autre.
 - Petit changement : Entrée sur un mot de passe WPA vide ne ferme plus le formulaire (il reste ouvert).
 - Vérifications : comportement de Quickshell 0.3.2 sur un profil d'essai jamais activé (`autoconnect no`, supprimé ensuite) :
   profil apparu déjà lu dans `nmSettings`, `write` fusionne clé par clé (méthode, phase 2, identifiant gardés), `settingsChanged`
-  ~40 ms après une écriture du seul secret, mot de passe enregistré (drapeaux 0). Chaîne complète sur le vrai NetworkManager
+  ~40 ms après une écriture du seul secret, mot de passe enregistré (drapeaux 0), gardé par une écriture sans secret,
+  effacé par `clearSecrets` (identifiant gardé). Chaîne complète sur le vrai NetworkManager
   non jouée (refusée par le contrôle de permissions : elle aurait laissé un profil Uni-Fi à connexion automatique) : couverte
   par `test-network.py` sur réseaux factices (nouveau test, ci-dessous). `test-network.py` complet OK sur Sway headless, sans
   avertissement ; deux défauts préexistants du test corrigés : filtre des avertissements trompé par les couleurs du journal,
   erreur Zink de Mesa sur banc sans GPU (`LIBGL_ALWAYS_SOFTWARE=1`). Démarrage complet de la copie sur banc : aucun nouvel
   avertissement. Bureau réel rechargé sans erreur.
-- **À tester à la main** : Uni-Fi avec tes identifiants (PEAP ; si refus, Forget puis TTLS) ; un mauvais mot de passe d'abord
-  (formulaire rouge, Username prérempli, puis le bon) ; eduroam (`identifiant@établissement`) ; le domaine du serveur si ton
-  service informatique le donne ; Tab et Entrée au clavier.
+- **À tester à la main** : Forget sur Uni-Fi (le profil de ton essai garde le mauvais mot de passe), puis un mauvais mot de
+  passe : ~25 s de « Connecting… », puis formulaire rouge (aussi en fermant le panneau pendant l'attente puis en le rouvrant) et
+  Uni-Fi non enregistré ; puis le bon, avec « Connect » ; domaine du serveur (nom du certificat, donné en session) ; eduroam
+  (`identifiant@établissement`) ; Tab, Entrée.
 
 ## Word, Excel, PowerPoint dans « Ouvrir avec » (2026-11-16)
 
