@@ -207,13 +207,111 @@ Singleton {
         return ["Very weak", "Weak", "Fair", "Good", "Excellent"][wifiLevel(strength)];
     }
     // Réseau qui se connecte avec une clé WPA (le panneau la demande s'il est inconnu : connectWithPsk fait un profil WPA) ;
-    // Open et OWE : sans mot de passe ; entreprise (EAP, LEAP) et WEP : à régler dans l'éditeur de connexions.
+    // entreprise WPA / WPA2 (802.1X) : identifiant et mot de passe demandés par le panneau (signIn) ; Open et OWE : sans mot de
+    // passe ; WPA3 Enterprise 192 bits (certificats), LEAP et WEP : à régler dans l'éditeur de connexions.
     function needsPsk(security: int): bool {
         return [WifiSecurityType.WpaPsk, WifiSecurityType.Wpa2Psk, WifiSecurityType.Sae].includes(security);
     }
+    function isEnterprise(security: int): bool {
+        return security === WifiSecurityType.WpaEap || security === WifiSecurityType.Wpa2Eap;
+    }
     function needsEditor(security: int): bool {
-        return [WifiSecurityType.WpaEap, WifiSecurityType.Wpa2Eap, WifiSecurityType.Wpa3SuiteB192, WifiSecurityType.Leap,
-            WifiSecurityType.DynamicWep, WifiSecurityType.StaticWep].includes(security);
+        return [WifiSecurityType.Wpa3SuiteB192, WifiSecurityType.Leap, WifiSecurityType.DynamicWep,
+            WifiSecurityType.StaticWep].includes(security);
+    }
+
+    // --- Réseaux entreprise : connexion par identifiant et mot de passe (PEAP + MSCHAPv2 ou TTLS + PAP) ---
+    // Quickshell ne crée que des profils WPA-PSK : le profil est créé par `nmcli`, sans secret et sans connexion automatique
+    // (sinon NetworkManager l'active aussitôt, échoue faute de mot de passe et le panneau croirait à un refus) ; Quickshell y
+    // écrit ensuite le mot de passe (NMSettings.write, jamais sur une ligne de commande) et la connexion automatique, puis la
+    // connexion part du profil une fois l'écriture faite (`settingsChanged`). Profil existant (identifiant ou mot de passe
+    // refusé) : seuls ces deux champs sont réécrits, le reste est gardé. `802-1x.eap` n'est pas écrit par Quickshell (liste non
+    // convertie en `as`) : méthode fixée à la création. Domaine du serveur : certificat vérifié (autorités du système +
+    // domaine) ; vide : aucune vérification.
+    signal signInFailed(var network)
+    // Connexion en cours : { network, uuid, password } pendant la création, puis { network, settings } pendant l'écriture.
+    property var signInRequest: null
+
+    // Profil PEAP ou TTLS enregistré du réseau (identifiant et mot de passe), sinon null.
+    function passwordProfile(network: var): var {
+        const list = network?.nmSettings ?? [];
+        for (let i = 0; i < list.length; i++) {
+            const eap = list[i].read()?.["802-1x"]?.eap ?? [];
+            if (eap.includes("peap") || eap.includes("ttls"))
+                return list[i];
+        }
+        return null;
+    }
+
+    function savedIdentity(network: var): string {
+        return passwordProfile(network)?.read()["802-1x"].identity ?? "";
+    }
+
+    function signInEnterprise(network: var, identity: string, password: string, method: string, domain: string): void {
+        const saved = passwordProfile(network);
+        if (saved) {
+            writeSignIn(network, saved, { "802-1x": { identity: identity, password: password } });
+            return;
+        }
+        signInRequest = { network: network, uuid: "", password: password };
+        signInAdd.command = ["nmcli", "connection", "add", "type", "wifi", "con-name", network.name, "ssid", network.name,
+            "connection.autoconnect", "no", "wifi-sec.key-mgmt", "wpa-eap", "802-1x.eap", method,
+            "802-1x.phase2-auth", method === "ttls" ? "pap" : "mschapv2", "802-1x.identity", identity].concat(domain === ""
+            ? [] : ["802-1x.system-ca-certs", "yes", "802-1x.domain-suffix-match", domain]);
+        signInAdd.running = true;
+    }
+
+    function writeSignIn(network: var, settings: var, values: var): void {
+        signInRequest = { network: network, settings: settings };
+        settings.write(values);
+    }
+
+    // Profil créé : il apparaît dans `nmSettings` déjà lu (vérifié le 2026-11-16).
+    function findCreatedProfile(): void {
+        const request = signInRequest;
+        const list = request?.uuid ? request.network.nmSettings : [];
+        for (let i = 0; i < list.length; i++) {
+            if (list[i].uuid === request.uuid && list[i].read()?.["802-1x"]) {
+                writeSignIn(request.network, list[i], { "802-1x": { password: request.password }, connection: { autoconnect: true } });
+                return;
+            }
+        }
+    }
+
+    Process {
+        id: signInAdd
+        // « Connection '<nom>' (<uuid>) successfully added. » ; échec : rien sur la sortie standard.
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const request = root.signInRequest;
+                if (!request || request.settings)
+                    return;
+                const uuid = /\(([0-9a-f-]{36})\) successfully added/.exec(text)?.[1] ?? "";
+                if (uuid === "") {
+                    root.signInRequest = null;
+                    root.signInFailed(request.network);
+                    return;
+                }
+                root.signInRequest = Object.assign({}, request, { uuid: uuid });
+                root.findCreatedProfile();
+            }
+        }
+    }
+
+    Connections {
+        target: root.signInRequest?.uuid ? root.signInRequest.network : null
+        function onNmSettingsChanged() {
+            root.findCreatedProfile();
+        }
+    }
+
+    Connections {
+        target: root.signInRequest?.settings ?? null
+        function onSettingsChanged() {
+            const request = root.signInRequest;
+            root.signInRequest = null;
+            request.network.connectWithSettings(request.settings);
+        }
     }
 
     // Sans mot de passe : ouvert, ou OWE (chiffré, sans clé).

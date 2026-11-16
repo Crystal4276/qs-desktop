@@ -34,4 +34,13 @@ QtObject {
     }
     property var devices: ({values: [wifi, ethernet]})
     function checkConnectivity() { checks++; }
+    // Formulaires du panneau : réseau entreprise (802.1X) et WPA, hors liste ; appels enregistrés.
+    property var calls: []
+    property FakeWifi enterprise: FakeWifi { name: "Campus" }
+    property FakeWifi personal: FakeWifi { name: "Home"; security: WifiSecurityType.Wpa2Psk }
+    property Component profileComponent: Component { FakeProfile {} }
+    // Profil apparu (NetworkManager après `nmcli connection add`).
+    function addProfile(network, uuid, map) {
+        network.nmSettings = network.nmSettings.concat([profileComponent.createObject(network, { uuid: uuid, map: map })]);
+    }
 }

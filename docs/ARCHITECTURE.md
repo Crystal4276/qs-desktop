@@ -244,7 +244,7 @@ Singletons de `services/`. Les widgets ne lisent que les services ; aucun `Proce
 | `SystemStats` | CPU, mémoire (5 s) | `/proc` (`FileView`) |
 | `Gpu` | utilisation et température (5 s) | `nvidia-smi` ou sysfs (§ 7.16) |
 | `Monitor` | statistiques détaillées, panneau ouvert seulement | `/proc`, `/sys`, `nvidia-smi`, `df` |
-| `Network` | débit, connexions NetworkManager | `/proc/net`, `Quickshell.Networking`, `nmcli` (détails) |
+| `Network` | débit, connexions NetworkManager | `/proc/net`, `Quickshell.Networking`, `nmcli` (détails, création des profils Wi-Fi entreprise) |
 | `Tailscale`, `ZeroTier` | onglets du panneau réseau | `tailscale`, `zerotier-cli` ; `Poller`, `CliRunner` |
 | `Vpn` | NordVPN | `nordvpn` (une seule file de commandes) |
 | `Bluez` | Bluetooth | `Quickshell.Bluetooth` ; `bluetoothctl` (appairage) |
@@ -352,6 +352,12 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
   IPv4) : `nmcli`, toutes les 5 s panneau ouvert. Portail captif : bouton vers le navigateur par défaut ; sonde native relancée
   toutes les 10 s pendant un accès limité, même panneau fermé. Sonde et navigateur partagent une adresse HTTP ; configuration
   système reproductible et retour arrière : `docs/NETWORK.md`. Sondes désactivées : résultats périmés ignorés.
+- Wi-Fi entreprise (WPA / WPA2 802.1X) : formulaire du panneau (PEAP + MSCHAPv2 ou TTLS + PAP, identifiant, mot de passe,
+  domaine du serveur facultatif : autorités du système + `domain-suffix-match`). Quickshell ne crée que des profils WPA-PSK :
+  profil créé par `nmcli connection add`, sans secret ni connexion automatique ; mot de passe et connexion automatique écrits par
+  `NMSettings.write` dès que le profil apparaît dans `nmSettings` (déjà lu), connexion par `connectWithSettings` après
+  `settingsChanged`. Refus : identifiant et mot de passe réécrits dans le profil existant. `802-1x.eap` (liste) n'est pas converti
+  par `write` : méthode fixée à la création. WPA3 192 bits, LEAP, WEP : éditeur.
 - Panneau réseau : onglets Wired (détails `nmcli`, graphe du trafic) / Tailscale (`status --json`, `debug prefs` ; actions grâce à
   `--operator=$USER`, à faire à la main) / ZeroTier (`zerotier-cli -j` avec le jeton copié dans `~/.zeroTierOneAuthToken`,
   à la main ; sinon interfaces `zt*` en lecture seule). Relus toutes les 5 s onglet affiché ; 60 s sinon, sans câble.
@@ -662,7 +668,7 @@ Revue complète des types (documentation 0.3.0, `qmltypes` de 0.3.2, code source
 | `Quickshell.Wayland` | `WlrLayershell`, `WlSessionLock`, `IdleMonitor`, `IdleInhibitor`, `ScreencopyView`, `ToplevelManager`, `Toplevel` | `ShortcutInhibitor` (le verrou bloque déjà), `BackgroundEffect` (flou hors charte, absent de Sway) |
 | `Quickshell.Widgets` | `IconImage`, `ClippingRectangle` | — |
 | `Quickshell.DBusMenu`, `.Services.SystemTray` | menus et icônes du tray | — |
-| `Quickshell.Bluetooth`, `.Networking` | Bluetooth, réseau, Wi-Fi | `NMSettings` non utilisé à ce jour |
+| `Quickshell.Bluetooth`, `.Networking` | Bluetooth, réseau, Wi-Fi | `NMSettings.write` : secret des profils Wi-Fi entreprise ; `802-1x.eap` (liste) non converti |
 | `Quickshell.Services.Mpris`, `.Notifications`, `.UPower` (+ `PowerProfiles`), `.Polkit`, `.Pam` | tous | — |
 | `Quickshell.Services.Pipewire` | `Pipewire`, `PwNode`, `PwNodeAudio`, `PwObjectTracker`, `PwNodePeakMonitor` | `PwLink*` (pas de routage audio) |
 | `Quickshell.Services.Greetd` | `Greetd`, `GreetdState` (écran de connexion, § 9) | — |

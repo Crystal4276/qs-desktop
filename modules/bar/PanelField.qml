@@ -46,6 +46,7 @@ Rectangle {
         color: Theme.panel.text
         echoMode: root.password ? TextInput.Password : TextInput.Normal
         clip: true
+        activeFocusOnTab: true   // Tab d'un champ à l'autre (identifiant, mot de passe, domaine du Wi-Fi entreprise)
         onAccepted: root.accepted(text)
         onEditingFinished: root.editingFinished(text)
         Keys.onEscapePressed: event => {
