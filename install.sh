@@ -954,7 +954,8 @@ write_setting() {   # fichier contenu description [keep : déjà noté au regist
 }
 
 # Modèle des web apps développé : @PROFILES@ et @WEBAPPS@ remplacés par les chemins tels quels (accents, &, | compris).
-# desktop : argument entier entre guillemets dans Exec si un chemin a une espace ; json : chemin échappé pour JSON.
+# desktop : argument entier entre guillemets dans Exec (ligne Exec seule) si un chemin a une espace ; json : chemin échappé
+# pour JSON.
 fill_template() {   # modèle desktop|json profils webapps
     python3 -I - "$@" <<'PY'
 import json, re, sys
@@ -964,7 +965,8 @@ if kind == "json":
     text = text.replace("@WEBAPPS@", json.dumps(webapps, ensure_ascii=False)[1:-1])
 else:
     if " " in profiles + webapps:
-        text = re.sub(r'(--(?:user-data-dir|load-extension)=@(?:PROFILES|WEBAPPS)@[^ ]*)', r'"\1"', text)
+        quote = lambda arg: f'"{arg}"' if "@PROFILES@" in arg or "@WEBAPPS@" in arg else arg
+        text = re.sub(r"(?m)^Exec=(.*)$", lambda m: "Exec=" + " ".join(map(quote, m[1].split(" "))), text)
     text = text.replace("@PROFILES@", profiles).replace("@WEBAPPS@", webapps)
 print(text, end="")
 PY

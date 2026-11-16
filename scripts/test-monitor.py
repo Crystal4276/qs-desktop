@@ -61,6 +61,11 @@ class MonitorTests(unittest.TestCase):
         groups = self.groups([row(80, ['chromium', '--app=https://unknown', '--user-data-dir=/profiles/new'])])
         self.assertEqual(list(groups), ['profile:/profiles/new'])
 
+    def test_open_file_relay(self):
+        self.entries.append(entry('word', '/repo/open-file', '--', 'chromium', '--user-data-dir=/profiles/word', '--app=https://word'))
+        groups = self.groups([row(80, ['chromium', '--user-data-dir=/profiles/word', '--app=https://word/doc'])])
+        self.assertEqual(list(groups), ['word'])
+
     def test_title_arguments(self):
         self.assertEqual(m.arguments(b'chromium --type=renderer --user-data-dir="/a b"\x00'), ['chromium', '--type=renderer', '--user-data-dir=/a b'])
 

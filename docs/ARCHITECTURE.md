@@ -394,6 +394,9 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
   popups (OAuth) restent dans la web app. L'hôte `open-link` appelle `qs ipc call compositor focusNextWindowOf chromium` avant Chromium, après nettoyage de l'environnement :
   la fenêtre qui reçoit le lien et son espace sont affichés.
 - Règles d'espace : Discord (deux `app_id` : `…@me-Default` et `…@me_<salon>-Default`) et WhatsApp sur l'espace 5.
+- Word, Excel, PowerPoint dans « Ouvrir avec » (`MimeType` des lanceurs, LibreOffice gardé par défaut dans `dotfiles/mime/defaults.list`) :
+  Office web ne lit pas un fichier local, le lanceur passe par `open-file %f -- chromium …`, qui copie le chemin (`wl-copy`, rappel
+  « Upload, Ctrl+L, Ctrl+V » par `notify-send`) et lance la web app sans le fichier. Le moniteur saute ce relais comme `env`.
 
 ### 7.11 Fond d'écran (`modules/wallpaper/`, `services/Wallpapers.qml`)
 

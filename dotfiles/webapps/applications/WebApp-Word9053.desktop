@@ -2,11 +2,12 @@
 Version=1.0
 Name=Word
 Comment=Word
-Exec=chromium --app="https://www.office.com/launch/word" --class=WebApp-Word9053 --name=WebApp-Word9053 --user-data-dir=@PROFILES@/Word9053 --load-extension=@WEBAPPS@/open-links
+Exec=@WEBAPPS@/open-file %f -- chromium --app="https://www.office.com/launch/word" --class=WebApp-Word9053 --name=WebApp-Word9053 --user-data-dir=@PROFILES@/Word9053 --load-extension=@WEBAPPS@/open-links
 Terminal=false
 X-MultipleArgs=false
 Type=Application
 Icon=solstice-microsoft-365-word
 Categories=GTK;Office;
+MimeType=application/vnd.openxmlformats-officedocument.wordprocessingml.document;application/vnd.ms-word.document.macroEnabled.12;application/msword;application/vnd.oasis.opendocument.text;
 StartupWMClass=chrome-www.office.com__launch_word-Default
 StartupNotify=true

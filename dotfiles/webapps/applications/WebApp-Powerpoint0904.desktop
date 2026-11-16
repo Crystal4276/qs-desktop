@@ -2,11 +2,12 @@
 Version=1.0
 Name=Powerpoint
 Comment=Powerpoint
-Exec=chromium --app="https://www.office.com/launch/powerpoint" --class=WebApp-Powerpoint0904 --name=WebApp-Powerpoint0904 --user-data-dir=@PROFILES@/Powerpoint0904 --load-extension=@WEBAPPS@/open-links
+Exec=@WEBAPPS@/open-file %f -- chromium --app="https://www.office.com/launch/powerpoint" --class=WebApp-Powerpoint0904 --name=WebApp-Powerpoint0904 --user-data-dir=@PROFILES@/Powerpoint0904 --load-extension=@WEBAPPS@/open-links
 Terminal=false
 X-MultipleArgs=false
 Type=Application
 Icon=solstice-microsoft-365-powerpoint
 Categories=GTK;Office;
+MimeType=application/vnd.openxmlformats-officedocument.presentationml.presentation;application/vnd.ms-powerpoint.presentation.macroEnabled.12;application/vnd.openxmlformats-officedocument.presentationml.slideshow;application/vnd.ms-powerpoint;application/vnd.oasis.opendocument.presentation;
 StartupWMClass=chrome-www.office.com__launch_powerpoint-Default
 StartupNotify=true

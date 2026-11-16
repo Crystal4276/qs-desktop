@@ -68,7 +68,7 @@ xdg-utils               # xdg-open (liens HTTP/HTTPS via le lanceur desktop Chro
 pacman-contrib          # checkupdates (module mises à jour)
 fakeroot                # requis par checkupdates (non déclaré par pacman-contrib)
 gnome-terminal          # terminal lancé par les modules (configurable par machine)
-libnotify               # notify-send (sortie audio suivante, connexions et batterie Bluetooth, disques amovibles, tests)
+libnotify               # notify-send (sortie audio suivante, connexions et batterie Bluetooth, disques amovibles, fichier ouvert dans une web app Office, tests)
 
 # --- Installation (install.sh) ---
 base-devel              # makepkg : construction de paru-bin (seul paquet AUR, installé par install.sh)
@@ -83,7 +83,7 @@ gtk-update-icon-cache   # cache de la surcouche Papirus (dossiers Catppuccin)
 grim                    # captures des outils de dev (scripts/shot.sh) ; touche Impr. : outil natif
 slurp                   # choix de l'écran partagé (xdg-desktop-portal-wlr) ; plus utilisé par la touche Impr.
 iproute2                # `ip -j addr` : interfaces ZeroTier sans jeton (panneau réseau) ; dans `base`
-wl-clipboard            # presse-papiers : captures (outil natif), IP / noms copiés depuis le panneau réseau
+wl-clipboard            # presse-papiers : captures (outil natif), IP / noms copiés depuis le panneau réseau, chemin du fichier ouvert dans une web app Office
 imagemagick             # scripts/crop.sh
 jq                      # scripts de test (lecture JSON swaymsg/hyprctl) ; barre d'état de Claude Code (dotfiles/claude)
 zenity                  # fenêtres de test (scripts/test-outputs.sh)

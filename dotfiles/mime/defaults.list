@@ -9,3 +9,8 @@ org.mozilla.Thunderbird.desktop text/calendar x-scheme-handler/mailto
 deluge.desktop application/x-bittorrent x-scheme-handler/magnet
 org.gnome.Papers.desktop application/pdf
 nemo.desktop inode/directory
+# LibreOffice explicite : les web apps Office (dotfiles/webapps) déclarent ces types pour « Ouvrir avec » et, sans défaut
+# écrit, passeraient avant LibreOffice (lanceurs de ~/.local/share lus en premier).
+libreoffice-writer.desktop application/vnd.openxmlformats-officedocument.wordprocessingml.document application/vnd.ms-word.document.macroEnabled.12 application/msword application/vnd.oasis.opendocument.text
+libreoffice-calc.desktop application/vnd.openxmlformats-officedocument.spreadsheetml.sheet application/vnd.ms-excel.sheet.macroEnabled.12 application/vnd.ms-excel.sheet.binary.macroEnabled.12 application/vnd.ms-excel application/vnd.oasis.opendocument.spreadsheet text/csv
+libreoffice-impress.desktop application/vnd.openxmlformats-officedocument.presentationml.presentation application/vnd.ms-powerpoint.presentation.macroEnabled.12 application/vnd.openxmlformats-officedocument.presentationml.slideshow application/vnd.ms-powerpoint application/vnd.oasis.opendocument.presentation
