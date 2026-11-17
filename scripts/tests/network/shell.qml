@@ -88,7 +88,8 @@ ShellRoot {
                 connectivity: Network.connectivity, checks: Backend.checks, commands: Launch.commands,
                 buttonVisible: button !== null && button.visible, closedBeforeLaunch: root.closedBeforeLaunch,
                 scanner: Backend.wifi.scannerEnabled, primary: Network.primary, primaryWired: Network.primaryWired,
-                wiredLimited: Network.wiredLimited, details: Object.keys(Network.wiredDetails)});
+                wiredLimited: Network.wiredLimited, details: Object.keys(Network.wiredDetails),
+                ipIface: Network.wiredDetails["test-ethernet"]?.ipIface ?? ""});
         }
         function openPanel(): void {
             root.panel = panelComponent.createObject(root);

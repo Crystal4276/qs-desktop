@@ -29,6 +29,12 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
   - `Vpn.refresh()` à l'affichage de l'onglet NordVPN par le service ; notification d'échec entreprise : « Open the Network
     panel… » ; commentaires périmés (Tailscale, ZeroTier, `PanelTabs`, `Network`).
   - Tests ajoutés : accès limité sous VPN, port de pont, détails lus à la connexion du câble.
+- Passe 3 (8 constats) — corrigés : détails filaires relus à chaque changement de câble connecté, et relecture refaite si
+  une lecture tournait (entrée lue câble débranché, avant le pont : Wi-Fi pris pour principal ; test et contre-épreuve) ;
+  icône VPN NordVPN aussi pendant une connexion lancée hors du panneau (`Vpn.connecting`) ; préférences Tailscale lues
+  seulement onglet Tailscale affiché ; `switchLocked` de `Panel` / `PanelFrame` retiré (plus d'usage) ; commentaires
+  périmés ; ligne de test en double. Écarté : graphe de la carte principale = trafic de la première route (le tunnel sous
+  un VPN, porté par cette connexion ; choix du plan, comme le module débit de la barre).
 - `test-network.py` : à lancer **dans le Sway du banc** (`WAYLAND_DISPLAY`, `XDG_RUNTIME_DIR`) ; sur la session réelle, son
   panneau de test se ferme au gré du pointeur et le test des formulaires échoue (aussi sur `ea8a721`, avant le refactor).
   Passe sur banc, avec deux cas de plus (VPN sur Wi-Fi, câble de LAN) ; banc Sway : démarrage complet sans avertissement.
