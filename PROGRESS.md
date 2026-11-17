@@ -16,7 +16,21 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
 - Vérifié sur banc Sway (horaire de test à 2 min) : hors plage → éteinte ; à la main dans les deux sens ; heure de début →
   allumée ; éteinte à la main puis rechargement → reste éteinte ; nouvelle session dans la plage → allumée ; heure de fin →
   éteinte. Bureau réel : allumée puis éteinte par IPC (gammastep lancé, arrêté après le fondu), aucun nouvel avertissement.
-- **À tester** : ce soir à 20:00, le bouton s'allume avec l'écran ; l'éteindre à la main, il reste éteint jusqu'à 06:00.
+- Revue, passe 1 : plus moyen de se passer de la veilleuse le soir → **interrupteur « Schedule »** (clic droit sur Night Light,
+  ton choix), comme « ne pas déranger » : coupé, veilleuse seulement à la main ; le couper dans la plage l'éteint si l'horaire
+  l'avait allumée, le rétablir l'allume ; gardé dans `night-light-schedule.json` (activé par défaut), heures toujours dans la
+  config machine ; sous-titre des heures masqué quand il est coupé. Horaire appliqué au début de session seulement une fois ce
+  fichier lu (un `JsonAdapter` garde ses valeurs par défaut jusque-là, `blockLoading` ou non ; `text()` forcé essayé : il
+  réécrivait le fichier de « ne pas déranger » avec ses valeurs par défaut, abandonné). Avertissement rétabli pour des heures mal
+  formées (aussi quand la config machine est lue après le démarrage). Drapeaux renommés (`persist.loaded` / `ready` de gammastep).
+  Écartés : mise en veille de plus d'un jour avec un choix manuel, heures modifiées dans `hosts/*.json` (appliquées comme une
+  heure atteinte), deux `SystemClock`, ancien fichier d'état.
+- Vérifié sur banc Sway : horaire coupé et rétabli dans la plage (par l'horaire, à la main), heures de début et de fin
+  horaire coupé, 3 nouvelles sessions de suite horaire coupé, vrais rechargements (fichier modifié : `touch` ne recharge pas),
+  heures mal formées ; « ne pas déranger » inchangé ; capture du panneau avec la ligne dépliée. Bureau réel : deux rechargements
+  sans nouvel avertissement, veilleuse allumée puis éteinte.
+- **À tester** : ce soir à 20:00, le bouton s'allume avec l'écran ; l'éteindre à la main, il reste éteint jusqu'à 06:00 ; clic
+  droit → « Schedule ».
 
 ## Copies Nemo : fin, questions, clé USB (2026-11-16)
 

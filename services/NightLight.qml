@@ -10,24 +10,80 @@ import qs.config
 // fondu d'environ 4 s à l'activation et à la désactivation, là où wlsunset change la température d'un coup.
 // Horaire comme « ne pas déranger » (services/Notifs.qml, ta demande du 2026-11-17) : allumée à l'heure de début, éteinte à
 // l'heure de fin, libre à la main entre les deux jusqu'à la prochaine heure ; appliqué au démarrage de la session, gardé au
-// rechargement. `enabled` dit donc si l'écran est chaud en ce moment (bouton du panneau de réglages).
+// rechargement. `enabled` dit donc si l'écran est chaud en ce moment (bouton du panneau de réglages). Horaire coupé (clic droit
+// sur le bouton, gardé dans un fichier d'état) : seulement à la main. Le couper ou le rétablir dans la plage fait comme
+// Notifs.setSchedule : rétabli, allumée ; coupé, éteinte si elle l'avait été par l'horaire.
 Singleton {
     id: root
 
     readonly property var config: Settings.nightLight
     readonly property bool enabled: persist.enabled
-    readonly property string schedule: `${Settings.timeText(Settings.minutes(config.from))} – ${Settings.timeText(Settings.minutes(config.to))}`
+    readonly property bool scheduled: scheduleState.enabled
+    readonly property string schedule: [config.from, config.to].map(t => Settings.timeText(Settings.minutes(t))).join(" – ")
     readonly property bool nightHours: Settings.within(clock.hours * 60 + clock.minutes, config.from, config.to)
 
     function toggle(): void {
-        persist.enabled = !persist.enabled;
+        set(!persist.enabled, false);
     }
 
-    onNightHoursChanged: if (persist.ready) persist.enabled = nightHours
+    function set(on: bool, bySchedule: bool): void {
+        persist.enabled = on;
+        persist.bySchedule = on && bySchedule;
+    }
+
+    function setScheduled(on: bool): void {
+        if (on === scheduleState.enabled)
+            return;
+        scheduleState.enabled = on;
+        if (on && nightHours && !persist.enabled)
+            set(true, true);
+        else if (!on && nightHours && persist.bySchedule)
+            set(false, false);
+    }
+
+    // Heure de début ou de fin atteinte, ou démarrage de la session.
+    function applySchedule(): void {
+        if (scheduleState.enabled)
+            set(nightHours, true);
+    }
+
+    // Heure atteinte, ou heures changées (config machine lue après le démarrage, ou modifiée).
+    onNightHoursChanged: if (persist.loaded && scheduleRead) applySchedule()
+
+    // Début de session : horaire appliqué une fois l'état de la session repris (persist) et le fichier lu (ou absent) ; les
+    // propriétés d'un JsonAdapter gardent leur valeur par défaut tant que la lecture n'est pas finie, blockLoading ou non.
+    property bool sessionStart: false
+    property bool scheduleRead: false
+
+    function startSession(): void {
+        if (sessionStart && scheduleRead) {
+            sessionStart = false;
+            applySchedule();
+        }
+    }
 
     SystemClock {
         id: clock
         precision: SystemClock.Minutes
+    }
+
+    FileView {
+        path: Quickshell.statePath("night-light-schedule.json")
+        printErrors: false
+        onAdapterUpdated: writeAdapter()
+        onLoaded: {
+            root.scheduleRead = true;
+            root.startSession();
+        }
+        onLoadFailed: {   // pas encore de fichier : horaire activé
+            root.scheduleRead = true;
+            root.startSession();
+        }
+
+        JsonAdapter {
+            id: scheduleState
+            property bool enabled: true
+        }
     }
 
     PersistentProperties {
@@ -35,12 +91,15 @@ Singleton {
         reloadableId: "nightlight"
 
         property bool enabled: false
-        property bool ready: false
+        property bool bySchedule: false   // allumée par l'horaire (pas à la main)
+        property bool loaded: false
 
         onLoaded: {
-            if (!ready)   // premier chargement de cette instance : début de session
-                enabled = root.nightHours;
-            ready = true;
+            if (!loaded) {   // premier chargement de cette instance : début de session
+                root.sessionStart = true;
+                root.startSession();
+            }
+            loaded = true;
         }
     }
 
@@ -136,7 +195,18 @@ Singleton {
         failures = 0;
         apply();
     }
-    Component.onCompleted: apply()
+    Component.onCompleted: {
+        checkHours();
+        apply();
+    }
+
+    // Config machine lue après le démarrage, ou modifiée : heures revues.
+    onConfigChanged: checkHours()
+
+    function checkHours(): void {
+        if (Settings.minutes(config.from) < 0 || Settings.minutes(config.to) < 0)
+            console.warn(`NightLight: horaire ${config.from} – ${config.to} mal formé, veilleuse seulement à la main`);
+    }
 
     Process {
         id: gammastep
@@ -215,6 +285,14 @@ Singleton {
 
         function isEnabled(): bool {
             return root.enabled;
+        }
+
+        function setScheduled(on: bool): void {
+            root.setScheduled(on);
+        }
+
+        function isScheduled(): bool {
+            return root.scheduled;
         }
     }
 }
