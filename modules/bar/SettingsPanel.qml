@@ -10,7 +10,7 @@ import qs.services
 // Panneau de réglages façon GNOME (ARCHITECTURE § 7.5) : ouvert par l'engrenage de la barre ou `qs ipc call settings toggle`.
 // Remplace le power menu Rofi. De haut en bas, dans l'ordre des réglages rapides de GNOME 51 :
 // - batterie (laptop), capture d'écran ; à droite verrouiller, se déconnecter, redémarrer, éteindre (sans confirmation) ;
-// - curseurs : sortie son, luminosité (laptop) ; flèche : choix du périphérique (toujours affichée, même avec un seul
+// - curseurs : sortie son, luminosité (laptop), température de la veilleuse (dépliée par clic droit sur sa bascule) ; flèche : choix du périphérique (toujours affichée, même avec un seul
 //   périphérique : la liste montre lequel est utilisé), puis « Advanced… » (pavucontrol). Pas de micro (ta demande du 2026-10-26 :
 //   jamais réglé ici ; il reste dans le panneau audio) ;
 // - profils d'énergie (3 boutons) ; bascules en 2 colonnes : ne pas déranger et veilleuse (clic droit : leur horaire), écran
@@ -223,6 +223,18 @@ Panel {
         onFieldLeft: root.frameItem.forceActiveFocus()
     }
 
+    // Température de la veilleuse : de gauche (moins chaud) à droite (plus chaud), appliquée au relâcher (gammastep relancé).
+    QuickSlider {
+        visible: root.expanded === "nightLight"
+        icon: Theme.icon.nightLight
+        iconColor: Theme.quickSettings.warmthIcon
+        gradient: Theme.quickSettings.warmthGradient
+        commitOnRelease: true
+        percentShown: false
+        value: NightLight.warmth
+        onMoved: v => NightLight.setWarmth(v)
+    }
+
     // Curseur : glyphe (clic : muet), curseur de volume, pourcentage, flèche du choix de périphérique.
     component QuickSlider: RowLayout {
         id: line
@@ -233,6 +245,9 @@ Panel {
         property bool muted: false
         property bool expandable: false
         property bool expanded: false
+        property alias gradient: slider.gradient
+        property alias commitOnRelease: slider.commitOnRelease
+        property bool percentShown: true
         signal moved(real value)
         signal iconClicked
         signal expandClicked
@@ -255,6 +270,7 @@ Panel {
         }
 
         VolumeSlider {
+            id: slider
             Layout.fillWidth: true
             inset: Theme.slider.knobSize / 2
             opacity: line.muted ? Theme.panel.disabledOpacity : 1   // comme l'OSD
@@ -263,6 +279,7 @@ Panel {
         }
 
         PercentLabel {
+            opacity: line.percentShown ? 1 : 0   // toujours là : curseurs alignés
             value: line.value
         }
 

@@ -2,19 +2,29 @@ import QtQuick
 import qs.config
 
 // Curseur de volume (THEME.md § 3) : rail `crust`, partie remplie `text`, bouton `surface2`. Barre (Slider.qml) et panneau audio.
-// Clic / glisser : 0–100 % ; molette ±5 %. Le centre du bouton suit la valeur sur toute la longueur du rail (il déborde aux
+// Clic / glisser : 0–100 % ; molette ±5 %. `gradient` : remplissage en dégradé (GradientFill.qml) au lieu de `fill` ;
+// `commitOnRelease` : en glissant, le bouton suit le pointeur et `moved` n'est émis qu'au relâcher (veilleuse : chaque réglage
+// relance gammastep). Le centre du bouton suit la valeur sur toute la longueur du rail (il déborde aux
 // extrémités, mesuré sur la référence) : `inset` réserve la place du débordement.
 Item {
     id: root
 
     property real value: 0
     property int inset: Theme.slider.padding
+    property list<color> gradient: []
+    property bool commitOnRelease: false
+    property real dragged: -1   // valeur en cours de glissement (commitOnRelease), -1 sinon
+    readonly property real shown: Math.min(1, dragged >= 0 ? dragged : value)
     signal moved(real value)
 
     implicitHeight: Theme.slider.knobSize
 
     function emit(v: real): void {
-        root.moved(Math.max(0, Math.min(1, Math.round(100 * v) / 100)));
+        const value = Math.max(0, Math.min(1, Math.round(100 * v) / 100));
+        if (commitOnRelease)
+            dragged = value;
+        else
+            moved(value);
     }
 
     // Molette, clavier : plafond à 100 %, sauf volume déjà au-dessus (réglé ailleurs), qui ne retombe pas à 100 % d'un cran (Audio.step).
@@ -32,14 +42,24 @@ Item {
         color: Theme.slider.trough
 
         Rectangle {
-            width: Math.min(1, root.value) * trough.width
+            visible: root.gradient.length === 0
+            width: root.shown * trough.width
             height: parent.height
             radius: Theme.slider.troughRadius
             color: Theme.slider.fill
         }
 
+        GradientFill {
+            visible: root.gradient.length > 0
+            width: root.shown * trough.width
+            height: parent.height
+            span: trough.width
+            cornerRadius: Theme.slider.troughRadius
+            colors: root.gradient
+        }
+
         Rectangle {
-            x: Math.min(1, root.value) * trough.width - width / 2
+            x: root.shown * trough.width - width / 2
             anchors.verticalCenter: parent.verticalCenter
             width: Theme.slider.knobSize
             height: Theme.slider.knobSize
@@ -55,6 +75,12 @@ Item {
             if (pressed)
                 root.emit((mouse.x - trough.x) / trough.width);
         }
+        onReleased: {
+            if (root.dragged >= 0)
+                root.moved(root.dragged);
+            root.dragged = -1;
+        }
+        onCanceled: root.dragged = -1
     }
 
     // Clavier : Gauche / Droite ±5 % (comme la molette) ; liseré quand le curseur est choisi.

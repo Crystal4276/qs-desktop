@@ -214,7 +214,7 @@ de ce desktop n'en est pas une), rétroéclairage (`/sys/class/backlight`), GPU 
   un lecteur arrêté n'est plus suivi.
 - `updateCommand` : absente → `paru`, sinon `yay`, sinon `sudo pacman -Syu`.
 - `nightLight` : horaire de départ `{ "schedule": true, "from": "20:00", "to": "06:00" }`, ensuite réglé depuis le panneau (état local),
-  comme `doNotDisturb` ; `"temperature": 3239` (kelvins).
+  comme `doNotDisturb` ; `"temperature": 3239` (kelvins), aussi valeur de départ, ensuite réglée au curseur du panneau (1700 à 4700 K).
 - `doNotDisturb` : horaire de départ `{ "schedule": true, "from": "21:00", "to": "07:00" }`, ensuite réglé depuis le panneau (état local).
 - `doNotDisturb.muteApps` : applications qui jouent elles-mêmes le son de leurs notifications, coupées pendant « ne pas déranger », par
   `application.id` du flux (web apps : `env PULSE_PROP_OVERRIDE=application.id=whatsapp chromium …` dans leur lanceur) ou par

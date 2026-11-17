@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell.Services.Pipewire
-import Quickshell.Widgets
 import qs.config
 
 // Niveau capté par une entrée audio (ta demande du 2026-10-26) : trait fin de la position de la carte média (4 px, creux
@@ -63,40 +62,12 @@ Rectangle {
         }
     }
 
-    // Remplissage : fenêtre arrondie sur un dégradé de toute la largeur (la couleur dépend de la position, comme un vu-mètre),
-    // fait d'un segment par paire de couleurs voisines.
-    ClippingRectangle {
+    GradientFill {
         visible: root.capturing
         width: root.level * root.width
         height: root.height
-        radius: Math.min(root.radius, width / 2)
-        color: "transparent"
-
-        Row {
-            Repeater {
-                model: Theme.levelMeter.gradient.length - 1
-
-                Rectangle {
-                    id: segment
-
-                    required property int index
-
-                    // Arrondi au pixel supérieur : pas de jointure entre segments (le dernier déborde, coupé).
-                    width: Math.ceil(root.width / (Theme.levelMeter.gradient.length - 1))
-                    height: root.height
-                    gradient: Gradient {
-                        orientation: Gradient.Horizontal
-                        GradientStop {
-                            position: 0
-                            color: Theme.levelMeter.gradient[segment.index]
-                        }
-                        GradientStop {
-                            position: 1
-                            color: Theme.levelMeter.gradient[segment.index + 1]
-                        }
-                    }
-                }
-            }
-        }
+        span: root.width
+        cornerRadius: root.radius
+        colors: Theme.levelMeter.gradient
     }
 }
