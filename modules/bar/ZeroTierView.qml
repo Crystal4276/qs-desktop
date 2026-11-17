@@ -4,7 +4,7 @@ import Quickshell
 import qs.config
 import qs.services
 
-// Onglet ZeroTier du panneau réseau (ta demande du 2026-10-19 ; services/ZeroTier.qml) : carte du nœud (en ligne, identifiant
+// Onglet ZeroTier du panneau VPN (ta demande du 2026-10-19 ; services/ZeroTier.qml) : carte du nœud (en ligne, identifiant
 // à copier), réseaux (nom, état, adresses ; DNS du réseau, quitter avec confirmation), rejoindre un réseau par son identifiant.
 // Sans le jeton : interfaces `zt*` en lecture seule et la commande qui l'active.
 ColumnLayout {

@@ -40,6 +40,12 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
   détails filaires relus seulement quand l'ensemble des câbles connectés change (pas à chaque interface nordlynx, veth…) ;
   test de l'entrée périmée rendu probant (contre-épreuve) ; `ZeroTier.polling` retiré ; commentaires. Écarté : Wi-Fi en
   IPv6 seul avec un câble sans passerelle (rare ; routes IPv4 seules, comme le module débit de la barre).
+- Passe 5 (7 constats, aucun grave ni moyen) — corrigés : onglet VPN choisi à la main gardé pour toutes les barres
+  (`Network.vpnPicked`) ; détails filaires lus aussi au démarrage (câble déjà connecté après un rechargement : pont inconnu
+  jusqu'à l'ouverture du panneau) ; correspondance câble → interface IP en une fonction (`Network.ipIface`) ; commentaires et
+  § 7.9. Écartés : relance « native » de `Process` (`running = true` pendant une lecture) à la place de `wiredAgain` — la doc
+  de Quickshell 0.3 ne la décrit pas, relance explicite gardée ; état du panneau VPN rangé dans `Network` (mécanisme des
+  panneaux ouverts déjà là, sans cycle entre singletons) ; contrôle de test qui pourrait passer sur un banc très chargé.
 - `test-network.py` : à lancer **dans le Sway du banc** (`WAYLAND_DISPLAY`, `XDG_RUNTIME_DIR`) ; sur la session réelle, son
   panneau de test se ferme au gré du pointeur et le test des formulaires échoue (aussi sur `ea8a721`, avant le refactor).
   Passe sur banc, avec deux cas de plus (VPN sur Wi-Fi, câble de LAN) ; banc Sway : démarrage complet sans avertissement.

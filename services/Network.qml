@@ -182,12 +182,15 @@ Singleton {
     // connexion du câble) — sous un VPN (tun, wg…), la connexion physique qui le porte ; à défaut, filaire d'abord. "wired",
     // "wifi" ou "" (aucune). `primaryWired` : le câble concerné.
     readonly property var connectedWired: wiredDevices.filter(d => d.connected)
+    function ipIface(device: var): string {
+        return wiredDetails[device.name]?.ipIface ?? device.name;
+    }
     readonly property string uplink: defaultRoutes.find(n => connectedWifi !== null && n === wifi.name
-        || connectedWired.some(d => n === (wiredDetails[d.name]?.ipIface ?? d.name))) ?? ""
+        || connectedWired.some(d => n === ipIface(d))) ?? ""
     readonly property string primary: uplink !== "" ? (uplink === wifi?.name ? "wifi" : "wired")
         : wiredConnected ? "wired" : connectedWifi !== null ? "wifi" : ""
     readonly property string primaryWired: primary !== "wired" ? ""
-        : (connectedWired.find(d => uplink === (wiredDetails[d.name]?.ipIface ?? d.name)) ?? connectedWired[0])?.name ?? ""
+        : (connectedWired.find(d => uplink === ipIface(d)) ?? connectedWired[0])?.name ?? ""
 
     // Autre réseau connecté : débit et adresse du précédent effacés, relus aussitôt panneau ouvert. Comparé au précédent : la
     // liaison est réévaluée à chaque variation de signal.
@@ -564,6 +567,7 @@ Singleton {
     readonly property bool vpnPanelOpen: openPanels.some(p => p.kind === "vpn")
     // Onglet affiché du panneau VPN (VpnPanel) : Tailscale et ZeroTier ne sont relus toutes les 5 s que sur le leur.
     property string vpnTab: ""
+    property string vpnPicked: ""   // onglet choisi à la main, gardé d'une ouverture à l'autre, sur toutes les barres
     // Panneau réseau épinglé, pas un simple aperçu (Panel.qml, `pinned`) : vérification de connectivité ; échec entreprise montré
     // sans notification. (Ouvert, aperçu au survol compris : recherche des réseaux Wi-Fi ; sans elle, Quickshell ne liste que
     // les réseaux enregistrés à portée : aperçu vide, « searching… » ; liste remplie aussitôt depuis celle que NetworkManager
@@ -723,6 +727,7 @@ Singleton {
 
     // Câbles connectés : lus quand leur ensemble change (la liste est recalculée à chaque interface ajoutée : nordlynx, veth…).
     property string connectedWiredNames: ""
+    Component.onCompleted: Qt.callLater(readWired)   // câble déjà connecté (rechargement) : son pont
     onConnectedWiredChanged: {
         const names = connectedWired.map(d => d.name).join(" ");
         if (names === connectedWiredNames)
