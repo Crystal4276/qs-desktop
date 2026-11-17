@@ -5,7 +5,7 @@ import qs.services
 
 // Carte du réseau Wi-Fi courant (THEME.md § 3 « Module Wi-Fi »), en tête du panneau comme le réseau déplié de KDE : glyphe
 // coloré selon la qualité, nom, état et qualité en mots (GNOME), jauge du signal, puis détails — bande et canal, débit du lien,
-// sécurité, adresse IPv4 ; graphe du trafic si le Wi-Fi porte la route par défaut. En connexion : glyphe animé et bouton « Cancel ».
+// sécurité, adresse IPv4 ; graphe du trafic si le Wi-Fi est la connexion principale (Network.primary). En connexion : glyphe animé et bouton « Cancel ».
 PanelCard {
     id: root
 
@@ -18,7 +18,6 @@ PanelCard {
     readonly property int level: Network.wifiLevel(strength)
     readonly property color qualityColor: Theme.wifi.quality[level]
     readonly property var accessPoint: Network.wifiAccessPoints[network?.name ?? ""] ?? null
-    readonly property bool carriesTraffic: Network.wifiCarriesRoute
 
     // [libellé, valeur] ; lignes sans valeur omises (détails pas encore lus, ou absents).
     readonly property var details: [
@@ -115,6 +114,6 @@ PanelCard {
     }
 
     TrafficGraph {
-        visible: root.connected && root.carriesTraffic
+        visible: root.connected && Network.primary === "wifi"
     }
 }

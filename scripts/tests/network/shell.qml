@@ -11,8 +11,8 @@ ShellRoot {
     property bool closedBeforeLaunch: false
     property QtObject firstPanel: QtObject { property bool pinned: false }
     property QtObject secondPanel: QtObject { property bool pinned: false }
-    property WifiPanel panel: null
-    Component { id: panelComponent; WifiPanel {} }
+    property NetworkPanel panel: null
+    Component { id: panelComponent; NetworkPanel {} }
     Connections {
         target: Launch
         function onCommandsChanged() { root.closedBeforeLaunch = root.panel !== null && !root.panel.visible; }
@@ -26,8 +26,9 @@ ShellRoot {
     function field(placeholder) {
         return root.findAll(root.panel.contentItem, item => item.placeholder?.startsWith(placeholder), [])[0];
     }
+    // Le dernier : les cartes Ethernet, au-dessus du Wi-Fi, ont aussi « Connect » / « Disconnect ».
     function button(text) {
-        return root.findAll(root.panel.contentItem, item => item.text === text && item.clicked !== undefined, [])[0];
+        return root.findAll(root.panel.contentItem, item => item.text === text && item.clicked !== undefined, []).pop();
     }
     function openPanelOnce() {
         if (root.panel) return;
@@ -69,15 +70,15 @@ ShellRoot {
         }
         function panels(pinned: bool, count: int): void {
             root.firstPanel.pinned = root.secondPanel.pinned = pinned;
-            Network.setPanelOpen("wifi", root.firstPanel, count > 0);
-            Network.setPanelOpen("wifi", root.secondPanel, count > 1);
+            Network.setPanelOpen("network", root.firstPanel, count > 0);
+            Network.setPanelOpen("network", root.secondPanel, count > 1);
         }
         function snapshot(): string {
             const button = root.findPortal(card);
             return JSON.stringify({portal: Network.wifiCaptivePortal, limited: Network.wifiLimited,
                 connectivity: Network.connectivity, checks: Backend.checks, commands: Launch.commands,
                 buttonVisible: button !== null && button.visible, closedBeforeLaunch: root.closedBeforeLaunch,
-                scanner: Backend.wifi.scannerEnabled});
+                scanner: Backend.wifi.scannerEnabled, primary: Network.primary, primaryWired: Network.primaryWired});
         }
         function openPanel(): void {
             root.panel = panelComponent.createObject(root);
@@ -88,7 +89,7 @@ ShellRoot {
             root.panel.destroy();
             root.panel = null;
         }
-        // Formulaires (WifiPanel) : réseau `enterprise` ou `personal` du faux backend.
+        // Formulaires (NetworkPanel) : réseau `enterprise` ou `personal` du faux backend.
         function openForm(name: string): void {
             root.openPanelOnce();
             root.panel.activate(Backend[name]);

@@ -542,7 +542,7 @@ echo "Connexion « Campus » ajoutée avec succès."
             before = snap()['checks']; time.sleep(0.25)
             assert snap()['checks'] > before, 'portal must poll with all panels closed'
             ipc('capture', str(work / 'portal.png')); time.sleep(0.15)
-            # Exercise the actual WifiPanel handler, including exclusive keyboard release.
+            # Exercise the actual NetworkPanel handler, including exclusive keyboard release.
             ipc('openPanel'); time.sleep(0.1)
             ipc('activate'); result = snap()
             assert result['commands'] == [['xdg-open', 'http://ping.omacom.io/nm-check.txt']]
@@ -564,10 +564,18 @@ echo "Connexion « Campus » ajoutée avec succès."
             assert not snap()['portal']
             config(canCheckConnectivity=True, wired=True, interfaceName='test-ethernet')
             assert not snap()['portal'] and not snap()['limited']
+            # Connexion principale (icône du tray, graphe) : route par défaut, sinon (VPN) le filaire d'abord.
+            assert (snap()['primary'], snap()['primaryWired']) == ('wired', 'test-ethernet'), snap()
+            config(interfaceName='nordlynx')
+            assert (snap()['primary'], snap()['primaryWired']) == ('wired', 'test-ethernet'), snap()
+            config(interfaceName='test-wifi')
+            assert (snap()['primary'], snap()['primaryWired']) == ('wifi', ''), snap()
+            config(interfaceName='test-ethernet')
             config(wired=False, joined=False)
-            assert not snap()['portal']
+            assert not snap()['portal'] and snap()['primary'] == '', snap()
             before = snap()['checks']; config(joined=True)
             assert snap()['portal'] and snap()['checks'] > before
+            assert snap()['primary'] == 'wifi', snap()
             config(connectivity=4)
             before = snap()['checks']
             ipc('panels', 'false', '1'); time.sleep(0.04)
@@ -592,7 +600,7 @@ echo "Connexion « Campus » ajoutée avec succès."
             errors = [line for line in lines if ('WARN' in line or 'ERROR' in line)
                       and 'qt.qpa.services:' not in line and 'qt.qpa.wayland.textinput:' not in line]
             assert not errors, '\n'.join(errors)
-            print('PASS QML: portal/full/limited, guarded click, browser argv, polling, disabled checks/radio, route attribution, reconnect, preview/pinned, multiple panels')
+            print('PASS QML: portal/full/limited, guarded click, browser argv, polling, disabled checks/radio, route attribution, primary connection, reconnect, preview/pinned, multiple panels')
             for name in ('portal', 'enterprise-form', 'enterprise-refused'):
                 if (work / f'{name}.png').exists():
                     print('Capture:', work / f'{name}.png')

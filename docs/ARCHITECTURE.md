@@ -347,9 +347,12 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
 
 ### 7.6 Réseau (tray)
 
-- Deux icônes : **réseau** (filaire ; visible si un câble est branché, ou sans Wi-Fi) et
-  **Wi-Fi**. Connexion limitée signalée (`Networking.connectivity`).
-- Wi-Fi (`WifiPanel.qml`) : `Quickshell.Networking` (interrupteur, réseaux, mot de passe, oubli ; recherche des réseaux dès
+- Une icône, celle de la **connexion principale** (`Network.primary` : interface de la route par défaut ; route sur un VPN : la
+  connexion physique dessous, filaire d'abord) : câble, ou glyphe Wi-Fi ; sans connexion, l'état du Wi-Fi. Connexion limitée
+  signalée (`Networking.connectivity`).
+- Panneau réseau (`NetworkPanel.qml`) : Ethernet (une carte par câble dès qu'un port existe, détails `nmcli`), puis Wi-Fi ; graphe
+  du trafic sur la carte de la connexion principale seulement. Tailscale et ZeroTier : panneau VPN (§ 7.9).
+- Wi-Fi : `Quickshell.Networking` (interrupteur, réseaux, mot de passe, oubli ; recherche des réseaux dès
   l'aperçu au survol : sans elle, seuls les réseaux enregistrés à portée sont listés), réseau courant déplié, niveaux de
   signal GNOME (20 / 40 / 50 / 80 %), glyphe animé dessiné en QML (`WifiIcon.qml`). Détails absents de l'API (bande, canal, débit,
   IPv4) : `nmcli`, toutes les 5 s panneau ouvert. Portail captif : bouton vers le navigateur par défaut ; sonde native relancée
@@ -380,7 +383,6 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
     fermeture si l'échec attendait derrière un autre formulaire ; oublié, formulaire compris, si le réseau se connecte
     entre-temps. Formulaire d'un réseau qui disparaît : Qt remet `passwordFor` (propriété `var`) à null, le
     formulaire se ferme (une référence d'objet détruit rangée dans un objet JS, elle, reste, propriétés indéfinies).
-- Panneau réseau : une carte par câble (détails `nmcli`, graphe du trafic). Tailscale et ZeroTier : panneau VPN (§ 7.9).
 - Édition complète des connexions : `nm-connection-editor`. Copies : `wl-copy`.
 
 ### 7.7 Bluetooth (tray)
