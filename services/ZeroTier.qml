@@ -104,7 +104,7 @@ Singleton {
     Poller {
         id: poller
         tab: "zerotier"
-        active: root.available && (root.polling || !Network.wiredLinked || !root.present)
+        active: root.available
         busy: root.reading
         onRead: {
             if (!root.available)

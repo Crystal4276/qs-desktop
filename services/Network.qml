@@ -123,14 +123,9 @@ Singleton {
     readonly property bool limited: (wiredConnected || connectedWifi !== null)
         && [NetworkConnectivity.None, NetworkConnectivity.Portal, NetworkConnectivity.Limited].includes(connectivity)
 
-    // Filaire de l'icône « réseau » (Tray.qml, qui y ajoute Tailscale / ZeroTier : ce service ne les lit pas, eux lisent
-    // celui-ci — pas de dépendance circulaire entre singletons, qui donnait des liaisons `undefined` au démarrage) : câble
-    // branché, état (noms de nm-applet, Papirus-Dark).
+    // Filaire de l'icône « réseau » (Tray.qml) : câble branché, état (noms de nm-applet, Papirus-Dark).
     readonly property bool wiredLinked: wiredDevices.some(d => d.hasLink)
     readonly property bool wiredShown: managed && (wiredLinked || wifi === null)
-    // Le bouton « réseau » sert d'entrée aux réseaux privés (Tray, onglet ouvert d'abord : NetworkPanel) : sans câble mais avec
-    // le Wi-Fi (qui a son icône), ou sans NetworkManager.
-    readonly property bool privateEntry: !wiredShown
     readonly property string icon: wiredConnected ? (wiredLimited ? "network-wired-no-route" : "nm-device-wired") : "nm-no-connection"
 
     // --- Module Wi-Fi (WifiPanel.qml, WifiIcon.qml) ---
@@ -551,13 +546,15 @@ Singleton {
         }
     }
 
-    // Panneaux ouverts : le Wi-Fi recherche les réseaux et relit ses détails ; le panneau réseau relit les détails filaires (et
-    // fait relire Tailscale / ZeroTier toutes les 5 s). Liste des panneaux ouverts plutôt qu'un booléen : deux barres avec un
-    // tray, ou une barre recréée, ne s'écrasent pas.
+    // Panneaux ouverts : le Wi-Fi recherche les réseaux et relit ses détails ; le panneau réseau relit les détails filaires ; le
+    // panneau VPN fait relire Tailscale / ZeroTier toutes les 5 s (Poller.qml : ces services lisent celui-ci, pas l'inverse —
+    // pas de dépendance circulaire entre singletons, qui donnait des liaisons `undefined` au démarrage). Liste des panneaux
+    // ouverts plutôt qu'un booléen : deux barres avec un tray, ou une barre recréée, ne s'écrasent pas.
     property var openPanels: []
     readonly property bool networkPanelOpen: openPanels.some(p => p.kind === "network")
-    // Onglet affiché du panneau réseau (NetworkPanel) : Tailscale et ZeroTier ne sont relus toutes les 5 s que sur le leur.
-    property string networkTab: ""
+    readonly property bool vpnPanelOpen: openPanels.some(p => p.kind === "vpn")
+    // Onglet affiché du panneau VPN (VpnPanel) : Tailscale et ZeroTier ne sont relus toutes les 5 s que sur le leur.
+    property string vpnTab: ""
     // Panneau Wi-Fi ouvert, aperçu au survol compris : recherche des réseaux (sans elle, Quickshell ne liste que les réseaux
     // enregistrés à portée : aperçu vide, « searching… » ; liste remplie aussitôt depuis celle que NetworkManager garde).
     readonly property bool wifiPanelOpen: openPanels.some(p => p.kind === "wifi")
@@ -696,7 +693,7 @@ Singleton {
     property var wiredDetails: ({})
 
     Timer {
-        running: root.networkPanelOpen && root.networkTab === "wired" && root.wiredDevices.length > 0
+        running: root.networkPanelOpen && root.wiredDevices.length > 0
         triggeredOnStart: true
         interval: root.detailsInterval
         repeat: true

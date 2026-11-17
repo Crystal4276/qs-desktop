@@ -86,7 +86,7 @@ Autre distribution qu'Arch : pas encore prévue (paquets à installer soi-même 
 
 | Logiciel | Commande | Remarque |
 |---|---|---|
-| NordVPN | `paru -S nordvpn-bin`, puis `sudo systemctl enable --now nordvpnd`, `sudo usermod -aG nordvpn $USER`, `nordvpn login` | module de la barre masqué sans lui |
+| NordVPN | `paru -S nordvpn-bin`, puis `sudo systemctl enable --now nordvpnd`, `sudo usermod -aG nordvpn $USER`, `nordvpn login` | onglet NordVPN du panneau VPN masqué sans lui |
 | Plex Media Server | `paru -S plex-media-server`, puis `sudo systemctl enable --now plexmediaserver` | |
 | RustDesk | `paru -S rustdesk-bin` | |
 

@@ -3,6 +3,23 @@
 État courant seulement. Historique figé : phases 0 à 10 dans `docs/archive/PROGRESS.md`, maintenance du 2026-11-05 au 2026-11-09
 et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de besoin).
 
+## Cartes réseau, étape 1 : panneau VPN à onglets (2026-11-17)
+
+- Ta demande : NordVPN, Tailscale et ZeroTier réunis dans un panneau **VPN** (onglets des services présents) ; Ethernet et Wi-Fi
+  réunis ensuite dans le panneau **Network** (étape 2, à faire après validation).
+- `VpnPanel.qml` : onglets ; à l'ouverture, l'onglet choisi à la main, sinon le premier VPN actif, sinon le premier ; vues
+  construites seulement sur leur onglet. `NordVpnView.qml` : l'ancien panneau NordVPN, avec une carte comme Tailscale
+  (icône, état, interrupteur, détails Server / Technology / Uptime / Transfer, pause) ; recherche focalisée à l'ouverture.
+- Tray : un bouton VPN (icône NordVPN connecté, sinon `network-vpn`, atténuée sans VPN actif) ; bouton réseau = filaire seul.
+  Tailscale et ZeroTier relus toutes les 60 s même câble branché (pour cette icône), 5 s sur leur onglet.
+- Vérifié sur banc Sway (faux `nordvpn`, aucune action) : trois onglets, focus de la recherche, `Vpn.panelOpen` et relecture
+  rapide seulement sur l'onglet affiché, onglet choisi gardé, panneau réseau filaire ; `test-network.py` passe ; démarrage
+  complet sans avertissement QML. Bureau réel (Hyprland) : relancé par `scripts/dev.sh` (le rechargement à chaud ne voit pas un
+  nouveau fichier QML), sans nouvel avertissement.
+- Vu en passant : Tailscale signale lui-même « Tailscale failed to fetch the DNS configuration of your device: exit status 1 »
+  (santé du démon, affichée en rouge dans l'onglet ; antérieur).
+- À tester à la main : ouvrir le panneau VPN (clic, survol), passer d'un onglet à l'autre, Échap dans la recherche.
+
 ## Laptop : installation vérifiée, SSH du desktop vers le laptop (2026-11-17)
 
 - `git pull` du laptop (1 commit local, 30 distants) : rebase, conflit de `PROGRESS.md` résolu en gardant les deux sections.
