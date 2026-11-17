@@ -4,12 +4,12 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 
-// Tailscale (onglet du panneau réseau, ta demande du 2026-10-19) : état, appareils du tailnet, nœud de sortie et options, par
+// Tailscale (onglet du panneau VPN, ta demande du 2026-10-19) : état, appareils du tailnet, nœud de sortie et options, par
 // la commande `tailscale` (pas de bibliothèque native). Lecture sans droits (`status --json`, `debug prefs`) ; les actions
 // demandent que ton utilisateur soit « operator » du démon (`sudo tailscale set --operator=$USER`, une fois — install.sh) :
 // sans cela, l'erreur de la commande est affichée.
-// Relu toutes les 5 s panneau réseau ouvert ; panneau fermé, toutes les 60 s seulement sans câble branché (l'icône réseau en
-// dépend alors) ; une fois au démarrage ; rien si la commande est absente. Préférences lues panneau ouvert seulement.
+// Relu toutes les 5 s onglet affiché ; sinon toutes les 60 s (l'icône VPN du tray en dépend) ; rien si la commande est
+// absente. Préférences lues panneau ouvert seulement.
 Singleton {
     id: root
 

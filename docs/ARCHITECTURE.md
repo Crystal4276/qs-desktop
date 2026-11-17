@@ -349,7 +349,7 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
 
 - Une icône, celle de la **connexion principale** (`Network.primary` : première route par défaut, par métrique, qui passe par le
   Wi-Fi ou un câble connectés ; sous un VPN, la connexion qui le porte) : câble, ou glyphe Wi-Fi ; sans connexion, l'état du
-  câble s'il est branché, sinon celui du Wi-Fi. Connexion limitée
+  câble s'il est branché, sinon celui du Wi-Fi. L'accès limité est attribué à cette même connexion. Connexion limitée
   signalée (`Networking.connectivity`).
 - Panneau réseau (`NetworkPanel.qml`) : Ethernet (une carte par câble dès qu'un port existe, détails `nmcli`), puis Wi-Fi ; graphe
   du trafic sur la carte de la connexion principale seulement. Tailscale et ZeroTier : panneau VPN (§ 7.9).

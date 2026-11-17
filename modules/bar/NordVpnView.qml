@@ -29,7 +29,6 @@ ColumnLayout {
 
     Component.onCompleted: {
         tab = Vpn.recent.length > 0 ? "recent" : "all";
-        Vpn.refresh();
         Vpn.loadCountries();
     }
 

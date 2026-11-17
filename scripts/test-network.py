@@ -129,7 +129,7 @@ exec ''' + real_install + ' "$@"\n')
 
 
 def form_test(ipc, nmcli_log, notify_log, work):
-    """Formulaires du panneau Wi-Fi : réseau entreprise et réseau WPA. Création sans secret sur la ligne de commande (sortie de
+    """Formulaires du panneau réseau : réseau entreprise et réseau WPA. Création sans secret sur la ligne de commande (sortie de
     `nmcli` traduite), TTLS sans domaine refusé, profil d'un nouveau réseau supprimé après un échec, saisie reprise, mot de passe
     enregistré refusé hors panneau (vraie liste surveillée) ou au clic (« expiré »), profil existant gardé, panneau fermé ou en
     aperçu, annulation (de la seule connexion suivie), autre connexion demandée, deux créations rapprochées, garde-fou, réseau
@@ -214,7 +214,7 @@ def form_test(ipc, nmcli_log, notify_log, work):
     assert notified() == [] and not form_pending(ipc)
     ipc('emitFail', 'enterprise', 'NoSecrets'); settle()
     assert new_calls(before) == [] and notified() == ['--app-name=Wi-Fi', '--icon=network-wireless-offline', '--',
-        'Campus refused the saved password: it may have expired', 'Open the Wi-Fi panel to enter the new one.'], notified()
+        'Campus refused the saved password: it may have expired', 'Open the Network panel to enter the new one.'], notified()
     # Connecté depuis (autre moyen) : l'échec en attente est dépassé, rien à montrer. (Réseau du portail retiré : une carte
     # n'a qu'un réseau connecté.)
     ipc('configure', json.dumps({'joined': False})); ipc('setState', 'enterprise', 'Connected'); settle()
@@ -277,7 +277,7 @@ def form_test(ipc, nmcli_log, notify_log, work):
     before = calls()
     ipc('fail', 'enterprise', 'NoSecrets', 'true'); settle(1.2)
     assert new_calls(before) == [], calls()
-    assert notified()[3:] == ['Wrong username or password for Campus', 'Open the Wi-Fi panel to try again.'], notified()
+    assert notified()[3:] == ['Wrong username or password for Campus', 'Open the Network panel to try again.'], notified()
     f = form()
     assert f['passwordFor'] == '' and f['failurePending'], f
     ipc('closePanel'); settle(); ipc('reopenPanel'); settle()
@@ -333,7 +333,7 @@ def form_test(ipc, nmcli_log, notify_log, work):
     assert form()['title'] == ['Password for Home'] and notified() == [], form()
     ipc('closePanel'); settle()
     assert notified()[3:] == ['Campus refused the saved password: it may have expired',
-                              'Open the Wi-Fi panel to enter the new one.'], notified()
+                              'Open the Network panel to enter the new one.'], notified()
     ipc('reopenPanel'); settle()
     assert form()['title'] == ['Sign in to Campus'], form()
     notify_log.unlink()
@@ -570,11 +570,19 @@ echo "Connexion « Campus » ajoutée avec succès."
             assert (snap()['primary'], snap()['primaryWired']) == ('wired', 'test-ethernet'), snap()
             config(interfaceName='test-wifi')
             assert (snap()['primary'], snap()['primaryWired']) == ('wifi', ''), snap()
-            # VPN porté par le Wi-Fi, câble d'un réseau local sans passerelle : le Wi-Fi.
+            # VPN porté par le Wi-Fi, câble d'un réseau local sans passerelle : le Wi-Fi, accès limité compris (portail).
             config(defaultRoutes=['tun0', 'test-wifi'])
             assert (snap()['primary'], snap()['primaryWired']) == ('wifi', ''), snap()
+            assert snap()['limited'] and not snap()['wiredLimited'], snap()
             config(defaultRoutes=['tun0', 'test-ethernet', 'test-wifi'])
             assert (snap()['primary'], snap()['primaryWired']) == ('wired', 'test-ethernet'), snap()
+            assert not snap()['limited'] and snap()['wiredLimited'], snap()
+            # Détails du câble lus à sa connexion, panneau fermé (pont de la route) ; port d'un pont : la route du pont.
+            config(wired=False, wiredDetails={}); config(wired=True); time.sleep(0.3)
+            assert 'test-ethernet' in snap()['details'], snap()
+            config(wiredDetails={'test-ethernet': {'ipIface': 'br0'}}, defaultRoutes=['br0', 'test-wifi'])
+            assert (snap()['primary'], snap()['primaryWired']) == ('wired', 'test-ethernet'), snap()
+            config(wiredDetails={}, interfaceName='test-ethernet')
             config(interfaceName='test-ethernet')
             config(wired=False, joined=False)
             assert not snap()['portal'] and snap()['primary'] == '', snap()

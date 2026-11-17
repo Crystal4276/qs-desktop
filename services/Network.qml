@@ -123,24 +123,25 @@ Singleton {
     readonly property bool limited: (wiredConnected || connectedWifi !== null)
         && [NetworkConnectivity.None, NetworkConnectivity.Portal, NetworkConnectivity.Limited].includes(connectivity)
 
-    // Icône « réseau » (Tray.qml, avec `wifiShown`) : câble branché, ou pas de Wi-Fi ; état filaire (noms de nm-applet, Papirus-Dark).
+    // Bouton « réseau » du tray : présent avec un câble ou le Wi-Fi gérés par NetworkManager (sans eux, masqué) ; icône filaire
+    // (noms de nm-applet, Papirus-Dark) si la connexion principale est filaire, ou sans connexion avec un câble branché (sauf
+    // Wi-Fi en connexion) ou sans Wi-Fi ; sinon glyphe Wi-Fi (WifiIcon.qml).
+    readonly property bool shown: managed && (wiredDevices.length > 0 || wifi !== null)
     readonly property bool wiredLinked: wiredDevices.some(d => d.hasLink)
-    readonly property bool wiredShown: managed && (wiredLinked || wifi === null)
+    readonly property bool iconWired: primary === "wired"
+        || primary === "" && (wifi === null || wiredLinked && connectingWifi === null)
     readonly property string icon: wiredConnected ? (wiredLimited ? "network-wired-no-route" : "nm-device-wired") : "nm-no-connection"
 
     // --- Wi-Fi (partie Wi-Fi de NetworkPanel.qml, WifiIcon.qml) ---
 
-    readonly property bool wifiShown: managed && wifi !== null
     readonly property bool wifiHardwareEnabled: Networking.wifiHardwareEnabled
     // Radio utilisable : interrupteur logiciel et matériel (rfkill, mode avion).
     readonly property bool wifiUsable: wifiEnabled && wifiHardwareEnabled
     readonly property var connectingWifi: wifiNetworks.find(n => n.state === ConnectionState.Connecting) ?? null
     // Réseau de la carte du panneau : connecté, sinon en cours de connexion.
     readonly property var currentWifi: connectedWifi ?? connectingWifi
-    // Accès limité (vérification globale de NetworkManager) attribué à l'interface de la route par défaut : le Wi-Fi s'il la
-    // porte ou s'il est seul connecté (route sur un VPN : tun0, wg0…), sinon le filaire.
-    readonly property bool wifiCarriesRoute: wifi !== null && interfaceName === wifi.name
-    readonly property bool wifiLimited: limited && connectedWifi !== null && (wifiCarriesRoute || !wiredConnected)
+    // Accès limité (vérification globale de NetworkManager) attribué à la connexion principale.
+    readonly property bool wifiLimited: limited && primary === "wifi"
     readonly property bool wifiCaptivePortal: wifiUsable && wifiLimited && connectivity === NetworkConnectivity.Portal
     // Même entrée HTTP que la sonde NetworkManager (dotfiles/NetworkManager) : le navigateur suit la redirection du portail.
     readonly property string captivePortalUrl: "http://ping.omacom.io/nm-check.txt"
@@ -175,13 +176,11 @@ Singleton {
     // Libellé des cartes (filaire, Wi-Fi) quand l'accès est limité.
     readonly property string limitedText: connectivity === NetworkConnectivity.Portal ? "Sign-in required: captive portal"
         : "Connected without Internet access"
-    readonly property bool wiredLimited: limited && wiredConnected && !wifiCarriesRoute
-    // Câble qui porte la route (son pont si c'est un port de pont : détails lus panneau ouvert) ; "" : aucun (VPN, Wi-Fi).
-    readonly property string routeWiredDevice: wiredDevices.find(d => d.connected
-        && interfaceName === (wiredDetails[d.name]?.ipIface ?? d.name))?.name ?? ""
-    // Connexion principale (icône réseau du tray, graphe du trafic ; ta demande du 2026-11-17) : la première route par défaut
-    // (métrique) qui passe par le Wi-Fi ou un câble connectés — sous un VPN (tun, wg…), la connexion physique qui le porte ; à
-    // défaut (pont pas encore lu), filaire d'abord. "wired", "wifi" ou "" (aucune). `primaryWired` : le câble concerné.
+    readonly property bool wiredLimited: limited && primary === "wired"
+    // Connexion principale (icône réseau du tray, graphe du trafic, accès limité ; ta demande du 2026-11-17) : la première route
+    // par défaut (métrique) qui passe par le Wi-Fi ou un câble connectés (son pont, s'il en est un port : wiredDetails, lus à la
+    // connexion du câble) — sous un VPN (tun, wg…), la connexion physique qui le porte ; à défaut, filaire d'abord. "wired",
+    // "wifi" ou "" (aucune). `primaryWired` : le câble concerné.
     readonly property var connectedWired: wiredDevices.filter(d => d.connected)
     readonly property string uplink: defaultRoutes.find(n => connectedWifi !== null && n === wifi.name
         || connectedWired.some(d => n === (wiredDetails[d.name]?.ipIface ?? d.name))) ?? ""
@@ -240,7 +239,7 @@ Singleton {
     // Échec à montrer : { network, name, kind, identity, method, domain } ; `kind` : "refused" (identifiant ou mot de passe
     // saisi refusé), "expired" (mot de passe enregistré refusé), "failed" (échec de la connexion), "profile" (création ou
     // préparation en échec, avant toute connexion). Pris par
-    // le panneau épinglé (takeSignInFailure) ; aucun panneau Wi-Fi épinglé (fermé, ou simple aperçu) : notification en plus.
+    // le panneau épinglé (takeSignInFailure) ; aucun panneau réseau épinglé (fermé, ou simple aperçu) : notification en plus.
     property var signInFailure: null
 
     // Message d'un échec (panneau, notification).
@@ -266,8 +265,8 @@ Singleton {
     function notifySignInFailure(failure: var): void {
         failure.notified = true;
         Quickshell.execDetached(["notify-send", "--app-name=Wi-Fi", "--icon=network-wireless-offline", "--",
-            failureText(failure), failure.kind === "expired" ? "Open the Wi-Fi panel to enter the new one."
-            : "Open the Wi-Fi panel to try again."]);
+            failureText(failure), failure.kind === "expired" ? "Open the Network panel to enter the new one."
+            : "Open the Network panel to try again."]);
     }
 
     function takeSignInFailure(): var {
@@ -594,7 +593,7 @@ Singleton {
     }
 
     // Détails que Quickshell.Networking n'expose pas (bande, canal, débit du lien, adresse), lus avec `nmcli` toutes les 5 s
-    // pendant que le panneau Wi-Fi est ouvert, comme les détails du panneau réseau de KDE :
+    // pendant que le panneau réseau est ouvert, comme les détails du panneau réseau de KDE :
     // - par SSID, le point d'accès utilisé, sinon le plus fort : { band, channel, width, inUse, signal } ;
     // - interface Wi-Fi : débit du lien (CAPABILITIES.SPEED : débit actuel donné par le pilote) et adresse IPv4.
     property var wifiAccessPoints: ({})
@@ -697,7 +696,7 @@ Singleton {
     }
 
     // --- Détails filaires (WiredCard.qml), lus avec `nmcli` toutes les 5 s panneau réseau ouvert, comme les détails de KDE et de
-    // GNOME Settings. Un port de pont (ton `eno2` dans `bridge0`) n'a pas d'adresse : elle est lue sur le pont
+    // GNOME Settings, et à la connexion d'un câble (pont de la connexion principale). Un port de pont (ton `eno2` dans `bridge0`) n'a pas d'adresse : elle est lue sur le pont
     // (/sys/class/net/<port>/master). Par appareil : { ipIface, bridge, product, ipv4, gateway, dns, domain, ipv6 }.
     property var wiredDetails: ({})
 
@@ -706,10 +705,19 @@ Singleton {
         triggeredOnStart: true
         interval: root.detailsInterval
         repeat: true
-        onTriggered: {
-            wiredQuery.command = ["sh", "-c", root.wiredScript, "sh", ...root.wiredDevices.map(d => d.name)];
-            wiredQuery.running = true;
-        }
+        onTriggered: root.readWired()
+    }
+
+    function readWired(): void {
+        if (wiredQuery.running || wiredDevices.length === 0)
+            return;
+        wiredQuery.command = ["sh", "-c", wiredScript, "sh", ...wiredDevices.map(d => d.name)];
+        wiredQuery.running = true;
+    }
+
+    onConnectedWiredChanged: {
+        if (connectedWired.some(d => wiredDetails[d.name] === undefined))
+            Qt.callLater(readWired);
     }
 
     // Pour chaque appareil : `@@ <appareil> <interface IP>`, puis les champs (`nmcli -g` : une ligne par champ).
