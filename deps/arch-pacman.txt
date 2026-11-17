@@ -83,7 +83,7 @@ gtk-update-icon-cache   # cache de la surcouche Papirus (dossiers Catppuccin)
 # --- Captures et outils de dev ---
 grim                    # captures des outils de dev (scripts/shot.sh) ; touche Impr. : outil natif
 slurp                   # choix de l'écran partagé (xdg-desktop-portal-wlr) ; plus utilisé par la touche Impr.
-iproute2                # `ip -j addr` : interfaces ZeroTier sans jeton (panneau réseau) ; dans `base`
+iproute2                # `ip -j addr` : interfaces ZeroTier sans jeton (panneau VPN) ; dans `base`
 wl-clipboard            # presse-papiers : captures (outil natif), IP / noms copiés depuis le panneau VPN, chemin du fichier ouvert dans une web app Office
 imagemagick             # scripts/crop.sh
 jq                      # scripts de test (lecture JSON swaymsg/hyprctl) ; barre d'état de Claude Code (dotfiles/claude)

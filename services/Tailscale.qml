@@ -187,7 +187,12 @@ Singleton {
                 // Code 1 quand Tailscale est arrêté (JSON quand même) comme quand le démon est injoignable (pas de JSON) : le
                 // JSON fait foi.
                 try {
-                    root.status = JSON.parse(text);
+                    const status = JSON.parse(text);
+                    // Lecture de fond (`--peers=false`) : appareils de la dernière lecture complète gardés, affichés à
+                    // l'ouverture de l'onglet le temps de la relire (pas « 0 of 0 devices »).
+                    if (!root.polling && status && root.status?.Peer)
+                        status.Peer = root.status.Peer;
+                    root.status = status;
                     root.installed = true;
                     root.failures = 0;
                 } catch (e) {

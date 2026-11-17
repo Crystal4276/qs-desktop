@@ -52,6 +52,11 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
   Écartés (négligeables) : saisie perdue en changeant d'onglet VPN (vues libérées, comme avant pour Tailscale / ZeroTier) ;
   prédicat « un VPN actif » en partie répété (icône, onglet d'ouverture) ; `Vpn.active` vrai pendant une simple action ;
   panneau réseau épinglé qui reste ouvert quand son bouton disparaît.
+- Passe 7 (8 constats, aucun grave ni moyen) — corrigés : appareils Tailscale gardés par les lectures de fond
+  (`--peers=false`) : plus de « 0 of 0 devices » en rouvrant l'onglet (vérifié sur banc après 65 s) ; plus de lecture
+  Tailscale / ZeroTier à chaque ouverture du panneau VPN (60 s et onglet affiché suffisent) ; `deps/` ; ligne NordVPN sans
+  virgule finale si la ville manque ; focus différé ignoré panneau fermé ; `wiredConnected` tiré de `connectedWired` ;
+  commentaires trop longs. Écarté : sonde de connectivité à l'épinglage du panneau réseau sur une machine filaire.
 - `test-network.py` : à lancer **dans le Sway du banc** (`WAYLAND_DISPLAY`, `XDG_RUNTIME_DIR`) ; sur la session réelle, son
   panneau de test se ferme au gré du pointeur et le test des formulaires échoue (aussi sur `ea8a721`, avant le refactor).
   Passe sur banc, avec deux cas de plus (VPN sur Wi-Fi, câble de LAN) ; banc Sway : démarrage complet sans avertissement.

@@ -61,7 +61,7 @@ ColumnLayout {
             return "Pausing…";
         }
         return Vpn.state === "Connecting" ? "Connecting…"
-            : Vpn.connected ? `Connected · ${Vpn.country}, ${Vpn.city}`
+            : Vpn.connected ? ["Connected", [Vpn.country, Vpn.city].filter(s => s).join(", ")].filter(s => s).join(" · ")
             : Vpn.paused ? "Paused" : "Disconnected";
     }
 

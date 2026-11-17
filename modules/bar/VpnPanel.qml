@@ -42,7 +42,7 @@ Panel {
             return;
         Network.vpnTab = current;
         // La vue quittée emporte le focus : recherche NordVPN, sinon le cadre (Échap, flèches).
-        Qt.callLater(() => (nordvpn.item?.searchInput ?? frameItem).forceActiveFocus());
+        Qt.callLater(() => root.visible && (nordvpn.item?.searchInput ?? frameItem)?.forceActiveFocus());
     }
     Component.onDestruction: Network.setPanelOpen("vpn", root, false)
 

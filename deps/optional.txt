@@ -7,7 +7,7 @@ power-profiles-daemon   # profils d'énergie du panneau de réglages ; installé
 brightnessctl   # réglage du rétroéclairage (laptop), clavier éteint en veille ; installé par install.sh si /sys/class/backlight existe
 paru-bin        # (AUR) commande de mise à jour lancée par le module updates ; construit par install.sh (seule exception AUR) ; sinon yay ou pacman
 nordvpn-bin     # (AUR) module NordVPN (connexion, pays, pause) ; masqué si absent ; pas installé par install.sh (README.md)
-tailscale       # onglet Tailscale du panneau réseau (état, appareils, nœud de sortie, options) ; masqué si absent. Actions : `sudo tailscale set --operator=$USER` une fois (install.sh, phase 11)
+tailscale       # onglet Tailscale du panneau VPN (état, appareils, nœud de sortie, options) ; masqué si absent. Actions : `sudo tailscale set --operator=$USER` une fois (install.sh, phase 11)
 xorg-xinit      # startx : sessions X11 proposées par l'écran de connexion (scripts/greeter-session.sh) ; sans lui, elles sont masquées
 xorg-server     # serveur X des sessions X11 de l'écran de connexion (avec xorg-xinit)
 socat           # transmission au Chromium déjà lancé ; absent : lancement normal (scripts/chromium-launch.sh)
