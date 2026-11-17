@@ -243,9 +243,9 @@ Panel {
         }
     }
 
-    // Horaire de la veilleuse (clic droit sur sa bascule) : interrupteur ; heures dans la config machine.
+    // Horaire de la veilleuse (clic droit sur sa bascule) : interrupteur ; heures dans la config machine (invalides : rien).
     PanelRow {
-        visible: root.expanded === "nightLight"
+        visible: root.expanded === "nightLight" && NightLight.validSchedule
         clickable: false
         text: "Schedule"
 

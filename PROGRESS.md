@@ -49,6 +49,11 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
   signal `loaded` (vérifié), heures fixes sans effet dans la config de gammastep (documentées). Bancs refaits (« ne pas
   déranger » : a à g, 6 rechargements ; veilleuse : sessions, horaire coupé, rechargements, heures invalides), bureau réel :
   état identique, aucun nouvel avertissement.
+- Revue, passe 4 : heure lue d'un bloc (`clock.date`) dans les deux horaires (heures et minutes changées l'une après l'autre :
+  heure fausse un instant au changement d'heure, bascule de trop avec une limite à la demie ; antérieur pour « ne pas
+  déranger ») ; heures de la veilleuse invalides : ligne « Schedule » masquée, avertissement seulement quand elles le deviennent
+  (vérifié : aucun au démontage d'un rechargement). Écartés : « ne pas déranger » appliqué quelques millisecondes après
+  `Notifs.loaded` au début de session (`Audio` suit le changement), points déjà écartés.
 - **À tester** : ce soir à 20:00, le bouton s'allume avec l'écran ; l'éteindre à la main, il reste éteint jusqu'à 06:00 ; clic
   droit → « Schedule ». À 21:00, « ne pas déranger » comme avant.
 
