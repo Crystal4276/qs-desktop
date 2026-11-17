@@ -40,7 +40,7 @@ bureau. **À garder identique à `qs-env.sh`.** Sans ce fichier, `qs` fonctionne
   OpenGL par fenêtre (40 à 75 ms de premier affichage chacune). Essayés sans gain : Vulkan, fenêtres à la demande, barres créées
   après les écrans.
 - Gardés malgré leur coût : `checkupdates` au démarrage (sinon la pilule apparaîtrait en pleine session) ; lectures Tailscale et
-  ZeroTier (icône du tray) ; `nvidia-smi` lancé toutes les 5 s (`-l 5` résident : −0,2 % CPU mais +30 Mo).
+  ZeroTier toutes les 60 s (icône VPN du tray) ; `nvidia-smi` lancé toutes les 5 s (`-l 5` résident : −0,2 % CPU mais +30 Mo).
 - Une seule construction de chaque barre au démarrage (`Bar.qml`) ; barres affichées avec les fonds (copie des fonds à la taille de
   l'écran : `ARCHITECTURE.md` § 7.11).
 - Pentes mémoire (banc, rendu logiciel) : pas de conclusion sur une fuite ; le verrouillage coûte ~170 Mo en rendu logiciel, à mesurer

@@ -18,24 +18,31 @@ Panel {
     // Onglet de l'ouverture choisi : les vues se construisent ensuite (pas une vue de l'onglet précédent, aussitôt détruite).
     property bool ready: false
     readonly property var tabs: [
-        { key: "nordvpn", text: "NordVPN", shown: Vpn.available, active: Vpn.connected },
-        { key: "tailscale", text: "Tailscale", shown: Tailscale.installed, active: Tailscale.running },
-        { key: "zerotier", text: "ZeroTier", shown: ZeroTier.present, active: ZeroTier.connectedCount > 0 }
+        { key: "nordvpn", text: "NordVPN", shown: Vpn.available },
+        { key: "tailscale", text: "Tailscale", shown: Tailscale.installed },
+        { key: "zerotier", text: "ZeroTier", shown: ZeroTier.present }
     ].filter(t => t.shown)
     readonly property string current: tabs.some(t => t.key === tab) ? tab : (tabs[0]?.key ?? "")
 
-    // Recherche des pays NordVPN à l'ouverture sur son onglet.
+    // Recherche des pays NordVPN : focus à l'ouverture sur son onglet, et en y passant.
     initialFocus: nordvpn.item?.searchInput ?? frameItem
 
     onVisibleChanged: {
-        if (visible && !picked)
-            tab = (tabs.find(t => t.active) ?? tabs[0])?.key ?? "";
+        if (visible && !picked) {
+            const active = { nordvpn: Vpn.connected, tailscale: Tailscale.running, zerotier: ZeroTier.connectedCount > 0 };
+            tab = (tabs.find(t => active[t.key]) ?? tabs[0])?.key ?? "";
+        }
         ready = visible;
         if (visible)
             Network.vpnTab = current;
         Network.setPanelOpen("vpn", root, visible);
     }
-    onCurrentChanged: if (visible) Network.vpnTab = current
+    onCurrentChanged: {
+        if (!visible)
+            return;
+        Network.vpnTab = current;
+        Qt.callLater(() => nordvpn.item?.searchInput.forceActiveFocus());
+    }
     Component.onDestruction: Network.setPanelOpen("vpn", root, false)
 
     // Plus aucun service (NordVPN figé, ZeroTier arrêté…) panneau ouvert : fermé, son icône n'est plus là.

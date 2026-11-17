@@ -78,22 +78,25 @@ Item {
 
         // Modules natifs, après les applications (remplacent l'icône NordVPN, nm-applet, udiskie, blueman ; phase 5 ; Wi-Fi séparé
         // du réseau le 2026-10-19).
-        // VPN (NordVPN, Tailscale, ZeroTier ; ta demande du 2026-11-17) : icône NordVPN connecté, sinon `network-vpn`, atténuée si
-        // aucun VPN n'est actif.
+        // VPN (NordVPN, Tailscale, ZeroTier ; ta demande du 2026-11-17) : icône NordVPN (bleue connecté, grise en connexion ou
+        // en pause), sinon `network-vpn`, atténuée si aucun VPN n'est actif.
         TrayButton {
+            readonly property bool nordvpn: Vpn.connected || Vpn.busy || Vpn.paused
+
             visible: Vpn.available || Tailscale.installed || ZeroTier.present
-            icon: Vpn.connected ? Vpn.icon : "network-vpn"
-            opacity: Vpn.connected || Tailscale.running || ZeroTier.connectedCount > 0 ? 1 : Theme.panel.disabledOpacity
+            icon: nordvpn ? Vpn.icon : "network-vpn"
+            opacity: nordvpn || Tailscale.running || ZeroTier.connectedCount > 0 ? 1 : Theme.panel.disabledOpacity
             panel: vpnPanel
         }
 
         // Réseau (Ethernet et Wi-Fi, ta demande du 2026-11-17) : icône de la connexion principale (Network.primary) — filaire
         // (noms de nm-applet), ou glyphe Wi-Fi dessiné et animé (WifiIcon.qml, niveau du signal à la manière de GNOME). Sans
-        // connexion : l'état du Wi-Fi (éteint, en connexion…) s'il y en a un, sinon « aucune connexion ».
+        // connexion : l'état du câble s'il est branché (sauf Wi-Fi en connexion) ou sans Wi-Fi, sinon celui du Wi-Fi.
         TrayButton {
             id: networkButton
 
-            readonly property bool wired: Network.primary === "wired" || (Network.primary === "" && Network.wifi === null)
+            readonly property bool wired: Network.primary === "wired" || (Network.primary === "" && (Network.wifi === null
+                || Network.wiredLinked && Network.connectingWifi === null))
 
             visible: Network.wiredShown || Network.wifiShown
             icon: wired ? Network.icon : ""

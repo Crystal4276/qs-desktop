@@ -17,6 +17,7 @@ Singleton {
     // Détails nmcli des cartes Wi-Fi et filaire : toutes les 5 s.
     readonly property int detailsInterval: 5000
     property string interfaceName: ""
+    property var defaultRoutes: []   // interfaces des routes par défaut, par métrique croissante (la première : interfaceName)
     property string interfaceNames: ""   // toutes les interfaces ; celle de NordVPN fait relire son statut (Vpn.qml)
     property real downBytesPerSecond: 0
     property real upBytesPerSecond: 0
@@ -52,14 +53,13 @@ Singleton {
         const names = dev.text().split("\n").slice(2).map(l => l.split(":")[0].trim()).filter(n => n).join(" ");
         if (names !== interfaceNames)
             interfaceNames = names;
-        // Route par défaut : destination et masque 00000000 (pas les 0.0.0.0/1 d'un VPN) ; la plus petite métrique l'emporte.
-        let best = null;
-        for (const line of route.text().split("\n").slice(1)) {
-            const f = line.trim().split(/\s+/);
-            if (f.length > 7 && f[1] === "00000000" && f[7] === "00000000" && (!best || Number(f[6]) < best.metric))
-                best = { name: f[0], metric: Number(f[6]) };
-        }
-        const name = best?.name ?? "";
+        // Routes par défaut : destination et masque 00000000 (pas les 0.0.0.0/1 d'un VPN) ; la plus petite métrique l'emporte.
+        const routes = route.text().split("\n").slice(1).map(line => line.trim().split(/\s+/))
+            .filter(f => f.length > 7 && f[1] === "00000000" && f[7] === "00000000")
+            .sort((a, b) => Number(a[6]) - Number(b[6])).map(f => f[0]);
+        if (routes.join(" ") !== defaultRoutes.join(" "))
+            defaultRoutes = routes;
+        const name = routes[0] ?? "";
         if (name !== interfaceName) {
             interfaceName = name;
             previous = null;
@@ -179,12 +179,16 @@ Singleton {
     // Câble qui porte la route (son pont si c'est un port de pont : détails lus panneau ouvert) ; "" : aucun (VPN, Wi-Fi).
     readonly property string routeWiredDevice: wiredDevices.find(d => d.connected
         && interfaceName === (wiredDetails[d.name]?.ipIface ?? d.name))?.name ?? ""
-    // Connexion principale (icône réseau du tray, graphe du trafic ; ta demande du 2026-11-17) : celle qui porte la route par
-    // défaut ; route sur un VPN (tun, nordlynx, tailscale0…) ou pont pas encore lu : la connexion physique dessous, filaire
-    // d'abord. "wired", "wifi" ou "" (aucune). `primaryWired` : le câble concerné.
-    readonly property string primary: wifiCarriesRoute ? "wifi" : wiredConnected ? "wired" : connectedWifi !== null ? "wifi" : ""
+    // Connexion principale (icône réseau du tray, graphe du trafic ; ta demande du 2026-11-17) : la première route par défaut
+    // (métrique) qui passe par le Wi-Fi ou un câble connectés — sous un VPN (tun, wg…), la connexion physique qui le porte ; à
+    // défaut (pont pas encore lu), filaire d'abord. "wired", "wifi" ou "" (aucune). `primaryWired` : le câble concerné.
+    readonly property var connectedWired: wiredDevices.filter(d => d.connected)
+    readonly property string uplink: defaultRoutes.find(n => connectedWifi !== null && n === wifi.name
+        || connectedWired.some(d => n === (wiredDetails[d.name]?.ipIface ?? d.name))) ?? ""
+    readonly property string primary: uplink !== "" ? (uplink === wifi?.name ? "wifi" : "wired")
+        : wiredConnected ? "wired" : connectedWifi !== null ? "wifi" : ""
     readonly property string primaryWired: primary !== "wired" ? ""
-        : routeWiredDevice || (wiredDevices.find(d => d.connected)?.name ?? "")
+        : (connectedWired.find(d => uplink === (wiredDetails[d.name]?.ipIface ?? d.name)) ?? connectedWired[0])?.name ?? ""
 
     // Autre réseau connecté : débit et adresse du précédent effacés, relus aussitôt panneau ouvert. Comparé au précédent : la
     // liaison est réévaluée à chaque variation de signal.

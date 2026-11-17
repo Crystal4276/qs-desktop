@@ -347,8 +347,9 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
 
 ### 7.6 Réseau (tray)
 
-- Une icône, celle de la **connexion principale** (`Network.primary` : interface de la route par défaut ; route sur un VPN : la
-  connexion physique dessous, filaire d'abord) : câble, ou glyphe Wi-Fi ; sans connexion, l'état du Wi-Fi. Connexion limitée
+- Une icône, celle de la **connexion principale** (`Network.primary` : première route par défaut, par métrique, qui passe par le
+  Wi-Fi ou un câble connectés ; sous un VPN, la connexion qui le porte) : câble, ou glyphe Wi-Fi ; sans connexion, l'état du
+  câble s'il est branché, sinon celui du Wi-Fi. Connexion limitée
   signalée (`Networking.connectivity`).
 - Panneau réseau (`NetworkPanel.qml`) : Ethernet (une carte par câble dès qu'un port existe, détails `nmcli`), puis Wi-Fi ; graphe
   du trafic sur la carte de la connexion principale seulement. Tailscale et ZeroTier : panneau VPN (§ 7.9).
@@ -408,7 +409,7 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
 
 ### 7.9 VPN (tray) : NordVPN, Tailscale, ZeroTier
 
-- Un bouton (icône NordVPN connecté, sinon `network-vpn`, atténuée sans VPN actif), un panneau à onglets des services présents ;
+- Un bouton (icône NordVPN connecté, en connexion ou en pause, sinon `network-vpn`, atténuée sans VPN actif), un panneau à onglets des services présents ;
   à l'ouverture, l'onglet choisi à la main, sinon le premier VPN actif.
 - Tailscale (`status --json`, `debug prefs` ; actions grâce à `--operator=$USER`, à faire à la main) / ZeroTier (`zerotier-cli -j`
   avec le jeton copié dans `~/.zeroTierOneAuthToken`, à la main ; sinon interfaces `zt*` en lecture seule) : relus toutes les
