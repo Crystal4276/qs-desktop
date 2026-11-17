@@ -51,7 +51,7 @@ Singleton {
     }
 
     // Heure atteinte, ou heures changées (config machine lue après le démarrage, ou modifiée).
-    onNightHoursChanged: if (persist.loaded && scheduleRead) applySchedule()
+    onNightHoursChanged: if (persist.restored && scheduleRead) applySchedule()
 
     // Début de session : horaire appliqué une fois l'état de la session repris (persist) et le fichier lu (ou absent) ; les
     // propriétés d'un JsonAdapter gardent leur valeur par défaut tant que la lecture n'est pas finie, blockLoading ou non.
@@ -94,14 +94,14 @@ Singleton {
 
         property bool enabled: false
         property bool bySchedule: false   // allumée par l'horaire (pas à la main)
-        property bool loaded: false
+        property bool restored: false   // état de la session repris
 
         onLoaded: {
-            if (!loaded) {   // premier chargement de cette instance : début de session
+            if (!restored) {   // premier chargement de cette instance : début de session
                 root.sessionStart = true;
                 root.startSession();
             }
-            loaded = true;
+            restored = true;
         }
     }
 
