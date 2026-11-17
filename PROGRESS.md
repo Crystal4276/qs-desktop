@@ -61,6 +61,9 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
   `root.minutes` de la passe 2 ne le corrigeait pas, retirée). Écartés aussi : `schedule` de la config machine changé à chaud
   sans effet avant la prochaine heure (comme avant), IPC de l'horaire avec des heures invalides, analyse des heures répétée,
   points déjà écartés.
+- Revue, passe 6 : heures de la veilleuse devenues invalides à chaud : l'horaire ne l'éteint plus (seulement à la main, comme
+  annoncé ; essai sur banc par écriture atomique, comme un éditeur : un fichier tronqué puis réécrit passe un instant par les
+  valeurs par défaut). Le reste : négligeable ou déjà écarté.
 - **À tester** : ce soir à 20:00, le bouton s'allume avec l'écran ; l'éteindre à la main, il reste éteint jusqu'à 06:00 ; clic
   droit → « Schedule ». À 21:00, « ne pas déranger » comme avant.
 
