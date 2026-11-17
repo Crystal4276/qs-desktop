@@ -341,8 +341,8 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
 - Ligne du haut : batterie (laptop), capture d'écran, verrouiller / se déconnecter / redémarrer / éteindre (pas de veille, pas de
   confirmation). Curseurs : sortie son (flèche → choix de la sortie), luminosité (laptop). Bouton du sélecteur de fond.
 - Bascules : profil d'énergie (trois boutons), ne pas déranger (clic droit : horaire), garder l'écran allumé (`IdleInhibitor`), VRR et
-  HDR (écrans compatibles), veilleuse (`gammastep`, fondu de ~4 s ;
-  horaire comme « ne pas déranger » : allumée au début, éteinte à la fin, libre à la main entre les deux), mode avion (dès qu'il y a une radio).
+  HDR (écrans compatibles), veilleuse (`gammastep`, fondu de ~4 s ; horaire comme « ne pas déranger » : allumée au début, éteinte
+  à la fin, libre à la main entre les deux ; clic droit : couper l'horaire), mode avion (dès qu'il y a une radio).
 - Aperçu au survol de l'engrenage. Réseau, Bluetooth, NordVPN, disques, cloche restent dans le tray (pas de doublon). IPC `settings toggle`.
 
 ### 7.6 Réseau (tray)

@@ -13,14 +13,14 @@ import qs.services
 // - curseurs : sortie son, luminosité (laptop) ; flèche : choix du périphérique (toujours affichée, même avec un seul
 //   périphérique : la liste montre lequel est utilisé), puis « Advanced… » (pavucontrol). Pas de micro (ta demande du 2026-10-26 :
 //   jamais réglé ici ; il reste dans le panneau audio) ;
-// - profils d'énergie (3 boutons) ; bascules en 2 colonnes : ne pas déranger (clic droit : son horaire), écran allumé, veilleuse,
-//   HDR, VRR, mode avion (dès qu'il y a une radio Wi-Fi ou Bluetooth).
+// - profils d'énergie (3 boutons) ; bascules en 2 colonnes : ne pas déranger et veilleuse (clic droit : leur horaire), écran
+//   allumé, HDR, VRR, mode avion (dès qu'il y a une radio Wi-Fi ou Bluetooth).
 // Ce qui a sa place dans le tray (réseau, Bluetooth, VPN, disques, notifications) n'est pas repris.
 // Carte du tray (Panel.qml, ta demande du 2026-10-26) : aperçu au survol de l'engrenage, épinglée au clic, fermée comme les autres.
 Panel {
     id: root
 
-    property string expanded: ""   // "sink", "dnd" ou "" : liste de périphériques ou horaire du « ne pas déranger » déplié
+    property string expanded: ""   // "sink", "dnd", "nightLight" ou "" : liste de périphériques ou horaire déplié
 
     WlrLayershell.namespace: "quickshell-settings"
     title: "Settings"   // comme les autres cartes du tray (ta demande du 2026-10-27)
@@ -177,9 +177,10 @@ Panel {
         QuickToggle {
             icon: Theme.icon.nightLight
             title: "Night Light"
-            subtitle: NightLight.schedule
+            subtitle: NightLight.scheduled ? NightLight.schedule : ""
             checked: NightLight.enabled
             onClicked: NightLight.toggle()
+            onSecondaryClicked: root.expanded = root.expanded === "nightLight" ? "" : "nightLight"
         }
 
         QuickToggle {
@@ -239,6 +240,18 @@ Panel {
         PanelSwitch {
             checked: Notifs.scheduled
             onToggled: checked => Notifs.setSchedule(checked, Notifs.scheduleFrom, Notifs.scheduleTo)
+        }
+    }
+
+    // Horaire de la veilleuse (clic droit sur sa bascule) : interrupteur ; heures dans la config machine.
+    PanelRow {
+        visible: root.expanded === "nightLight"
+        clickable: false
+        text: "Schedule"
+
+        PanelSwitch {
+            checked: NightLight.scheduled
+            onToggled: checked => NightLight.setScheduled(checked)
         }
     }
 
