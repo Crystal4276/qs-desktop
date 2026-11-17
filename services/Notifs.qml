@@ -33,13 +33,13 @@ Singleton {
     // « Ne pas déranger » programmé (ta demande du 2026-10-26) : activé à l'heure de début, désactivé à l'heure de fin ; entre
     // les deux, la bascule à la main reste libre jusqu'à la prochaine heure. Appliqué aussi au démarrage de la session. Horaire
     // activé, ou heures changées, de sorte qu'on entre dans la plage : activé ; qu'on en sorte : désactivé, seulement s'il l'avait
-    // été par l'horaire (pas à la main). Réglé depuis le panneau de réglages, gardé dans un fichier d'état (départ :
-    // `doNotDisturb` de hosts/*.json).
-    readonly property bool scheduled: schedule.enabled
+    // été par l'horaire (pas à la main). Réglé depuis le panneau de réglages, gardé dans un fichier d'état ; valeur pas encore
+    // réglée (null) : celle de `doNotDisturb` dans hosts/*.json.
+    readonly property bool scheduled: schedule.enabled ?? Settings.doNotDisturb.schedule
     // Toujours "HH:MM" (le fichier d'état ou hosts/*.json peuvent contenir "7:00") : format du champ d'heure.
-    readonly property string scheduleFrom: Settings.timeText(Settings.minutes(schedule.from))
-    readonly property string scheduleTo: Settings.timeText(Settings.minutes(schedule.to))
-    readonly property bool quietHours: Settings.within(clock.hours * 60 + clock.minutes, schedule.from, schedule.to)
+    readonly property string scheduleFrom: Settings.timeText(Settings.minutes(schedule.from ?? Settings.doNotDisturb.from))
+    readonly property string scheduleTo: Settings.timeText(Settings.minutes(schedule.to ?? Settings.doNotDisturb.to))
+    readonly property bool quietHours: Settings.within(clock.hours * 60 + clock.minutes, scheduleFrom, scheduleTo)
     property bool editing: false   // setSchedule en cours : la plage change par réglage, pas par l'heure
 
     // Bascule à la main (panneau de réglages, centre de notifications).
@@ -56,7 +56,7 @@ Singleton {
     // Heure mal formée (IPC) : refusée seule, le champ revient à l'ancienne. Heures identiques acceptées (plage vide : inversion des
     // heures en deux saisies possible). Une seule écriture du fichier.
     function setSchedule(enabled: bool, from: string, to: string): void {
-        const was = schedule.enabled && quietHours;
+        const was = scheduled && quietHours;
         const f = Settings.minutes(from), t = Settings.minutes(to);
         editing = true;
         schedule.enabled = enabled;
@@ -66,7 +66,7 @@ Singleton {
             schedule.to = Settings.timeText(t);
         editing = false;
         scheduleFile.writeAdapter();
-        const now = schedule.enabled && quietHours;
+        const now = scheduled && quietHours;
         if (now && !was) {
             if (!doNotDisturb)   // déjà activé à la main : il le reste (pas repris par l'horaire)
                 setBySchedule(true);
@@ -77,34 +77,50 @@ Singleton {
 
     // Heure de début ou de fin atteinte, ou démarrage de la session.
     function applySchedule(): void {
-        if (schedule.enabled)
+        if (scheduled)
             setBySchedule(quietHours);
     }
 
-    // Pas pendant la construction (au rechargement, le fichier d'état remplace les heures par défaut) : premier passage par
-    // persist.onLoaded.
-    property bool constructed: false
-    Component.onCompleted: constructed = true
-    onQuietHoursChanged: if (constructed && !editing) applySchedule()
+    // Pas avant la lecture du fichier d'état (un JsonAdapter garde ses valeurs par défaut jusque-là, blockLoading ou non) ; au
+    // début de la session, une fois l'état de la session repris (persist.onLoaded) et ce fichier lu (ou absent). Comme la
+    // veilleuse (services/NightLight.qml).
+    property bool sessionStart: false
+    property bool scheduleRead: false
+    onQuietHoursChanged: if (scheduleRead && !editing) applySchedule()
+
+    function startSession(): void {
+        if (sessionStart && scheduleRead) {
+            sessionStart = false;
+            applySchedule();
+        }
+    }
 
     SystemClock {
         id: clock
         precision: SystemClock.Minutes
     }
 
-    // Lu avant la suite (blockLoading) : l'horaire est connu quand l'état de la session est repris (persist.onLoaded).
+    // Pas de liaison vers Settings dans l'adaptateur : la config machine, souvent lue après ce fichier, remplacerait ses valeurs
+    // (et le fichier avec, par onAdapterUpdated).
     FileView {
         id: scheduleFile
         path: Quickshell.statePath("do-not-disturb.json")
-        blockLoading: true
         printErrors: false
         onAdapterUpdated: if (!root.editing) writeAdapter()
+        onLoaded: {
+            root.scheduleRead = true;
+            root.startSession();
+        }
+        onLoadFailed: {   // pas encore de fichier : config machine
+            root.scheduleRead = true;
+            root.startSession();
+        }
 
         JsonAdapter {
             id: schedule
-            property bool enabled: Settings.doNotDisturb.schedule
-            property string from: Settings.doNotDisturb.from
-            property string to: Settings.doNotDisturb.to
+            property var enabled: null
+            property var from: null
+            property var to: null
         }
     }
 
@@ -130,7 +146,8 @@ Singleton {
             root.loaded = true;
             if (!ready) {   // premier chargement de cette instance
                 staleIconDirs.running = true;
-                root.applySchedule();
+                root.sessionStart = true;
+                root.startSession();
             }
             root.iconFiles = Object.assign(JSON.parse(iconFiles), root.iconFiles);   // + copies faites avant ce point
             root.restoreLive(JSON.parse(live));
