@@ -46,7 +46,7 @@ Singleton {
 
     // Heure de début ou de fin atteinte, ou démarrage de la session.
     function applySchedule(): void {
-        if (scheduleState.enabled)
+        if (scheduleState.enabled && validSchedule)
             set(nightHours, true);
     }
 
