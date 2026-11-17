@@ -3,6 +3,25 @@
 État courant seulement. Historique figé : phases 0 à 10 dans `docs/archive/PROGRESS.md`, maintenance du 2026-11-05 au 2026-11-09
 et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de besoin).
 
+## Cartes réseau : revue en boucle (2026-11-17)
+
+- Passe 1 (`/code-review high` sur `ea8a721..HEAD`, 9 constats) — corrigés :
+  - `Vpn.panelOpen` dérivé de `Network.vpnPanelOpen` / `vpnTab` comme `Poller` (écrit par la vue, sa destruction différée
+    pouvait le remettre à faux derrière la vue d'une autre barre) ;
+  - connexion principale : première route par défaut (métrique) passant par le Wi-Fi ou un câble connectés
+    (`Network.defaultRoutes`), au lieu de « filaire d'abord » sous un VPN (VPN porté par le Wi-Fi avec un câble de LAN sans
+    passerelle : icône et graphe côté Ethernet à tort) ;
+  - recherche NordVPN focalisée aussi en passant sur son onglet (reproduit sur banc : focus perdu) ;
+  - aucune ligne de pays construite avant le choix Recent / All (~150 lignes à chaque ouverture) ;
+  - icône VPN : NordVPN gris pendant une connexion ou une pause (retour visuel perdu) ;
+  - câble branché mais pas connecté : icône réseau sur l'état du câble (sauf Wi-Fi en connexion), plus celui du Wi-Fi ;
+  - `tabs` du panneau VPN sans l'état actif (relu à l'ouverture seulement).
+  Écartés : relecture Tailscale / ZeroTier toutes les 60 s même câble branché (coût accepté, noté dans `PERFORMANCE.md`) ;
+  recherche Wi-Fi à chaque ouverture du panneau réseau (sa liste en fait partie).
+- `test-network.py` : à lancer **dans le Sway du banc** (`WAYLAND_DISPLAY`, `XDG_RUNTIME_DIR`) ; sur la session réelle, son
+  panneau de test se ferme au gré du pointeur et le test des formulaires échoue (aussi sur `ea8a721`, avant le refactor).
+  Passe sur banc, avec deux cas de plus (VPN sur Wi-Fi, câble de LAN) ; banc Sway : démarrage complet sans avertissement.
+
 ## Cartes réseau, étape 2 : panneau Network = Ethernet + Wi-Fi (2026-11-17)
 
 - `NetworkPanel.qml` (ancien `WifiPanel.qml`, supprimé) : cartes Ethernet en haut (dès qu'un port existe, « Cable unplugged »

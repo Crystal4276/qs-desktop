@@ -8,7 +8,7 @@ import qs.services
 // dernière entrée des récents / déconnexion ; détails de la connexion), pause, choix d'un pays puis éventuellement d'une ville.
 // Onglets Recent / All countries ; la recherche (focus à l'ouverture) affiche tous les pays filtrés, débuts de nom puis débuts
 // de mot d'abord ; Entrée connecte au premier résultat, Échap efface la recherche puis ferme.
-// Construite seulement onglet affiché (VpnPanel.qml) : son existence dit au service que le panneau est ouvert.
+// Construite seulement onglet affiché (VpnPanel.qml).
 ColumnLayout {
     id: root
 
@@ -19,8 +19,8 @@ ColumnLayout {
     readonly property string query: Vpn.label(search.text.trim()).toLowerCase()
     // Liste affichée : une recherche montre tous les pays, quel que soit l'onglet (effacée, l'onglet revient).
     readonly property string shown: query !== "" ? "all" : tab
-    // Entrées affichées : « Pays » ou « Pays/Ville » (récents).
-    readonly property var rows: shown === "recent" ? Vpn.recent : matches(Vpn.countries, query)
+    // Entrées affichées : « Pays » ou « Pays/Ville » (récents) ; aucune avant le choix de l'onglet (pas ~150 lignes pour rien).
+    readonly property var rows: shown === "" ? [] : shown === "recent" ? Vpn.recent : matches(Vpn.countries, query)
     // Détails, trafic, pause : connexion établie et aucune action en cours (pendant un changement, le statut est encore l'ancien).
     readonly property bool settled: Vpn.connected && !Vpn.busy
 
@@ -29,11 +29,9 @@ ColumnLayout {
 
     Component.onCompleted: {
         tab = Vpn.recent.length > 0 ? "recent" : "all";
-        Vpn.panelOpen = true;
         Vpn.refresh();
         Vpn.loadCountries();
     }
-    Component.onDestruction: Vpn.panelOpen = false
 
     // Pays contenant la recherche : ceux qui commencent par elle, puis ceux dont un mot commence par elle, puis les autres ;
     // ordre alphabétique dans chaque groupe.

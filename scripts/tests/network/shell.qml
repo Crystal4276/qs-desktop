@@ -64,7 +64,14 @@ ShellRoot {
         function configure(json: string): void {
             const values = JSON.parse(json);
             for (const key of Object.keys(values)) {
-                if (key === "interfaceName") Network.interfaceName = values[key];
+                // Route seule : elle est aussi la seule route par défaut ; `defaultRoutes` : liste complète, par métrique.
+                if (key === "interfaceName") {
+                    Network.interfaceName = values[key];
+                    Network.defaultRoutes = values[key] ? [values[key]] : [];
+                } else if (key === "defaultRoutes") {
+                    Network.defaultRoutes = values[key];
+                    Network.interfaceName = values[key][0] ?? "";
+                }
                 else Backend[key] = values[key];
             }
         }

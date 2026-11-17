@@ -570,6 +570,11 @@ echo "Connexion « Campus » ajoutée avec succès."
             assert (snap()['primary'], snap()['primaryWired']) == ('wired', 'test-ethernet'), snap()
             config(interfaceName='test-wifi')
             assert (snap()['primary'], snap()['primaryWired']) == ('wifi', ''), snap()
+            # VPN porté par le Wi-Fi, câble d'un réseau local sans passerelle : le Wi-Fi.
+            config(defaultRoutes=['tun0', 'test-wifi'])
+            assert (snap()['primary'], snap()['primaryWired']) == ('wifi', ''), snap()
+            config(defaultRoutes=['tun0', 'test-ethernet', 'test-wifi'])
+            assert (snap()['primary'], snap()['primaryWired']) == ('wired', 'test-ethernet'), snap()
             config(interfaceName='test-ethernet')
             config(wired=False, joined=False)
             assert not snap()['portal'] and snap()['primary'] == '', snap()

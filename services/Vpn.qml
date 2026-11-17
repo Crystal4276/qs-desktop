@@ -348,7 +348,8 @@ Singleton {
         cities = copy;
     }
 
-    property bool panelOpen: false   // temps de connexion et volumes transférés à jour (VpnPanel.qml)
+    // Onglet NordVPN affiché (VpnPanel.qml) : temps de connexion et volumes transférés à jour.
+    readonly property bool panelOpen: Network.vpnPanelOpen && Network.vpnTab === "nordvpn"
     // État transitoire (connexion ou déconnexion en cours, lancée d'ici ou non) : à suivre de près.
     readonly property bool settling: available && !["Connected", "Disconnected", "Paused"].includes(state)
 
