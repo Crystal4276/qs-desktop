@@ -148,7 +148,10 @@ leur état d'origine. Le desktop n'est pas concerné : son sshd reste réglé à
 Sur une machine cliente (`system-setup.sh client-retention`), le journal systemd est gardé jusqu'à la veille, pas plus
 (`/etc/systemd/journald.conf.d/60-qs-desktop-client.conf` : fichiers d'une heure, effacés au-delà de 2 jours), et le cache
 pacman ne garde que la version installée et une seule précédente de chaque paquet (hook `/etc/pacman.d/hooks/90-qs-paccache.hook`,
-`paccache -rk2` après chaque transaction). Le retrait système retire ces fichiers ; ce qui a été effacé ne revient pas.
+`paccache -rk2` après chaque transaction). Au premier passage sur une machine déjà utilisée, journald efface en entier chaque
+fichier de journal qui contient une entrée de plus de 2 jours (`MaxRetentionSec`) : l'historique d'avant l'installation disparaît,
+veille comprise ; la règle ne vaut qu'à partir des fichiers d'une heure. Le retrait système retire ces fichiers ; ce qui a été
+effacé ne revient pas.
 
 Sur toute machine (étape système `install`, ou seule : `system-setup.sh removable-writeback`), une règle udev borne à 64 Mio le
 cache d'écriture des disques USB et des cartes SD (`/etc/udev/rules.d/60-qs-desktop-removable-writeback.rules`) : la fin d'une

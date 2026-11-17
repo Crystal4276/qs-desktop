@@ -3,6 +3,24 @@
 État courant seulement. Historique figé : phases 0 à 10 dans `docs/archive/PROGRESS.md`, maintenance du 2026-11-05 au 2026-11-09
 et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de besoin).
 
+## Laptop : installation vérifiée, SSH du desktop vers le laptop (2026-11-17)
+
+- `git pull` du laptop (1 commit local, 30 distants) : rebase, conflit de `PROGRESS.md` résolu en gardant les deux sections.
+  Le rechargement à chaud pendant le rebase n'a pas vu le nouveau `services/FileOps.qml` (`FileOps is not defined` dans
+  `shell.qml`) : bureau relancé (`scripts/dev.sh`), sans nouvel avertissement.
+- `./install.sh` relancé sur le laptop, puis vérifié (`--dry-run` tout en `=`, et à la main chaque ligne `+` toujours affichée
+  en simulation) : sudoers, `intel_gpu_top`, GRUB Horizon, greetd, ZeroTier, UFW (22 et 445 sur `zt+`), réseau des VM, règle
+  udev des clés USB, `sshd`, journal et cache pacman, `ssh terrier-zt` sans mot de passe.
+- **Journal effacé** au rechargement de journald par `client-retention` : `MaxRetentionSec=2day` supprime en entier un fichier
+  qui contient une entrée de plus de 2 jours, et un seul fichier couvrait le 9 au 17 novembre. Historique perdu jusqu'à
+  14:00:14, une seule fois (fichiers d'une heure ensuite). Documenté dans `README.md` ; script inchangé (rien de natif pour
+  garder la veille d'un fichier plus ancien).
+- `xdg-document-portal` (service du compte) en échec depuis la veille, cause perdue avec le journal : relancé, actif.
+- SSH du desktop vers le laptop : clé `~/.ssh/id_ed25519` du desktop ajoutée à `~/.ssh/authorized_keys` du laptop (lue par
+  SSH, sans `ssh-copy-id` ni mot de passe), clé d'hôte ed25519 du laptop écrite dans `known_hosts` du desktop depuis
+  `/etc/ssh` (sauvegarde `known_hosts.bak-<date>`), alias `laptop-zt` déjà présent. Vérifié : `ssh laptop-zt` depuis le
+  desktop, sans mot de passe.
+
 ## Veilleuse : même logique que « ne pas déranger » (2026-11-17)
 
 - Ta demande : les boutons « Do Not Disturb » et « Night Light » du panneau de réglages réagissent pareil. Le bouton de la
@@ -88,8 +106,7 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
 - Vérifié sur bancs Sway et Hyprland (Nemo réel, copies lancées par `org.Nemo.FileOperations`, Nemo bridé en CPU) : fin
   fenêtre ouverte, fermeture à la main, conflit, erreur, réponse en moins de 3 s (rien), clic (focus sur la question),
   question répondue (notification retirée) ; démarrage complet sans nouvel avertissement ; `test-install.py` 0 échec.
-- Règle installée sur `terrier` (`system-setup.sh removable-writeback`, 2026-11-16) ; **à faire par toi** sur le laptop (même
-  commande, sans `sudo` : le script l'appelle lui-même).
+- Règle installée sur `terrier` (`system-setup.sh removable-writeback`, 2026-11-16) et sur le laptop (`install.sh`, 2026-11-17).
 - Règle vérifiée sur `terrier` avec une clé USB virtuelle (`dummy_hcd` + `g_mass_storage`, FAT montée par le bureau) : appliquée à
   l'ajout et sur « change » (`strict_limit=1`, `max_bytes` ≈ 16 Mio) ; copie de 1,5 Gio : sans la règle, écritures finies
   (100 %) à 1,2 s puis 11 s bloquées à la fermeture (option `flush` d'udisks pour FAT ; en exFAT, fin annoncée avant
