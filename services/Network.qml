@@ -721,7 +721,15 @@ Singleton {
         wiredQuery.running = true;
     }
 
-    onConnectedWiredChanged: Qt.callLater(readWired)
+    // Câbles connectés : lus quand leur ensemble change (la liste est recalculée à chaque interface ajoutée : nordlynx, veth…).
+    property string connectedWiredNames: ""
+    onConnectedWiredChanged: {
+        const names = connectedWired.map(d => d.name).join(" ");
+        if (names === connectedWiredNames)
+            return;
+        connectedWiredNames = names;
+        Qt.callLater(readWired);
+    }
 
     // Pour chaque appareil : `@@ <appareil> <interface IP>`, puis les champs (`nmcli -g` : une ligne par champ).
     readonly property string wiredScript: `for d; do

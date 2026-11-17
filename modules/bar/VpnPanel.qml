@@ -29,7 +29,7 @@ Panel {
 
     onVisibleChanged: {
         if (visible && !picked) {
-            const active = { nordvpn: Vpn.connected, tailscale: Tailscale.running, zerotier: ZeroTier.connectedCount > 0 };
+            const active = { nordvpn: Vpn.active, tailscale: Tailscale.running, zerotier: ZeroTier.connectedCount > 0 };
             tab = (tabs.find(t => active[t.key]) ?? tabs[0])?.key ?? "";
         }
         ready = visible;

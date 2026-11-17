@@ -35,6 +35,11 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
   seulement onglet Tailscale affiché ; `switchLocked` de `Panel` / `PanelFrame` retiré (plus d'usage) ; commentaires
   périmés ; ligne de test en double. Écarté : graphe de la carte principale = trafic de la première route (le tunnel sous
   un VPN, porté par cette connexion ; choix du plan, comme le module débit de la barre).
+- Passe 4 (7 constats, un moyen) — corrigés : icône NordVPN bleue gardée démon figé (statut de la dernière lecture) →
+  `Vpn.active` (disponible et connecté, en connexion, action ou pause), commun à l'icône et à l'onglet choisi à l'ouverture ;
+  détails filaires relus seulement quand l'ensemble des câbles connectés change (pas à chaque interface nordlynx, veth…) ;
+  test de l'entrée périmée rendu probant (contre-épreuve) ; `ZeroTier.polling` retiré ; commentaires. Écarté : Wi-Fi en
+  IPv6 seul avec un câble sans passerelle (rare ; routes IPv4 seules, comme le module débit de la barre).
 - `test-network.py` : à lancer **dans le Sway du banc** (`WAYLAND_DISPLAY`, `XDG_RUNTIME_DIR`) ; sur la session réelle, son
   panneau de test se ferme au gré du pointeur et le test des formulaires échoue (aussi sur `ea8a721`, avant le refactor).
   Passe sur banc, avec deux cas de plus (VPN sur Wi-Fi, câble de LAN) ; banc Sway : démarrage complet sans avertissement.
