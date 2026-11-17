@@ -18,6 +18,17 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
   - `tabs` du panneau VPN sans l'état actif (relu à l'ouverture seulement).
   Écartés : relecture Tailscale / ZeroTier toutes les 60 s même câble branché (coût accepté, noté dans `PERFORMANCE.md`) ;
   recherche Wi-Fi à chaque ouverture du panneau réseau (sa liste en fait partie).
+- Passe 2 (10 constats) — corrigés :
+  - en quittant l'onglet NordVPN, focus rendu au cadre (reproduit : plus personne ne l'avait, Échap et flèches morts) ;
+  - pont du câble lu aussi à sa connexion (avant : seulement panneau ouvert ; Wi-Fi pris pour principal jusque-là ;
+    contre-épreuve faite) ;
+  - accès limité attribué à la connexion principale (`wifiLimited` / `wiredLimited` / carte filaire), plus à la première
+    route ; `wifiCarriesRoute` et `routeWiredDevice` retirés ;
+  - choix de l'icône réseau dans `Network.iconWired` (plus dans `Tray.qml`) ; bouton masqué sans câble ni Wi-Fi gérés
+    (`Network.shown`, il ouvrait un panneau vide) ;
+  - `Vpn.refresh()` à l'affichage de l'onglet NordVPN par le service ; notification d'échec entreprise : « Open the Network
+    panel… » ; commentaires périmés (Tailscale, ZeroTier, `PanelTabs`, `Network`).
+  - Tests ajoutés : accès limité sous VPN, port de pont, détails lus à la connexion du câble.
 - `test-network.py` : à lancer **dans le Sway du banc** (`WAYLAND_DISPLAY`, `XDG_RUNTIME_DIR`) ; sur la session réelle, son
   panneau de test se ferme au gré du pointeur et le test des formulaires échoue (aussi sur `ea8a721`, avant le refactor).
   Passe sur banc, avec deux cas de plus (VPN sur Wi-Fi, câble de LAN) ; banc Sway : démarrage complet sans avertissement.

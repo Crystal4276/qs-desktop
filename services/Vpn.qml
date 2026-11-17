@@ -350,6 +350,7 @@ Singleton {
 
     // Onglet NordVPN affiché (VpnPanel.qml) : temps de connexion et volumes transférés à jour.
     readonly property bool panelOpen: Network.vpnPanelOpen && Network.vpnTab === "nordvpn"
+    onPanelOpenChanged: if (panelOpen) refresh()
     // État transitoire (connexion ou déconnexion en cours, lancée d'ici ou non) : à suivre de près.
     readonly property bool settling: available && !["Connected", "Disconnected", "Paused"].includes(state)
 

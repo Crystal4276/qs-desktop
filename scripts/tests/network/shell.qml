@@ -68,6 +68,8 @@ ShellRoot {
                 if (key === "interfaceName") {
                     Network.interfaceName = values[key];
                     Network.defaultRoutes = values[key] ? [values[key]] : [];
+                } else if (key === "wiredDetails") {
+                    Network.wiredDetails = values[key];
                 } else if (key === "defaultRoutes") {
                     Network.defaultRoutes = values[key];
                     Network.interfaceName = values[key][0] ?? "";
@@ -85,7 +87,8 @@ ShellRoot {
             return JSON.stringify({portal: Network.wifiCaptivePortal, limited: Network.wifiLimited,
                 connectivity: Network.connectivity, checks: Backend.checks, commands: Launch.commands,
                 buttonVisible: button !== null && button.visible, closedBeforeLaunch: root.closedBeforeLaunch,
-                scanner: Backend.wifi.scannerEnabled, primary: Network.primary, primaryWired: Network.primaryWired});
+                scanner: Backend.wifi.scannerEnabled, primary: Network.primary, primaryWired: Network.primaryWired,
+                wiredLimited: Network.wiredLimited, details: Object.keys(Network.wiredDetails)});
         }
         function openPanel(): void {
             root.panel = panelComponent.createObject(root);
