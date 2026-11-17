@@ -86,13 +86,18 @@ Singleton {
     // veilleuse (services/NightLight.qml).
     property bool sessionStart: false
     property bool scheduleRead: false
-    onQuietHoursChanged: if (scheduleRead && !editing) applySchedule()
+    onQuietHoursChanged: if (loaded && scheduleRead && !editing) applySchedule()
 
     function startSession(): void {
         if (sessionStart && scheduleRead) {
             sessionStart = false;
             applySchedule();
         }
+    }
+
+    function readSchedule(): void {
+        scheduleRead = true;
+        startSession();
     }
 
     SystemClock {
@@ -107,14 +112,8 @@ Singleton {
         path: Quickshell.statePath("do-not-disturb.json")
         printErrors: false
         onAdapterUpdated: if (!root.editing) writeAdapter()
-        onLoaded: {
-            root.scheduleRead = true;
-            root.startSession();
-        }
-        onLoadFailed: {   // pas encore de fichier : config machine
-            root.scheduleRead = true;
-            root.startSession();
-        }
+        onLoaded: root.readSchedule()
+        onLoadFailed: root.readSchedule()   // pas encore de fichier : config machine
 
         JsonAdapter {
             id: schedule
