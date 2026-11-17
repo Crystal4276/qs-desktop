@@ -20,6 +20,11 @@ Singleton {
     readonly property bool enabled: persist.enabled
     readonly property bool scheduled: scheduleState.enabled
     readonly property string schedule: [config.from, config.to].map(t => Settings.timeText(Settings.minutes(t))).join(" – ")
+    // Heures valides et différentes ; sinon veilleuse seulement à la main (avertissement), sans heures affichées.
+    readonly property bool validSchedule: {
+        const from = Settings.minutes(config.from), to = Settings.minutes(config.to);
+        return from >= 0 && to >= 0 && from !== to;
+    }
     readonly property bool nightHours: Settings.within(clock.hours * 60 + clock.minutes, config.from, config.to)
 
     function toggle(): void {
@@ -62,6 +67,11 @@ Singleton {
         }
     }
 
+    function readSchedule(): void {
+        scheduleRead = true;
+        startSession();
+    }
+
     SystemClock {
         id: clock
         precision: SystemClock.Minutes
@@ -71,14 +81,8 @@ Singleton {
         path: Quickshell.statePath("night-light-schedule.json")
         printErrors: false
         onAdapterUpdated: writeAdapter()
-        onLoaded: {
-            root.scheduleRead = true;
-            root.startSession();
-        }
-        onLoadFailed: {   // pas encore de fichier : horaire activé
-            root.scheduleRead = true;
-            root.startSession();
-        }
+        onLoaded: root.readSchedule()
+        onLoadFailed: root.readSchedule()   // pas encore de fichier : horaire activé
 
         JsonAdapter {
             id: scheduleState
@@ -204,8 +208,8 @@ Singleton {
     onConfigChanged: checkHours()
 
     function checkHours(): void {
-        if (Settings.minutes(config.from) < 0 || Settings.minutes(config.to) < 0)
-            console.warn(`NightLight: horaire ${config.from} – ${config.to} mal formé, veilleuse seulement à la main`);
+        if (!validSchedule)
+            console.warn(`NightLight: horaire ${config.from} – ${config.to} invalide, veilleuse seulement à la main`);
     }
 
     Process {

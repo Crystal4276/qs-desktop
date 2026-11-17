@@ -42,6 +42,13 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
 - Vérifié sur banc (« ne pas déranger ») : sans fichier, fichier horaire coupé (3 sessions), fichier aux heures à toi contre la
   config, ton fichier actuel, réglage par IPC, 6 vrais rechargements sans avertissement ; bureau réel : état identique avant et
   après, aucun nouvel avertissement.
+- Revue, passe 3 : « ne pas déranger » attend aussi l'état de la session (comme la veilleuse) ; heures de la veilleuse
+  identiques ou mal formées : sous-titre masqué, un seul avertissement (`validSchedule`, rétabli) ; lecture du fichier d'état
+  par une seule fonction (`readSchedule`). Écartés : ancien `night-light.json` non repris (il disait « éteinte », écrit ce
+  matin ; le reprendre couperait l'horaire), état manuel d'une session à l'autre (déjà écarté), adaptateur rempli avant le
+  signal `loaded` (vérifié), heures fixes sans effet dans la config de gammastep (documentées). Bancs refaits (« ne pas
+  déranger » : a à g, 6 rechargements ; veilleuse : sessions, horaire coupé, rechargements, heures invalides), bureau réel :
+  état identique, aucun nouvel avertissement.
 - **À tester** : ce soir à 20:00, le bouton s'allume avec l'écran ; l'éteindre à la main, il reste éteint jusqu'à 06:00 ; clic
   droit → « Schedule ». À 21:00, « ne pas déranger » comme avant.
 

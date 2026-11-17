@@ -177,7 +177,7 @@ Panel {
         QuickToggle {
             icon: Theme.icon.nightLight
             title: "Night Light"
-            subtitle: NightLight.scheduled ? NightLight.schedule : ""
+            subtitle: NightLight.scheduled && NightLight.validSchedule ? NightLight.schedule : ""
             checked: NightLight.enabled
             onClicked: NightLight.toggle()
             onSecondaryClicked: root.expanded = root.expanded === "nightLight" ? "" : "nightLight"
