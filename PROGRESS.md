@@ -29,8 +29,21 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
   horaire coupé, 3 nouvelles sessions de suite horaire coupé, vrais rechargements (fichier modifié : `touch` ne recharge pas),
   heures mal formées ; « ne pas déranger » inchangé ; capture du panneau avec la ligne dépliée. Bureau réel : deux rechargements
   sans nouvel avertissement, veilleuse allumée puis éteinte.
+- Revue, passe 2 : **« ne pas déranger » avait deux défauts** (antérieurs, vus en traçant le chargement sur banc) : horaire
+  appliqué au début de session avec les valeurs par défaut, avant la lecture de `do-not-disturb.json` (horaire coupé ou heures à
+  toi : allumé à tort en se connectant le soir) ; valeurs du fichier liées à la config machine dans l'adaptateur, qui les
+  remplaçait (et réécrivait le fichier) quand elle était lue après lui (vu sur banc : horaire coupé perdu). Corrigé comme la
+  veilleuse : horaire appliqué une fois le fichier lu, fichier sans liaison (valeur absente = config machine ; ton fichier actuel,
+  complet, est repris tel quel). `Settings.within` : `minutes()` qualifié (`root.`), sinon avertissement au rechargement.
+  Écartés : état manuel non gardé d'une session à l'autre (comme « ne pas déranger »), rechargement à la seconde d'une heure,
+  `setScheduled` par IPC dans les millisecondes du démarrage, sous-titre avec des heures identiques, avertissement répété à chaque
+  modification d'une config mal formée, deux `SystemClock`, logique d'horaire en deux exemplaires (proches, un composant commun
+  serait plus gros que l'écart).
+- Vérifié sur banc (« ne pas déranger ») : sans fichier, fichier horaire coupé (3 sessions), fichier aux heures à toi contre la
+  config, ton fichier actuel, réglage par IPC, 6 vrais rechargements sans avertissement ; bureau réel : état identique avant et
+  après, aucun nouvel avertissement.
 - **À tester** : ce soir à 20:00, le bouton s'allume avec l'écran ; l'éteindre à la main, il reste éteint jusqu'à 06:00 ; clic
-  droit → « Schedule ».
+  droit → « Schedule ». À 21:00, « ne pas déranger » comme avant.
 
 ## Copies Nemo : fin, questions, clé USB (2026-11-16)
 
