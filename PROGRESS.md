@@ -57,6 +57,12 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
   Tailscale / ZeroTier à chaque ouverture du panneau VPN (60 s et onglet affiché suffisent) ; `deps/` ; ligne NordVPN sans
   virgule finale si la ville manque ; focus différé ignoré panneau fermé ; `wiredConnected` tiré de `connectedWired` ;
   commentaires trop longs. Écarté : sonde de connectivité à l'épinglage du panneau réseau sur une machine filaire.
+- Passe 8 (rien au-dessus de « mineur ») — corrigés : lecture Tailscale avec ou sans appareils décidée à son lancement, plus
+  à l'arrivée du résultat (onglet ouvert pendant une lecture de fond : « 0 of 0 devices » un instant ; vérifié sur banc par
+  des réouvertures successives) ; commentaires rewrappés. Écartés : connexion principale de NetworkManager (Quickshell 0.3 ne
+  l'expose pas, `Networking` sans `primaryConnection` ; un processus de plus, et sous un VPN elle désigne le VPN) ; liste des
+  appareils Tailscale gardée en mémoire après une ouverture de l'onglet (quelques centaines de Ko avec Mullvad, contre un
+  écran vide à chaque ouverture). **Fin de la revue en boucle** : il ne reste que des points négligeables ou acceptés.
 - `test-network.py` : à lancer **dans le Sway du banc** (`WAYLAND_DISPLAY`, `XDG_RUNTIME_DIR`) ; sur la session réelle, son
   panneau de test se ferme au gré du pointeur et le test des formulaires échoue (aussi sur `ea8a721`, avant le refactor).
   Passe sur banc, avec deux cas de plus (VPN sur Wi-Fi, câble de LAN) ; banc Sway : démarrage complet sans avertissement.

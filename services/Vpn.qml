@@ -358,8 +358,9 @@ Singleton {
     readonly property bool settling: available && !["Connected", "Disconnected", "Paused"].includes(state)
 
     // Statut toutes les 5 s si l'onglet NordVPN est affiché ou l'état transitoire ; sinon toutes les 30 s (`nordvpn status` à
-    // chaque fois), et aussitôt quand l'interface NordVPN apparaît ou disparaît (Network.qml, 2,5 s au plus) : l'icône suit une connexion lancée
-    // en ligne de commande. Module masqué (démon pas encore prêt, compte connecté plus tard) : nouvel essai toutes les 30 s.
+    // chaque fois), et aussitôt quand l'interface NordVPN apparaît ou disparaît (Network.qml, 2,5 s au plus) : l'icône suit une
+    // connexion lancée en ligne de commande. Module masqué (démon pas encore prêt, compte connecté plus tard) : nouvel essai
+    // toutes les 30 s.
     Timer {
         interval: root.panelOpen || root.settling ? 5000 : 30000
         running: true

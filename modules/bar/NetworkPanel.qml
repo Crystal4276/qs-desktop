@@ -8,10 +8,10 @@ import qs.services
 // Panneau réseau (remplace le menu de nm-applet, ARCHITECTURE § 7.6 ; THEME.md § 3 « Panneau réseau » et « Module Wi-Fi ») :
 // Ethernet puis Wi-Fi (ta demande du 2026-11-17 ; Tailscale et ZeroTier : panneau VPN). Une carte par câble (WiredCard.qml),
 // dès qu'un port existe. Wi-Fi, si l'appareil a une carte Wi-Fi : interrupteur ; carte du réseau courant (WifiCard.qml :
-// qualité du signal et détails, comme KDE) ; autres réseaux visibles avec force, bande et état (GNOME, Cinnamon) ; mot de passe demandé sous la liste pour un réseau protégé inconnu, redemandé en
-// rouge s'il est refusé (réseau entreprise : identifiant aussi, méthode et domaine à la création) ; échec de connexion signalé ;
-// édition des connexions. Graphe du trafic sur la carte de la connexion principale (Network.primary). Libellés en anglais,
-// comme nm-applet et la locale du système.
+// qualité du signal et détails, comme KDE) ; autres réseaux visibles avec force, bande et état (GNOME, Cinnamon) ; mot de passe
+// demandé sous la liste pour un réseau protégé inconnu, redemandé en rouge s'il est refusé (réseau entreprise : identifiant
+// aussi, méthode et domaine à la création) ; échec de connexion signalé ; édition des connexions. Graphe du trafic sur la carte
+// de la connexion principale (Network.primary). Libellés en anglais, comme nm-applet et la locale du système.
 // Quickshell.Networking importé sous `NM` : son type `Network` masquerait le service du même nom.
 Panel {
     id: root

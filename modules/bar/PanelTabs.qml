@@ -2,8 +2,8 @@ import QtQuick
 import QtQuick.Layouts
 import qs.config
 
-// Onglets d'un panneau (VPN, liste de pays NordVPN, méthode Wi-Fi entreprise ; THEME.md § 3) : boutons de panneau de même largeur, l'onglet `current` « coché ».
-// `model` : [{ key, text }] ; un clic émet `picked(key)`.
+// Onglets d'un panneau (VPN, liste de pays NordVPN, méthode Wi-Fi entreprise ; THEME.md § 3) : boutons de panneau de même
+// largeur, l'onglet `current` « coché ». `model` : [{ key, text }] ; un clic émet `picked(key)`.
 RowLayout {
     id: root
 
