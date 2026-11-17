@@ -123,12 +123,12 @@ Singleton {
     readonly property bool limited: (wiredConnected || connectedWifi !== null)
         && [NetworkConnectivity.None, NetworkConnectivity.Portal, NetworkConnectivity.Limited].includes(connectivity)
 
-    // Filaire de l'icône « réseau » (Tray.qml) : câble branché, état (noms de nm-applet, Papirus-Dark).
+    // Icône « réseau » (Tray.qml, avec `wifiShown`) : câble branché, ou pas de Wi-Fi ; état filaire (noms de nm-applet, Papirus-Dark).
     readonly property bool wiredLinked: wiredDevices.some(d => d.hasLink)
     readonly property bool wiredShown: managed && (wiredLinked || wifi === null)
     readonly property string icon: wiredConnected ? (wiredLimited ? "network-wired-no-route" : "nm-device-wired") : "nm-no-connection"
 
-    // --- Module Wi-Fi (WifiPanel.qml, WifiIcon.qml) ---
+    // --- Wi-Fi (partie Wi-Fi de NetworkPanel.qml, WifiIcon.qml) ---
 
     readonly property bool wifiShown: managed && wifi !== null
     readonly property bool wifiHardwareEnabled: Networking.wifiHardwareEnabled
@@ -157,8 +157,8 @@ Singleton {
     }
 
     onConnectivityChecksEnabledChanged: Qt.callLater(checkConnectivity)
-    onWifiPanelPinnedChanged: {
-        if (wifiPanelPinned)
+    onNetworkPanelPinnedChanged: {
+        if (networkPanelPinned)
             Qt.callLater(checkConnectivity);
         else if (signInFailure && !signInFailure.notified)
             notifySignInFailure(signInFailure);   // attendait derrière un autre formulaire, panneau refermé sans le montrer
@@ -179,6 +179,12 @@ Singleton {
     // Câble qui porte la route (son pont si c'est un port de pont : détails lus panneau ouvert) ; "" : aucun (VPN, Wi-Fi).
     readonly property string routeWiredDevice: wiredDevices.find(d => d.connected
         && interfaceName === (wiredDetails[d.name]?.ipIface ?? d.name))?.name ?? ""
+    // Connexion principale (icône réseau du tray, graphe du trafic ; ta demande du 2026-11-17) : celle qui porte la route par
+    // défaut ; route sur un VPN (tun, nordlynx, tailscale0…) ou pont pas encore lu : la connexion physique dessous, filaire
+    // d'abord. "wired", "wifi" ou "" (aucune). `primaryWired` : le câble concerné.
+    readonly property string primary: wifiCarriesRoute ? "wifi" : wiredConnected ? "wired" : connectedWifi !== null ? "wifi" : ""
+    readonly property string primaryWired: primary !== "wired" ? ""
+        : routeWiredDevice || (wiredDevices.find(d => d.connected)?.name ?? "")
 
     // Autre réseau connecté : débit et adresse du précédent effacés, relus aussitôt panneau ouvert. Comparé au précédent : la
     // liaison est réévaluée à chaque variation de signal.
@@ -192,7 +198,7 @@ Singleton {
         Qt.callLater(checkConnectivity);
         wifiBitrate = "";
         wifiAddress = "";
-        if (wifiPanelOpen && connectedWifi)
+        if (networkPanelOpen && connectedWifi)
             linkQuery.running = true;
     }
 
@@ -249,7 +255,7 @@ Singleton {
 
     function reportSignInFailure(failure: var): void {
         signInFailure = failure;
-        if (!wifiPanelPinned)
+        if (!networkPanelPinned)
             notifySignInFailure(failure);
     }
 
@@ -546,7 +552,7 @@ Singleton {
         }
     }
 
-    // Panneaux ouverts : le Wi-Fi recherche les réseaux et relit ses détails ; le panneau réseau relit les détails filaires ; le
+    // Panneaux ouverts : le panneau réseau recherche les réseaux Wi-Fi et relit les détails filaires et Wi-Fi ; le
     // panneau VPN fait relire Tailscale / ZeroTier toutes les 5 s (Poller.qml : ces services lisent celui-ci, pas l'inverse —
     // pas de dépendance circulaire entre singletons, qui donnait des liaisons `undefined` au démarrage). Liste des panneaux
     // ouverts plutôt qu'un booléen : deux barres avec un tray, ou une barre recréée, ne s'écrasent pas.
@@ -555,12 +561,11 @@ Singleton {
     readonly property bool vpnPanelOpen: openPanels.some(p => p.kind === "vpn")
     // Onglet affiché du panneau VPN (VpnPanel) : Tailscale et ZeroTier ne sont relus toutes les 5 s que sur le leur.
     property string vpnTab: ""
-    // Panneau Wi-Fi ouvert, aperçu au survol compris : recherche des réseaux (sans elle, Quickshell ne liste que les réseaux
-    // enregistrés à portée : aperçu vide, « searching… » ; liste remplie aussitôt depuis celle que NetworkManager garde).
-    readonly property bool wifiPanelOpen: openPanels.some(p => p.kind === "wifi")
-    // Panneau Wi-Fi épinglé, pas un simple aperçu (Panel.qml, `pinned`) : vérification de connectivité ; échec entreprise montré
-    // sans notification.
-    readonly property bool wifiPanelPinned: openPanels.some(p => p.kind === "wifi" && p.panel.pinned === true)
+    // Panneau réseau épinglé, pas un simple aperçu (Panel.qml, `pinned`) : vérification de connectivité ; échec entreprise montré
+    // sans notification. (Ouvert, aperçu au survol compris : recherche des réseaux Wi-Fi ; sans elle, Quickshell ne liste que
+    // les réseaux enregistrés à portée : aperçu vide, « searching… » ; liste remplie aussitôt depuis celle que NetworkManager
+    // garde.)
+    readonly property bool networkPanelPinned: openPanels.some(p => p.kind === "network" && p.panel.pinned === true)
 
     function setPanelOpen(kind: string, panel: QtObject, open: bool): void {
         const others = openPanels.filter(p => p.panel !== panel);
@@ -571,7 +576,7 @@ Singleton {
         when: root.wifi !== null
         target: root.wifi
         property: "scannerEnabled"
-        value: root.wifiPanelOpen
+        value: root.networkPanelOpen
     }
 
     // Wi-Fi coupé (interrupteur, mode avion, `nmcli radio`) : la connexion suivie s'arrête, ce n'est pas un échec à annoncer.
@@ -614,7 +619,7 @@ Singleton {
     }
 
     Timer {
-        running: root.wifiPanelOpen && root.wifi !== null && root.wifiUsable
+        running: root.networkPanelOpen && root.wifi !== null && root.wifiUsable
         triggeredOnStart: true
         interval: root.detailsInterval
         repeat: true
@@ -632,7 +637,7 @@ Singleton {
         if (names === wifiNames)
             return;
         wifiNames = names;
-        if (wifiPanelOpen && wifiUsable && names !== "")
+        if (networkPanelOpen && wifiUsable && names !== "")
             apQuery.running = true;
     }
 

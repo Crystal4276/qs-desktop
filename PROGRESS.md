@@ -3,6 +3,22 @@
 État courant seulement. Historique figé : phases 0 à 10 dans `docs/archive/PROGRESS.md`, maintenance du 2026-11-05 au 2026-11-09
 et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de besoin).
 
+## Cartes réseau, étape 2 : panneau Network = Ethernet + Wi-Fi (2026-11-17)
+
+- `NetworkPanel.qml` (ancien `WifiPanel.qml`, supprimé) : cartes Ethernet en haut (dès qu'un port existe, « Cable unplugged »
+  compris), puis la partie Wi-Fi (ligne « Wi-Fi » avec son interrupteur, carte du réseau courant, autres réseaux, formulaires),
+  `Network settings…` en bas. Recherche Wi-Fi et sonde de connectivité à l'ouverture, comme l'ancien panneau Wi-Fi.
+- **Connexion principale** (`Network.primary`) : celle qui porte la route par défaut ; route sur un VPN : la connexion physique
+  dessous, filaire d'abord. Graphe du trafic seulement sur sa carte (Ethernet ou Wi-Fi).
+- Tray : un seul bouton réseau ; icône câble si l'Ethernet est principal, glyphe Wi-Fi (niveau du signal) si c'est le Wi-Fi ;
+  sans connexion, l'état du Wi-Fi.
+- `WiredCard.device` en `var` (comme `WifiCard.network`) : le test réseau y passe une fausse carte Ethernet.
+- Vérifié : `test-network.py` (formulaires, portail, plus la connexion principale : route filaire, VPN, Wi-Fi, aucune) ; banc Sway
+  avec le vrai matériel (panneau fusionné, graphe sur Ethernet, icône du tray pour chaque connexion principale forcée) ;
+  démarrage complet sans avertissement. Bureau réel (Hyprland) relancé, sans nouvel avertissement.
+- À tester à la main sur le laptop : icône Wi-Fi et graphe sur la carte Wi-Fi quand le Wi-Fi porte Internet ; câble branché ↔
+  débranché à chaud (icône et graphe qui changent de carte) ; avec NordVPN connecté, graphe sur la connexion physique.
+
 ## Cartes réseau, étape 1 : panneau VPN à onglets (2026-11-17)
 
 - Ta demande : NordVPN, Tailscale et ZeroTier réunis dans un panneau **VPN** (onglets des services présents) ; Ethernet et Wi-Fi

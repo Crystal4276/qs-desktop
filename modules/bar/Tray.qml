@@ -87,19 +87,20 @@ Item {
             panel: vpnPanel
         }
 
-        // Réseau filaire : câble branché, ou pas de Wi-Fi.
+        // Réseau (Ethernet et Wi-Fi, ta demande du 2026-11-17) : icône de la connexion principale (Network.primary) — filaire
+        // (noms de nm-applet), ou glyphe Wi-Fi dessiné et animé (WifiIcon.qml, niveau du signal à la manière de GNOME). Sans
+        // connexion : l'état du Wi-Fi (éteint, en connexion…) s'il y en a un, sinon « aucune connexion ».
         TrayButton {
-            visible: Network.wiredShown
-            icon: Network.icon
-            panel: networkPanel
-        }
+            id: networkButton
 
-        // Wi-Fi (ta demande du 2026-10-19) : glyphe dessiné et animé (WifiIcon.qml), niveau du signal à la manière de GNOME.
-        TrayButton {
-            visible: Network.wifiShown
-            panel: wifiPanel
+            readonly property bool wired: Network.primary === "wired" || (Network.primary === "" && Network.wifi === null)
+
+            visible: Network.wiredShown || Network.wifiShown
+            icon: wired ? Network.icon : ""
+            panel: networkPanel
 
             WifiIcon {
+                visible: !networkButton.wired
                 anchors.fill: parent
                 off: !Network.wifiUsable
                 connecting: Network.connectedWifi === null && Network.connectingWifi !== null
@@ -154,10 +155,6 @@ Item {
 
     NetworkPanel {
         id: networkPanel
-    }
-
-    WifiPanel {
-        id: wifiPanel
     }
 
     DisksPanel {

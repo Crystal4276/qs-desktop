@@ -31,6 +31,10 @@ QtObject {
         property bool connected: Backend.wired
         property bool hasLink: Backend.wired
         property string name: "test-ethernet"
+        property int state: connected ? ConnectionState.Connected : ConnectionState.Disconnected
+        property int linkSpeed: 1000
+        property string address: ""
+        property var network: null
     }
     property var devices: ({values: [wifi, ethernet]})
     function checkConnectivity() { checks++; }

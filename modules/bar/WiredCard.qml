@@ -5,12 +5,12 @@ import qs.config
 import qs.services
 
 // Carte d'une connexion filaire (THEME.md § 3 « Panneau réseau ») : même cadre que la carte Wi-Fi. En-tête (icône, état et
-// vitesse du lien, Connect / Disconnect), graphe du trafic si ce câble porte la route par défaut (KDE), puis détails comme GNOME
-// Settings et KDE : adaptateur, IPv4, passerelle, DNS, domaine, IPv6, adresse matérielle, pont.
+// vitesse du lien, Connect / Disconnect), graphe du trafic si ce câble est la connexion principale (Network.primaryWired ; KDE),
+// puis détails comme GNOME Settings et KDE : adaptateur, IPv4, passerelle, DNS, domaine, IPv6, adresse matérielle, pont.
 PanelCard {
     id: root
 
-    property NM.NetworkDevice device: null   // WiredDevice
+    property var device: null   // Quickshell.Networking WiredDevice (ou faux appareil du test réseau)
 
     readonly property var details: Network.wiredDetails[device?.name ?? ""] ?? null
     readonly property bool connected: device?.connected ?? false
@@ -54,7 +54,7 @@ PanelCard {
     }
 
     TrafficGraph {
-        visible: root.carriesTraffic
+        visible: root.connected && Network.primaryWired === root.device.name
     }
 
     DetailsGrid {
