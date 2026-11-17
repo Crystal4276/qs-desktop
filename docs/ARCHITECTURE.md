@@ -245,7 +245,7 @@ Singletons de `services/`. Les widgets ne lisent que les services ; aucun `Proce
 | `Gpu` | utilisation et température (5 s) | `nvidia-smi` ou sysfs (§ 7.16) |
 | `Monitor` | statistiques détaillées, panneau ouvert seulement | `/proc`, `/sys`, `nvidia-smi`, `df` |
 | `Network` | débit, connexions NetworkManager | `/proc/net`, `Quickshell.Networking`, `nmcli` (détails, création des profils Wi-Fi entreprise) |
-| `Tailscale`, `ZeroTier` | onglets du panneau réseau | `tailscale`, `zerotier-cli` ; `Poller`, `CliRunner` |
+| `Tailscale`, `ZeroTier` | onglets du panneau VPN | `tailscale`, `zerotier-cli` ; `Poller`, `CliRunner` |
 | `Vpn` | NordVPN | `nordvpn` (une seule file de commandes) |
 | `Bluez` | Bluetooth | `Quickshell.Bluetooth` ; `bluetoothctl` (appairage) |
 | `Disks` | disques amovibles | `busctl`, `gdbus monitor`, `udisksctl` |
@@ -347,7 +347,7 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
 
 ### 7.6 Réseau (tray)
 
-- Deux icônes : **réseau** (filaire et réseaux privés ; visible si un câble est branché, sans Wi-Fi, ou avec Tailscale / ZeroTier) et
+- Deux icônes : **réseau** (filaire ; visible si un câble est branché, ou sans Wi-Fi) et
   **Wi-Fi**. Connexion limitée signalée (`Networking.connectivity`).
 - Wi-Fi (`WifiPanel.qml`) : `Quickshell.Networking` (interrupteur, réseaux, mot de passe, oubli ; recherche des réseaux dès
   l'aperçu au survol : sans elle, seuls les réseaux enregistrés à portée sont listés), réseau courant déplié, niveaux de
@@ -380,9 +380,7 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
     fermeture si l'échec attendait derrière un autre formulaire ; oublié, formulaire compris, si le réseau se connecte
     entre-temps. Formulaire d'un réseau qui disparaît : Qt remet `passwordFor` (propriété `var`) à null, le
     formulaire se ferme (une référence d'objet détruit rangée dans un objet JS, elle, reste, propriétés indéfinies).
-- Panneau réseau : onglets Wired (détails `nmcli`, graphe du trafic) / Tailscale (`status --json`, `debug prefs` ; actions grâce à
-  `--operator=$USER`, à faire à la main) / ZeroTier (`zerotier-cli -j` avec le jeton copié dans `~/.zeroTierOneAuthToken`,
-  à la main ; sinon interfaces `zt*` en lecture seule). Relus toutes les 5 s onglet affiché ; 60 s sinon, sans câble.
+- Panneau réseau : une carte par câble (détails `nmcli`, graphe du trafic). Tailscale et ZeroTier : panneau VPN (§ 7.9).
 - Édition complète des connexions : `nm-connection-editor`. Copies : `wl-copy`.
 
 ### 7.7 Bluetooth (tray)
@@ -406,12 +404,17 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
 - Montage automatique et notifications comme udiskie ; volumes système (`HintSystem`, `HintIgnore`) ignorés.
 - Icône visible seulement avec un disque branché ; disque LUKS branché : le panneau s'ouvre avec le champ prêt (pas au démarrage).
 
-### 7.9 NordVPN (tray)
+### 7.9 VPN (tray) : NordVPN, Tailscale, ZeroTier
 
-- Commande `nordvpn` (pas d'API ni de flux d'événements) : `status` (lignes `Clé: valeur`) lu périodiquement et après chaque action ;
+- Un bouton (icône NordVPN connecté, sinon `network-vpn`, atténuée sans VPN actif), un panneau à onglets des services présents ;
+  à l'ouverture, l'onglet choisi à la main, sinon le premier VPN actif.
+- Tailscale (`status --json`, `debug prefs` ; actions grâce à `--operator=$USER`, à faire à la main) / ZeroTier (`zerotier-cli -j`
+  avec le jeton copié dans `~/.zeroTierOneAuthToken`, à la main ; sinon interfaces `zt*` en lecture seule) : relus toutes les
+  5 s onglet affiché, 60 s sinon (icône du tray).
+- NordVPN : commande `nordvpn` (pas d'API ni de flux d'événements) : `status` (lignes `Clé: valeur`) lu périodiquement et après chaque action ;
   **une seule file** pour toutes les commandes (une lecture suit chaque action et voit son effet).
-- Panneau : onglets Recent (historique local `vpn.json`, pays et ville) / All countries, recherche ; l'interrupteur reconnecte à la
-  dernière entrée. IPC `vpn connect [pays]` (vide : dernier pays) / `vpn disconnect` (`$mod+u` / `$mod+i`).
+- Onglet NordVPN : carte (état, interrupteur qui reconnecte à la dernière entrée, détails, pause), puis Recent (historique local
+  `vpn.json`, pays et ville) / All countries, recherche. IPC `vpn connect [pays]` (vide : dernier pays) / `vpn disconnect` (`$mod+u` / `$mod+i`).
 - Module masqué si `nordvpn` est absent ou le compte non connecté. **Jamais d'action réelle en test** (`docs/DEVELOPMENT.md`).
 
 ### 7.10 Web apps

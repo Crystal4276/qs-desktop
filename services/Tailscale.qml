@@ -163,12 +163,12 @@ Singleton {
         refresh();
     }
 
-    // Relecture : onglet affiché (5 s) ; sinon 60 s, câble débranché (icône du tray) ou service pas encore joint (démarrage
-    // avant le démon, redémarrage), sans quoi l'onglet ne reviendrait jamais sur une machine câblée.
+    // Relecture : onglet affiché (5 s) ; sinon 60 s, pour l'icône VPN du tray (atténuée sans VPN actif) et un service pas encore
+    // joint (démarrage avant le démon, redémarrage).
     Poller {
         id: poller
         tab: "tailscale"
-        active: root.available && (root.polling || !Network.wiredLinked || !root.installed)
+        active: root.available
         busy: statusQuery.running || prefsQuery.running
         onRead: root.read()
         onPanelOpened: root.prefsStale = true   // réglage fait ailleurs (terminal) depuis la dernière ouverture

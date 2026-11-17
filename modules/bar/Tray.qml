@@ -78,22 +78,19 @@ Item {
 
         // Modules natifs, après les applications (remplacent l'icône NordVPN, nm-applet, udiskie, blueman ; phase 5 ; Wi-Fi séparé
         // du réseau le 2026-10-19).
+        // VPN (NordVPN, Tailscale, ZeroTier ; ta demande du 2026-11-17) : icône NordVPN connecté, sinon `network-vpn`, atténuée si
+        // aucun VPN n'est actif.
         TrayButton {
-            visible: Vpn.available
-            icon: Vpn.icon
+            visible: Vpn.available || Tailscale.installed || ZeroTier.present
+            icon: Vpn.connected ? Vpn.icon : "network-vpn"
+            opacity: Vpn.connected || Tailscale.running || ZeroTier.connectedCount > 0 ? 1 : Theme.panel.disabledOpacity
             panel: vpnPanel
         }
 
+        // Réseau filaire : câble branché, ou pas de Wi-Fi.
         TrayButton {
-            // Réseau : filaire, et Tailscale / ZeroTier (visibles aussi sans câble, icône `network-vpn`).
-            readonly property bool privateNetworks: Tailscale.installed || ZeroTier.present
-            readonly property bool privateUp: Tailscale.running || ZeroTier.connectedCount > 0
-            visible: Network.wiredShown || privateNetworks
-            // Sans câble mais avec le Wi-Fi (qui a son icône), ou sans NetworkManager, le bouton sert aux réseaux privés :
-            // `network-vpn`, atténuée si aucun n'est actif. Sinon l'état filaire (sans câble ni Wi-Fi : « aucune connexion »,
-            // même si Tailscale se dit actif).
-            icon: Network.privateEntry ? "network-vpn" : Network.icon
-            opacity: Network.privateEntry && !privateUp ? Theme.panel.disabledOpacity : 1
+            visible: Network.wiredShown
+            icon: Network.icon
             panel: networkPanel
         }
 
