@@ -213,7 +213,7 @@ de ce desktop n'en est pas une), rétroéclairage (`/sys/class/backlight`), GPU 
 - `mediaPlayer` : lecteur préféré (nom D-Bus après `org.mpris.MediaPlayer2.`) : suivi s'il joue, sinon un lecteur qui joue, sinon lui ;
   un lecteur arrêté n'est plus suivi.
 - `updateCommand` : absente → `paru`, sinon `yay`, sinon `sudo pacman -Syu`.
-- `nightLight` : `{ "from": "20:00", "to": "06:00", "temperature": 3239 }`.
+- `nightLight` : `{ "from": "20:00", "to": "06:00", "temperature": 3239 }` (heures identiques ou mal formées : seulement à la main).
 - `doNotDisturb` : horaire de départ `{ "schedule": true, "from": "21:00", "to": "07:00" }`, ensuite réglé depuis le panneau (état local).
 - `doNotDisturb.muteApps` : applications qui jouent elles-mêmes le son de leurs notifications, coupées pendant « ne pas déranger », par
   `application.id` du flux (web apps : `env PULSE_PROP_OVERRIDE=application.id=whatsapp chromium …` dans leur lanceur) ou par
@@ -341,7 +341,8 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
 - Ligne du haut : batterie (laptop), capture d'écran, verrouiller / se déconnecter / redémarrer / éteindre (pas de veille, pas de
   confirmation). Curseurs : sortie son (flèche → choix de la sortie), luminosité (laptop). Bouton du sélecteur de fond.
 - Bascules : profil d'énergie (trois boutons), ne pas déranger (clic droit : horaire), garder l'écran allumé (`IdleInhibitor`), VRR et
-  HDR (écrans compatibles), veilleuse (`gammastep`, fondu de ~4 s), mode avion (dès qu'il y a une radio).
+  HDR (écrans compatibles), veilleuse (`gammastep`, fondu de ~4 s ;
+  horaire comme « ne pas déranger » : allumée au début, éteinte à la fin, libre à la main entre les deux), mode avion (dès qu'il y a une radio).
 - Aperçu au survol de l'engrenage. Réseau, Bluetooth, NordVPN, disques, cloche restent dans le tray (pas de doublon). IPC `settings toggle`.
 
 ### 7.6 Réseau (tray)

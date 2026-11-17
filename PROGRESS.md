@@ -3,6 +3,21 @@
 État courant seulement. Historique figé : phases 0 à 10 dans `docs/archive/PROGRESS.md`, maintenance du 2026-11-05 au 2026-11-09
 et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de besoin).
 
+## Veilleuse : même logique que « ne pas déranger » (2026-11-17)
+
+- Ta demande : les boutons « Do Not Disturb » et « Night Light » du panneau de réglages réagissent pareil. Le bouton de la
+  veilleuse restait allumé toute la journée (il voulait dire « horaire armé », gammastep passant seul du jour à la nuit).
+  Désormais, comme « ne pas déranger » : allumée à l'heure de début (20:00), éteinte à l'heure de fin (06:00), libre à la main
+  entre les deux jusqu'à la prochaine heure ; horaire appliqué au démarrage de la session, état gardé au rechargement. Le bouton
+  dit donc si l'écran est chaud en ce moment.
+- gammastep ne fait plus que chauffer l'écran avec son fondu (même température de jour comme de nuit) ; hors de la veilleuse, il
+  ne tourne plus (avant : toute la journée, à 6500 K). Plage commune aux deux : `Settings.within`. Ancien fichier d'état
+  `night-light.json` inutilisé (laissé tel quel).
+- Vérifié sur banc Sway (horaire de test à 2 min) : hors plage → éteinte ; à la main dans les deux sens ; heure de début →
+  allumée ; éteinte à la main puis rechargement → reste éteinte ; nouvelle session dans la plage → allumée ; heure de fin →
+  éteinte. Bureau réel : allumée puis éteinte par IPC (gammastep lancé, arrêté après le fondu), aucun nouvel avertissement.
+- **À tester** : ce soir à 20:00, le bouton s'allume avec l'écran ; l'éteindre à la main, il reste éteint jusqu'à 06:00.
+
 ## Copies Nemo : fin, questions, clé USB (2026-11-16)
 
 - Ta demande (article Phoronix sur KDE Frameworks 6.32) : savoir quand une copie est finie ou bloquée sur une question. Nemo
