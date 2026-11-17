@@ -2,7 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import qs.config
 
-// Heure HH:MM (horaire du « ne pas déranger », SettingsPanel.qml) : champ de la largeur de « 00:00 » ; montre `value` tant qu'il
+// Heure HH:MM (horaires du « ne pas déranger » et de la veilleuse, SettingsPanel.qml) : champ de la largeur de « 00:00 » ; montre `value` tant qu'il
 // n'a pas le focus. Masque HH:MM (ta demande du 2026-10-26) : deux points fixes, chiffres remplacés en place. Entrée ou sortie du
 // champ : `edited(heure)` si l'heure change (Entrée : aussi `accepted`, à qui de rendre le focus au panneau ; la sortie du champ
 // qui suit ne la renvoie pas). Échap annule la saisie et émet `cancelled` (rendre le focus au panneau : un second Échap le

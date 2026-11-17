@@ -3,6 +3,23 @@
 État courant seulement. Historique figé : phases 0 à 10 dans `docs/archive/PROGRESS.md`, maintenance du 2026-11-05 au 2026-11-09
 et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de besoin).
 
+## Veilleuse : horaire réglable comme « ne pas déranger » (2026-11-17)
+
+- Clic droit sur Night Light : même ligne « Schedule » que « ne pas déranger » (heures modifiables, interrupteur), plus
+  seulement l'interrupteur. Logique commune dans `services/Schedule.qml` (fichier d'état, heures, bascules à l'heure, au
+  réglage et au début de session), utilisée par `Notifs` et `NightLight` ; ligne commune `modules/bar/ScheduleRow.qml`.
+  Heures de la veilleuse dans `night-light-schedule.json` (ton fichier actuel, `{"enabled": true}`, repris : heures de la
+  config machine tant que tu ne les changes pas) ; `nightLight.schedule` ajouté à la config machine, comme `doNotDisturb`.
+  Heures identiques : plage vide (comme « ne pas déranger », plus d'avertissement ni de ligne masquée). IPC :
+  `nightlight setSchedule <bool> <de> <à>` et `scheduleState` (remplacent `setScheduled` / `isScheduled`).
+- Vérifié sur banc Sway : sortie et retour dans la plage par réglage, horaire coupé, bascule à la main gardée, heure mal
+  formée refusée, passage réel d'une heure (les deux horaires), session neuve avec l'ancien format du fichier, rechargement ;
+  capture du panneau déplié. Bureau réel : rechargé, états inchangés.
+- Piège vu en route : un **rechargement** à chaud refuse un composant en ligne ajouté à un fichier (« ScheduleRow is not a
+  type »), un démarrage à neuf l'accepte ; d'où le fichier séparé. Le bureau réel est resté sur l'ancienne génération le temps
+  de corriger (noté dans `docs/DEVELOPMENT.md`).
+- À tester à la main : clic droit sur Night Light, saisie des heures, interrupteur.
+
 ## Cartes réseau : revue en boucle (2026-11-17)
 
 - Passe 1 (`/code-review high` sur `ea8a721..HEAD`, 9 constats) — corrigés :

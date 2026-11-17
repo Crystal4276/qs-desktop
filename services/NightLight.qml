@@ -5,25 +5,25 @@ import Quickshell
 import Quickshell.Io
 import qs.config
 
-// Veilleuse (Night Light de GNOME) : `gammastep`, avec l'horaire et la température de la config (`nightLight` dans
-// hosts/*.json ; valeurs par défaut reprises de tes réglages GNOME). gammastep plutôt que wlsunset (ta demande du 2026-10-26) :
-// fondu d'environ 4 s à l'activation et à la désactivation, là où wlsunset change la température d'un coup.
-// Horaire comme « ne pas déranger » (Notifs.qml, ta demande du 2026-11-17) : `enabled` dit si l'écran est chaud en ce moment.
+// Veilleuse (Night Light de GNOME) : `gammastep`, à la température de la config (`nightLight` dans hosts/*.json ; valeur par
+// défaut reprise de tes réglages GNOME). gammastep plutôt que wlsunset (ta demande du 2026-10-26) : fondu d'environ 4 s à
+// l'activation et à la désactivation, là où wlsunset change la température d'un coup.
+// Horaire comme « ne pas déranger » (Schedule.qml, ta demande du 2026-11-17) : `enabled` dit si l'écran est chaud en ce moment.
 Singleton {
     id: root
 
     readonly property var config: Settings.nightLight
     readonly property bool enabled: persist.enabled
-    readonly property bool scheduled: scheduleState.enabled
-    readonly property string schedule: [config.from, config.to].map(t => Settings.timeText(Settings.minutes(t))).join(" – ")
-    // Heures valides et différentes ; sinon veilleuse seulement à la main (avertissement), sans heures affichées.
-    readonly property bool validSchedule: {
-        const from = Settings.minutes(config.from), to = Settings.minutes(config.to);
-        return from >= 0 && to >= 0 && from !== to;
+
+    // Horaire réglé depuis le panneau de réglages ; heures de départ dans la config machine.
+    readonly property Schedule schedule: Schedule {
+        file: "night-light-schedule.json"
+        defaults: root.config
+        active: persist.enabled
+        bySchedule: persist.bySchedule
+        ready: persist.restored
+        onSwitched: value => root.set(value, true)
     }
-    // clock.date, pas hours et minutes : changés l'un après l'autre, ils donneraient un instant une heure fausse (06:59 → 06:00 →
-    // 07:00) et une bascule de trop.
-    readonly property bool nightHours: Settings.within(clock.date.getHours() * 60 + clock.date.getMinutes(), config.from, config.to)
 
     function toggle(): void {
         set(!persist.enabled, false);
@@ -32,60 +32,6 @@ Singleton {
     function set(on: bool, bySchedule: bool): void {
         persist.enabled = on;
         persist.bySchedule = on && bySchedule;
-    }
-
-    function setScheduled(on: bool): void {
-        if (on === scheduleState.enabled)
-            return;
-        scheduleState.enabled = on;
-        if (on && nightHours && !persist.enabled)
-            set(true, true);
-        else if (!on && nightHours && persist.bySchedule)
-            set(false, false);
-    }
-
-    // Heure de début ou de fin atteinte, ou démarrage de la session.
-    function applySchedule(): void {
-        if (scheduleState.enabled && validSchedule)
-            set(nightHours, true);
-    }
-
-    // Heure atteinte, ou heures changées (config machine lue après le démarrage, ou modifiée).
-    onNightHoursChanged: if (persist.restored && scheduleRead) applySchedule()
-
-    // Début de session : horaire appliqué une fois l'état de la session repris (persist) et le fichier lu (ou absent) ; les
-    // propriétés d'un JsonAdapter gardent leur valeur par défaut tant que la lecture n'est pas finie, blockLoading ou non.
-    property bool sessionStart: false
-    property bool scheduleRead: false
-
-    function startSession(): void {
-        if (sessionStart && scheduleRead) {
-            sessionStart = false;
-            applySchedule();
-        }
-    }
-
-    function readSchedule(): void {
-        scheduleRead = true;
-        startSession();
-    }
-
-    SystemClock {
-        id: clock
-        precision: SystemClock.Minutes
-    }
-
-    FileView {
-        path: Quickshell.statePath("night-light-schedule.json")
-        printErrors: false
-        onAdapterUpdated: writeAdapter()
-        onLoaded: root.readSchedule()
-        onLoadFailed: root.readSchedule()   // pas encore de fichier : horaire activé
-
-        JsonAdapter {
-            id: scheduleState
-            property bool enabled: true
-        }
     }
 
     PersistentProperties {
@@ -97,10 +43,8 @@ Singleton {
         property bool restored: false   // état de la session repris
 
         onLoaded: {
-            if (!restored) {   // premier chargement de cette instance : début de session
-                root.sessionStart = true;
-                root.startSession();
-            }
+            if (!restored)   // premier chargement de cette instance : début de session
+                root.schedule.startSession();
             restored = true;
         }
     }
@@ -197,18 +141,7 @@ Singleton {
         failures = 0;
         apply();
     }
-    Component.onCompleted: {
-        checkHours();
-        apply();
-    }
-
-    // Config machine lue après le démarrage, ou modifiée.
-    onValidScheduleChanged: checkHours()
-
-    function checkHours(): void {
-        if (!validSchedule)
-            console.warn(`NightLight: horaire ${config.from} – ${config.to} invalide, veilleuse seulement à la main`);
-    }
+    Component.onCompleted: apply()
 
     Process {
         id: gammastep
@@ -289,12 +222,14 @@ Singleton {
             return root.enabled;
         }
 
-        function setScheduled(on: bool): void {
-            root.setScheduled(on);
+        // Tests : horaire en JSON ; réglage comme depuis le panneau.
+        function scheduleState(): string {
+            const s = root.schedule;
+            return JSON.stringify({ enabled: root.enabled, scheduled: s.enabled, from: s.from, to: s.to, nightHours: s.inRange });
         }
 
-        function isScheduled(): bool {
-            return root.scheduled;
+        function setSchedule(enabled: bool, from: string, to: string): void {
+            root.schedule.set(enabled, from, to);
         }
     }
 }

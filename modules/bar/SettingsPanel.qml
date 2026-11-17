@@ -161,7 +161,7 @@ Panel {
         QuickToggle {
             icon: Theme.icon.doNotDisturb
             title: "Do Not Disturb"
-            subtitle: Notifs.scheduled ? `${Notifs.scheduleFrom} – ${Notifs.scheduleTo}` : ""
+            subtitle: Notifs.schedule.summary
             checked: Notifs.doNotDisturb
             onClicked: Notifs.setDoNotDisturb(!Notifs.doNotDisturb)
             onSecondaryClicked: root.expanded = root.expanded === "dnd" ? "" : "dnd"
@@ -177,10 +177,10 @@ Panel {
         QuickToggle {
             icon: Theme.icon.nightLight
             title: "Night Light"
-            subtitle: NightLight.scheduled && NightLight.validSchedule ? NightLight.schedule : ""
+            subtitle: NightLight.schedule.summary
             checked: NightLight.enabled
             onClicked: NightLight.toggle()
-            onSecondaryClicked: if (NightLight.validSchedule) root.expanded = root.expanded === "nightLight" ? "" : "nightLight"
+            onSecondaryClicked: root.expanded = root.expanded === "nightLight" ? "" : "nightLight"
         }
 
         QuickToggle {
@@ -210,49 +210,17 @@ Panel {
         }
     }
 
-    // Horaire du « ne pas déranger » (clic droit sur sa bascule) : heures modifiables (Entrée ou sortie du champ), interrupteur.
-    PanelRow {
+    // Horaires du « ne pas déranger » et de la veilleuse (clic droit sur leur bascule).
+    ScheduleRow {
         visible: root.expanded === "dnd"
-        clickable: false
-        text: "Schedule"
-
-        TimeField {
-            value: Notifs.scheduleFrom
-            onEdited: time => Notifs.setSchedule(Notifs.scheduled, time, Notifs.scheduleTo)
-            onAccepted: root.frameItem.forceActiveFocus()   // Entrée : le cadre reprend le clavier (Échap, flèches)
-            onCancelled: root.frameItem.forceActiveFocus()
-        }
-
-        Text {
-            text: "–"
-            font.family: Theme.font.text
-            font.pixelSize: Theme.panel.fontSize
-            color: Theme.panel.text
-        }
-
-        TimeField {
-            value: Notifs.scheduleTo
-            onEdited: time => Notifs.setSchedule(Notifs.scheduled, Notifs.scheduleFrom, time)
-            onAccepted: root.frameItem.forceActiveFocus()
-            onCancelled: root.frameItem.forceActiveFocus()
-        }
-
-        PanelSwitch {
-            checked: Notifs.scheduled
-            onToggled: checked => Notifs.setSchedule(checked, Notifs.scheduleFrom, Notifs.scheduleTo)
-        }
+        schedule: Notifs.schedule
+        onFieldLeft: root.frameItem.forceActiveFocus()
     }
 
-    // Horaire de la veilleuse (clic droit sur sa bascule) : interrupteur ; heures dans la config machine (invalides : rien).
-    PanelRow {
-        visible: root.expanded === "nightLight" && NightLight.validSchedule
-        clickable: false
-        text: "Schedule"
-
-        PanelSwitch {
-            checked: NightLight.scheduled
-            onToggled: checked => NightLight.setScheduled(checked)
-        }
+    ScheduleRow {
+        visible: root.expanded === "nightLight"
+        schedule: NightLight.schedule
+        onFieldLeft: root.frameItem.forceActiveFocus()
     }
 
     // Curseur : glyphe (clic : muet), curseur de volume, pourcentage, flèche du choix de périphérique.
