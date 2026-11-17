@@ -69,7 +69,7 @@ Singleton {
     // `now` (minutes depuis minuit) dans la plage de `from` à `to` (HH:MM), qui peut passer minuit ; heures identiques : plage
     // vide ; heure mal formée : jamais (veilleuse, « ne pas déranger »).
     function within(now: int, from: string, to: string): bool {
-        const f = root.minutes(from), t = root.minutes(to);   // root : au rechargement, appel sans lui perdu (destruction)
+        const f = minutes(from), t = minutes(to);
         if (f < 0 || t < 0)
             return false;
         return f <= t ? now >= f && now < t : now >= f || now < t;

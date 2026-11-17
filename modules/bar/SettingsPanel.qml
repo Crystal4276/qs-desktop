@@ -180,7 +180,7 @@ Panel {
             subtitle: NightLight.scheduled && NightLight.validSchedule ? NightLight.schedule : ""
             checked: NightLight.enabled
             onClicked: NightLight.toggle()
-            onSecondaryClicked: root.expanded = root.expanded === "nightLight" ? "" : "nightLight"
+            onSecondaryClicked: if (NightLight.validSchedule) root.expanded = root.expanded === "nightLight" ? "" : "nightLight"
         }
 
         QuickToggle {
