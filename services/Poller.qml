@@ -1,7 +1,7 @@
 import QtQuick
 
 // Relecture d'un service du panneau VPN (Tailscale, ZeroTier) : toutes les 5 s quand son onglet (`tab`) est affiché
-// (`fast`), 60 s sinon, seulement si `active`. Lu aussi à l'ouverture du panneau (onglets à jour) ; `panelClosed` à sa
+// (`fast`), 60 s sinon, seulement si `active` ; `panelOpened` à l'ouverture du panneau, `panelClosed` à sa
 // fermeture. `request()` : demande de lecture ; regroupées dans un même tour de boucle (ouverture, activation, passage en
 // rapide arrivent ensemble), et refaite à la fin d'une lecture en cours (`busy`) pour voir l'effet d'une action qui vient de
 // finir. Le service lit dans `read`.
@@ -39,10 +39,9 @@ Timer {
     property Connections panel: Connections {
         target: Network
         function onVpnPanelOpenChanged() {
-            if (Network.vpnPanelOpen) {
+            if (Network.vpnPanelOpen)
                 root.panelOpened();
-                root.request();
-            } else
+            else
                 root.panelClosed();
         }
     }

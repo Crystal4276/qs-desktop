@@ -114,7 +114,7 @@ Singleton {
     readonly property var wifiNetworks: wifi ? wifi.networks.values.slice().sort((a, b) =>
         (b.connected - a.connected) || (b.known - a.known) || (b.signalStrength - a.signalStrength)) : []
     readonly property var connectedWifi: wifiNetworks.find(n => n.connected) ?? null
-    readonly property bool wiredConnected: wiredDevices.some(d => d.connected)
+    readonly property bool wiredConnected: connectedWired.length > 0
 
     // Connecté sans accès à Internet (vérification de connectivité de NetworkManager ; ajout du 2026-10-16, nm-applet ne le
     // signalait pas) : portail captif, accès limité ou aucun. « Unknown » (vérification désactivée) compte comme un accès complet.
@@ -700,8 +700,8 @@ Singleton {
     }
 
     // --- Détails filaires (WiredCard.qml), lus avec `nmcli` toutes les 5 s panneau réseau ouvert, comme les détails de KDE et de
-    // GNOME Settings, et à la connexion d'un câble (pont de la connexion principale). Un port de pont (ton `eno2` dans `bridge0`) n'a pas d'adresse : elle est lue sur le pont
-    // (/sys/class/net/<port>/master). Par appareil : { ipIface, bridge, product, ipv4, gateway, dns, domain, ipv6 }.
+    // GNOME Settings, ainsi qu'au démarrage et à la connexion d'un câble (pont de la connexion principale). Un port de pont (ton
+    // `eno2` dans `bridge0`) n'a pas d'adresse : elle est lue sur le pont (/sys/class/net/<port>/master). Par appareil : { ipIface, bridge, product, ipv4, gateway, dns, domain, ipv6 }.
     property var wiredDetails: ({})
 
     Timer {
