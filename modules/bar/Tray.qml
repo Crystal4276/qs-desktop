@@ -80,11 +80,9 @@ Item {
         // VPN (NordVPN, Tailscale, ZeroTier ; ta demande du 2026-11-17) : icône NordVPN (bleue connecté, grise en connexion ou
         // en pause), sinon `network-vpn`, atténuée si aucun VPN n'est actif.
         TrayButton {
-            readonly property bool nordvpn: Vpn.connected || Vpn.connecting || Vpn.busy || Vpn.paused
-
             visible: Vpn.available || Tailscale.installed || ZeroTier.present
-            icon: nordvpn ? Vpn.icon : "network-vpn"
-            opacity: nordvpn || Tailscale.running || ZeroTier.connectedCount > 0 ? 1 : Theme.panel.disabledOpacity
+            icon: Vpn.active ? Vpn.icon : "network-vpn"
+            opacity: Vpn.active || Tailscale.running || ZeroTier.connectedCount > 0 ? 1 : Theme.panel.disabledOpacity
             panel: vpnPanel
         }
 

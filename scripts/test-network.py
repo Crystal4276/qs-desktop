@@ -578,12 +578,13 @@ echo "Connexion « Campus » ajoutée avec succès."
             assert (snap()['primary'], snap()['primaryWired']) == ('wired', 'test-ethernet'), snap()
             assert not snap()['limited'] and snap()['wiredLimited'], snap()
             # Détails du câble lus à sa connexion, panneau fermé (pont de la route) ; port d'un pont : la route du pont.
-            config(wired=False, wiredDetails={}); config(wired=True); time.sleep(0.3)
+            config(wired=False); time.sleep(0.3); config(wiredDetails={}); config(wired=True); time.sleep(0.3)
             assert 'test-ethernet' in snap()['details'], snap()
             config(wiredDetails={'test-ethernet': {'ipIface': 'br0'}}, defaultRoutes=['br0', 'test-wifi'])
             assert (snap()['primary'], snap()['primaryWired']) == ('wired', 'test-ethernet'), snap()
             # Entrée périmée (lue câble débranché, avant son pont) : relue à la connexion.
-            config(wired=False, wiredDetails={'test-ethernet': {'ipIface': 'stale0'}}); config(wired=True); time.sleep(0.3)
+            config(wired=False); time.sleep(0.3); config(wiredDetails={'test-ethernet': {'ipIface': 'stale0'}})
+            config(wired=True); time.sleep(0.3)
             assert snap()['ipIface'] == 'test-ethernet', snap()
             config(wiredDetails={}, interfaceName='test-ethernet')
             config(wired=False, joined=False)

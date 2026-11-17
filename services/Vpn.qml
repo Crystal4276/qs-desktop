@@ -18,6 +18,9 @@ Singleton {
     readonly property string state: status["Status"] ?? ""
     readonly property bool connected: state === "Connected"
     readonly property bool paused: state === "Paused"
+    // NordVPN en jeu (icône du tray, onglet choisi à l'ouverture du panneau VPN) : connecté, en connexion, action en cours ou en
+    // pause ; jamais démon indisponible (statut gardé de la dernière lecture réussie).
+    readonly property bool active: available && (connected || connecting || busy || paused)
     readonly property string country: status["Country"] ?? ""
     readonly property string city: status["City"] ?? ""
     readonly property bool connecting: state === "Connecting" || doing === "connect"
