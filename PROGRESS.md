@@ -46,6 +46,12 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
   § 7.9. Écartés : relance « native » de `Process` (`running = true` pendant une lecture) à la place de `wiredAgain` — la doc
   de Quickshell 0.3 ne la décrit pas, relance explicite gardée ; état du panneau VPN rangé dans `Network` (mécanisme des
   panneaux ouverts déjà là, sans cycle entre singletons) ; contrôle de test qui pourrait passer sur un banc très chargé.
+- Passe 6 (7 constats, aucun grave ni moyen) — corrigés : préférences Tailscale lues de nouveau au démarrage (depuis la
+  passe 3, bandeau « Read only » et interrupteurs inactifs le temps de la première lecture) ; attentes du test réseau sur le
+  résultat de chaque lecture au lieu de 0,3 s fixes ; `deps/README.md` (réseau et VPN) et commentaire de `wl-clipboard`.
+  Écartés (négligeables) : saisie perdue en changeant d'onglet VPN (vues libérées, comme avant pour Tailscale / ZeroTier) ;
+  prédicat « un VPN actif » en partie répété (icône, onglet d'ouverture) ; `Vpn.active` vrai pendant une simple action ;
+  panneau réseau épinglé qui reste ouvert quand son bouton disparaît.
 - `test-network.py` : à lancer **dans le Sway du banc** (`WAYLAND_DISPLAY`, `XDG_RUNTIME_DIR`) ; sur la session réelle, son
   panneau de test se ferme au gré du pointeur et le test des formulaires échoue (aussi sur `ea8a721`, avant le refactor).
   Passe sur banc, avec deux cas de plus (VPN sur Wi-Fi, câble de LAN) ; banc Sway : démarrage complet sans avertissement.

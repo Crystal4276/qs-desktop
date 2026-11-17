@@ -577,15 +577,21 @@ echo "Connexion « Campus » ajoutée avec succès."
             config(defaultRoutes=['tun0', 'test-ethernet', 'test-wifi'])
             assert (snap()['primary'], snap()['primaryWired']) == ('wired', 'test-ethernet'), snap()
             assert not snap()['limited'] and snap()['wiredLimited'], snap()
-            # Détails du câble lus à sa connexion, panneau fermé (pont de la route) ; port d'un pont : la route du pont.
-            config(wired=False); time.sleep(0.3); config(wiredDetails={}); config(wired=True); time.sleep(0.3)
-            assert 'test-ethernet' in snap()['details'], snap()
+            # Détails du câble lus à sa connexion, panneau fermé (pont de la route) ; port d'un pont : la route du pont. Chaque
+            # lecture (sh + nmcli) attendue jusqu'à son résultat : celle de la déconnexion finie avant d'effacer.
+            def wait_for(check, timeout=3.0):
+                end = time.monotonic() + timeout
+                while not check(snap()) and time.monotonic() < end: time.sleep(0.05)
+                return snap()
+            config(wiredDetails={}); config(wired=False); wait_for(lambda s: 'test-ethernet' in s['details'])
+            config(wiredDetails={}); config(wired=True)
+            assert 'test-ethernet' in wait_for(lambda s: 'test-ethernet' in s['details'])['details'], snap()
             config(wiredDetails={'test-ethernet': {'ipIface': 'br0'}}, defaultRoutes=['br0', 'test-wifi'])
             assert (snap()['primary'], snap()['primaryWired']) == ('wired', 'test-ethernet'), snap()
             # Entrée périmée (lue câble débranché, avant son pont) : relue à la connexion.
-            config(wired=False); time.sleep(0.3); config(wiredDetails={'test-ethernet': {'ipIface': 'stale0'}})
-            config(wired=True); time.sleep(0.3)
-            assert snap()['ipIface'] == 'test-ethernet', snap()
+            config(wiredDetails={}); config(wired=False); wait_for(lambda s: 'test-ethernet' in s['details'])
+            config(wiredDetails={'test-ethernet': {'ipIface': 'stale0'}}); config(wired=True)
+            assert wait_for(lambda s: s['ipIface'] == 'test-ethernet')['ipIface'] == 'test-ethernet', snap()
             config(wiredDetails={}, interfaceName='test-ethernet')
             config(wired=False, joined=False)
             assert not snap()['portal'] and snap()['primary'] == '', snap()
