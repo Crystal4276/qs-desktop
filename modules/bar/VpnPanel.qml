@@ -14,7 +14,6 @@ Panel {
     title: "VPN"
 
     property string tab: ""
-    property bool picked: false    // onglet choisi à la main : gardé d'une ouverture à l'autre
     // Onglet de l'ouverture choisi : les vues se construisent ensuite (pas une vue de l'onglet précédent, aussitôt détruite).
     property bool ready: false
     readonly property var tabs: [
@@ -28,9 +27,10 @@ Panel {
     initialFocus: nordvpn.item?.searchInput ?? frameItem
 
     onVisibleChanged: {
-        if (visible && !picked) {
+        // Onglet choisi à la main (Network.vpnPicked : le même pour toutes les barres), sinon le premier VPN actif.
+        if (visible) {
             const active = { nordvpn: Vpn.active, tailscale: Tailscale.running, zerotier: ZeroTier.connectedCount > 0 };
-            tab = (tabs.find(t => active[t.key]) ?? tabs[0])?.key ?? "";
+            tab = (tabs.find(t => t.key === Network.vpnPicked) ?? tabs.find(t => active[t.key]) ?? tabs[0])?.key ?? "";
         }
         ready = visible;
         if (visible)
@@ -55,7 +55,7 @@ Panel {
         current: root.current
         onPicked: key => {
             root.tab = key;
-            root.picked = true;
+            Network.vpnPicked = key;
         }
     }
 

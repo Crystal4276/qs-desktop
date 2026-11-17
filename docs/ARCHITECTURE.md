@@ -418,7 +418,7 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
   **une seule file** pour toutes les commandes (une lecture suit chaque action et voit son effet).
 - Onglet NordVPN : carte (état, interrupteur qui reconnecte à la dernière entrée, détails, pause), puis Recent (historique local
   `vpn.json`, pays et ville) / All countries, recherche. IPC `vpn connect [pays]` (vide : dernier pays) / `vpn disconnect` (`$mod+u` / `$mod+i`).
-- Module masqué si `nordvpn` est absent ou le compte non connecté. **Jamais d'action réelle en test** (`docs/DEVELOPMENT.md`).
+- Onglet NordVPN masqué si `nordvpn` est absent ou le compte non connecté (bouton VPN masqué sans aucun des trois). **Jamais d'action réelle en test** (`docs/DEVELOPMENT.md`).
 
 ### 7.10 Web apps
 

@@ -49,7 +49,8 @@ OverlayPopup {
     }
 
     property bool previewing: false
-    // Ouvert et épinglé (pas un aperçu) : recherche Bluetooth et Wi-Fi seulement alors (radio, batterie du laptop).
+    // Ouvert et épinglé (pas un aperçu) : recherche Bluetooth seulement alors (radio, batterie du laptop) ; le Wi-Fi cherche dès
+    // l'aperçu (Network.qml : sans recherche, liste vide).
     readonly property bool pinned: visible && !previewing
     // Fermé pointeur sur l'icône : pas d'aperçu avant que le pointeur l'ait quittée.
     property bool previewSuppressed: false

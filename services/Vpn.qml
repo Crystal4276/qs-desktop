@@ -5,7 +5,7 @@ import Quickshell
 import Quickshell.Io
 
 // NordVPN (module natif du tray, remplace l'icône de norduserd ; ARCHITECTURE § 7.9). Aucune API : commande `nordvpn`,
-// statut relu toutes les 30 s (5 s panneau ouvert ou état transitoire ; plus bas) et après chaque action. Masqué si `nordvpn` est absent ou si tu n'es pas connecté au compte
+// statut relu toutes les 30 s (5 s onglet NordVPN du panneau VPN affiché ou état transitoire ; plus bas) et après chaque action. Masqué si `nordvpn` est absent ou si tu n'es pas connecté au compte
 // (revérifié toutes les 30 s).
 // Toutes les commandes passent par une seule file (ta demande du 2026-10-20) : une à la fois, dans l'ordre ; une lecture
 // du statut voit donc toujours l'effet de l'action d'avant.
@@ -357,7 +357,7 @@ Singleton {
     // État transitoire (connexion ou déconnexion en cours, lancée d'ici ou non) : à suivre de près.
     readonly property bool settling: available && !["Connected", "Disconnected", "Paused"].includes(state)
 
-    // Statut toutes les 5 s si le panneau est ouvert ou l'état transitoire ; sinon toutes les 30 s (`nordvpn status` à chaque fois),
+    // Statut toutes les 5 s si l'onglet NordVPN est affiché ou l'état transitoire ; sinon toutes les 30 s (`nordvpn status` à chaque fois),
     // et aussitôt quand l'interface NordVPN apparaît ou disparaît (Network.qml, 2,5 s au plus) : l'icône suit une connexion lancée
     // en ligne de commande. Module masqué (démon pas encore prêt, compte connecté plus tard) : nouvel essai toutes les 30 s.
     Timer {

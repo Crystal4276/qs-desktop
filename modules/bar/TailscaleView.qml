@@ -4,7 +4,7 @@ import Quickshell
 import qs.config
 import qs.services
 
-// Onglet Tailscale du panneau réseau (ta demande du 2026-10-19 ; services/Tailscale.qml) : carte (interrupteur up / down,
+// Onglet Tailscale du panneau VPN (ta demande du 2026-10-19 ; services/Tailscale.qml) : carte (interrupteur up / down,
 // connexion, cet appareil), nœud de sortie, options (DNS, routes, Shields Up, accès au LAN), appareils du tailnet (en ligne,
 // système, liaison directe ou relayée ; clic : copie de l'IP).
 ColumnLayout {
