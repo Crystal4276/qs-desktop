@@ -25,7 +25,9 @@ Singleton {
         const from = Settings.minutes(config.from), to = Settings.minutes(config.to);
         return from >= 0 && to >= 0 && from !== to;
     }
-    readonly property bool nightHours: Settings.within(clock.hours * 60 + clock.minutes, config.from, config.to)
+    // clock.date, pas hours et minutes : changés l'un après l'autre, ils donneraient un instant une heure fausse (06:59 → 06:00 →
+    // 07:00) et une bascule de trop.
+    readonly property bool nightHours: Settings.within(clock.date.getHours() * 60 + clock.date.getMinutes(), config.from, config.to)
 
     function toggle(): void {
         set(!persist.enabled, false);
@@ -204,8 +206,8 @@ Singleton {
         apply();
     }
 
-    // Config machine lue après le démarrage, ou modifiée : heures revues.
-    onConfigChanged: checkHours()
+    // Config machine lue après le démarrage, ou modifiée.
+    onValidScheduleChanged: checkHours()
 
     function checkHours(): void {
         if (!validSchedule)
