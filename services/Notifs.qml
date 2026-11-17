@@ -30,98 +30,23 @@ Singleton {
     property alias doNotDisturb: persist.doNotDisturb
     property bool loaded: false   // état de la session repris (persist.onLoaded) : doNotDisturb exact
 
-    // « Ne pas déranger » programmé (ta demande du 2026-10-26) : activé à l'heure de début, désactivé à l'heure de fin ; entre
-    // les deux, la bascule à la main reste libre jusqu'à la prochaine heure. Appliqué aussi au démarrage de la session. Horaire
-    // activé, ou heures changées, de sorte qu'on entre dans la plage : activé ; qu'on en sorte : désactivé, seulement s'il l'avait
-    // été par l'horaire (pas à la main). Réglé depuis le panneau de réglages, gardé dans un fichier d'état ; valeur pas encore
-    // réglée (null) : celle de `doNotDisturb` dans hosts/*.json.
-    readonly property bool scheduled: schedule.enabled ?? Settings.doNotDisturb.schedule
-    // Toujours "HH:MM" (le fichier d'état ou hosts/*.json peuvent contenir "7:00") : format du champ d'heure.
-    readonly property string scheduleFrom: Settings.timeText(Settings.minutes(schedule.from ?? Settings.doNotDisturb.from))
-    readonly property string scheduleTo: Settings.timeText(Settings.minutes(schedule.to ?? Settings.doNotDisturb.to))
-    // clock.date : voir NightLight.nightHours.
-    readonly property bool quietHours: Settings.within(clock.date.getHours() * 60 + clock.date.getMinutes(), scheduleFrom, scheduleTo)
-    property bool editing: false   // setSchedule en cours : la plage change par réglage, pas par l'heure
+    // « Ne pas déranger » programmé (Schedule.qml), réglé depuis le panneau de réglages.
+    readonly property Schedule schedule: Schedule {
+        file: "do-not-disturb.json"
+        defaults: Settings.doNotDisturb
+        active: root.doNotDisturb
+        bySchedule: persist.dndBySchedule
+        ready: root.loaded
+        onSwitched: value => {
+            root.doNotDisturb = value;
+            persist.dndBySchedule = value;
+        }
+    }
 
     // Bascule à la main (panneau de réglages, centre de notifications).
     function setDoNotDisturb(on: bool): void {
         doNotDisturb = on;
         persist.dndBySchedule = false;
-    }
-
-    function setBySchedule(on: bool): void {
-        doNotDisturb = on;
-        persist.dndBySchedule = on;
-    }
-
-    // Heure mal formée (IPC) : refusée seule, le champ revient à l'ancienne. Heures identiques acceptées (plage vide : inversion des
-    // heures en deux saisies possible). Une seule écriture du fichier.
-    function setSchedule(enabled: bool, from: string, to: string): void {
-        const was = scheduled && quietHours;
-        const f = Settings.minutes(from), t = Settings.minutes(to);
-        editing = true;
-        schedule.enabled = enabled;
-        if (f >= 0)
-            schedule.from = Settings.timeText(f);
-        if (t >= 0)
-            schedule.to = Settings.timeText(t);
-        editing = false;
-        scheduleFile.writeAdapter();
-        const now = scheduled && quietHours;
-        if (now && !was) {
-            if (!doNotDisturb)   // déjà activé à la main : il le reste (pas repris par l'horaire)
-                setBySchedule(true);
-        }
-        else if (!now && was && persist.dndBySchedule)
-            setBySchedule(false);
-    }
-
-    // Heure de début ou de fin atteinte, ou démarrage de la session.
-    function applySchedule(): void {
-        if (scheduled)
-            setBySchedule(quietHours);
-    }
-
-    // Pas avant la lecture du fichier d'état (un JsonAdapter garde ses valeurs par défaut jusque-là, blockLoading ou non) ; au
-    // début de la session, une fois l'état de la session repris (persist.onLoaded) et ce fichier lu (ou absent). Comme la
-    // veilleuse (services/NightLight.qml).
-    property bool sessionStart: false
-    property bool scheduleRead: false
-    onQuietHoursChanged: if (loaded && scheduleRead && !editing) applySchedule()
-
-    function startSession(): void {
-        if (sessionStart && scheduleRead) {
-            sessionStart = false;
-            applySchedule();
-        }
-    }
-
-    function readSchedule(): void {
-        scheduleRead = true;
-        startSession();
-    }
-
-    SystemClock {
-        id: clock
-        precision: SystemClock.Minutes
-    }
-
-    // Pas de liaison vers Settings dans l'adaptateur : la config machine, souvent lue après ce fichier, remplacerait ses valeurs
-    // (et le fichier avec, par onAdapterUpdated).
-    FileView {
-        id: scheduleFile
-        path: Quickshell.statePath("do-not-disturb.json")
-        printErrors: false
-        onAdapterUpdated: if (!root.editing) writeAdapter()
-        onLoaded: root.readSchedule()
-        onLoadFailed: root.readSchedule()   // pas encore de fichier : config machine
-
-        JsonAdapter {
-            id: schedule
-            property var enabled: null
-            property var from: null
-            property var to: null
-        }
     }
 
     // Historique et « ne pas déranger » gardés quand la config se recharge (les notifications affichées le sont par le serveur).
@@ -146,8 +71,7 @@ Singleton {
             root.loaded = true;
             if (!ready) {   // premier chargement de cette instance
                 staleIconDirs.running = true;
-                root.sessionStart = true;
-                root.startSession();
+                root.schedule.startSession();
             }
             root.iconFiles = Object.assign(JSON.parse(iconFiles), root.iconFiles);   // + copies faites avant ce point
             root.restoreLive(JSON.parse(live));
@@ -920,11 +844,12 @@ Singleton {
 
         // Tests : « ne pas déranger » et son horaire, en JSON ; réglage de l'horaire comme depuis le panneau.
         function doNotDisturbState(): string {
-            return JSON.stringify({ doNotDisturb: root.doNotDisturb, scheduled: root.scheduled, from: root.scheduleFrom, to: root.scheduleTo, quietHours: root.quietHours });
+            const s = root.schedule;
+            return JSON.stringify({ doNotDisturb: root.doNotDisturb, scheduled: s.enabled, from: s.from, to: s.to, quietHours: s.inRange });
         }
 
         function setSchedule(enabled: bool, from: string, to: string): void {
-            root.setSchedule(enabled, from, to);
+            root.schedule.set(enabled, from, to);
         }
 
         // dunstctl set-paused true|false : comme la bascule à la main.

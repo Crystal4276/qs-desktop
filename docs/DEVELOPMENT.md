@@ -190,6 +190,8 @@ Construite sur le laptop (2026-11-11) pour `plymouth-setup.sh` en mode UKI, dans
 - `flat`, `flatMap`, `Object.fromEntries` : absents (`[].concat(...listes)` à la place de `flat`).
 - `grabToImage` multiplie sa taille cible par l'échelle de l'écran (450 px → 675 en scale 1.5) : diviser.
 - Bogue de Qt 6.12 au coin des menus (raison parmi d'autres de l'abandon du menu copié de GTK).
+- Composant en ligne (`component X: …`) ajouté à un fichier déjà chargé : refusé au **rechargement** à chaud (« X is not a
+  type »), accepté au démarrage. Le bureau garde l'ancienne génération, mais un nouveau composant va dans son propre fichier.
 
 **Plymouth 26 (plugin `script`)**
 - Pas de littéraux hexadécimaux (`0x11`) : l'analyse du script se bloque sans message, écran noir. Décimal seulement, sans

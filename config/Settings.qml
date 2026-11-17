@@ -40,11 +40,10 @@ Singleton {
     // Veille des écrans (services/Idle.qml) : `timeout` en secondes (0 : jamais) ; `lockOnIdle` : verrouiller avant extinction ;
     // `lockBeforeSleep` : avant suspension du système. null : seulement sur une machine avec batterie.
     readonly property var idle: Object.assign({ timeout: 300, lockOnIdle: null, lockBeforeSleep: null }, config.idle ?? {})
-    // Veilleuse : allumée à `from`, éteinte à `to` (HH:MM ; identiques : seulement à la main), `temperature` en kelvins
-    // (hosts/default.json : tes réglages GNOME).
-    readonly property var nightLight: Object.assign({ from: "20:00", to: "06:00", temperature: 3239 }, config.nightLight ?? {})
-    // « Ne pas déranger » programmé (services/Notifs.qml) : actif de `from` à `to` (HH:MM) si `schedule`. Valeurs de départ :
-    // ensuite réglées depuis le panneau de réglages et gardées dans un fichier d'état.
+    // Veilleuse (services/NightLight.qml) et « ne pas déranger » (services/Notifs.qml) programmés : actifs de `from` à `to` (HH:MM)
+    // si `schedule` (services/Schedule.qml). Valeurs de départ : ensuite réglées depuis le panneau de réglages et gardées dans un
+    // fichier d'état. Veilleuse : `temperature` en kelvins (hosts/default.json : tes réglages GNOME).
+    readonly property var nightLight: Object.assign({ schedule: true, from: "20:00", to: "06:00", temperature: 3239 }, config.nightLight ?? {})
     // `muteApps` : applications coupées pendant « ne pas déranger » (services/Audio.qml), par `application.id` donné au lancement
     // ou par binaire ; à reprendre dans la règle dotfiles/wireplumber/.
     // Écran de connexion (services/Greeter.qml) : `defaultSession`, session proposée tant que l'utilisateur n'en a choisi aucune,
