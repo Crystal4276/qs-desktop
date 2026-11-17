@@ -34,7 +34,7 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
   toi : allumé à tort en se connectant le soir) ; valeurs du fichier liées à la config machine dans l'adaptateur, qui les
   remplaçait (et réécrivait le fichier) quand elle était lue après lui (vu sur banc : horaire coupé perdu). Corrigé comme la
   veilleuse : horaire appliqué une fois le fichier lu, fichier sans liaison (valeur absente = config machine ; ton fichier actuel,
-  complet, est repris tel quel). `Settings.within` : `minutes()` qualifié (`root.`), sinon avertissement au rechargement.
+  complet, est repris tel quel).
   Écartés : état manuel non gardé d'une session à l'autre (comme « ne pas déranger »), rechargement à la seconde d'une heure,
   `setScheduled` par IPC dans les millisecondes du démarrage, sous-titre avec des heures identiques, avertissement répété à chaque
   modification d'une config mal formée, deux `SystemClock`, logique d'horaire en deux exemplaires (proches, un composant commun
@@ -54,6 +54,13 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
   déranger ») ; heures de la veilleuse invalides : ligne « Schedule » masquée, avertissement seulement quand elles le deviennent
   (vérifié : aucun au démontage d'un rechargement). Écartés : « ne pas déranger » appliqué quelques millisecondes après
   `Notifs.loaded` au début de session (`Audio` suit le changement), points déjà écartés.
+- Revue, passe 5 : clic droit sur Night Light sans effet avec des heures invalides (il repliait les autres lignes) ; en-tête de
+  `NightLight.qml` raccourci. Avertissement « Unable to assign [undefined] to bool » des deux horaires : seulement quand un
+  rechargement tombe à moins d'une seconde d'un changement de minute (l'horloge de l'instance démontée sonne) ; reproduit avec
+  le code d'avant (`Notifs.qml[42]`, 2 fois sur 3), effet du moteur QML, sans conséquence : écarté (la qualification
+  `root.minutes` de la passe 2 ne le corrigeait pas, retirée). Écartés aussi : `schedule` de la config machine changé à chaud
+  sans effet avant la prochaine heure (comme avant), IPC de l'horaire avec des heures invalides, analyse des heures répétée,
+  points déjà écartés.
 - **À tester** : ce soir à 20:00, le bouton s'allume avec l'écran ; l'éteindre à la main, il reste éteint jusqu'à 06:00 ; clic
   droit → « Schedule ». À 21:00, « ne pas déranger » comme avant.
 

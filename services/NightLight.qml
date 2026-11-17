@@ -8,11 +8,7 @@ import qs.config
 // Veilleuse (Night Light de GNOME) : `gammastep`, avec l'horaire et la température de la config (`nightLight` dans
 // hosts/*.json ; valeurs par défaut reprises de tes réglages GNOME). gammastep plutôt que wlsunset (ta demande du 2026-10-26) :
 // fondu d'environ 4 s à l'activation et à la désactivation, là où wlsunset change la température d'un coup.
-// Horaire comme « ne pas déranger » (services/Notifs.qml, ta demande du 2026-11-17) : allumée à l'heure de début, éteinte à
-// l'heure de fin, libre à la main entre les deux jusqu'à la prochaine heure ; appliqué au démarrage de la session, gardé au
-// rechargement. `enabled` dit donc si l'écran est chaud en ce moment (bouton du panneau de réglages). Horaire coupé (clic droit
-// sur le bouton, gardé dans un fichier d'état) : seulement à la main. Le couper ou le rétablir dans la plage fait comme
-// Notifs.setSchedule : rétabli, allumée ; coupé, éteinte si elle l'avait été par l'horaire.
+// Horaire comme « ne pas déranger » (Notifs.qml, ta demande du 2026-11-17) : `enabled` dit si l'écran est chaud en ce moment.
 Singleton {
     id: root
 
