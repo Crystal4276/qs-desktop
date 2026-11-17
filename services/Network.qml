@@ -699,9 +699,10 @@ Singleton {
         }
     }
 
-    // --- Détails filaires (WiredCard.qml), lus avec `nmcli` toutes les 5 s panneau réseau ouvert, comme les détails de KDE et de
-    // GNOME Settings, ainsi qu'au démarrage et à la connexion d'un câble (pont de la connexion principale). Un port de pont (ton
-    // `eno2` dans `bridge0`) n'a pas d'adresse : elle est lue sur le pont (/sys/class/net/<port>/master). Par appareil : { ipIface, bridge, product, ipv4, gateway, dns, domain, ipv6 }.
+    // --- Détails filaires (WiredCard.qml), lus avec `nmcli` toutes les 5 s panneau réseau ouvert, comme les détails de KDE et
+    // de GNOME Settings, ainsi qu'au démarrage et à la connexion d'un câble (pont de la connexion principale). Un port de pont
+    // (ton `eno2` dans `bridge0`) n'a pas d'adresse : elle est lue sur le pont (/sys/class/net/<port>/master). Par appareil : {
+    // ipIface, bridge, product, ipv4, gateway, dns, domain, ipv6 }.
     property var wiredDetails: ({})
 
     Timer {

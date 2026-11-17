@@ -117,9 +117,12 @@ Singleton {
     // dès l'ouverture de l'onglet), puis onglet affiché à chaque ouverture du panneau et après une action (`prefsStale`), pas
     // toutes les 5 s.
     property bool prefsStale: true
+    property bool fullStatus: false   // lecture en cours avec la liste des appareils
     function read(): void {
         if (!available)
             return;
+        if (!statusQuery.running)
+            fullStatus = polling;   // liste complète ou non : décidée au lancement, pas à l'arrivée du résultat
         statusQuery.running = true;
         if (prefs === null || polling && prefsStale) {
             prefsStale = false;
@@ -181,7 +184,7 @@ Singleton {
         // Onglet fermé : l'état seul (`--peers=false`) ; la liste complète (des centaines de nœuds Mullvad possibles) est lue à
         // l'ouverture de l'onglet.
         // Bornée (démon figé : sans cela, Poller resterait occupé pour la session).
-        command: ["timeout", "10", "tailscale", "status", "--json", ...(root.polling ? [] : ["--peers=false"])]
+        command: ["timeout", "10", "tailscale", "status", "--json", ...(root.fullStatus ? [] : ["--peers=false"])]
         stdout: StdioCollector {
             onStreamFinished: {
                 // Code 1 quand Tailscale est arrêté (JSON quand même) comme quand le démon est injoignable (pas de JSON) : le
@@ -190,7 +193,7 @@ Singleton {
                     const status = JSON.parse(text);
                     // Lecture de fond (`--peers=false`) : appareils de la dernière lecture complète gardés, affichés à
                     // l'ouverture de l'onglet le temps de la relire (pas « 0 of 0 devices »).
-                    if (!root.polling && status && root.status?.Peer)
+                    if (!root.fullStatus && status && root.status?.Peer)
                         status.Peer = root.status.Peer;
                     root.status = status;
                     root.installed = true;
