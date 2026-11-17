@@ -76,12 +76,11 @@ Item {
             }
         }
 
-        // Modules natifs, après les applications (remplacent l'icône NordVPN, nm-applet, udiskie, blueman ; phase 5 ; Wi-Fi séparé
-        // du réseau le 2026-10-19).
+        // Modules natifs, après les applications (remplacent l'icône NordVPN, nm-applet, udiskie, blueman ; phase 5).
         // VPN (NordVPN, Tailscale, ZeroTier ; ta demande du 2026-11-17) : icône NordVPN (bleue connecté, grise en connexion ou
         // en pause), sinon `network-vpn`, atténuée si aucun VPN n'est actif.
         TrayButton {
-            readonly property bool nordvpn: Vpn.connected || Vpn.busy || Vpn.paused
+            readonly property bool nordvpn: Vpn.connected || Vpn.connecting || Vpn.busy || Vpn.paused
 
             visible: Vpn.available || Tailscale.installed || ZeroTier.present
             icon: nordvpn ? Vpn.icon : "network-vpn"

@@ -708,17 +708,20 @@ Singleton {
         onTriggered: root.readWired()
     }
 
+    // Demandée pendant une lecture : refaite à sa fin (un câble qui vient de rejoindre son pont).
+    property bool wiredAgain: false
     function readWired(): void {
-        if (wiredQuery.running || wiredDevices.length === 0)
+        if (wiredQuery.running) {
+            wiredAgain = true;
+            return;
+        }
+        if (wiredDevices.length === 0)
             return;
         wiredQuery.command = ["sh", "-c", wiredScript, "sh", ...wiredDevices.map(d => d.name)];
         wiredQuery.running = true;
     }
 
-    onConnectedWiredChanged: {
-        if (connectedWired.some(d => wiredDetails[d.name] === undefined))
-            Qt.callLater(readWired);
-    }
+    onConnectedWiredChanged: Qt.callLater(readWired)
 
     // Pour chaque appareil : `@@ <appareil> <interface IP>`, puis les champs (`nmcli -g` : une ligne par champ).
     readonly property string wiredScript: `for d; do
@@ -736,6 +739,12 @@ Singleton {
 
     Process {
         id: wiredQuery
+        onRunningChanged: {
+            if (!running && root.wiredAgain) {
+                root.wiredAgain = false;
+                root.readWired();
+            }
+        }
         stdout: StdioCollector {
             onStreamFinished: {
                 const details = {};

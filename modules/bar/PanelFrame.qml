@@ -11,7 +11,6 @@ Rectangle {
     property string title: ""
     property bool hasSwitch: false
     property bool switchChecked: false
-    property bool switchLocked: false
     property real maxHeight: Infinity
     signal switchToggled(bool checked)
     signal closeRequested
@@ -100,7 +99,6 @@ Rectangle {
                 PanelSwitch {
                     visible: root.hasSwitch
                     checked: root.switchChecked
-                    locked: root.switchLocked
                     onToggled: checked => root.switchToggled(checked)
                 }
             }

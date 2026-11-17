@@ -9,7 +9,7 @@ import Quickshell.Io
 // demandent que ton utilisateur soit « operator » du démon (`sudo tailscale set --operator=$USER`, une fois — install.sh) :
 // sans cela, l'erreur de la commande est affichée.
 // Relu toutes les 5 s onglet affiché ; sinon toutes les 60 s (l'icône VPN du tray en dépend) ; rien si la commande est
-// absente. Préférences lues panneau ouvert seulement.
+// absente. Préférences lues onglet affiché seulement.
 Singleton {
     id: root
 
@@ -113,14 +113,14 @@ Singleton {
             poller.request();
     }
 
-    // Préférences : elles ne changent que par `tailscale set` ; relues au démarrage, à l'ouverture du panneau et après une
-    // action (`prefsStale`), pas toutes les 5 s.
+    // Préférences (onglet Tailscale seulement) : elles ne changent que par `tailscale set` ; lues au premier affichage de
+    // l'onglet, puis à chaque ouverture du panneau et après une action (`prefsStale`), pas toutes les 5 s.
     property bool prefsStale: true
     function read(): void {
         if (!available)
             return;
         statusQuery.running = true;
-        if (prefsStale || prefs === null) {
+        if (polling && (prefsStale || prefs === null)) {
             prefsStale = false;
             prefsQuery.running = true;
         }

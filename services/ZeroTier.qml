@@ -76,8 +76,8 @@ Singleton {
         run(["set", id, `${key}=${on ? 1 : 0}`]);
     }
 
-    // Relecture : onglet affiché (5 s) ; sinon 60 s, câble débranché (icône du tray) ou service pas encore joint (démarrage
-    // avant le démon, redémarrage), sans quoi l'onglet ne reviendrait jamais sur une machine câblée.
+    // Relecture : onglet affiché (5 s) ; sinon 60 s, pour l'icône VPN du tray et un service pas encore joint (démarrage avant le
+    // démon, redémarrage).
     // Lecture en deux temps (`info`, puis `listnetworks` ou les interfaces) : `reading` la couvre entière, pour que Poller ne
     // relance rien entre les deux ; remis à faux quand plus rien ne tourne (y compris une commande qui n'a pas démarré).
     property bool reading: false

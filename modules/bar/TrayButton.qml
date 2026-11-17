@@ -1,7 +1,7 @@
 import QtQuick
 import qs.config
 
-// Bouton d'un module natif du tray (réseau, Wi-Fi, disques, Bluetooth, NordVPN) : même taille que les icônes d'applications ;
+// Bouton d'un module natif du tray (VPN, réseau, disques, Bluetooth, notifications) : même taille que les icônes d'applications ;
 // icône du thème (`icon`) ou glyphe dessiné en contenu (Wi-Fi). Survol : aperçu du panneau après un court arrêt sur l'icône ; un
 // appui (gauche ou droit, sauf `panelButtons` réduit : l'autre émet `otherPressed`) l'épingle, l'ouvre ou le ferme
 // (PreviewArea.qml, Panel.qml).

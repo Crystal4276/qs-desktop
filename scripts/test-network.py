@@ -582,8 +582,10 @@ echo "Connexion « Campus » ajoutée avec succès."
             assert 'test-ethernet' in snap()['details'], snap()
             config(wiredDetails={'test-ethernet': {'ipIface': 'br0'}}, defaultRoutes=['br0', 'test-wifi'])
             assert (snap()['primary'], snap()['primaryWired']) == ('wired', 'test-ethernet'), snap()
+            # Entrée périmée (lue câble débranché, avant son pont) : relue à la connexion.
+            config(wired=False, wiredDetails={'test-ethernet': {'ipIface': 'stale0'}}); config(wired=True); time.sleep(0.3)
+            assert snap()['ipIface'] == 'test-ethernet', snap()
             config(wiredDetails={}, interfaceName='test-ethernet')
-            config(interfaceName='test-ethernet')
             config(wired=False, joined=False)
             assert not snap()['portal'] and snap()['primary'] == '', snap()
             before = snap()['checks']; config(joined=True)
