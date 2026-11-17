@@ -7,48 +7,49 @@ import qs.config
 
 // Veilleuse (Night Light de GNOME) : `gammastep`, avec l'horaire et la température de la config (`nightLight` dans
 // hosts/*.json ; valeurs par défaut reprises de tes réglages GNOME). gammastep plutôt que wlsunset (ta demande du 2026-10-26) :
-// fondu d'environ 4 s à l'activation, à la désactivation et aux heures de l'horaire, là où wlsunset change la température d'un
-// coup. Activée ou non : gardé dans un fichier d'état local, donc retrouvé à la session suivante.
+// fondu d'environ 4 s à l'activation et à la désactivation, là où wlsunset change la température d'un coup.
+// Horaire comme « ne pas déranger » (services/Notifs.qml, ta demande du 2026-11-17) : allumée à l'heure de début, éteinte à
+// l'heure de fin, libre à la main entre les deux jusqu'à la prochaine heure ; appliqué au démarrage de la session, gardé au
+// rechargement. `enabled` dit donc si l'écran est chaud en ce moment (bouton du panneau de réglages).
 Singleton {
     id: root
 
     readonly property var config: Settings.nightLight
-    readonly property bool enabled: state.enabled
-    readonly property string schedule: `${Settings.timeText(fromMinutes)} – ${Settings.timeText(toMinutes)}`
+    readonly property bool enabled: persist.enabled
+    readonly property string schedule: `${Settings.timeText(Settings.minutes(config.from))} – ${Settings.timeText(Settings.minutes(config.to))}`
+    readonly property bool nightHours: Settings.within(clock.hours * 60 + clock.minutes, config.from, config.to)
 
     function toggle(): void {
-        state.enabled = !state.enabled;
+        persist.enabled = !persist.enabled;
     }
 
-    FileView {
-        path: Quickshell.statePath("night-light.json")
-        printErrors: false
-        onAdapterUpdated: writeAdapter()
+    onNightHoursChanged: if (persist.ready) persist.enabled = nightHours
 
-        JsonAdapter {
-            id: state
-            property bool enabled: false
+    SystemClock {
+        id: clock
+        precision: SystemClock.Minutes
+    }
+
+    PersistentProperties {
+        id: persist
+        reloadableId: "nightlight"
+
+        property bool enabled: false
+        property bool ready: false
+
+        onLoaded: {
+            if (!ready)   // premier chargement de cette instance : début de session
+                enabled = root.nightHours;
+            ready = true;
         }
     }
 
-    // Horaire : gammastep ne connaît qu'une nuit qui passe minuit (dusk-time : passage à la nuit, dawn-time : retour au jour).
-    // Nuit dans la même journée (00:30 – 06:00) : sa « journée » devient la nuit, températures inversées. Heures mal formées ou
-    // identiques : veilleuse sans effet (avertissement).
-    readonly property int fromMinutes: Settings.minutes(config.from)
-    readonly property int toMinutes: Settings.minutes(config.to)
-    readonly property bool validSchedule: fromMinutes >= 0 && toMinutes >= 0 && fromMinutes !== toMinutes
+    // gammastep ne sert qu'à chauffer l'écran avec fondu : même température de jour comme de nuit (heures sans effet, mais
+    // nécessaires : sans elles, il cherche une position géographique).
+    readonly property string configText: ["[general]", "adjustment-method=wayland", "fade=1", "dawn-time=06:00",
+        "dusk-time=18:00", `temp-day=${config.temperature}`, `temp-night=${config.temperature}`, ""].join("\n")
 
-    readonly property string configText: {
-        const crossesMidnight = fromMinutes > toMinutes;
-        const night = String(config.temperature), day = "6500";
-        return ["[general]", "adjustment-method=wayland", "fade=1",
-            `${crossesMidnight ? "dusk" : "dawn"}-time=${Settings.timeText(fromMinutes)}`,
-            `${crossesMidnight ? "dawn" : "dusk"}-time=${Settings.timeText(toMinutes)}`,
-            `temp-day=${crossesMidnight ? day : night}`, `temp-night=${crossesMidnight ? night : day}`, ""].join("\n");
-    }
-
-    // Config machine modifiée : gammastep arrêté puis relancé avec elle (retry) ; pas lancé (horaire invalide corrigé, abandon) :
-    // nouvel essai.
+    // Température modifiée : gammastep arrêté puis relancé avec elle (retry).
     onConfigTextChanged: {
         failures = 0;
         if (gammastep.running) {
@@ -59,7 +60,7 @@ Singleton {
         }
     }
 
-    // Écrit avant chaque lancement (les heures ne passent que par un fichier de config).
+    // Écrit avant chaque lancement (la config ne passe que par un fichier).
     FileView {
         id: configFile
         path: Quickshell.statePath("gammastep.ini")
@@ -76,17 +77,9 @@ Singleton {
     property real startedAt: 0
     property int failures: 0   // arrêts juste après le lancement, à la suite
 
-    function start(): void {
-        if (!validSchedule) {
-            console.warn(`NightLight: horaire ${schedule} invalide`);
-            return;
-        }
-        previous.running = true;   // lancement une fois le gammastep précédent arrêté (launch)
-    }
-
     function launch(): void {
-        if (!enabled || !validSchedule)
-            return;   // désactivée, ou horaire devenu invalide, pendant l'attente (avertissement : start)
+        if (!enabled)
+            return;   // désactivée pendant l'attente
         configFile.setText(configText);   // config à jour, même changée pendant l'attente (écriture bloquante)
         gammaOn = true;
         ready = false;
@@ -126,7 +119,7 @@ Singleton {
             return;   // launch() suivra
         if (!gammastep.running) {
             if (enabled)
-                start();
+                previous.running = true;   // lancement une fois le gammastep précédent arrêté (launch)
             return;
         }
         if (!ready)

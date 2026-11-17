@@ -39,13 +39,7 @@ Singleton {
     // Toujours "HH:MM" (le fichier d'état ou hosts/*.json peuvent contenir "7:00") : format du champ d'heure.
     readonly property string scheduleFrom: Settings.timeText(Settings.minutes(schedule.from))
     readonly property string scheduleTo: Settings.timeText(Settings.minutes(schedule.to))
-    readonly property bool quietHours: {
-        const now = clock.hours * 60 + clock.minutes;
-        const from = Settings.minutes(schedule.from), to = Settings.minutes(schedule.to);
-        if (from < 0 || to < 0)
-            return false;
-        return from <= to ? now >= from && now < to : now >= from || now < to;
-    }
+    readonly property bool quietHours: Settings.within(clock.hours * 60 + clock.minutes, schedule.from, schedule.to)
     property bool editing: false   // setSchedule en cours : la plage change par réglage, pas par l'heure
 
     // Bascule à la main (panneau de réglages, centre de notifications).

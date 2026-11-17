@@ -40,7 +40,8 @@ Singleton {
     // Veille des écrans (services/Idle.qml) : `timeout` en secondes (0 : jamais) ; `lockOnIdle` : verrouiller avant extinction ;
     // `lockBeforeSleep` : avant suspension du système. null : seulement sur une machine avec batterie.
     readonly property var idle: Object.assign({ timeout: 300, lockOnIdle: null, lockBeforeSleep: null }, config.idle ?? {})
-    // Veilleuse : de `from` à `to` (HH:MM, différentes), `temperature` en kelvins la nuit (hosts/default.json : tes réglages GNOME).
+    // Veilleuse : allumée à `from`, éteinte à `to` (HH:MM ; identiques : seulement à la main), `temperature` en kelvins
+    // (hosts/default.json : tes réglages GNOME).
     readonly property var nightLight: Object.assign({ from: "20:00", to: "06:00", temperature: 3239 }, config.nightLight ?? {})
     // « Ne pas déranger » programmé (services/Notifs.qml) : actif de `from` à `to` (HH:MM) si `schedule`. Valeurs de départ :
     // ensuite réglées depuis le panneau de réglages et gardées dans un fichier d'état.
@@ -63,6 +64,15 @@ Singleton {
     function minutes(time: string): int {
         const match = /^([01]?\d|2[0-3]):([0-5]?\d)$/.exec(time ?? "");
         return match ? Number(match[1]) * 60 + Number(match[2]) : -1;
+    }
+
+    // `now` (minutes depuis minuit) dans la plage de `from` à `to` (HH:MM), qui peut passer minuit ; heures identiques : plage
+    // vide ; heure mal formée : jamais (veilleuse, « ne pas déranger »).
+    function within(now: int, from: string, to: string): bool {
+        const f = minutes(from), t = minutes(to);
+        if (f < 0 || t < 0)
+            return false;
+        return f <= t ? now >= f && now < t : now >= f || now < t;
     }
 
     // Minutes depuis minuit → "HH:MM" ("" si négatif).
