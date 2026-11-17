@@ -5,8 +5,7 @@ import Quickshell
 import Quickshell.Io
 import qs.config
 
-// Veilleuse (Night Light de GNOME) : `gammastep`, à la température de la config (`nightLight` dans hosts/*.json ; valeur par
-// défaut reprise de tes réglages GNOME). gammastep plutôt que wlsunset (ta demande du 2026-10-26) : fondu d'environ 4 s à
+// Veilleuse (Night Light de GNOME) : `gammastep`. gammastep plutôt que wlsunset (ta demande du 2026-10-26) : fondu d'environ 4 s à
 // l'activation et à la désactivation, là où wlsunset change la température d'un coup.
 // Horaire comme « ne pas déranger » (Schedule.qml, ta demande du 2026-11-17) : `enabled` dit si l'écran est chaud en ce moment.
 Singleton {
@@ -14,6 +13,29 @@ Singleton {
 
     readonly property var config: Settings.nightLight
     readonly property bool enabled: persist.enabled
+
+    // Température (ta demande du 2026-11-18) : réglée depuis le panneau, gardée dans un fichier d'état ; pas encore réglée : celle
+    // de la config machine (`nightLight.temperature`, tes réglages GNOME). Plage du curseur de GNOME. `warmth` : position du
+    // curseur, de 0 (moins chaud) à 1 (plus chaud).
+    readonly property int minTemperature: 1700
+    readonly property int maxTemperature: 4700
+    readonly property int temperature: Math.max(minTemperature, Math.min(maxTemperature, Math.round(temperatureState.temperature ?? config.temperature)))
+    readonly property real warmth: (maxTemperature - temperature) / (maxTemperature - minTemperature)
+
+    function setWarmth(warmth: real): void {
+        temperatureState.temperature = Math.round(maxTemperature - Math.max(0, Math.min(1, warmth)) * (maxTemperature - minTemperature));
+    }
+
+    FileView {
+        path: Quickshell.statePath("night-light.json")   // ancien fichier d'état, repris (sa clé `enabled` est ignorée)
+        printErrors: false
+        onAdapterUpdated: writeAdapter()
+
+        JsonAdapter {
+            id: temperatureState
+            property var temperature: null
+        }
+    }
 
     // Horaire réglé depuis le panneau de réglages ; heures de départ dans la config machine.
     readonly property Schedule schedule: Schedule {
@@ -51,17 +73,25 @@ Singleton {
 
     // gammastep ne sert qu'à chauffer l'écran avec fondu : même température de jour comme de nuit (heures sans effet, mais
     // nécessaires : sans elles, il cherche une position géographique).
-    readonly property string configText: ["[general]", "adjustment-method=wayland", "fade=1", "dawn-time=06:00",
-        "dusk-time=18:00", `temp-day=${config.temperature}`, `temp-night=${config.temperature}`, ""].join("\n")
+    function configText(fade: bool): string {
+        return ["[general]", "adjustment-method=wayland", `fade=${fade ? 1 : 0}`, "dawn-time=06:00", "dusk-time=18:00",
+            `temp-day=${temperature}`, `temp-night=${temperature}`, ""].join("\n");
+    }
 
-    // Température modifiée : gammastep arrêté puis relancé avec elle (retry).
-    onConfigTextChanged: {
+    // Température modifiée, veilleuse allumée : saut net (essai, ta demande du 2026-11-18). gammastep ne change pas de
+    // température en marche : arrêté sec (SIGKILL : le compositeur rend aussitôt le gamma neutre, sans fondu de sortie), puis
+    // relancé aussitôt, sans fondu d'entrée (`jump`). Ce gammastep-là s'éteint donc sans fondu lui aussi. Éteinte : nouvelle
+    // température au prochain lancement.
+    property bool jump: false
+
+    onTemperatureChanged: {
         failures = 0;
-        if (gammastep.running) {
+        if (gammastep.running && gammaOn) {
+            jump = true;
             ready = false;
-            gammastep.signal(15);
-        } else {
-            apply();
+            gammastep.signal(9);
+        } else if (!gammastep.running) {
+            apply();   // essais espacés en cours : relancé aussitôt
         }
     }
 
@@ -83,9 +113,11 @@ Singleton {
     property int failures: 0   // arrêts juste après le lancement, à la suite
 
     function launch(): void {
+        const fade = !jump;
+        jump = false;
         if (!enabled)
             return;   // désactivée pendant l'attente
-        configFile.setText(configText);   // config à jour, même changée pendant l'attente (écriture bloquante)
+        configFile.setText(configText(fade));   // config à jour, même changée pendant l'attente (écriture bloquante)
         gammaOn = true;
         ready = false;
         startedAt = Date.now();
@@ -139,6 +171,7 @@ Singleton {
 
     onEnabledChanged: {
         failures = 0;
+        jump = false;
         apply();
     }
     Component.onCompleted: apply()
@@ -164,6 +197,10 @@ Singleton {
             readyDelay.stop();
             root.gammaOn = false;
             root.ready = false;
+            if (root.jump) {   // arrêté pour changer de température (onTemperatureChanged) : relancé aussitôt
+                root.apply();
+                return;
+            }
             root.failures = Date.now() - root.startedAt < 5000 ? root.failures + 1 : 0;
             if (root.failures === 10)
                 console.warn("NightLight: gammastep s'arrête aussitôt lancé, nouvel essai chaque minute (autre client gamma ?)");
@@ -220,6 +257,15 @@ Singleton {
 
         function isEnabled(): bool {
             return root.enabled;
+        }
+
+        // Tests : température en kelvins, réglée comme depuis le curseur.
+        function temperature(): int {
+            return root.temperature;
+        }
+
+        function setTemperature(kelvins: int): void {
+            root.setWarmth((root.maxTemperature - kelvins) / (root.maxTemperature - root.minTemperature));
         }
 
         // Tests : horaire en JSON ; réglage comme depuis le panneau.

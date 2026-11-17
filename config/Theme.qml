@@ -354,6 +354,10 @@ Singleton {
         readonly property int columns: 2                              // bascules en 2 colonnes, comme GNOME
         readonly property color checked: root.panel.accent            // bascule activée : fond `green`…
         readonly property color checkedText: root.module.highlightText   // …texte `mantle` (contraste inversé, comme le lanceur)
+        // Curseur de température de la veilleuse (clic droit sur sa bascule) : dégradé du niveau d'entrée audio (ton choix du
+        // 2026-11-18), glyphe comme les bascules.
+        readonly property list<color> warmthGradient: root.levelMeter.gradient
+        readonly property color warmthIcon: root.panel.text
     }
 
     // § 4 — Notifications

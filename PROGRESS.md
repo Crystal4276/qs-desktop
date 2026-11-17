@@ -3,6 +3,22 @@
 État courant seulement. Historique figé : phases 0 à 10 dans `docs/archive/PROGRESS.md`, maintenance du 2026-11-05 au 2026-11-09
 et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de besoin).
 
+## Veilleuse : curseur de température (2026-11-18)
+
+- Sous la ligne « Schedule » de la veilleuse (clic droit) : curseur de température, de gauche (4700 K, moins chaud) à droite
+  (1700 K, plus chaud), plage de GNOME ; dégradé du niveau audio (ton choix), glyphe de la veilleuse. Appliqué au relâcher
+  (molette, clavier : à chaque cran). Gardé dans `night-light.json` (ancien fichier repris) ; config machine = valeur de départ.
+- **Essai « saut net »** (ton choix) : gammastep ne change pas de température en marche ; arrêté sec (SIGKILL : gamma neutre
+  aussitôt) et relancé sans fondu. Mesuré sur banc (faux gammastep) : relance 50 à 90 ms après l'appel. Le gammastep relancé
+  s'éteint aussi sans fondu (la prochaine extinction est nette, l'allumage suivant refait le fondu). Si le rendu ne te plaît
+  pas : hyprsunset sous Hyprland (réglable à chaud), gammastep sous Sway.
+- Remplissage en dégradé mis en commun (`modules/bar/GradientFill.qml`) : niveau audio et curseur (`VolumeSlider.gradient`,
+  `commitOnRelease`).
+- Vérifié : banc Sway (rechargement à chaud depuis la version d'avant, relances et fondus avec un faux gammastep, veilleuse
+  éteinte : rien de relancé, capture) ; bureau réel sous Hyprland : 3239 → 3209 → 3239 K, gamma repris par chaque gammastep,
+  aucun nouvel avertissement.
+- À tester à la main : glisser le curseur et juger le saut (Sway et Hyprland), molette.
+
 ## Veilleuse : horaire réglable comme « ne pas déranger » (2026-11-17)
 
 - Clic droit sur Night Light : même ligne « Schedule » que « ne pas déranger » (heures modifiables, interrupteur), plus
