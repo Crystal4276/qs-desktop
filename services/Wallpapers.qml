@@ -128,6 +128,16 @@ Singleton {
         state.overrides = Object.assign({}, overrides, { [description]: path });
     }
 
+    // Choix enregistrés tels quels (utilitaire : « Reset » revient à ceux de son ouverture).
+    function snapshot(): var {
+        return { selection: state.selection, overrides: state.overrides };
+    }
+
+    function restore(saved: var): void {
+        state.overrides = saved.overrides;
+        state.selection = saved.selection;
+    }
+
     // Ouverture de l'utilitaire depuis l'interface (bouton du panneau de réglages), sur l'écran `screen` (celui du bouton) :
     // modules/wallpaper/WallpaperPicker.qml écoute.
     signal pickerRequested(var screen)

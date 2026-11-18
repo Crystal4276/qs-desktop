@@ -60,9 +60,11 @@ def test(work, compositor="sway", scale=1, shots=None):
     t=t.replace('                id: cell','                id: cell\n                Component.onCompleted: root.lifecycle.created++\n                Component.onDestruction: root.lifecycle.destroyed++')
     picker_source.write_text(t)
     probe = root / 'shell.qml'
-    qml = probe.read_text().replace('import Quickshell\n', 'import QtQuick\nimport Quickshell\nimport Quickshell.Io\n')
+    qml = probe.read_text().replace('import Quickshell\n', 'import QtQuick\nimport QtTest\nimport Quickshell\nimport Quickshell.Io\n')
     qml = qml[:qml.rfind('}')] + '''
     PickerWindow { id: picker }
+    // Real Qt wheel and key events (QtTest), as a mouse notch or a key press would send them.
+    TestCase { id: events; when: false }
     property var pending: null
     property bool closeNext: false
     property int libraryChanges: 0
@@ -107,6 +109,21 @@ def test(work, compositor="sway", scale=1, shots=None):
         }
         function scrollEnd(): void { picker.grid.currentIndex=picker.items.length-1; picker.grid.positionViewAtEnd(); }
         function screen(name: string): void { picker.open(Quickshell.screens.find(s=>s.name===name)); }
+        function wheel(notches: int): void {
+            const g=picker.grid;
+            for(let i=0;i<Math.abs(notches);i++) events.mouseWheel(g,g.width/2,g.height/2,0,notches>0?-120:120);
+        }
+        function top(): void { picker.grid.positionViewAtBeginning(); }
+        function click(i: int): void { const g=picker.grid; g.positionViewAtIndex(i,GridView.Center); events.mouseClick(g.itemAtIndex(i)); }
+        function key(name: string): void { events.parent=picker.frameItem; events.keyClick({up:Qt.Key_Up,down:Qt.Key_Down,left:Qt.Key_Left,right:Qt.Key_Right}[name]); }
+        function resetButton(): var { return picker.testControls.children[0].children.find(b=>b.text==="Reset"); }
+        function reset(): bool { const b=resetButton(); if(!b.enabled) return false; events.mouseClick(b); return true; }
+        function pickerState(): string {
+            const g=picker.grid, i=g.currentIndex, cell=g.itemAtIndex(i);
+            return JSON.stringify({tab:picker.tab,index:i,y:g.contentY,height:g.height,cellHeight:g.cellHeight,changed:picker.changed,
+                resetEnabled:resetButton().enabled,focus:g.activeFocus,path:g.modelEntries[i]?.path,
+                visible:!!cell && cell.y+cell.height>g.contentY && cell.y<g.contentY+g.height});
+        }
         function gridState(): string { return JSON.stringify({index:picker.grid?.currentIndex,y:picker.grid?.contentY}); }
         function reloadGrid(): void { picker.visited={}; Qt.callLater(()=>picker.visit()); }
         function imageStates(): string {
@@ -385,6 +402,43 @@ def test(work, compositor="sway", scale=1, shots=None):
             assert stats()['visible']
         ipc('screen','HEADLESS-2'); ipc('tab','simple'); time.sleep(.3)
         check_layout(1280,800,1)
+        # Wheel: one row per notch, fast notches add up.
+        def picker_state(): return json.loads(ipc('pickerState'))
+        ipc('top'); time.sleep(.2)
+        p=picker_state(); assert p['y']==0, p
+        ipc('wheel',1); time.sleep(.6)
+        assert picker_state()['y']==p['cellHeight'], picker_state()
+        ipc('wheel',5); time.sleep(.6)
+        assert picker_state()['y']==6*p['cellHeight'], picker_state()
+        ipc('wheel',-2); time.sleep(.6)
+        assert picker_state()['y']==4*p['cellHeight'], picker_state()
+        ipc('wheel',1000); time.sleep(.6)
+        end=picker_state(); assert end['y']>4*p['cellHeight'] and end['y']==json.loads(ipc('geometry'))['contentHeight']-end['height'], end
+        # Opening: tab and thumbnail of the current wallpaper, keyboard on it; arrows apply; Reset returns to the opening state.
+        ipc('close'); ipc('choose',40); before=state()['selection']
+        assert before['path']==state()['items'][40]['path'], before
+        ipc('top'); ipc('tab','panorama'); ipc('close')
+        ipc('screen','HEADLESS-2'); time.sleep(.5)
+        p=picker_state(); assert p['tab']=='simple' and p['index']==40 and p['visible'] and p['focus'], p
+        assert not p['changed'] and not p['resetEnabled'], p
+        ipc('key','down'); time.sleep(.2)
+        assert state()['selection']['path']==state()['items'][41]['path'], state()['selection']
+        ipc('key','down'); ipc('key','up'); ipc('key','up'); time.sleep(.2)
+        assert state()['selection']==before and not picker_state()['changed'], picker_state()
+        ipc('key','up'); time.sleep(.2)
+        p=picker_state(); assert state()['selection']['path']==state()['items'][39]['path'] and p['changed'] and p['resetEnabled'], p
+        ipc('wheel',-1000); time.sleep(.3)
+        assert ipc('reset')=='true'; time.sleep(.3)
+        p=picker_state(); assert state()['selection']==before and not p['changed'] and not p['resetEnabled'], p
+        assert p['index']==40 and p['visible'], p
+        # Clicks still reach the thumbnails under the wheel area.
+        ipc('click',42); time.sleep(.2)
+        assert state()['selection']['path']==state()['items'][42]['path'] and picker_state()['index']==42, state()['selection']
+        # Top edge: Up applies nothing and leaves the grid (frame focus chain), as before.
+        ipc('choose',0); ipc('close'); ipc('screen','HEADLESS-2'); time.sleep(.4)
+        assert picker_state()['index']==0
+        ipc('key','up'); time.sleep(.2)
+        p=picker_state(); assert state()['selection']['path']==state()['items'][0]['path'] and not p['focus'], p
         ipc('close'); assert not stats()['visible']
         if shots:
             shots.mkdir(parents=True,exist_ok=True)

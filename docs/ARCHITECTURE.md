@@ -455,6 +455,10 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
   un scan identique conserve les objets du modèle et les images décodées. Les écritures pendant un scan sont fusionnées
   avec son résultat. Les réservations de capture sont annulables et les callbacks obsolètes ignorés.
   Une grille est chargée à la première visite de chaque onglet puis conservée, avec sa position clavier et son défilement.
+  Ouverture : onglet et vignette du fond actuel (choisie au clavier, centrée). Flèches : la vignette voisine est appliquée tout de
+  suite (au bord, la touche passe au cadre). Molette : une rangée par cran (`MouseArea` sur la grille ; le défilement de Flickable
+  s'arrêtait à une demi-rangée quelle que soit la vitesse de la molette). « Reset » (actif après un changement) revient aux choix de
+  l'ouverture (`Wallpapers.snapshot` / `restore`).
   `Thumbnail.qml` attend une taille physique valide, capture à la taille logique et régénère un cache illisible depuis
   l’original. Seules les cellules virtualisées des onglets visités sont retenues ; aucun préchargement des 252 variantes. Les noms des caches disque sont inchangés.
 - **Copie à la taille de l'écran** (démarrage plus rapide) : chaque fond simple affiché est enregistré en BMP tel qu'affiché dans
