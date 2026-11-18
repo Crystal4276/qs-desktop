@@ -19,19 +19,16 @@ Scope {
 
     // Température modifiée, veilleuse allumée : saut net (sous Hyprland, hyprsunset fait un fondu). gammastep ne change pas de
     // température en marche : arrêté sec (SIGKILL : le compositeur rend aussitôt le gamma neutre, sans fondu de sortie), puis
-    // relancé aussitôt, sans fondu d'entrée (`jump`). Ce gammastep-là s'éteint donc sans fondu lui aussi. Éteinte : nouvelle
-    // température au prochain lancement.
+    // relancé aussitôt, sans fondu d'entrée (`jump`). Ce gammastep-là s'éteint donc sans fondu lui aussi. Rafale (molette,
+    // clavier) : un seul saut, 400 ms après le dernier cran (`settle`). Éteinte : nouvelle température au prochain lancement, ou
+    // au rallumage pendant le fondu de sortie (saut).
     property bool jump: false
+    property int launched: 0   // température du gammastep en marche
 
     onTemperatureChanged: {
         failures = 0;
-        if (gammastep.running && gammaOn) {
-            jump = true;
-            ready = false;
-            gammastep.signal(9);
-        } else if (!gammastep.running) {
-            apply();   // essais espacés en cours : relancé aussitôt
-        }
+        if (enabled)
+            settle.restart();
     }
 
     // Écrit avant chaque lancement (la config ne passe que par un fichier).
@@ -54,6 +51,7 @@ Scope {
     function launch(): void {
         configFile.setText(configText(!jump));   // écriture bloquante
         jump = false;
+        launched = temperature;
         gammaOn = true;
         ready = false;
         startedAt = Date.now();
@@ -68,6 +66,14 @@ Scope {
                 launch();
             return;
         }
+        if (enabled && launched !== temperature) {
+            if (!jump) {
+                jump = true;
+                ready = false;
+                gammastep.signal(9);
+            }
+            return;   // relancé par onExited
+        }
         if (!ready)
             return;   // readyDelay rappelle apply()
         if (gammaOn !== enabled) {
@@ -81,6 +87,7 @@ Scope {
     onEnabledChanged: {
         failures = 0;
         jump = false;
+        settle.stop();
         apply();
     }
     Component.onCompleted: apply()
@@ -118,6 +125,12 @@ Scope {
                 retry.start();
             }
         }
+    }
+
+    Timer {
+        id: settle
+        interval: 400
+        onTriggered: root.apply()
     }
 
     Timer {
