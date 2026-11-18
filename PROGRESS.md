@@ -17,7 +17,8 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
 - Vérifié : `--dry-run`, `test-install.py` (0 échec). Appliqué sur le laptop le 2026-11-18 (`pkexec` : fichier installé,
   inscrit au registre de `system-setup.sh`, logind relu par SIGHUP) : `HandleLidSwitchExternalPower` = `ignore`,
   `HandleLidSwitch` = `suspend` ; logind actif, verrous de Quickshell intacts, bureau vivant.
-- À tester à la main : capot fermé sur le dock plusieurs heures (pas de veille) ; dock débranché capot fermé (veille).
+- Validé à la main le 2026-11-18 : dock débranché capot fermé → veille. Reste à voir : capot fermé sur le dock plusieurs
+  heures (pas de veille).
 
 ## ZeroTier : jeton copié par install.sh (2026-11-18)
 
