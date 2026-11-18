@@ -14,7 +14,7 @@ Item {
     property list<color> gradient: []
     property bool commitOnRelease: false
     property real dragged: -1   // valeur en cours de glissement (commitOnRelease), -1 sinon
-    readonly property real shown: Math.min(1, dragged >= 0 ? dragged : value)
+    readonly property real displayed: Math.min(1, dragged >= 0 ? dragged : value)
     signal moved(real value)
 
     implicitHeight: Theme.slider.knobSize
@@ -43,7 +43,7 @@ Item {
 
         Rectangle {
             visible: root.gradient.length === 0
-            width: root.shown * trough.width
+            width: root.displayed * trough.width
             height: parent.height
             radius: Theme.slider.troughRadius
             color: Theme.slider.fill
@@ -51,7 +51,7 @@ Item {
 
         GradientFill {
             visible: root.gradient.length > 0
-            width: root.shown * trough.width
+            width: root.displayed * trough.width
             height: parent.height
             span: trough.width
             cornerRadius: Theme.slider.troughRadius
@@ -59,7 +59,7 @@ Item {
         }
 
         Rectangle {
-            x: root.shown * trough.width - width / 2
+            x: root.displayed * trough.width - width / 2
             anchors.verticalCenter: parent.verticalCenter
             width: Theme.slider.knobSize
             height: Theme.slider.knobSize

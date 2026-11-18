@@ -34,7 +34,7 @@ Scope {
     // Une commande à la fois ; la dernière température demandée est envoyée à la fin de la précédente. Changée pendant le
     // lancement : envoyée une fois hyprsunset prêt.
     function send(): void {
-        if (sunset.running && !setter.running && sent !== temperature) {
+        if (sunset.running && !stopping && !setter.running && sent !== temperature) {
             sent = temperature;
             setter.exec(["hyprctl", "hyprsunset", "temperature", String(temperature)]);
         }
