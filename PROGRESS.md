@@ -11,16 +11,16 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
   `MouseArea` (molette seulement) sur la grille. Les bancs (QtTest) n'envoient pas `pixelDelta` : vérifié à la main.
 - Flèches : restent sur les vignettes. Depuis le fond actuel (pour un écran visé sans image propre : l'image de tous les écrans
   qu'il montre), la voisine est appliquée tout de suite et montrée ; sans fond actuel dans l'onglet, la première. Bloquées au
-  bord : rien d'appliqué. Clic sur une vignette : flèches rendues aux vignettes.
+  bord : rien d'appliqué. Clic sur une vignette, ou Tab depuis les boutons : flèches rendues aux vignettes.
 - Vignette du fond actuel centrée et choisie au clavier : ouverture (sur son onglet), « Reset », écran visé changé, dossier relu
   (onglets cachés compris), autre largeur ou hauteur d'écran.
 - « Reset » (à la suite des onglets, grisé tant que rien n'a changé) : fonds d'avant l'ouverture (tous les écrans et par écran).
-- Revue en boucle (`/code-review high`, 6 passes, un commit chacune) : 11 défauts reproduits sur banc avec contre-épreuve et
+- Revue en boucle (`/code-review high`, 7 passes, un commit chacune) : 12 défauts reproduits sur banc avec contre-épreuve et
   corrigés, chacun couvert par `test-wallpapers.py` (Sway et Hyprland). Écartés en connaissance de cause : une application par
   répétition de touche maintenue, flèches avec Ctrl / Maj, trackpoint (absent), « Reset » actif pour un état identique, ou
   annulant un changement externe fait panneau ouvert ; recentrage si le dossier relu à l'ouverture change pendant qu'on défile.
 - Piège vu en route : session verrouillée par l'inactivité → pas de rechargement à chaud (`docs/DEVELOPMENT.md`).
-- Validé à la main le 2026-11-18 : molette (une rangée par cran). À tester à la main : flèches, clic puis flèches, « Reset »
+- Validé à la main le 2026-11-18 : molette (une rangée par cran). À tester à la main : flèches, clic puis flèches, Tab, « Reset »
   dans le vrai panneau ; pavé tactile (aucun geste enregistré pendant la mesure).
 
 ## Laptop : pas de veille capot fermé sur secteur / dock (2026-11-18)

@@ -455,7 +455,9 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
   un scan identique conserve les objets du modèle et les images décodées. Les écritures pendant un scan sont fusionnées
   avec son résultat. Les réservations de capture sont annulables et les callbacks obsolètes ignorés.
   Une grille est chargée à la première visite de chaque onglet puis conservée ; sa position clavier et son défilement restent d'un
-  onglet à l'autre, et reviennent au fond actuel à l'ouverture, au « Reset » et quand son modèle est remplacé (dossier relu).
+  onglet à l'autre, et reviennent au fond actuel à l'ouverture et au « Reset » (onglet affiché), quand son modèle est remplacé
+  (dossier relu, onglets cachés compris) et quand la taille de l'écran change. Tab passe des boutons aux vignettes et inversement ;
+  un clic sur une vignette leur rend aussi les flèches.
   Ouverture et « Reset » : onglet et vignette du fond actuel (choisie au clavier, centrée). Flèches : restent sur les vignettes ;
   la voisine du fond actuel est appliquée tout de suite, la première sur un onglet sans fond actuel. Molette : une rangée par cran
   (`MouseArea` sur la grille, d'après `angleDelta` ; le défilement de Flickable s'arrêtait à une demi-rangée quelle que soit la

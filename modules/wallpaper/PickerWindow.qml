@@ -256,6 +256,7 @@ OverlayPopup {
                             cellHeight: Theme.wallpaperPicker.thumbHeight + 2 * Theme.wallpaperPicker.selectionPadding
                             clip: true
                             boundsBehavior: Flickable.StopAtBounds
+                            activeFocusOnTab: true   // Tab ramène aux vignettes depuis les boutons
                             model: modelEntries
 
                             // Largeur changée (ouvert sur un écran d'un autre nombre de colonnes) : la vignette du clavier reste en vue.
@@ -351,10 +352,8 @@ OverlayPopup {
                 }
             }
 
-            // Molette : une rangée par cran (Flickable relance à chaque cran un défilement d'une demi-rangée, sans cumul : lent
-            // avec une molette rapide). La molette arrive aussi avec `pixelDelta` (15 px par cran, mesuré) : seules les phases,
-            // propres au pavé tactile, les distinguent ; le pavé tactile garde le défilement natif, avec son élan. Clics laissés
-            // aux vignettes.
+            // Molette : une rangée par cran (Flickable : une demi-rangée, sans cumul). Elle a aussi un `pixelDelta` : seules les
+            // phases distinguent le pavé tactile, laissé au défilement natif (ARCHITECTURE § 7.11). Clics laissés aux vignettes.
             MouseArea {
                 anchors.fill: parent
                 acceptedButtons: Qt.NoButton
