@@ -34,7 +34,7 @@ Scope {
     // Heure mal formée (IPC) : refusée seule, le champ revient à l'ancienne. Heures identiques acceptées (plage vide : inversion des
     // heures en deux saisies possible). Une seule écriture du fichier.
     function set(enabled: bool, from: string, to: string): void {
-        const was = this.enabled && inRange;
+        const was = root.enabled && inRange;
         const f = Settings.minutes(from), t = Settings.minutes(to);
         editing = true;
         adapter.enabled = enabled;
@@ -44,7 +44,7 @@ Scope {
             adapter.to = Settings.timeText(t);
         editing = false;
         fileView.writeAdapter();
-        const now = this.enabled && inRange;
+        const now = root.enabled && inRange;
         if (now && !was && !active)   // déjà allumée à la main : elle le reste (pas reprise par l'horaire)
             switched(true);
         else if (!now && was && bySchedule)

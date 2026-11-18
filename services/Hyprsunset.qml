@@ -44,7 +44,10 @@ Scope {
         failures = 0;
         apply();
     }
-    onTemperatureChanged: send()
+    onTemperatureChanged: {
+        sendFailures = 0;
+        send();
+    }
     Component.onCompleted: apply()
 
     // Arrêté avec Quickshell (`qs kill`), comme gammastep. Il quitte aussi quand un autre client tient déjà la matrice (le
@@ -69,8 +72,8 @@ Scope {
         }
     }
 
-    // Échec (socket pas encore ouvert juste après le lancement) : nouvel essai 200 ms plus tard, 10 fois au plus ; ensuite, au
-    // prochain changement de température.
+    // Échec (socket pas encore ouvert juste après le lancement) : nouvel essai 200 ms plus tard, 10 fois au plus (et autant au
+    // prochain changement de température).
     Process {
         id: setter
         onExited: code => {
