@@ -24,7 +24,6 @@ Panel {
 
     WlrLayershell.namespace: "quickshell-settings"
     title: "Settings"   // comme les autres cartes du tray (ta demande du 2026-10-27)
-    pinClickPasses: false   // aperçu : le premier clic épingle seulement (verrouiller, éteindre… sans confirmation)
 
     onVisibleChanged: if (!visible) expanded = ""   // en plus de celui de Panel.qml
 

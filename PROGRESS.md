@@ -2241,3 +2241,13 @@ Choix utilisateur : réseau local rétabli **avec mot de passe** (pas d'invité 
 (écriture, groupe `sambashare`, compte Samba obligatoire, mêmes interfaces que le reste). L'`include` du fichier machine
 passe en fin de `[global]` de `smb.conf`, pour qu'un partage qu'il déclare n'avale pas les réglages globaux suivants.
 Validé par `testparm` et `test-samba.py` (PASS). À appliquer sur terrier : `scripts/system-setup.sh samba` (sudo, terminal).
+
+## Réglages : un seul clic dans l'aperçu (2026-11-18)
+
+À ta demande : dans l'aperçu au survol de l'engrenage, le premier clic épinglait seulement la carte, et il fallait un second clic
+pour le bouton. `pinClickPasses` est supprimé (`Panel.qml`, `SettingsPanel.qml`) : comme sur les cartes du tray, le clic épingle et
+atteint le bouton visé. Remplace la décision du 2026-10-26 (protection des boutons d'alimentation sans confirmation contre un clic
+destiné à une fenêtre sous l'aperçu) : un clic sur verrouiller, se déconnecter, redémarrer ou éteindre agit maintenant dès l'aperçu.
+- Banc Sway headless : démarrage complet sans avertissement QML. Clic non simulé (pas de `pywayland`) ; bureau réel rechargé sans erreur.
+- **À vérifier à la main** : survol de l'engrenage, puis un seul clic sur un bouton (capture, profil d'énergie, bascule) → action
+  immédiate.
