@@ -15,10 +15,12 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
 - Vignette du fond actuel centrée et choisie au clavier : ouverture (sur son onglet), « Reset », écran visé changé, dossier relu
   (onglets cachés compris), autre largeur ou hauteur d'écran.
 - « Reset » (à la suite des onglets, grisé tant que rien n'a changé) : fonds d'avant l'ouverture (tous les écrans et par écran).
-- Revue en boucle (`/code-review high`, 7 passes, un commit chacune) : 12 défauts reproduits sur banc avec contre-épreuve et
-  corrigés, chacun couvert par `test-wallpapers.py` (Sway et Hyprland). Écartés en connaissance de cause : une application par
+- Revue en boucle (`/code-review high`, 8 passes, un commit chacune ; la 8e ne trouve plus que du négligeable) : 12 défauts
+  reproduits sur banc avec contre-épreuve et corrigés, chacun couvert par `test-wallpapers.py` (Sway et Hyprland). Écartés en connaissance de cause : une application par
   répétition de touche maintenue, flèches avec Ctrl / Maj, trackpoint (absent), « Reset » actif pour un état identique, ou
   annulant un changement externe fait panneau ouvert ; recentrage si le dossier relu à l'ouverture change pendant qu'on défile.
+- Décision en attente : l'écran choisi dans la rangée reste choisi d'une ouverture à l'autre (comme avant) ; les flèches
+  appliquant tout de suite, la première après réouverture agit sur cet écran. Le remettre à « All screens » à chaque ouverture ?
 - Piège vu en route : session verrouillée par l'inactivité → pas de rechargement à chaud (`docs/DEVELOPMENT.md`).
 - Validé à la main le 2026-11-18 : molette (une rangée par cran). À tester à la main : flèches, clic puis flèches, Tab, « Reset »
   dans le vrai panneau ; pavé tactile (aucun geste enregistré pendant la mesure).

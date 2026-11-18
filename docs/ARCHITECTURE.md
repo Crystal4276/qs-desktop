@@ -456,7 +456,8 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
   avec son résultat. Les réservations de capture sont annulables et les callbacks obsolètes ignorés.
   Une grille est chargée à la première visite de chaque onglet puis conservée ; sa position clavier et son défilement restent d'un
   onglet à l'autre, et reviennent au fond actuel à l'ouverture et au « Reset » (onglet affiché), quand son modèle est remplacé
-  (dossier relu, onglets cachés compris) et quand la taille de l'écran change. Tab passe des boutons aux vignettes et inversement ;
+  (dossier relu, onglets cachés compris) et quand la hauteur de l'écran change ; une autre largeur (nombre de colonnes) garde
+  la vignette du clavier en vue. Tab passe des boutons aux vignettes et inversement ;
   un clic sur une vignette leur rend aussi les flèches.
   Ouverture et « Reset » : onglet et vignette du fond actuel (choisie au clavier, centrée). Flèches : restent sur les vignettes ;
   la voisine du fond actuel est appliquée tout de suite, la première sur un onglet sans fond actuel. Molette : une rangée par cran
