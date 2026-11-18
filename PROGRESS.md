@@ -2216,3 +2216,11 @@ Choix utilisateur : réseau local rétabli **avec mot de passe** (pas d'invité 
 - Tests : `test-ssh-server.py` (hook ajouté au cas rétention), `test-ssh-desktop.py`, `test-install.py` : 0 échec.
 - **À faire sur le laptop** : après `./install.sh`, une mise à jour (`paru`) doit afficher « Keeping the installed and one
   previous version… » ; `ls /var/cache/pacman/pkg/` : au plus deux versions par paquet.
+
+## Samba — partage `/mnt` de terrier (2026-11-18)
+
+À ta demande : `smb://<IP ZeroTier de terrier>/mnt` donne accès aux disques de données de `/mnt` depuis le laptop.
+`/mnt` appartient à root, donc pas de partage Nemo possible : partage `[mnt]` dans `dotfiles/samba/hosts/terrier.conf`
+(écriture, groupe `sambashare`, compte Samba obligatoire, mêmes interfaces que le reste). L'`include` du fichier machine
+passe en fin de `[global]` de `smb.conf`, pour qu'un partage qu'il déclare n'avale pas les réglages globaux suivants.
+Validé par `testparm` et `test-samba.py` (PASS). À appliquer sur terrier : `scripts/system-setup.sh samba` (sudo, terminal).
