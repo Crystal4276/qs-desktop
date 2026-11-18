@@ -124,7 +124,7 @@ def test(work, compositor="sway", scale=1, shots=None):
         function reset(): bool { const b=resetButton(); if(!b.enabled) return false; events.mouseClick(b); return true; }
         function pickerState(): string {
             const g=picker.grid, i=g.currentIndex, cell=g.itemAtIndex(i);
-            return JSON.stringify({tab:picker.tab,index:i,y:g.contentY,height:g.height,cellHeight:g.cellHeight,changed:picker.changed,
+            return JSON.stringify({tab:picker.tab,index:i,y:g.contentY,height:g.height,cellHeight:g.cellHeight,changed:picker.changed,target:picker.target,
                 resetEnabled:resetButton().enabled,focus:g.activeFocus,path:g.modelEntries[i]?.path,
                 visible:!!cell && cell.y+cell.height>g.contentY && cell.y<g.contentY+g.height});
         }
@@ -484,6 +484,10 @@ def test(work, compositor="sway", scale=1, shots=None):
         # A screen target without its own image shows the all-screens one: arrows start there and set this screen only.
         ipc('target','test-screen'); time.sleep(.4)
         p=picker_state(); assert p['index']==41 and p['visible'], ('target without image',p)
+        # Reopened: back on all screens (arrows apply at once).
+        ipc('close'); ipc('screen','HEADLESS-2'); time.sleep(.4)
+        assert picker_state()['target']=='', picker_state()
+        ipc('target','test-screen'); time.sleep(.4)
         ipc('key','down'); time.sleep(.2)
         v=state(); assert v['overrides']=={'test-screen':v['items'][42]['path']} and v['selection']['path']==v['items'][41]['path'], v
         assert ipc('reset')=='true'; time.sleep(.3)
