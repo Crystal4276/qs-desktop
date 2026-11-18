@@ -487,6 +487,18 @@ def test(work, compositor="sway", scale=1, shots=None):
         assert ipc('reset')=='true'; time.sleep(.3)
         ipc('target',''); time.sleep(.3)
         assert state()['overrides']=={} and state()['selection']['path']==state()['items'][41]['path'], state()
+        # Same, at the top edge: an arrow that cannot move gives the screen no image of its own.
+        ipc('choose',0); ipc('target','test-screen'); time.sleep(.4)
+        ipc('key','up'); time.sleep(.2)
+        assert state()['overrides']=={}, state()['overrides']
+        ipc('target',''); time.sleep(.3)
+        # A tab without the current wallpaper, scrolled away: the first arrow shows the thumbnail it applies.
+        ipc('tab','panorama'); time.sleep(.3); ipc('choose',0); ipc('tab','simple'); time.sleep(.4)
+        ipc('key','down'); time.sleep(.3)
+        ipc('tab','panorama'); time.sleep(.3); ipc('choose',0); ipc('tab','simple'); time.sleep(.4)
+        ipc('wheel',1000); time.sleep(.3)
+        ipc('key','down'); time.sleep(.3)
+        p=picker_state(); assert state()['selection']['path']==state()['items'][0]['path'] and p['index']==0 and p['visible'], ('scrolled away',p)
         ipc('close'); assert not stats()['visible']
         if shots:
             shots.mkdir(parents=True,exist_ok=True)
