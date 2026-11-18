@@ -210,8 +210,8 @@ les applications déjà ouvertes peuvent garder leur curseur jusqu'à leur proch
 
 Autres constats pour un nouveau PC :
 - trousseau `gnome-keyring` déverrouillé par PAM à la connexion (greetd : `dotfiles/greetd/pam-greetd`) ;
-- `logind` par défaut (bouton power = extinction ; capot = mise en veille, sauf écran externe actif : verrou `handle-lid-switch`
-  d'`Idle.qml`) ; dalle éteinte capot fermé par le compositeur (`dotfiles/*/hosts/<laptop>`) ;
+- `logind` (bouton power = extinction ; capot = mise en veille sur batterie, sauf écran externe actif : verrou
+  `handle-lid-switch` d'`Idle.qml` ; rien sur secteur : `dotfiles/logind/60-qs-desktop-lid.conf`) ; dalle éteinte capot fermé par le compositeur (`dotfiles/*/hosts/<laptop>`) ;
 - polices de repli : `noto-fonts-cjk` (japonais, chinois, coréen ; ici les polices Microsoft le font), `noto-fonts-emoji` ;
 - partage d'écran sous Sway : `xdg-desktop-portal-wlr` choisit l'écran avec `slurp` ;
 - **secrets jamais versionnés** : jetons (NordVPN…), adresses de montage (`gio mount ssh://…`) → `~/.config/qs-desktop.local/`.

@@ -7,7 +7,8 @@
 #                                                 /etc/environment, groupes (libvirt, kvm, sambashare), services (réseau, Bluetooth,
 #                                                 profils d'énergie, Samba, libvirt), réseau « default » des VM démarré au boot,
 #                                                 hook pacman gardant 10_linux de GRUB désactivé (machine GRUB + UKI),
-#                                                 cache d'écriture borné des disques USB et cartes SD (removable-writeback)
+#                                                 cache d'écriture borné des disques USB et cartes SD (removable-writeback),
+#                                                 capot fermé sur secteur sans mise en veille (logind)
 #         system-setup.sh [--dry-run] removable-writeback
 #                                                 règle udev : la fin d'une copie vers une clé suit l'écriture réelle
 #         system-setup.sh [--dry-run] cursor      curseur du thème copié pour l'écran de connexion (/usr/local/share/icons)
@@ -319,9 +320,19 @@ do_removable_writeback() {
     [[ -z "$changed" ]] || run udevadm control --reload
 }
 
+# Capot fermé sur secteur (chargeur, dock USB-C) : pas de veille. Le verrou d'Idle.qml ne suffit pas avec un dock : un écran
+# endormi qui coupe sa connexion (DP-MST) disparaît du compositeur et logind mettait alors le laptop en veille.
+lid_conf=/etc/systemd/logind.conf.d/60-qs-desktop-lid.conf
+do_lid() {
+    cmp -s "$repo/dotfiles/logind/60-qs-desktop-lid.conf" "$lid_conf" && { echo "= $lid_conf à jour"; return; }
+    install_file dotfiles/logind/60-qs-desktop-lid.conf "$lid_conf"
+    run systemctl kill -s HUP systemd-logind.service
+}
+
 do_install() {
     do_samba
     do_removable_writeback
+    do_lid
 
     # Thème des applications Qt (Kvantum + Papirus via qt6ct) : lu à l'ouverture de session, Quickshell en hérite.
     if grep -qx 'QT_QPA_PLATFORMTHEME=qt6ct' /etc/environment 2>/dev/null; then
@@ -559,12 +570,13 @@ do_uninstall() {
         "$repo/scripts/intel-gpu-setup.sh" ${dry:+--dry-run} uninstall || echo "! Retrait des droits GPU Intel incomplet ; poursuite des autres étapes" >&2
     fi
     [[ -f "$registry" ]] || { echo "= rien à défaire ($registry absent)"; return; }
-    local kind target backup samba_changed="" systemd_changed="" journal_changed="" udev_changed=""
+    local kind target backup samba_changed="" systemd_changed="" journal_changed="" udev_changed="" logind_changed=""
     recorded file /etc/samba/smb.conf && samba_changed=1
     recorded file /etc/samba/smb.host.conf && samba_changed=1
     recorded file /etc/systemd/system/smb.service.d/50-qs-zerotier.conf && systemd_changed=1
     recorded file "$journal_conf" && journal_changed=1
     recorded file "$writeback_rule" && udev_changed=1
+    recorded file "$lid_conf" && logind_changed=1
     # Ordre inverse de l'installation.
     while read -r kind target backup <&3; do
         case "$kind" in
@@ -588,6 +600,7 @@ do_uninstall() {
     [[ -z "$systemd_changed" ]] || run systemctl daemon-reload
     [[ -z "$journal_changed" ]] || run systemctl reload systemd-journald.service
     [[ -z "$udev_changed" ]] || run udevadm control --reload
+    [[ -z "$logind_changed" ]] || run systemctl kill -s HUP systemd-logind.service
     if [[ -n "$samba_changed" ]] && systemctl is-active --quiet smb.service; then
         run systemctl restart smb.service
     fi
