@@ -458,10 +458,11 @@ do_thunderbird_theme() {
 }
 
 do_zerotier() {
-    local id="${1:-}" dir=/var/lib/zerotier-one/networks.d ready="" output deadline
+    local id="${1:-}" dir=/var/lib/zerotier-one/networks.d ready="" output deadline token=""
     [[ "$id" =~ ^[0-9a-f]{16}$ ]] || return 2
     if [[ -n "$dry" ]]; then
-        echo "+ ZeroTier : réseau $id, service activé et démarré ; DNS et route par défaut désactivés"
+        echo "+ ZeroTier : réseau $id, service activé et démarré ; DNS et route par défaut désactivés ;"
+        echo "  jeton du service copié dans ~/.zeroTierOneAuthToken (panneau VPN)"
         return
     fi
     command -v zerotier-cli >/dev/null || { echo '! zerotier-one absent' >&2; return 1; }
@@ -476,6 +477,12 @@ do_zerotier() {
     deadline=$((SECONDS + 60))
     while (( SECONDS < deadline )); do
         if output="$(sudo timeout 5 zerotier-cli -j listnetworks)"; then
+            # Service prêt, donc jeton créé : copie personnelle pour le panneau VPN (refaite s'il a changé, service réinstallé).
+            if [[ -z "$token" ]]; then
+                token="$HOME/.zeroTierOneAuthToken"
+                sudo cmp -s /var/lib/zerotier-one/authtoken.secret "$token" ||
+                    run install -m 600 -o "$user" -g "$(id -gn "$user")" /var/lib/zerotier-one/authtoken.secret "$token" || return 1
+            fi
             ready="$(printf '%s' "$output" | python3 -c 'import json,sys; n=next((n for n in json.load(sys.stdin) if n.get("nwid",n.get("id"))==sys.argv[1]),{}); print(n.get("status","ABSENT")); print(",".join(n.get("assignedAddresses",[])))' "$id")" || return 1
             echo "ZeroTier $id : $ready"
             case "${ready%%$'\n'*}" in

@@ -3,6 +3,15 @@
 État courant seulement. Historique figé : phases 0 à 10 dans `docs/archive/PROGRESS.md`, maintenance du 2026-11-05 au 2026-11-09
 et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de besoin).
 
+## ZeroTier : jeton copié par install.sh (2026-11-18)
+
+- Laptop : onglet ZeroTier en lecture seule (« copy the service token »), `install.sh` ne copiait pas le jeton malgré la
+  doc. Copié à la main (`pkexec install … ~/.zeroTierOneAuthToken`) ; `zerotier-cli -j info` accepté, nœud en ligne.
+- `system-setup.sh zerotier` (étape système d'`install.sh`) copie désormais le jeton du service dès que celui-ci répond,
+  et le recopie s'il a changé (service réinstallé). Vérifié : `--dry-run`, `test-install.py` (0 échec) ; chemin réel (sudo)
+  à voir au prochain `install.sh` sur une machine neuve.
+- À tester à la main : onglet ZeroTier du panneau VPN sur le laptop (nœud, réseaux, rejoindre / quitter).
+
 ## Veilleuse : curseur de température (2026-11-18)
 
 - Sous la ligne « Schedule » de la veilleuse (clic droit) : curseur de température, de gauche (4700 K, moins chaud) à droite

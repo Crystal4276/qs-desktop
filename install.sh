@@ -272,7 +272,7 @@ ask_system() {
     [[ "$profile" == jeux ]] && echo "  dépôt multilib (Steam, jeux 32 bits),"
     echo "  écran de connexion greetd + greeter Quickshell, Samba, services (réseau, Bluetooth, énergie, VM), groupes, thème Qt,"
     echo "  cache d'écriture borné des clés USB et cartes SD (règle udev : la fin d'une copie suit l'écriture réelle),"
-    echo "  ZeroTier (jonction automatique au réseau configuré dans hosts/zerotier-network),"
+    echo "  ZeroTier (jonction automatique au réseau configuré dans hosts/zerotier-network, jeton copié pour le panneau VPN),"
     echo "  extensions de Chromium, thème de Thunderbird, sonde de connectivité NetworkManager, mesures GPU Intel (s'il y en a un)."
     [[ "$profile" == travail ]] && echo "  menu GRUB Horizon (UKI, délai 2 s) ; écran de démarrage Plymouth Core Lab (initramfs, ligne de commande du noyau, image de secours : docs/PLYMOUTH.md)."
     ask "Faire ces étapes système ?" oui || { system=""; echo "- étapes système non faites (relancer install.sh pour les faire)"; }
