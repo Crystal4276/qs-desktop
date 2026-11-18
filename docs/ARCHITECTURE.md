@@ -515,8 +515,10 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
 
 ### 7.13.1 Capot du laptop
 
-- Veille : **logind** par défaut (capot fermé → veille, sur secteur comme batterie ; ignoré avec un écran externe ; 30 s de
-  répit après un réveil ; veille aussi au retrait du dernier externe capot fermé). Verrouillage avant veille : § 7.13.
+- Veille : **logind** (capot fermé → veille sur batterie ; ignoré sur secteur, chargeur ou dock USB-C, par
+  `HandleLidSwitchExternalPower=ignore`, `dotfiles/logind/`, étape système d'`install.sh` ; ignoré avec un écran externe ;
+  30 s de répit après un réveil ; veille aussi au retrait du dernier externe capot fermé sur batterie, ou du secteur capot
+  fermé). Verrouillage avant veille : § 7.13.
 - Un écran éteint par la veille a son connecteur détaché (sysfs `enabled`, vérifié sous Hyprland) : logind ne voit plus
   l'externe et mettrait en veille un laptop branché capot fermé. `Idle.qml` bloque donc `handle-lid-switch` tant qu'un écran
   externe est **actif** dans `Compositor.outputs` (veille des écrans comprise ; connecteurs `DP`/`HDMI`/`DVI`/`VGA`, ceux que

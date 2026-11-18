@@ -3,6 +3,25 @@
 État courant seulement. Historique figé : phases 0 à 10 dans `docs/archive/PROGRESS.md`, maintenance du 2026-11-05 au 2026-11-09
 et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de besoin).
 
+## Laptop : pas de veille capot fermé sur secteur / dock (2026-11-18)
+
+- Constat : sur le dock USB-C (écran NEC en DP-9, charge par le dock), le laptop se mettait en veille capot fermé, sans nouvel
+  événement de capot (journal : « Suspending… » de logind, plusieurs fois le 2026-11-18). Cause : logind met en veille capot
+  fermé sur secteur comme sur batterie, et le verrou « External display active » d'`Idle.qml` se relâche quand l'écran
+  endormi coupe sa connexion derrière le dock (limite acceptée le 2026-11-12) ; la revérification du capot suspend alors.
+- Ta demande : sur le dock comme sur secteur, pas de veille. Réglage natif `HandleLidSwitchExternalPower=ignore`
+  (`dotfiles/logind/60-qs-desktop-lid.conf`, installé par `system-setup.sh install`, étape système d'`install.sh`, relu par
+  logind sur SIGHUP, retiré par `--uninstall`). Le dock est vu comme secteur (`AC online=1`). Effet aussi avec le simple
+  chargeur : capot fermé, la dalle s'éteint, le laptop reste allumé. Sur batterie : veille, inchangé ; dock ou chargeur
+  débranché capot fermé : veille (revérification du capot par logind).
+- Vérifié : `--dry-run`, `test-install.py` (0 échec). **Pas encore appliqué sur le laptop** (mot de passe polkit, tu n'étais
+  pas devant l'écran). À lancer :
+  `pkexec sh -c 'install -D -m 644 "$1" /etc/systemd/logind.conf.d/60-qs-desktop-lid.conf && echo "file /etc/systemd/logind.conf.d/60-qs-desktop-lid.conf -" >> /var/lib/qs-desktop/system-setup/registry && systemctl kill -s HUP systemd-logind.service' sh "$PWD/dotfiles/logind/60-qs-desktop-lid.conf"`
+  depuis le dépôt (ou `scripts/system-setup.sh install` dans un terminal), puis
+  `busctl get-property org.freedesktop.login1 /org/freedesktop/login1 org.freedesktop.login1.Manager HandleLidSwitchExternalPower`
+  → `"ignore"`.
+- À tester à la main : capot fermé sur le dock plusieurs heures (pas de veille) ; dock débranché capot fermé (veille).
+
 ## ZeroTier : jeton copié par install.sh (2026-11-18)
 
 - Laptop : onglet ZeroTier en lecture seule (« copy the service token »), `install.sh` ne copiait pas le jeton malgré la
