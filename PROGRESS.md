@@ -28,8 +28,8 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
 - Vérifié : banc Sway (rechargement à chaud depuis la version d'avant, relances et fondus avec un faux gammastep, veilleuse
   éteinte : rien de relancé, capture de la valeur) ; bureau réel sous Hyprland : hyprsunset lancé à 2690 K après
   rechargement, 4000 → 1800 → 2690 K sans relance, extinction puis rallumage, aucun nouvel avertissement.
-- À tester à la main : glisser le curseur et juger le fondu (Hyprland) et le saut (Sway), molette, valeur affichée pendant le
-  glissement.
+- Validé à la main le 2026-11-18 : fondu sous Hyprland ; saut sous Sway (laptop) gardé, ton choix (pas d'outil des dépôts
+  officiels qui change la température à chaud sous Sway ; `wl-gammarelay-rs`, AUR seulement, écarté).
 
 ## Veilleuse : horaire réglable comme « ne pas déranger » (2026-11-17)
 
