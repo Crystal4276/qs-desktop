@@ -234,6 +234,8 @@ OverlayPopup {
                                 const next = JSON.parse(signature);
                                 if (JSON.stringify(modelEntries) !== signature) modelEntries = next;
                             }
+                            // Modèle remplacé (dossier relu, écran visé dans Core Lab) : la grille repart de 0 ; retour au fond actuel.
+                            onModelEntriesChanged: if (kind === root.tab) Qt.callLater(root.showCurrent)
                             anchors.fill: parent
                             cellWidth: kind === "panorama" || kind === "triptych" ? width : Math.min(root.cellWidth, width)
                             cellHeight: Theme.wallpaperPicker.thumbHeight + 2 * Theme.wallpaperPicker.selectionPadding
@@ -242,10 +244,9 @@ OverlayPopup {
                             keyNavigationEnabled: true
                             model: modelEntries
 
-                            // Taille changée (ouvert sur un écran d'une autre largeur : nombre de colonnes, surface pas encore à sa
-                            // taille) : la vignette du clavier reste en vue.
+                            // Largeur changée (ouvert sur un écran d'un autre nombre de colonnes) : la vignette du clavier reste en vue.
+                            // Pas la hauteur (rangée des écrans montrée selon l'onglet) : les grilles cachées ne bougent pas.
                             onWidthChanged: Qt.callLater(showIndex)
-                            onHeightChanged: Qt.callLater(showIndex)
                             // Après la mise en page (reportée) : en changeant de nombre de colonnes, la grille déplace son origine.
                             function showIndex(): void {
                                 if (currentIndex >= 0)

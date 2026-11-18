@@ -463,6 +463,15 @@ def test(work, compositor="sway", scale=1, shots=None):
         ipc('close'); resize(1920,1200)
         ipc('screen','HEADLESS-1'); time.sleep(.6)
         p=picker_state(); assert p['index']==41 and p['visible'], ('back to 1 column',p)
+        # A folder change read while open (new model) keeps the current thumbnail.
+        (wallpapers/'simple/zz-new.png').write_bytes(png)
+        ipc('refresh'); wait_for(lambda v:'simple/zz-new.png' in v['lib']['simple']); time.sleep(.4)
+        p=picker_state(); assert p['index']==41 and p['visible'], ('library changed',p)
+        # Back on a tab (screen row shown / hidden: grid height changes): its keyboard thumbnail is in view (PanelFrame
+        # scrolls to the focused item), the current wallpaper's.
+        ipc('top'); time.sleep(.2)
+        ipc('tab','panorama'); time.sleep(.3); ipc('tab','simple'); time.sleep(.3)
+        p=picker_state(); assert p['visible'] and p['index']==41, ('tab switch',p)
         ipc('close'); assert not stats()['visible']
         if shots:
             shots.mkdir(parents=True,exist_ok=True)
