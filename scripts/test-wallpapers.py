@@ -499,6 +499,13 @@ def test(work, compositor="sway", scale=1, shots=None):
         ipc('wheel',1000); time.sleep(.3)
         ipc('key','down'); time.sleep(.3)
         p=picker_state(); assert state()['selection']['path']==state()['items'][0]['path'] and p['index']==0 and p['visible'], ('scrolled away',p)
+        # Opening on a shorter screen with the same column count: the current thumbnail is in view.
+        ipc('choose',41); ipc('close'); resize(1280,1600,'HEADLESS-3',1)
+        ipc('screen','HEADLESS-3'); time.sleep(.6)
+        p=picker_state(); assert p['index']==41 and p['visible'], ('tall',p)
+        ipc('close'); ipc('screen','HEADLESS-2'); time.sleep(.6)
+        p=picker_state(); assert p['index']==41 and p['visible'], ('shorter',p)
+        resize(1280,800,'HEADLESS-3',1)
         ipc('close'); assert not stats()['visible']
         if shots:
             shots.mkdir(parents=True,exist_ok=True)

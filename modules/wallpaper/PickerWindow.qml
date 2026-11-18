@@ -139,6 +139,9 @@ OverlayPopup {
             tab = "simple";
     }
     onTargetChanged: Qt.callLater(showCurrent)
+    // Hauteur de l'écran (ouvert sur un autre, même nombre de colonnes) : centrage refait à la vraie taille. Celle de la grille
+    // change aussi avec les onglets (rangée des écrans) : pas elle.
+    onHeightChanged: Qt.callLater(showCurrent)
     onOutputsChanged: {
         if (target !== "" && !outputs.some(o => o.description === target))
             target = "";
@@ -349,8 +352,9 @@ OverlayPopup {
             }
 
             // Molette : une rangée par cran (Flickable relance à chaque cran un défilement d'une demi-rangée, sans cumul : lent
-            // avec une molette rapide). Molette et pavé tactile arrivent tous deux avec `pixelDelta` (15 px par cran) ; seul le
-            // pavé tactile a des phases : il garde le défilement natif, avec son élan. Clics laissés aux vignettes.
+            // avec une molette rapide). La molette arrive aussi avec `pixelDelta` (15 px par cran, mesuré) : seules les phases,
+            // propres au pavé tactile, les distinguent ; le pavé tactile garde le défilement natif, avec son élan. Clics laissés
+            // aux vignettes.
             MouseArea {
                 anchors.fill: parent
                 acceptedButtons: Qt.NoButton

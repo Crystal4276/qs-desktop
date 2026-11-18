@@ -45,6 +45,10 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
   positions par onglet. Écartés (négligeables) : image propre d'un écran supprimée du dossier, flèches avec Ctrl / Maj, ordre des
   clés dans `changed`, course théorique entre `items` et le modèle de la grille, règle du type d'une image propre en double ;
   test sur un écran fictif (les écrans virtuels n'ont pas de description).
+- Passe 5 : 6 constats. Corrigés : ouverture sur un écran moins haut au même nombre de colonnes → vignette centrée dans
+  l'ancienne hauteur, hors de vue (reproduit, contre-épreuve, test ajouté) : recentrage quand la hauteur de la fenêtre change ;
+  commentaire des 15 px (molette seulement). Écartés (négligeables) : départ sur Panoramas avec un écran visé caché, changement
+  externe pendant l'ouverture annulé par « Reset », molette sur une bibliothèque vide, nom de `showCurrent` à deux niveaux.
 - Copies des passes 1 et 2 restées sans effet sur le bureau réel : session verrouillée par l'inactivité, rechargement à chaud
   coupé (`LockScreen.qml`). Relance par `scripts/dev.sh` (verrou repris, `isLocked`/`isSecure` vrais, aucune erreur) : le bureau
   tourne le code actuel. Piège noté dans `docs/DEVELOPMENT.md`.
