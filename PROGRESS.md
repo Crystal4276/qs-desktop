@@ -14,12 +14,9 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
   logind sur SIGHUP, retiré par `--uninstall`). Le dock est vu comme secteur (`AC online=1`). Effet aussi avec le simple
   chargeur : capot fermé, la dalle s'éteint, le laptop reste allumé. Sur batterie : veille, inchangé ; dock ou chargeur
   débranché capot fermé : veille (revérification du capot par logind).
-- Vérifié : `--dry-run`, `test-install.py` (0 échec). **Pas encore appliqué sur le laptop** (mot de passe polkit, tu n'étais
-  pas devant l'écran). À lancer :
-  `pkexec sh -c 'install -D -m 644 "$1" /etc/systemd/logind.conf.d/60-qs-desktop-lid.conf && echo "file /etc/systemd/logind.conf.d/60-qs-desktop-lid.conf -" >> /var/lib/qs-desktop/system-setup/registry && systemctl kill -s HUP systemd-logind.service' sh "$PWD/dotfiles/logind/60-qs-desktop-lid.conf"`
-  depuis le dépôt (ou `scripts/system-setup.sh install` dans un terminal), puis
-  `busctl get-property org.freedesktop.login1 /org/freedesktop/login1 org.freedesktop.login1.Manager HandleLidSwitchExternalPower`
-  → `"ignore"`.
+- Vérifié : `--dry-run`, `test-install.py` (0 échec). Appliqué sur le laptop le 2026-11-18 (`pkexec` : fichier installé,
+  inscrit au registre de `system-setup.sh`, logind relu par SIGHUP) : `HandleLidSwitchExternalPower` = `ignore`,
+  `HandleLidSwitch` = `suspend` ; logind actif, verrous de Quickshell intacts, bureau vivant.
 - À tester à la main : capot fermé sur le dock plusieurs heures (pas de veille) ; dock débranché capot fermé (veille).
 
 ## ZeroTier : jeton copié par install.sh (2026-11-18)
