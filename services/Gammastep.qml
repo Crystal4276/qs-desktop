@@ -66,7 +66,7 @@ Scope {
                 launch();
             return;
         }
-        if (enabled && launched !== temperature) {
+        if (enabled && launched !== temperature && !settle.running) {   // rafale en cours : settle rappelle apply()
             if (!jump) {
                 jump = true;
                 ready = false;
