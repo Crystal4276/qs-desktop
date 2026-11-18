@@ -256,7 +256,6 @@ OverlayPopup {
                             cellHeight: Theme.wallpaperPicker.thumbHeight + 2 * Theme.wallpaperPicker.selectionPadding
                             clip: true
                             boundsBehavior: Flickable.StopAtBounds
-                            keyNavigationEnabled: true
                             model: modelEntries
 
                             // Largeur changée (ouvert sur un écran d'un autre nombre de colonnes) : la vignette du clavier reste en vue.
@@ -285,11 +284,11 @@ OverlayPopup {
                                     currentIndex = here;
                                     move();
                                 }
-                                // Bloqué au bord : rien (un écran visé sans image propre en recevrait une, la même).
-                                if (currentIndex !== here) {
+                                // Bloqué au bord : rien d'appliqué (un écran visé sans image propre en recevrait une, la même).
+                                if (currentIndex !== here)
                                     root.apply(currentIndex);
-                                    positionViewAtIndex(currentIndex, GridView.Contain);   // curseur déjà sur 0 : la vue ne suit pas
-                                }
+                                // Montrée même si le curseur n'a pas bougé (vue défilée à la molette : elle ne suivrait pas).
+                                positionViewAtIndex(currentIndex, GridView.Contain);
                             }
 
                             delegate: Item {
@@ -342,6 +341,7 @@ OverlayPopup {
                                     anchors.fill: parent
                                     onClicked: {
                                         view.currentIndex = cell.index;
+                                        view.forceActiveFocus();   // flèches rendues aux vignettes (focus sur un bouton, Tab)
                                         root.apply(cell.index);
                                     }
                                 }

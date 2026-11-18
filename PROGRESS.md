@@ -5,55 +5,23 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
 
 ## Sélecteur de fonds : molette, flèches, « Reset » (2026-11-18)
 
-- Molette : une rangée de vignettes par cran, les crans rapides s'additionnent. Mesuré avant : un cran = 72 px (demi-rangée),
-  et 5 ou 10 crans rapides restaient à 72 px (Flickable relance le même défilement à chaque cran). `MouseArea` (molette
-  seulement) sur la grille : un `WheelHandler` dans la grille ne recevait pas la molette sous Hyprland imbriqué.
-  - Premier essai raté sur le laptop : la vraie molette (Razer Orochi V2, Hyprland) envoie `angleDelta` 120 **et** `pixelDelta`
-    15 px par cran, sans phase, depuis un périphérique que Qt nomme « touchpad » (mesuré avec une fenêtre de test) ; le code
-    prenait les 15 px. Désormais : sans phase → une rangée par cran (`angleDelta`) ; avec phases (pavé tactile) → défilement
-    natif, avec son élan. Les bancs ne simulent pas `pixelDelta` (QtTest) : ce cas n'est vérifié qu'à la main.
-- Flèches : restent sur les vignettes (plus de passage aux boutons Images / Core Lab / Reset). La voisine du fond actuel est
-  appliquée tout de suite ; sur un onglet sans fond actuel, la première flèche applique la première vignette. Entrée et clic
-  inchangés ; Tab passe toujours aux boutons.
-- Ouverture et « Reset » : onglet du fond actuel, sa vignette centrée et choisie au clavier, clavier rendu aux vignettes (aussi
-  après « Reset » au clavier). Écran visé changé : sa vignette dans l'onglet affiché. Grille d'une autre largeur (écran d'un autre
-  nombre de colonnes) : la vignette du clavier reste en vue.
-- « Reset » (à la suite des onglets, grisé tant que rien n'a changé) : revient aux fonds d'avant l'ouverture du panneau
-  (tous les écrans et choix par écran).
-- Vérifié : `test-wallpapers.py` sous Sway et Hyprland imbriqué, vrais événements Qt (`QtTest`) : molette, flèches, bord haut,
-  onglet sans fond actuel, clic sous la zone de molette, Reset ; aucun nouvel avertissement. Bureau réel rechargé, sans erreur.
-- Revue en boucle (`/code-review high`) — passe 1 : 10 constats. Corrigés (reproduits sur banc, tests ajoutés) : focus perdu
-  après « Reset » au clavier ; vignette hors de vue à l'ouverture sur un écran d'un autre nombre de colonnes (origine de la grille
-  déplacée après la mise en page) ; doc du changement d'écran visé. Écartés : première vignette appliquée sur « All screens »
-  et départ du fond actuel (ta demande) ; « Reset » actif pour un état identique, double écriture de `restore` (comme
-  `setAll`), molette horizontale, test en double (négligeables). Touche maintenue : un fond appliqué à chaque répétition
-  (non simulable par QtTest ; décodage asynchrone, ancien fond gardé pendant le décodage, aucune copie avant 3 s) : accepté.
-- Passe 2 : 9 constats. Corrigés (reproduits sur banc, tests ajoutés) : dossier relu pendant l'ouverture (ou écran visé dans
-  Core Lab) → modèle remplacé, curseur ramené à la première vignette : retour au fond actuel ; recentrage à chaque changement de
-  hauteur de la grille (passe 1) retiré, seule la largeur compte. Constaté au passage, d'avant : au retour sur un onglet,
-  `PanelFrame` fait défiler jusqu'à la vignette du clavier (le fond actuel) ; gardé. Écartés (négligeables) : trackpoint (aucun
-  ici), cadre clavier sur une vignette quand l'onglet n'a pas le fond actuel, molette pendant l'élan du pavé tactile, panneau
-  ouvert avant la lecture de `wallpaper.json` (millisecondes du démarrage), doublons, coût de `changed`.
-- Passe 3 : 6 constats. Corrigés (reproduits sur banc, contre-épreuve, tests ajoutés) : écran visé sans image propre → les
-  flèches partaient de la première vignette (et la posaient sur cet écran) au lieu de l'image de tous les écrans qu'il montre ;
-  modèle d'un onglet caché remplacé → retour au fond actuel aussi pour lui (`showCurrent` propre à chaque grille). Écartés
-  (négligeables) : test supposant `originY` nul (stable sur tous les passages), recentrage sur changement de mode d'écran
-  panneau ouvert, appels de focus redondants.
-- Passe 4 : 9 constats. Corrigés (reproduits sur banc, contre-épreuve, tests ajoutés) : flèche bloquée au bord avec un écran
-  visé sans image propre → lui donnait en silence la même image (introduit en passe 3) : rien n'est appliqué si le curseur ne
-  bouge pas ; onglet sans fond actuel défilé à la molette → la première flèche applique la vignette 0 et la montre ; doc des
-  positions par onglet. Écartés (négligeables) : image propre d'un écran supprimée du dossier, flèches avec Ctrl / Maj, ordre des
-  clés dans `changed`, course théorique entre `items` et le modèle de la grille, règle du type d'une image propre en double ;
-  test sur un écran fictif (les écrans virtuels n'ont pas de description).
-- Passe 5 : 6 constats. Corrigés : ouverture sur un écran moins haut au même nombre de colonnes → vignette centrée dans
-  l'ancienne hauteur, hors de vue (reproduit, contre-épreuve, test ajouté) : recentrage quand la hauteur de la fenêtre change ;
-  commentaire des 15 px (molette seulement). Écartés (négligeables) : départ sur Panoramas avec un écran visé caché, changement
-  externe pendant l'ouverture annulé par « Reset », molette sur une bibliothèque vide, nom de `showCurrent` à deux niveaux.
-- Copies des passes 1 et 2 restées sans effet sur le bureau réel : session verrouillée par l'inactivité, rechargement à chaud
-  coupé (`LockScreen.qml`). Relance par `scripts/dev.sh` (verrou repris, `isLocked`/`isSecure` vrais, aucune erreur) : le bureau
-  tourne le code actuel. Piège noté dans `docs/DEVELOPMENT.md`.
-- Validé à la main le 2026-11-18 : molette (une rangée par cran, fenêtre de test). À tester à la main : flèches et Reset dans le
-  vrai panneau, pavé tactile (aucun geste enregistré pendant la mesure).
+- Molette : une rangée de vignettes par cran, les crans rapides s'additionnent (avant : 72 px par cran, sans cumul). La vraie
+  molette envoie `angleDelta` 120 **et** `pixelDelta` 15 px sans phase, depuis un périphérique que Qt nomme « touchpad »
+  (mesuré sur le laptop, Razer Orochi V2, Hyprland) : seules les phases distinguent le pavé tactile, laissé au défilement natif.
+  `MouseArea` (molette seulement) sur la grille. Les bancs (QtTest) n'envoient pas `pixelDelta` : vérifié à la main.
+- Flèches : restent sur les vignettes. Depuis le fond actuel (pour un écran visé sans image propre : l'image de tous les écrans
+  qu'il montre), la voisine est appliquée tout de suite et montrée ; sans fond actuel dans l'onglet, la première. Bloquées au
+  bord : rien d'appliqué. Clic sur une vignette : flèches rendues aux vignettes.
+- Vignette du fond actuel centrée et choisie au clavier : ouverture (sur son onglet), « Reset », écran visé changé, dossier relu
+  (onglets cachés compris), autre largeur ou hauteur d'écran.
+- « Reset » (à la suite des onglets, grisé tant que rien n'a changé) : fonds d'avant l'ouverture (tous les écrans et par écran).
+- Revue en boucle (`/code-review high`, 6 passes, un commit chacune) : 11 défauts reproduits sur banc avec contre-épreuve et
+  corrigés, chacun couvert par `test-wallpapers.py` (Sway et Hyprland). Écartés en connaissance de cause : une application par
+  répétition de touche maintenue, flèches avec Ctrl / Maj, trackpoint (absent), « Reset » actif pour un état identique, ou
+  annulant un changement externe fait panneau ouvert ; recentrage si le dossier relu à l'ouverture change pendant qu'on défile.
+- Piège vu en route : session verrouillée par l'inactivité → pas de rechargement à chaud (`docs/DEVELOPMENT.md`).
+- Validé à la main le 2026-11-18 : molette (une rangée par cran). À tester à la main : flèches, clic puis flèches, « Reset »
+  dans le vrai panneau ; pavé tactile (aucun geste enregistré pendant la mesure).
 
 ## Laptop : pas de veille capot fermé sur secteur / dock (2026-11-18)
 
