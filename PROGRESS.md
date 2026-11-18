@@ -28,6 +28,12 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
   et départ du fond actuel (ta demande) ; « Reset » actif pour un état identique, double écriture de `restore` (comme
   `setAll`), molette horizontale, test en double (négligeables). Touche maintenue : un fond appliqué à chaque répétition
   (non simulable par QtTest ; décodage asynchrone, ancien fond gardé pendant le décodage, aucune copie avant 3 s) : accepté.
+- Passe 2 : 9 constats. Corrigés (reproduits sur banc, tests ajoutés) : dossier relu pendant l'ouverture (ou écran visé dans
+  Core Lab) → modèle remplacé, curseur ramené à la première vignette : retour au fond actuel ; recentrage à chaque changement de
+  hauteur de la grille (passe 1) retiré, seule la largeur compte. Constaté au passage, d'avant : au retour sur un onglet,
+  `PanelFrame` fait défiler jusqu'à la vignette du clavier (le fond actuel) ; gardé. Écartés (négligeables) : trackpoint (aucun
+  ici), cadre clavier sur une vignette quand l'onglet n'a pas le fond actuel, molette pendant l'élan du pavé tactile, panneau
+  ouvert avant la lecture de `wallpaper.json` (millisecondes du démarrage), doublons, coût de `changed`.
 - Validé à la main le 2026-11-18 : molette (une rangée par cran, fenêtre de test). À tester à la main : flèches et Reset dans le
   vrai panneau, pavé tactile (aucun geste enregistré pendant la mesure).
 
