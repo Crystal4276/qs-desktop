@@ -118,6 +118,7 @@ def test(work, compositor="sway", scale=1, shots=None):
         function click(i: int): void { const g=picker.grid; g.positionViewAtIndex(i,GridView.Center); events.mouseClick(g.itemAtIndex(i)); }
         function key(name: string): void { events.parent=picker.frameItem; events.keyClick({up:Qt.Key_Up,down:Qt.Key_Down,left:Qt.Key_Left,right:Qt.Key_Right}[name]); }
         function resetButton(): var { return picker.testControls.children[0].children.find(b=>b.text==="Reset"); }
+        function tabKey(): void { events.parent=picker.frameItem; events.keyClick(Qt.Key_Tab); }
         function focusReset(): void { resetButton().forceActiveFocus(); }
         function resetKey(): void { const b=resetButton(); b.forceActiveFocus(); events.parent=picker.frameItem; events.keyClick(Qt.Key_Return); }
         function reset(): bool { const b=resetButton(); if(!b.enabled) return false; events.mouseClick(b); return true; }
@@ -514,6 +515,13 @@ def test(work, compositor="sway", scale=1, shots=None):
         ipc('click',43); time.sleep(.2)
         ipc('key','down'); time.sleep(.2)
         assert state()['selection']['path']==state()['items'][44]['path'], state()['selection']
+        # Keyboard only: Tab leaves the thumbnails for the buttons, and Tab cycles back to them.
+        run('qs','ipc','--pid',pid,'call','corelab-test','focusReset',env=env); time.sleep(.2)
+        assert not picker_state()['focus']
+        for _ in range(12):
+            ipc('tabKey'); time.sleep(.05)
+            if picker_state()['focus']: break
+        assert picker_state()['focus'], 'Tab never returns to the thumbnails'
         # Blocked at the top edge after a wheel scroll: the current thumbnail comes back into view.
         ipc('choose',0); ipc('close'); ipc('screen','HEADLESS-2'); time.sleep(.5)
         ipc('wheel',1000); time.sleep(.3)
