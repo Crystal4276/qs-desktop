@@ -510,13 +510,13 @@ def test(work, compositor="sway", scale=1, shots=None):
         resize(1280,800,'HEADLESS-3',1)
         # Focus on a button (Tab), then a click on a thumbnail: arrows step through the thumbnails again.
         ipc('close'); ipc('screen','HEADLESS-2'); time.sleep(.5)
-        run('qs','ipc','--pid',pid,'call','corelab-test','focusReset',env=env); time.sleep(.2)
+        ipc('focusReset'); time.sleep(.2)
         assert not picker_state()['focus']
         ipc('click',43); time.sleep(.2)
         ipc('key','down'); time.sleep(.2)
         assert state()['selection']['path']==state()['items'][44]['path'], state()['selection']
         # Keyboard only: Tab leaves the thumbnails for the buttons, and Tab cycles back to them.
-        run('qs','ipc','--pid',pid,'call','corelab-test','focusReset',env=env); time.sleep(.2)
+        ipc('focusReset'); time.sleep(.2)
         assert not picker_state()['focus']
         for _ in range(12):
             ipc('tabKey'); time.sleep(.05)

@@ -50,13 +50,13 @@ OverlayPopup {
         Qt.callLater(() => { if (visible) grid?.forceActiveFocus(); });
     }
 
-    // Vignette de départ (ouverture, flèches) dans les vignettes `entries` de l'onglet `kind` : le fond choisi ; écran visé sans
+    // Vignette de départ (ouverture, flèches) dans les vignettes `list` de l'onglet `kind` : le fond choisi ; écran visé sans
     // image propre : celle de tous les écrans, qu'il montre.
-    function currentIn(kind: string, entries: var): int {
-        const i = entries.findIndex(e => isCurrent(kind, e.path));
+    function currentIn(kind: string, list: var): int {
+        const i = list.findIndex(e => isCurrent(kind, e.path));
         const s = Wallpapers.selection;
         return i >= 0 || target === "" || Wallpapers.overrides[target] || s?.kind !== kind ? i
-            : entries.findIndex(e => e.path === s.path);
+            : list.findIndex(e => e.path === s.path);
     }
 
     function showCurrent(): void {
