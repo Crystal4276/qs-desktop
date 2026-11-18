@@ -15,11 +15,19 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
 - Flèches : restent sur les vignettes (plus de passage aux boutons Images / Core Lab / Reset). La voisine du fond actuel est
   appliquée tout de suite ; sur un onglet sans fond actuel, la première flèche applique la première vignette. Entrée et clic
   inchangés ; Tab passe toujours aux boutons.
-- Ouverture et « Reset » : onglet du fond actuel, sa vignette centrée et choisie au clavier ; idem au changement d'écran visé.
+- Ouverture et « Reset » : onglet du fond actuel, sa vignette centrée et choisie au clavier, clavier rendu aux vignettes (aussi
+  après « Reset » au clavier). Écran visé changé : sa vignette dans l'onglet affiché. Grille d'une autre largeur (écran d'un autre
+  nombre de colonnes) : la vignette du clavier reste en vue.
 - « Reset » (à la suite des onglets, grisé tant que rien n'a changé) : revient aux fonds d'avant l'ouverture du panneau
   (tous les écrans et choix par écran).
 - Vérifié : `test-wallpapers.py` sous Sway et Hyprland imbriqué, vrais événements Qt (`QtTest`) : molette, flèches, bord haut,
   onglet sans fond actuel, clic sous la zone de molette, Reset ; aucun nouvel avertissement. Bureau réel rechargé, sans erreur.
+- Revue en boucle (`/code-review high`) — passe 1 : 10 constats. Corrigés (reproduits sur banc, tests ajoutés) : focus perdu
+  après « Reset » au clavier ; vignette hors de vue à l'ouverture sur un écran d'un autre nombre de colonnes (origine de la grille
+  déplacée après la mise en page) ; doc du changement d'écran visé. Écartés : première vignette appliquée sur « All screens »
+  et départ du fond actuel (ta demande) ; « Reset » actif pour un état identique, double écriture de `restore` (comme
+  `setAll`), molette horizontale, test en double (négligeables). Touche maintenue : un fond appliqué à chaque répétition
+  (non simulable par QtTest ; décodage asynchrone, ancien fond gardé pendant le décodage, aucune copie avant 3 s) : accepté.
 - Validé à la main le 2026-11-18 : molette (une rangée par cran, fenêtre de test). À tester à la main : flèches et Reset dans le
   vrai panneau, pavé tactile (aucun geste enregistré pendant la mesure).
 

@@ -56,16 +56,20 @@ OverlayPopup {
         if (i < 0)
             return;
         grid.currentIndex = i;
-        grid.positionViewAtIndex(i, GridView.Center);
+        grid.showIndex();
     }
 
-    // Onglet et vignette du fond actuel (ouverture, « Reset »).
+    // Onglet et vignette du fond actuel, clavier sur les vignettes (ouverture, « Reset » : le bouton, grisé, perd le focus).
     function goToCurrent(): void {
         if (tabs.some(t => t.key === currentTab))
             tab = currentTab;
         else if (!tabs.some(t => t.key === tab))
             tab = "simple";
-        Qt.callLater(showCurrent);
+        Qt.callLater(() => {
+            showCurrent();
+            if (visible)
+                grid?.forceActiveFocus();
+        });
     }
 
     // Onglet du fond actuel : celui de l'écran visé s'il en a un, sinon celui de tous les écrans.
@@ -237,6 +241,16 @@ OverlayPopup {
                             boundsBehavior: Flickable.StopAtBounds
                             keyNavigationEnabled: true
                             model: modelEntries
+
+                            // Taille changée (ouvert sur un écran d'une autre largeur : nombre de colonnes, surface pas encore à sa
+                            // taille) : la vignette du clavier reste en vue.
+                            onWidthChanged: Qt.callLater(showIndex)
+                            onHeightChanged: Qt.callLater(showIndex)
+                            // Après la mise en page (reportée) : en changeant de nombre de colonnes, la grille déplace son origine.
+                            function showIndex(): void {
+                                if (currentIndex >= 0)
+                                    positionViewAtIndex(currentIndex, GridView.Center);
+                            }
 
                             Keys.onReturnPressed: root.apply(currentIndex)
                             Keys.onEnterPressed: root.apply(currentIndex)
