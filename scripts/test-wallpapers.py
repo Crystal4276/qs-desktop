@@ -113,6 +113,7 @@ def test(work, compositor="sway", scale=1, shots=None):
             const g=picker.grid;
             for(let i=0;i<Math.abs(notches);i++) events.mouseWheel(g,g.width/2,g.height/2,0,notches>0?-120:120);
         }
+        function target(value: string): void { picker.target=value; }
         function top(): void { picker.grid.positionViewAtBeginning(); }
         function click(i: int): void { const g=picker.grid; g.positionViewAtIndex(i,GridView.Center); events.mouseClick(g.itemAtIndex(i)); }
         function key(name: string): void { events.parent=picker.frameItem; events.keyClick({up:Qt.Key_Up,down:Qt.Key_Down,left:Qt.Key_Left,right:Qt.Key_Right}[name]); }
@@ -472,6 +473,20 @@ def test(work, compositor="sway", scale=1, shots=None):
         ipc('top'); time.sleep(.2)
         ipc('tab','panorama'); time.sleep(.3); ipc('tab','simple'); time.sleep(.3)
         p=picker_state(); assert p['visible'] and p['index']==41, ('tab switch',p)
+        # A hidden tab's model replaced (folder read while another tab is shown): back on the tab, its current thumbnail.
+        ipc('tab','panorama'); time.sleep(.3)
+        (wallpapers/'simple/zy-new.png').write_bytes(png)
+        ipc('refresh'); wait_for(lambda v:'simple/zy-new.png' in v['lib']['simple']); time.sleep(.4)
+        ipc('tab','simple'); time.sleep(.4)
+        p=picker_state(); assert p['index']==41 and p['visible'], ('hidden tab model',p)
+        # A screen target without its own image shows the all-screens one: arrows start there and set this screen only.
+        ipc('target','test-screen'); time.sleep(.4)
+        p=picker_state(); assert p['index']==41 and p['visible'], ('target without image',p)
+        ipc('key','down'); time.sleep(.2)
+        v=state(); assert v['overrides']=={'test-screen':v['items'][42]['path']} and v['selection']['path']==v['items'][41]['path'], v
+        assert ipc('reset')=='true'; time.sleep(.3)
+        ipc('target',''); time.sleep(.3)
+        assert state()['overrides']=={} and state()['selection']['path']==state()['items'][41]['path'], state()
         ipc('close'); assert not stats()['visible']
         if shots:
             shots.mkdir(parents=True,exist_ok=True)

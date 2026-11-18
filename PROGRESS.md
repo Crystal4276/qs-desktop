@@ -34,6 +34,11 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
   `PanelFrame` fait défiler jusqu'à la vignette du clavier (le fond actuel) ; gardé. Écartés (négligeables) : trackpoint (aucun
   ici), cadre clavier sur une vignette quand l'onglet n'a pas le fond actuel, molette pendant l'élan du pavé tactile, panneau
   ouvert avant la lecture de `wallpaper.json` (millisecondes du démarrage), doublons, coût de `changed`.
+- Passe 3 : 6 constats. Corrigés (reproduits sur banc, contre-épreuve, tests ajoutés) : écran visé sans image propre → les
+  flèches partaient de la première vignette (et la posaient sur cet écran) au lieu de l'image de tous les écrans qu'il montre ;
+  modèle d'un onglet caché remplacé → retour au fond actuel aussi pour lui (`showCurrent` propre à chaque grille). Écartés
+  (négligeables) : test supposant `originY` nul (stable sur tous les passages), recentrage sur changement de mode d'écran
+  panneau ouvert, appels de focus redondants.
 - Copies des passes 1 et 2 restées sans effet sur le bureau réel : session verrouillée par l'inactivité, rechargement à chaud
   coupé (`LockScreen.qml`). Relance par `scripts/dev.sh` (verrou repris, `isLocked`/`isSecure` vrais, aucune erreur) : le bureau
   tourne le code actuel. Piège noté dans `docs/DEVELOPMENT.md`.
