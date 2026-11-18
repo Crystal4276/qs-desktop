@@ -17,7 +17,8 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
     matrice : relancé 1 s plus tard (une fois par minute après 10 échecs).
   - Sway : saut net gardé (gammastep ne change pas de température en marche), un seul pour une rafale (molette : 400 ms
     après le dernier cran) ; fondu de 4 s à l'allumage et à l'extinction ; rallumée pendant ce fondu après un réglage : saut
-    à la nouvelle température.
+    à la nouvelle température. Limite connue : le gammastep relancé par un saut s'éteint aussi net (fondu fixé au lancement),
+    y compris à l'heure de fin ; l'allumage suivant refait le fondu.
     Attente de l'ancien gammastep retirée (piège propre à Hyprland).
   - Moteur lancé après lecture du fichier de température : pas de départ à la valeur par défaut au rechargement.
 - Valeur en direct : la température s'affiche à droite du curseur (« 2690 K ») et suit le pointeur pendant le glissement ;
