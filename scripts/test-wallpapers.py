@@ -118,6 +118,7 @@ def test(work, compositor="sway", scale=1, shots=None):
         function click(i: int): void { const g=picker.grid; g.positionViewAtIndex(i,GridView.Center); events.mouseClick(g.itemAtIndex(i)); }
         function key(name: string): void { events.parent=picker.frameItem; events.keyClick({up:Qt.Key_Up,down:Qt.Key_Down,left:Qt.Key_Left,right:Qt.Key_Right}[name]); }
         function resetButton(): var { return picker.testControls.children[0].children.find(b=>b.text==="Reset"); }
+        function focusReset(): void { resetButton().forceActiveFocus(); }
         function resetKey(): void { const b=resetButton(); b.forceActiveFocus(); events.parent=picker.frameItem; events.keyClick(Qt.Key_Return); }
         function reset(): bool { const b=resetButton(); if(!b.enabled) return false; events.mouseClick(b); return true; }
         function pickerState(): string {
@@ -506,6 +507,18 @@ def test(work, compositor="sway", scale=1, shots=None):
         ipc('close'); ipc('screen','HEADLESS-2'); time.sleep(.6)
         p=picker_state(); assert p['index']==41 and p['visible'], ('shorter',p)
         resize(1280,800,'HEADLESS-3',1)
+        # Focus on a button (Tab), then a click on a thumbnail: arrows step through the thumbnails again.
+        ipc('close'); ipc('screen','HEADLESS-2'); time.sleep(.5)
+        run('qs','ipc','--pid',pid,'call','corelab-test','focusReset',env=env); time.sleep(.2)
+        assert not picker_state()['focus']
+        ipc('click',43); time.sleep(.2)
+        ipc('key','down'); time.sleep(.2)
+        assert state()['selection']['path']==state()['items'][44]['path'], state()['selection']
+        # Blocked at the top edge after a wheel scroll: the current thumbnail comes back into view.
+        ipc('choose',0); ipc('close'); ipc('screen','HEADLESS-2'); time.sleep(.5)
+        ipc('wheel',1000); time.sleep(.3)
+        ipc('key','up'); time.sleep(.3)
+        p=picker_state(); assert p['index']==0 and p['visible'] and state()['selection']['path']==state()['items'][0]['path'], ('edge after wheel',p)
         ipc('close'); assert not stats()['visible']
         if shots:
             shots.mkdir(parents=True,exist_ok=True)
