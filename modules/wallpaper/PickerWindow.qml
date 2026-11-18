@@ -8,8 +8,9 @@ import qs.services
 import qs.modules.bar
 
 // Utilitaire de changement de fond (ARCHITECTURE § 7.11) : vignettes du dossier des fonds, par onglet — images simples,
-// panoramas (plusieurs écrans), triptyques (trois écrans). Un clic ou Entrée applique le fond tout de suite ; la fenêtre reste
-// ouverte pour comparer. Image simple : pour tous les écrans ou un seul (rangée du haut). Échap ou un clic à côté ferme.
+// panoramas (plusieurs écrans), triptyques (trois écrans). Un clic, Entrée ou une flèche applique le fond tout de suite ; la
+// fenêtre reste ouverte pour comparer, « Reset » revient aux fonds de son ouverture. Image simple : pour tous les écrans ou un
+// seul (rangée du haut). Échap ou un clic à côté ferme.
 OverlayPopup {
     id: root
 
@@ -49,6 +50,25 @@ OverlayPopup {
         Qt.callLater(() => { if (visible) grid?.forceActiveFocus(); });
     }
 
+    // Vignette du fond actuel choisie au clavier et montrée (ouverture, écran visé changé, « Reset »).
+    function showCurrent(): void {
+        const i = grid?.modelEntries.findIndex(e => isCurrent(e.path)) ?? -1;
+        if (i < 0)
+            return;
+        grid.currentIndex = i;
+        grid.positionViewAtIndex(i, GridView.Center);
+    }
+
+    // Onglet du fond actuel : celui de l'écran visé s'il en a un, sinon celui de tous les écrans.
+    readonly property string currentTab: {
+        const own = target !== "" ? Wallpapers.overrides[target] ?? "" : "";
+        return own !== "" ? own.split("/")[0] : Wallpapers.selection?.kind ?? "";
+    }
+
+    // Choix à l'ouverture, rétablis par « Reset ».
+    property var opened: null
+    readonly property bool changed: opened !== null && JSON.stringify(Wallpapers.snapshot()) !== JSON.stringify(opened)
+
     // Après une lecture du dossier seulement : pas de message pendant la première.
     readonly property bool empty: Wallpapers.libraryRead && items.length === 0
 
@@ -56,11 +76,16 @@ OverlayPopup {
     function open(from: var): void {
         screen = from ?? Outputs.focusedScreen();
         Wallpapers.refresh();
-        if (!tabs.some(t => t.key === tab))
+        if (!visible)
+            opened = Wallpapers.snapshot();
+        if (tabs.some(t => t.key === currentTab))
+            tab = currentTab;
+        else if (!tabs.some(t => t.key === tab))
             tab = "simple";
         prepareOpen(null);
         visible = true;
         visit();
+        Qt.callLater(showCurrent);
     }
 
     function toggle(): void {
@@ -100,6 +125,7 @@ OverlayPopup {
         if (!tabs.some(t => t.key === tab))
             tab = "simple";
     }
+    onTargetChanged: showCurrent()
     onOutputsChanged: {
         if (target !== "" && !outputs.some(o => o.description === target))
             target = "";
@@ -133,6 +159,15 @@ OverlayPopup {
                         text: modelData.name
                         checked: root.tab === modelData.key
                         onClicked: root.tab = modelData.key
+                    }
+                }
+
+                PanelButton {
+                    text: "Reset"
+                    enabled: root.changed
+                    onClicked: {
+                        Wallpapers.restore(root.opened);
+                        root.showCurrent();
                     }
                 }
             }
@@ -201,6 +236,20 @@ OverlayPopup {
                             Keys.onReturnPressed: root.apply(currentIndex)
                             Keys.onEnterPressed: root.apply(currentIndex)
                             Keys.onEscapePressed: root.close()
+                            // Flèches : la vignette voisine est appliquée tout de suite ; au bord, la touche passe au cadre
+                            // (élément suivant, PanelFrame.qml).
+                            Keys.onUpPressed: event => step(event, () => moveCurrentIndexUp())
+                            Keys.onDownPressed: event => step(event, () => moveCurrentIndexDown())
+                            Keys.onLeftPressed: event => step(event, () => moveCurrentIndexLeft())
+                            Keys.onRightPressed: event => step(event, () => moveCurrentIndexRight())
+                            function step(event: KeyEvent, move: var): void {
+                                const previous = currentIndex;
+                                move();
+                                if (currentIndex !== previous)
+                                    root.apply(currentIndex);
+                                else
+                                    event.accepted = false;
+                            }
 
                             delegate: Item {
                                 id: cell
@@ -258,6 +307,20 @@ OverlayPopup {
                             }
                         }
                     }
+                }
+            }
+
+            // Molette : une rangée par cran (Flickable relance à chaque cran un défilement d'une demi-rangée, sans cumul : lent
+            // avec une molette rapide) ; pavé tactile : au pixel près. Clics laissés aux vignettes.
+            MouseArea {
+                anchors.fill: parent
+                acceptedButtons: Qt.NoButton
+                onWheel: wheel => {
+                    const g = root.grid;
+                    if (!g)
+                        return;
+                    const delta = wheel.pixelDelta.y !== 0 ? wheel.pixelDelta.y : wheel.angleDelta.y / 120 * g.cellHeight;
+                    g.contentY = Math.max(g.originY, Math.min(g.originY + g.contentHeight - g.height, g.contentY - delta));
                 }
             }
         }

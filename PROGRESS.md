@@ -3,6 +3,22 @@
 État courant seulement. Historique figé : phases 0 à 10 dans `docs/archive/PROGRESS.md`, maintenance du 2026-11-05 au 2026-11-09
 et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de besoin).
 
+## Sélecteur de fonds : molette, flèches, « Reset » (2026-11-18)
+
+- Molette : une rangée de vignettes par cran, les crans rapides s'additionnent. Mesuré avant : un cran = 72 px (demi-rangée),
+  et 5 ou 10 crans rapides restaient à 72 px (Flickable relance le même défilement à chaque cran). Pavé tactile : au pixel près,
+  sans élan en fin de geste. `MouseArea` (molette seulement) sur la grille : un `WheelHandler` dans la grille ne recevait pas la
+  molette sous Hyprland imbriqué.
+- Flèches : la vignette voisine devient le fond tout de suite (au bord, comme avant, le focus passe aux boutons). Entrée et clic
+  inchangés.
+- Ouverture : onglet du fond actuel, sa vignette centrée et choisie au clavier ; idem au changement d'écran visé et après « Reset ».
+- « Reset » (à la suite des onglets, grisé tant que rien n'a changé) : revient aux fonds d'avant l'ouverture du panneau
+  (tous les écrans et choix par écran).
+- Vérifié : `test-wallpapers.py` sous Sway (échelle 1 ; 1,5 jusqu'aux captures, la capture 3440 × 1,5 dépasse le délai de `grim`,
+  étape antérieure) et Hyprland imbriqué, vrais événements Qt (`QtTest`) : molette, flèches, bord haut, clic sous la zone de
+  molette, Reset ; aucun nouvel avertissement. Bureau réel rechargé, vivant, sans erreur.
+- À tester à la main : vitesse de la molette (souris et pavé tactile du laptop), flèches, Reset.
+
 ## Laptop : pas de veille capot fermé sur secteur / dock (2026-11-18)
 
 - Constat : sur le dock USB-C (écran NEC en DP-9, charge par le dock), le laptop se mettait en veille capot fermé, sans nouvel
