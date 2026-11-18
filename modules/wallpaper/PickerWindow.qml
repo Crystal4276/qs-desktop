@@ -59,6 +59,15 @@ OverlayPopup {
         grid.positionViewAtIndex(i, GridView.Center);
     }
 
+    // Onglet et vignette du fond actuel (ouverture, « Reset »).
+    function goToCurrent(): void {
+        if (tabs.some(t => t.key === currentTab))
+            tab = currentTab;
+        else if (!tabs.some(t => t.key === tab))
+            tab = "simple";
+        Qt.callLater(showCurrent);
+    }
+
     // Onglet du fond actuel : celui de l'écran visé s'il en a un, sinon celui de tous les écrans.
     readonly property string currentTab: {
         const own = target !== "" ? Wallpapers.overrides[target] ?? "" : "";
@@ -78,14 +87,10 @@ OverlayPopup {
         Wallpapers.refresh();
         if (!visible)
             opened = Wallpapers.snapshot();
-        if (tabs.some(t => t.key === currentTab))
-            tab = currentTab;
-        else if (!tabs.some(t => t.key === tab))
-            tab = "simple";
+        goToCurrent();
         prepareOpen(null);
         visible = true;
         visit();
-        Qt.callLater(showCurrent);
     }
 
     function toggle(): void {
@@ -167,7 +172,7 @@ OverlayPopup {
                     enabled: root.changed
                     onClicked: {
                         Wallpapers.restore(root.opened);
-                        root.showCurrent();
+                        root.goToCurrent();
                     }
                 }
             }
@@ -236,19 +241,22 @@ OverlayPopup {
                             Keys.onReturnPressed: root.apply(currentIndex)
                             Keys.onEnterPressed: root.apply(currentIndex)
                             Keys.onEscapePressed: root.close()
-                            // Flèches : la vignette voisine est appliquée tout de suite ; au bord, la touche passe au cadre
-                            // (élément suivant, PanelFrame.qml).
-                            Keys.onUpPressed: event => step(event, () => moveCurrentIndexUp())
-                            Keys.onDownPressed: event => step(event, () => moveCurrentIndexDown())
-                            Keys.onLeftPressed: event => step(event, () => moveCurrentIndexLeft())
-                            Keys.onRightPressed: event => step(event, () => moveCurrentIndexRight())
-                            function step(event: KeyEvent, move: var): void {
-                                const previous = currentIndex;
-                                move();
-                                if (currentIndex !== previous)
+                            // Flèches : restent sur les vignettes (pas de passage aux boutons) ; depuis le fond actuel, la voisine
+                            // est appliquée tout de suite ; onglet sans fond actuel : la première.
+                            Keys.onUpPressed: step(() => moveCurrentIndexUp())
+                            Keys.onDownPressed: step(() => moveCurrentIndexDown())
+                            Keys.onLeftPressed: step(() => moveCurrentIndexLeft())
+                            Keys.onRightPressed: step(() => moveCurrentIndexRight())
+                            function step(move: var): void {
+                                const here = modelEntries.findIndex(e => root.isCurrent(e.path));
+                                if (here < 0) {
+                                    currentIndex = 0;
+                                } else {
+                                    currentIndex = here;
+                                    move();
+                                }
+                                if (!root.isCurrent(modelEntries[currentIndex]?.path ?? ""))
                                     root.apply(currentIndex);
-                                else
-                                    event.accepted = false;
                             }
 
                             delegate: Item {
@@ -311,16 +319,19 @@ OverlayPopup {
             }
 
             // Molette : une rangée par cran (Flickable relance à chaque cran un défilement d'une demi-rangée, sans cumul : lent
-            // avec une molette rapide) ; pavé tactile : au pixel près. Clics laissés aux vignettes.
+            // avec une molette rapide). Molette et pavé tactile arrivent tous deux avec `pixelDelta` (15 px par cran) ; seul le
+            // pavé tactile a des phases : il garde le défilement natif, avec son élan. Clics laissés aux vignettes.
             MouseArea {
                 anchors.fill: parent
                 acceptedButtons: Qt.NoButton
                 onWheel: wheel => {
                     const g = root.grid;
-                    if (!g)
+                    if (!g || wheel.phase !== Qt.NoScrollPhase) {
+                        wheel.accepted = false;
                         return;
-                    const delta = wheel.pixelDelta.y !== 0 ? wheel.pixelDelta.y : wheel.angleDelta.y / 120 * g.cellHeight;
-                    g.contentY = Math.max(g.originY, Math.min(g.originY + g.contentHeight - g.height, g.contentY - delta));
+                    }
+                    g.contentY = Math.max(g.originY, Math.min(g.originY + g.contentHeight - g.height,
+                        g.contentY - wheel.angleDelta.y / 120 * g.cellHeight));
                 }
             }
         }

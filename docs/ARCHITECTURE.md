@@ -455,9 +455,11 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
   un scan identique conserve les objets du modèle et les images décodées. Les écritures pendant un scan sont fusionnées
   avec son résultat. Les réservations de capture sont annulables et les callbacks obsolètes ignorés.
   Une grille est chargée à la première visite de chaque onglet puis conservée, avec sa position clavier et son défilement.
-  Ouverture : onglet et vignette du fond actuel (choisie au clavier, centrée). Flèches : la vignette voisine est appliquée tout de
-  suite (au bord, la touche passe au cadre). Molette : une rangée par cran (`MouseArea` sur la grille ; le défilement de Flickable
-  s'arrêtait à une demi-rangée quelle que soit la vitesse de la molette). « Reset » (actif après un changement) revient aux choix de
+  Ouverture et « Reset » : onglet et vignette du fond actuel (choisie au clavier, centrée). Flèches : restent sur les vignettes ;
+  la voisine du fond actuel est appliquée tout de suite, la première sur un onglet sans fond actuel. Molette : une rangée par cran
+  (`MouseArea` sur la grille, d'après `angleDelta` ; le défilement de Flickable s'arrêtait à une demi-rangée quelle que soit la
+  vitesse). Sous Wayland, la molette arrive aussi avec `pixelDelta` (15 px par cran) et un périphérique « touchpad » : seule la
+  phase distingue le pavé tactile, laissé au défilement natif. « Reset » (actif après un changement) revient aux choix de
   l'ouverture (`Wallpapers.snapshot` / `restore`).
   `Thumbnail.qml` attend une taille physique valide, capture à la taille logique et régénère un cache illisible depuis
   l’original. Seules les cellules virtualisées des onglets visités sont retenues ; aucun préchargement des 252 variantes. Les noms des caches disque sont inchangés.

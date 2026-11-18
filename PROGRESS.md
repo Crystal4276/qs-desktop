@@ -6,18 +6,22 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
 ## Sélecteur de fonds : molette, flèches, « Reset » (2026-11-18)
 
 - Molette : une rangée de vignettes par cran, les crans rapides s'additionnent. Mesuré avant : un cran = 72 px (demi-rangée),
-  et 5 ou 10 crans rapides restaient à 72 px (Flickable relance le même défilement à chaque cran). Pavé tactile : au pixel près,
-  sans élan en fin de geste. `MouseArea` (molette seulement) sur la grille : un `WheelHandler` dans la grille ne recevait pas la
-  molette sous Hyprland imbriqué.
-- Flèches : la vignette voisine devient le fond tout de suite (au bord, comme avant, le focus passe aux boutons). Entrée et clic
-  inchangés.
-- Ouverture : onglet du fond actuel, sa vignette centrée et choisie au clavier ; idem au changement d'écran visé et après « Reset ».
+  et 5 ou 10 crans rapides restaient à 72 px (Flickable relance le même défilement à chaque cran). `MouseArea` (molette
+  seulement) sur la grille : un `WheelHandler` dans la grille ne recevait pas la molette sous Hyprland imbriqué.
+  - Premier essai raté sur le laptop : la vraie molette (Razer Orochi V2, Hyprland) envoie `angleDelta` 120 **et** `pixelDelta`
+    15 px par cran, sans phase, depuis un périphérique que Qt nomme « touchpad » (mesuré avec une fenêtre de test) ; le code
+    prenait les 15 px. Désormais : sans phase → une rangée par cran (`angleDelta`) ; avec phases (pavé tactile) → défilement
+    natif, avec son élan. Les bancs ne simulent pas `pixelDelta` (QtTest) : ce cas n'est vérifié qu'à la main.
+- Flèches : restent sur les vignettes (plus de passage aux boutons Images / Core Lab / Reset). La voisine du fond actuel est
+  appliquée tout de suite ; sur un onglet sans fond actuel, la première flèche applique la première vignette. Entrée et clic
+  inchangés ; Tab passe toujours aux boutons.
+- Ouverture et « Reset » : onglet du fond actuel, sa vignette centrée et choisie au clavier ; idem au changement d'écran visé.
 - « Reset » (à la suite des onglets, grisé tant que rien n'a changé) : revient aux fonds d'avant l'ouverture du panneau
   (tous les écrans et choix par écran).
-- Vérifié : `test-wallpapers.py` sous Sway (échelle 1 ; 1,5 jusqu'aux captures, la capture 3440 × 1,5 dépasse le délai de `grim`,
-  étape antérieure) et Hyprland imbriqué, vrais événements Qt (`QtTest`) : molette, flèches, bord haut, clic sous la zone de
-  molette, Reset ; aucun nouvel avertissement. Bureau réel rechargé, vivant, sans erreur.
-- À tester à la main : vitesse de la molette (souris et pavé tactile du laptop), flèches, Reset.
+- Vérifié : `test-wallpapers.py` sous Sway et Hyprland imbriqué, vrais événements Qt (`QtTest`) : molette, flèches, bord haut,
+  onglet sans fond actuel, clic sous la zone de molette, Reset ; aucun nouvel avertissement. Bureau réel rechargé, sans erreur.
+- Validé à la main le 2026-11-18 : molette (une rangée par cran, fenêtre de test). À tester à la main : flèches et Reset dans le
+  vrai panneau, pavé tactile (aucun geste enregistré pendant la mesure).
 
 ## Laptop : pas de veille capot fermé sur secteur / dock (2026-11-18)
 

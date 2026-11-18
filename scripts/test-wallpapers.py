@@ -434,11 +434,19 @@ def test(work, compositor="sway", scale=1, shots=None):
         # Clicks still reach the thumbnails under the wheel area.
         ipc('click',42); time.sleep(.2)
         assert state()['selection']['path']==state()['items'][42]['path'] and picker_state()['index']==42, state()['selection']
-        # Top edge: Up applies nothing and leaves the grid (frame focus chain), as before.
+        # Top edge: Up applies nothing and arrows stay on the thumbnails.
         ipc('choose',0); ipc('close'); ipc('screen','HEADLESS-2'); time.sleep(.4)
         assert picker_state()['index']==0
         ipc('key','up'); time.sleep(.2)
-        p=picker_state(); assert state()['selection']['path']==state()['items'][0]['path'] and not p['focus'], p
+        p=picker_state(); assert state()['selection']['path']==state()['items'][0]['path'] and p['focus'] and p['index']==0, p
+        # A tab without the current wallpaper: the first arrow applies its first thumbnail; Reset returns to the opening tab.
+        ipc('tab','panorama'); time.sleep(.3)
+        ipc('key','down'); time.sleep(.2)
+        assert state()['selection']=={'kind':'panorama','path':state()['items'][0]['path']}, state()['selection']
+        assert picker_state()['focus']
+        assert ipc('reset')=='true'; time.sleep(.4)
+        p=picker_state(); assert p['tab']=='simple' and p['index']==0 and p['focus'], p
+        assert state()['selection']['path']==state()['items'][0]['path'], state()['selection']
         ipc('close'); assert not stats()['visible']
         if shots:
             shots.mkdir(parents=True,exist_ok=True)
