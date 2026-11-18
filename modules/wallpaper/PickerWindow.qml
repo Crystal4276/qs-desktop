@@ -282,8 +282,11 @@ OverlayPopup {
                                     currentIndex = here;
                                     move();
                                 }
-                                if (!root.isCurrent(kind, modelEntries[currentIndex]?.path ?? ""))
+                                // Bloqué au bord : rien (un écran visé sans image propre en recevrait une, la même).
+                                if (currentIndex !== here) {
                                     root.apply(currentIndex);
+                                    positionViewAtIndex(currentIndex, GridView.Contain);   // curseur déjà sur 0 : la vue ne suit pas
+                                }
                             }
 
                             delegate: Item {

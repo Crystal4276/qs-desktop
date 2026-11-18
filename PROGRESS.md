@@ -39,6 +39,12 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
   modèle d'un onglet caché remplacé → retour au fond actuel aussi pour lui (`showCurrent` propre à chaque grille). Écartés
   (négligeables) : test supposant `originY` nul (stable sur tous les passages), recentrage sur changement de mode d'écran
   panneau ouvert, appels de focus redondants.
+- Passe 4 : 9 constats. Corrigés (reproduits sur banc, contre-épreuve, tests ajoutés) : flèche bloquée au bord avec un écran
+  visé sans image propre → lui donnait en silence la même image (introduit en passe 3) : rien n'est appliqué si le curseur ne
+  bouge pas ; onglet sans fond actuel défilé à la molette → la première flèche applique la vignette 0 et la montre ; doc des
+  positions par onglet. Écartés (négligeables) : image propre d'un écran supprimée du dossier, flèches avec Ctrl / Maj, ordre des
+  clés dans `changed`, course théorique entre `items` et le modèle de la grille, règle du type d'une image propre en double ;
+  test sur un écran fictif (les écrans virtuels n'ont pas de description).
 - Copies des passes 1 et 2 restées sans effet sur le bureau réel : session verrouillée par l'inactivité, rechargement à chaud
   coupé (`LockScreen.qml`). Relance par `scripts/dev.sh` (verrou repris, `isLocked`/`isSecure` vrais, aucune erreur) : le bureau
   tourne le code actuel. Piège noté dans `docs/DEVELOPMENT.md`.
