@@ -8,16 +8,25 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
 - Sous la ligne « Schedule » de la veilleuse (clic droit) : curseur de température, de gauche (4700 K, moins chaud) à droite
   (1700 K, plus chaud), plage de GNOME ; dégradé du niveau audio (ton choix), glyphe de la veilleuse. Appliqué au relâcher
   (molette, clavier : à chaque cran). Gardé dans `night-light.json` (ancien fichier repris) ; config machine = valeur de départ.
-- **Essai « saut net »** (ton choix) : gammastep ne change pas de température en marche ; arrêté sec (SIGKILL : gamma neutre
-  aussitôt) et relancé sans fondu. Mesuré sur banc (faux gammastep) : relance 50 à 90 ms après l'appel. Le gammastep relancé
-  s'éteint aussi sans fondu (la prochaine extinction est nette, l'allumage suivant refait le fondu). Si le rendu ne te plaît
-  pas : hyprsunset sous Hyprland (réglable à chaud), gammastep sous Sway.
+- **Deux moteurs** (ton choix, après l'essai du saut net, flash rejeté) : `services/Hyprsunset.qml` sous Hyprland,
+  `services/Gammastep.qml` sous Sway ; `NightLight.qml` garde l'état, l'horaire et la température. Paquet `hyprsunset`
+  (`extra`) installé le 2026-11-18.
+  - Hyprland : hyprsunset tourne veilleuse allumée ; température changée à chaud (`hyprctl hyprsunset temperature`, une
+    commande à la fois, la dernière gagne). Fondu de Hyprland (500 ms, linéaire, `render:ctm_animation` auto) à chaque
+    changement, à l'allumage et à l'extinction (avant : 4 s pour ces deux-là). Arrêté net si un autre client tient la
+    matrice : relancé 1 s plus tard (une fois par minute après 10 échecs).
+  - Sway : saut net gardé (gammastep ne change pas de température en marche), fondu de 4 s à l'allumage et à l'extinction.
+    Attente de l'ancien gammastep retirée (piège propre à Hyprland).
+  - Moteur lancé après lecture du fichier de température : pas de départ à la valeur par défaut au rechargement.
+- Valeur en direct : la température s'affiche à droite du curseur (« 2690 K ») et suit le pointeur pendant le glissement ;
+  chiffres tabulaires d'Inter (`tnum`, largeur fixe).
 - Remplissage en dégradé mis en commun (`modules/bar/GradientFill.qml`) : niveau audio et curseur (`VolumeSlider.gradient`,
   `commitOnRelease`).
 - Vérifié : banc Sway (rechargement à chaud depuis la version d'avant, relances et fondus avec un faux gammastep, veilleuse
-  éteinte : rien de relancé, capture) ; bureau réel sous Hyprland : 3239 → 3209 → 3239 K, gamma repris par chaque gammastep,
-  aucun nouvel avertissement.
-- À tester à la main : glisser le curseur et juger le saut (Sway et Hyprland), molette.
+  éteinte : rien de relancé, capture de la valeur) ; bureau réel sous Hyprland : hyprsunset lancé à 2690 K après
+  rechargement, 4000 → 1800 → 2690 K sans relance, extinction puis rallumage, aucun nouvel avertissement.
+- À tester à la main : glisser le curseur et juger le fondu (Hyprland) et le saut (Sway), molette, valeur affichée pendant le
+  glissement.
 
 ## Veilleuse : horaire réglable comme « ne pas déranger » (2026-11-17)
 

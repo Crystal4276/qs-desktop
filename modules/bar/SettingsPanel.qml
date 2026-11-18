@@ -223,14 +223,16 @@ Panel {
         onFieldLeft: root.frameItem.forceActiveFocus()
     }
 
-    // Température de la veilleuse : de gauche (moins chaud) à droite (plus chaud), appliquée au relâcher (gammastep relancé).
+    // Température de la veilleuse : de gauche (moins chaud) à droite (plus chaud), appliquée au relâcher ; la valeur suit le
+    // pointeur pendant le glissement.
     QuickSlider {
+        id: warmth
         visible: root.expanded === "nightLight"
         icon: Theme.icon.nightLight
         iconColor: Theme.quickSettings.warmthIcon
         gradient: Theme.quickSettings.warmthGradient
         commitOnRelease: true
-        percentShown: false
+        label: `${NightLight.kelvinsAt(warmth.shown)} K`
         value: NightLight.warmth
         onMoved: v => NightLight.setWarmth(v)
     }
@@ -247,7 +249,8 @@ Panel {
         property bool expanded: false
         property alias gradient: slider.gradient
         property alias commitOnRelease: slider.commitOnRelease
-        property bool percentShown: true
+        property string label: ""   // à la place du pourcentage
+        readonly property alias shown: slider.shown   // valeur affichée, pendant le glissement aussi
         signal moved(real value)
         signal iconClicked
         signal expandClicked
@@ -279,8 +282,9 @@ Panel {
         }
 
         PercentLabel {
-            opacity: line.percentShown ? 1 : 0   // toujours là : curseurs alignés
             value: line.value
+            text: line.label || `${Math.round(line.value * 100)} %`
+            alsoFits: `${NightLight.maxTemperature} K`   // température de la veilleuse : curseurs alignés
         }
 
         // Toujours là (invisible sans liste : luminosité) : curseurs et pourcentages alignés d'une ligne à l'autre.

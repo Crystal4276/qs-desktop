@@ -20,7 +20,8 @@ hyprland                # compositeur secondaire
 # (fond d'écran, veille, verrouillage : natifs Quickshell — swaybg, swayidle, hypridle, swaylock ne sont plus requis)
 
 # --- Panneau de réglages ---
-gammastep               # veilleuse (Night Light) : écran plus chaud le soir, en fondu, Sway et Hyprland (wlr-gamma-control)
+gammastep               # veilleuse (Night Light) sous Sway : écran plus chaud le soir, en fondu (wlr-gamma-control)
+hyprsunset              # veilleuse sous Hyprland : température changée à chaud, fondu de Hyprland (hyprland-ctm-control)
 xdg-user-dirs           # dossier Images des captures et des fonds d'écran, dossiers du menu d'applications (`xdg-user-dir`)
 
 # --- Énergie ---

@@ -256,7 +256,7 @@ Singletons de `services/`. Les widgets ne lisent que les services ; aucun `Proce
 | `Battery`, `Brightness` | laptop | `UPower` ; `/sys/class/backlight` + `brightnessctl` |
 | `Profiles` | profils d'énergie | `PowerProfiles` (power-profiles-daemon) |
 | `Rfkill` | mode avion | `rfkill` |
-| `NightLight` | veilleuse | `gammastep` (jamais deux à la fois) |
+| `NightLight` | veilleuse : état, horaire (`Schedule`), température | `Hyprsunset` sous Hyprland (`hyprsunset`, `hyprctl`), `Gammastep` sous Sway (`gammastep`) |
 | `Idle` | veille des écrans | `IdleMonitor`, `systemd-inhibit`, `gdbus monitor` (`PrepareForSleep`) |
 | `Polkit` | agent polkit | `Quickshell.Services.Polkit` |
 | `Session` | verrouiller, déconnexion, redémarrage, extinction | `Compositor`, `systemctl` |
@@ -271,7 +271,7 @@ Singletons de `services/`. Les widgets ne lisent que les services ; aucun `Proce
 Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `nordvpn`, `tailscale`, `zerotier-cli`, `busctl` / `gdbus` /
 `udisksctl` (pas d'accès D-Bus générique en QML), `bluetoothctl` (pas d'agent d'appairage dans Quickshell), `nmcli` (détails),
 `notify-send`, `wl-copy` (le presse-papiers de Quickshell ne gère que du texte, et seulement avec un appui récent), `xdg-open`,
-`brightnessctl`, `gammastep`, `rfkill`, `pavucontrol` et `nm-connection-editor` (boutons « avancé »).
+`brightnessctl`, `gammastep`, `hyprsunset` (pas de réglage gamma ni de matrice de couleur dans Quickshell), `rfkill`, `pavucontrol` et `nm-connection-editor` (boutons « avancé »).
 
 ## 7. Composants
 
@@ -342,8 +342,10 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
 - Ligne du haut : batterie (laptop), capture d'écran, verrouiller / se déconnecter / redémarrer / éteindre (pas de veille, pas de
   confirmation). Curseurs : sortie son (flèche → choix de la sortie), luminosité (laptop). Bouton du sélecteur de fond.
 - Bascules : profil d'énergie (trois boutons), ne pas déranger (clic droit : horaire), garder l'écran allumé (`IdleInhibitor`), VRR et
-  HDR (écrans compatibles), veilleuse (`gammastep`, fondu de ~4 s ; horaire comme « ne pas déranger » : allumée au début, éteinte
-  à la fin, libre à la main entre les deux ; clic droit : couper l'horaire), mode avion (dès qu'il y a une radio).
+  HDR (écrans compatibles), veilleuse (horaire comme « ne pas déranger » : allumée au début, éteinte à la fin, libre à la main
+  entre les deux ; clic droit : heures, interrupteur, curseur de température avec sa valeur en kelvins, appliquée au relâcher ;
+  Hyprland : `hyprsunset`, fondu de 500 ms de Hyprland à chaque changement ; Sway : `gammastep`, fondu de ~4 s à l'allumage et à
+  l'extinction, saut net au changement de température), mode avion (dès qu'il y a une radio).
 - Aperçu au survol de l'engrenage. Réseau, Bluetooth, NordVPN, disques, cloche restent dans le tray (pas de doublon). IPC `settings toggle`.
 
 ### 7.6 Réseau (tray)
