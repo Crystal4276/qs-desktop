@@ -50,13 +50,17 @@ OverlayPopup {
         Qt.callLater(() => { if (visible) grid?.forceActiveFocus(); });
     }
 
-    // Vignette du fond actuel choisie au clavier et montrée (ouverture, écran visé changé, « Reset »).
+    // Vignette de départ (ouverture, flèches) dans les vignettes `entries` de l'onglet `kind` : le fond choisi ; écran visé sans
+    // image propre : celle de tous les écrans, qu'il montre.
+    function currentIn(kind: string, entries: var): int {
+        const i = entries.findIndex(e => isCurrent(kind, e.path));
+        const s = Wallpapers.selection;
+        return i >= 0 || target === "" || Wallpapers.overrides[target] || s?.kind !== kind ? i
+            : entries.findIndex(e => e.path === s.path);
+    }
+
     function showCurrent(): void {
-        const i = grid?.modelEntries.findIndex(e => isCurrent(e.path)) ?? -1;
-        if (i < 0)
-            return;
-        grid.currentIndex = i;
-        grid.showIndex();
+        grid?.showCurrent();
     }
 
     // Onglet et vignette du fond actuel, clavier sur les vignettes (ouverture, « Reset » : le bouton, grisé, perd le focus).
@@ -102,11 +106,11 @@ OverlayPopup {
     }
 
     // Choix « tous les écrans » : seulement si aucun écran présent n'a sa propre image (celles d'écrans débranchés ne comptent pas).
-    function isCurrent(path: string): bool {
-        if ((tab === "simple" || tab === "corelab") && target !== "")
+    function isCurrent(kind: string, path: string): bool {
+        if ((kind === "simple" || kind === "corelab") && target !== "")
             return Wallpapers.overrides[target] === path;
         const s = Wallpapers.selection;
-        return s !== null && s.kind === tab && s.path === path && !outputs.some(o => Wallpapers.overrides[o.description]);
+        return s !== null && s.kind === kind && s.path === path && !outputs.some(o => Wallpapers.overrides[o.description]);
     }
 
     function apply(index: int): void {
@@ -134,7 +138,7 @@ OverlayPopup {
         if (!tabs.some(t => t.key === tab))
             tab = "simple";
     }
-    onTargetChanged: showCurrent()
+    onTargetChanged: Qt.callLater(showCurrent)
     onOutputsChanged: {
         if (target !== "" && !outputs.some(o => o.description === target))
             target = "";
@@ -234,8 +238,16 @@ OverlayPopup {
                                 const next = JSON.parse(signature);
                                 if (JSON.stringify(modelEntries) !== signature) modelEntries = next;
                             }
-                            // Modèle remplacé (dossier relu, écran visé dans Core Lab) : la grille repart de 0 ; retour au fond actuel.
-                            onModelEntriesChanged: if (kind === root.tab) Qt.callLater(root.showCurrent)
+                            // Vignette du fond actuel choisie au clavier et montrée (ouverture, écran visé changé, « Reset ») ; modèle
+                            // remplacé (dossier relu, écran visé dans Core Lab, onglet caché compris) : la grille était repartie de 0.
+                            function showCurrent(): void {
+                                const i = root.currentIn(kind, modelEntries);
+                                if (i < 0)
+                                    return;
+                                currentIndex = i;
+                                showIndex();
+                            }
+                            onModelEntriesChanged: Qt.callLater(showCurrent)
                             anchors.fill: parent
                             cellWidth: kind === "panorama" || kind === "triptych" ? width : Math.min(root.cellWidth, width)
                             cellHeight: Theme.wallpaperPicker.thumbHeight + 2 * Theme.wallpaperPicker.selectionPadding
@@ -263,14 +275,14 @@ OverlayPopup {
                             Keys.onLeftPressed: step(() => moveCurrentIndexLeft())
                             Keys.onRightPressed: step(() => moveCurrentIndexRight())
                             function step(move: var): void {
-                                const here = modelEntries.findIndex(e => root.isCurrent(e.path));
+                                const here = root.currentIn(kind, modelEntries);
                                 if (here < 0) {
                                     currentIndex = 0;
                                 } else {
                                     currentIndex = here;
                                     move();
                                 }
-                                if (!root.isCurrent(modelEntries[currentIndex]?.path ?? ""))
+                                if (!root.isCurrent(kind, modelEntries[currentIndex]?.path ?? ""))
                                     root.apply(currentIndex);
                             }
 
@@ -279,7 +291,7 @@ OverlayPopup {
 
                                 required property var modelData
                                 required property int index
-                                readonly property bool current: root.isCurrent(modelData.path)
+                                readonly property bool current: root.isCurrent(view.kind, modelData.path)
 
                                 width: view.cellWidth
                                 height: view.cellHeight
