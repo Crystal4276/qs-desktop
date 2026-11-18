@@ -117,6 +117,7 @@ def test(work, compositor="sway", scale=1, shots=None):
         function click(i: int): void { const g=picker.grid; g.positionViewAtIndex(i,GridView.Center); events.mouseClick(g.itemAtIndex(i)); }
         function key(name: string): void { events.parent=picker.frameItem; events.keyClick({up:Qt.Key_Up,down:Qt.Key_Down,left:Qt.Key_Left,right:Qt.Key_Right}[name]); }
         function resetButton(): var { return picker.testControls.children[0].children.find(b=>b.text==="Reset"); }
+        function resetKey(): void { const b=resetButton(); b.forceActiveFocus(); events.parent=picker.frameItem; events.keyClick(Qt.Key_Return); }
         function reset(): bool { const b=resetButton(); if(!b.enabled) return false; events.mouseClick(b); return true; }
         function pickerState(): string {
             const g=picker.grid, i=g.currentIndex, cell=g.itemAtIndex(i);
@@ -447,6 +448,21 @@ def test(work, compositor="sway", scale=1, shots=None):
         assert ipc('reset')=='true'; time.sleep(.4)
         p=picker_state(); assert p['tab']=='simple' and p['index']==0 and p['focus'], p
         assert state()['selection']['path']==state()['items'][0]['path'], state()['selection']
+        # Keyboard Reset (focus on the button, Enter) gives the keyboard back to the thumbnails, same tab.
+        ipc('choose',40); ipc('close'); ipc('screen','HEADLESS-2'); time.sleep(.4)
+        ipc('key','down'); time.sleep(.2)
+        ipc('resetKey'); time.sleep(.4)
+        p=picker_state(); assert state()['selection']['path']==state()['items'][40]['path'] and p['focus'] and p['index']==40, p
+        ipc('key','down'); time.sleep(.2)
+        assert state()['selection']['path']==state()['items'][41]['path'], state()['selection']
+        # Opening on a screen with another column count still shows the current thumbnail.
+        ipc('close'); resize(3440,1440); ipc('screen','HEADLESS-1'); time.sleep(.6)
+        p=picker_state(); assert p['index']==41 and p['visible'], ('3 columns',p)
+        ipc('close'); ipc('screen','HEADLESS-2'); time.sleep(.6)
+        p=picker_state(); assert p['index']==41 and p['visible'], ('1 column',p)
+        ipc('close'); resize(1920,1200)
+        ipc('screen','HEADLESS-1'); time.sleep(.6)
+        p=picker_state(); assert p['index']==41 and p['visible'], ('back to 1 column',p)
         ipc('close'); assert not stats()['visible']
         if shots:
             shots.mkdir(parents=True,exist_ok=True)
