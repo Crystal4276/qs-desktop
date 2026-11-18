@@ -25,7 +25,7 @@ Scope {
     // Toujours "HH:MM" (le fichier d'état ou hosts/*.json peuvent contenir "7:00") : format du champ d'heure.
     readonly property string from: Settings.timeText(Settings.minutes(adapter.from ?? defaults.from))
     readonly property string to: Settings.timeText(Settings.minutes(adapter.to ?? defaults.to))
-    readonly property string summary: enabled ? `${from} – ${to}` : ""   // sous-titre de la bascule
+    readonly property string summary: enabled && from && to ? `${from} – ${to}` : ""   // sous-titre de la bascule
     // clock.date, pas hours et minutes : changés l'un après l'autre, ils donneraient un instant une heure fausse (06:59 → 06:00 →
     // 07:00) et une bascule de trop.
     readonly property bool inRange: Settings.within(clock.date.getHours() * 60 + clock.date.getMinutes(), from, to)

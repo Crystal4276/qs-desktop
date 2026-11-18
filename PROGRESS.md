@@ -15,7 +15,9 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
     commande à la fois, la dernière gagne). Fondu de Hyprland (500 ms, linéaire, `render:ctm_animation` auto) à chaque
     changement, à l'allumage et à l'extinction (avant : 4 s pour ces deux-là). Arrêté net si un autre client tient la
     matrice : relancé 1 s plus tard (une fois par minute après 10 échecs).
-  - Sway : saut net gardé (gammastep ne change pas de température en marche), fondu de 4 s à l'allumage et à l'extinction.
+  - Sway : saut net gardé (gammastep ne change pas de température en marche), un seul pour une rafale (molette : 400 ms
+    après le dernier cran) ; fondu de 4 s à l'allumage et à l'extinction ; rallumée pendant ce fondu après un réglage : saut
+    à la nouvelle température.
     Attente de l'ancien gammastep retirée (piège propre à Hyprland).
   - Moteur lancé après lecture du fichier de température : pas de départ à la valeur par défaut au rechargement.
 - Valeur en direct : la température s'affiche à droite du curseur (« 2690 K ») et suit le pointeur pendant le glissement ;

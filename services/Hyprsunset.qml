@@ -15,20 +15,24 @@ Scope {
     property int sent: 0   // température en vigueur dans hyprsunset
     property real startedAt: 0
     property int failures: 0   // arrêts juste après le lancement, à la suite
+    property bool stopping: false   // arrêté par nous (veilleuse éteinte)
+    property int sendFailures: 0
 
     function apply(): void {
         if (enabled && !sunset.running) {
             sent = temperature;
+            sendFailures = 0;
             startedAt = Date.now();
             sunset.exec(["setpriv", "--pdeathsig", "TERM", "hyprsunset", "-t", String(temperature)]);
-        } else if (!enabled) {
+        } else if (!enabled && sunset.running) {
             retry.stop();
+            stopping = true;
             sunset.signal(15);
         }
     }
 
     // Une commande à la fois ; la dernière température demandée est envoyée à la fin de la précédente. Changée pendant le
-    // lancement (fichier d'état lu après) : envoyée une fois hyprsunset prêt.
+    // lancement : envoyée une fois hyprsunset prêt.
     function send(): void {
         if (sunset.running && !setter.running && sent !== temperature) {
             sent = temperature;
@@ -50,6 +54,11 @@ Scope {
         id: sunset
         onRunningChanged: if (running) root.send()
         onExited: {
+            if (root.stopping) {   // rallumée pendant l'arrêt : relancée aussitôt
+                root.stopping = false;
+                root.apply();
+                return;
+            }
             root.failures = Date.now() - root.startedAt < 5000 ? root.failures + 1 : 0;
             if (root.failures === 10)
                 console.warn("NightLight: hyprsunset s'arrête aussitôt lancé, nouvel essai chaque minute");
@@ -60,16 +69,21 @@ Scope {
         }
     }
 
-    // Échec (socket pas encore ouvert juste après le lancement) : nouvel essai 200 ms plus tard.
+    // Échec (socket pas encore ouvert juste après le lancement) : nouvel essai 200 ms plus tard, 10 fois au plus ; ensuite, au
+    // prochain changement de température.
     Process {
         id: setter
         onExited: code => {
-            if (code !== 0) {
-                root.sent = 0;
-                resend.start();
-            } else {
+            if (code === 0) {
+                root.sendFailures = 0;
                 root.send();
+                return;
             }
+            root.sent = 0;
+            if (++root.sendFailures < 10)
+                resend.start();
+            else if (root.sendFailures === 10)
+                console.warn("NightLight: hyprsunset ne répond pas à hyprctl");
         }
     }
 
