@@ -232,7 +232,7 @@ Panel {
         iconColor: Theme.quickSettings.warmthIcon
         gradient: Theme.quickSettings.warmthGradient
         commitOnRelease: true
-        label: `${NightLight.kelvinsAt(warmth.shown)} K`
+        label: `${NightLight.kelvinsAt(warmth.displayed)} K`
         value: NightLight.warmth
         onMoved: v => NightLight.setWarmth(v)
     }
@@ -250,7 +250,7 @@ Panel {
         property alias gradient: slider.gradient
         property alias commitOnRelease: slider.commitOnRelease
         property string label: ""   // à la place du pourcentage
-        readonly property alias shown: slider.shown   // valeur affichée, pendant le glissement aussi
+        readonly property alias displayed: slider.displayed   // valeur affichée, pendant le glissement aussi
         signal moved(real value)
         signal iconClicked
         signal expandClicked
