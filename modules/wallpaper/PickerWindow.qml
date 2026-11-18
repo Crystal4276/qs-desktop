@@ -93,8 +93,10 @@ OverlayPopup {
     function open(from: var): void {
         screen = from ?? Outputs.focusedScreen();
         Wallpapers.refresh();
-        if (!visible)
+        if (!visible) {
             opened = Wallpapers.snapshot();
+            target = "";   // les flèches appliquent tout de suite : toujours tous les écrans à l'ouverture
+        }
         goToCurrent();
         prepareOpen(null);
         visible = true;

@@ -19,8 +19,8 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
   reproduits sur banc avec contre-épreuve et corrigés, chacun couvert par `test-wallpapers.py` (Sway et Hyprland). Écartés en connaissance de cause : une application par
   répétition de touche maintenue, flèches avec Ctrl / Maj, trackpoint (absent), « Reset » actif pour un état identique, ou
   annulant un changement externe fait panneau ouvert ; recentrage si le dossier relu à l'ouverture change pendant qu'on défile.
-- Décision en attente : l'écran choisi dans la rangée reste choisi d'une ouverture à l'autre (comme avant) ; les flèches
-  appliquant tout de suite, la première après réouverture agit sur cet écran. Le remettre à « All screens » à chaque ouverture ?
+- Décidé : à chaque ouverture, la rangée revient sur « All screens » (avant : dernier écran choisi gardé ; les flèches
+  appliquant tout de suite, la première après réouverture aurait agi sur cet écran seul).
 - Piège vu en route : session verrouillée par l'inactivité → pas de rechargement à chaud (`docs/DEVELOPMENT.md`).
 - Validé à la main le 2026-11-18 : molette (une rangée par cran). À tester à la main : flèches, clic puis flèches, Tab, « Reset »
   dans le vrai panneau ; pavé tactile (aucun geste enregistré pendant la mesure).

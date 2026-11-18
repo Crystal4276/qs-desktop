@@ -459,6 +459,7 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
   (dossier relu, onglets cachés compris) et quand la hauteur de l'écran change ; une autre largeur (nombre de colonnes) garde
   la vignette du clavier en vue. Tab passe des boutons aux vignettes et inversement ;
   un clic sur une vignette leur rend aussi les flèches.
+  Ouverture : rangée remise sur « All screens » (les flèches appliquent tout de suite).
   Ouverture et « Reset » : onglet et vignette du fond actuel (choisie au clavier, centrée). Flèches : restent sur les vignettes ;
   la voisine du fond actuel est appliquée tout de suite, la première sur un onglet sans fond actuel. Molette : une rangée par cran
   (`MouseArea` sur la grille, d'après `angleDelta` ; le défilement de Flickable s'arrêtait à une demi-rangée quelle que soit la
