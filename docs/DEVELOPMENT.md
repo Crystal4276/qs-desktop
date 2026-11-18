@@ -6,7 +6,10 @@ Savoir-faire pour modifier le bureau sans le casser. Version cible : **Quickshel
 
 - `~/.config/quickshell/desktop` → ce dépôt. L'instance de la session est lancée par `scripts/desktop.sh` (autostart de Sway et
   d'Hyprland, `dotfiles/`), qui la relance après un arrêt (abandon après 5 arrêts en une minute).
-- **Chaque fichier QML sauvegardé dans le dépôt recharge à chaud le vrai bureau** (barres, fonds, services).
+- **Chaque fichier QML sauvegardé dans le dépôt recharge à chaud le vrai bureau** (barres, fonds, services), **sauf session
+  verrouillée** (`LockScreen.qml` : `watchFiles` coupé) : la copie reste sans effet jusqu'au rechargement suivant après
+  déverrouillage. Vérifier avec `scripts/ipc.sh lock isLocked` (le `LockedHint` de logind reste à `no`). Une relance
+  (`scripts/dev.sh`) pendant le verrouillage reverrouille (`QS_LOCK_STATE`) : vu le 2026-11-18, mais à éviter sans besoin.
 - Commandes : `scripts/dev.sh` (= `desktop.sh restart`, affiche les erreurs du démarrage), `scripts/dev.sh stop`, `scripts/dev.sh log`,
   `scripts/desktop.sh pid`. Journal : `$XDG_RUNTIME_DIR/qs-desktop.<session>.log`. Relance au clavier : `$mod+Ctrl+W`.
 - Raccourcis → `scripts/ipc.sh <cible> <fonction> [args]` : `qs ipc --pid <instance de la session>`, 2 s au plus, sinon échec et
