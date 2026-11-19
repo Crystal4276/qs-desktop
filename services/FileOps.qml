@@ -22,7 +22,8 @@ Singleton {
     id: root
 
     readonly property int questionDelay: 3000
-    readonly property var notify: ["notify-send", "--app-name=nemo", "--hint=string:desktop-entry:org.Nemo", "--icon=system-file-manager"]
+    readonly property string appName: "nemo"   // fin d'une copie : affichée même en « ne pas déranger » (Notifs)
+    readonly property var notify: ["notify-send", `--app-name=${appName}`, "--hint=string:desktop-entry:org.Nemo", "--icon=system-file-manager"]
     readonly property string summary: "File Operations"
 
     // Statut de la fenêtre de progression, sans son pourcentage. Copie, déplacement (« Copying "A" to "B" », « Copying file 3

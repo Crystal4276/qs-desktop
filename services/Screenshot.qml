@@ -22,6 +22,7 @@ Singleton {
     property bool cursorHidden: false
     // Curseur à masquer par l'outil (curseur logiciel possible) : Sway. Hyprland : curseur matériel, exclu par `paintCursor: false` (logiciel : BACKLOG).
     readonly property bool hidesCursor: !Compositor.isHyprland
+    readonly property string appName: "Screenshot"   // notification de capture : affichée même en « ne pas déranger » (Notifs)
     readonly property string pictures: Places.pictures !== "" ? Places.pictures : `${Quickshell.env("HOME")}/Pictures`
 
     // Pas pendant le verrouillage : l'outil prendrait le clavier de l'écran de verrouillage (fermé au verrouillage ; capture déjà
@@ -181,7 +182,7 @@ Singleton {
     // de la notification.
     function notifySaved(path: string): void {
         const uri = "file://" + path.split("/").map(encodeURIComponent).join("/");
-        Quickshell.execDetached(["sh", "-c", `a=$(notify-send --app-name=Screenshot --icon=accessories-screenshot --hint="string:image-path:$0" \
+        Quickshell.execDetached(["sh", "-c", `a=$(notify-send --app-name=${root.appName} --icon=accessories-screenshot --hint="string:image-path:$0" \
             --action=default=Open --wait "Screenshot saved" "$1") && [ "$a" = default ] && gdbus call --session \
             --dest org.freedesktop.FileManager1 --object-path /org/freedesktop/FileManager1 \
             --method org.freedesktop.FileManager1.ShowItems "$2" "" >/dev/null`,

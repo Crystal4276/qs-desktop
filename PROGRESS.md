@@ -16,7 +16,10 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
   sur l'ultrawide → 400×300 ; 1200×600 à cheval 4K / ultrawide → 1800×900, jonction à 840 px ; les trois écrans → 12 840×2160 ;
   **vrai glisser au pointeur virtuel** de la 4K gauche à l'ultrawide → 1500×750, cadre continu (capture du banc) ; notification
   avec aperçu ; `ShowItems` → Nemo sur le dossier, fichier sélectionné. Captures de test effacées.
-- Pendant « ne pas déranger » (21:00–07:00), la notification va directement dans l'historique, comme les autres.
+- « Ne pas déranger » : ton premier essai (22:37) n'a rien affiché, la notification était partie dans l'historique comme les
+  autres. Ta décision : la confirmation d'une capture répond à ton geste, elle s'affiche quand même (`Notifs.silent`, nom
+  d'application `Screenshot.appName`). Même règle pour la fin d'une copie de fichiers (`FileOps.appName`, ta demande) :
+  `Notifs.feedbackApps`. Banc, ne pas déranger actif : une autre application reste silencieuse, capture et copie s'affichent.
 - À tester à la main : tracer d'un écran à l'autre sous **Sway** (pas de banc Sway avec images) et sous Hyprland ; clic sur la
   notification → Nemo, fichier sélectionné.
 
