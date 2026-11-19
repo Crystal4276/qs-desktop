@@ -86,6 +86,6 @@ grim                    # captures des outils de dev (scripts/shot.sh) ; touche 
 slurp                   # choix de l'écran partagé (xdg-desktop-portal-wlr) ; plus utilisé par la touche Impr.
 iproute2                # `ip -j addr` : interfaces ZeroTier sans jeton (panneau VPN) ; dans `base`
 wl-clipboard            # presse-papiers : captures (outil natif), IP / noms copiés depuis le panneau VPN, chemin du fichier ouvert dans une web app Office
-imagemagick             # scripts/crop.sh
+imagemagick             # scripts/crop.sh ; capture d'écran : PNG encodé hors de Quickshell (services/Screenshot.qml)
 jq                      # scripts de test (lecture JSON swaymsg/hyprctl) ; barre d'état de Claude Code (dotfiles/claude)
 zenity                  # fenêtres de test (scripts/test-outputs.sh)

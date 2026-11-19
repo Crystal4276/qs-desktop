@@ -146,7 +146,7 @@ LazyLoader {
                     stitch.origin = Qt.point(x0, y0);
                     stitch.pieces = pieces;
                     const s = Math.max(...pieces.map(p => p.scale)) / (view.sourceSize.width / view.width);
-                    const started = stitch.grabToImage(result => Screenshot.finish(result.saveToFile(Screenshot.capturePath)),
+                    const started = stitch.grabToImage(result => Screenshot.finish(result.saveToFile(Screenshot.rawPath)),
                         Qt.size(Math.round(stitch.width * s), Math.round(stitch.height * s)));
                     if (!started)
                         Screenshot.close();
