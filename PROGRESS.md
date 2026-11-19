@@ -33,6 +33,10 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
   - passe 3 : origine de l'assemblage calée sans erreur de virgule flottante (colonne noire à gauche pour 1 départ sur 20,
     disposition 1080p + 4K en x=1920) ; `capture` par IPC outil fermé ne bloque plus les captures suivantes ; fenêtre presque
     hors du bureau : sa bande visible est capturée (rien avant) ; commentaires mis à jour ;
+  - passe 4 : assemblage en pixels entiers (les deux bords de chaque part arrondis pareil, image recadrée à sa taille exacte par
+    `magick`) : plus de colonne noire à la jonction ni au bord (reproduites : 5801→6201 à cheval ultrawide / 4K, deux 4K à 1.5
+    côte à côte → 755 px dont un noir) ; balayage de 17 zones à travers les jonctions sans ligne noire, parts 4K toujours 1:1 ;
+    assemblage annulé (Échap, verrouillage) : plus enregistré ;
   - écartés : écran sans image figée (non reproduit : un écran en DPMS fournit encore son image), verrouillage pendant une
     capture (la capture se termine), nom d'application usurpable pour « ne pas déranger », `notify-send` orphelin après un
     redémarrage de Quickshell, taille de texture maximale pour un assemblage géant.
