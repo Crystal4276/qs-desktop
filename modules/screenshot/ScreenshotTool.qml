@@ -96,8 +96,8 @@ LazyLoader {
                 paintCursor: false
             }
 
-            // Capture de la sélection si cet écran en est chargé (Screenshot.capture) : découpe de l'image figée à sa résolution
-            // réelle, enregistrée, copiée dans le presse-papiers ; image figée pas encore reçue : outil fermé sans capture.
+            // Capture de la sélection si elle touche cet écran (Screenshot.capture) : découpe de l'image figée à sa résolution
+            // réelle, remise au service (Screenshot.addPiece) ; image figée pas encore reçue : outil fermé sans capture.
             ShaderEffectSource {
                 id: crop
                 z: -1
@@ -143,8 +143,9 @@ LazyLoader {
                     const s = Math.max(...pieces.map(p => p.scale));
                     if (pieces.find(p => p.scale === s).screen !== win.modelData?.name)
                         return;
-                    const x0 = Math.floor(Math.min(...pieces.map(p => p.x)) * s) / s;
-                    const y0 = Math.floor(Math.min(...pieces.map(p => p.y)) * s) / s;
+                    // 1e-6 : x × s calculé 6144,999… pour 6145 (virgule flottante), un pixel noir sinon.
+                    const x0 = Math.floor(Math.min(...pieces.map(p => p.x)) * s + 1e-6) / s;
+                    const y0 = Math.floor(Math.min(...pieces.map(p => p.y)) * s + 1e-6) / s;
                     const target = Qt.size(Math.max(1, Math.round(Math.max(...pieces.map(p => p.x + p.width)) - x0)),
                         Math.max(1, Math.round(Math.max(...pieces.map(p => p.y + p.height)) - y0)));
                     stitch.width = Math.round(target.width * s) / s;

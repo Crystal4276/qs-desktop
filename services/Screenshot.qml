@@ -7,7 +7,7 @@ import qs.config
 
 // Outil de capture natif (ARCHITECTURE § 7.15, modèle de l'outil de GNOME ; fenêtres : modules/screenshot/) : image figée de chaque
 // écran (ScreencopyView), puis zone (sur un ou plusieurs écrans), écran ou fenêtre ; enregistrée comme ta touche Impr.
-// (`Images/screenshot/AAAA-MM-JJ-HHMMSS.png`), copiée dans le presse-papiers et annoncée par une notification (clic : le fichier
+// (`Images/screenshot/AAAA-MM-JJ-HHMMSS.png`, `-2`… pour une autre dans la même seconde), copiée dans le presse-papiers et annoncée par une notification (clic : le fichier
 // montré dans le gestionnaire de fichiers). Fenêtres : rectangles donnés par le compositeur (Toplevel ne fournit pas leur position).
 Singleton {
     id: root
@@ -123,7 +123,7 @@ Singleton {
 
     // Capture de la sélection : chaque écran qu'elle touche découpe sa part de son image figée, à sa résolution réelle
     // (modules/screenshot/ScreenshotTool.qml), puis addPiece ; une seule part est enregistrée telle quelle, plusieurs sont
-    // assemblées en une image par l'écran de départ (stitchRequested), à l'échelle la plus haute (comme grim : la partie d'un
+    // assemblées en une image par un écran de la plus haute échelle (stitchRequested), à cette échelle (comme grim : la partie d'un
     // écran moins dense est agrandie). Sur aucun écran : outil fermé.
     signal captureRequested(var rect, var screens)
     signal stitchRequested(var pieces)
@@ -138,14 +138,17 @@ Singleton {
 
     function capture(): void {
         const s = selection;
-        if (!s || s.width <= 0 || s.height <= 0 || capturing)
+        if (!active || !s || s.width <= 0 || s.height <= 0 || capturing)
             return;
         const names = Quickshell.screens.map(q => q.name);
         // Moins de Theme.screenshot.snap px sur un écran (fenêtre flottante qui dépasse un peu, arrondi d'une largeur
-        // fractionnaire) : écran ignoré, sinon une bande de lui et toute l'image à son échelle.
-        const over = o => Math.min(Math.min(s.x + s.width, o.x + o.width) - Math.max(s.x, o.x),
-            Math.min(s.y + s.height, o.y + o.height) - Math.max(s.y, o.y)) >= Math.min(Theme.screenshot.snap, s.width, s.height);
-        const touched = Compositor.outputs.filter(o => names.includes(o.name) && over(o)).map(o => o.name);
+        // fractionnaire) : écran ignoré, sinon une bande de lui et toute l'image à son échelle ; sauf s'il n'y a pas mieux
+        // (fenêtre presque hors du bureau : sa bande visible).
+        const overlap = o => Math.min(Math.min(s.x + s.width, o.x + o.width) - Math.max(s.x, o.x),
+            Math.min(s.y + s.height, o.y + o.height) - Math.max(s.y, o.y));
+        const outs = Compositor.outputs.filter(o => names.includes(o.name));
+        const limit = Math.min(Theme.screenshot.snap, Math.max(...outs.map(overlap)));
+        const touched = outs.filter(o => overlap(o) > 0 && overlap(o) >= limit).map(o => o.name);
         if (touched.length === 0) {
             close();
             return;
