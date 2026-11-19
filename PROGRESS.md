@@ -37,6 +37,11 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
     `magick`) : plus de colonne noire à la jonction ni au bord (reproduites : 5801→6201 à cheval ultrawide / 4K, deux 4K à 1.5
     côte à côte → 755 px dont un noir) ; balayage de 17 zones à travers les jonctions sans ligne noire, parts 4K toujours 1:1 ;
     assemblage annulé (Échap, verrouillage) : plus enregistré ;
+  - passe 5 : il restait des lignes noires (rangée sous une part, colonne à la jonction pour un départ fractionnaire) : chaque
+    écran arrondissait sa part de son côté. Refait à la racine : zone calée sur la grille de la plus haute échelle, part de
+    chaque écran arrondie vers l'extérieur, posée dans le cadre exact de son écran (cadres jointifs), taille exacte par `magick`.
+    Bancs neufs dans trois dispositions (terrier ; 1080p + 4K + ultrawide ; laptop 1.25 + 4K + ultrawide) : 26 zones sans ligne
+    noire, parts 4K 1:1. Piège du banc noté (`docs/DEVELOPMENT.md`) : géométrie changée à chaud non vue ;
   - écartés : écran sans image figée (non reproduit : un écran en DPMS fournit encore son image), verrouillage pendant une
     capture (la capture se termine), nom d'application usurpable pour « ne pas déranger », `notify-send` orphelin après un
     redémarrage de Quickshell, taille de texture maximale pour un assemblage géant.
