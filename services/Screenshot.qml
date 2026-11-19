@@ -168,15 +168,16 @@ Singleton {
         if (pieces.length < expected)
             return;
         if (pieces.length === 1)
-            finish(piece.grab.saveToFile(rawPath));
+            finish(piece.grab.saveToFile(rawPath), "");
         else
             stitchRequested(pieces);
     }
 
-    // Image brute écrite (ok) : encodée en PNG ; dans tous les cas, outil fermé.
-    function finish(ok: bool): void {
+    // Image brute écrite (ok) : encodée en PNG, recadrée à `crop` (« LxH » en pixels, assemblage) ; dans tous les cas, outil
+    // fermé.
+    function finish(ok: bool, crop: string): void {
         if (ok)
-            encode(rawPath, capturePath);
+            encode(rawPath, capturePath, crop);
         close();
     }
 
@@ -198,9 +199,9 @@ Singleton {
     // gros ; image brute effacée), presse-papiers, notification avec l'aperçu (indice
     // image-path ; icône du thème en repli) ; un clic (action « default ») montre le fichier dans le gestionnaire de fichiers
     // (org.freedesktop.FileManager1, Nemo ici). `notify-send --wait` vit jusqu'à la fermeture de la notification.
-    function encode(raw: string, path: string): void {
+    function encode(raw: string, path: string, crop: string): void {
         const uri = "file://" + path.split("/").map(encodeURIComponent).join("/");
-        Quickshell.execDetached(["sh", "-c", `magick "$0" -define png:compression-level=3 "$1"; s=$?; rm -f "$0"; [ $s = 0 ] || exit 1
+        Quickshell.execDetached(["sh", "-c", `magick "$0" ${crop !== "" ? `-crop ${crop}+0+0 +repage` : ""} -define png:compression-level=3 "$1"; s=$?; rm -f "$0"; [ $s = 0 ] || exit 1
             wl-copy --type image/png < "$1"
             a=$(notify-send --app-name=${root.appName} --icon=${Theme.screenshot.notificationIcon} --hint="string:image-path:$1" \
                 --action=default=Open --wait "Screenshot saved" "$2") && [ "$a" = default ] && gdbus call --session \

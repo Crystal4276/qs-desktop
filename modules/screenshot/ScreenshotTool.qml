@@ -137,23 +137,30 @@ LazyLoader {
                 }
 
                 // Parts de plusieurs écrans : assemblées à l'échelle la plus haute S, par la fenêtre d'un écran de cette
-                // échelle (grabToImage rend une taille logique entière × S : origine et parts calées sur ses pixels, les
-                // parts de cette échelle copiées 1:1, les autres agrandies).
+                // échelle, en pixels de S : les deux bords de chaque part arrondis de la même façon (parts voisines jointives,
+                // parts de cette échelle copiées 1:1, les autres agrandies). grabToImage rend une taille logique entière × S :
+                // la plus petite qui contient l'image, le surplus recadré à l'encodage (Screenshot.finish).
                 function onStitchRequested(pieces) {
                     const s = Math.max(...pieces.map(p => p.scale));
                     if (pieces.find(p => p.scale === s).screen !== win.modelData?.name)
                         return;
-                    // 1e-6 : x × s calculé 6144,999… pour 6145 (virgule flottante), un pixel noir sinon.
-                    const x0 = Math.floor(Math.min(...pieces.map(p => p.x)) * s + 1e-6) / s;
-                    const y0 = Math.floor(Math.min(...pieces.map(p => p.y)) * s + 1e-6) / s;
-                    const target = Qt.size(Math.max(1, Math.round(Math.max(...pieces.map(p => p.x + p.width)) - x0)),
-                        Math.max(1, Math.round(Math.max(...pieces.map(p => p.y + p.height)) - y0)));
+                    const edges = pieces.map(p => ({
+                        l: Math.round(p.x * s), t: Math.round(p.y * s),
+                        r: Math.round((p.x + p.width) * s), b: Math.round((p.y + p.height) * s)
+                    }));
+                    const x0 = Math.min(...edges.map(e => e.l)), y0 = Math.min(...edges.map(e => e.t));
+                    const w = Math.max(...edges.map(e => e.r)) - x0, h = Math.max(...edges.map(e => e.b)) - y0;
+                    const target = Qt.size(Math.ceil(w / s - 1e-9), Math.ceil(h / s - 1e-9));
                     stitch.width = Math.round(target.width * s) / s;
                     stitch.height = Math.round(target.height * s) / s;
-                    stitch.origin = Qt.point(x0, y0);
-                    stitch.ratio = s;
-                    stitch.pieces = pieces;
-                    const started = stitch.grabToImage(result => Screenshot.finish(result.saveToFile(Screenshot.rawPath)), target);
+                    stitch.places = edges.map((e, i) => ({
+                        url: pieces[i].grab.url,
+                        x: (e.l - x0) / s, y: (e.t - y0) / s, width: (e.r - e.l) / s, height: (e.b - e.t) / s
+                    }));
+                    const started = stitch.grabToImage(result => {
+                        if (Screenshot.capturing)   // pas après Échap ou le verrouillage
+                            Screenshot.finish(result.saveToFile(Screenshot.rawPath), `${w}x${h}`);
+                    }, target);
                     if (!started)
                         Screenshot.close();
                 }
@@ -163,22 +170,20 @@ LazyLoader {
             Item {
                 id: stitch
 
-                property point origin
-                property real ratio: 1
-                property var pieces: []
+                property var places: []   // { url, x, y, width, height } dans l'image assemblée
 
                 z: -1
 
                 Repeater {
-                    model: stitch.pieces
+                    model: stitch.places
 
                     Image {
                         required property var modelData
-                        x: Math.round((modelData.x - stitch.origin.x) * stitch.ratio) / stitch.ratio
-                        y: Math.round((modelData.y - stitch.origin.y) * stitch.ratio) / stitch.ratio
+                        x: modelData.x
+                        y: modelData.y
                         width: modelData.width
                         height: modelData.height
-                        source: modelData.grab.url
+                        source: modelData.url
                         smooth: true
                     }
                 }
