@@ -42,6 +42,10 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
     chaque écran arrondie vers l'extérieur, posée dans le cadre exact de son écran (cadres jointifs), taille exacte par `magick`.
     Bancs neufs dans trois dispositions (terrier ; 1080p + 4K + ultrawide ; laptop 1.25 + 4K + ultrawide) : 26 zones sans ligne
     noire, parts 4K 1:1. Piège du banc noté (`docs/DEVELOPMENT.md`) : géométrie changée à chaud non vue ;
+  - passe 6 : bord d'écran entre deux pixels de la grille (1366 + laptop à 1,25 : colonne noire, part à 1,25 rééchantillonnée,
+    126 px au lieu de 125 ; pas sur terrier, bords entiers à 1,5) : grille calée sur l'origine de l'écran de plus haute échelle,
+    chaque écran étiré sur son cadre arrondi ; corrigé et vérifié 1:1, plus les trois autres dispositions. « Copied to
+    clipboard » seulement si `wl-copy` a réussi ;
   - écartés : écran sans image figée (non reproduit : un écran en DPMS fournit encore son image), verrouillage pendant une
     capture (la capture se termine), nom d'application usurpable pour « ne pas déranger », `notify-send` orphelin après un
     redémarrage de Quickshell, taille de texture maximale pour un assemblage géant.
