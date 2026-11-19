@@ -139,7 +139,8 @@ LazyLoader {
 
                 // Parts de plusieurs écrans : assemblées à l'échelle la plus haute S, par la fenêtre d'un écran de cette
                 // échelle, en pixels de S depuis l'origine de la grille (Screenshot.captureOrigin) : chaque écran étiré sur son
-                // cadre arrondi (cadres jointifs), découpé à la zone ; l'écran de la grille copié 1:1, les autres agrandis.
+                // cadre arrondi (cadres jointifs), découpé à la zone ; les écrans d'échelle S copiés 1:1 (décalés sur leur
+                // cadre), les autres agrandis.
                 // Taille rendue par grabToImage : comme une part.
                 function onStitchRequested(pieces) {
                     const s = Math.max(...pieces.map(p => p.scale));
