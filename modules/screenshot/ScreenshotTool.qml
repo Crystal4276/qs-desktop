@@ -129,25 +129,30 @@ LazyLoader {
                     crop.height = ph / scale;
                     crop.textureSize = Qt.size(pw, ph);
                     const started = crop.grabToImage(result => Screenshot.addPiece({
-                        grab: result, x: win.ox + px / scale, y: win.oy + py / scale,
-                        width: target.width, height: target.height, scale
+                        grab: result, screen: win.modelData.name, scale,
+                        x: win.ox + px / scale, y: win.oy + py / scale, width: pw / scale, height: ph / scale
                     }), target);
                     if (!started)
                         Screenshot.close();
                 }
 
-                // Parts de plusieurs écrans (écran de départ) : assemblées à leur place, à l'échelle la plus haute.
+                // Parts de plusieurs écrans : assemblées à l'échelle la plus haute S, par la fenêtre d'un écran de cette
+                // échelle (grabToImage rend une taille logique entière × S : origine et parts calées sur ses pixels, les
+                // parts de cette échelle copiées 1:1, les autres agrandies).
                 function onStitchRequested(pieces) {
-                    if (!win.home)
+                    const s = Math.max(...pieces.map(p => p.scale));
+                    if (pieces.find(p => p.scale === s).screen !== win.modelData?.name)
                         return;
-                    const x0 = Math.min(...pieces.map(p => p.x)), y0 = Math.min(...pieces.map(p => p.y));
-                    stitch.width = Math.max(...pieces.map(p => p.x + p.width)) - x0;
-                    stitch.height = Math.max(...pieces.map(p => p.y + p.height)) - y0;
+                    const x0 = Math.floor(Math.min(...pieces.map(p => p.x)) * s) / s;
+                    const y0 = Math.floor(Math.min(...pieces.map(p => p.y)) * s) / s;
+                    const target = Qt.size(Math.max(1, Math.round(Math.max(...pieces.map(p => p.x + p.width)) - x0)),
+                        Math.max(1, Math.round(Math.max(...pieces.map(p => p.y + p.height)) - y0)));
+                    stitch.width = Math.round(target.width * s) / s;
+                    stitch.height = Math.round(target.height * s) / s;
                     stitch.origin = Qt.point(x0, y0);
+                    stitch.ratio = s;
                     stitch.pieces = pieces;
-                    const s = Math.max(...pieces.map(p => p.scale)) / (view.sourceSize.width / view.width);
-                    const started = stitch.grabToImage(result => Screenshot.finish(result.saveToFile(Screenshot.rawPath)),
-                        Qt.size(Math.round(stitch.width * s), Math.round(stitch.height * s)));
+                    const started = stitch.grabToImage(result => Screenshot.finish(result.saveToFile(Screenshot.rawPath)), target);
                     if (!started)
                         Screenshot.close();
                 }
@@ -158,6 +163,7 @@ LazyLoader {
                 id: stitch
 
                 property point origin
+                property real ratio: 1
                 property var pieces: []
 
                 z: -1
@@ -167,8 +173,8 @@ LazyLoader {
 
                     Image {
                         required property var modelData
-                        x: modelData.x - stitch.origin.x
-                        y: modelData.y - stitch.origin.y
+                        x: Math.round((modelData.x - stitch.origin.x) * stitch.ratio) / stitch.ratio
+                        y: Math.round((modelData.y - stitch.origin.y) * stitch.ratio) / stitch.ratio
                         width: modelData.width
                         height: modelData.height
                         source: modelData.grab.url
@@ -270,16 +276,17 @@ LazyLoader {
                         return Qt.point(Math.max(x1, Math.min(p.x, x2)), Math.max(y1, Math.min(p.y, y2)));
                     }
 
-                    // Mode zone : à moins de `snap` px d'un bord d'écran, le point s'y colle. Le pointeur n'est plus arrêté au
-                    // bord (il passe sur l'écran voisin) : viser ce bord resterait sinon au pixel près, et le moindre dépassement
-                    // ajouterait une bande du voisin, toute l'image à son échelle.
-                    readonly property int snap: 8
+                    // Mode zone : près d'un bord d'écran (Theme.screenshot.snap), le point s'y colle. Le pointeur n'est plus
+                    // arrêté au bord (il passe sur l'écran voisin) : viser ce bord resterait sinon au pixel près, et le moindre
+                    // dépassement ajouterait une bande du voisin, toute l'image à son échelle. Bords des écrans à hauteur
+                    // (largeur) du point seulement.
                     function snapToEdges(p: point): point {
                         const names = Quickshell.screens.map(q => q.name);
                         const outs = Compositor.outputs.filter(o => names.includes(o.name));
-                        const near = (v, edges) => edges.find(e => Math.abs(v - e) <= snap) ?? v;
-                        return Qt.point(near(p.x, [].concat(...outs.map(o => [o.x, o.x + o.width]))),
-                            near(p.y, [].concat(...outs.map(o => [o.y, o.y + o.height]))));
+                        const near = (v, edges) => edges.find(e => Math.abs(v - e) <= Theme.screenshot.snap) ?? v;
+                        const xs = outs.filter(o => p.y >= o.y && p.y <= o.y + o.height).map(o => [o.x, o.x + o.width]);
+                        const ys = outs.filter(o => p.x >= o.x && p.x <= o.x + o.width).map(o => [o.y, o.y + o.height]);
+                        return Qt.point(near(p.x, [].concat(...xs)), near(p.y, [].concat(...ys)));
                     }
 
                     function windowAt(p: point): var {

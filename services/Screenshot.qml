@@ -133,7 +133,7 @@ Singleton {
     // le shell 1,5 s pour un écran entier, ~7 s pour trois (mesuré le 2026-11-19).
     property string rawPath: ""
     property int expected: 0
-    // Parts reçues : { grab (ItemGrabResult), x, y, width, height (logiques globales), scale }.
+    // Parts reçues : { grab (ItemGrabResult), screen, scale, x, y, width, height (logiques globales) }.
     property var pieces: []
 
     function capture(): void {
@@ -141,11 +141,11 @@ Singleton {
         if (!s || s.width <= 0 || s.height <= 0 || capturing)
             return;
         const names = Quickshell.screens.map(q => q.name);
-        // Moins d'1 px sur un écran (arrondi d'une largeur logique fractionnaire) : ignoré, sinon toute l'image passerait à
-        // son échelle.
-        const touched = Compositor.outputs.filter(o => names.includes(o.name)
-            && Math.min(s.x + s.width, o.x + o.width) - Math.max(s.x, o.x) >= 1
-            && Math.min(s.y + s.height, o.y + o.height) - Math.max(s.y, o.y) >= 1).map(o => o.name);
+        // Moins de Theme.screenshot.snap px sur un écran (fenêtre flottante qui dépasse un peu, arrondi d'une largeur
+        // fractionnaire) : écran ignoré, sinon une bande de lui et toute l'image à son échelle.
+        const over = o => Math.min(Math.min(s.x + s.width, o.x + o.width) - Math.max(s.x, o.x),
+            Math.min(s.y + s.height, o.y + o.height) - Math.max(s.y, o.y)) >= Math.min(Theme.screenshot.snap, s.width, s.height);
+        const touched = Compositor.outputs.filter(o => names.includes(o.name) && over(o)).map(o => o.name);
         if (touched.length === 0) {
             close();
             return;
@@ -177,12 +177,18 @@ Singleton {
         close();
     }
 
-    // Fichier de la capture : dossier Images XDG (comme le script de la touche Impr.).
+    // Fichier de la capture : dossier Images XDG (comme le script de la touche Impr.) ; une autre capture dans la même seconde
+    // prend un suffixe (-2, -3…) au lieu d'écraser la première.
+    property string lastStamp: ""
+    property int sameStamp: 0
+
     function nextPath(): string {
         const now = new Date();
         const pad = n => String(n).padStart(2, "0");
-        const name = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}.png`;
-        return `${pictures}/screenshot/${name}`;
+        const stamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+        sameStamp = stamp === lastStamp ? sameStamp + 1 : 1;
+        lastStamp = stamp;
+        return `${pictures}/screenshot/${stamp}${sameStamp > 1 ? `-${sameStamp}` : ""}.png`;
     }
 
     // Hors de Quickshell, à la suite : PNG (`magick`, compression 3 : un écran 4K en 0,6 s au lieu de 1,9 s, fichier 19 % plus

@@ -70,7 +70,9 @@ Item {
             sourceSize.width: card.t.iconSize
             sourceSize.height: card.t.iconSize
             fillMode: Image.PreserveAspectFit
-            asynchronous: true   // aperçu d'une capture de plusieurs écrans : ~0,5 s de décodage, hors du fil de l'interface
+            // Fichier (aperçu d'une capture de plusieurs écrans : ~0,5 s de décodage) : hors du fil de l'interface ; icône du
+            // thème : tout de suite.
+            asynchronous: String(source).startsWith("file:")
             // Image illisible (fichier effacé, nom absent du thème) : icône de l'application, comme dans l'historique.
             property bool failed: false
             source: failed && card.entry.fallbackIcon !== "" ? card.entry.fallbackIcon : card.entry.icon
