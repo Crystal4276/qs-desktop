@@ -3,6 +3,23 @@
 État courant seulement. Historique figé : phases 0 à 10 dans `docs/archive/PROGRESS.md`, maintenance du 2026-11-05 au 2026-11-09
 et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de besoin).
 
+## Capture : zone sur plusieurs écrans, notification (2026-11-19)
+
+- Zone : le tracé passe d'un écran à l'autre (borne : rectangle englobant les écrans ; avant : écran de départ seulement). Cadre
+  autour de la zone entière, sans trait à la jonction. Chaque écran touché découpe sa part à sa résolution réelle, l'écran de départ
+  les assemble en une image à l'échelle la plus haute (ton choix : comme grim, la partie ultrawide est agrandie ×1,5). Zone sur un
+  seul écran : chemin inchangé, pixel pour pixel.
+- Notification « Screenshot saved » (ton choix : aperçu de la capture ; icône Papirus `accessories-screenshot` en repli) ; clic :
+  `org.freedesktop.FileManager1.ShowItems`, Nemo ouvre `Images/screenshot` avec le fichier sélectionné. Aucun nouveau paquet
+  (`notify-send`, `gdbus`).
+- Banc Hyprland imbriqué (3 écrans virtuels, disposition de terrier, rendu GPU : `ScreencopyView` y reçoit des images) : 400×300
+  sur l'ultrawide → 400×300 ; 1200×600 à cheval 4K / ultrawide → 1800×900, jonction à 840 px ; les trois écrans → 12 840×2160 ;
+  **vrai glisser au pointeur virtuel** de la 4K gauche à l'ultrawide → 1500×750, cadre continu (capture du banc) ; notification
+  avec aperçu ; `ShowItems` → Nemo sur le dossier, fichier sélectionné. Captures de test effacées.
+- Pendant « ne pas déranger » (21:00–07:00), la notification va directement dans l'historique, comme les autres.
+- À tester à la main : tracer d'un écran à l'autre sous **Sway** (pas de banc Sway avec images) et sous Hyprland ; clic sur la
+  notification → Nemo, fichier sélectionné.
+
 ## Sélecteur de fonds : molette, flèches, « Reset » (2026-11-18)
 
 - Molette : une rangée de vignettes par cran, les crans rapides s'additionnent (avant : 72 px par cran, sans cumul). La vraie

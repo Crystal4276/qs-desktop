@@ -12,7 +12,7 @@ sudo                    # scripts de mise en place système, après accord expli
 # `systemd-inhibit` de la veille et du capot, `busctl` des disques).
 python                  # install.sh (réglages, dconf) ; inhibition vidéo ; relevés et arrêt sécurisé des applications (scripts/monitor-processes.py), mesures GPU (scripts/gpu-stats.py)
 python-gobject          # Gio / GLib : inhibition vidéo et suivi des ouvertures depuis Deluge / Thunderbird / Steam
-glib2                   # gdbus : disques amovibles, mise en veille du système (services/Idle.qml) ; gsettings : reconnexion Bluetooth reprise de blueman
+glib2                   # gdbus : disques amovibles, mise en veille du système (services/Idle.qml), capture montrée dans le gestionnaire de fichiers ; gsettings : reconnexion Bluetooth reprise de blueman
 
 # --- Compositeurs et sorties ---
 sway                    # compositeur principal
@@ -70,7 +70,7 @@ pacman-contrib          # checkupdates (module mises à jour) ; paccache (cache 
 fakeroot                # requis par checkupdates (non déclaré par pacman-contrib)
 gnome-terminal          # terminal lancé par les modules (configurable par machine)
 gettext                 # traduction de Nemo lue par services/FileOps.qml (titre de sa boîte de conflit)
-libnotify               # notify-send (sortie audio suivante, connexions et batterie Bluetooth, disques amovibles, fichier ouvert dans une web app Office, Wi-Fi entreprise refusé, tests)
+libnotify               # notify-send (capture enregistrée, sortie audio suivante, connexions et batterie Bluetooth, disques amovibles, fichier ouvert dans une web app Office, Wi-Fi entreprise refusé, tests)
 
 # --- Installation (install.sh) ---
 base-devel              # makepkg : construction de paru-bin (seul paquet AUR, installé par install.sh)
