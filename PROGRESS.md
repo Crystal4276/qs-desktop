@@ -20,6 +20,22 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
   autres. Ta décision : la confirmation d'une capture répond à ton geste, elle s'affiche quand même (`Notifs.silent`, nom
   d'application `Screenshot.appName`). Même règle pour la fin d'une copie de fichiers (`FileOps.appName`, ta demande) :
   `Notifs.feedbackApps`. Banc, ne pas déranger actif : une autre application reste silencieuse, capture et copie s'affichent.
+- Revue en boucle (`/code-review high`, un commit par passe ; constats reproduits sur le banc Hyprland imbriqué avant correction) :
+  - passe 1 : aimantation aux bords d'écran en mode zone (3 px de dépassement donnaient 4505×750 au lieu de 3000×500) ; outil
+    fermé si son écran de départ disparaît (restait bloqué) ; aperçus des notifications chargés hors du fil de l'interface
+    (0,5 s de décodage pour trois écrans) ; icône dans `Theme.qml` ;
+  - découvert en route : l'encodage PNG de Qt figeait tout le shell 1,5 s (ultrawide entier), 2,3 s (4K), ~7 s (trois écrans),
+    défaut antérieur. Ta décision : BMP brut écrit par Quickshell (~10 ms), PNG par `magick` hors de lui (compression 3) ;
+    shell bloqué 61 ms sur le vrai bureau, notification 0,1–2,3 s après ; le trou entre écrans de tailles différentes devient noir ;
+  - passe 2 : assemblage en pixels de la plus haute échelle (partie 4K copiée 1:1, écart max 45 → 0), parts à leur taille réelle ;
+    recouvrement de moins de `Theme.screenshot.snap` ignoré dans tous les modes ; aimantation aux seuls bords à hauteur du point ;
+    deux captures dans la même seconde : suffixe `-2` (retiré de `BACKLOG.md`) ;
+  - passe 3 : origine de l'assemblage calée sans erreur de virgule flottante (colonne noire à gauche pour 1 départ sur 20,
+    disposition 1080p + 4K en x=1920) ; `capture` par IPC outil fermé ne bloque plus les captures suivantes ; fenêtre presque
+    hors du bureau : sa bande visible est capturée (rien avant) ; commentaires mis à jour ;
+  - écartés : écran sans image figée (non reproduit : un écran en DPMS fournit encore son image), verrouillage pendant une
+    capture (la capture se termine), nom d'application usurpable pour « ne pas déranger », `notify-send` orphelin après un
+    redémarrage de Quickshell, taille de texture maximale pour un assemblage géant.
 - À tester à la main : tracer d'un écran à l'autre sous **Sway** (pas de banc Sway avec images) et sous Hyprland ; clic sur la
   notification → Nemo, fichier sélectionné.
 
