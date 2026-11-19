@@ -102,6 +102,7 @@ Rectangle {
 
             Layout.alignment: Qt.AlignTop
             implicitSize: Theme.notificationCentre.iconSize
+            asynchronous: true   // aperçu d'une capture (NotificationCard)
             source: icon.startsWith("image:") || icon.startsWith("file:") ? icon : `image://icon/${icon}`
             onStatusChanged: {
                 if (status === Image.Error && attempt < candidates.length - 1)

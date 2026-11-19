@@ -270,19 +270,32 @@ LazyLoader {
                         return Qt.point(Math.max(x1, Math.min(p.x, x2)), Math.max(y1, Math.min(p.y, y2)));
                     }
 
+                    // Mode zone : à moins de `snap` px d'un bord d'écran, le point s'y colle. Le pointeur n'est plus arrêté au
+                    // bord (il passe sur l'écran voisin) : viser ce bord resterait sinon au pixel près, et le moindre dépassement
+                    // ajouterait une bande du voisin, toute l'image à son échelle.
+                    readonly property int snap: 8
+                    function snapToEdges(p: point): point {
+                        const names = Quickshell.screens.map(q => q.name);
+                        const outs = Compositor.outputs.filter(o => names.includes(o.name));
+                        const near = (v, edges) => edges.find(e => Math.abs(v - e) <= snap) ?? v;
+                        return Qt.point(near(p.x, [].concat(...outs.map(o => [o.x, o.x + o.width]))),
+                            near(p.y, [].concat(...outs.map(o => [o.y, o.y + o.height]))));
+                    }
+
                     function windowAt(p: point): var {
                         const list = Screenshot.windows.filter(w => p.x >= w.x && p.x < w.x + w.width && p.y >= w.y && p.y < w.y + w.height);
                         return list.length > 0 ? list[list.length - 1] : null;   // la dernière : flottante, au-dessus
                     }
 
                     onPositionChanged: m => {
-                        const p = clampToDesktop(globalPoint(m));
+                        let p = clampToDesktop(globalPoint(m));
                         if (Screenshot.mode === "screen") {
                             win.hovered = { x: 0, y: 0, width: win.width, height: win.height };
                         } else if (Screenshot.mode === "window") {
                             const w = windowAt(p);
                             win.hovered = w ? { x: w.x - win.ox, y: w.y - win.oy, width: w.width, height: w.height } : null;
                         } else if (pressed) {
+                            p = snapToEdges(p);
                             Screenshot.selection = {
                                 x: Math.min(start.x, p.x), y: Math.min(start.y, p.y),
                                 width: Math.abs(p.x - start.x), height: Math.abs(p.y - start.y)
@@ -293,13 +306,14 @@ LazyLoader {
                     onExited: win.hovered = null
 
                     onPressed: m => {
-                        const p = clampToDesktop(globalPoint(m));
+                        let p = clampToDesktop(globalPoint(m));
                         if (Screenshot.mode === "screen") {
                             Screenshot.selection = { x: win.ox, y: win.oy, width: win.width, height: win.height };
                         } else if (Screenshot.mode === "window") {
                             const w = windowAt(p);
                             Screenshot.selection = w ? { x: w.x, y: w.y, width: w.width, height: w.height } : null;
                         } else {
+                            p = snapToEdges(p);
                             start = p;
                             Screenshot.selection = { x: p.x, y: p.y, width: 0, height: 0 };
                         }

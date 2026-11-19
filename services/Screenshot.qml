@@ -3,6 +3,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import qs.config
 
 // Outil de capture natif (ARCHITECTURE § 7.15, modèle de l'outil de GNOME ; fenêtres : modules/screenshot/) : image figée de chaque
 // écran (ScreencopyView), puis zone (sur un ou plusieurs écrans), écran ou fenêtre ; enregistrée comme ta touche Impr.
@@ -33,6 +34,14 @@ Singleton {
         target: Session
         function onLockActiveChanged() {
             if (Session.lockActive && !root.capturing)
+                root.close();
+        }
+    }
+    // Écran de départ retiré (câble, capot) : barre d'outils, clavier et assemblage y vivaient ; outil fermé.
+    Connections {
+        target: Quickshell
+        function onScreensChanged() {
+            if (root.active && !Quickshell.screens.some(s => s.name === root.startScreen))
                 root.close();
         }
     }
@@ -129,9 +138,11 @@ Singleton {
         if (!s || s.width <= 0 || s.height <= 0 || capturing)
             return;
         const names = Quickshell.screens.map(q => q.name);
+        // Moins d'1 px sur un écran (arrondi d'une largeur logique fractionnaire) : ignoré, sinon toute l'image passerait à
+        // son échelle.
         const touched = Compositor.outputs.filter(o => names.includes(o.name)
-            && Math.min(s.x + s.width, o.x + o.width) > Math.max(s.x, o.x)
-            && Math.min(s.y + s.height, o.y + o.height) > Math.max(s.y, o.y)).map(o => o.name);
+            && Math.min(s.x + s.width, o.x + o.width) - Math.max(s.x, o.x) >= 1
+            && Math.min(s.y + s.height, o.y + o.height) - Math.max(s.y, o.y) >= 1).map(o => o.name);
         if (touched.length === 0) {
             close();
             return;
@@ -182,7 +193,7 @@ Singleton {
     // de la notification.
     function notifySaved(path: string): void {
         const uri = "file://" + path.split("/").map(encodeURIComponent).join("/");
-        Quickshell.execDetached(["sh", "-c", `a=$(notify-send --app-name=${root.appName} --icon=accessories-screenshot --hint="string:image-path:$0" \
+        Quickshell.execDetached(["sh", "-c", `a=$(notify-send --app-name=${root.appName} --icon=${Theme.screenshot.notificationIcon} --hint="string:image-path:$0" \
             --action=default=Open --wait "Screenshot saved" "$1") && [ "$a" = default ] && gdbus call --session \
             --dest org.freedesktop.FileManager1 --object-path /org/freedesktop/FileManager1 \
             --method org.freedesktop.FileManager1.ShowItems "$2" "" >/dev/null`,
