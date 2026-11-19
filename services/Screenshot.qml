@@ -134,6 +134,7 @@ Singleton {
     property string rawPath: ""
     property int expected: 0
     property var captureRect: null   // zone capturée, calée (capture)
+    property point captureOrigin      // origine de sa grille de pixels
     // Parts reçues : { grab (ItemGrabResult), screen, scale, x, y, width, height (logiques globales), crop (« LxH » utiles) }.
     property var pieces: []
 
@@ -154,18 +155,21 @@ Singleton {
             close();
             return;
         }
-        // Zone ramenée aux écrans pris et calée sur la grille de pixels de leur plus haute échelle : chaque écran en découpe
+        // Zone ramenée aux écrans pris et calée sur la grille de pixels d'un écran de leur plus haute échelle (depuis son
+        // origine : un bord d'écran peut tomber entre deux pixels de la grille absolue, 1366 × 1,25) : chaque écran en découpe
         // sa part, l'assemblage la remet dans le cadre exact de son écran (pas de pixel manquant aux jonctions).
         const k = Math.max(...used.map(o => o.scale));
-        const grid = v => Math.round(v * k) / k;
-        const x1 = grid(Math.max(s.x, Math.min(...used.map(o => o.x)))), y1 = grid(Math.max(s.y, Math.min(...used.map(o => o.y))));
-        const x2 = grid(Math.min(s.x + s.width, Math.max(...used.map(o => o.x + o.width))));
-        const y2 = grid(Math.min(s.y + s.height, Math.max(...used.map(o => o.y + o.height))));
+        const ref = used.find(o => o.scale === k);
+        const gx = v => ref.x + Math.round((v - ref.x) * k) / k, gy = v => ref.y + Math.round((v - ref.y) * k) / k;
+        const x1 = gx(Math.max(s.x, Math.min(...used.map(o => o.x)))), y1 = gy(Math.max(s.y, Math.min(...used.map(o => o.y))));
+        const x2 = gx(Math.min(s.x + s.width, Math.max(...used.map(o => o.x + o.width))));
+        const y2 = gy(Math.min(s.y + s.height, Math.max(...used.map(o => o.y + o.height))));
         if (x2 <= x1 || y2 <= y1) {
             close();
             return;
         }
         captureRect = { x: x1, y: y1, width: x2 - x1, height: y2 - y1 };
+        captureOrigin = Qt.point(ref.x, ref.y);
         capturing = true;
         capturePath = nextPath();
         rawPath = `${Quickshell.env("XDG_RUNTIME_DIR") || "/tmp"}/qs-screenshot-${capturePath.split("/").pop()}.bmp`;
@@ -215,12 +219,12 @@ Singleton {
     function encode(raw: string, path: string, crop: string): void {
         const uri = "file://" + path.split("/").map(encodeURIComponent).join("/");
         Quickshell.execDetached(["sh", "-c", `magick "$0" ${crop !== "" ? `-crop ${crop}+0+0 +repage` : ""} -define png:compression-level=3 "$1"; s=$?; rm -f "$0"; [ $s = 0 ] || exit 1
-            wl-copy --type image/png < "$1"
+            c=; wl-copy --type image/png < "$1" && c=" · copied to clipboard"
             a=$(notify-send --app-name=${root.appName} --icon=${Theme.screenshot.notificationIcon} --hint="string:image-path:$1" \
-                --action=default=Open --wait "Screenshot saved" "$2") && [ "$a" = default ] && gdbus call --session \
+                --action=default=Open --wait "Screenshot saved" "$2$c") && [ "$a" = default ] && gdbus call --session \
                 --dest org.freedesktop.FileManager1 --object-path /org/freedesktop/FileManager1 \
                 --method org.freedesktop.FileManager1.ShowItems "$3" "" >/dev/null`,
-            raw, path, `${path.split("/").pop()} · copied to clipboard`, `[${JSON.stringify(uri)}]`]);
+            raw, path, path.split("/").pop(), `[${JSON.stringify(uri)}]`]);
     }
 
     function ensureDirectory(): void {

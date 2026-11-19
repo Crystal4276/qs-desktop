@@ -138,8 +138,9 @@ LazyLoader {
                 }
 
                 // Parts de plusieurs écrans : assemblées à l'échelle la plus haute S, par la fenêtre d'un écran de cette
-                // échelle, en pixels de S : chaque part dans le cadre exact de son écran dans la zone (cadres jointifs), celles
-                // de cette échelle copiées 1:1, les autres agrandies. Taille rendue par grabToImage : comme une part.
+                // échelle, en pixels de S depuis l'origine de la grille (Screenshot.captureOrigin) : chaque écran étiré sur son
+                // cadre arrondi (cadres jointifs), découpé à la zone ; l'écran de la grille copié 1:1, les autres agrandis.
+                // Taille rendue par grabToImage : comme une part.
                 function onStitchRequested(pieces) {
                     const s = Math.max(...pieces.map(p => p.scale));
                     if (pieces.find(p => p.scale === s).screen !== win.modelData?.name)
@@ -148,16 +149,18 @@ LazyLoader {
                         Screenshot.close();
                         return;
                     }
-                    const z = Screenshot.captureRect;
-                    const zl = Math.round(z.x * s), zt = Math.round(z.y * s);
-                    const zr = Math.round((z.x + z.width) * s), zb = Math.round((z.y + z.height) * s);
+                    const z = Screenshot.captureRect, g = Screenshot.captureOrigin;
+                    const X = v => Math.round((v - g.x) * s), Y = v => Math.round((v - g.y) * s);
+                    const zl = X(z.x), zt = Y(z.y), zr = X(z.x + z.width), zb = Y(z.y + z.height);
                     stitch.places = pieces.map(p => {
                         const o = Compositor.output(p.screen);
-                        const l = Math.max(zl, Math.round(o.x * s)), t = Math.max(zt, Math.round(o.y * s));
-                        const r = Math.min(zr, Math.round((o.x + o.width) * s)), b = Math.min(zb, Math.round((o.y + o.height) * s));
+                        const fl = X(o.x), ft = Y(o.y), fx = (X(o.x + o.width) - fl) / o.width, fy = (Y(o.y + o.height) - ft) / o.height;
+                        const l = Math.max(zl, fl), t = Math.max(zt, ft);
+                        const r = Math.min(zr, X(o.x + o.width)), b = Math.min(zb, Y(o.y + o.height));
                         return {
                             url: p.grab.url, x: (l - zl) / s, y: (t - zt) / s, width: (r - l) / s, height: (b - t) / s,
-                            imageX: p.x - l / s, imageY: p.y - t / s, imageWidth: p.width, imageHeight: p.height
+                            imageX: (fl + (p.x - o.x) * fx - l) / s, imageY: (ft + (p.y - o.y) * fy - t) / s,
+                            imageWidth: p.width * fx / s, imageHeight: p.height * fy / s
                         };
                     });
                     const target = Qt.size(Math.ceil((zr - zl) / s - 1e-9), Math.ceil((zb - zt) / s - 1e-9));
