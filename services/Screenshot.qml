@@ -129,6 +129,9 @@ Singleton {
     signal stitchRequested(var pieces)
 
     property string capturePath: ""
+    // Image brute (BMP, ~10 ms) écrite par Quickshell, encodée en PNG hors de lui (encode) : l'encodeur PNG de Qt bloquait tout
+    // le shell 1,5 s pour un écran entier, ~7 s pour trois (mesuré le 2026-11-19).
+    property string rawPath: ""
     property int expected: 0
     // Parts reçues : { grab (ItemGrabResult), x, y, width, height (logiques globales), scale }.
     property var pieces: []
@@ -149,6 +152,7 @@ Singleton {
         }
         capturing = true;
         capturePath = nextPath();
+        rawPath = `${Quickshell.env("XDG_RUNTIME_DIR") || "/tmp"}/qs-screenshot-${capturePath.split("/").pop()}.bmp`;
         expected = touched.length;
         pieces = [];
         captureRequested(s, touched);
@@ -161,17 +165,15 @@ Singleton {
         if (pieces.length < expected)
             return;
         if (pieces.length === 1)
-            finish(piece.grab.saveToFile(capturePath));
+            finish(piece.grab.saveToFile(rawPath));
         else
             stitchRequested(pieces);
     }
 
-    // Image enregistrée (ok) : presse-papiers et notification ; dans tous les cas, outil fermé.
+    // Image brute écrite (ok) : encodée en PNG ; dans tous les cas, outil fermé.
     function finish(ok: bool): void {
-        if (ok) {
-            copyToClipboard(capturePath);
-            notifySaved(capturePath);
-        }
+        if (ok)
+            encode(rawPath, capturePath);
         close();
     }
 
@@ -183,21 +185,19 @@ Singleton {
         return `${pictures}/screenshot/${name}`;
     }
 
-    // Image enregistrée : copiée dans le presse-papiers (PNG).
-    function copyToClipboard(path: string): void {
-        Quickshell.execDetached(["sh", "-c", 'wl-copy --type image/png < "$0"', path]);
-    }
-
-    // Notification avec l'aperçu (indice image-path ; icône du thème en repli) ; un clic (action « default ») montre le fichier
-    // dans le gestionnaire de fichiers (org.freedesktop.FileManager1, Nemo ici). `notify-send --wait` vit jusqu'à la fermeture
-    // de la notification.
-    function notifySaved(path: string): void {
+    // Hors de Quickshell, à la suite : PNG (`magick`, compression 3 : un écran 4K en 0,6 s au lieu de 1,9 s, fichier 19 % plus
+    // gros ; image brute effacée), presse-papiers, notification avec l'aperçu (indice
+    // image-path ; icône du thème en repli) ; un clic (action « default ») montre le fichier dans le gestionnaire de fichiers
+    // (org.freedesktop.FileManager1, Nemo ici). `notify-send --wait` vit jusqu'à la fermeture de la notification.
+    function encode(raw: string, path: string): void {
         const uri = "file://" + path.split("/").map(encodeURIComponent).join("/");
-        Quickshell.execDetached(["sh", "-c", `a=$(notify-send --app-name=${root.appName} --icon=${Theme.screenshot.notificationIcon} --hint="string:image-path:$0" \
-            --action=default=Open --wait "Screenshot saved" "$1") && [ "$a" = default ] && gdbus call --session \
-            --dest org.freedesktop.FileManager1 --object-path /org/freedesktop/FileManager1 \
-            --method org.freedesktop.FileManager1.ShowItems "$2" "" >/dev/null`,
-            path, `${path.split("/").pop()} · copied to clipboard`, `[${JSON.stringify(uri)}]`]);
+        Quickshell.execDetached(["sh", "-c", `magick "$0" -define png:compression-level=3 "$1"; s=$?; rm -f "$0"; [ $s = 0 ] || exit 1
+            wl-copy --type image/png < "$1"
+            a=$(notify-send --app-name=${root.appName} --icon=${Theme.screenshot.notificationIcon} --hint="string:image-path:$1" \
+                --action=default=Open --wait "Screenshot saved" "$2") && [ "$a" = default ] && gdbus call --session \
+                --dest org.freedesktop.FileManager1 --object-path /org/freedesktop/FileManager1 \
+                --method org.freedesktop.FileManager1.ShowItems "$3" "" >/dev/null`,
+            raw, path, `${path.split("/").pop()} · copied to clipboard`, `[${JSON.stringify(uri)}]`]);
     }
 
     function ensureDirectory(): void {

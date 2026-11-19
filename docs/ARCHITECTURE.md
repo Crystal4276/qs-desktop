@@ -557,8 +557,9 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
 - Zone sur plusieurs écrans : le bouton tenu, le pointeur reste à la surface de départ (prise implicite de Wayland), qui suit le tracé
   au-dessus des autres écrans ; borne : rectangle englobant les écrans.
 - Découpe à la résolution réelle (`grabToImage` corrigé de l'échelle) par chaque écran touché ; plusieurs parts : assemblées par
-  l'écran de départ à l'échelle la plus haute (comme grim ; trou entre écrans transparent). Enregistrée dans
-  `Images/screenshot/AAAA-MM-JJ-HHMMSS.png`, copiée (`wl-copy`), annoncée par `notify-send` (aperçu en `image-path`, icône
+  l'écran de départ à l'échelle la plus haute (comme grim ; trou entre écrans noir). Écrite brute (BMP dans
+  `XDG_RUNTIME_DIR`, ~10 ms), encodée en PNG hors de Quickshell (`magick`, compression 3 ; l'encodeur de Qt bloquait le shell
+  1,5 s par écran entier) dans `Images/screenshot/AAAA-MM-JJ-HHMMSS.png`, copiée (`wl-copy`), annoncée par `notify-send` (aperçu en `image-path`, icône
   `accessories-screenshot` en repli) ; clic (action `default`) : `org.freedesktop.FileManager1.ShowItems` (Nemo : dossier ouvert,
   fichier sélectionné). Fermé au verrouillage. IPC `screenshot area|screen|window` ; test : `select x y w h`, `capture`, `isActive`.
 - `ScreencopyView` ne reçoit aucune image en rendu logiciel : l'outil se teste sur de vrais écrans ou sur le banc Hyprland imbriqué
