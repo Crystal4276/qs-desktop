@@ -110,56 +110,62 @@ LazyLoader {
                 function onCaptureRequested(rect, screens) {
                     if (!screens.includes(win.modelData?.name))
                         return;
-                    const r = win.local;
-                    if (!r || !view.hasContent || view.width <= 0) {
+                    // Part de cet écran en pixels de son image figée, arrondie vers l'extérieur (copie 1:1, sans
+                    // rééchantillonnage ; l'assemblage la recoupe au cadre de l'écran).
+                    const scale = view.sourceSize.width / view.width;
+                    const px = Math.max(0, Math.floor((rect.x - win.ox) * scale + 1e-6));
+                    const py = Math.max(0, Math.floor((rect.y - win.oy) * scale + 1e-6));
+                    const pw = Math.min(view.sourceSize.width, Math.ceil((rect.x + rect.width - win.ox) * scale - 1e-6)) - px;
+                    const ph = Math.min(view.sourceSize.height, Math.ceil((rect.y + rect.height - win.oy) * scale - 1e-6)) - py;
+                    if (!view.hasContent || view.width <= 0 || pw <= 0 || ph <= 0) {
                         Screenshot.close();
                         return;
                     }
-                    // Copie 1:1 de l'image figée : découpe calée sur ses pixels, et de la taille que rendra grabToImage (il prend
-                    // une taille logique entière et la multiplie par l'échelle de l'écran). Sélection à la souris en scale 1.5 :
-                    // coordonnées fractionnaires, découpe sinon rééchantillonnée d'un pixel.
-                    const scale = view.sourceSize.width / view.width;
-                    const target = Qt.size(Math.max(1, Math.round(r.width)), Math.max(1, Math.round(r.height)));
-                    const pw = Math.min(Math.round(target.width * scale), view.sourceSize.width);
-                    const ph = Math.min(Math.round(target.height * scale), view.sourceSize.height);
-                    const px = Math.min(Math.round(r.x * scale), view.sourceSize.width - pw);
-                    const py = Math.min(Math.round(r.y * scale), view.sourceSize.height - ph);
-                    crop.sourceRect = Qt.rect(px / scale, py / scale, pw / scale, ph / scale);
-                    crop.width = pw / scale;
-                    crop.height = ph / scale;
-                    crop.textureSize = Qt.size(pw, ph);
+                    // grabToImage rend une taille logique entière × l'échelle : la plus petite qui contient la part, le surplus
+                    // (hors de l'image : transparent) recadré à l'encodage.
+                    const target = Qt.size(Math.ceil(pw / scale - 1e-9), Math.ceil(ph / scale - 1e-9));
+                    const tw = Math.round(target.width * scale), th = Math.round(target.height * scale);
+                    crop.sourceRect = Qt.rect(px / scale, py / scale, tw / scale, th / scale);
+                    crop.width = tw / scale;
+                    crop.height = th / scale;
+                    crop.textureSize = Qt.size(tw, th);
                     const started = crop.grabToImage(result => Screenshot.addPiece({
-                        grab: result, screen: win.modelData.name, scale,
-                        x: win.ox + px / scale, y: win.oy + py / scale, width: pw / scale, height: ph / scale
+                        grab: result, screen: win.modelData.name, scale, crop: `${pw}x${ph}`,
+                        x: win.ox + px / scale, y: win.oy + py / scale, width: tw / scale, height: th / scale
                     }), target);
                     if (!started)
                         Screenshot.close();
                 }
 
                 // Parts de plusieurs écrans : assemblées à l'échelle la plus haute S, par la fenêtre d'un écran de cette
-                // échelle, en pixels de S : les deux bords de chaque part arrondis de la même façon (parts voisines jointives,
-                // parts de cette échelle copiées 1:1, les autres agrandies). grabToImage rend une taille logique entière × S :
-                // la plus petite qui contient l'image, le surplus recadré à l'encodage (Screenshot.finish).
+                // échelle, en pixels de S : chaque part dans le cadre exact de son écran dans la zone (cadres jointifs), celles
+                // de cette échelle copiées 1:1, les autres agrandies. Taille rendue par grabToImage : comme une part.
                 function onStitchRequested(pieces) {
                     const s = Math.max(...pieces.map(p => p.scale));
                     if (pieces.find(p => p.scale === s).screen !== win.modelData?.name)
                         return;
-                    const edges = pieces.map(p => ({
-                        l: Math.round(p.x * s), t: Math.round(p.y * s),
-                        r: Math.round((p.x + p.width) * s), b: Math.round((p.y + p.height) * s)
-                    }));
-                    const x0 = Math.min(...edges.map(e => e.l)), y0 = Math.min(...edges.map(e => e.t));
-                    const w = Math.max(...edges.map(e => e.r)) - x0, h = Math.max(...edges.map(e => e.b)) - y0;
-                    const target = Qt.size(Math.ceil(w / s - 1e-9), Math.ceil(h / s - 1e-9));
+                    if (pieces.some(p => !Compositor.output(p.screen))) {
+                        Screenshot.close();
+                        return;
+                    }
+                    const z = Screenshot.captureRect;
+                    const zl = Math.round(z.x * s), zt = Math.round(z.y * s);
+                    const zr = Math.round((z.x + z.width) * s), zb = Math.round((z.y + z.height) * s);
+                    stitch.places = pieces.map(p => {
+                        const o = Compositor.output(p.screen);
+                        const l = Math.max(zl, Math.round(o.x * s)), t = Math.max(zt, Math.round(o.y * s));
+                        const r = Math.min(zr, Math.round((o.x + o.width) * s)), b = Math.min(zb, Math.round((o.y + o.height) * s));
+                        return {
+                            url: p.grab.url, x: (l - zl) / s, y: (t - zt) / s, width: (r - l) / s, height: (b - t) / s,
+                            imageX: p.x - l / s, imageY: p.y - t / s, imageWidth: p.width, imageHeight: p.height
+                        };
+                    });
+                    const target = Qt.size(Math.ceil((zr - zl) / s - 1e-9), Math.ceil((zb - zt) / s - 1e-9));
                     stitch.width = Math.round(target.width * s) / s;
                     stitch.height = Math.round(target.height * s) / s;
-                    stitch.places = edges.map((e, i) => ({
-                        url: pieces[i].grab.url,
-                        x: (e.l - x0) / s, y: (e.t - y0) / s, width: (e.r - e.l) / s, height: (e.b - e.t) / s
-                    }));
                     const started = stitch.grabToImage(result => {
                         if (Screenshot.capturing)   // pas après Échap ou le verrouillage
-                            Screenshot.finish(result.saveToFile(Screenshot.rawPath), `${w}x${h}`);
+                            Screenshot.finish(result.saveToFile(Screenshot.rawPath), `${zr - zl}x${zb - zt}`);
                     }, target);
                     if (!started)
                         Screenshot.close();
@@ -170,21 +176,30 @@ LazyLoader {
             Item {
                 id: stitch
 
-                property var places: []   // { url, x, y, width, height } dans l'image assemblée
+                // { url, x, y, width, height (cadre de l'écran dans l'image assemblée), imageX… (part dans ce cadre) }
+                property var places: []
 
                 z: -1
 
                 Repeater {
                     model: stitch.places
 
-                    Image {
+                    Item {
                         required property var modelData
                         x: modelData.x
                         y: modelData.y
                         width: modelData.width
                         height: modelData.height
-                        source: modelData.url
-                        smooth: true
+                        clip: true
+
+                        Image {
+                            x: parent.modelData.imageX
+                            y: parent.modelData.imageY
+                            width: parent.modelData.imageWidth
+                            height: parent.modelData.imageHeight
+                            source: parent.modelData.url
+                            smooth: true
+                        }
                     }
                 }
             }

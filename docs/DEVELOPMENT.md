@@ -54,6 +54,8 @@ Construits dans le scratchpad de session (perdus au redémarrage). Reprendre le 
 **Hyprland imbriqué** — dans la session Hyprland (sous Nvidia, le mode headless n'alloue aucune image ; imbriqué dans Sway : refusé,
 `xdg_wm_base` v5) : une fenêtre s'ouvre le temps du test. Régler le banc comme la vraie config, en particulier `cursor.no_warps` ;
 déplacer le pointeur comme un vrai geste (sinon `follow_mouse` rend le focus au dernier écran visé : échecs aléatoires).
+Changer position ou échelle d'un écran à chaud (`hl.monitor` par `hyprctl eval`) n'émet ni `monitoradded` ni `configreloaded` :
+`Compositor.outputs` garde l'ancienne géométrie ; démarrer le banc avec la disposition voulue.
 
 **Écran de connexion** — sur le Sway headless, `qs -p <copie>/greeter.qml` avec `GREETD_SOCK` (faux greetd) et `QS_GREETER_DIR`
 (dossier d'état et fonds exportés, au lieu de `/var/lib/qs-desktop`) ; le bureau du banc exporte ses fonds sous `QS_GREETER_DIR` aussi.

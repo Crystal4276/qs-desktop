@@ -133,7 +133,8 @@ Singleton {
     // le shell 1,5 s pour un écran entier, ~7 s pour trois (mesuré le 2026-11-19).
     property string rawPath: ""
     property int expected: 0
-    // Parts reçues : { grab (ItemGrabResult), screen, scale, x, y, width, height (logiques globales) }.
+    property var captureRect: null   // zone capturée, calée (capture)
+    // Parts reçues : { grab (ItemGrabResult), screen, scale, x, y, width, height (logiques globales), crop (« LxH » utiles) }.
     property var pieces: []
 
     function capture(): void {
@@ -148,17 +149,29 @@ Singleton {
             Math.min(s.y + s.height, o.y + o.height) - Math.max(s.y, o.y));
         const outs = Compositor.outputs.filter(o => names.includes(o.name));
         const limit = Math.min(Theme.screenshot.snap, Math.max(...outs.map(overlap)));
-        const touched = outs.filter(o => overlap(o) > 0 && overlap(o) >= limit).map(o => o.name);
-        if (touched.length === 0) {
+        const used = outs.filter(o => overlap(o) > 0 && overlap(o) >= limit);
+        if (used.length === 0) {
             close();
             return;
         }
+        // Zone ramenée aux écrans pris et calée sur la grille de pixels de leur plus haute échelle : chaque écran en découpe
+        // sa part, l'assemblage la remet dans le cadre exact de son écran (pas de pixel manquant aux jonctions).
+        const k = Math.max(...used.map(o => o.scale));
+        const grid = v => Math.round(v * k) / k;
+        const x1 = grid(Math.max(s.x, Math.min(...used.map(o => o.x)))), y1 = grid(Math.max(s.y, Math.min(...used.map(o => o.y))));
+        const x2 = grid(Math.min(s.x + s.width, Math.max(...used.map(o => o.x + o.width))));
+        const y2 = grid(Math.min(s.y + s.height, Math.max(...used.map(o => o.y + o.height))));
+        if (x2 <= x1 || y2 <= y1) {
+            close();
+            return;
+        }
+        captureRect = { x: x1, y: y1, width: x2 - x1, height: y2 - y1 };
         capturing = true;
         capturePath = nextPath();
         rawPath = `${Quickshell.env("XDG_RUNTIME_DIR") || "/tmp"}/qs-screenshot-${capturePath.split("/").pop()}.bmp`;
-        expected = touched.length;
+        expected = used.length;
         pieces = [];
-        captureRequested(s, touched);
+        captureRequested(captureRect, used.map(o => o.name));
     }
 
     function addPiece(piece): void {
@@ -168,13 +181,13 @@ Singleton {
         if (pieces.length < expected)
             return;
         if (pieces.length === 1)
-            finish(piece.grab.saveToFile(rawPath), "");
+            finish(piece.grab.saveToFile(rawPath), piece.crop);
         else
             stitchRequested(pieces);
     }
 
-    // Image brute écrite (ok) : encodée en PNG, recadrée à `crop` (« LxH » en pixels, assemblage) ; dans tous les cas, outil
-    // fermé.
+    // Image brute écrite (ok) : encodée en PNG, recadrée à `crop` (« LxH » en pixels : grabToImage ne rend que des tailles
+    // logiques entières) ; dans tous les cas, outil fermé.
     function finish(ok: bool, crop: string): void {
         if (ok)
             encode(rawPath, capturePath, crop);
