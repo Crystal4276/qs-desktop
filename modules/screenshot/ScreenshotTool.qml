@@ -8,9 +8,9 @@ import qs.modules.bar
 
 // Outil de capture (modèle de l'outil de GNOME, service : Screenshot.qml) : à l'ouverture, une image figée de chaque écran ; voile et
 // cadre de ta sélection actuelle (slurp). Capture dès que le choix est fait (demande du 2026-10-19) : zone (tracer, capture au
-// relâchement), écran (clic sur un écran), fenêtre (clic sur une fenêtre). Barre d'outils en bas de l'écran de départ : modes,
-// fermer. Entrée ou Espace capturent l'écran présélectionné (mode écran), Échap ferme. La capture vient de l'image figée, à la
-// résolution réelle de l'écran.
+// relâchement ; elle peut passer d'un écran à l'autre), écran (clic sur un écran), fenêtre (clic sur une fenêtre). Barre d'outils
+// en bas de l'écran de départ : modes, fermer. Entrée ou Espace capturent l'écran présélectionné (mode écran), Échap ferme. La
+// capture vient de l'image figée, à la résolution réelle de chaque écran.
 LazyLoader {
     active: Screenshot.active
 
@@ -34,6 +34,10 @@ LazyLoader {
                 const x2 = Math.min(s.x + s.width, ox + output.width), y2 = Math.min(s.y + s.height, oy + output.height);
                 return x2 > x1 && y2 > y1 ? { x: x1 - ox, y: y1 - oy, width: x2 - x1, height: y2 - y1 } : null;
             }
+            // Sélection entière dans les coordonnées de cet écran (cadre : pas de trait à la jonction de deux écrans).
+            readonly property var whole: Screenshot.selection && local
+                ? { x: Screenshot.selection.x - ox, y: Screenshot.selection.y - oy, width: Screenshot.selection.width, height: Screenshot.selection.height }
+                : null
             property var hovered: null      // écran ou fenêtre sous le pointeur (coordonnées de cet écran)
             property bool stalled: false    // pas d'image figée au bout de 3 s : surface laissée transparente au pointeur
 
@@ -103,8 +107,8 @@ LazyLoader {
 
             Connections {
                 target: Screenshot
-                function onCaptureRequested(rect, screen) {
-                    if (screen !== win.modelData?.name)
+                function onCaptureRequested(rect, screens) {
+                    if (!screens.includes(win.modelData?.name))
                         return;
                     const r = win.local;
                     if (!r || !view.hasContent || view.width <= 0) {
@@ -124,14 +128,52 @@ LazyLoader {
                     crop.width = pw / scale;
                     crop.height = ph / scale;
                     crop.textureSize = Qt.size(pw, ph);
-                    const path = Screenshot.nextPath();
-                    const started = crop.grabToImage(result => {
-                        if (result.saveToFile(path))
-                            Screenshot.copyToClipboard(path);
-                        Screenshot.close();
-                    }, target);
+                    const started = crop.grabToImage(result => Screenshot.addPiece({
+                        grab: result, x: win.ox + px / scale, y: win.oy + py / scale,
+                        width: target.width, height: target.height, scale
+                    }), target);
                     if (!started)
                         Screenshot.close();
+                }
+
+                // Parts de plusieurs écrans (écran de départ) : assemblées à leur place, à l'échelle la plus haute.
+                function onStitchRequested(pieces) {
+                    if (!win.home)
+                        return;
+                    const x0 = Math.min(...pieces.map(p => p.x)), y0 = Math.min(...pieces.map(p => p.y));
+                    stitch.width = Math.max(...pieces.map(p => p.x + p.width)) - x0;
+                    stitch.height = Math.max(...pieces.map(p => p.y + p.height)) - y0;
+                    stitch.origin = Qt.point(x0, y0);
+                    stitch.pieces = pieces;
+                    const s = Math.max(...pieces.map(p => p.scale)) / (view.sourceSize.width / view.width);
+                    const started = stitch.grabToImage(result => Screenshot.finish(result.saveToFile(Screenshot.capturePath)),
+                        Qt.size(Math.round(stitch.width * s), Math.round(stitch.height * s)));
+                    if (!started)
+                        Screenshot.close();
+                }
+            }
+
+            // Assemblage des parts (sous l'image figée, comme crop) ; vide hors d'une capture sur plusieurs écrans.
+            Item {
+                id: stitch
+
+                property point origin
+                property var pieces: []
+
+                z: -1
+
+                Repeater {
+                    model: stitch.pieces
+
+                    Image {
+                        required property var modelData
+                        x: modelData.x - stitch.origin.x
+                        y: modelData.y - stitch.origin.y
+                        width: modelData.width
+                        height: modelData.height
+                        source: modelData.grab.url
+                        smooth: true
+                    }
                 }
             }
 
@@ -192,11 +234,11 @@ LazyLoader {
 
                 // Cadre de la sélection, à l'extérieur de la zone (comme slurp).
                 Rectangle {
-                    visible: win.local !== null
-                    x: (win.local?.x ?? 0) - Theme.screenshot.border
-                    y: (win.local?.y ?? 0) - Theme.screenshot.border
-                    width: (win.local?.width ?? 0) + 2 * Theme.screenshot.border
-                    height: (win.local?.height ?? 0) + 2 * Theme.screenshot.border
+                    visible: win.whole !== null
+                    x: (win.whole?.x ?? 0) - Theme.screenshot.border
+                    y: (win.whole?.y ?? 0) - Theme.screenshot.border
+                    width: (win.whole?.width ?? 0) + 2 * Theme.screenshot.border
+                    height: (win.whole?.height ?? 0) + 2 * Theme.screenshot.border
                     color: "transparent"
                     border.width: Theme.screenshot.border
                     border.color: Theme.screenshot.selection
@@ -216,9 +258,16 @@ LazyLoader {
                         return Qt.point(m.x + win.ox, m.y + win.oy);
                     }
 
-                    // Point gardé sur l'écran du geste.
-                    function clampToScreen(p: point): point {
-                        return Qt.point(Math.max(win.ox, Math.min(p.x, win.ox + win.width)), Math.max(win.oy, Math.min(p.y, win.oy + win.height)));
+                    // Point gardé dans le rectangle qui englobe les écrans : le bouton tenu, le pointeur reste à cet écran
+                    // (prise implicite de Wayland) même au-dessus d'un autre, une zone peut donc passer de l'un à l'autre.
+                    function clampToDesktop(p: point): point {
+                        const names = Quickshell.screens.map(q => q.name);
+                        const outs = Compositor.outputs.filter(o => names.includes(o.name));
+                        if (outs.length === 0)
+                            return p;
+                        const x1 = Math.min(...outs.map(o => o.x)), y1 = Math.min(...outs.map(o => o.y));
+                        const x2 = Math.max(...outs.map(o => o.x + o.width)), y2 = Math.max(...outs.map(o => o.y + o.height));
+                        return Qt.point(Math.max(x1, Math.min(p.x, x2)), Math.max(y1, Math.min(p.y, y2)));
                     }
 
                     function windowAt(p: point): var {
@@ -227,7 +276,7 @@ LazyLoader {
                     }
 
                     onPositionChanged: m => {
-                        const p = clampToScreen(globalPoint(m));
+                        const p = clampToDesktop(globalPoint(m));
                         if (Screenshot.mode === "screen") {
                             win.hovered = { x: 0, y: 0, width: win.width, height: win.height };
                         } else if (Screenshot.mode === "window") {
@@ -244,7 +293,7 @@ LazyLoader {
                     onExited: win.hovered = null
 
                     onPressed: m => {
-                        const p = clampToScreen(globalPoint(m));
+                        const p = clampToDesktop(globalPoint(m));
                         if (Screenshot.mode === "screen") {
                             Screenshot.selection = { x: win.ox, y: win.oy, width: win.width, height: win.height };
                         } else if (Screenshot.mode === "window") {

@@ -5,8 +5,9 @@ import Quickshell
 import Quickshell.Io
 
 // Outil de capture natif (ARCHITECTURE § 7.15, modèle de l'outil de GNOME ; fenêtres : modules/screenshot/) : image figée de chaque
-// écran (ScreencopyView), puis zone, écran ou fenêtre ; enregistrée comme ta touche Impr. (`Images/screenshot/AAAA-MM-JJ-HHMMSS.png`)
-// et copiée dans le presse-papiers. Fenêtres : rectangles donnés par le compositeur (Toplevel ne fournit pas leur position).
+// écran (ScreencopyView), puis zone (sur un ou plusieurs écrans), écran ou fenêtre ; enregistrée comme ta touche Impr.
+// (`Images/screenshot/AAAA-MM-JJ-HHMMSS.png`), copiée dans le presse-papiers et annoncée par une notification (clic : le fichier
+// montré dans le gestionnaire de fichiers). Fenêtres : rectangles donnés par le compositeur (Toplevel ne fournit pas leur position).
 Singleton {
     id: root
 
@@ -64,6 +65,7 @@ Singleton {
         active = false;
         capturing = false;
         selection = null;
+        pieces = [];
         nudge.stop();
         settle.stop();
     }
@@ -109,31 +111,56 @@ Singleton {
         onTriggered: root.cursorHidden = true
     }
 
-    // Capture de la sélection par la fenêtre de l'écran qui en recouvre la plus grande part (un seul fichier, même pour une fenêtre
-    // à cheval sur deux écrans : on garde la partie de cet écran) ; modules/screenshot/ScreenshotTool.qml. Sur aucun écran :
-    // outil fermé.
-    signal captureRequested(var rect, string screen)
+    // Capture de la sélection : chaque écran qu'elle touche découpe sa part de son image figée, à sa résolution réelle
+    // (modules/screenshot/ScreenshotTool.qml), puis addPiece ; une seule part est enregistrée telle quelle, plusieurs sont
+    // assemblées en une image par l'écran de départ (stitchRequested), à l'échelle la plus haute (comme grim : la partie d'un
+    // écran moins dense est agrandie). Sur aucun écran : outil fermé.
+    signal captureRequested(var rect, var screens)
+    signal stitchRequested(var pieces)
+
+    property string capturePath: ""
+    property int expected: 0
+    // Parts reçues : { grab (ItemGrabResult), x, y, width, height (logiques globales), scale }.
+    property var pieces: []
 
     function capture(): void {
         const s = selection;
-        if (!s || s.width <= 0 || s.height <= 0)
+        if (!s || s.width <= 0 || s.height <= 0 || capturing)
             return;
         const names = Quickshell.screens.map(q => q.name);
-        let best = "", bestArea = 0;
-        for (const o of Compositor.outputs.filter(o => names.includes(o.name))) {
-            const w = Math.min(s.x + s.width, o.x + o.width) - Math.max(s.x, o.x);
-            const h = Math.min(s.y + s.height, o.y + o.height) - Math.max(s.y, o.y);
-            if (w > 0 && h > 0 && w * h > bestArea) {
-                best = o.name;
-                bestArea = w * h;
-            }
-        }
-        if (best === "")
+        const touched = Compositor.outputs.filter(o => names.includes(o.name)
+            && Math.min(s.x + s.width, o.x + o.width) > Math.max(s.x, o.x)
+            && Math.min(s.y + s.height, o.y + o.height) > Math.max(s.y, o.y)).map(o => o.name);
+        if (touched.length === 0) {
             close();
-        else {
-            capturing = true;
-            captureRequested(s, best);
+            return;
         }
+        capturing = true;
+        capturePath = nextPath();
+        expected = touched.length;
+        pieces = [];
+        captureRequested(s, touched);
+    }
+
+    function addPiece(piece): void {
+        if (!capturing)
+            return;
+        pieces = [...pieces, piece];
+        if (pieces.length < expected)
+            return;
+        if (pieces.length === 1)
+            finish(piece.grab.saveToFile(capturePath));
+        else
+            stitchRequested(pieces);
+    }
+
+    // Image enregistrée (ok) : presse-papiers et notification ; dans tous les cas, outil fermé.
+    function finish(ok: bool): void {
+        if (ok) {
+            copyToClipboard(capturePath);
+            notifySaved(capturePath);
+        }
+        close();
     }
 
     // Fichier de la capture : dossier Images XDG (comme le script de la touche Impr.).
@@ -147,6 +174,18 @@ Singleton {
     // Image enregistrée : copiée dans le presse-papiers (PNG).
     function copyToClipboard(path: string): void {
         Quickshell.execDetached(["sh", "-c", 'wl-copy --type image/png < "$0"', path]);
+    }
+
+    // Notification avec l'aperçu (indice image-path ; icône du thème en repli) ; un clic (action « default ») montre le fichier
+    // dans le gestionnaire de fichiers (org.freedesktop.FileManager1, Nemo ici). `notify-send --wait` vit jusqu'à la fermeture
+    // de la notification.
+    function notifySaved(path: string): void {
+        const uri = "file://" + path.split("/").map(encodeURIComponent).join("/");
+        Quickshell.execDetached(["sh", "-c", `a=$(notify-send --app-name=Screenshot --icon=accessories-screenshot --hint="string:image-path:$0" \
+            --action=default=Open --wait "Screenshot saved" "$1") && [ "$a" = default ] && gdbus call --session \
+            --dest org.freedesktop.FileManager1 --object-path /org/freedesktop/FileManager1 \
+            --method org.freedesktop.FileManager1.ShowItems "$2" "" >/dev/null`,
+            path, `${path.split("/").pop()} · copied to clipboard`, `[${JSON.stringify(uri)}]`]);
     }
 
     function ensureDirectory(): void {

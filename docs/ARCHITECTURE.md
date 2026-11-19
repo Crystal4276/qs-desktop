@@ -554,9 +554,15 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
 - Modèle de l'outil de GNOME : image figée de chaque écran (`ScreencopyView` jusqu'à la première image), voile et cadre ; capture dès
   le choix fait — zone tracée, écran cliqué, fenêtre cliquée (rectangles donnés par le compositeur, empilement réel, espace spécial
   d'Hyprland compris). Entrée / Espace : écran présélectionné ; Échap ferme.
-- Découpe à la résolution réelle (`grabToImage` corrigé de l'échelle), enregistrée dans `Images/screenshot/AAAA-MM-JJ-HHMMSS.png` et
-  copiée (`wl-copy`). Fermé au verrouillage. IPC `screenshot area|screen|window` ; test : `select x y w h`, `capture`, `isActive`.
-- `ScreencopyView` ne reçoit aucune image en rendu logiciel : l'outil ne se teste que sur de vrais écrans.
+- Zone sur plusieurs écrans : le bouton tenu, le pointeur reste à la surface de départ (prise implicite de Wayland), qui suit le tracé
+  au-dessus des autres écrans ; borne : rectangle englobant les écrans.
+- Découpe à la résolution réelle (`grabToImage` corrigé de l'échelle) par chaque écran touché ; plusieurs parts : assemblées par
+  l'écran de départ à l'échelle la plus haute (comme grim ; trou entre écrans transparent). Enregistrée dans
+  `Images/screenshot/AAAA-MM-JJ-HHMMSS.png`, copiée (`wl-copy`), annoncée par `notify-send` (aperçu en `image-path`, icône
+  `accessories-screenshot` en repli) ; clic (action `default`) : `org.freedesktop.FileManager1.ShowItems` (Nemo : dossier ouvert,
+  fichier sélectionné). Fermé au verrouillage. IPC `screenshot area|screen|window` ; test : `select x y w h`, `capture`, `isActive`.
+- `ScreencopyView` ne reçoit aucune image en rendu logiciel : l'outil se teste sur de vrais écrans ou sur le banc Hyprland imbriqué
+  (rendu GPU, écrans virtuels).
 
 ### 7.16 GPU et statistiques système
 
