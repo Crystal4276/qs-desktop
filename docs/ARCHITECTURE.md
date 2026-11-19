@@ -306,7 +306,7 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
   ne transmet pas de jeton d'activation, la fenêtre n'est que marquée urgente).
 - Icônes en fichier temporaire (Chromium) copiées à la réception dans `<cacheDir>/notification-icons/` (vidé au démarrage).
 - Centre de notifications (cloche du tray) : 20 dernières fermées, carte média ; « ne pas déranger » (clic droit sur la cloche) :
-  seules les critiques s'affichent, sons des `muteApps` coupés ; horaire réglable.
+  seules les critiques et les réponses à ton geste (capture enregistrée, copie terminée) s'affichent, sons des `muteApps` coupés ; horaire réglable.
 - Historique et « ne pas déranger » conservés au rechargement (`PersistentProperties`), pas au redémarrage.
 - IPC `notifications` : `close`, `closeAll`, `historyPop`, `count`.
 

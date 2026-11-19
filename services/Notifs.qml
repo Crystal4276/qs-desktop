@@ -357,8 +357,12 @@ Singleton {
             history = [...history.filter(h => !byKey[h.key]), ...updated];
     }
 
+    // Réponses à ton geste, affichées même en « ne pas déranger » (ta demande du 2026-11-19) : capture enregistrée, copie de
+    // fichiers terminée.
+    readonly property var feedbackApps: [Screenshot.appName, FileOps.appName]
+
     function silent(n: Notification): bool {
-        return doNotDisturb && n.urgency !== NotificationUrgency.Critical;
+        return doNotDisturb && n.urgency !== NotificationUrgency.Critical && !feedbackApps.includes(n.appName);
     }
 
     // Silencieuse qui doit s'afficher : sa ligne quitte l'historique (elle y reviendra à sa fermeture), elle s'affiche.
