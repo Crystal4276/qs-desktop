@@ -49,9 +49,8 @@ Idées et défauts connus hors du programme des phases. Rien ici n'est implémen
   `resolvconf` pour openresolv et lance `resolvconf -l`, que `systemd-resolvconf` refuse (code 1). Piste native : `/etc/resolv.conf`
   → `/run/systemd/resolve/stub-resolv.conf` (NetworkManager passe alors par resolved), puis redémarrer `tailscaled` ; par
   `scripts/system-setup.sh` pour le laptop aussi ; vérifier à la main le DNS de NordVPN connecté (aucune action NordVPN en test).
-- Capture : deux captures dans la même seconde portent le même nom (la seconde écrase la première) ; la découpe
-  (`ShaderEffectSource`) est rendue sur chaque écran tant que l'outil est ouvert (~85 Mo de VRAM pour rien sur deux écrans sur trois :
-  la créer dans `onCaptureRequested`) ; avec un curseur logiciel (écrans virtuels, VM, certains laptops), le curseur est dans l'image.
+- Capture : la découpe (`ShaderEffectSource`) est rendue sur chaque écran tant que l'outil est ouvert (~85 Mo de VRAM pour rien sur
+  les écrans que la capture ne touche pas : la créer dans `onCaptureRequested`) ; avec un curseur logiciel (écrans virtuels, VM, certains laptops), le curseur est dans l'image.
 - Polkit : agent perdu si polkitd redémarre (surveiller le propriétaire de `org.freedesktop.PolicyKit1` et recréer l'agent).
 - HDR sous Hyprland : la règle complète fige la position (sans `hosts/`, un écran HDR n'est plus replacé si un autre écran change,
   jusqu'au `reload` suivant) et perd les autres champs de la règle de l'écran (miroir, zone réservée) tant que le HDR est actif.

@@ -536,6 +536,9 @@ Singleton {
         readonly property color hover: Qt.alpha(root.color.pink, 0.25)   // écran ou fenêtre sous le pointeur
         readonly property int gap: root.panel.gap                   // barre d'outils : distance au bas de l'écran
         readonly property string notificationIcon: "accessories-screenshot"   // capture enregistrée (Papirus), si l'aperçu manque
+        // Zone : un point à moins de `snap` px logiques d'un bord d'écran s'y colle ; une zone qui déborde de moins sur un
+        // écran ne le prend pas (sinon une bande de lui, toute l'image à son échelle).
+        readonly property int snap: 8
     }
 
     // Panneau de statistiques système (nouveau, phase 8b ; remplace btop et nvtop) : style des panneaux ; jauges aux couleurs des modules
