@@ -46,6 +46,8 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
     126 px au lieu de 125 ; pas sur terrier, bords entiers à 1,5) : grille calée sur l'origine de l'écran de plus haute échelle,
     chaque écran étiré sur son cadre arrondi ; corrigé et vérifié 1:1, plus les trois autres dispositions. « Copied to
     clipboard » seulement si `wl-copy` a réussi ;
+  - passe 7 : plus que du négligeable (un commentaire corrigé ; liseré sombre supposé au bord d'un écran à 1,25 étiré : non
+    reproduit, dernière rangée identique à un agrandissement bilinéaire de la capture native). Fin de la boucle.
   - écartés : écran sans image figée (non reproduit : un écran en DPMS fournit encore son image), verrouillage pendant une
     capture (la capture se termine), nom d'application usurpable pour « ne pas déranger », `notify-send` orphelin après un
     redémarrage de Quickshell, taille de texture maximale pour un assemblage géant.
