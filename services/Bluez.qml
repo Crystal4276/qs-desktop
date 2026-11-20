@@ -435,6 +435,10 @@ Singleton {
                 awaitingBattery = false;
                 Quickshell.execDetached(["notify-send", "--app-name=Bluetooth", "--transient", `--icon=${device.icon || "bluetooth"}`,
                     "--", device.name, "Disconnected"]);
+                // Invalidate in-flight reads even if the same device reconnects before their answer.
+                root.cardReads = Object.assign({}, root.cardReads,
+                    { [device.address]: (root.cardReads[device.address] ?? 0) + 1 });
+                root.profileErrors = Object.assign({}, root.profileErrors, { [device.address]: "" });
                 root.setAudioCard(device.address, null);
             }
 

@@ -3,7 +3,7 @@
 import argparse,json,os,shutil,signal,subprocess,tempfile,time
 from pathlib import Path
 REPO=Path(__file__).resolve().parents[1]
-parser=argparse.ArgumentParser();parser.add_argument('--expect-bugs',action='store_true');args=parser.parse_args()
+parser=argparse.ArgumentParser();parser.add_argument('--expect-bugs',action='store_true');parser.add_argument('--expect-stale',action='store_true');args=parser.parse_args()
 with tempfile.TemporaryDirectory(prefix='qs-bt-profiles-') as tmp:
  w=Path(tmp)
  for d in ('shell/services','bin','runtime'): (w/d).mkdir(parents=True)
@@ -19,6 +19,8 @@ import json,os,time
 from pathlib import Path
 w=Path(os.environ['BT_TEST_WORK'])
 active=int((w/'state').read_text())
+if (w/'mode').read_text()=='slow-read':
+ (w/'reading').touch();time.sleep(.4)
 if (w/'mode').read_text()=='bad-json': print('{');raise SystemExit()
 print(json.dumps([{'id':50,'type':'PipeWire:Interface:Device','info':{'params':{'EnumProfile':[{'index':i,'name':n,'description':d,'available':a} for i,n,d,a in [(0,'off','Off','yes'),(1,'a2dp-sink','High Fidelity Playback (A2DP Sink, codec AAC)','yes'),(2,'headset-head-unit','Headset Head Unit (HSP/HFP, codec MSBC)','yes'),(3,'absent','Unavailable','no')]],'Profile':[{'index':active}]}}}]))
 ''')
@@ -95,6 +97,12 @@ ShellRoot {
    (w/'bin/wpctl').write_text('#!/nonexistent-test-interpreter\n')
    ipc('select',2);wait(lambda: state()['error'] and not state()['busy'])
    (w/'mode').write_text('bad-json');ipc('read');wait(lambda: state()['card'] is None)
+   (w/'mode').write_text('slow-read');ipc('read');wait(lambda: (w/'reading').exists())
+   ipc('disconnect');ipc('reconnect');time.sleep(.6)
+   if args.expect_stale:
+    assert state()['card'] is not None,state();print('REPRO stale profile read repopulates card after disconnect/reconnect')
+   else:
+    assert state()['card'] is None,state()
    print('PASS profiles: filtering, serialized selection, confirmed active state, failure/retry, disconnected guard, malformed response')
  finally:
   os.killpg(p.pid,signal.SIGTERM);p.wait(timeout=5);log.close()
