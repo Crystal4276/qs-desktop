@@ -3,6 +3,15 @@
 État courant seulement. Historique figé : phases 0 à 10 dans `docs/archive/PROGRESS.md`, maintenance du 2026-11-05 au 2026-11-09
 et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de besoin).
 
+## Web apps : catégories Notion et Discord (2026-11-20)
+
+- Notion « absent du lanceur » sur le laptop : vérifié par SSH, lanceur généré par `install.sh` et lu par `DesktopEntries`
+  (instance isolée hors écran), aucun filtre ne le masque ; probablement sous la partie visible d'une recherche « web ».
+- Catégorie non standard `WebApps` remplacée (ta demande) : Notion `GTK;Office;`, Discord `GTK;Network;` ; menu d'applications :
+  « Office » et « Internet » au lieu de « Other ». `desktop-file-validate` sans erreur, `test-install.py` 0 échec.
+- À faire sur le laptop : `git pull` puis `./install.sh` (régénère les deux lanceurs) ; vérifier « notion » dans le lanceur et
+  Notion dans « Office » du menu d'applications.
+
 ## Capture : zone sur plusieurs écrans, notification (2026-11-19)
 
 - Zone : le tracé passe d'un écran à l'autre (borne : rectangle englobant les écrans ; avant : écran de départ seulement). Cadre
