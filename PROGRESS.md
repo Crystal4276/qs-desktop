@@ -16,7 +16,20 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
   `.shots/bluetooth-profile-review.png`.
 - Batterie : test existant PASS. Bureau complet Sway headless / Hyprland imbriqué : démarrage et six rechargements chacun
   PASS ; diagnostics connus du banc inchangés (services absents, Tailscale, entrées desktop, fermeture des sockets).
-  Aucun changement du profil des écouteurs réels, aucune action NordVPN. Revue suivante en cours.
+  Aucun changement du profil des écouteurs réels, aucune action NordVPN.
+- Passe 2 : lecture retardée reproduite après déconnexion/reconnexion rapide (ancienne carte réaffichée). Le compteur
+  de lectures est maintenant invalidé à la déconnexion ; l'erreur de la connexion précédente est également effacée.
+  Scénario ajouté au test ciblé et PASS ; contre-épreuve `--expect-stale` sur la passe 1 positive. Démarrage complet et six
+  rechargements sur chacun des deux compositeurs de nouveau PASS, zéro diagnostic Bluez/FileOps nouveau.
+- Passe 3 : relecture des fichiers complets et des corrections, aucune autre anomalie significative trouvée. Batterie
+  horizontale sur banc : niveaux / couleurs, rotation 90°, plusieurs appareils, noms longs, indisponibilité, déconnexion et
+  retrait de l'objet appareil PASS. Pas de changement du composant laptop ; test batterie existant PASS en passe 1.
+  Limites mineures : message de changement de profil volontairement générique ; test ciblé de commande avec appareils
+  QML factices (cycle de vie natif couvert séparément). Arrêt de la boucle. L'échec de barre préexistant à 1280 px reste
+  documenté dans la section précédente et n'a pas été modifié ici.
+- Déploiement final : PID 314028 conservé, trois barres et trois fonds, rechargement sans nouvelle erreur QML. Anciennes
+  tentatives BlueZ sans réponse / « In Progress » encore visibles, hors sélection de profil. Capture
+  `.shots/bluetooth-review-after.png` ; bancs arrêtés, aucun profil audio réel changé pour les tests.
 
 ## Bluetooth : icône de batterie horizontale (2026-11-20)
 
