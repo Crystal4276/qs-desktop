@@ -12,8 +12,13 @@ def desktop(source, script):
     value = str(script)
     if any(c in value for c in '\n\r='):
         raise ValueError('Unsupported path for a desktop Exec key')
-    quoted = value.replace('\\', '\\\\').replace('"', '\\"').replace('`', '\\`').replace('$', '\\$')
-    quoted = quoted.replace('\\', '\\\\').replace('%', '%%')
+    # Steam's launcher ignores Exec quoting: quote only paths with reserved characters.
+    if any(c in value for c in ' \t"\'\\><~|&;$*?#()`'):
+        quoted = value.replace('\\', '\\\\').replace('"', '\\"').replace('`', '\\`').replace('$', '\\$')
+        quoted = '"' + quoted.replace('\\', '\\\\') + '"'
+    else:
+        quoted = value
+    quoted = quoted.replace('%', '%%')
     result = []
     section = ''
     replaced = False
@@ -23,7 +28,7 @@ def desktop(source, script):
         if section == '[Desktop Entry]' and line.startswith('Exec='):
             if line.strip() not in ('Exec=chromium %U', 'Exec=/usr/bin/chromium %U'):
                 raise ValueError('Custom Chromium Exec: preserve it and review before installation')
-            line = f'Exec=python3 "{quoted}" %U\n'
+            line = f'Exec=python3 {quoted} %U\n'
             replaced = True
         result.append(line)
     if not replaced:
