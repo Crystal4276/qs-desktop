@@ -10,6 +10,7 @@ Rectangle {
 
     property string icon: ""
     property string text: ""
+    property alias wrapMode: mainText.wrapMode
     property string subtext: ""
     // Contenu secondaire personnalisé ; le texte standard reste le défaut.
     property Component subtextContent: null
@@ -96,12 +97,13 @@ Rectangle {
             spacing: 0
 
             Text {
+                id: mainText
                 Layout.fillWidth: true
                 text: root.text
                 font.family: Theme.font.text
                 font.pixelSize: Theme.panel.fontSize
                 color: root.active ? Theme.panel.accent : Theme.panel.text
-                elide: Text.ElideRight
+                elide: wrapMode === Text.NoWrap ? Text.ElideRight : Text.ElideNone
             }
 
             Text {

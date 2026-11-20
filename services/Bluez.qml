@@ -242,6 +242,8 @@ Singleton {
     }
 
     property var audioCards: ({})
+    property var profileChanges: ({})
+    property var profileErrors: ({})
     // Dernière lecture lancée par adresse : une lecture plus ancienne qui finit après elle est ignorée.
     property var cardReads: ({})
 
@@ -264,9 +266,15 @@ Singleton {
     }
 
     function setAudioProfile(device: BluetoothDevice, index: int): void {
+        if (!device?.connected || profileChanges[device.address])
+            return;
         const card = audioCards[device.address];
-        if (card)
-            profileSetter.createObject(root, { device: device, command: ["wpctl", "set-profile", String(card.id), String(index)] }).running = true;
+        if (!card || !card.profiles.some(p => p.index === index))
+            return;
+        profileErrors = Object.assign({}, profileErrors, { [device.address]: "" });
+        profileChanges = withFlag(profileChanges, device.address, true);
+        profileSetter.createObject(root, { device: device, address: device.address,
+            command: ["wpctl", "set-profile", String(card.id), String(index)] }).running = true;
     }
 
     Component {
@@ -304,11 +312,26 @@ Singleton {
         id: profileSetter
 
         Process {
+            id: setter
             property BluetoothDevice device
-            onExited: {
-                root.readAudioCard(device);
+            property string address
+            property bool settled: false
+
+            function finish(code: int): void {
+                if (settled)
+                    return;
+                settled = true;
+                root.profileChanges = root.withFlag(root.profileChanges, address, false);
+                if (device?.connected) {
+                    root.profileErrors = Object.assign({}, root.profileErrors,
+                        { [address]: code === 0 ? "" : "Audio profile change failed" });
+                    root.readAudioCard(device);
+                }
                 destroy();
             }
+            onExited: code => finish(code)
+            // Failed start has no exited signal; defer until a normal exit handler has run.
+            onRunningChanged: if (!running) Qt.callLater(() => { if (setter) setter.finish(-1); })
         }
     }
 

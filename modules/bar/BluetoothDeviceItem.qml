@@ -194,12 +194,20 @@ ColumnLayout {
                 required property var modelData
 
                 text: modelData.description
+                wrapMode: Text.WordWrap
+                enabled: !(Bluez.profileChanges[root.device?.address] ?? false)
                 active: modelData.index === root.audioCard?.active
                 onClicked: {
                     if (!active)
                         Bluez.setAudioProfile(root.device, modelData.index);
                 }
             }
+        }
+
+        PanelSection {
+            visible: (Bluez.profileErrors[root.device?.address] ?? "") !== ""
+            text: Bluez.profileErrors[root.device?.address] ?? ""
+            color: Theme.panel.warning
         }
 
         PanelSection {
