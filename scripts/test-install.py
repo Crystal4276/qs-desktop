@@ -170,6 +170,8 @@ def main():
         env["PATH"] = f"{tmp / 'bin'}:{env['PATH']}"
         # Import raté exprès (Chromium factice) : retenté à chaque passage, hors du test « sans changement ».
         IMPORTS = ("+ nightTab : ", "+ Stylus : ") if shutil.which("chromium") else ()
+        # Aucun GVFS sur le bus privé : gvfsd-fuse peut garder les tubes de sortie ouverts après dbus-run-session.
+        env.update(GIO_USE_VFS="local", GVFS_DISABLE_FUSE="1")
         env.update(HOME=str(home), XDG_RUNTIME_DIR=str(run), XDG_CACHE_HOME=str(cache), LANG="C.UTF-8", QS_INSTALL_ASSUME_CLOSED="1",
                    QS_PAPIRUS_DIR=str(icons / "Papirus"), QS_WALLPAPERS_REPO=git_repo(tmp / "src/wallpapers", "fond.png"),
                    QS_DM_REPO=git_repo(tmp / "src/gms", "install-all.sh"))
