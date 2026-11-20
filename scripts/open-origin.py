@@ -23,6 +23,8 @@ from gi.repository import Gio, GLib
 REPO = Path(__file__).resolve().parent.parent
 SOURCES = {'deluge', 'deluge-gtk', 'thunderbird', 'steam', 'steamwebhelper'}
 SOURCE_CLASSES = {'deluge', 'org.mozilla.thunderbird', 'thunderbird', 'steam'}
+# Steam starts every game through reaper: a game and its launchers are not opened content.
+BARRIERS = {'reaper'}
 
 
 def identity(pid):
@@ -46,6 +48,8 @@ def source_of(pid):
             break
         if row['name'] in SOURCES:
             return row['name']
+        if row['name'] in BARRIERS:
+            break
         pid = row['ppid']
     return ''
 
