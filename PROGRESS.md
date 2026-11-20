@@ -3,6 +3,27 @@
 État courant seulement. Historique figé : phases 0 à 10 dans `docs/archive/PROGRESS.md`, maintenance du 2026-11-05 au 2026-11-09
 et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de besoin).
 
+## Notifications : hauteur adaptée et historique étendu (2026-11-20)
+
+- Choix validés : hauteur selon le contenu, jusqu’à 10 px du bas de l’écran ; historique de 100 entrées au lieu de 20.
+  Le plafond local de 400 px est remplacé par la place disponible sous le titre, la carte média et les commandes fixes.
+  Compteur « Recent », retour en haut à l’ouverture et position bornée après suppression / changement de hauteur.
+- Barre native Qt Quick Controls Basic, visible seulement en débordement, glissable ; valeurs de la charte du menu
+  d’applications reprises dans Theme.notificationCentre, gouttière constante, sans animation. Aucun paquet ajouté.
+  PanelFrame expose seulement la hauteur disponible ; le fonctionnement des autres panneaux est conservé.
+- Test ciblé ajouté : vrais panneau / Notifs sur bus privé, média et session factices ; Sway 720 / 1200 px à échelle 1,
+  1080 px à échelle 1,5 et Hyprland imbriqué 1200 px à échelle 1,5 PASS. Avec / sans média et DND, molette, glissement,
+  dépliage, suppression en fin de liste, nettoyage, plafond de 100 / éviction de la 101e, persistance au rechargement,
+  aperçu sans marquage vu puis ouverture épinglée et navigation clavier. Aucun avertissement de scène sur le banc ciblé.
+  QtTest retiré de la fixture avant le rechargement : singleton non rechargeable par Quickshell.
+- Bureau complet sur copie : test lifecycle, démarrage puis six rechargements sous Sway et Hyprland PASS. Diagnostics
+  des services absents, entrées desktop et sockets du banc conservés ; aucune action NordVPN ni sur Bluetooth réel.
+- Déploiement : PID 314028 conservé, trois barres et trois fonds ; rechargement sans nouvelle erreur QML. Ouverture réelle
+  épinglée par pointeur virtuel, capture puis fermeture et position du pointeur rétablie. 20 entrées existantes conservées.
+  Avertissements Bluetooth sans réponse et Qt textinput déjà présents avant le changement. Aucun banc restant.
+  Captures : `.shots/notifications-real-after.png`, `.shots/notifications-{sway-1,hyprland-1.5}.png` (données factices sur banc).
+  Pavé tactile physique à confirmer à l’usage ; molette et glissement vérifiés par événements Qt réels sur banc.
+
 ## Bluetooth : revue batterie et profils audio (2026-11-20)
 
 - Passe 1 : trois défauts confirmés avant correction : libellés de codecs tronqués à 500 px, commandes de changement

@@ -12,7 +12,7 @@ import qs.config
 //    le pointeur est sur les notifications (sauf notification « transient ») ;
 //  - tri : urgence décroissante, puis ordre d'arrivée ;
 //  - doublons empilés avec compteur « (N) » ; étiquette de pile (x-dunst-stack-tag…) : remplace la précédente de la même application ;
-//  - historique : toute notification fermée y entre (20 au plus) ; rappelée, elle reste affichée jusqu'à sa fermeture ;
+//  - historique : toute notification fermée y entre (100 au plus) ; rappelée, elle reste affichée jusqu'à sa fermeture ;
 //  - texte : « <b>titre</b>\ncorps », indicateurs (A) actions, (U) liens, âge « (1m 4s old) » au-delà de 60 s.
 // Ajouts (ta demande du 2026-10-16) : centre de notifications (cloche du tray, NotificationsPanel.qml) qui montre l'historique,
 // et « ne pas déranger » : seules les critiques s'affichent, les autres vont directement dans l'historique.
@@ -86,7 +86,7 @@ Singleton {
             persist.history = JSON.stringify(history);
         pruneImages();
         pruneTimer.restart();
-        // Ligne d'une silencieuse poussée hors de l'historique (20 au plus) : elle cesse d'être suivie.
+        // Ligne d'une silencieuse poussée hors de l'historique (100 au plus) : elle cesse d'être suivie.
         for (const entry of [...quiet]) {
             if (!history.some(h => h.key === entry.historyKey))
                 entry.notification?.expire();
@@ -154,7 +154,7 @@ Singleton {
     // Horloge à la seconde, pour l'âge affiché.
     property real clock: Date.now()
 
-    readonly property int historyLength: 20               // dunstrc
+    readonly property int historyLength: 100              // centre de notifications
     readonly property int ageThreshold: 60                // dunstrc show_age_threshold, en secondes
     // Durée d'affichage maximale (ta demande du 2026-11-02), y compris pour une application qui demande plus ou « jamais ».
     // Seule exception : une notification critique sans délai reste jusqu'à sa fermeture (comme sous Dunst).

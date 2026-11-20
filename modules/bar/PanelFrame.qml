@@ -12,6 +12,9 @@ Rectangle {
     property bool hasSwitch: false
     property bool switchChecked: false
     property real maxHeight: Infinity
+    // Place disponible pour un contenu qui gère son propre défilement.
+    readonly property real availableContentHeight: Math.max(0, maxHeight - 2 * Theme.panel.padding
+        - (header.visible ? header.implicitHeight + Theme.panel.spacing : 0))
     signal switchToggled(bool checked)
     signal closeRequested
 

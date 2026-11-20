@@ -31,7 +31,8 @@ Chaque commande a été rattachée à son paquet sur cette machine avec `pacman 
 
 « Natif » = fait par Quickshell lui-même, sans programme externe. Le paquet `quickshell` installe déjà Qt 6, `qt6-svg`,
 `qt6-wayland` et `libpipewire`. Les modules Quickshell utilisés (`I3`, `Hyprland`, `Services.Pipewire`, `.Mpris`, `.SystemTray`,
-`.Notifications`, `.UPower`) sont tous inclus dans ce paquet.
+`.Notifications`, `.UPower`) sont tous inclus dans ce paquet. Le centre de notifications utilise aussi
+`QtQuick.Controls.Basic` (`ScrollBar`), fourni par `qt6-declarative`, dépendance de `quickshell` ; aucun paquet supplémentaire.
 
 ### Barre
 

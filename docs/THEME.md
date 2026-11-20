@@ -104,7 +104,8 @@ partagées par les panneaux et le retour de bascule ; durée de ce retour : 3 se
 ## 4. Notifications
 
 `Theme.notification` : reprend la config Dunst (fond `base`, cadre `overlay2`, critique `peach`, police Inter 16 pt, titre en gras),
-carte média et lignes du centre de notifications (`Theme.mediaCard`, `Theme.notificationCentre`), OSD (`Theme.osd`, cadre des panneaux).
+carte média et lignes du centre de notifications (`Theme.mediaCard`, `Theme.notificationCentre`). Le centre adapte sa hauteur
+au contenu jusqu’à 10 px du bas ; le curseur et sa gouttière reprennent les valeurs de `Theme.appMenu`, sans animation. OSD (`Theme.osd`, cadre des panneaux).
 
 ## 5. Lanceur
 
