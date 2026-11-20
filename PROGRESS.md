@@ -11,7 +11,11 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
 - Fenêtre de zone de notification de Wine (`explorer.exe /desktop`, 160x20) : plus créée, réglage natif de Wine dans le préfixe
   d'EVE (hors dépôt, EVE fermé) : `[Software\\Wine\\Explorer]` `"ShowSystray"=dword:00000000` dans
   `compatdata/8500/pfx/user.reg`. Autre machine : même ajout ; sinon les règles `eve-systray` l'envoient sur l'espace 9.
-- À tester : lancer EVE depuis Steam ; lanceur flottant 1600x800, centré sur l'espace 9 ; jeu sur l'espace 3 ; plus de petite fenêtre.
+- Liens de Steam (et « Watch on YouTube ») sans effet, déjà avant : Steam lit `Exec=python3 "…/browser-link.py" %U` sans gérer
+  les guillemets (journal : `can't open file '$HOME/"/home/…"'`). `browser-links-setup.py` ne met plus de guillemets
+  que si le chemin contient un caractère réservé ; surcharge réinstallée ici. Laptop : `git pull` puis `./install.sh`.
+- À tester : lancer EVE depuis Steam ; lanceur flottant 1600x800, centré sur l'espace 9 ; jeu sur l'espace 3 ; plus de petite fenêtre ;
+  un lien et « Watch on YouTube » dans Steam ouvrent Chromium sur l'écran principal.
 
 ## Web apps : catégories Notion et Discord (2026-11-20)
 

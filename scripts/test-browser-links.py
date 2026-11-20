@@ -80,6 +80,11 @@ class Routing(unittest.TestCase):
 class Installation(unittest.TestCase):
     source_text = '[Desktop Entry]\nName=Chromium\nExec=chromium %U\nActions=new-window;\n\n[Desktop Action new-window]\nExec=chromium\n'
 
+    def test_exec_quotes_only_reserved_paths(self):
+        # Steam's launcher passes quotes literally: a plain path stays unquoted.
+        self.assertIn(b'Exec=python3 /repo/scripts/browser-link.py %U\n', s.desktop(self.source_text, Path('/repo/scripts/browser-link.py')))
+        self.assertIn(b'Exec=python3 "/my repo/browser-link.py" %U\n', s.desktop(self.source_text, Path('/my repo/browser-link.py')))
+
     def test_install_idempotence_restore_and_dry_run(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp); target = root/'applications/chromium.desktop'; state = root/'state/browser-links'
