@@ -7,12 +7,13 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
 
 - Cause : le placement « contenu ouvert depuis Steam » (`lua/openorigin.lua`, `open-origin.py`) remontait l'ascendance jusqu'à
   `steam` et ramenait le lanceur EVE et sa fenêtre de zone de notification sur l'écran principal, après la règle « espace 9 ».
-  Les jeux passent tous par `reaper` : l'ascendance s'y arrête ; `test-open-origin.py` couvre le cas.
+  Les jeux passent tous par `reaper` : pour placer une nouvelle fenêtre, l'ascendance s'y arrête ; les liens ouverts depuis un
+  jeu gardent l'origine Steam (écran principal) ; `test-open-origin.py` couvre les deux cas.
 - Fenêtre de zone de notification de Wine (`explorer.exe /desktop`, 160x20) : plus créée, réglage natif de Wine dans le préfixe
   d'EVE (hors dépôt, EVE fermé) : `[Software\\Wine\\Explorer]` `"ShowSystray"=dword:00000000` dans
   `compatdata/8500/pfx/user.reg`. Autre machine : même ajout ; sinon les règles `eve-systray` l'envoient sur l'espace 9.
 - Liens de Steam (et « Watch on YouTube ») sans effet, déjà avant : Steam lit `Exec=python3 "…/browser-link.py" %U` sans gérer
-  les guillemets (journal : `can't open file '$HOME/"/home/…"'`). `browser-links-setup.py` ne met plus de guillemets
+  les guillemets (journal : `can't open file '~/"/home/…"'`). `browser-links-setup.py` ne met plus de guillemets
   que si le chemin contient un caractère réservé ; surcharge réinstallée ici. Laptop : `git pull` puis `./install.sh`.
 - À tester : lancer EVE depuis Steam ; lanceur flottant 1600x800, centré sur l'espace 9 ; jeu sur l'espace 3 ; plus de petite fenêtre ;
   un lien et « Watch on YouTube » dans Steam ouvrent Chromium sur l'écran principal.

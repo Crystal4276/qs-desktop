@@ -23,8 +23,8 @@ from gi.repository import Gio, GLib
 REPO = Path(__file__).resolve().parent.parent
 SOURCES = {'deluge', 'deluge-gtk', 'thunderbird', 'steam', 'steamwebhelper'}
 SOURCE_CLASSES = {'deluge', 'org.mozilla.thunderbird', 'thunderbird', 'steam'}
-# Steam starts every game through reaper: a game and its launchers are not opened content.
-BARRIERS = {'reaper'}
+# Steam starts every game through reaper: a game's own windows are not opened content (its links still are).
+GAME_BARRIERS = {'reaper'}
 
 
 def identity(pid):
@@ -38,7 +38,7 @@ def identity(pid):
         return None
 
 
-def source_of(pid):
+def source_of(pid, barriers=()):
     seen = set()
     for _ in range(40):
         if pid in seen:
@@ -48,7 +48,7 @@ def source_of(pid):
             break
         if row['name'] in SOURCES:
             return row['name']
-        if row['name'] in BARRIERS:
+        if row['name'] in barriers:
             break
         pid = row['ppid']
     return ''
@@ -159,7 +159,7 @@ class Policy:
         if window['app'] in SOURCE_CLASSES:return
         # Later windows of an existing viewer need their own open request, not its old ancestry.
         if any(w['pid']==window['pid'] and w['id']!=window['id'] for w in self.desktop.windows()):return
-        source=source_of(window['pid']) or startup_source(window['pid'])
+        source=source_of(window['pid'], GAME_BARRIERS) or startup_source(window['pid'])
         if source:self.desktop.place(window,self.primary())
 
 
