@@ -92,6 +92,11 @@ verrouillage).
 
 ## Tests ciblés de robustesse
 
+- `python3 scripts/test-notifications.py [--compositor sway|hyprland] [--scale 1.5] [--height 720] [--shots .shots]` :
+  panneau et service Notifs réels sur bus privé, média et session factices ; hauteur adaptée, commandes fixes, molette,
+  glissement du curseur, dépliage, suppressions, limite de 100 entrées, rechargement et aperçu / marquage vu.
+  Les captures sont factices ; aucun historique réel effacé. QtTest retiré avant le rechargement (singleton non rechargeable).
+
 - `dbus-run-session -- python3 scripts/test-audio.py` : service Audio, PipeWire et WirePlumber privés ; ancienne destination
   persistée puis politique native, deux / trois sorties, rafales paires / impaires, volumes et coupures conservés,
   exception manuelle / réouverture, flux protégé, application suspendue / fermée, retrait de sortie et absence de matériel.

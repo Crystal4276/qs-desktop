@@ -22,6 +22,7 @@ OverlayPopup {
     property string title: ""
     // Largeur du cadre (carte d'une application du tray : celle de son contenu, connue après l'ouverture : recentrée).
     property real frameWidth: Theme.panel.width
+    readonly property alias availableContentHeight: frame.availableContentHeight
     // Interrupteur du titre (Bluetooth, audio…) : visible si `hasSwitch`.
     property bool hasSwitch: false
     property bool switchChecked: false

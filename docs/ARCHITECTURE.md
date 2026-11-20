@@ -317,8 +317,10 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
   pour les actions nommées. Ouvrir une notification affiche l'espace et la fenêtre de l'application (`focusNextActivation` : Quickshell
   ne transmet pas de jeton d'activation, la fenêtre n'est que marquée urgente).
 - Icônes en fichier temporaire (Chromium) copiées à la réception dans `<cacheDir>/notification-icons/` (vidé au démarrage).
-- Centre de notifications (cloche du tray) : 20 dernières fermées, carte média ; « ne pas déranger » (clic droit sur la cloche) :
+- Centre de notifications (cloche du tray) : 100 dernières fermées, carte média ; « ne pas déranger » (clic droit sur la cloche) :
   seules les critiques et les réponses à ton geste (capture enregistrée, copie terminée) s'affichent, sons des `muteApps` coupés ; horaire réglable.
+- Le centre grandit selon son contenu jusqu’à la marge basse de l’écran (10 px) ; seule la liste défile, avec une barre
+  native Qt Quick Controls dans la charte du menu d’applications. Titre, carte média et commandes restent au-dessus.
 - Historique et « ne pas déranger » conservés au rechargement (`PersistentProperties`), pas au redémarrage.
 - IPC `notifications` : `close`, `closeAll`, `historyPop`, `count`.
 
