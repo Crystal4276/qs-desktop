@@ -27,6 +27,7 @@ def method(c,s,path,iface,name,params,inv):
      ticks[0]+=1;changed(a,{'PowerState':v('s',['on','on-disabling','off','off-enabling'][ticks[0]%4])})
     return True
    GLib.timeout_add(2,tick)
+  elif action in ('audio-headphones','audio-headset','audio-speakers'):changed(d,{'Icon':v('s',action)})
   elif action=='unpaired':changed(d,{'Paired':v('b',False)})
   elif action=='enabled':changed(a,{'Powered':v('b',True),'PowerState':v('s','on')})
   elif action=='enabling':changed(a,{'PowerState':v('s','off-enabling')})
