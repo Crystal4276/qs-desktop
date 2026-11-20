@@ -3,6 +3,19 @@
 État courant seulement. Historique figé : phases 0 à 10 dans `docs/archive/PROGRESS.md`, maintenance du 2026-11-05 au 2026-11-09
 et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de besoin).
 
+## Bitwarden : revue en boucle (2026-11-20)
+
+- Passe 1 : règles Sway / Hyprland, installateur, test et documentation relus dans leur contexte complet. Correction de
+  l’isolement du test d’installation : `GIO_USE_VFS=local` et `GVFS_DISABLE_FUSE=1` définis par le test lui-même ; ses premiers
+  essais sans ces variables avaient laissé `gvfsd-fuse` tenir les tubes ouverts après la fin de `dbus-run-session`.
+  Le défaut dépend de l’activation de GVFS (pas systématique). Copie corrigée, sans variables fournies par l’appelant :
+  test d’installation complet, **0 échec**, installation / idempotence / conservation des autres zooms / retrait exact.
+- Contre-vérification fonctionnelle sur le code conservé, prototypes de hauteur exclus : 16 scénarios sur Sway headless et
+  Hyprland imbriqué, deux écrans aux échelles 1 et 1,5, profils Default / Profile_2 : flottants, centrés, taille 480×630 demandée
+  conservée ; Chromium et autre extension restent en mosaïque. Chromium derrière : géométrie inchangée.
+- Profil Chromium jetable, extension factice avec l’identité de Bitwarden : trois ouvertures successives à 100 %, défaut du
+  navigateur à 125 %, sans `setZoom` entre les ouvertures. Aucun coffre ni profil réel utilisés dans ces tests.
+
 ## Bitwarden : exception native de zoom à 100 % (2026-11-20)
 
 - Décision finale : conserver la taille demandée par Bitwarden ; aucun réglage de hauteur dans Sway ou Hyprland.
