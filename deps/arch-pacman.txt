@@ -51,7 +51,7 @@ noto-fonts-emoji        # emojis en couleur (notifications)
 papirus-icon-theme      # thème d'icônes Papirus-Dark (notifications, lanceur, menu d'applications, tray)
 
 # --- Audio / média ---
-pipewire                # serveur audio (Quickshell.Services.Pipewire) ; pw-dump : profils Bluetooth ; pw-metadata : flux suivant la sortie choisie
+pipewire                # serveur audio (Quickshell.Services.Pipewire) ; pw-dump : profils Bluetooth
 wireplumber             # gestionnaire de session PipeWire, wpctl (dont le choix du profil audio Bluetooth)
 pipewire-pulse          # compatibilité PulseAudio (pavucontrol)
 rtkit                   # priorité temps réel des threads audio PipeWire, activation native par D-Bus

@@ -190,62 +190,38 @@ Singleton {
         return node !== null && !node.name.startsWith("bluez_") && !node.properties["api.bluez5.address"];
     }
 
-    // Seule une sélection explicite déplace les applications ; aucun effet au démarrage.
+    // WirePlumber assure le routage ; seul le choix en attente sert aux rafales de touches.
     property PwNode requestedSink: null
     property bool announceSwitch: false
-    property bool collectStreams: false
-    property bool switchFailed: false
-    property var switchQueue: []
-    onSinkChanged: Qt.callLater(routeNextStream)
+    onSinkChanged: Qt.callLater(confirmSink)
+    onSinksChanged: Qt.callLater(confirmSink)
 
     function setDefaultSink(node: PwNode): void {
         if (!node || !sinks.includes(node))
             return;
         requestedSink = node;
-        collectStreams = true;
-        switchFailed = false;
-        switchQueue = [];
+        announceSwitch = false;
         Pipewire.preferredDefaultAudioSink = node;
         switchTimeout.restart();
-        Qt.callLater(routeNextStream);
+        Qt.callLater(confirmSink);
     }
 
-    function routeNextStream(): void {
-        if (!switchTimeout.running || followDefault.running)
+    function confirmSink(): void {
+        if (!switchTimeout.running)
             return;
-        if (!requestedSink || !sinks.includes(requestedSink)) {
+        if (!requestedSink || !sinks.includes(requestedSink))
             finishSwitch(false);
-            return;
-        }
-        if (sink !== requestedSink)
-            return;
-        if (collectStreams) {
-            // Pas les loopbacks / filtres internes ; les micros ne sont pas dans streams.
-            switchQueue = streams.filter(n => n.ready && !n.properties["node.link-group"])
-                .map(n => ({id: n.id, serial: n.properties["object.serial"]}));
-            collectStreams = false;
-        }
-        while (switchQueue.length > 0) {
-            const entry = switchQueue.shift();
-            // Un id peut être réutilisé pendant la bascule : vérifier aussi le serial.
-            if (!streams.some(n => n.id === entry.id && n.ready && n.properties["object.serial"] === entry.serial))
-                continue;
-            // -1 libère aussi une destination restaurée par WirePlumber : suivre le défaut.
-            followDefault.command = ["pw-metadata", "-n", "default", "--", String(entry.id), "target.object", "-1", "Spa:Id"];
-            followDefault.running = true;
-            return;
-        }
-        finishSwitch(!switchFailed);
+        else if (sink === requestedSink)
+            finishSwitch(true);
     }
 
     function finishSwitch(ok: bool): void {
         switchTimeout.stop();
         if (!ok)
-            Quickshell.execDetached(["notify-send", "Audio Switch Error", "Could not switch all audio streams."]);
+            Quickshell.execDetached(["notify-send", "Audio Switch Error", "Could not select the audio output."]);
         else if (announceSwitch && requestedSink)
             Quickshell.execDetached(["notify-send", "Audio Switch", root.nodeName(requestedSink)]);
         requestedSink = null;
-        switchQueue = [];
         announceSwitch = false;
     }
 
@@ -253,15 +229,6 @@ Singleton {
         id: switchTimeout
         interval: 3000
         onTriggered: root.finishSwitch(false)
-    }
-
-    Process {
-        id: followDefault
-        onExited: (code, status) => {
-            if (code !== 0 || status !== 0)
-                root.switchFailed = true;
-            Qt.callLater(root.routeNextStream);
-        }
     }
 
     function setDefaultSource(node: PwNode): void {
@@ -298,8 +265,8 @@ Singleton {
         const current = requestedSink ?? sink;
         const i = list.findIndex(n => n.id === current?.id);
         const next = list[(i + 1) % list.length];
-        announceSwitch = true;
         setDefaultSink(next);
+        announceSwitch = true;
     }
 
     function toggleMicMute(): void {
