@@ -94,7 +94,9 @@ verrouillage).
 
 - `python3 scripts/test-notifications.py [--compositor sway|hyprland] [--scale 1.5] [--height 720] [--shots .shots]` :
   panneau et service Notifs réels sur bus privé, média et session factices ; hauteur adaptée, commandes fixes, molette,
-  glissement du curseur, dépliage, suppressions, limite de 100 entrées, rechargement et aperçu / marquage vu.
+  glissement du curseur, dépliage, suppressions, navigation clavier jusqu’à la dernière ligne et Échap, 105 notifications
+  D-Bus réelles, limite de 100 entrées, rechargement et aperçu / marquage vu. L’adresse du bus privé est transmise aux
+  clients et le PID du serveur est vérifié avant tout envoi ; arrêt explicite si le destinataire diffère du Quickshell du banc.
   Les captures sont factices ; aucun historique réel effacé. QtTest retiré avant le rechargement (singleton non rechargeable).
 
 - `dbus-run-session -- python3 scripts/test-audio.py` : service Audio, PipeWire et WirePlumber privés ; ancienne destination

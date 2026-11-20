@@ -3,6 +3,31 @@
 État courant seulement. Historique figé : phases 0 à 10 dans `docs/archive/PROGRESS.md`, maintenance du 2026-11-05 au 2026-11-09
 et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de besoin).
 
+## Notifications : revue en série (2026-11-20)
+
+- Passe 1 : fichiers complets relus (cadre / panneau, liste / lignes, média, service Notifs, thème, tests et documentation).
+  Aucun défaut important établi dans le dimensionnement ni la limite de 100 entrées. Le test clavier initial vérifiait
+  seulement la présence d’un focus : ajouté parcours Tab jusqu’à la notification la plus ancienne, défilement pour la rendre
+  accessible, commandes fixes et fermeture Échap. Ajout d’une rafale de 105 notifications D-Bus natives et vérification
+  de l’éviction des cinq premières, des silencieuses suivies et de leur nettoyage.
+- Incident pendant l’extension du test : les nouveaux clients gdbus ont hérité du bus réel, tandis que le serveur du banc
+  était sur son bus privé. 105 messages « Review / Native N » ont rempli l’historique réel et évincé ses 20 anciennes entrées.
+  Erreur annoncée à l’utilisateur ; messages de test seuls supprimés ensuite par une commande temporaire validée sur banc,
+  retirée immédiatement après usage. Historique réel à 0 après nettoyage ; anciennes entrées non récupérables par le service
+  (pas de sauvegarde de l’historique). Aucun historique personnel n’a été exporté ni versionné.
+- Protection du test : adresse D-Bus réellement créée par dbus-run-session reprise par les clients ; refus du bus hérité,
+  contrôle du PID propriétaire de org.freedesktop.Notifications avant la rafale, indépendamment des assertions Python.
+  Contre-épreuve avec PID destinataire erroné injecté : arrêt avant tout envoi PASS. Disponibilité au démarrage et après
+  rechargement attendue explicitement plutôt que supposée après un délai fixe (« Not ready » observé pendant le nettoyage).
+- Passe 2 : test étendu PASS sous Sway isolé 720 px et Hyprland imbriqué à échelle 1,5 ; aucune erreur / alerte de scène.
+  Relecture des chemins d’arrivée, expiration, éviction, nettoyage et restauration ; aucune autre anomalie significative.
+- Passe 3 : relecture finale des fichiers et des nouvelles protections, aucune autre correction nécessaire. Arrêt de la boucle.
+  Aucun changement du QML de production conservé ; le service temporaire de nettoyage a été retiré. Limites mineures :
+  rendu du banc encore attendu brièvement entre les interactions, pavé tactile physique à confirmer à l’usage.
+- Bureau réel PID 314028 conservé, trois barres / trois fonds, aucun banc restant. Aucun changement de compositeur, aucune
+  action NordVPN. Captures de revue à données factices : `.shots/notifications-review-sway-1.png` et
+  `.shots/notifications-review-hyprland-1.5.png`. Incidents Bluetooth / Qt textinput déjà connus inchangés.
+
 ## Notifications : hauteur adaptée et historique étendu (2026-11-20)
 
 - Choix validés : hauteur selon le contenu, jusqu’à 10 px du bas de l’écran ; historique de 100 entrées au lieu de 20.

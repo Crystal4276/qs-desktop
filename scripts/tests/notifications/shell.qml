@@ -38,11 +38,21 @@ ShellRoot {
             events.mouseRelease(t,t.width/2,t.height/2+100);
         }
         function tab(): void { events.keyClick(Qt.Key_Tab); }
+        function keyboardEnd(): bool {
+            panel.frameItem.forceActiveFocus();
+            for (let i=0;i<250;i++) {
+                events.keyClick(Qt.Key_Tab);
+                for (let a=panel.frameItem.focusedItem;a;a=a.parent)
+                    if (a.entry?.key===Notifs.history[0]?.key) return true;
+            }
+            return false;
+        }
+        function pressEscape(): void { events.keyClick(Qt.Key_Escape); }
         function shot(path: string): void { panel.frameItem.grabToImage(r=>r.saveToFile(path)); }
         function state(): string {
             const l=panel.testList,f=panel.frameItem;
             return JSON.stringify({count:Notifs.history.length,first:Notifs.history[0]?.summary,seen:!Notifs.unseen,
-                width:f.width,height:f.height,max:f.maxHeight,outerY:f.children[0].contentY,
+                quiet:Notifs.quiet.length,popups:Notifs.popups.length,visible:panel.visible,width:f.width,height:f.height,max:f.maxHeight,outerY:f.children[0].contentY,
                 controlsY:panel.testControls.mapToItem(f,0,0).y,listHeight:l.height,content:l.contentHeight,y:l.contentY,
                 scrollbar:panel.testScrollbar.visible,focus:!!f.focusedItem});
         }
