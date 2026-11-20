@@ -3,6 +3,19 @@
 État courant seulement. Historique figé : phases 0 à 10 dans `docs/archive/PROGRESS.md`, maintenance du 2026-11-05 au 2026-11-09
 et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de besoin).
 
+## Luminosité : crans alignés sur 5 % (2026-11-20)
+
+- Suite retenue : 1 → 5 → 10… → 100 %, dans les deux sens ; depuis 7 %, montée à 10 %, descente à 5 %.
+  `Brightness.step` vise le multiple suivant/précédent depuis la dernière valeur demandée (rafales conservées).
+- Touches, molette sur l'icône et crans du curseur des réglages passent par le même service ; `VolumeSlider.stepHandler`
+  optionnel transmis par `QuickSlider`. Clic/glissement toujours libres ; volume et veilleuse gardent leurs pas actuels.
+- Banc Sway isolé, faux sysfs et faux `brightnessctl` : 24 cas de limites/valeurs intermédiaires, rafales lentes dans les deux
+  sens (service et vrai curseur), IPC up/down, glissement à 7 %, pas du volume inchangé. Diagnostics de démarrage identiques
+  à la version d'origine (portail, entrées desktop et PipeWire sans serveur) ; aucune action NordVPN ni sur la vraie dalle.
+- Bureau réel : rechargé, PID 1782 vivant, trois sorties et barres présentes ; aucun banc restant. Capture privée :
+  `.shots/brightness-steps-after.png`. Avertissement au rechargement dans `FileOps.qml` (appId indéfini au démontage), hors correction.
+- À vérifier sur le laptop : touches, molette sur l'icône et molette/flèches sur le curseur, notamment 1 → 5 %.
+
 ## EVE : lanceur sur l'espace de Steam (2026-11-20)
 
 - Cause : le placement « contenu ouvert depuis Steam » (`lua/openorigin.lua`, `open-origin.py`) remontait l'ascendance jusqu'à

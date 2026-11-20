@@ -114,6 +114,7 @@ Panel {
         visible: Brightness.available
         icon: Theme.level(Theme.icon.backlight, Brightness.percent)
         iconColor: Theme.module.backlight
+        stepHandler: points => Brightness.step(points)
         value: Brightness.percent / 100
         onMoved: v => Brightness.setPercent(Math.round(v * 100))
     }
@@ -246,6 +247,7 @@ Panel {
         property bool muted: false
         property bool expandable: false
         property bool expanded: false
+        property alias stepHandler: slider.stepHandler
         property alias gradient: slider.gradient
         property alias commitOnRelease: slider.commitOnRelease
         property string label: ""   // à la place du pourcentage
