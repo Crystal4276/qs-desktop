@@ -8,7 +8,10 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
 - Cause : le placement « contenu ouvert depuis Steam » (`lua/openorigin.lua`, `open-origin.py`) remontait l'ascendance jusqu'à
   `steam` et ramenait le lanceur EVE et sa fenêtre de zone de notification sur l'écran principal, après la règle « espace 9 ».
   Les jeux passent tous par `reaper` : l'ascendance s'y arrête ; `test-open-origin.py` couvre le cas.
-- À tester : lancer EVE depuis Steam ; lanceur flottant 1600x800, centré sur l'espace 9 ; jeu sur l'espace 3.
+- Fenêtre de zone de notification de Wine (`explorer.exe /desktop`, 160x20) : plus créée, réglage natif de Wine dans le préfixe
+  d'EVE (hors dépôt, EVE fermé) : `[Software\\Wine\\Explorer]` `"ShowSystray"=dword:00000000` dans
+  `compatdata/8500/pfx/user.reg`. Autre machine : même ajout ; sinon les règles `eve-systray` l'envoient sur l'espace 9.
+- À tester : lancer EVE depuis Steam ; lanceur flottant 1600x800, centré sur l'espace 9 ; jeu sur l'espace 3 ; plus de petite fenêtre.
 
 ## Web apps : catégories Notion et Discord (2026-11-20)
 
