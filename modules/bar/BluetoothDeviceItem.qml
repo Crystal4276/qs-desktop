@@ -67,10 +67,46 @@ ColumnLayout {
     }
 
     PanelRow {
+        id: deviceRow
         text: (root.device?.name ?? "")
-        subtext: [root.stateText(), Bluez.typeName(root.device),
-            root.device?.connected && root.device.batteryAvailable ? `battery ${Bluez.batteryPercent(root.device)} %` : ""]
-            .filter(s => s).join(" · ")
+        subtext: [root.stateText(), Bluez.typeName(root.device)].filter(s => s).join(" · ")
+        subtextContent: RowLayout {
+            id: secondary
+            readonly property bool batteryShown: (root.device?.connected ?? false) && root.device.batteryAvailable
+            spacing: 0
+
+            Text {
+                Layout.maximumWidth: Math.max(0, secondary.width - (indicator.visible ? indicator.implicitWidth : 0))
+                text: deviceRow.subtext + (secondary.batteryShown && deviceRow.subtext !== "" ? " · " : "")
+                font.family: Theme.font.text
+                font.pixelSize: Theme.panel.smallFontSize
+                color: Theme.panel.secondaryText
+                elide: Text.ElideRight
+            }
+
+            RowLayout {
+                id: indicator
+                visible: secondary.batteryShown
+                spacing: Theme.panel.rowPadding
+
+                BatteryIcon {
+                    percent: Bluez.batteryPercent(root.device)
+                    warning: percent <= Battery.warningLevel
+                    horizontal: true
+                    pixelSize: Theme.panel.smallFontSize
+                }
+
+                Text {
+                    text: `${Bluez.batteryPercent(root.device)} %`
+                    font.family: Theme.font.text
+                    font.pixelSize: Theme.panel.smallFontSize
+                    color: Theme.panel.secondaryText
+                    font.features: ({ "tnum": 1 })
+                }
+            }
+
+            Item { Layout.fillWidth: true }
+        }
         active: root.device?.connected ?? false
         onClicked: root.toggled()
 

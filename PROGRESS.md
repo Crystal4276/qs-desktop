@@ -3,6 +3,24 @@
 État courant seulement. Historique figé : phases 0 à 10 dans `docs/archive/PROGRESS.md`, maintenance du 2026-11-05 au 2026-11-09
 et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de besoin).
 
+## Bluetooth : icône de batterie horizontale (2026-11-20)
+
+- Ligne principale des appareils connectés avec batterie : libellé `battery` remplacé par le glyphe du laptop tourné à 90°,
+  borne à droite, puis pourcentage ; détails dépliés conservés selon ton choix. Couleurs turquoise / rouge à 30 % ou moins,
+  glyphes par niveau et valeurs de charte existants. Aucun changement des notifications ni des actions Bluetooth.
+- `BatteryIcon` partagé avec le module laptop (orientation verticale et rendu conservés) ; emplacement secondaire facultatif
+  dans `PanelRow`. Niveau réactif, masqué sans batterie disponible ou à la déconnexion ; ellipse des textes longs.
+- Test batterie existant adapté et PASS. Banc visuel privé avec vrais composants et appareils QML factices : niveaux
+  0 / 15 / 30 / 31 / 100 %, couleurs, présence du pourcentage, déconnexion et batterie indisponible PASS ; largeur réelle
+  500 px, plusieurs lignes et noms/types longs vérifiés. Captures `.shots/qs-bt-battery{,-long}.png`.
+- Test barre exécuté : échec préexistant à 1280 px (écart -2 px au lieu de 10), reproduit à l'identique sur le code initial ;
+  dimensions du module batterie identiques (40 px). Hors périmètre, non corrigé ni masqué.
+- Bureau complet sur copie : Sway headless et Hyprland imbriqué, démarrage et six rechargements chacun PASS. Diagnostics
+  connus du banc conservés : services absents, entrées desktop invalides, Tailscale au démontage et fermeture des sockets.
+- Déploiement : PID réel 314028 conservé, rechargement sans erreur QML nouvelle, trois barres et trois fonds présents.
+  Délai de connexion BlueZ préexistant encore observé. Capture `.shots/bluetooth-battery-after.png`. Bancs arrêtés ; aucune
+  action NordVPN ni sur les appareils Bluetooth réels pendant les essais. Rendu réel du panneau à confirmer à l'usage.
+
 ## Audio : notification de bascule et icônes des sorties (2026-11-20)
 
 - Choix utilisateur : DAC représenté par des enceintes, casques/écouteurs par un casque ; notification standard enrichie,
