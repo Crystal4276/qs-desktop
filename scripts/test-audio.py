@@ -25,11 +25,12 @@ def test():
           monitor.v4l2 = disabled
           monitor.libcamera = disabled
         } }\n''')
+        shutil.copy2(REPO/'config/Theme.qml', w/'shell/config/Theme.qml')
         shutil.copy2(REPO/'services/Audio.qml', w/'shell/services/Audio.qml')
         (w/'shell/services/Notifs.qml').write_text('pragma Singleton\nimport QtQuick\nQtObject { property bool doNotDisturb: false; property bool loaded: true }')
         (w/'shell/services/Launch.qml').write_text('pragma Singleton\nimport QtQuick\nQtObject { function exec(args) {} }')
         (w/'shell/config/Settings.qml').write_text('pragma Singleton\nimport QtQuick\nQtObject { property var doNotDisturb: ({muteApps: []}) }')
-        (w/'bin/notify-send').write_text('#!/bin/sh\nprintf "%s\\n" "$*" >> "$AUDIO_TEST_NOTIFICATIONS"\n')
+        (w/'bin/notify-send').write_text('#!/usr/bin/python3\nimport os,sys,json\nwith open(os.environ["AUDIO_TEST_NOTIFICATIONS"],"a") as f: f.write(json.dumps(sys.argv[1:])+"\\n")\n')
         (w/'bin/notify-send').chmod(0o755)
         (w/'shell/shell.qml').write_text('''import QtQuick
 import Quickshell
@@ -37,7 +38,7 @@ import Quickshell.Io
 import qs.services
 ShellRoot {
  IpcHandler { target: "test"
-  function state(): string { return JSON.stringify({sink: Audio.sink?.name, pending: Audio.requestedSink?.name, sinks: Audio.sinks.map(n=>({name:n.name,id:n.id,volume:n.audio.volume})), streams: Audio.streams.map(n=>({id:n.id,name:n.name})), source: Audio.source?.id}); }
+  function state(): string { return JSON.stringify({sink: Audio.sink?.name, pending: Audio.requestedSink?.name, sinks: Audio.sinks.map(n=>({name:n.name,id:n.id,volume:n.audio.volume})), streams: Audio.streams.map(n=>({id:n.id,name:n.name})), source: Audio.source?.id, icons: Audio.sinks.map(n=>Audio.outputIcon(n))}); }
   function select(name: string): void { Audio.setDefaultSink(Audio.sinks.find(n=>n.name===name)); }
   function burst(count: int): void { for (let i=0; i<count; ++i) Audio.cycleSink(); }
  }
@@ -45,6 +46,7 @@ ShellRoot {
         env = dict(os.environ, XDG_RUNTIME_DIR=str(w/'r'), PIPEWIRE_RUNTIME_DIR=str(w/'r'),
                    XDG_CONFIG_HOME=str(w/'config'), XDG_STATE_HOME=str(w/'state'), XDG_CACHE_HOME=str(w/'cache'),
                    QT_QPA_PLATFORM='offscreen', QS_TEST='1', GIO_USE_VFS='local', GVFS_DISABLE_FUSE='1',
+                   DBUS_SYSTEM_BUS_ADDRESS=os.environ['DBUS_SESSION_BUS_ADDRESS'],
                    PATH=str(w/'bin')+':'+os.environ['PATH'], AUDIO_TEST_NOTIFICATIONS=str(w/'notifications'))
         for k in ('PIPEWIRE_REMOTE', 'SWAYSOCK', 'I3SOCK', 'HYPRLAND_INSTANCE_SIGNATURE', 'WAYLAND_DISPLAY', 'DISPLAY'):
             env.pop(k, None)
@@ -70,13 +72,21 @@ ShellRoot {
         def linked(stream, sink):
             a,b=node(stream),node(sink)
             return a and b and any(n.get('info',{}).get('props',{}).get('link.output.node')==a['id'] and n['info']['props'].get('link.input.node')==b['id'] for n in nodes())
+        def notices():
+            return [json.loads(line) for line in (w/'notifications').read_text().splitlines()] if (w/'notifications').exists() else []
+        def control(action):
+            return run('gdbus','call','--address',env['DBUS_SYSTEM_BUS_ADDRESS'],'--dest','org.bluez','--object-path','/','--method','org.test.Control.Run',action)
         try:
+            start(['python3',str(REPO/'scripts/tests/service-lifecycle/bluez.py'),env['DBUS_SYSTEM_BUS_ADDRESS']], 'bluez')
+            until(lambda:control('add'))
+            control('audio-headphones')
             start(['pipewire'], 'pipewire')
             until(lambda:(w/'r/pipewire-0').exists())
             start(['wireplumber'], 'wireplumber')
             until(lambda:run('pw-metadata','-l'))
             for name,cls in [('dac','Audio/Sink'),('headphones','Audio/Sink'),('mic','Audio/Source/Virtual')]:
-                run('pw-cli','create-node','adapter',f'{{ factory.name=support.null-audio-sink node.name={name} media.class={cls} object.linger=true audio.position=[ FL FR ] }}')
+                extra = 'api.bluez5.address="00:11:22:33:44:55"' if name == 'headphones' else ''
+                run('pw-cli','create-node','adapter',f'{{ factory.name=support.null-audio-sink node.name={name} media.class={cls} object.linger=true audio.position=[ FL FR ] {extra} }}')
             until(lambda:node('headphones'))
             run('wpctl','set-default',str(node('dac')['id']))
             for name,vol in [('dac','23%'),('headphones','35%')]: run('wpctl','set-volume',str(node(name)['id']),vol)
@@ -86,6 +96,22 @@ ShellRoot {
             def cycle(): return run('qs','ipc','--pid',str(qs.pid),'call','audio','cycleSink')
             def state(): return json.loads(ipc('state'))
             until(lambda:state().get('sink')=='dac')
+            until(lambda:state()['icons']==['audio-speakers','audio-headphones'])
+            control('audio-speakers');until(lambda:state()['icons']==['audio-speakers','audio-speakers'])
+            control('audio-headset');until(lambda:state()['icons']==['audio-speakers','audio-headphones'])
+            assert not notices(), notices()
+            cycle();until(lambda:len(notices())==1)
+            args=notices()[-1]
+            assert '--icon=audio-headphones' in args and '--expire-time=3000' in args and '--hint=string:x-dunst-stack-tag:audio-output' in args, args
+            assert args[-2]=='Audio output switched' and 'dac → <b>headphones</b>' in args[-1] and '35 %' in args[-1], args
+            run('wpctl','set-mute',str(node('dac')['id']),'1')
+            cycle();until(lambda:len(notices())==2)
+            assert '--icon=audio-speakers' in notices()[-1] and '23 % · Muted' in notices()[-1][-1],notices()
+            run('wpctl','set-mute',str(node('dac')['id']),'0')
+            count=len(notices())
+            ipc('burst','2');until(lambda:not state().get('pending'))
+            time.sleep(.2);assert len(notices())==count,notices()
+
             players=[]
             for name in ('music','browser'):
                 players.append(start(['pw-cat','--playback','--raw','--rate','48000','--channels','2','--format','s16','--properties',f'node.name={name}', '/dev/zero'],name))
@@ -94,7 +120,7 @@ ShellRoot {
                 run('pw-metadata','-n','default','--',str(node(name)['id']),'target.object',str(node('dac')['info']['props']['object.serial']),'Spa:Id')
             # Reproduce persisted routing before enabling the native policy.
             time.sleep(1.2)  # WirePlumber state write debounce.
-            wp=procs[1]; wp.terminate(); wp.wait(timeout=3)
+            wp=procs[2]; wp.terminate(); wp.wait(timeout=3)
             wp=start(['wireplumber'],'wireplumber')
             until(lambda:linked('music','dac') and linked('browser','dac'))
             run('wpctl','set-default',str(node('headphones')['id']))
@@ -108,8 +134,10 @@ ShellRoot {
             wp=start(['wireplumber'],'wireplumber')
             until(lambda:run('wpctl','settings','linking.follow-default-target'))
             time.sleep(1.2)  # Finish startup restoration before issuing the user selection.
+            notification_count=len(notices())
             ipc('select','headphones')
             until(lambda:linked('music','headphones') and linked('browser','headphones'))
+            time.sleep(.1);assert len(notices())==notification_count,notices()
             for name,vol in [('dac','23%'),('headphones','35%')]:
                 run('wpctl','set-volume',str(node(name)['id']),vol)
             run('wpctl','set-volume',str(node('music')['id']),'41%')
@@ -126,10 +154,12 @@ ShellRoot {
                 ipc('burst',str(count))
                 until(lambda:state()['sink']==expected and not state().get('pending'))
                 until(lambda:linked('music',expected) and linked('browser',expected))
-            run('pw-cli','create-node','adapter','{ factory.name=support.null-audio-sink node.name=third media.class=Audio/Sink object.linger=true audio.position=[ FL FR ] }')
+            run('pw-cli','create-node','adapter','{ factory.name=support.null-audio-sink node.name=third node.nick="Wired <b> & headphones" device.form-factor=headphones media.class=Audio/Sink object.linger=true audio.position=[ FL FR ] }')
             until(lambda:len(state()['sinks'])==3)
+            assert state()['icons'][-1]=='audio-headphones',state()
             ipc('select','dac');until(lambda:state()['sink']=='dac' and not state().get('pending'))
             ipc('burst','2');until(lambda:state()['sink']=='third' and not state().get('pending'))
+            until(lambda:'Wired &lt;b&gt; &amp; headphones' in notices()[-1][-1])
             ipc('burst','4');until(lambda:state()['sink']=='dac' and not state().get('pending'))
             run('pw-cli','destroy',str(node('third')['id']))
             assert state()['source']==before['source']
@@ -161,7 +191,9 @@ ShellRoot {
             players[1].terminate(); players[1].wait(timeout=3)
             run('pw-cli','destroy',str(node('headphones')['id']))
             until(lambda:len(state()['sinks'])==1)
+            notification_count=len(notices())
             cycle();until(lambda:not state().get('pending'))
+            time.sleep(.1);assert len(notices())==notification_count,notices()
             players[0].terminate();players[0].wait(timeout=3)
             until(lambda:not state()['streams'])
             cycle();until(lambda:not state().get('pending'))
@@ -172,6 +204,7 @@ ShellRoot {
             cycle();until(lambda:'No sinks found!' in (w/'notifications').read_text())
             log=(w/'qs.log').read_text()
             assert not any(t in log for t in ('ReferenceError','TypeError','Error:','Unable to assign')),log
+            print('PASS: output icons (DAC, wired, Bluetooth headset/speakers), rich notification, mute, escaped names, silent panel selections and no-op bursts',flush=True)
             print('PASS: native migration, 2/3 outputs and even/odd bursts, per-app/output volumes and mute, exceptions and reopening, protected streams, removed outputs, microphone unchanged, no runtime helper',flush=True)
         finally:
             for p in reversed(procs):

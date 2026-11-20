@@ -360,6 +360,13 @@ Singleton {
         readonly property color warmthIcon: root.panel.text
     }
 
+    // Sorties audio : DAC/enceintes et casques, retour de bascule bref (choix du 2026-11-20).
+    readonly property QtObject audio: QtObject {
+        readonly property string speakersIcon: "audio-speakers"
+        readonly property string headphonesIcon: "audio-headphones"
+        readonly property int switchTimeout: 3000
+    }
+
     // § 4 — Notifications
     readonly property QtObject notification: QtObject {
         readonly property int offset: 4               // coin bas-droit, x et y

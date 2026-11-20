@@ -18,7 +18,7 @@ ColumnLayout {
     property bool monitoring: false
 
     readonly property PwNode current: input ? Audio.source : Audio.sink
-    readonly property string icon: input ? "audio-input-microphone" : "audio-speakers"
+    readonly property string icon: input ? "audio-input-microphone" : Audio.outputIcon(current)
 
     Layout.fillWidth: true
     spacing: Theme.panel.spacing
@@ -51,7 +51,7 @@ ColumnLayout {
 
             required property PwNode modelData
 
-            icon: root.icon
+            icon: root.input ? root.icon : Audio.outputIcon(modelData)
             text: Audio.nodeName(modelData)
             belowShown: root.input && Audio.hasLevel(modelData)
             below: Loader {

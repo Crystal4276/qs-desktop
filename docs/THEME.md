@@ -98,6 +98,9 @@ Composants propres : calendrier (`Theme.calendar`), Wi-Fi (`Theme.wifi`, glyphe 
 (`Theme.bluetooth`), panneau réseau (`Theme.network`, graphe du trafic), curseurs (`Theme.slider`), niveau des entrées audio
 (`Theme.levelMeter`), panneau de réglages (`Theme.quickSettings`), croix d'effacement des champs de recherche.
 
+`Theme.audio` : icônes Papirus des sorties (`audio-speakers` pour les DAC/enceintes, `audio-headphones` pour les casques),
+partagées par les panneaux et le retour de bascule ; durée de ce retour : 3 secondes.
+
 ## 4. Notifications
 
 `Theme.notification` : reprend la config Dunst (fond `base`, cadre `overlay2`, critique `peach`, police Inter 16 pt, titre en gras),

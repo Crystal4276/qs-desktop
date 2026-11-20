@@ -37,6 +37,11 @@ Le choix d’une sortie audio (`Audio.setDefaultSink`, panneau ou `$mod+s`) util
 WirePlumber fait suivre les applications : `55-playback-follow-default.conf` empêche la restauration d’anciennes destinations
 pour les seuls flux de lecture (`state.restore-target = false`). Volumes, coupures et destinations des micros restent retenus.
 Les exceptions explicites de la session sont respectées ; aucun helper de routage, aucune file de processus dans Audio.
+`Audio.outputIcon(node)` partage la représentation des sorties entre panneaux et notification : métadonnées PipeWire,
+type Bluetooth natif associé par adresse, sinon enceintes (DAC compris). Le raccourci et le clic milieu notifient seulement
+après confirmation du défaut effectif : départ → destination, volume/muet conservés, icône de destination. Durée 3 s et
+étiquette de pile `audio-output` ; les choix dans les panneaux restent silencieux. Une rafale garde son départ et sa dernière
+cible ; aucun succès si elle revient au départ.
 Le choix en attente sert aux rafales et la notification confirme la sortie globale effective.
 
 

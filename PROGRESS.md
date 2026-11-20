@@ -3,6 +3,28 @@
 État courant seulement. Historique figé : phases 0 à 10 dans `docs/archive/PROGRESS.md`, maintenance du 2026-11-05 au 2026-11-09
 et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de besoin).
 
+## Audio : notification de bascule et icônes des sorties (2026-11-20)
+
+- Choix utilisateur : DAC représenté par des enceintes, casques/écouteurs par un casque ; notification standard enrichie,
+  uniquement raccourci et clic milieu. Départ → destination en gras, icône de destination et volume/muet réellement conservés ;
+  3 secondes et remplacement par étiquette `audio-output`. Les panneaux audio et réglages partagent `Audio.outputIcon` :
+  métadonnées PipeWire, type Bluetooth natif associé par adresse, repli enceintes ; aucun appareil codé en dur.
+- Départ figé pendant une rafale ; succès après confirmation du défaut effectif, aucun succès sans changement.
+  Noms échappés pour le balisage ; volume omis tant que le nœud n’est pas prêt. Routage, micro, historique et DND inchangés.
+- Test audio privé étendu : icônes DAC/casque filaire/casque et enceintes Bluetooth simulés, trajet, durée/étiquette,
+  volume/muet, balisage échappé, panneaux silencieux, rafales sans changement et sortie unique ; PASS avec les contrôles
+  de routage existants. Aucun helper ni paquet ajouté. BlueZ simulé sur bus système privé.
+- Banc visuel Sway avec vrais services Audio/Notifs et deux sorties PipeWire privées : rendu des deux sens validé,
+  remplacement sans doublon puis expiration, une seule ligne d’historique ; zéro diagnostic QML. Captures :
+  `.shots/audio-ui-bench-to-{headphones,speakers}.png`.
+- Bureau complet Sway : test lifecycle et six rechargements PASS. Hyprland : premier lifecycle arrêté au délai de la
+  question FileOps (focus, hors audio) ; contrôle séparé du bureau complet et six rechargements PASS, contre-épreuve
+  sur code initial également PASS. Un essai intermédiaire a réémis FileOps.qml:88 au démontage, déjà observé auparavant ;
+  dernier essai : aucun avertissement de scène. Diagnostics des services absents du banc et course Tailscale conservés.
+- Déploiement : PID réel 314028 conservé, rechargement réussi sans erreur QML nouvelle. Deux bascules réelles capturées,
+  casque/enceintes correctement distingués ; volumes 65 %/60 % inchangés, sortie initiale rétablie. Captures recadrées :
+  `.shots/audio-ui-{headphones,speakers}.png`. Aucune action NordVPN. Bancs arrêtés.
+
 ## Audio : politique native et revue (2026-11-20)
 
 - Décision après audit : WirePlumber gère le routage global ; les exceptions explicites de pavucontrol restent prioritaires

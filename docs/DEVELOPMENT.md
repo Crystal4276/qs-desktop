@@ -95,6 +95,8 @@ verrouillage).
 - `dbus-run-session -- python3 scripts/test-audio.py` : service Audio, PipeWire et WirePlumber privés ; ancienne destination
   persistée puis politique native, deux / trois sorties, rafales paires / impaires, volumes et coupures conservés,
   exception manuelle / réouverture, flux protégé, application suspendue / fermée, retrait de sortie et absence de matériel.
+  Icônes des sorties (dont casque/enceintes BlueZ simulés), contenu/volume/muet de la notification, balisage échappé,
+  sélections silencieuses et absence de notification pour les rafales sans changement.
   Un faux `pw-metadata` détecte tout retour d’un helper dans le service. Aucun accès à l’audio de la session.
 
 - `python3 scripts/test-wallpapers.py` : service et sélecteur réels sur Sway isolé ; regroupement Core Lab, résolution physique,

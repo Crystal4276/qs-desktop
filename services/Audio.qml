@@ -3,6 +3,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import Quickshell.Bluetooth
 import Quickshell.Services.Pipewire
 import qs.config
 
@@ -184,6 +185,15 @@ Singleton {
         return node.nickname || node.description || node.name;
     }
 
+    // Même représentation dans les panneaux et le retour de bascule. Un DAC représente les enceintes.
+    function outputIcon(node: PwNode): string {
+        const p = node?.properties ?? {};
+        const address = p["api.bluez5.address"];
+        const device = address ? Bluetooth.devices.values.find(d => d.address.toLowerCase() === String(address).toLowerCase()) : null;
+        const kind = p["device.form-factor"] || device?.icon || p["device.icon-name"] || p["media.icon-name"] || "";
+        return /headphone|headset|earphone|earbud|hands-free/i.test(kind) ? Theme.audio.headphonesIcon : Theme.audio.speakersIcon;
+    }
+
     // Niveau capté affiché (panneau audio) : pas pour une entrée Bluetooth, dont la capture ferait passer le casque du profil
     // A2DP (musique) au profil micro (HSP/HFP, son dégradé) tant que le panneau est ouvert.
     function hasLevel(node: PwNode): bool {
@@ -193,12 +203,18 @@ Singleton {
     // WirePlumber assure le routage ; seul le choix en attente sert aux rafales de touches.
     property PwNode requestedSink: null
     property bool announceSwitch: false
+    property string switchFromName: ""
+    property int switchFromId: -1
     onSinkChanged: Qt.callLater(confirmSink)
     onSinksChanged: Qt.callLater(confirmSink)
 
     function setDefaultSink(node: PwNode): void {
         if (!node || !sinks.includes(node))
             return;
+        if (!switchTimeout.running) {
+            switchFromName = sink ? nodeName(sink) : "";
+            switchFromId = sink?.id ?? -1;
+        }
         requestedSink = node;
         announceSwitch = false;
         Pipewire.preferredDefaultAudioSink = node;
@@ -219,8 +235,15 @@ Singleton {
         switchTimeout.stop();
         if (!ok)
             Quickshell.execDetached(["notify-send", "Audio Switch Error", "Could not select the audio output."]);
-        else if (announceSwitch && requestedSink)
-            Quickshell.execDetached(["notify-send", "Audio Switch", root.nodeName(requestedSink)]);
+        else if (announceSwitch && requestedSink && requestedSink.id !== switchFromId) {
+            const escape = text => String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            const destination = `<b>${escape(nodeName(requestedSink))}</b>`;
+            const route = switchFromName ? `${escape(switchFromName)} → ${destination}` : destination;
+            const level = requestedSink.ready ? `\nVolume: ${Math.round(requestedSink.audio.volume * 100)} %${requestedSink.audio.muted ? " · Muted" : ""}` : "";
+            Quickshell.execDetached(["notify-send", "--app-name=Audio", `--icon=${outputIcon(requestedSink)}`,
+                `--expire-time=${Theme.audio.switchTimeout}`, "--hint=string:x-dunst-stack-tag:audio-output",
+                "--", "Audio output switched", route + level]);
+        }
         requestedSink = null;
         announceSwitch = false;
     }
