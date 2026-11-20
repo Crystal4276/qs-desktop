@@ -9,6 +9,7 @@ import qs.config
 Item {
     id: root
 
+    property var stepHandler: null   // délégation des crans au service (luminosité)
     property real value: 0
     property int inset: Theme.slider.padding
     property list<color> gradient: []
@@ -29,6 +30,10 @@ Item {
 
     // Molette, clavier : plafond à 100 %, sauf volume déjà au-dessus (réglé ailleurs), qui ne retombe pas à 100 % d'un cran (Audio.step).
     function step(points: int): void {
+        if (stepHandler) {
+            stepHandler(points);
+            return;
+        }
         root.moved(Math.max(0, Math.min(Math.max(1, value), Math.round(100 * value + points) / 100)));
     }
 

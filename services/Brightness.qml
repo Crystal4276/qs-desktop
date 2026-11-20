@@ -26,9 +26,13 @@ Singleton {
     property int target: -1
     property int applied: -1
 
-    // Molette et touches : ±points % depuis la dernière valeur demandée (des crans rapprochés s'additionnent, aucun n'est perdu).
+    // Molette et touches : prochain multiple du pas dans le sens demandé, depuis la dernière valeur demandée.
     function step(points: int): void {
-        setPercent((target >= 0 ? target : percent) + points);
+        if (points === 0)
+            return;
+        const value = target >= 0 ? target : percent;
+        const size = Math.abs(points);
+        setPercent((points > 0 ? Math.floor(value / size) + 1 : Math.ceil(value / size) - 1) * size);
     }
 
     // Curseur du panneau de réglages : valeur absolue en %.
