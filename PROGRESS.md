@@ -28,6 +28,16 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
   observés : FileOps.qml:88 (booléen indéfini) et délai de connexion BlueZ ; non masqués ni corrigés ici.
   Pas de processus de test restant. Confirmation acoustique à faire à l’usage.
 
+- Passe 2 : relecture du service complet, du test audio, de la règle, des appels des panneaux et des raccords de
+  l’installateur ; aucune autre anomalie significative trouvée dans le changement audio. Arrêt de la boucle.
+  Limites mineures : pause testée par suspension du client (pas par un lecteur authentifié mis en pause), fin de restauration
+  du serveur privé attendue pendant 1,2 s dans le banc. Pas de délai de démarrage ajouté au bureau.
+- Validation complète Sway / Hyprland : démarrage et six rechargements chacun, PASS. Déploiement de la règle via le registre
+  standard d’installation, redémarrage unique de WirePlumber puis rechargement du service Audio validé ; PID 314028 conservé,
+  trois barres et trois fonds. Spotify en lecture suit le défaut dans les deux sens, volumes et micro inchangés.
+  Aucun banc restant, aucune action NordVPN. Capture : `.shots/audio-native-after.png`.
+  Au rechargement réel, avertissements hors audio `FileOps.qml:88` et délai de connexion Bluez observés ; non modifiés ni masqués.
+
 ## Audio : bascule des applications vers la sortie choisie (2026-11-20, remplacée par la politique native ci-dessus)
 
 - Défaut constaté en session : les écouteurs soundcore étaient le défaut, mais Spotify restait relié au DAC SMSL via
