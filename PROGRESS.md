@@ -3,6 +3,21 @@
 État courant seulement. Historique figé : phases 0 à 10 dans `docs/archive/PROGRESS.md`, maintenance du 2026-11-05 au 2026-11-09
 et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de besoin).
 
+## Bluetooth : revue batterie et profils audio (2026-11-20)
+
+- Passe 1 : trois défauts confirmés avant correction : libellés de codecs tronqués à 500 px, commandes de changement
+  concurrentes (la première, lente, écrasait la seconde), échec silencieux de `wpctl`. Une seule commande par appareil,
+  choix temporairement désactivés ; message d'erreur sur échec, relance possible. Échec de démarrage également libéré.
+  Les noms complets de profils passent sur plusieurs lignes via une option de PanelRow ; lignes ordinaires conservées.
+- Test ciblé `dbus-run-session -- python3 scripts/test-bluetooth-profiles.py` : vrai service, appareils factices et commandes
+  enregistrées sur bus privé ; filtrage des profils, sélection, exclusion des commandes parallèles, échec/reprise, exécutable
+  impossible à lancer, déconnexion et JSON invalide PASS. Mode `--expect-bugs` a reproduit les deux défauts de commande sur
+  le code initial. Banc visuel : troncature reproduite avant, cinq libellés complets après à 500 px ; capture
+  `.shots/bluetooth-profile-review.png`.
+- Batterie : test existant PASS. Bureau complet Sway headless / Hyprland imbriqué : démarrage et six rechargements chacun
+  PASS ; diagnostics connus du banc inchangés (services absents, Tailscale, entrées desktop, fermeture des sockets).
+  Aucun changement du profil des écouteurs réels, aucune action NordVPN. Revue suivante en cours.
+
 ## Bluetooth : icône de batterie horizontale (2026-11-20)
 
 - Ligne principale des appareils connectés avec batterie : libellé `battery` remplacé par le glyphe du laptop tourné à 90°,

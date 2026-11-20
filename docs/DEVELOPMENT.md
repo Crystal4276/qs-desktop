@@ -124,6 +124,9 @@ verrouillage).
 - `python3 scripts/test-brightness.py` : service réel et curseur hors écran, sysfs et `brightnessctl` factices ; crans,
   arrondis matériels (10000/64/16 niveaux), minimum non nul, rafales, changements externes et échecs. Aucune écriture réelle.
 
+- `dbus-run-session -- python3 scripts/test-bluetooth-profiles.py` : service Bluez réel, appareils et commandes factices ;
+  profils disponibles, concurrence, échec/reprise, lancement impossible, déconnexion et réponse invalide. Aucun accès à l’audio réel.
+
 - `python3 scripts/test-battery.py` : service Battery réel, source de données simulée et `notify-send` factice ;
   couleurs, seuils 30 % / 15 %, urgence, absence de doublons et réarmement en charge. Aucune décharge ni notification réelle.
 
