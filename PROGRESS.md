@@ -3,6 +3,21 @@
 État courant seulement. Historique figé : phases 0 à 10 dans `docs/archive/PROGRESS.md`, maintenance du 2026-11-05 au 2026-11-09
 et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de besoin).
 
+## Bitwarden : fenêtres détachées flottantes (2026-11-20)
+
+- Constat sur Hyprland, espace 3 : le déverrouillage de l’extension Chromium est une fenêtre Wayland séparée,
+  `chrome-nngceckbapebfimnlniiiahkandclblb-Default`, placée en mosaïque (1703×1353) ; son contenu reste étroit.
+- Règles natives communes Sway / Hyprland : cette identité d’extension, tous profils Chromium, flotte et se centre.
+  Taille demandée par l’application conservée (aucune taille imposée) ; les fenêtres détachées volontaires sont aussi concernées.
+- Bancs Sway headless et Hyprland imbriqué : 24 scénarios, un / deux écrans, échelles 1 et 1,5 ; clients GTK Wayland factices
+  480×630, profils Default / Profile_2 : flottants, dimensions conservées, centrés ; Chromium et autre extension en mosaïque.
+  Chromium maintenu derrière : géométrie inchangée à l’ouverture des fenêtres Bitwarden. Aucun autostart ni action NordVPN.
+- Configuration Sway complète validée ; Lua et diff vérifiés. Hyprland réel rechargé sans erreur ; bureau PID 1782 vivant,
+  bancs arrêtés. Une fenêtre déjà ouverte doit être fermée et rouverte pour recevoir la règle.
+- Réouverture réelle par tes soins : flottante, 600×788 demandés par Chromium, centrée sur l’espace 3 ; champ PIN focalisé
+  (capture `.shots/bitwarden-floating.png`). Pointeur et focus restaurés après capture.
+- À vérifier à la main : déverrouillage et retour au formulaire ; Sway sur le laptop.
+
 ## Luminosité : revue en boucle (2026-11-20)
 
 - Passe 1 : deux défauts reproduits sur le code d'origine avant correction : max=64, montée bloquée à 9 % (10 % demandé,

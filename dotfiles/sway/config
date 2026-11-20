@@ -78,6 +78,8 @@
 
 # Floating rules
     floating_maximum_size -1 x -1
+    # Fenêtres détachées de l’extension Bitwarden : taille demandée par Chromium, tous profils.
+    for_window [app_id="^chrome-nngceckbapebfimnlniiiahkandclblb-.+$"] floating enable, move position center
     for_window [app_id="gnome-disks"] floating enable, move position center
     for_window [app_id="blueman-manager"] floating enable, move position center
     for_window [title="Volume Control"] floating enable, move position center
