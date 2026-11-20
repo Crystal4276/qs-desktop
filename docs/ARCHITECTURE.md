@@ -33,6 +33,11 @@ Celle de `CLAUDE.md`, plus :
 - `shell.qml` : `//@ pragma IconTheme Papirus-Dark` (§ 8.1), `//@ pragma ShellId desktop` (même identifiant pour `qs ipc` et les
   dossiers d'état, que la config soit lancée par `-p` ou par `-c`). Imports `qs.config`, `qs.services`, `qs.modules.*`, sans `qmldir`.
 
+Le choix explicite d’une sortie audio (`Audio.setDefaultSink`, panneau ou `$mod+s`) change le défaut natif puis libère
+les destinations imposées des flux de lecture des applications avec `pw-metadata` (`target.object = -1`). WirePlumber
+les fait suivre le défaut, y compris lorsqu’une ancienne destination avait été restaurée. Volumes et états muets conservés ;
+micros et loopbacks internes exclus. Aucun déplacement au simple démarrage du bureau ni à la connexion Bluetooth.
+
 ## 2. Compositeur
 
 `services/Compositor.qml` (singleton) choisit son backend au démarrage :
