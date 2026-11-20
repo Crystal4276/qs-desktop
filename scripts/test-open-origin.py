@@ -117,7 +117,8 @@ class Policy(unittest.TestCase):
     def test_steam_games_are_not_opened_content(self):
         rows={20:dict(name='crbrowsermain',ppid=21),21:dict(name='reaper',ppid=22),22:dict(name='steam',ppid=1)}
         with patch.object(m,'identity',side_effect=lambda pid:rows.get(pid)):
-            self.assertEqual(m.source_of(20),'')
+            self.assertEqual(m.source_of(20,m.GAME_BARRIERS),'')
+            self.assertEqual(m.source_of(20),'steam')  # Links opened by a game keep their origin.
 
 
 if __name__=='__main__':unittest.main()
