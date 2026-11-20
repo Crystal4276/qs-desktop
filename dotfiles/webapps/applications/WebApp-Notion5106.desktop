@@ -7,6 +7,6 @@ Terminal=false
 X-MultipleArgs=false
 Type=Application
 Icon=notion
-Categories=GTK;WebApps;
+Categories=GTK;Office;
 StartupWMClass=chrome-www.notion.so__-Default
 StartupNotify=true
