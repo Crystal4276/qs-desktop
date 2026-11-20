@@ -12,7 +12,14 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
   `brightnessctl` (arrondi matériel), max=10000/64/16 ; séquences complètes montée/descente, limites, valeurs intermédiaires,
   rafales, IPC, glissement, volume inchangé, changement externe et échec d'écriture : OK. Aucune action sur la vraie dalle.
 - Démarrage complet et vrai `SettingsPanel` sur Sway isolé : OK, diagnostics identiques à la version d'origine ; aucune
-  action NordVPN. Bancs arrêtés. Revue suivante en cours.
+  action NordVPN. Bancs arrêtés.
+- Passe 2 : fichiers entiers relus (service, curseurs, molette, OSD et raccourcis des deux compositeurs) ; aucun autre défaut
+  significatif. Test élargi : appuis espacés traversant le sondage sysfs d'une seconde et les fins de commandes, demandes
+  absolues/crans mélangés, bornes hors plage, pas nul, matériel absent : OK sur les trois résolutions matérielles.
+- Arrêt de la boucle après cette passe. Limites mineures : l'OSD affiche le pourcentage matériel arrondi (les dalles à peu de
+  niveaux ne peuvent représenter tous les pourcentages), changement externe vu au prochain sondage (~1 s) ; touche de
+  luminosité sans matériel : OSD à 0 %, aucune commande lancée. Pas d'abstraction ni de processus permanent ajoutés.
+- Bureau réel rechargé et vivant, aucune luminosité réelle modifiée ; essai physique sur le laptop toujours à faire.
 
 ## Luminosité : crans alignés sur 5 % (2026-11-20)
 
