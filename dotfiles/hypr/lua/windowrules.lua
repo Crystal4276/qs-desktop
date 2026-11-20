@@ -56,7 +56,9 @@ hl.window_rule({
 -- Fenêtres flottantes et centrées
 ------------------------------------------------------------------------------
 
+-- Fenêtres détachées de l’extension Bitwarden : taille demandée conservée ; suffixe du profil Chromium.
 local floatingCentered = {
+   { name = "bitwarden-popout",     match = { class = "^chrome-nngceckbapebfimnlniiiahkandclblb-.+$" } },
    { name = "gnome-disks",           match = { class = "^(gnome-disks)$" } },
    { name = "blueman-manager",       match = { class = "^(blueman-manager)$" } },
    { name = "volume-control",        match = { title = "^(Volume Control)$" } },
