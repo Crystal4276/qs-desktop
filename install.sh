@@ -490,6 +490,7 @@ step_configs() {
     fi
     link "$(host_file dotfiles/chromium conf dotfiles/chromium/chromium-flags.conf)" "$config/chromium-flags.conf"
     step_spotify
+    link dotfiles/wireplumber/wireplumber.conf.d/55-playback-follow-default.conf "$config/wireplumber/wireplumber.conf.d/55-playback-follow-default.conf"
     link dotfiles/wireplumber/wireplumber.conf.d/60-stream-full-volume.conf "$config/wireplumber/wireplumber.conf.d/60-stream-full-volume.conf"
     link dotfiles/wireplumber/scripts/stream-full-volume.lua "$data/wireplumber/scripts/stream-full-volume.lua"
     if dnd_mutes; then

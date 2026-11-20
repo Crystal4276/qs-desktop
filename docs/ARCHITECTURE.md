@@ -33,10 +33,12 @@ Celle de `CLAUDE.md`, plus :
 - `shell.qml` : `//@ pragma IconTheme Papirus-Dark` (§ 8.1), `//@ pragma ShellId desktop` (même identifiant pour `qs ipc` et les
   dossiers d'état, que la config soit lancée par `-p` ou par `-c`). Imports `qs.config`, `qs.services`, `qs.modules.*`, sans `qmldir`.
 
-Le choix explicite d’une sortie audio (`Audio.setDefaultSink`, panneau ou `$mod+s`) change le défaut natif puis libère
-les destinations imposées des flux de lecture des applications avec `pw-metadata` (`target.object = -1`). WirePlumber
-les fait suivre le défaut, y compris lorsqu’une ancienne destination avait été restaurée. Volumes et états muets conservés ;
-micros et loopbacks internes exclus. Aucun déplacement au simple démarrage du bureau ni à la connexion Bluetooth.
+Le choix d’une sortie audio (`Audio.setDefaultSink`, panneau ou `$mod+s`) utilise uniquement le défaut natif Quickshell.
+WirePlumber fait suivre les applications : `55-playback-follow-default.conf` empêche la restauration d’anciennes destinations
+pour les seuls flux de lecture (`state.restore-target = false`). Volumes, coupures et destinations des micros restent retenus.
+Les exceptions explicites de la session sont respectées ; aucun helper de routage, aucune file de processus dans Audio.
+Le choix en attente sert aux rafales et la notification confirme la sortie globale effective.
+
 
 ## 2. Compositeur
 

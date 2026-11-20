@@ -116,6 +116,9 @@ def main():
         (home / ".config/gtk-3.0").mkdir(parents=True)
         (home / ".config/gtk-3.0/settings.ini").write_text("[Settings]\ngtk-theme-name=Adwaita\ngtk-enable-animations=0\n")
         # Config gérée par un gestionnaire de dotfiles (stow) : un lien vers un autre dépôt.
+        original_audio = home / ".config/wireplumber/wireplumber.conf.d/55-playback-follow-default.conf"
+        original_audio.parent.mkdir(parents=True)
+        original_audio.write_text("# existing user policy\n")
         (home / "dots/qt6ct").mkdir(parents=True)
         (home / "dots/qt6ct/qt6ct.conf").write_text("[Appearance]\nstyle=Fusion\n")
         (home / ".config/qt6ct").mkdir()
@@ -253,6 +256,9 @@ def main():
         import tomllib
         spotify = cfg / "spotify-launcher.conf"
         spotify_config = tomllib.loads(spotify.read_text())["spotify"]
+        audio_policy = cfg / "wireplumber/wireplumber.conf.d/55-playback-follow-default.conf"
+        check(audio_policy.is_symlink() and "state.restore-target = false" in audio_policy.read_text(),
+              "audio : politique native de sortie globale installée")
         check(spotify.is_symlink() and spotify.resolve() == repo / "dotfiles/spotify/spotify-launcher.conf"
               and spotify_config["extra_env_vars"] == ["DISPLAY="]
               and "--ozone-platform=wayland" in spotify_config["extra_arguments"],

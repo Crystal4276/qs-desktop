@@ -42,7 +42,7 @@ Chaque commande a été rattachée à son paquet sur cette machine avec `pacman 
 | Espaces de travail | natif (`Quickshell.I3` / `Quickshell.Hyprland`) | — | — | Symbols Nerd Font Mono | — |
 | Média (mpris) | natif (`Services.Mpris`, D-Bus) | — | un lecteur MPRIS (Spotify via `spotify-launcher` ou le paquet AUR `spotify`, n'est pas une dépendance du bureau) ; choix du lecteur à la molette natif (plus de `playerctl`) | Inter, Font Awesome 7 Brands, FontAwesome 4.7 | — |
 | Volume (icône + curseur) | natif (`Services.Pipewire`) | `pipewire`, `wireplumber` (services utilisateur actifs), `rtkit` (priorité temps réel) | `pavucontrol` (réglages avancés du panneau audio ; `pipewire-pulse`) | Symbols Nerd Font Mono | — |
-| Sortie audio suivante (ex-`audio-toggle.sh`) | natif (`Services.Pipewire`) + `pw-metadata` (flux existants suivant le défaut) + `notify-send` | `pipewire`, `libnotify` | — | — | — |
+| Sortie audio suivante (ex-`audio-toggle.sh`) | natif (`Services.Pipewire`) + `notify-send` | `libnotify` | — | — | — |
 | Mises à jour | `checkupdates` | `pacman-contrib`, **`fakeroot`** (`checkupdates` échoue sans lui ; non déclaré par `pacman-contrib`) | `paru` ou `yay` (clic) ; terminal | Inter, Hack Nerd Font | — |
 | GPU | NVIDIA : `nvidia-smi` ; AMD : sysfs (natif) ; Intel : `intel_gpu_top` (PMU, un seul processus à 5 s) | — | `nvidia-utils` (NVIDIA) ; `intel-gpu-tools`, `libcap` (Intel), `polkit` pour accorder CAP_PERFMON ; module masqué sans charge lisible | Inter, Hack Nerd Font | — |
 | CPU | natif (`/proc/stat`) | — | — | Inter, Hack Nerd Font | — |
@@ -107,6 +107,14 @@ Les applications personnelles lancées au démarrage (Steam, Spotify, Thunderbir
 
 Portails captifs : `scripts/network-setup.sh [--dry-run] install|uninstall` (`sudo`, `nmcli`, `coreutils`, `diffutils`, `flock` de `util-linux`).
 Configuration et sauvegarde système, à reprendre par `install.sh` en phase 12 : [NETWORK.md](../docs/NETWORK.md).
+
+### Sortie audio globale
+
+`55-playback-follow-default.conf` désactive uniquement la restauration des destinations des flux de lecture.
+WirePlumber fait suivre la sortie globale aux applications ; les volumes, coupures et destinations des micros restent retenus.
+Une destination choisie explicitement par application dans pavucontrol reste prioritaire pendant la session.
+`install.sh` installe la règle ; après une installation dans une session ouverte, relancer une fois
+`systemctl --user restart wireplumber`, puis sélectionner la sortie souhaitée. Une brève coupure audio est attendue.
 
 ### Spotify en Wayland natif
 

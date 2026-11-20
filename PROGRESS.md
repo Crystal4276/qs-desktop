@@ -3,7 +3,32 @@
 État courant seulement. Historique figé : phases 0 à 10 dans `docs/archive/PROGRESS.md`, maintenance du 2026-11-05 au 2026-11-09
 et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de besoin).
 
-## Audio : bascule des applications vers la sortie choisie (2026-11-20)
+## Audio : politique native et revue (2026-11-20)
+
+- Décision après audit : WirePlumber gère le routage global ; les exceptions explicites de pavucontrol restent prioritaires
+  pendant la session. Les anciennes destinations par application ne sont plus restaurées à leur réouverture.
+- Passe 1 : quatre défauts du déplacement forcé reproduits sur serveur privé : helper bloqué encore vivant après le délai,
+  erreur d’une ancienne demande attribuée à la suivante, succès sans déplacement pour un flux non déplaçable, destruction
+  d’un flux `node.dont-fallback`. La file et le helper ont été supprimés, remplacés par la règle native
+  `55-playback-follow-default.conf` (`state.restore-target = false`, lecture seulement). Volume et coupure restent retenus.
+  Quickshell choisit seulement le défaut, garde le dernier choix pour les rafales et confirme la sortie globale effective.
+- Test audio : ancienne destination persistée reproduite puis ignorée par la règle ; deux / trois sorties, rafales paires /
+  impaires, volumes par sortie / application, coupures, exceptions manuelles et réouverture, flux protégé, application
+  suspendue / fermée, retrait et absence de sorties, micro inchangé. Faux helper : aucun appel. PASS.
+  Attente du banc corrigée : une commande de sélection lancée pendant la restauration initiale de WirePlumber pouvait être
+  écrasée ; attendre sa disponibilité puis la fin de restauration avant la sélection. Aucun réglage ajouté au bureau pour cela.
+- Installation / idempotence / retrait et restauration d’une règle préexistante : `test-install.py`, 0 échec. Premier essai
+  sur copie sans `.git` : échec de la sonde Plymouth qui utilise `git archive` ; contre-épreuve sur dépôt original puis copie
+  avec historique Git : 0 échec. Aucune modification ni installation de Plymouth.
+- Bureau complet Sway headless et Hyprland imbriqué, six rechargements chacun : PASS, diagnostics connus du banc inchangés
+  (services absents et course Tailscale). Aucune action NordVPN ni Bluetooth réelle sur banc.
+- Règle installée via `link` et le registre standard, un redémarrage utilisateur de WirePlumber pour l’activation ; préférences
+  de lecture et micro conservées. Spotify en lecture suit les deux bascules natives, volumes et micro inchangés ; bureau
+  PID 314028 vivant, trois barres et trois fonds. Capture `.shots/audio-native-after.png`. Avertissements hors audio
+  observés : FileOps.qml:88 (booléen indéfini) et délai de connexion BlueZ ; non masqués ni corrigés ici.
+  Pas de processus de test restant. Confirmation acoustique à faire à l’usage.
+
+## Audio : bascule des applications vers la sortie choisie (2026-11-20, remplacée par la politique native ci-dessus)
 
 - Défaut constaté en session : les écouteurs soundcore étaient le défaut, mais Spotify restait relié au DAC SMSL via
   `target.object`. Le raccourci changeait uniquement le défaut et imposait 60 % à chaque sélection.

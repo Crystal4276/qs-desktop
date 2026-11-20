@@ -10,6 +10,7 @@ import tempfile
 import time
 
 REPO = Path(__file__).resolve().parents[1]
+METADATA = shutil.which('pw-metadata')
 
 def test():
     with tempfile.TemporaryDirectory(prefix='qs-audio-test-') as tmp:
@@ -38,7 +39,7 @@ ShellRoot {
  IpcHandler { target: "test"
   function state(): string { return JSON.stringify({sink: Audio.sink?.name, pending: Audio.requestedSink?.name, sinks: Audio.sinks.map(n=>({name:n.name,id:n.id,volume:n.audio.volume})), streams: Audio.streams.map(n=>({id:n.id,name:n.name})), source: Audio.source?.id}); }
   function select(name: string): void { Audio.setDefaultSink(Audio.sinks.find(n=>n.name===name)); }
-  function burst(): void { Audio.cycleSink(); Audio.cycleSink(); Audio.cycleSink(); }
+  function burst(count: int): void { for (let i=0; i<count; ++i) Audio.cycleSink(); }
  }
 }''')
         env = dict(os.environ, XDG_RUNTIME_DIR=str(w/'r'), PIPEWIRE_RUNTIME_DIR=str(w/'r'),
@@ -91,68 +92,87 @@ ShellRoot {
             until(lambda:linked('music','dac') and linked('browser','dac'))
             for name in ('music','browser'):
                 run('pw-metadata','-n','default','--',str(node(name)['id']),'target.object',str(node('dac')['info']['props']['object.serial']),'Spa:Id')
-            # Counterexample: changing only the default leaves explicitly pinned apps on DAC.
+            # Reproduce persisted routing before enabling the native policy.
+            time.sleep(1.2)  # WirePlumber state write debounce.
+            wp=procs[1]; wp.terminate(); wp.wait(timeout=3)
+            wp=start(['wireplumber'],'wireplumber')
+            until(lambda:linked('music','dac') and linked('browser','dac'))
             run('wpctl','set-default',str(node('headphones')['id']))
             until(lambda:state()['sink']=='headphones')
-            assert linked('music','dac'), 'baseline no longer reproduces'
-            print('PASS: baseline pinned stream stays on DAC',flush=True)
+            assert linked('music','dac')
+            print('PASS: old remembered target reproduces stuck playback',flush=True)
+            until(lambda:'headphones' in (w/'state/wireplumber/default-nodes').read_text())
+            shutil.copy2(REPO/'dotfiles/wireplumber/wireplumber.conf.d/55-playback-follow-default.conf',
+                         w/'config/wireplumber/wireplumber.conf.d/55-playback-follow-default.conf')
+            wp.terminate(); wp.wait(timeout=3)
+            wp=start(['wireplumber'],'wireplumber')
+            until(lambda:run('wpctl','settings','linking.follow-default-target'))
+            time.sleep(1.2)  # Finish startup restoration before issuing the user selection.
             ipc('select','headphones')
             until(lambda:linked('music','headphones') and linked('browser','headphones'))
-            until(lambda:not state().get('pending'))
-            before=state()
-            assert before.get('source') is not None, before
+            for name,vol in [('dac','23%'),('headphones','35%')]:
+                run('wpctl','set-volume',str(node(name)['id']),vol)
             run('wpctl','set-volume',str(node('music')['id']),'41%')
             run('wpctl','set-mute',str(node('browser')['id']),'1')
-            assert all(abs(n['volume']-({'dac':.23,'headphones':.35}[n['name']]))<.001 for n in before['sinks']),before
+            before=state()
+            # Runtime must never invoke the old helper, even if it hangs or fails.
+            marker=w/'helper-called'
+            (w/'bin/pw-metadata').write_text('#!/bin/sh\ntouch "'+str(marker)+'"\nexit 1\n')
+            (w/'bin/pw-metadata').chmod(0o755)
             for name in ('dac','headphones','dac'):
                 ipc('select',name)
-                until(lambda:linked('music',name) and linked('browser',name))
-                until(lambda:not state().get('pending'))
-            ipc('burst')
-            until(lambda:state()['sink']=='headphones' and not state().get('pending'))
-            until(lambda:linked('music','headphones') and linked('browser','headphones'))
+                until(lambda:linked('music',name) and linked('browser',name) and not state().get('pending'))
+            for count,expected in [(2,'dac'),(3,'headphones'),(2,'headphones')]:
+                ipc('burst',str(count))
+                until(lambda:state()['sink']==expected and not state().get('pending'))
+                until(lambda:linked('music',expected) and linked('browser',expected))
+            run('pw-cli','create-node','adapter','{ factory.name=support.null-audio-sink node.name=third media.class=Audio/Sink object.linger=true audio.position=[ FL FR ] }')
+            until(lambda:len(state()['sinks'])==3)
+            ipc('select','dac');until(lambda:state()['sink']=='dac' and not state().get('pending'))
+            ipc('burst','2');until(lambda:state()['sink']=='third' and not state().get('pending'))
+            ipc('burst','4');until(lambda:state()['sink']=='dac' and not state().get('pending'))
+            run('pw-cli','destroy',str(node('third')['id']))
             assert state()['source']==before['source']
             for n in state()['sinks']:
                 assert abs(n['volume']-({'dac':.23,'headphones':.35}[n['name']]))<.001,state()
             assert abs(float(run('wpctl','get-volume',str(node('music')['id'])).split()[1])-.41)<.005
             assert 'MUTED' in run('wpctl','get-volume',str(node('browser')['id']))
-            cycle()
-            until(lambda:state()['sink']=='dac' and not state().get('pending'))
-            cycle()
-            until(lambda:state()['sink']=='headphones' and not state().get('pending'))
-            # A suspended application still has to move before it resumes.
+            # Manual exceptions stay on their selected output during this session.
+            run(METADATA,'-n','default','--',str(node('music')['id']),'target.object',str(node('dac')['info']['props']['object.serial']),'Spa:Id')
+            ipc('select','headphones');until(lambda:state()['sink']=='headphones' and not state().get('pending'))
+            until(lambda:linked('browser','headphones'))
+            assert linked('music','dac')
+            players[0].terminate();players[0].wait(timeout=3)
+            until(lambda:node('music') is None)
+            players[0]=start(['pw-cat','--playback','--raw','--rate','48000','--channels','2','--format','s16','--properties','node.name=music','/dev/zero'],'music-reopened')
+            until(lambda:linked('music','headphones'))
+            # Explicit non-movable targets are left to WirePlumber, never destroyed by a -1 override.
+            fragile=start(['pw-cat','--playback','--raw','--rate','48000','--channels','2','--format','s16','--properties',
+                           'node.name=fragile target.object=dac node.dont-move=true node.dont-fallback=true','/dev/zero'],'fragile')
+            until(lambda:linked('fragile','dac'))
+            ipc('select','dac');until(lambda:state()['sink']=='dac' and not state().get('pending'))
+            ipc('select','headphones');until(lambda:state()['sink']=='headphones' and not state().get('pending'))
+            assert fragile.poll() is None and linked('fragile','dac')
+            fragile.terminate();fragile.wait(timeout=3)
+            # A suspended application still follows before it resumes.
             os.kill(players[0].pid,signal.SIGSTOP)
-            ipc('select','dac')
-            until(lambda:linked('music','dac') and linked('browser','dac'))
+            ipc('select','dac');until(lambda:linked('music','dac') and linked('browser','dac'))
             os.kill(players[0].pid,signal.SIGCONT)
             players[1].terminate(); players[1].wait(timeout=3)
-            ipc('select','headphones')
-            until(lambda:linked('music','headphones') and not state().get('pending'))
             run('pw-cli','destroy',str(node('headphones')['id']))
-            until(lambda:state()['sink']=='dac')
-            ipc('select','dac')
-            until(lambda:linked('music','dac') and not state().get('pending'))
-            for p in players:
-                if p.poll() is None: p.terminate(); p.wait(timeout=3)
+            until(lambda:len(state()['sinks'])==1)
+            cycle();until(lambda:not state().get('pending'))
+            players[0].terminate();players[0].wait(timeout=3)
             until(lambda:not state()['streams'])
-            ipc('select','dac'); until(lambda:not state().get('pending'))
-            assert not (w/'notifications').exists() or 'Error' not in (w/'notifications').read_text(),(w/'notifications').read_text()
-            late=start(['pw-cat','--playback','--raw','--rate','48000','--channels','2','--format','s16','--properties','node.name=late','/dev/zero'],'late')
-            until(lambda:linked('late','dac'))
-            # A failed helper reports failure without a hung switch or a success notification.
-            (w/'bin/pw-metadata').write_text('#!/bin/sh\nexit 1\n')
-            (w/'bin/pw-metadata').chmod(0o755)
-            ipc('select','dac')
-            until(lambda:not state().get('pending') and (w/'notifications').exists() and 'Audio Switch Error' in (w/'notifications').read_text())
-            (w/'bin/pw-metadata').unlink()
-            late.terminate(); late.wait(timeout=3)
+            cycle();until(lambda:not state().get('pending'))
+            assert not marker.exists(), 'runtime invoked pw-metadata'
+            assert 'Error' not in (w/'notifications').read_text()
             run('pw-cli','destroy',str(node('dac')['id']))
             until(lambda:not state()['sinks'])
-            cycle()
-            until(lambda:'No sinks found!' in (w/'notifications').read_text())
+            cycle();until(lambda:'No sinks found!' in (w/'notifications').read_text())
             log=(w/'qs.log').read_text()
             assert not any(t in log for t in ('ReferenceError','TypeError','Error:','Unable to assign')),log
-            print('PASS: two apps, both directions, retained volumes, rapid keys, paused/closed apps, removed sink, no streams, microphone unchanged, per-app volume/mute preserved, real shortcut IPC, command failure, no sinks',flush=True)
+            print('PASS: native migration, 2/3 outputs and even/odd bursts, per-app/output volumes and mute, exceptions and reopening, protected streams, removed outputs, microphone unchanged, no runtime helper',flush=True)
         finally:
             for p in reversed(procs):
                 if p.poll() is None:

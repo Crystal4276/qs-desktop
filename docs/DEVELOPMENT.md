@@ -92,9 +92,10 @@ verrouillage).
 
 ## Tests ciblés de robustesse
 
-- `dbus-run-session -- python3 scripts/test-audio.py` : vrai service Audio, PipeWire et WirePlumber privés, sorties et micro
-  virtuels ; flux attachés à une ancienne sortie, sélection / IPC / rafales, volumes et coupures conservés, application
-  suspendue ou fermée, sortie disparue, commande en échec et aucune sortie. Aucun accès à l’audio de la session.
+- `dbus-run-session -- python3 scripts/test-audio.py` : service Audio, PipeWire et WirePlumber privés ; ancienne destination
+  persistée puis politique native, deux / trois sorties, rafales paires / impaires, volumes et coupures conservés,
+  exception manuelle / réouverture, flux protégé, application suspendue / fermée, retrait de sortie et absence de matériel.
+  Un faux `pw-metadata` détecte tout retour d’un helper dans le service. Aucun accès à l’audio de la session.
 
 - `python3 scripts/test-wallpapers.py` : service et sélecteur réels sur Sway isolé ; regroupement Core Lab, résolution physique,
   échelle fractionnaire, replis, choix par écran, persistance et changement de profil, dossier ou variante absents.
