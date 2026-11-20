@@ -15,6 +15,13 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
   conservée ; Chromium et autre extension restent en mosaïque. Chromium derrière : géométrie inchangée.
 - Profil Chromium jetable, extension factice avec l’identité de Bitwarden : trois ouvertures successives à 100 %, défaut du
   navigateur à 125 %, sans `setZoom` entre les ouvertures. Aucun coffre ni profil réel utilisés dans ces tests.
+- Passe 2 : relecture après correction, aucun autre défaut significatif. Matrice Chromium élargie : défauts 100 / 125 / 150 %,
+  deux démarrages par cas et deux ouvertures par démarrage ; Bitwarden à 100 %, pages ordinaires au zoom général inchangé.
+  Contre-épreuve sans exception : Bitwarden suit bien le défaut à 125 %. Clé de partition `x` vérifiée dans le code Chromium :
+  partition principale (chemin relatif vide), pas une valeur propre à cette machine.
+- Fin de la boucle après cette passe : restent les limites déjà délimitées (défilement accepté, essai physique Sway sur le laptop,
+  exception installée dans le profil principal Default). Aucun ajustement de hauteur ni script supplémentaire retenu.
+  Bureau réel vivant ; bancs arrêtés. Les changements de revue ne touchent que l’isolement du test.
 
 ## Bitwarden : exception native de zoom à 100 % (2026-11-20)
 
