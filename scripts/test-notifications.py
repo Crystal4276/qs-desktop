@@ -5,6 +5,17 @@ from pathlib import Path
 REPO=Path(__file__).resolve().parents[1]
 def run(*args, **kwargs):
     return subprocess.check_output(args,text=True,stderr=subprocess.PIPE,timeout=10,**kwargs).strip()
+def wait_for(predicate, timeout=15):
+    deadline=time.monotonic()+timeout
+    while time.monotonic()<deadline:
+        try:
+            value=predicate()
+            if value: return value
+        except (subprocess.SubprocessError, ValueError):
+            pass
+        time.sleep(.1)
+    raise AssertionError('Bench did not become ready')
+
 def test(work, compositor, scale, shots, height):
     root=work/'shell'
     shutil.copytree(REPO,root,ignore=shutil.ignore_patterns('.git','.shots','.agents','.codex','.aws','__pycache__'))
@@ -68,10 +79,15 @@ def test(work, compositor, scale, shots, height):
                 if (work / 'wayland').exists(): break
                 time.sleep(.1)
             env.update(WAYLAND_DISPLAY=(work / 'wayland').read_text().strip(), QT_QPA_PLATFORM='wayland')
-        shell = subprocess.Popen(['dbus-run-session', '--', 'qs', '-p', str(root)], env=env,
+        shell = subprocess.Popen(['dbus-run-session', '--', 'sh', '-c',
+             'printf \'%s\' "$DBUS_SESSION_BUS_ADDRESS" > "$1"; exec qs -p "$2"',
+             'sh', str(work/'bus-address'), str(root)], env=env,
                                  stdout=(work / 'qs.log').open('w'), stderr=subprocess.STDOUT, start_new_session=True)
-        time.sleep(4)
-        pid = run('pgrep', '-P', str(shell.pid), 'qs')
+        pid = wait_for(lambda: run('pgrep', '-P', str(shell.pid), 'qs'))
+        wait_for(lambda: 'target notification-test' in run('qs','ipc','--pid',pid,'show',env=env))
+        env['DBUS_SESSION_BUS_ADDRESS']=(work/'bus-address').read_text()
+        if env['DBUS_SESSION_BUS_ADDRESS'] == os.environ.get('DBUS_SESSION_BUS_ADDRESS'):
+            raise RuntimeError('Refusing to use the inherited session bus')
         def ipc(method,*args):
             return run('qs','ipc','--pid',pid,'call','notification-test',method,*map(str,args),env=env)
         def state():
@@ -92,6 +108,25 @@ def test(work, compositor, scale, shots, height):
         ipc('drag'); assert state()['y']>0,state()
         ipc('fill',101); s=state(); assert s['count']==100 and s['first']=='Message 1',s
         ipc('tab'); assert state()['focus']
+        assert ipc('keyboardEnd')=='true',state()
+        s=state(); assert s['y']>0 and s['outerY']==0,s
+        ipc('pressEscape'); assert not state()['visible'],state()
+        ipc('open'); assert state()['y']==0,state()
+        # Overflow also works with native D-Bus notifications, including live quiet entries.
+        ipc('clear'); ipc('quiet','true')
+        owner=run('/usr/bin/gdbus','call','--session','--dest','org.freedesktop.DBus',
+            '--object-path','/org/freedesktop/DBus','--method','org.freedesktop.DBus.GetConnectionUnixProcessID',
+            'org.freedesktop.Notifications',env=env)
+        if not re.search(r'uint32 '+pid+r'\b',owner):
+            raise RuntimeError('Notification server is not the isolated Quickshell: '+owner)
+        for i in range(105):
+            run('/usr/bin/gdbus','call','--session','--dest','org.freedesktop.Notifications',
+                '--object-path','/org/freedesktop/Notifications','--method','org.freedesktop.Notifications.Notify',
+                'Review','0','dialog-information',f'Native {i}','Native body','[]','{}','4000',env=env)
+        s=state(); assert s['count']==100 and s['first']=='Native 5' and s['popups']==0,s
+        assert s['quiet']<=100,s
+        ipc('clear'); assert state()['quiet']==0,state()
+        ipc('quiet','false'); ipc('fill',100)
         if shots:
             shots.mkdir(parents=True,exist_ok=True)
             ipc('shot',str(shots/f'notifications-{compositor}-{scale}.png'));time.sleep(.4)
@@ -100,7 +135,10 @@ def test(work, compositor, scale, shots, height):
         text=qml.read_text().replace('import QtTest','').replace('TestCase { id: events; parent: panel.frameItem; when: false }','')
         # QtTest cannot instantiate its singleton across a Quickshell reload.
         text=text[:text.index('        function wheel()')] + text[text.index('        function shot('):]
-        qml.write_text(text+'\n// reload\n');time.sleep(2)
+        loaded=(work/'qs.log').read_text().count('Configuration Loaded')
+        qml.write_text(text+'\n// reload\n')
+        wait_for(lambda: (work/'qs.log').read_text().count('Configuration Loaded')>loaded)
+        wait_for(lambda: 'target notification-test' in run('qs','ipc','--pid',pid,'show',env=env))
         assert state()['count']==100,state()
         ipc('preview'); ipc('close'); assert not state()['seen'],state()
         ipc('open'); ipc('close'); assert state()['seen'],state()
@@ -108,7 +146,7 @@ def test(work, compositor, scale, shots, height):
         assert s['count']==0 and s['y']==0 and not s['scrollbar'] and s['height']<s['max'],s
         log=(work/'qs.log').read_text()
         assert not re.search(r'WARN scene:|ERROR|TypeError|ReferenceError|Failed to load',log),log
-        print(f'PASS {compositor} scale {scale}: adaptive height, fixed controls, wheel/drag, deletion, 100-entry cap, reload, preview/seen, keyboard, clear')
+        print(f'PASS {compositor} scale {scale}: geometry, wheel/drag, expansion, keyboard to last row/Escape, 105 native notifications on verified private bus, cap/eviction/clear, reload, preview/seen')
     finally:
         if shell:
             os.killpg(shell.pid,signal.SIGTERM);shell.wait(timeout=5)
