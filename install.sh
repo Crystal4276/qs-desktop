@@ -827,7 +827,8 @@ webapp_profiles() {
 chromium_profiles() {
     local profile common='"extensions.theme.system_theme": 1, "browser.custom_chrome_frame": false' ids
     ids="$(grep -oE '^[a-p]{32}' "$repo/dotfiles/chromium/extensions.txt" | sed 's/.*/"&"/' | paste -sd,)"
-    chromium_prefs "$config/chromium" Chromium "{$common}"
+    # Exception native pour l’origine de l’extension, indépendante du zoom général et des sites.
+    chromium_prefs "$config/chromium" Chromium "{$common, \"partition.per_host_zoom_levels.x.nngceckbapebfimnlniiiahkandclblb.zoom_level\": 0}"
     for profile in $(webapp_profiles); do
         chromium_prefs "$data/ice/profiles/$profile" "web app ${profile%%[0-9]*}" "{$common, \"extensions.external_uninstalls\": [$ids]}"
     done

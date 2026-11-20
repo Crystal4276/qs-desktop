@@ -122,7 +122,13 @@ def main():
         (home / ".config/qt6ct/qt6ct.conf").symlink_to(home / "dots/qt6ct/qt6ct.conf")
         # Profil Chromium existant, autre thème et autres réglages.
         (home / ".config/chromium/Default").mkdir(parents=True)
-        (home / ".config/chromium/Default/Preferences").write_text('{"browser":{"x":1},"extensions":{"theme":{"system_theme":0}}}')
+        (home / ".config/chromium/Default/Preferences").write_text(json.dumps({
+            "browser": {"x": 1}, "extensions": {"theme": {"system_theme": 0}},
+            "partition": {"default_zoom_level": {"x": 1.2239010857415449}, "per_host_zoom_levels": {"x": {
+                "example.test": {"zoom_level": 2},
+                "nngceckbapebfimnlniiiahkandclblb": {"zoom_level": 1.2239010857415449, "last_modified": "123"}
+            }}}
+        }, separators=(",", ":")))
         # Web app déjà ouverte une fois : une extension externe refusée par l'utilisateur, à garder.
         (home / ".local/share/ice/profiles/DiscordWeb2996/Default").mkdir(parents=True)
         (home / ".local/share/ice/profiles/DiscordWeb2996/Default/Preferences").write_text(
@@ -365,6 +371,11 @@ def main():
               and "external_uninstalls" not in prefs["extensions"]
               and wprefs["extensions"]["theme"]["system_theme"] == 1 and wprefs["browser"]["custom_chrome_frame"] is False,
               "Chromium et web apps : thème GTK, barre de titre du système, autres réglages gardés")
+        check(prefs["partition"]["per_host_zoom_levels"]["x"]["nngceckbapebfimnlniiiahkandclblb"]["zoom_level"] == 0
+              and prefs["partition"]["default_zoom_level"]["x"] == 1.2239010857415449
+              and prefs["partition"]["per_host_zoom_levels"]["x"]["example.test"] == {"zoom_level": 2}
+              and prefs["partition"]["per_host_zoom_levels"]["x"]["nngceckbapebfimnlniiiahkandclblb"]["last_modified"] == "123"
+              and "partition" not in wprefs, "Bitwarden : zoom 100 %, zoom général, autres sites et métadonnées gardés")
         discord = json.loads((home / ".local/share/ice/profiles/DiscordWeb2996/Default/Preferences").read_text())
         check(len(ids) == 9 and wprefs["extensions"]["external_uninstalls"] == ids
               and discord["extensions"]["external_uninstalls"] == ["a" * 32] + ids,
