@@ -3,6 +3,21 @@
 État courant seulement. Historique figé : phases 0 à 10 dans `docs/archive/PROGRESS.md`, maintenance du 2026-11-05 au 2026-11-09
 et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de besoin).
 
+## Steam : retrait des restes GE-Proton (2026-11-20)
+
+- Audit : quatre installations manuelles GE-Proton (9-22, 10-32, 10-34, 11-7), environ 5,7 Gio, encore chargées par Steam.
+  Préfixe de test `compatdata/0` défectueux (deux `kernel32.dll` vides), huit sondes graphiques en échec au démarrage.
+- Selon ta décision : Steam fermé proprement, quatre installations et préfixe 0 déplacés dans une sauvegarde locale datée
+  hors détection Steam ; configuration sauvegardée, seules les sélections GE-Proton9-11 absentes retirées pour Another World
+  et l'ancien raccourci Path of Building (exécutable déjà absent). Préfixes de jeux conservés, 308 fichiers de référence
+  identiques après nettoyage et avant relance. Sauvegarde conservée : l'espace disque n'est pas encore libéré.
+- Redémarrage réel : connexion OK, rendu Nvidia actif ; aucune mention GE-Proton ni erreur kernel32/version de préfixe/sonde
+  dans les nouvelles lignes. Préfixe 0 non recréé. Lanceur EVE ouvert avec Proton Experimental officiel, 1600×800 sur l'espace 9,
+  puis fermé après contrôle ; aucun lancement de personnage. Bureau réel vivant, aucune modification QML ou des compositeurs.
+- Restent les avertissements secondaires Steam/CEF et, dans les sondes officielles, « unable to use parent for game drive »
+  avec chemin vide ; caches trouvés, aucune sonde en échec. Pas de modification des binaires ni de filtre des journaux.
+  Déconnexions expliquées par tes changements VPN, hors problème Steam ; aucune action NordVPN.
+
 ## Bitwarden : revue en boucle (2026-11-20)
 
 - Passe 1 : règles Sway / Hyprland, installateur, test et documentation relus dans leur contexte complet. Correction de
