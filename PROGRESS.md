@@ -3,6 +3,24 @@
 État courant seulement. Historique figé : phases 0 à 10 dans `docs/archive/PROGRESS.md`, maintenance du 2026-11-05 au 2026-11-09
 et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de besoin).
 
+## Bitwarden : exception native de zoom à 100 % (2026-11-20)
+
+- Décision finale : conserver la taille demandée par Bitwarden ; aucun réglage de hauteur dans Sway ou Hyprland.
+  Les essais à 80 % de l’écran puis 900 px ont été retirés (trop haut / dimensions fixes, non souhaités).
+- Une valeur à 100 % lue pendant le diagnostic venait de ton réglage manuel ; elle ne garantissait pas les ouvertures suivantes.
+  Exception native Chromium enregistrée, navigateur fermé par tes soins :
+  `partition.per_host_zoom_levels.x.nngceckbapebfimnlniiiahkandclblb.zoom_level = 0`.
+  Zoom général 125 %, polices et autres sites conservés ; copie de sécurité locale de Preferences.
+- Même réglage dans `install.sh`, navigateur principal / Default uniquement ; application différée si Chromium est ouvert,
+  restauration de la clé au retrait via le mécanisme existant. Aucun script résident ni modification de Bitwarden.
+- Profil Chromium jetable et extension factice avec la même identité : ouverture à 100 % malgré un défaut à 125 %,
+  puis trois réouvertures. Test complet `scripts/test-install.py` : 0 échec (bus privé, GIO_USE_VFS=local,
+  GVFS_DISABLE_FUSE=1), conservation des autres zooms et métadonnées, idempotence, retrait exact.
+- Réouverture réelle après redémarrage de Chromium, sans réglage manuel : exception à 100 % conservée, fenêtre flottante
+  et centrée, taille native 600×788. Capture `.shots/bitwarden-native-100.png` : défilement encore présent avec le contenu
+  actuel ; taille laissée à Bitwarden, selon ta décision. Son code actuel demande 630 px, sans mesure dynamique du contenu.
+- Bureau vivant, aucun banc restant. Laptop : fermer Chromium puis relancer `install.sh` pour appliquer l’exception.
+
 ## Bitwarden : fenêtres détachées flottantes (2026-11-20)
 
 - Constat sur Hyprland, espace 3 : le déverrouillage de l’extension Chromium est une fenêtre Wayland séparée,
