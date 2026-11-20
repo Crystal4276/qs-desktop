@@ -42,7 +42,7 @@ Chaque commande a été rattachée à son paquet sur cette machine avec `pacman 
 | Espaces de travail | natif (`Quickshell.I3` / `Quickshell.Hyprland`) | — | — | Symbols Nerd Font Mono | — |
 | Média (mpris) | natif (`Services.Mpris`, D-Bus) | — | un lecteur MPRIS (Spotify via `spotify-launcher` ou le paquet AUR `spotify`, n'est pas une dépendance du bureau) ; choix du lecteur à la molette natif (plus de `playerctl`) | Inter, Font Awesome 7 Brands, FontAwesome 4.7 | — |
 | Volume (icône + curseur) | natif (`Services.Pipewire`) | `pipewire`, `wireplumber` (services utilisateur actifs), `rtkit` (priorité temps réel) | `pavucontrol` (réglages avancés du panneau audio ; `pipewire-pulse`) | Symbols Nerd Font Mono | — |
-| Sortie audio suivante (ex-`audio-toggle.sh`) | natif (`Services.Pipewire`) + `notify-send` | `libnotify` | — | — | — |
+| Sortie audio suivante (ex-`audio-toggle.sh`) | natif (`Services.Pipewire`) + `pw-metadata` (flux existants suivant le défaut) + `notify-send` | `pipewire`, `libnotify` | — | — | — |
 | Mises à jour | `checkupdates` | `pacman-contrib`, **`fakeroot`** (`checkupdates` échoue sans lui ; non déclaré par `pacman-contrib`) | `paru` ou `yay` (clic) ; terminal | Inter, Hack Nerd Font | — |
 | GPU | NVIDIA : `nvidia-smi` ; AMD : sysfs (natif) ; Intel : `intel_gpu_top` (PMU, un seul processus à 5 s) | — | `nvidia-utils` (NVIDIA) ; `intel-gpu-tools`, `libcap` (Intel), `polkit` pour accorder CAP_PERFMON ; module masqué sans charge lisible | Inter, Hack Nerd Font | — |
 | CPU | natif (`/proc/stat`) | — | — | Inter, Hack Nerd Font | — |

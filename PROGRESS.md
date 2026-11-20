@@ -3,6 +3,27 @@
 État courant seulement. Historique figé : phases 0 à 10 dans `docs/archive/PROGRESS.md`, maintenance du 2026-11-05 au 2026-11-09
 et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de besoin).
 
+## Audio : bascule des applications vers la sortie choisie (2026-11-20)
+
+- Défaut constaté en session : les écouteurs soundcore étaient le défaut, mais Spotify restait relié au DAC SMSL via
+  `target.object`. Le raccourci changeait uniquement le défaut et imposait 60 % à chaque sélection.
+- Décisions utilisateur : toutes les applications suivent le choix explicite ; chaque sortie conserve son volume.
+  `Audio.setDefaultSink` centralise panneaux et raccourci : attend le défaut effectif, puis libère les destinations des
+  flux de lecture avec `pw-metadata` (`target.object = -1`). Micro et loopbacks internes exclus ; aucun déplacement au
+  démarrage ou à la connexion Bluetooth. Appuis rapprochés : dernière sélection ; file séquentielle, contrôle du serial,
+  erreur si commande échoue ou délai de 3 s dépassé. Pas de processus permanent ni de nouvelle règle WirePlumber.
+- Test `dbus-run-session -- python3 scripts/test-audio.py` sur PipeWire / WirePlumber privés : contre-exemple reproduit
+  (défaut changé, application toujours sur DAC), deux applications dans les deux sens, vrai IPC, trois appels immédiats,
+  volumes par sortie et par application, coupure conservée, application suspendue / fermée, sortie disparue, absence de flux
+  et de sorties, commande en échec ; micro virtuel disponible inchangé. PASS, aucun diagnostic QML nouveau.
+- Bureau complet sur copie isolée : `test-service-lifecycle.py` sous Sway headless et Hyprland imbriqué, six rechargements
+  chacun, PASS ; avertissements connus des services absents du banc et de Tailscale conservés. Aucune action NordVPN.
+- Déploiement rechargé par l’instance réelle, PID 314028 conservé ; trois barres et trois fonds présents. Spotify en lecture
+  déplacé vers les écouteurs puis vers le DAC avec les vrais appels `audio cycleSink`, volumes et micro inchangés.
+  Dernière vérification : écouteurs sélectionnés, Spotify lié aux écouteurs et en lecture, volume des écouteurs 50 % conservé.
+  Capture privée : `.shots/audio-switch-after.png`. Bancs arrêtés. Confirmation acoustique à faire à l’usage ; les liens
+  PipeWire sont vérifiés, aucune écoute physique ne peut être attestée ici. Dépendance `pw-metadata` documentée (PipeWire déjà installé).
+
 ## Maintenance GE-Proton et avertissements QML (2026-11-20)
 
 - Plan approuvé exécuté : contrôle des chemins de `steam-maintenance/20261120-114427`, des descripteurs, exécutables,
