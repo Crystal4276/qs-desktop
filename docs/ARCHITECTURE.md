@@ -407,7 +407,7 @@ Restent hors Quickshell, faute d'équivalent : `nvidia-smi`, `checkupdates`, `no
   un appairage seulement, `bluetoothctl` est lancé comme agent (`agent KeyboardDisplay`, sans `default-agent`) ; ses demandes
   (`[agent] Confirm passkey`, `Enter PIN code`) sont affichées dans le panneau, **jamais acceptées automatiquement**. Seules les lignes
   `[agent] …` et les résultats de `pair` en début de ligne sont lus (un nom d'appareil pourrait imiter une question).
-- Lignes : état, type, batterie ; détails dépliables (adresse copiable, renommage, reconnexion automatique) ; ordre figé panneau ouvert.
+- Lignes : état, type, batterie (glyphe du laptop partagé, horizontal, suivi du pourcentage pour les appareils connectés) ; détails dépliables (adresse copiable, renommage, reconnexion automatique) ; ordre figé panneau ouvert.
 - Notifications de connexion / déconnexion (« Connected 80% » quand la batterie arrive) ; batterie faible à 30 % puis 15 %, réarmée
   au-dessus de 40 %.
 - Reconnexion automatique des appareils choisis (`bluetooth.json`, état local) : démarrage, allumage, apparition, toutes les 60 s.

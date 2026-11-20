@@ -11,13 +11,11 @@ Item {
     implicitWidth: label.implicitWidth + 2 * Theme.bar.modulePadding
     implicitHeight: label.implicitHeight + 2 * Theme.bar.modulePadding
 
-    Text {
+    BatteryIcon {
         id: label
         anchors.centerIn: parent
-        text: Battery.charging ? Theme.icon.batteryCharging
-            : Theme.level(Theme.icon.battery, Battery.percent)
-        font.family: Theme.font.icons
-        font.pixelSize: Theme.font.defaultIcon
-        color: Battery.warning && !Battery.charging ? Theme.module.batteryWarning : Theme.module.battery
+        percent: Battery.percent
+        charging: Battery.charging
+        warning: Battery.warning
     }
 }

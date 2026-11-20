@@ -11,6 +11,8 @@ Rectangle {
     property string icon: ""
     property string text: ""
     property string subtext: ""
+    // Contenu secondaire personnalisé ; le texte standard reste le défaut.
+    property Component subtextContent: null
     property bool active: false
     property bool clickable: true
     // Action en cours (NordVPN) : icône et texte atténués, inactive (souris, clavier) ; garde le focus, et ses boutons restent
@@ -104,12 +106,19 @@ Rectangle {
 
             Text {
                 Layout.fillWidth: true
-                visible: root.subtext !== ""
+                visible: root.subtextContent === null && root.subtext !== ""
                 text: root.subtext
                 font.family: Theme.font.text
                 font.pixelSize: Theme.panel.smallFontSize
                 color: Theme.panel.secondaryText
                 elide: Text.ElideRight
+            }
+
+            Loader {
+                Layout.fillWidth: true
+                active: root.subtextContent !== null
+                visible: active
+                sourceComponent: root.subtextContent
             }
 
             ColumnLayout {
