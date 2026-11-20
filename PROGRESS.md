@@ -3,6 +3,13 @@
 État courant seulement. Historique figé : phases 0 à 10 dans `docs/archive/PROGRESS.md`, maintenance du 2026-11-05 au 2026-11-09
 et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de besoin).
 
+## EVE : lanceur sur l'espace de Steam (2026-11-20)
+
+- Cause : le placement « contenu ouvert depuis Steam » (`lua/openorigin.lua`, `open-origin.py`) remontait l'ascendance jusqu'à
+  `steam` et ramenait le lanceur EVE et sa fenêtre de zone de notification sur l'écran principal, après la règle « espace 9 ».
+  Les jeux passent tous par `reaper` : l'ascendance s'y arrête ; `test-open-origin.py` couvre le cas.
+- À tester : lancer EVE depuis Steam ; lanceur flottant 1600x800, centré sur l'espace 9 ; jeu sur l'espace 3.
+
 ## Web apps : catégories Notion et Discord (2026-11-20)
 
 - Notion « absent du lanceur » sur le laptop : vérifié par SSH, lanceur généré par `install.sh` et lu par `DesktopEntries`

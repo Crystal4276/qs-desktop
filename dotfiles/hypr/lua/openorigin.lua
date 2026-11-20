@@ -4,6 +4,8 @@ local runtime = os.getenv('XDG_RUNTIME_DIR')
 if not runtime then return end
 local sources = {deluge=true, ['deluge-gtk']=true, thunderbird=true, steam=true, steamwebhelper=true}
 local own = {deluge=true, ['org.mozilla.thunderbird']=true, thunderbird=true, steam=true}
+-- Steam starts every game through reaper: a game and its launchers are not opened content.
+local barriers = {reaper=true}
 local consumed, timers = {}, {}
 local function read(path)
     local f = io.open(path, 'rb')
@@ -26,6 +28,7 @@ local function ancestry(pid)
         local row = identity(pid)
         if not row then return false end
         if sources[row.name] then return true end
+        if barriers[row.name] then return false end
         pid = row.parent
     end
     return false

@@ -735,6 +735,7 @@ Le processus `scripts/open-origin.py` appartient à `Compositor` : démarrage en
 et nettoyage du socket au rechargement ; un verrou assure une seule instance. Désactivé sur les bancs généraux `QS_TEST=1`.
 La politique suit les origines Deluge / Thunderbird / Steam par identité de processus et les chemins natifs GIO, GApplication,
 GTK CommandLine, FileManager1, portail et MPRIS. Les programmes enfants directs sont aussi suivis à la création de leur fenêtre.
+Les jeux lancés par Steam (`reaper` dans l'ascendance) n'en sont pas : leurs règles de compositeur s'appliquent.
 Sous Hyprland, `lua/openorigin.lua` intervient synchroniquement dans `window.open`, à la fin du mapping mais avant le rendu.
 Le suivi publie atomiquement les identités PID/démarrage et l'écran principal dans `$XDG_RUNTIME_DIR/qs-open-origin.state`
 (mode 600, supprimé à l'arrêt). Requêtes limitées à 5 s ; l'ascendance native couvre les enfants directs. Les nouveaux clients
