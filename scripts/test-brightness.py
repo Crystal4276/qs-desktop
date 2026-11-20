@@ -26,6 +26,8 @@ def check(maximum):
         device = work / 'sys/class/backlight/test'
         (device / 'max_brightness').write_text(str(maximum))
         (device / 'brightness').write_text(str(maximum))
+        if maximum == 0:
+            shutil.rmtree(device)
         (work / 'delay').write_text('0')
         (work / 'fail').write_text('0')
         (work / 'shell.qml').write_text('''import QtQuick
@@ -34,13 +36,25 @@ import Quickshell.Io
 import qs.services
 import qs.modules.bar
 ShellRoot {
+    Timer {
+        id: sequence
+        property int remaining: 0
+        property int points: 0
+        repeat: true
+        onTriggered: {
+            slider.step(points);
+            if (--remaining === 0) stop();
+        }
+    }
     VolumeSlider { id: slider; value: Brightness.percent / 100; stepHandler: points => Brightness.step(points); onMoved: v => Brightness.setPercent(Math.round(v * 100)) }
     VolumeSlider { id: volume; value: .07; onMoved: v => value = v }
     IpcHandler {
         target: "test"
-        function state(): string { return JSON.stringify({available: Brightness.available, current: Brightness.current, percent: Brightness.percent, target: Brightness.target, applied: Brightness.applied, volume: volume.value}); }
+        function state(): string { return JSON.stringify({available: Brightness.available, current: Brightness.current, percent: Brightness.percent, target: Brightness.target, applied: Brightness.applied, volume: volume.value, remaining: sequence.remaining}); }
         function set(p: int): void { Brightness.setPercent(p); }
         function steps(points: int, count: int, viaSlider: bool): void { for (let i=0;i<count;i++) { if (viaSlider) slider.step(points); else Brightness.step(points); } }
+        function timed(points: int, count: int): void { sequence.points = points; sequence.remaining = count; sequence.interval = 90; sequence.start(); }
+        function mixed(): void { Brightness.setPercent(80); slider.step(-5); Brightness.setPercent(7); slider.step(5); }
         function drag(v: real): void { slider.emit(v); }
         function volumeStep(points: int): void { volume.step(points); }
     }
@@ -89,11 +103,21 @@ with (w/'writes').open('a') as f: f.write(json.dumps({'value': raw, 'args': sys.
                                                    env=env, text=True, stderr=subprocess.DEVNULL, timeout=3).strip()
                 def state():
                     return json.loads(ipc('state'))
+                until(state)
+                if maximum == 0:
+                    assert not state()['available']
+                    ipc('set', 50)
+                    ipc('steps', 5, 3, 'true')
+                    ipc('up', target='brightness')
+                    time.sleep(.1)
+                    assert not (work / 'writes').exists()
+                    print('PASS absent backlight: unavailable, no command')
+                    return
                 until(lambda: state()['available'])
                 def raw(percent):
                     return max(1, math.floor(maximum * percent / 100 + .5))
                 def settled():
-                    until(lambda: state()['target'] == -1)
+                    until(lambda: state()['target'] == -1 and state()['remaining'] == 0)
                     return state()['current']
                 def setp(value):
                     ipc('set', value)
@@ -122,6 +146,21 @@ with (w/'writes').open('a') as f: f.write(json.dumps({'value': raw, 'args': sys.
                     assert step(5, 20, via_slider) == maximum
                     assert step(-5, 20, via_slider) == raw(1)
                     (work / 'delay').write_text('0')
+                # Separate input events cross command exits and the one-second sysfs poll.
+                (work / 'delay').write_text('.13')
+                setp(1)
+                ipc('timed', 5, 20)
+                assert settled() == maximum
+                ipc('timed', -5, 20)
+                assert settled() == raw(1)
+                ipc('mixed')
+                assert settled() == raw(10)
+                (work / 'delay').write_text('0')
+                assert setp(-50) == raw(1)
+                assert setp(150) == maximum
+                before = (work / 'writes').read_text()
+                assert step(0) == maximum
+                assert (work / 'writes').read_text() == before
                 setp(1)
                 ipc('up', target='brightness')
                 assert settled() == raw(5)
@@ -154,5 +193,5 @@ with (w/'writes').open('a') as f: f.write(json.dumps({'value': raw, 'args': sys.
 
 if __name__ == '__main__':
     import sys
-    for maximum in map(int, sys.argv[1:] or ('10000', '64', '16')):
+    for maximum in map(int, sys.argv[1:] or ('10000', '64', '16', '0')):
         check(maximum)
