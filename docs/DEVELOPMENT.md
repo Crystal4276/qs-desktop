@@ -104,6 +104,14 @@ verrouillage).
   `--shots .shots` enregistre les vues laptop et ultra-large ; `QS_TEST_WALLPAPERS` peut désigner une bibliothèque existante
   lue seulement depuis le banc (sélection et caches isolés).
 
+- `python3 scripts/test-service-lifecycle.py [--compositor sway|hyprland]` : vrais services Bluez et FileOps,
+  BlueZ simulé sur bus système/session privés, fenêtres GTK factices, commandes VPN/alimentation et notifications factices.
+  Vérifie absence/apparition/retrait de l’adaptateur, activité et reconnexion silencieuse, appairage non encore suivi par
+  `paired`, titre de progression actualisé, question et retrait de sa notification ; puis démarrage complet et six
+  rechargements pendant des changements natifs continus. `--source <copie initiale> --expect-warnings` exige les deux
+  avertissements d’origine en contre-épreuve. Diagnostics des services absents du bus privé conservés ; avertissement
+  préexistant de `Tailscale.qml:176` au démontage signalé séparément, hors du périmètre Bluez/FileOps.
+
 - `python3 scripts/test-bar.py` : barre réelle sur Sway headless isolé, services média/audio/batterie factices ;
   1280–3440 px, ellipse artiste/titre, mises à jour, tray, replis et restauration, curseur conservé, absence de matériel.
 - `python3 scripts/test-brightness.py` : service réel et curseur hors écran, sysfs et `brightnessctl` factices ; crans,
@@ -224,6 +232,10 @@ Construite sur le laptop (2026-11-11) pour `plymouth-setup.sh` en mode UKI, dans
   restauration de l'historique.
 - `qs kill` moins d'une seconde après un rechargement à chaud peut planter (deux générations du moteur) : rapport dans
   `~/.cache/quickshell/crashes/`, sans gravité.
+- Pendant le démontage d’un rechargement, Quickshell interrompt l’ancien moteur avant de détruire ses singletons.
+  Un signal natif peut encore invalider une liaison : son résultat devient `undefined` sans exécuter son repli `??`.
+  Pour les valeurs concernées, `Bluez.busy` et le titre suivi par `FileOps` sont conservés et actualisés par les gestionnaires
+  de signaux (`Connections`), qui n’affectent aucune valeur lorsque le moteur est interrompu.
 - Le cache disque QML de Qt ne prend pas les chemins `qs:@/` : tout est recompilé à chaque lancement.
 - `Hyprland.usingLua` faux : le backend Hyprland n'envoie aucune action (seule la config Lua est prise en charge).
 - `Greetd` : après un refus (`auth_error`), Quickshell annule lui-même la session puis journalise « Received unexpected greetd response

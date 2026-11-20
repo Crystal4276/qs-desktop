@@ -28,8 +28,34 @@ Singleton {
     // Manette connectée : la veille des écrans est suspendue (Bar.qml), comme le module GameControllerWakelock de blueman.
     readonly property bool gamepadConnected: devices.some(d => d.connected && d.icon === "input-gaming")
     // Adaptateur qui s'allume ou s'éteint, appareil qui se connecte, se déconnecte ou s'appaire : icône du tray animée (GNOME, KDE).
-    readonly property bool busy: adapter?.state === BluetoothAdapterState.Enabling || adapter?.state === BluetoothAdapterState.Disabling
-        || devices.some(d => isBusy(d))
+    // Cache actualisé par signaux : une liaison peut être réévaluée après interruption de l’ancien moteur au rechargement.
+    readonly property bool busy: busyState
+    property bool busyState: false
+
+    function updateBusy(): void {
+        busyState = adapter?.state === BluetoothAdapterState.Enabling || adapter?.state === BluetoothAdapterState.Disabling
+            || devices.some(d => isBusy(d));
+    }
+    Component.onCompleted: updateBusy()
+    onAdapterChanged: updateBusy()
+    onDevicesChanged: updateBusy()
+    onRequestedChanged: updateBusy()
+    onAutoAttemptsChanged: updateBusy()
+
+    Connections {
+        target: root.adapter
+        function onStateChanged(): void { root.updateBusy(); }
+    }
+
+    Instantiator {
+        model: Bluetooth.devices
+        delegate: Connections {
+            required property BluetoothDevice modelData
+            target: modelData
+            function onStateChanged(): void { root.updateBusy(); }
+            function onPairingChanged(): void { root.updateBusy(); }
+        }
+    }
 
     // Icône du tray, noms du thème Papirus-Dark utilisés par blueman : éteint, appareil connecté, allumé.
     readonly property string icon: !enabled ? "blueman-tray-disabled" : anyConnected ? "blueman-tray-active" : "blueman-tray"
