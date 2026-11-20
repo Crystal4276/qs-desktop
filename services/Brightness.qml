@@ -30,7 +30,9 @@ Singleton {
     function step(points: int): void {
         if (points === 0)
             return;
-        const value = target >= 0 ? target : percent;
+        // Garder le cran demandé si le matériel confirme son arrondi ; un changement externe reprend la valeur lue.
+        const confirmed = applied >= 0 && current === Math.max(1, Math.round(max * applied / 100));
+        const value = target >= 0 ? target : confirmed ? applied : percent;
         const size = Math.abs(points);
         setPercent((points > 0 ? Math.floor(value / size) + 1 : Math.ceil(value / size) - 1) * size);
     }
@@ -46,7 +48,7 @@ Singleton {
 
     function apply(): void {
         applied = target;
-        setter.command = ["brightnessctl", "--device", device, "set", `${target}%`];
+        setter.command = ["brightnessctl", "--device", device, "--min-value=1", "set", `${target}%`];
         setter.running = true;
     }
 

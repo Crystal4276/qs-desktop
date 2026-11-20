@@ -3,6 +3,17 @@
 État courant seulement. Historique figé : phases 0 à 10 dans `docs/archive/PROGRESS.md`, maintenance du 2026-11-05 au 2026-11-09
 et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de besoin).
 
+## Luminosité : revue en boucle (2026-11-20)
+
+- Passe 1 : deux défauts reproduits sur le code d'origine avant correction : max=64, montée bloquée à 9 % (10 % demandé,
+  arrondi à 6/64) ; max=16, 1 % arrondi à zéro, dalle noire. `step` garde le dernier cran si la valeur brute lue confirme
+  son arrondi ; un changement externe reprend la valeur lue. Minimum matériel 1 avec l'option native `--min-value=1`.
+- Test de régression `scripts/test-brightness.py` : vrai service et `VolumeSlider` hors écran, bus privé, faux sysfs et
+  `brightnessctl` (arrondi matériel), max=10000/64/16 ; séquences complètes montée/descente, limites, valeurs intermédiaires,
+  rafales, IPC, glissement, volume inchangé, changement externe et échec d'écriture : OK. Aucune action sur la vraie dalle.
+- Démarrage complet et vrai `SettingsPanel` sur Sway isolé : OK, diagnostics identiques à la version d'origine ; aucune
+  action NordVPN. Bancs arrêtés. Revue suivante en cours.
+
 ## Luminosité : crans alignés sur 5 % (2026-11-20)
 
 - Suite retenue : 1 → 5 → 10… → 100 %, dans les deux sens ; depuis 7 %, montée à 10 %, descente à 5 %.
