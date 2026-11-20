@@ -3,6 +3,36 @@
 État courant seulement. Historique figé : phases 0 à 10 dans `docs/archive/PROGRESS.md`, maintenance du 2026-11-05 au 2026-11-09
 et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de besoin).
 
+## Maintenance GE-Proton et avertissements QML (2026-11-20)
+
+- Plan approuvé exécuté : contrôle des chemins de `steam-maintenance/20261120-114427`, des descripteurs, exécutables,
+  arguments et fichiers mappés des processus ; aucun usage des cinq dossiers archivés. Suppression limitée à GE-Proton9-22,
+  10-32, 10-34, 11-7-x86_64 et au préfixe de test `0`. **6 137 675 776 octets (5,716 Gio) réellement libérés** ; environ
+  240 Kio de configuration et diagnostics conservés, empreintes inchangées. Notice locale actualisée et mesure ajoutée dans
+  `cleanup-verification.json`. Les sept Proton officiels de la bibliothèque Steam sont présents, scripts `proton` identiques ;
+  Steam est resté ouvert. Aucune sauvegarde de jeu ni donnée privée de configuration touchée.
+- Cause QML reproduite sur copie isolée : changements natifs continus de l’adaptateur et des titres pendant le démontage
+  d’un rechargement. Quickshell 0.3.2 interrompt l’ancien moteur avant de détruire les singletons ; une liaison invalidée
+  retourne alors `undefined` sans même exécuter son repli `?? ""`. Les valeurs statiques, l’absence d’adaptateur et les
+  démarrages seuls ne reproduisaient pas le défaut. Aucun filtrage des diagnostics.
+- `Bluez.busy` conserve une valeur booléenne, actualisée par les signaux de l’adaptateur, de tous les appareils (y compris
+  non appairés) et des drapeaux de connexion. Même calcul, mêmes états, reconnexion silencieuse conservée.
+  `FileOps` conserve le dernier titre, initialisé à la création du suivi et actualisé par `titleChanged` ; aucun résultat de
+  liaison interrompue à convertir en chaîne. Interface, dépendances du bureau et politique Bluetooth inchangées.
+- Nouveau test `scripts/test-service-lifecycle.py` : vrais services sur bus privés, BlueZ et fenêtres GTK simulés,
+  notifications et commandes VPN/alimentation factices. Absence/apparition/retrait, allumage/extinction, connexion/déconnexion,
+  tentative automatique puis demande visible, appairage non appairé, progression et changement de titre, question et retrait :
+  **PASS**. Démarrage complet puis six rechargements sous Sway headless et Hyprland imbriqué : **0 avertissement Bluez/FileOps**.
+  Contre-épreuve sur l’ancien code : 299/12 avertissements sous Sway, puis 378/12 sous Hyprland.
+- Diagnostics inchangés du banc : services UPower/réseau/PipeWire absents du bus/runtime privé, anciennes entrées desktop
+  invalides et déconnexion de l’ancien client IPC. La même course atteint aussi `Tailscale.qml:176` (liaison `Poller.busy`),
+  reproduite sur l’ancien code et encore visible dans les tests ; **hors périmètre, non corrigée ni masquée**.
+- Déploiement des deux services après validation. L’ancienne génération a émis une dernière fois ses deux avertissements
+  pendant son remplacement ; rechargement suivant entre générations corrigées : aucun avertissement QML ni erreur nouvelle.
+  PID réel 1782 vivant, trois barres et trois fonds présents. Captures : `.shots/service-lifecycle-after-DP-{1,2,3}.png`
+  et `.shots/service-lifecycle-bars.png`. Bancs et processus de test arrêtés ; aucune action NordVPN ni sur les appareils
+  Bluetooth réels pendant les tests. Aucun changement des compositeurs ni redémarrage de Steam.
+
 ## Steam : retrait des restes GE-Proton (2026-11-20)
 
 - Audit : quatre installations manuelles GE-Proton (9-22, 10-32, 10-34, 11-7), environ 5,7 Gio, encore chargées par Steam.
@@ -10,7 +40,8 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
 - Selon ta décision : Steam fermé proprement, quatre installations et préfixe 0 déplacés dans une sauvegarde locale datée
   hors détection Steam ; configuration sauvegardée, seules les sélections GE-Proton9-11 absentes retirées pour Another World
   et l'ancien raccourci Path of Building (exécutable déjà absent). Préfixes de jeux conservés, 308 fichiers de référence
-  identiques après nettoyage et avant relance. Sauvegarde conservée : l'espace disque n'est pas encore libéré.
+  identiques après nettoyage et avant relance. Sauvegarde alors conservée ; dossiers volumineux supprimés ensuite selon le
+  plan approuvé (bilan ci-dessus).
 - Redémarrage réel : connexion OK, rendu Nvidia actif ; aucune mention GE-Proton ni erreur kernel32/version de préfixe/sonde
   dans les nouvelles lignes. Préfixe 0 non recréé. Lanceur EVE ouvert avec Proton Experimental officiel, 1600×800 sur l'espace 9,
   puis fermé après contrôle ; aucun lancement de personnage. Bureau réel vivant, aucune modification QML ou des compositeurs.

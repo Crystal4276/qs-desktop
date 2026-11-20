@@ -71,7 +71,12 @@ Singleton {
 
             required property Toplevel modelData
             readonly property bool nemo: modelData?.appId === "nemo"
-            readonly property string title: modelData?.title ?? ""   // indéfini au démontage d'un rechargement
+            // Dernier titre conservé : au rechargement, les signaux natifs peuvent atteindre un moteur déjà interrompu.
+            property string title: ""
+            readonly property Connections titleChanges: Connections {
+                target: watch.modelData
+                function onTitleChanged(): void { watch.title = watch.modelData?.title ?? ""; }
+            }
             property bool progress: false
             property string copied: ""   // noms du titre ; d'autres (opération suivante, même fenêtre) : dossier cherché à nouveau
             property string destination: ""   // chemin du dossier d'arrivée, si trouvé (bouton « Open folder »)
@@ -121,7 +126,10 @@ Singleton {
                     onStreamFinished: watch.destination = root.destinationIn(text.split("\n"), watch.title)
                 }
             }
-            Component.onCompleted: progress = nemo && percent()
+            Component.onCompleted: {
+                title = modelData?.title ?? "";
+                progress = nemo && percent();
+            }
             onQuestionChanged: {
                 if (!question)
                     notifier?.signal(2);   // SIGINT : notify-send ferme sa notification
