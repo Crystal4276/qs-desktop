@@ -33,6 +33,14 @@ Puis se déconnecter : l'écran de connexion greetd apparaît au prochain démar
 
 Sur un laptop, `fwupd` fournit les outils BIOS / firmwares et `smartmontools` le diagnostic du SSD.
 `install.sh` installe les outils sans appliquer de firmware ni activer la surveillance `smartd`.
+Sur un contrôleur de batterie compatible, son étape système prépare aussi le préréglage UPower **50–80 %**
+(`python3 scripts/battery-setup.py install`, dans un terminal ; `--dry-run` et `--root DIR` disponibles).
+La carte de l’icône batterie propose **Preserve · 80 %** pour le quotidien et **Full charge · 100 %** avant un départ.
+Ce choix temporaire reste actif jusqu’au départ, puis revient à la préservation au rebranchement suivant.
+Le pourcentage des réglages ouvre la même carte ; niveau, santé, température, cycles et autonomie sont affichés selon disponibilité.
+L’étape ne force aucune décharge ; la charge déjà au-dessus de 80 % peut y rester un moment.
+`--no-system` ignore la préparation ; le retrait système restaure la configuration et les valeurs de recharge initiales.
+Les clics passent par la permission UPower native de la session locale active, sans règle sudoers ou polkit supplémentaire.
 
 Tout fichier existant est sauvegardé avant d'être remplacé (`<fichier>.bak-<date>` à côté de l'original ; fichiers système dans
 `/var/lib/qs-desktop/`).

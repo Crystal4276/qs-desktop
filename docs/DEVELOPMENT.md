@@ -134,6 +134,11 @@ verrouillage).
 - `dbus-run-session -- python3 scripts/test-bluetooth-profiles.py` : service Bluez réel, appareils et commandes factices ;
   profils disponibles, concurrence, échec/reprise, lancement impossible, déconnexion et réponse invalide. Aucun accès à l’audio réel.
 
+- `python3 scripts/test-charging.py [--scale 1.5] [--shots DOSSIER]` : carte réelle sur Sway headless, contrôleur simulé ;
+  préservation / départ / retour secteur, départ armé hors secteur, relance complète, refus d’autorisation sans fausse sélection
+  ni boucle de reprise, clavier / aperçu / Échap ; installation / retrait dans une racine jetable et contrôle des confirmations
+  du client natif. Aucun changement de batterie réelle ; un banc qui utilise le client exige un bus système privé.
+
 - `python3 scripts/test-battery.py` : service Battery réel, source de données simulée et `notify-send` factice ;
   couleurs, seuils 30 % / 15 %, urgence, absence de doublons et réarmement en charge. Aucune décharge ni notification réelle.
 

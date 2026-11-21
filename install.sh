@@ -1245,6 +1245,12 @@ step_zerotier() {
     esac
 }
 
+step_battery() {
+    if compgen -G '/sys/class/power_supply/BAT*' >/dev/null; then
+        sub python3 "$repo/scripts/battery-setup.py" ${dry:+--dry-run} install
+    fi
+}
+
 step_system() {
     section "6. Système (sudo, avec confirmation)"
     # Accord donné une fois pour toutes (ask_system).
@@ -1276,6 +1282,7 @@ step_system() {
         if xpi="$(download thunderbird)"; then sub "$repo/scripts/system-setup.sh" ${dry:+--dry-run} thunderbird-theme "$xpi"
         elif [[ -z "$dry" ]]; then later "thème Thunderbird : téléchargement impossible ; relancer install.sh"; fi
     fi
+    step_battery
     # Sonde de connectivité NetworkManager (portails captifs Wi-Fi). Déjà installée : le script rechargerait NetworkManager pour rien.
     if cmp -s "$repo/dotfiles/NetworkManager/conf.d/90-qs-desktop-connectivity.conf" /etc/NetworkManager/conf.d/90-qs-desktop-connectivity.conf \
         && [[ -f /var/lib/qs-desktop/network-setup/ready ]]; then
@@ -1380,10 +1387,11 @@ EOF
     if command -v chromium >/dev/null; then
         python3 "$repo/scripts/browser-links-setup.py" ${dry:+--dry-run} uninstall 2>/dev/null || echo "= liens Chromium : rien à retirer"
     fi
-    if [[ -n "$system" ]] && ask "Défaire aussi les étapes système (GPU Intel, sudo pacman, Reflector, greeter → ancien gestionnaire, écran de démarrage Plymouth, menu GRUB Horizon, sonde réseau, Samba, services, groupes, cache des clés USB, extensions Chromium, thème Thunderbird) ?"; then
+    if [[ -n "$system" ]] && ask "Défaire aussi les étapes système (GPU Intel, sudo pacman, Reflector, greeter → ancien gestionnaire, écran de démarrage Plymouth, menu GRUB Horizon, sonde réseau, recharge batterie, Samba, services, groupes, cache des clés USB, extensions Chromium, thème Thunderbird) ?"; then
         [[ -f /var/lib/qs-desktop/grub-horizon/state.json ]] && sub grub_horizon_setup uninstall
         plymouth_installed && sub "$repo/scripts/plymouth-setup.sh" ${dry:+--dry-run} uninstall
         sub "$repo/scripts/system-setup.sh" ${dry:+--dry-run} uninstall
+        sub python3 "$repo/scripts/battery-setup.py" ${dry:+--dry-run} uninstall
         sub "$repo/scripts/network-setup.sh" ${dry:+--dry-run} uninstall
         sub "$repo/scripts/greeter-setup.sh" ${dry:+--dry-run} uninstall
         local own="/var/lib/qs-desktop/${USER:-$(id -un)}"

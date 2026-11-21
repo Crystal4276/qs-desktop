@@ -266,6 +266,7 @@ Singletons de `services/`. Les widgets ne lisent que les services ; aucun `Proce
 | `FileOps` | fin et questions des copies de Nemo, notifiées | `ToplevelManager` (titres des fenêtres de Nemo), `notify-send`, `gettext` (traduction de Nemo), fichiers ouverts en écriture par Nemo (`/proc`, dossier d'arrivée) |
 | `Updates` | mises à jour en attente | `checkupdates` |
 | `Battery`, `Brightness` | laptop | `UPower` ; `/sys/class/backlight` + `brightnessctl` |
+| `Charging` | préservation / départ, détails de batterie | API UPower par client Gio ponctuel (`batteryctl.py`), confirmation sysfs ; aucun démon ajouté |
 | `Profiles` | profils d'énergie | `PowerProfiles` (power-profiles-daemon) |
 | `Rfkill` | mode avion | `rfkill` |
 | `NightLight` | veilleuse : état, horaire (`Schedule`), température | `Hyprsunset` sous Hyprland (`hyprsunset`, `hyprctl`), `Gammastep` sous Sway (`gammastep`) |
@@ -764,3 +765,26 @@ Aucun chemin ni URI n'est écrit dans les logs ou l'état ; les requêtes et emp
 conserve l'identité du navigateur et utilise `browser-link.py` : l'origine est vérifiée auprès du suivi ; pour les trois sources,
 réutiliser une fenêtre Chromium centrale, sinon en créer une. Les autres sources et les lancements sans URL restent natifs.
 Les web apps conservent leur hôte `open-link` et le focus de la fenêtre qui reçoit leur lien.
+
+### 7.18 Carte batterie et politique de recharge
+
+- Une carte `BatteryPanel`, chargée à la demande par `Panels.qml`, partagée entre les barres. Icône batterie : aperçu / clic
+  comme les autres panneaux ; pourcentage des réglages : même carte ; `qs ipc call battery toggle`.
+- État d’alimentation distinct du choix de recharge. `Charging` sélectionne le préréglage UPower par `EnableChargeThreshold` :
+  préservation 50–80 %, ou pleine charge en mode standard. Le client ponctuel `batteryctl.py` découvre la batterie réelle
+  (`Type=Battery`, `PowerSupply`, `IsPresent`), lit les propriétés D-Bus, puis vérifie les seuils et le mode natif dans sysfs.
+  Le module UPower de Quickshell 0.3.2 ne fournit pas cette méthode ni tous les détails de santé. Aucun nouveau service permanent.
+- Départ choisi sur batterie : armé pour le prochain branchement. Départ choisi branché : la pleine charge reste prioritaire.
+  Débranchement après préparation : état « away » ; rebranchement suivant : préservation. Choix / dernière alimentation dans
+  `Quickshell.statePath("battery-charging.json")`, conservés après relance. Les transitions d’alimentation sont suivies pendant
+  l’exécution du bureau ; des débranchements / rebranchements entièrement effectués bureau arrêté ne peuvent être reconstruits.
+- Sélection verte seulement après confirmation du contrôleur. Erreur visible et bouton de reprise, pas de boucle d’authentification.
+  Lectures : événements UPower et 60 s en fond / 5 s carte ouverte. Sans batterie, aucune commande ; sans préparation, lecture seule.
+- `battery-setup.py`, appelé par l’étape système d’`install.sh` sur laptop, prépare les seuils et le préréglage matériel UPower
+  (`61-qs-desktop-battery.hwdb`). Nécessaire pour conserver 50–80 % après une pleine charge et une relance du démon : UPower
+  mémorise le choix et charge les seuils au démarrage. Sauvegarde initiale dans `/var/lib/qs-desktop/battery-setup`, relance ciblée
+  d’UPower ; réinstallation inchangée : mode courant conservé ; retrait : valeurs / configuration initiales restaurées.
+- Permission native UPower réservée à la session locale active ; aucune permission administrative générale ajoutée.
+  Le bureau doit être lancé par le compositeur de la session graphique, y compris après une maintenance via SSH.
+- Santé, température et cycles omis si absents. Autonomie estimée uniquement en décharge ; durée de pleine charge uniquement en
+  mode 100 %, aucune estimation artificielle à 80 %. Aucune décharge ni aucun cycle profond provoqué pour tester la limite.

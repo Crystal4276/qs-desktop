@@ -24,7 +24,7 @@ ShellRoot {
     // Apps : applications lues et filtrées avant la première ouverture du menu ou du lanceur. Audio : « ne pas déranger ».
     // Disks : montage automatique et notifications, même sans tray (config machine, aucun écran actif). Displays : `$mod+d` avant la
     // première ouverture du panneau de réglages. FileOps : fin et questions des copies de Nemo.
-    readonly property var background: [NightLight, Idle, Apps, Audio, Disks, Displays, FileOps]
+    readonly property var background: [NightLight, Idle, Apps, Audio, Disks, Displays, FileOps, Charging]
 
     Background {}
     Bar {}
