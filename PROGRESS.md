@@ -6,7 +6,8 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
 ## Outils BIOS / firmwares et diagnostic SSD du laptop (2026-11-21)
 
 **État actuel : outils installés et installateur publié, bilan SSD bon ; préparation du dock partielle après erreur USB,
-à reprendre sur place avant de conclure. Secure Boot / dbx exclus par l'utilisateur et inchangés. Détails ci-dessous.**
+à reprendre sur place avant de conclure. Retentative demandée, mais aucun nouveau flash après vérification et confirmation
+qu'aucune personne n'est sur place. Paquet complet 01.01.17 inspecté et empreinte validée. Secure Boot / dbx inchangés.**
 
 - Plan approuvé : `install.sh` ajoute `fwupd` et `smartmontools` avec les profils d'énergie quand une batterie est détectée,
   pour les profils travail et jeux. Dépendances et documentation mises à jour ; aucun modèle Dell codé en dur.
@@ -63,6 +64,29 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
   https://github.com/fwupd/firmware-dell/issues/256 ; ce témoignage ne démontre pas la cause sur le SD25TB4 présent.
   **À reprendre auprès du dock** : examiner l'état préparé avant activation, vérifier ensuite USB / Ethernet / écrans et
   choisir une suite cohérente avec le paquet composite. Ne pas tenter une rétrogradation à distance sur la base de ce seul cas.
+
+### Demande de retentative : inspection du paquet complet (2026-11-21)
+
+- L'utilisateur demande de retenter les composants manqués, inquiet pour le dock. Audit uniquement, **aucune nouvelle
+  écriture ni activation**. Il confirme que personne ne peut intervenir physiquement au bureau pour le moment.
+  État relu identique : échec RTS5 Gen2, anciennes versions actives, paquet global 1.1.17.1. Ethernet eth0 up / carrier 1,
+  secteur présent, batterie 100 %, Quickshell PID 201448 conservé, aucun service système en échec.
+- Paquet officiel complet 01.01.17 téléchargé dans un répertoire temporaire privé et inspecté hors du laptop, sans exécuter
+  de binaire fourni. SHA-256 conforme aux métadonnées LVFS :
+  `26d8e1e9eb16ff5d1c9c6e57336ea5dce2d82c4438c819e7d553ecb2110fe20f`.
+  Le CAB contient **déjà les sept versions cibles** : paquet 01.01.17.01, MST 09.04.03, PD 01.37.00.00, hubs 01.17 / 01.23,
+  RMM 02.03.07.00 et EC 01.00.11.01. Son README préconise l'installation du CAB complet par fwupdmgr. La sélection
+  de versions par composant dans le catalogue n'impliquait pas qu'il faille installer plusieurs CAB : erreur de méthode
+  reconnue et expliquée à l'utilisateur. La seconde installation 01.01.15 était inutile pour disposer des images cibles.
+- Réponse du mainteneur Dell/fwupd à une erreur similaire sur WD25 : déconnexion physique puis reconnexion avant de relire
+  les versions, https://github.com/fwupd/fwupd/issues/9215. Autre modèle ; ce n'est pas une preuve de la cause présente.
+  Le plugin installé utilise l'activation différée : une nouvelle écriture avant vérification après reconnexion ne permet
+  pas de valider l'état préparé. Pas de relance aveugle, pas de forçage ni de rétrogradation à distance.
+- Reprise **avec présence physique** : ouvrir le capot pour garder le laptop utilisable lors de la perte du dock ; confirmer
+  qu'aucune écriture n'est en cours ; suivre l'activation au débranchement USB-C en maintenant l'alimentation du dock pendant
+  cette activation, attendre sa fin puis reconnecter et relire toutes les versions. Vérifier USB / Ethernet / écrans.
+  Décider seulement alors d'une réapplication cohérente du CAB complet 01.01.17 avec les contrôles natifs fwupd. Si une
+  réinitialisation électrique est nécessaire ensuite, la distinguer de l'activation afin de ne pas couper une écriture en cours.
 
 ## Notifications : revue en série (2026-11-20)
 
