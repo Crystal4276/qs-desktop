@@ -34,6 +34,13 @@ Panel {
 
         Row {
             visible: Battery.available
+
+            TapHandler {
+                onTapped: {
+                    root.close();
+                    BarState.preferredButton("battery")?.toggle();
+                }
+            }
             spacing: Theme.panel.rowPadding
 
             Text {

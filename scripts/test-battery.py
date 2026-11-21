@@ -15,6 +15,7 @@ with tempfile.TemporaryDirectory(prefix='qs-battery-') as temp:
     }''')
  (r/'services/Battery.qml').write_text(s)
  shutil.copy2(REPO / 'config/Theme.qml',r/'config/Theme.qml');shutil.copy2(REPO / 'modules/bar/BatteryModule.qml',r/'modules/bar/BatteryModule.qml');shutil.copy2(REPO / 'modules/bar/BatteryIcon.qml',r/'modules/bar/BatteryIcon.qml');(r/'assets').symlink_to(REPO / 'assets')
+ for name in ('PreviewArea.qml', 'BarState.qml'): shutil.copy2(REPO/'modules/bar'/name,r/'modules/bar'/name)
  (r/'shell.qml').write_text('''import QtQuick
 import Quickshell
 import Quickshell.Io

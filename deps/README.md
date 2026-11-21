@@ -57,7 +57,7 @@ Chaque commande a été rattachée à son paquet sur cette machine avec `pacman 
 | Tray | natif (`Services.SystemTray` ; Quickshell fait aussi le rôle de « watcher ») | — | — | Inter (menus) | — |
 | Engrenage → panneau de réglages (remplace le power menu) | natif (`Pipewire`, `UPower`, `PowerProfiles`, `IdleInhibitor`, IPC du compositeur pour HDR / VRR) | `systemd` (redémarrer, éteindre), `gammastep` (veilleuse sous Sway), `hyprsunset` (sous Hyprland), `util-linux` (`rfkill`, mode avion), capture et verrouiller : natifs (phase 8b, voir plus bas) | `power-profiles-daemon` (3 boutons masqués sans lui) ; `brightnessctl` (luminosité, laptop) | Inter, Symbols Nerd Font Mono | `assets/{lock,logout,restart,shutdown}.svg` |
 | Bouton Arch → menu d'applications (remplace nwg-menu) | natif (`DesktopEntries`) | `xdg-user-dirs` (dossiers), `xdg-utils` (ouvrir dossiers et fichiers) ; boutons de session comme le panneau de réglages | — | Inter, Symbols Nerd Font Mono | `assets/{lock,logout,restart,shutdown}.svg`, icônes Papirus-Dark |
-| Batterie (laptop) | natif (`Services.UPower`) | — | `upower` (service système) | Symbols Nerd Font Mono (icônes v3 `U+F0079`…) | — |
+| Batterie (laptop) | état natif (`Services.UPower`), recharge par l’API D-Bus UPower (`scripts/batteryctl.py`, client ponctuel Gio) | `upower`, `python-gobject` ; préparation système : `systemd-hwdb`, `udevadm`, `systemctl` (`systemd`) et `sudo` | contrôleur compatible avec les seuils de recharge ; absence : carte informative | Inter, Symbols Nerd Font Mono (icônes v3 `U+F0079`…) | — |
 | Luminosité (laptop) | `/sys/class/backlight` | — | `brightnessctl` (écriture sans root) | Symbols Nerd Font Mono | — |
 
 Rendu de tous les SVG : `qt6-svg` (installé avec `quickshell`).

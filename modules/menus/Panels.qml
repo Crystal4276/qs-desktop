@@ -18,8 +18,15 @@ Scope {
         SettingsPanel {}
     }
 
+    LazyLoader {
+        id: battery
+
+        BatteryPanel {}
+    }
+
     Component.onCompleted: {
         BarState.registerLoader("menu", menu);
         BarState.registerLoader("settings", settings);
+        BarState.registerLoader("battery", battery);
     }
 }

@@ -1,0 +1,3 @@
+# UPower's native preservation preset. It remains available after a temporary full charge.
+battery:*:*:dmi:*
+ CHARGE_LIMIT=50,80

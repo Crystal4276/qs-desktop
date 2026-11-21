@@ -118,6 +118,14 @@ Singleton {
     }
 
     IpcHandler {
+        target: "battery"
+
+        function toggle(): void {
+            root.toggleFromShortcut("battery");
+        }
+    }
+
+    IpcHandler {
         target: "settings"
 
         function toggle(): void {

@@ -3,6 +3,28 @@
 État courant seulement. Historique figé : phases 0 à 10 dans `docs/archive/PROGRESS.md`, maintenance du 2026-11-05 au 2026-11-09
 et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de besoin).
 
+## Carte batterie : préservation et départ (2026-11-21)
+
+- Carte dédiée partagée entre écrans, aperçu / clic sur la batterie et accès depuis les réglages : niveau, alimentation,
+  limite confirmée, deux tuiles de recharge et détails disponibles (santé, température, cycles, capacité, autonomie).
+  Style des panneaux existants, aucune valeur graphique ajoutée ; captures simulées à échelles 1 et 1,5 validées.
+- Préservation 50–80 % par défaut ; départ temporaire à 100 % en mode standard. Départ armé hors secteur conservé au
+  branchement de préparation ; retour à la préservation après débranchement puis rebranchement. Choix / dernière alimentation
+  conservés après relance. Limite connue : des transitions entièrement effectuées bureau arrêté ne sont pas observables.
+- API UPower native, client Gio ponctuel car Quickshell 0.3.2 n’expose pas les méthodes / propriétés nécessaires. Confirmation
+  des seuils et du mode par sysfs avant succès ; erreurs visibles, aucune boucle de reprise automatique après un refus.
+  Ni démon ajouté ni nouvelle règle de privilèges. Les actions natives nécessitent une session graphique locale active.
+- `battery-setup.py`, intégré aux étapes système install / uninstall, prépare le préréglage UPower et les seuils du contrôleur
+  compatible. Sauvegarde / restauration initiales, mode de départ préservé au second passage, simulation et racine isolée.
+  Aucune décharge forcée, aucun firmware appliqué, aucun paquet ajouté. Documentation et dépendances mises à jour.
+- Tests : carte réelle sur Sway isolé à 1 et 1,5, transitions / arming / relance complète / refus sans faux succès ni boucle,
+  clavier / aperçu / Échap PASS. Client : écriture ignorée et refus détectés. Préparation : dry-run, installation, répétition,
+  retrait et matériel absent PASS ; sélection réelle de l’étape par install.sh avec batterie simulée PASS.
+- Régressions : alertes batterie PASS ; démarrage complet et six rechargements du bureau Sway PASS. Test général de barre :
+  échec de largeur à 1280 px, reproduit exactement sur le code inchangé (mêmes dimensions). Installateur : tous les contrôles
+  passent sauf le dry-run Plymouth, prérequis Plymouth absent sur l’hôte de test ; aucune installation supplémentaire.
+- Déploiement et activation sur le laptop : en cours ; mesures privées et captures réelles exclues du dépôt.
+
 ## Mise à jour du laptop depuis le dépôt (2026-11-21)
 
 - Dépôt avancé de 39 commits, de `12cf999` à `c030c24`, par fast-forward. Aucun fichier suivi modifié localement ;
