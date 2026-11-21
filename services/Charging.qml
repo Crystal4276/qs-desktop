@@ -12,14 +12,16 @@ Singleton {
     property var status: ({})
     property bool ready: false
     property bool panelOpen: false
-    property string error: ""
+    property string readError: ""
+    property string actionError: ""
+    readonly property string error: actionError || readError
     property bool again: false
     property string attempted: ""   // a failed automatic request is retried only by a click or a power-source change
     readonly property bool busy: reader.busy || setter.busy
     readonly property var details: status.battery ?? ({})
     readonly property bool supported: details.ChargeThresholdSupported === true
     readonly property bool configured: status.configured === true && details.ChargeStartThreshold === 50 && details.ChargeEndThreshold === 80
-    readonly property bool onBattery: status.onBattery === true
+    readonly property bool onBattery: UPower.onBattery
     readonly property string mode: status.mode ?? ""   // confirmed by both UPower and the kernel
     readonly property bool departure: state.phase !== "preserve"
     readonly property string wanted: departure ? "full" : "preserve"
@@ -33,11 +35,14 @@ Singleton {
             return;
         state.phase = departure ? (onBattery ? "armed" : "connected") : "preserve";
         state.lastOnline = !onBattery;
-        stateFile.writeAdapter();
-        error = "";
+        Qt.callLater(root.saveState);
+        readError = "";
+        actionError = "";
         attempted = "";
         apply();
     }
+
+    function saveState(): void { stateFile.writeAdapter(); }
 
     function powerChanged(online: bool): void {
         if (state.lastOnline !== online) {
@@ -49,7 +54,7 @@ Singleton {
             else if (state.phase === "away" && online)
                 state.phase = "preserve";
             state.lastOnline = online;
-            stateFile.writeAdapter();
+            Qt.callLater(root.saveState);
         }
     }
 
@@ -69,18 +74,24 @@ Singleton {
             reader.runCommand(["python3", "-I", program, "status"]);
     }
 
-    function accept(output: string): bool {
-        try {
-            const value = JSON.parse(output);
-            if (value.error || !value.battery || !value.hardware)
-                throw new Error(value.error || "Invalid battery status");
-            status = value;
-            powerChanged(!onBattery);
-            return true;
-        } catch (e) {
-            error = String(e.message ?? e);
-            return false;
-        }
+    function accept(output: string): void {
+        const value = JSON.parse(output);
+        if (value.error || !value.battery || !value.hardware)
+            throw new Error(value.error || "Invalid battery status");
+        // Power transitions come from the native signal, never from an older command reply.
+        status = value;
+    }
+
+    function failure(output: string, fallback: string): string {
+        try { return JSON.parse(output).error || fallback; }
+        catch (_) { return fallback; }
+    }
+
+    function retry(): void {
+        readError = "";
+        actionError = "";
+        attempted = "";
+        refresh();
     }
 
     CliRunner {
@@ -88,11 +99,14 @@ Singleton {
         program: "python3"
         probe: false
         onFinished: {
-            if (code === 0 && root.accept(output)) {
-                if (!setter.busy)
-                    root.apply();
-            } else {
-                root.error = root.error || error || "Battery information unavailable";
+            try {
+                if (code !== 0)
+                    throw new Error(root.failure(output, error || "Battery information unavailable"));
+                root.accept(output);
+                root.readError = "";
+                root.apply();
+            } catch (e) {
+                root.readError = String(e.message ?? e);
             }
             if (root.again) {
                 root.again = false;
@@ -106,14 +120,16 @@ Singleton {
         program: "python3"
         probe: false
         onFinished: {
-            if (code === 0 && root.accept(output)) {
-                root.error = "";
+            try {
+                if (code !== 0)
+                    throw new Error(root.failure(output, error || "Charging mode could not be changed"));
+                root.accept(output);
+                root.actionError = "";
                 // The source may have changed while the native call was running.
                 root.attempted = "";
                 Qt.callLater(root.apply);
-            } else {
-                try { root.error = JSON.parse(output).error || error; }
-                catch (_) { root.error = error || "Charging mode could not be changed"; }
+            } catch (e) {
+                root.actionError = String(e.message ?? e);
             }
             Qt.callLater(root.refresh);
         }
@@ -138,16 +154,26 @@ Singleton {
         if (!["preserve", "armed", "connected", "away"].includes(state.phase))
             state.phase = "preserve";
         ready = true;
+        if (Battery.available)
+            powerChanged(!onBattery);
         refresh();
     }
 
     Connections {
         target: UPower
-        function onOnBatteryChanged(): void { root.refresh(); }
+        function onOnBatteryChanged(): void {
+            if (root.ready && Battery.available)
+                root.powerChanged(!root.onBattery);
+            root.refresh();
+        }
     }
     Connections {
         target: Battery
-        function onAvailableChanged(): void { root.refresh(); }
+        function onAvailableChanged(): void {
+            if (root.ready && Battery.available)
+                root.powerChanged(!root.onBattery);
+            root.refresh();
+        }
     }
     onPanelOpenChanged: if (panelOpen) refresh()
 
