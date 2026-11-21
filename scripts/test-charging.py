@@ -72,6 +72,10 @@ def setup_test(work):
     spec = importlib.util.spec_from_file_location("batteryctl", REPO / "scripts/batteryctl.py")
     ctl = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(ctl)
+    class VoidReplyBus:
+        def call_sync(self, *args):
+            return ctl.GLib.Variant("()", ())
+    assert ctl.call(VoidReplyBus(), ctl.ROOT, ctl.DEVICE, "EnableChargeThreshold") is None
     initial = {"path": "/org/freedesktop/UPower/devices/battery_BAT0", "configured": True,
                "battery": {"ChargeThresholdSupported": True, "ChargeStartThreshold": 50,
                            "ChargeEndThreshold": 80, "ChargeThresholdEnabled": False},
