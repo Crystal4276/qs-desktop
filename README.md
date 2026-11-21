@@ -23,13 +23,16 @@ Puis se déconnecter : l'écran de connexion greetd apparaît au prochain démar
 | Étape | Ce qui est fait |
 |---|---|
 | Avant les paquets | profil de la machine (question 1) ; étapes système acceptées (question 2) : Reflector installe d'abord ce seul paquet avec les miroirs existants s'il manque, classe jusqu'à 20 miroirs HTTPS mondiaux synchronisés depuis moins de 12 h par débit, puis active le renouvellement hebdomadaire (`reflector.timer`) |
-| 1. Paquets | installe `deps/arch-pacman.txt` (le bureau) et `deps/apps.txt` (applications de base), les paquets du profil (`deps/games.txt` avec le dépôt `[multilib]`, ou `deps/work.txt`), ceux de la carte graphique (`deps/gpu.txt`), `brightnessctl` sur un laptop ; construit `paru-bin`, seul paquet AUR ; installe Claude Code |
+| 1. Paquets | installe `deps/arch-pacman.txt` (le bureau) et `deps/apps.txt` (applications de base), les paquets du profil (`deps/games.txt` avec le dépôt `[multilib]`, ou `deps/work.txt`), ceux de la carte graphique (`deps/gpu.txt`), `brightnessctl` si rétroéclairage détecté ; batterie détectée : `power-profiles-daemon`, `fwupd` et `smartmontools` ; construit `paru-bin`, seul paquet AUR ; installe Claude Code |
 | 2. Configs du compte | liens vers le dépôt : `~/.config/quickshell/desktop`, `sway`, `hypr`, `fastfetch`, `mpv`, `starship.toml`, `chromium-flags.conf`, règle WirePlumber ; bloc ajouté à `~/.bashrc` (le reste n'est pas touché) ; identité Git si elle manque, prise du compte GitHub de `gh` (sinon rappel : `gh auth login`, puis relancer) |
 | 3. Thème | archives officielles Catppuccin (`deps/themes.txt`, empreintes vérifiées) : GTK 3/4, curseur, Kvantum (Qt), dossiers Papirus lavande, Geany ; mêmes polices et curseur partout |
 | 4. Réglages | GSettings (`dotfiles/dconf/`), applications par défaut (`dotfiles/mime/defaults.list`), web apps, liens HTTP vers Chromium ; profils Chromium (navigateur et web apps) en thème GTK, barre de titre du système (sans boutons réduire / agrandir / fermer) ; exception de zoom Bitwarden à 100 % dans le navigateur principal |
 | Fonds, DigitalMicrograph | clone les fonds d'écran ; profil travail : clone `[depot prive configure localement]` (privé : `gh auth login` ou clé SSH) dans `~/DigitalMicrograph` |
 | 5. Config machine | crée `hosts/<machine>.json` s'il manque, avec le profil (à committer) |
 | 6. Système (sudo / authentification polkit) | compteurs GPU Intel (CAP_PERFMON ciblé et hook de mise à jour), écran de connexion greetd, profil travail : écran de démarrage Plymouth Core Lab (initramfs, `splash`, image de secours sans Plymouth pour une UKI : `docs/PLYMOUTH.md`, retour : `docs/ROLLBACK.md`), garde de GRUB pour les UKI (`10_linux` désactivé après chaque mise à jour de `grub`), sonde des portails captifs, Samba, services (réseau, Bluetooth, énergie, VM), groupes, thème Qt du système, extensions de Chromium (`dotfiles/chromium/extensions.txt`, installées depuis le Chrome Web Store au démarrage du navigateur ; pas dans les web apps) |
+
+Sur un laptop, `fwupd` fournit les outils BIOS / firmwares et `smartmontools` le diagnostic du SSD.
+`install.sh` installe les outils sans appliquer de firmware ni activer la surveillance `smartd`.
 
 Tout fichier existant est sauvegardé avant d'être remplacé (`<fichier>.bak-<date>` à côté de l'original ; fichiers système dans
 `/var/lib/qs-desktop/`).

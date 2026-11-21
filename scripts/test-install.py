@@ -99,6 +99,63 @@ def git_repo(path, name):
     return str(path)
 
 
+def test_laptop_packages(repo, tmp, env):
+    """Vraie sélection de paquets, matériel et pacman factices ; aucune installation."""
+    prefix = (repo / "install.sh").read_text().split('\nif [[ -n "$uninstall" ]]; then\n', 1)[0]
+    command = r'''
+is_arch() { return 0; }
+gpu_vendors() { echo intel; }
+compgen() {
+    [[ "$*" == *'/sys/class/power_supply/BAT'* && "$TEST_BATTERY" == 1 ]]
+}
+command() {
+    if [[ "$1" == -v && ( "$2" == lspci || "$2" == paru ) ]]; then return 0; fi
+    builtin command "$@"
+}
+pacman() {
+    case "$1" in
+        -Q) return 0 ;;
+        -T)
+            shift
+            printf '%s\n' "$@" > "$TEST_REQUEST"
+            if [[ "$TEST_INSTALLED" == 0 ]]; then
+                for package in "$@"; do
+                    case "$package" in fwupd|smartmontools) echo "$package" ;; esac
+                done
+            fi
+            ;;
+        *) echo "Appel pacman interdit" >&2; return 99 ;;
+    esac
+}
+sudo() { echo "Installation interdite dans ce test" >&2; return 99; }
+step_claude() { :; }
+if [[ -n "$packages" ]]; then step_packages; fi
+'''
+    request = tmp / "package-request"
+    for profile in ("travail", "jeux"):
+        for battery in ("0", "1"):
+            for installed in ("0", "1"):
+                request.unlink(missing_ok=True)
+                r = subprocess.run(
+                    ["bash", "-c", prefix + command, str(repo / "install.sh"),
+                     "--dry-run", "--no-system", "--profil", profile],
+                    env=dict(env, TEST_BATTERY=battery, TEST_INSTALLED=installed, TEST_REQUEST=str(request)),
+                    capture_output=True, text=True, timeout=30)
+                wanted = request.read_text().splitlines() if request.exists() else []
+                expected = int(battery)
+                check(r.returncode == 0 and all(wanted.count(p) == expected for p in
+                      ("fwupd", "smartmontools", "power-profiles-daemon")),
+                      f"paquets {profile}, batterie={battery}, installés={installed} : sélection unique ({r.stderr[-200:]})")
+                check(("+ sudo pacman" in r.stdout) == (battery == "1" and installed == "0"),
+                      "paquets : simulation des manquants / second passage déjà installé")
+    request.unlink(missing_ok=True)
+    r = subprocess.run(["bash", "-c", prefix + command, str(repo / "install.sh"),
+                        "--dry-run", "--no-system", "--no-packages"],
+                       env=dict(env, TEST_BATTERY="1", TEST_INSTALLED="0", TEST_REQUEST=str(request)),
+                       capture_output=True, text=True, timeout=30)
+    check(r.returncode == 0 and not request.exists(), "--no-packages : aucune sélection ni installation")
+
+
 def main():
     native_spotify_launcher = shutil.which("spotify-launcher")
     tmp = pathlib.Path(tempfile.mkdtemp(prefix="qs-install-test-"))
@@ -178,6 +235,8 @@ def main():
         env.update(HOME=str(home), XDG_RUNTIME_DIR=str(run), XDG_CACHE_HOME=str(cache), LANG="C.UTF-8", QS_INSTALL_ASSUME_CLOSED="1",
                    QS_PAPIRUS_DIR=str(icons / "Papirus"), QS_WALLPAPERS_REPO=git_repo(tmp / "src/wallpapers", "fond.png"),
                    QS_DM_REPO=git_repo(tmp / "src/gms", "install-all.sh"))
+
+        test_laptop_packages(repo, tmp, env)
 
         def install(*args, profile=("--profil", "jeux"), path=None, system=False):
             cmd = ["dbus-run-session", "--", "bash", "-c", 'dconf load / < "$0" 2>/dev/null; bash "$1" "${@:2}"; rc=$?; dconf dump / > "$0"; exit $rc',

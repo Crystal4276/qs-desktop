@@ -17,6 +17,9 @@ des dépôts, est installé par son script officiel (`https://claude.ai/install.
 - `gpu.txt` : paquets selon la carte graphique détectée (VA-API, `nvidia-smi`, Vulkan 32 bits des jeux).
 - `themes.txt` : thème Catppuccin (GTK, curseur, Kvantum, dossiers Papirus, Geany) : archives officielles, empreintes SHA-256.
 - `optional.txt` : selon le matériel ou les modules utilisés.
+- Batterie détectée : `install.sh` ajoute `power-profiles-daemon`, `fwupd` et `smartmontools`, pour les deux profils.
+  `fwupdmgr` inventorie et met à jour les firmwares compatibles ; `smartctl` lit la santé du SSD. L'installation ne flashe
+  aucun firmware et n'active pas `smartd` ; mises à jour et surveillance restent des opérations explicites.
 - Fichiers fournis par le dépôt lui-même (polices, images, feuilles de style) : colonne « Fichiers du dépôt » ci-dessous.
 
 Règle : chaque composant ajouté au dépôt met à jour **dans le même commit** la table « Par module » et les listes de paquets.
