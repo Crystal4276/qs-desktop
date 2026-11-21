@@ -3,6 +3,21 @@
 État courant seulement. Historique figé : phases 0 à 10 dans `docs/archive/PROGRESS.md`, maintenance du 2026-11-05 au 2026-11-09
 et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de besoin).
 
+## Outils BIOS / firmwares et diagnostic SSD du laptop (2026-11-21)
+
+- Plan approuvé : `install.sh` ajoute `fwupd` et `smartmontools` avec les profils d'énergie quand une batterie est détectée,
+  pour les profils travail et jeux. Dépendances et documentation mises à jour ; aucun modèle Dell codé en dur.
+  L'installateur fournit les outils sans appliquer de firmware ni activer `smartd`. Restic / Samba reportés à la demande
+  de l'utilisateur, partage du travail pas encore disponible.
+- Test de sélection ajouté à `test-install.py` : batterie présente / absente, deux profils, paquets manquants / déjà
+  installés, unicité et `--no-packages`, avec matériel et commandes de paquets simulés. Test complet en copie et HOME
+  jetables : **0 échec** ; syntaxe Bash et `git diff --check` OK. Premier passage bloqué par les sockets D-Bus du bac à sable ;
+  relance autorisée avec bus privé réussie. Aucun changement QML ni test de compositeur nécessaire.
+- Laptop réel contrôlé en lecture seule : Dell Pro 14 PC14250, BIOS 1.19.0 (2026-09-02), alimentation secteur présente,
+  Quickshell PID 201448, aucun service système en échec. Installation ciblée des deux paquets lancée via polkit depuis
+  une unité utilisateur transitoire ; authentification en attente à ce stade. Pas de flash ni redémarrage lancé.
+  Bilan SMART et inventaire des firmwares restent à effectuer après installation.
+
 ## Notifications : revue en série (2026-11-20)
 
 - Passe 1 : fichiers complets relus (cadre / panneau, liste / lignes, média, service Notifs, thème, tests et documentation).

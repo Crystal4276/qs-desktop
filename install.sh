@@ -346,8 +346,9 @@ step_packages() {
         mapfile -t -O "${#want[@]}" want < <(awk -v v="$v" -v g="$games" '!/^#/ && NF >= 2 && ($1 == v || (g == "yes" && $1 == v "-jeux")) { print $2 }' "$repo/deps/gpu.txt")
     done
     compgen -G '/sys/class/backlight/*' >/dev/null && want+=(brightnessctl)
-    # Laptop (batterie) : profils d'énergie du panneau de réglages ; pas sur un desktop.
-    compgen -G '/sys/class/power_supply/BAT*' >/dev/null && want+=(power-profiles-daemon)
+    # Laptop (batterie) : énergie, outils de mise à jour des firmwares et diagnostic SSD.
+    # Installer les outils seulement : aucun flash ni surveillance SMART automatique.
+    compgen -G '/sys/class/power_supply/BAT*' >/dev/null && want+=(power-profiles-daemon fwupd smartmontools)
     # « a|b » (deps/apps.txt) : l'un ou l'autre suffit ; sinon le premier est installé.
     local i alt choice
     for i in "${!want[@]}"; do
