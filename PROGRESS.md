@@ -5,6 +5,9 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
 
 ## Outils BIOS / firmwares et diagnostic SSD du laptop (2026-11-21)
 
+**État actuel : outils installés et installateur publié, bilan SSD bon ; préparation du dock partielle après erreur USB,
+à reprendre sur place avant de conclure. Secure Boot / dbx exclus par l'utilisateur et inchangés. Détails ci-dessous.**
+
 - Plan approuvé : `install.sh` ajoute `fwupd` et `smartmontools` avec les profils d'énergie quand une batterie est détectée,
   pour les profils travail et jeux. Dépendances et documentation mises à jour ; aucun modèle Dell codé en dur.
   L'installateur fournit les outils sans appliquer de firmware ni activer `smartd`. Restic / Samba reportés à la demande
@@ -15,7 +18,8 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
   relance autorisée avec bus privé réussie. Aucun changement QML ni test de compositeur nécessaire.
 - Laptop réel : Dell Pro 14 PC14250, BIOS 1.19.0 (2026-09-02). Après autorisation exceptionnelle explicite de sudo par
   l'utilisateur absent du laptop : demande polkit transitoire arrêtée, installation ciblée avec `sudo -n pacman` réussie.
-  `fwupd 2.1.10-1`, `smartmontools 7.5-2` et cinq dépendances officielles installés (46,88 Mio). Aucun firmware appliqué.
+  `fwupd 2.1.10-1`, `smartmontools 7.5-2` et cinq dépendances officielles installés (46,88 Mio). Aucun firmware appliqué
+  pendant cette installation des outils.
 - Inventaire fwupd effectué : BIOS, SSD KIOXIA EG6 (11600106), TPM et dock Dell SD25TB4 notamment. Secteur présent,
   batterie à 100 %. `smartd` inactif / désactivé ; bureau PID 201448 conservé, aucun service système en échec ; fwupd ne
   signale aucun redémarrage nécessaire. Pas de changement QML, de réglage BIOS ou de règle sudoers.
@@ -29,11 +33,36 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
   Huit mises à jour proposées : dock MST 9.03.004 → 09.04.03, PD 1.24.0.0 → 01.37.00.00, paquet dock 1.0.1.0 → 01.01.17.01,
   hubs Gen2 1.13 → 01.17 et 1.20 → 01.23, gestion distante 1.9.0.0 → 02.03.07.00, EC SD25TB4 1.0.4.0 → 01.00.11.01 ;
   UEFI dbx 20260402 → 20260707. Secure Boot actuellement désactivé. Capot fermé, dock et Wi-Fi présents.
-- **Aucun firmware appliqué** : l'approbation automatique a rejeté la commande globale `fwupdmgr update --assume-yes`,
+- Avant l'accord restreint au dock, l'approbation automatique a rejeté la commande globale `fwupdmgr update --assume-yes`,
   estimant l'autorisation générale insuffisamment précise pour les firmwares du dock et dbx, et le mode différé non confirmé.
-  Aucun contournement. À reprendre après accord explicite sur les versions ciblées et vérification du mode effectif
-  `dell_kestrel.UpdateOnDisconnect` (défaut true documenté par le manuel installé 2.1.10). Activation du dock par débranchement
-  USB-C, alimentation du dock conservée ; redémarrage du laptop laissé à l'utilisateur pour dbx.
+  Aucun contournement ; accord explicite et vérification effective de `dell_kestrel.UpdateOnDisconnect` obtenus ensuite
+  pour le dock seulement, voir ci-dessous. Le manuel installé 2.1.10 documente le défaut true.
+
+### Dock seul : préparation partielle, erreur USB (2026-11-21)
+
+- L'utilisateur a ensuite autorisé explicitement les mises à jour du **dock uniquement**, en excluant Secure Boot / dbx.
+  Terminal SSH avec saisie privée du mot de passe sudo ; contrôle préalable de la configuration effective
+  `dell_kestrel.UpdateOnDisconnect=true` et du paquet fwupd 2.1.10-1, sans changement de configuration. Aucun redémarrage
+  automatique autorisé, aucun contournement des contrôles fwupd. L'approbation automatique a accepté ce périmètre restreint.
+- Première commande ciblant MST 09.04.03 : paquet Dell 01.01.17 chargé, `Successfully installed firmware`, puis activation
+  annoncée au débranchement USB-C. Seconde commande ciblant PD 01.37.00.00 : paquet Dell 01.01.15 chargé, échec
+  `failed to erase spare bank: failed to SetReport: USB error: Pipe error [-9]`. Script arrêté immédiatement ; les cinq
+  commandes suivantes n'ont pas été exécutées, ticket sudo invalidé. Script temporaire retiré pour éviter une relance.
+- **Correction d'interprétation** : le message utilisateur initial attribuait l'échec au PD d'après l'étape du script.
+  L'historique natif identifie en fait **RTS5 Gen 2 USB Hub (01.23)**. fwupd élargit les commandes ciblées aux composants
+  du même paquet composite ; l'enchaînement de versions par composant a donc préparé deux ensembles successifs.
+  La reprise doit traiter ces paquets composites, et non supposer une écriture strictement limitée à l'identifiant demandé.
+- État après arrêt : paquet global lu 1.1.17.1 ; autres versions actives encore anciennes. Historique de préparation réussi
+  pour hub RTS0 Gen2 01.17, PD 01.37.00.00, gestion distante 02.03.02.00, EC 01.00.10.01, MST 09.04.01 ; échec RTS5 01.23.
+  Certaines versions préparées sont donc celles du second paquet et pas les versions cibles initiales du premier.
+  **Mise à jour partielle, activation et bon fonctionnement après activation non validés.** Aucune nouvelle écriture,
+  rétrogradation, activation, coupure de courant ou déconnexion commandée après l'erreur.
+- Laptop encore accessible, Ethernet eth0 up / carrier 1, Quickshell PID 201448 conservé, secteur / batterie 100 %, aucun service système en échec,
+  BIOS 1.19.0 et dbx 20260402 inchangés. L'absence de redémarrage requis pour le laptop ne valide pas l'état du dock.
+- Cas analogue avec exactement cette erreur sur un WD25 (modèle différent) :
+  https://github.com/fwupd/firmware-dell/issues/256 ; ce témoignage ne démontre pas la cause sur le SD25TB4 présent.
+  **À reprendre auprès du dock** : examiner l'état préparé avant activation, vérifier ensuite USB / Ethernet / écrans et
+  choisir une suite cohérente avec le paquet composite. Ne pas tenter une rétrogradation à distance sur la base de ce seul cas.
 
 ## Notifications : revue en série (2026-11-20)
 
