@@ -60,6 +60,75 @@ def setup_test(work):
     empty = work / "empty"
     run("python3", str(REPO / "scripts/battery-setup.py"), "--root", str(empty), "install")
     assert not empty.exists()
+    setup_spec = importlib.util.spec_from_file_location("battery_setup", REPO / "scripts/battery-setup.py")
+    setup = importlib.util.module_from_spec(setup_spec)
+    setup_spec.loader.exec_module(setup)
+    import sys
+    for failure_index in (1, 2):
+        trial = work / f"backup-failure-{failure_index}"
+        shutil.copytree(root, trial)
+        (trial / "sys/class/power_supply/BAT0/charge_types").write_text("Standard [Adaptive] Custom")
+        originals = setup.ORIGINALS
+        for name in originals:
+            target = trial / name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text("original content")
+        copy = shutil.copy2
+        calls = []
+        def fail_copy(src, dst):
+            calls.append(src)
+            if len(calls) == failure_index:
+                raise OSError("Injected backup failure")
+            return copy(src, dst)
+        with patch.object(sys, "argv", ["battery-setup.py", "--root", str(trial), "install"]), patch.object(setup.shutil, "copy2", side_effect=fail_copy):
+            try:
+                setup.main()
+                raise AssertionError("backup failure ignored")
+            except OSError:
+                pass
+        assert not (trial / "var/lib/qs-desktop/battery-setup").exists()
+        run("python3", str(REPO / "scripts/battery-setup.py"), "--root", str(trial), "uninstall")
+        assert all((trial / name).read_text() == "original content" for name in originals)
+    # Missing backups in a new manifest must fail before any file or hardware change.
+    trial = work / "missing-backup"
+    shutil.copytree(root, trial)
+    (trial / "sys/class/power_supply/BAT0/charge_types").write_text("Standard [Adaptive] Custom")
+    original = trial / setup.ORIGINALS[0]
+    original.parent.mkdir(parents=True, exist_ok=True)
+    original.write_text("keep this preset")
+    command = ["python3", str(REPO / "scripts/battery-setup.py"), "--root", str(trial)]
+    run(*command, "install")
+    installed = original.read_text()
+    state_dir = trial / "var/lib/qs-desktop/battery-setup"
+    (state_dir / setup.ORIGINALS[0].replace("/", "_")).unlink()
+    with patch.object(sys, "argv", ["battery-setup.py", "--root", str(trial), "uninstall"]):
+        try:
+            setup.main()
+            raise AssertionError("missing backup accepted")
+        except RuntimeError as error:
+            assert "Incomplete battery backup" in str(error)
+    assert original.read_text() == installed
+    assert (trial / "sys/class/power_supply/BAT0/charge_control_end_threshold").read_text() == "80"
+    # A partial old backup is refused before touching originals; completed legacy state remains supported.
+    trial = work / "legacy"
+    shutil.copytree(root, trial)
+    state_dir = trial / "var/lib/qs-desktop/battery-setup"
+    state_dir.mkdir(parents=True)
+    (state_dir / "original.json").write_text("[]")
+    original = trial / setup.ORIGINALS[0]
+    original.parent.mkdir(parents=True, exist_ok=True)
+    original.write_text("keep me")
+    with patch.object(sys, "argv", ["battery-setup.py", "--root", str(trial), "uninstall"]):
+        try:
+            setup.main()
+            raise AssertionError("incomplete legacy state accepted")
+        except RuntimeError as error:
+            assert "Incomplete legacy" in str(error)
+    assert original.read_text() == "keep me"
+    (state_dir / "ready").touch()
+    copy(original, state_dir / setup.ORIGINALS[0].replace("/", "_"))
+    run("python3", str(REPO / "scripts/battery-setup.py"), "--root", str(trial), "uninstall")
+    assert original.read_text() == "keep me"
     # Real installer selection, fake battery detection and a recording system-step runner.
     prefix = (REPO / "install.sh").read_text().split('\nif [[ -n "$uninstall" ]]; then\n', 1)[0]
     for battery in ("0", "1"):
@@ -142,7 +211,9 @@ ShellRoot {
   function close(): void { panel.close(); }
   function preview(): void { panel.preview(button, Qt.LeftButton); }
   function refresh(): void { Charging.refresh(); }
-  function choose(full: bool): void { Charging.select(full); }
+  function cycle(): void { TestPower.onBattery = true; TestPower.onBattery = false; }
+ function source(onBattery: bool): void { TestPower.onBattery = onBattery; }
+ function choose(full: bool): void { Charging.select(full); }
   function absent(value: bool): void { Battery.available = !value; }
   function press(full: bool): void {
    const tile = find(panel.frameItem, full ? "battery-full" : "battery-preserve");
@@ -165,8 +236,8 @@ FAKE = '''#!/usr/bin/python3
 import json, os, sys, time
 from pathlib import Path
 w=Path(os.environ["CHARGING_BENCH"])
-time.sleep(float((w/"delay").read_text()))
 s=json.loads((w/"controller.json").read_text())
+time.sleep(float((w/"delay").read_text()))
 command=sys.argv[-1]
 if command not in ("status","preserve","full"): raise SystemExit("Unexpected command")
 if command != "status":
@@ -180,6 +251,8 @@ if command != "status":
  s["hardware"]["charge_control_end_threshold"]="80" if command=="preserve" else "100"
  s["hardware"]["charge_types"]="[Custom]" if command=="preserve" else "[Standard]"
  (w/"controller.json").write_text(json.dumps(s))
+if command == "status" and (w/"readfail").read_text()=="1":
+ print(json.dumps({"error":"Temporary UPower failure"}));sys.exit(1)
 print(json.dumps(s))
 '''
 
@@ -188,6 +261,10 @@ def card_test(work, shots, scale):
     root = work / "shell"
     shutil.copytree(REPO, root, ignore=shutil.ignore_patterns(".git", ".shots", ".agents", ".codex", ".aws", "__pycache__"))
     (root / "services/Battery.qml").write_text(FIXTURE)
+    (root / "services/TestPower.qml").write_text("pragma Singleton\nimport QtQuick\nQtObject { property bool onBattery: false }")
+    charging = root / "services/Charging.qml"
+    charging.write_text(charging.read_text().replace("target: UPower", "target: TestPower")
+                        .replace("UPower.onBattery", "TestPower.onBattery"))
     (root / "services/Session.qml").write_text("pragma Singleton\nimport QtQuick\nQtObject { property bool lockActive: false }")
     (root / "shell.qml").write_text(SHELL)
     runtime = work / "runtime"
@@ -196,7 +273,7 @@ def card_test(work, shots, scale):
     bindir.mkdir()
     (bindir / "python3").write_text(FAKE)
     (bindir / "python3").chmod(0o755)
-    for key in ("fail", "ignored", "delay"):
+    for key in ("fail", "ignored", "delay", "readfail"):
         (work / key).write_text("0")
     controller = {"path": "/org/freedesktop/UPower/devices/battery_BAT0", "configured": True, "onBattery": False,
                   "mode": "", "battery": {"ChargeThresholdSupported": True, "ChargeThresholdEnabled": False,
@@ -246,6 +323,8 @@ def card_test(work, shots, scale):
             s = json.loads((work / "controller.json").read_text())
             s.update(changes)
             (work / "controller.json").write_text(json.dumps(s))
+            if "onBattery" in changes:
+                ipc("source", str(changes["onBattery"]).lower())
             ipc("refresh")
             return settled()
 
@@ -299,9 +378,31 @@ def card_test(work, shots, scale):
             ipc("refresh")
             settled()
         assert (work / "writes").read_text() == before
+        assert state()["error"] == "Not authorized", state()
         (work / "fail").write_text("0")
         ipc("choose", "false")
         until(lambda: state()["applied"])
+        # Rapid native transitions must survive an old read and an in-flight setter.
+        for during_write in (False, True):
+            ipc("choose", "false")
+            until(lambda: state()["applied"] and not state()["busy"])
+            if not during_write:
+                ipc("choose", "true")
+                until(lambda: state()["applied"] and not state()["busy"])
+            (work / "delay").write_text(".8")
+            ipc("choose", "true") if during_write else ipc("refresh")
+            until(lambda: state()["busy"])
+            ipc("cycle")
+            assert state()["wanted"] == "preserve", state()
+            until(lambda: state()["mode"] == "preserve" and state()["applied"] and not state()["busy"])
+            (work / "delay").write_text("0")
+        # Recover a read error without hiding a failed action on an ordinary successful read.
+        (work / "readfail").write_text("1")
+        ipc("refresh")
+        until(lambda: state()["error"] == "Temporary UPower failure" and not state()["busy"])
+        (work / "readfail").write_text("0")
+        ipc("refresh")
+        until(lambda: not state()["error"] and not state()["busy"])
         # Unsupported and unconfigured batteries remain readable, with no setter invocation.
         before = (work / "writes").read_text()
         update(configured=False)
@@ -321,7 +422,7 @@ def card_test(work, shots, scale):
                     and "UPower" not in line and not any(term in line for term in
                         ("xdg-desktop-portal", "qt.qpa.services:", "atk-bridge:", "AT-SPI:"))]
         assert not warnings, "\n".join(warnings)
-        print(f"PASS real card {scale}×: keyboard/preview/Escape, preservation/full/AC-return, off-AC arming, restart persistence, authorization failure/no retry loop, unavailable configuration")
+        print(f"PASS real card {scale}×: keyboard/preview/Escape, preservation/full/AC-return, off-AC arming, restart persistence, authorization failure/no retry loop, rapid AC return during reads/writes, read recovery, unavailable configuration")
     finally:
         if shell and shell.poll() is None:
             os.killpg(shell.pid, signal.SIGTERM)

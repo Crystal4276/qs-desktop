@@ -148,10 +148,6 @@ Panel {
         visible: Charging.error !== ""
         text: "Retry"
         enabled: !Charging.busy
-        onClicked: {
-            Charging.error = "";
-            Charging.attempted = "";
-            Charging.refresh();
-        }
+        onClicked: Charging.retry()
     }
 }

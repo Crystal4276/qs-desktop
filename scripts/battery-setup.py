@@ -12,8 +12,10 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 
 REPO = Path(__file__).resolve().parents[1]
+ORIGINALS = ("etc/udev/hwdb.d/61-qs-desktop-battery.hwdb", "var/lib/upower/charging-threshold-status")
 FILES = ("charge_control_start_threshold", "charge_control_end_threshold", "charge_types")
 
 
@@ -35,7 +37,17 @@ def refresh(staging):
 
 def restore(root, state, staging):
     saved = json.loads((state / "original.json").read_text())
-    for name in ("etc/udev/hwdb.d/61-qs-desktop-battery.hwdb", "var/lib/upower/charging-threshold-status"):
+    manifest = state / "original-files.json"
+    if manifest.exists():
+        originals = json.loads(manifest.read_text())
+        if set(originals) != set(ORIGINALS) or any(type(v) is not bool for v in originals.values()):
+            raise RuntimeError("Invalid original-file manifest; no restoration performed")
+        if any((state / name.replace("/", "_")).is_file() != present for name, present in originals.items()):
+            raise RuntimeError("Incomplete battery backup; no restoration performed")
+    elif not (state / "ready").is_file():
+        raise RuntimeError("Incomplete legacy battery backup; no restoration performed")
+    # Completed legacy installations used absence of a backup to record an absent original.
+    for name in ORIGINALS:
         target = root / name
         backup = state / name.replace("/", "_")
         if backup.exists():
@@ -104,17 +116,28 @@ def main():
                 raise RuntimeError("Cannot identify the original charging mode")
             item[FILES[2]] = match[1]
         saved.append(item)
-    originals = ("etc/udev/hwdb.d/61-qs-desktop-battery.hwdb", "var/lib/upower/charging-threshold-status")
+    originals = ORIGINALS
     if any((root / name).is_symlink() for name in originals):
         raise RuntimeError("Refusing a symbolic link on the original configuration")
-    state.mkdir(parents=True, mode=0o755)
-    (state / "original.json").write_text(json.dumps(saved))
-    for name in originals:
-        original = root / name
-        if original.is_symlink():
-            raise RuntimeError("Refusing a symbolic link on the original configuration")
-        if original.exists():
-            shutil.copy2(original, state / name.replace("/", "_"))
+    state.parent.mkdir(parents=True, exist_ok=True)
+    # Publish only a complete backup. An interrupted copy must never look restorable.
+    pending = Path(tempfile.mkdtemp(prefix=".battery-backup-", dir=state.parent))
+    try:
+        (pending / "original.json").write_text(json.dumps(saved))
+        manifest = {}
+        for name in originals:
+            original = root / name
+            if original.is_symlink():
+                raise RuntimeError("Refusing a symbolic link on the original configuration")
+            manifest[name] = original.exists()
+            if manifest[name]:
+                shutil.copy2(original, pending / name.replace("/", "_"))
+        (pending / "original-files.json").write_text(json.dumps(manifest))
+        pending.chmod(0o755)
+        pending.rename(state)
+    finally:
+        if pending.exists():
+            shutil.rmtree(pending)
     try:
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(source, target)

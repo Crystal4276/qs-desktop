@@ -779,11 +779,13 @@ Les web apps conservent leur hôte `open-link` et le focus de la fenêtre qui re
   `Quickshell.statePath("battery-charging.json")`, conservés après relance. Les transitions d’alimentation sont suivies pendant
   l’exécution du bureau ; des débranchements / rebranchements entièrement effectués bureau arrêté ne peuvent être reconstruits.
 - Sélection verte seulement après confirmation du contrôleur. Erreur visible et bouton de reprise, pas de boucle d’authentification.
+  Transitions natives traitées immédiatement, indépendamment des commandes en cours ; erreurs de lecture et d’action distinctes.
   Lectures : événements UPower et 60 s en fond / 5 s carte ouverte. Sans batterie, aucune commande ; sans préparation, lecture seule.
 - `battery-setup.py`, appelé par l’étape système d’`install.sh` sur laptop, prépare les seuils et le préréglage matériel UPower
   (`61-qs-desktop-battery.hwdb`). Nécessaire pour conserver 50–80 % après une pleine charge et une relance du démon : UPower
   mémorise le choix et charge les seuils au démarrage. Sauvegarde initiale dans `/var/lib/qs-desktop/battery-setup`, relance ciblée
-  d’UPower ; réinstallation inchangée : mode courant conservé ; retrait : valeurs / configuration initiales restaurées.
+  d’UPower ; sauvegarde complète publiée atomiquement et manifeste des fichiers d’origine, restauration incomplète refusée
+  (anciens états finalisés compatibles) ; réinstallation inchangée : mode courant conservé ; retrait : valeurs / configuration initiales restaurées.
 - Permission native UPower réservée à la session locale active ; aucune permission administrative générale ajoutée.
   Le bureau doit être lancé par le compositeur de la session graphique, y compris après une maintenance via SSH.
 - Santé, température et cycles omis si absents. Autonomie estimée uniquement en décharge ; durée de pleine charge uniquement en

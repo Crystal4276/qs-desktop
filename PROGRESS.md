@@ -3,6 +3,17 @@
 État courant seulement. Historique figé : phases 0 à 10 dans `docs/archive/PROGRESS.md`, maintenance du 2026-11-05 au 2026-11-09
 et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de besoin).
 
+## Batterie : corrections après revue (2026-11-21)
+
+- Transitions d’alimentation suivies directement par UPower, même pendant une lecture ou écriture : un retour secteur
+  rapproché revient à 80 %, sans qu’une réponse ancienne rétablisse le départ à 100 %. Écritures d’état rapprochées regroupées.
+- Sauvegarde système complète publiée par renommage avant toute modification ; manifeste explicite des fichiers présents
+  ou absents. Échec d’une copie : aucun état partiel publié. Restauration incomplète refusée avant toute modification ;
+  installations anciennes finalisées compatibles, anciennes sauvegardes partielles refusées.
+- Erreurs de lecture et d’action distinctes : rétablissement de lecture visible sans effacer un refus d’autorisation.
+- Contre-épreuves de la revue reproduites avant correction. Tests étendus : transitions natives pendant lecture / écriture,
+  réponse périmée, reprise après erreur, échecs des deux copies, sauvegarde manquante et compatibilité ancienne.
+
 ## Carte batterie : préservation et départ (2026-11-21)
 
 - Carte dédiée partagée entre écrans, aperçu / clic sur la batterie et accès depuis les réglages : niveau, alimentation,
