@@ -168,7 +168,8 @@ Suppression des anciens paquets seulement quand je le décide.
 - Travail directement sur `master`. Petits commits, Conventional Commits (`feat(bar): …`).
 - Push à la fin de chaque phase.
 - `.gitignore` : `.shots/`, logs, fichiers temporaires.
-- Rien de personnel ou sensible dans le dépôt (clés, jetons, adresses privées).
+- Données privées hors Git et diagnostics bruts dans `.shots/`. Employer des exemples fictifs dans le journal.
+- Dans chaque clone, utiliser l’adresse GitHub `noreply` et activer le hook de publication (voir README).
 
 ## Début de session
 

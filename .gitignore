@@ -12,3 +12,10 @@ dotfiles/mpv/host.conf
 
 # Provisioning privé
 hosts/zerotier-network.local
+dotfiles/samba/hosts/*.local.conf
+.env
+.env.*
+.ssh/
+.aws/
+*.pem
+*.key

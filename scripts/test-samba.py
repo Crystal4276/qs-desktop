@@ -124,19 +124,26 @@ fi""",
     assert len((root / 'ticks').read_text().splitlines()) == 30
     # Fichier machine (terrier : réseau local) installé, validé avec smb.conf, retiré au retrait.
     (root / 'hostname').write_text('terrier\n')
+    local = root / 'dotfiles/samba/hosts/terrier.local.conf'
+    local.parent.mkdir(exist_ok=True)
+    profile = '[global]\ninterfaces = lo eth0\n'
+    local.write_text(profile)
     run('samba')
     host = root / 'smb.host.conf'
-    assert 'bridge0' in host.read_text()
+    assert host.read_text() == profile
     assert 'include = /etc/samba/smb.host.conf' in target.read_text()
     (root / 'calls').unlink()
     run('samba')
     assert 'systemctl restart' not in (root / 'calls').read_text()
     host.write_text('# ancien\n')
     run('samba')
-    assert 'bridge0' in host.read_text() and 'systemctl restart' in (root / 'calls').read_text()
+    assert host.read_text() == profile and 'systemctl restart' in (root / 'calls').read_text()
+    local.unlink()
+    run('samba')
+    assert host.read_text() == profile
     run('uninstall')
     assert not host.exists() and target.read_bytes() == original
-    (root / 'dotfiles/samba/hosts/terrier.conf').write_text('interfaces = lo\nserver role = invalid-role\n')
+    local.write_text('interfaces = lo\nserver role = invalid-role\n')
     run('samba', success=False)
     assert not host.exists() and target.read_bytes() == original
     (root / 'hostname').write_text('sans-fichier\n')

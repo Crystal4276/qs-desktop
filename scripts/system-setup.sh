@@ -233,18 +233,36 @@ do_samba() {
     local changed="" rules
     if command -v smbd >/dev/null; then
         # Ajouts propres à la machine (réseau local de terrier…), inclus par smb.conf : validés avec lui.
-        local host_conf="dotfiles/samba/hosts/$(cat /proc/sys/kernel/hostname).conf" check
-        [[ -f "$repo/$host_conf" ]] || host_conf=""
+        local host_conf="dotfiles/samba/hosts/$(cat /proc/sys/kernel/hostname).local.conf"
+        local target_conf=/etc/samba/smb.host.conf check include_conf=""
+        if [[ -e "$repo/$host_conf" || -L "$repo/$host_conf" ]]; then
+            [[ -f "$repo/$host_conf" && -r "$repo/$host_conf" ]] || {
+                echo '! Profil Samba local illisible.' >&2
+                return 1
+            }
+            include_conf="$repo/$host_conf"
+        else
+            host_conf=""
+            [[ ! -f "$target_conf" ]] || include_conf="$target_conf"
+        fi
         check="$(mktemp)"
-        sed "s|^\( *include = \).*/smb\.host\.conf$|\1${host_conf:+$repo/$host_conf}|" \
-            "$repo/dotfiles/samba/smb.conf" >"$check"
+        if [[ -n "$include_conf" ]]; then
+            # Le chemin du dépôt peut contenir des caractères spéciaux pour sed.
+            local escaped_include="${include_conf//\\/\\\\}"
+            escaped_include="${escaped_include//&/\\&}"
+            escaped_include="${escaped_include//|/\\|}"
+            sed "s|^\( *include = \).*/smb\.host\.conf$|\1$escaped_include|" \
+                "$repo/dotfiles/samba/smb.conf" >"$check"
+        else
+            sed '/^ *include = .*\/smb\.host\.conf$/d' "$repo/dotfiles/samba/smb.conf" >"$check"
+        fi
         testparm -s "$check" >/dev/null || { rm -f "$check"; return 1; }
         rm -f "$check"
         cmp -s "$repo/dotfiles/samba/smb.conf" /etc/samba/smb.conf || changed=1
         install_file dotfiles/samba/smb.conf /etc/samba/smb.conf
         if [[ -n "$host_conf" ]]; then
-            cmp -s "$repo/$host_conf" /etc/samba/smb.host.conf || changed=1
-            install_file "$host_conf" /etc/samba/smb.host.conf
+            cmp -s "$repo/$host_conf" "$target_conf" || changed=1
+            install_file "$host_conf" "$target_conf"
         fi
         local source target systemd_changed=""
         for source in dotfiles/samba/zerotier-order.conf scripts/samba-wait-zerotier.sh; do
@@ -472,7 +490,7 @@ do_zerotier() {
     local id="${1:-}" dir=/var/lib/zerotier-one/networks.d ready="" output deadline token=""
     [[ "$id" =~ ^[0-9a-f]{16}$ ]] || return 2
     if [[ -n "$dry" ]]; then
-        echo "+ ZeroTier : réseau $id, service activé et démarré ; DNS et route par défaut désactivés ;"
+        echo "+ ZeroTier : réseau configuré localement, service activé et démarré ; DNS et route par défaut désactivés ;"
         echo "  jeton du service copié dans ~/.zeroTierOneAuthToken (panneau VPN)"
         return
     fi

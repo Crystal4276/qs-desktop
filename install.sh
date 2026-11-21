@@ -272,7 +272,7 @@ ask_system() {
     [[ "$profile" == jeux ]] && echo "  dépôt multilib (Steam, jeux 32 bits),"
     echo "  écran de connexion greetd + greeter Quickshell, Samba, services (réseau, Bluetooth, énergie, VM), groupes, thème Qt,"
     echo "  cache d'écriture borné des clés USB et cartes SD (règle udev : la fin d'une copie suit l'écriture réelle),"
-    echo "  ZeroTier (jonction automatique au réseau configuré dans hosts/zerotier-network, jeton copié pour le panneau VPN),"
+    echo "  ZeroTier (jonction si hosts/zerotier-network.local est fourni, jeton copié pour le panneau VPN),"
     echo "  extensions de Chromium, thème de Thunderbird, sonde de connectivité NetworkManager, mesures GPU Intel (s'il y en a un)."
     [[ "$profile" == travail ]] && echo "  menu GRUB Horizon (UKI, délai 2 s) ; écran de démarrage Plymouth Core Lab (initramfs, ligne de commande du noyau, image de secours : docs/PLYMOUTH.md)."
     ask "Faire ces étapes système ?" oui || { system=""; echo "- étapes système non faites (relancer install.sh pour les faire)"; }
@@ -1104,12 +1104,15 @@ step_wallpapers() {
 # Profil travail : DigitalMicrograph (Gatan Microscopy Suite sous Wine). Ses paquets viennent de deps/work.txt ; son dépôt (privé)
 # est cloné ici ; l'installation elle-même (kit Gatan, étape à la souris, 15 Go) reste à lancer depuis ce dépôt.
 step_dm() {
-    local dir="$HOME/DigitalMicrograph"
+    local dir="${QS_DM_DIR:-$HOME/DigitalMicrograph}"
     section "DigitalMicrograph (profil travail)"
-    sync_repo "${QS_DM_REPO:-[depot prive configure localement]}" "$dir" "scripts d'installation de DigitalMicrograph" || return 0
     if [[ -x "$HOME/.local/bin/digitalmicrograph" ]]; then
         echo "= DigitalMicrograph installé"
-    elif [[ -z "$dry" ]]; then
+        return
+    fi
+    [[ -n "${QS_DM_REPO:-}" ]] || return 0
+    sync_repo "$QS_DM_REPO" "$dir" "scripts d'installation de DigitalMicrograph" || return 0
+    if [[ -z "$dry" ]]; then
         later "DigitalMicrograph : copier le kit Gatan décompressé (GMS_FreeAnalysis17.zip) dans $dir, puis $dir/scripts/install-all.sh"
     fi
 }
@@ -1217,27 +1220,23 @@ step_grub_horizon() {
     fi
 }
 
-zerotier_network_file() {
-    if [[ -f "$repo/hosts/zerotier-network.local" ]]; then
-        echo "$repo/hosts/zerotier-network.local"
-    else
-        echo "$repo/hosts/zerotier-network"
+read_zerotier_network() {
+    local file="$repo/hosts/zerotier-network.local"
+    network_id=""
+    [[ -e "$file" || -L "$file" ]] || return 0
+    if [[ ! -f "$file" ]] || ! network_id="$(cat -- "$file")" || [[ ! "$network_id" =~ ^[[:xdigit:]]{16}$ ]]; then
+        echo '! ZeroTier : Network ID invalide ou illisible dans hosts/zerotier-network.local.' >&2
+        return 2
     fi
 }
 
 step_zerotier() {
-    local id file rc=0
-    file="$(zerotier_network_file)"
-    if [[ ! -f "$file" ]]; then
-        later "ZeroTier : renseigner hosts/zerotier-network.local puis relancer install.sh."
-        return
+    local rc=0
+    if [[ -z "$network_id" ]]; then
+        echo '= ZeroTier : joindre un réseau est facultatif (hosts/zerotier-network.local).'
+        return 0
     fi
-    id="$(cat "$file")"
-    if [[ ! "$id" =~ ^[[:xdigit:]]{16}$ ]]; then
-        later "ZeroTier : Network ID invalide dans $file."
-        return 1
-    fi
-    "$repo/scripts/system-setup.sh" ${dry:+--dry-run} zerotier "${id,,}" || rc=$?
+    "$repo/scripts/system-setup.sh" ${dry:+--dry-run} zerotier "${network_id,,}" || rc=$?
     case "$rc" in
         0) ;;
         3) later "ZeroTier : réseau non opérationnel ; vérifier autorisation Central et connectivité, puis relancer." ;;
@@ -1562,11 +1561,10 @@ if [[ -n "$uninstall" ]]; then
 fi
 [[ -n "$dry" ]] && echo "Simulation : rien ne sera modifié."
 choose_profile
-if [[ -n "$system" ]]; then
-    network_id="$(cat "$(zerotier_network_file)")"
-    [[ "$network_id" =~ ^[[:xdigit:]]{16}$ ]] || { echo '! Network ID ZeroTier invalide' >&2; exit 2; }
-fi
 ask_system
+if [[ -n "$system" ]]; then
+    read_zerotier_network
+fi
 [[ -n "$system" ]] && step_pacman_sudo
 [[ -n "$system" ]] && step_reflector
 [[ -n "$packages" ]] && step_packages

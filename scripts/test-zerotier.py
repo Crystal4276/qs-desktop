@@ -14,7 +14,9 @@ with tempfile.TemporaryDirectory(prefix='qs-zerotier-test-') as tmp:
     binaries = root / 'bin'
     binaries.mkdir()
     source = (REPO / 'scripts/system-setup.sh').read_text().replace(
-        'dir=/var/lib/zerotier-one/networks.d', f'dir={root}/networks.d')
+        'dir=/var/lib/zerotier-one/networks.d', f'dir={root}/networks.d').replace(
+        '/var/lib/zerotier-one/authtoken.secret', str(root / 'token'))
+    (root / 'token').write_text('test-token\n')
     helper = root / 'scripts/system-setup.sh'
     helper.write_text(source)
     for name, body in {
@@ -34,7 +36,7 @@ cat "$TEST_ROOT/response"''',
         file = binaries / name
         file.write_text('#!/bin/sh\n' + body + '\n')
         file.chmod(0o755)
-    env = dict(os.environ, TEST_ROOT=tmp, PATH=str(binaries) + ':' + os.environ['PATH'])
+    env = dict(os.environ, HOME=tmp, TEST_ROOT=tmp, PATH=str(binaries) + ':' + os.environ['PATH'])
 
     def run(*args):
         return subprocess.run(['bash', str(helper), *args], env=env,
@@ -82,24 +84,22 @@ with tempfile.TemporaryDirectory(prefix='qs-zerotier-provisioning-') as tmp:
     root = Path(tmp)
     (root / 'hosts').mkdir()
     (root / 'scripts').mkdir()
-    default = (REPO / 'hosts/zerotier-network').read_text().strip()
-    (root / 'hosts/zerotier-network').write_text(default + '\n')
     helper = root / 'scripts/system-setup.sh'
     helper.write_text('#!/bin/sh\nprintf "%s\\n" "$*"\n')
     helper.chmod(0o755)
     source = (REPO / 'install.sh').read_text().split('\nif [[ -n "$uninstall" ]]; then\n')[0]
     installer = root / 'install.sh'
-    installer.write_text(source + '\nstep_zerotier\n')
+    installer.write_text(source + '\nread_zerotier_network\nstep_zerotier\n')
 
     def provision():
         return subprocess.run(['bash', str(installer), '--dry-run'], capture_output=True, text=True)
 
     result = provision()
-    assert result.returncode == 0 and f'--dry-run zerotier {default}' in result.stdout, result.stdout + result.stderr
+    assert result.returncode == 0 and '--dry-run zerotier' not in result.stdout, result.stdout + result.stderr
     local = root / 'hosts/zerotier-network.local'
     local.write_text(NETWORK + '\n')
     result = provision()
     assert result.returncode == 0 and f'--dry-run zerotier {NETWORK}' in result.stdout
     local.write_text('invalid\n')
     assert provision().returncode != 0
-print('PASS provisioning : réseau fourni après clone, surcharge locale prioritaire, ID invalide refusé')
+print('PASS provisioning : réseau facultatif, fichier local utilisé, ID invalide refusé')

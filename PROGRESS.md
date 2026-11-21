@@ -1,5 +1,12 @@
 # Journal d'avancement
 
+## Confidentialité du dépôt public
+
+- Provisioning ZeroTier facultatif via un fichier local ignoré. Profils Samba privés locaux,
+  validés avant installation, et dépôt optionnel du profil travail fourni hors Git.
+- Contrôle des commits sortants et vérification GitHub. Les journaux publics décrivent le
+  résultat des validations. Les diagnostics bruts sont conservés localement.
+
 État courant seulement. Historique figé : phases 0 à 10 dans `docs/archive/PROGRESS.md`, maintenance du 2026-11-05 au 2026-11-09
 et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de besoin).
 

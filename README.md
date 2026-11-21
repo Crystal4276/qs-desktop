@@ -27,7 +27,7 @@ Puis se déconnecter : l'écran de connexion greetd apparaît au prochain démar
 | 2. Configs du compte | liens vers le dépôt : `~/.config/quickshell/desktop`, `sway`, `hypr`, `fastfetch`, `mpv`, `starship.toml`, `chromium-flags.conf`, règle WirePlumber ; bloc ajouté à `~/.bashrc` (le reste n'est pas touché) ; identité Git si elle manque, prise du compte GitHub de `gh` (sinon rappel : `gh auth login`, puis relancer) |
 | 3. Thème | archives officielles Catppuccin (`deps/themes.txt`, empreintes vérifiées) : GTK 3/4, curseur, Kvantum (Qt), dossiers Papirus lavande, Geany ; mêmes polices et curseur partout |
 | 4. Réglages | GSettings (`dotfiles/dconf/`), applications par défaut (`dotfiles/mime/defaults.list`), web apps, liens HTTP vers Chromium ; profils Chromium (navigateur et web apps) en thème GTK, barre de titre du système (sans boutons réduire / agrandir / fermer) ; exception de zoom Bitwarden à 100 % dans le navigateur principal |
-| Fonds, DigitalMicrograph | clone les fonds d'écran ; profil travail : clone `[depot prive configure localement]` (privé : `gh auth login` ou clé SSH) dans `~/DigitalMicrograph` |
+| Fonds, DigitalMicrograph | clone les fonds d’écran. Pour le profil travail, renseigner localement `QS_DM_REPO` pour cloner le dépôt optionnel dans `~/DigitalMicrograph`. `QS_DM_DIR` permet de réutiliser un autre dossier. |
 | 5. Config machine | crée `hosts/<machine>.json` s'il manque, avec le profil (à committer) |
 | 6. Système (sudo / authentification polkit) | compteurs GPU Intel (CAP_PERFMON ciblé et hook de mise à jour), écran de connexion greetd, profil travail : écran de démarrage Plymouth Core Lab (initramfs, `splash`, image de secours sans Plymouth pour une UKI : `docs/PLYMOUTH.md`, retour : `docs/ROLLBACK.md`), garde de GRUB pour les UKI (`10_linux` désactivé après chaque mise à jour de `grub`), sonde des portails captifs, Samba, services (réseau, Bluetooth, énergie, VM), groupes, thème Qt du système, extensions de Chromium (`dotfiles/chromium/extensions.txt`, installées depuis le Chrome Web Store au démarrage du navigateur ; pas dans les web apps) |
 
@@ -175,13 +175,9 @@ Dans bash, `desktop` lance `ssh terrier-zt` et `laptop` lance `ssh laptop-zt`. L
 ## Provisioning ZeroTier
 
 Les deux profils installent ZeroTier, les clients SMB/SFTP et iperf3 depuis les dépôts officiels.
-Le Network ID est fourni par `hosts/zerotier-network`, versionné : un nouveau clone puis
-`./install.sh` suffisent pour demander automatiquement la jonction, en acceptant les étapes système.
-Cet identifiant n'est ni une clé ni un jeton ; chaque machine génère sa propre identité.
-Pour changer le réseau commun, modifier ce fichier. Pour remplacer le réseau sur une seule installation,
-créer `hosts/zerotier-network.local` (prioritaire, ignoré par Git), avec seulement le Network ID
-sur une ligne (16 chiffres hexadécimaux). Aucun accès au desktop n'est nécessaire.
-L'ancien réseau n'est pas quitté automatiquement lors d'un changement d'ID.
+Pour demander une jonction, créer `hosts/zerotier-network.local` (ignoré par Git) avec le
+Network ID sur une ligne (16 chiffres hexadécimaux), puis accepter les étapes système.
+Sans ce fichier, l’installation se poursuit et les adhésions existantes sont conservées.
 
 L'étape système active ZeroTier et conserve l'adhésion dans son répertoire natif.
 Une nouvelle adhésion refuse DNS, routes publiques et route Internet par défaut.
@@ -196,9 +192,9 @@ Les ajouts n'activent ni Avahi ni serveur iperf3 ; sshd seulement sur une machin
 
 L'étape système configure les partages personnels et Nemo sur les interfaces locales, les ponts
 libvirt (`virbr*`) et ZeroTier (`zt*`) uniquement. Aucune adresse de machine n'est codée en dur.
-Les interfaces Wi-Fi et Ethernet ne servent pas SMB, sauf ajout par la machine :
-`dotfiles/samba/hosts/<machine>.conf` (installé en `/etc/samba/smb.host.conf`, inclus par `smb.conf` ;
-`terrier` y ajoute son réseau local filaire `bridge0`, compte Samba obligatoire).
+Pour ajouter une interface ou un partage privé, utiliser `dotfiles/samba/hosts/<machine>.local.conf`,
+ignoré par Git. Après validation, il est installé dans `/etc/samba/smb.host.conf`. Si le fichier local
+est absent, le profil Samba déjà installé est conservé.
 Un complément systemd attend l'adresse ZeroTier au démarrage de Samba (30 s maximum),
 et propage les arrêts et redémarrages du service ZeroTier à Samba. Les changements d'adresse
 sur une interface déjà connue sont suivis nativement par Samba sous Linux.
@@ -227,3 +223,10 @@ Détails : [rapport de validation](docs/ZEROTIER-VALIDATION.md).
 Le profil travail prépare aussi le **menu GRUB Horizon**, sur les installations GRUB + UKI compatibles : noyaux standard/LTS
 et variantes identifiés, menu deux secondes, adaptation au mode vidéo de démarrage. Installation système réversible ; aucun
 chargeur installé sur une machine qui n'utilise pas GRUB. Aperçu VM, limites et déploiement : [GRUB Horizon](docs/GRUB-HORIZON.md).
+
+## Publier sur GitHub
+
+Dans chaque clone de QS Desktop, configurer l’adresse GitHub `noreply` pour ce dépôt
+(`git config --local user.email VOTRE_ADRESSE_NOREPLY`), puis activer le contrôle
+(`git config --local core.hooksPath .githooks`). Le hook vérifie tous les commits envoyés.
+Garder les diagnostics bruts dans `.shots/` et employer des exemples fictifs dans la documentation.

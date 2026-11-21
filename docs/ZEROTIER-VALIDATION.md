@@ -65,10 +65,7 @@ capture Sway). VM arrêtée, disque temporaire sous `/tmp/qs-zerotier-validation
 Les VM préexistantes et les services/réseaux du desktop n'ont pas été modifiés.
 L'instance réelle QS Desktop et l'état ZeroTier du desktop sont inchangés à la fin des contrôles.
 
-## Correction du provisioning après cette validation
+## Provisioning local
 
-Le Network ID est maintenant fourni par le fichier versionné hosts/zerotier-network.
-La surcharge hosts/zerotier-network.local devient optionnelle : un nouveau clone rejoint
-le réseau sans préparer ce fichier. Tests isolés : absence du fichier local, priorité d'une
-surcharge et rejet d'un ID invalide passent. Aucun nouveau passage VM n'a été exécuté pour
-ce changement de sélection du fichier ; le provisioning système testé en VM est inchangé.
+Le test historique a utilisé un réseau fourni à la VM. Sur une nouvelle installation, la
+jonction est facultative et se configure dans `hosts/zerotier-network.local`, ignoré par Git.
