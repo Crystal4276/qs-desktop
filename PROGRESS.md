@@ -3,6 +3,20 @@
 État courant seulement. Historique figé : phases 0 à 10 dans `docs/archive/PROGRESS.md`, maintenance du 2026-11-05 au 2026-11-09
 et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de besoin).
 
+## Batterie : carte entièrement validée sur banc (2026-11-21)
+
+- Tests étendus avec les vrais BatteryModule, SettingsButton, Panels / LazyLoader, BatteryPanel et Charging : ouverture
+  par clic depuis l’icône et le pourcentage des réglages, aperçu au survol / épinglage, clic extérieur et Échap.
+- Clavier Wayland virtuel privé : fenêtre réellement active selon le compositeur, parcours Tab jusqu’aux deux tuiles,
+  Entrée / Espace sans focus forcé par le test. Clics des deux modes et Retry ; boutons désactivés pendant une commande,
+  configuration absente sans écriture, module masqué sans batterie et informations de santé absentes correctement omises.
+- Matrice Sway headless / Hyprland imbriqué, échelles 1 et 1,5 ; captures vérifiées. Scénarios de recharge, erreurs,
+  transitions rapides et persistance conservés. Aucun changement du code de production, nouvelle dépendance uniquement
+  de banc documentée (python-pywayland / xkbcli / XML Wayland), protocole officiel wlroots embarqué avec sa licence.
+- Diagnostic Qt textinput déjà connu (« Trying to disable … but … is focused ») distingué des erreurs de scène ;
+  aucune nouvelle erreur QML. Les contrôles graphiques ne demandent plus de validation manuelle à l’utilisateur.
+  Seules l’observation de la régulation réelle et la persistance au prochain démarrage normal restent hors du banc.
+
 ## Batterie : validation distante complémentaire sans redémarrage (2026-11-21)
 
 - Laptop verrouillé : bascule réelle préservation → pleine charge standard confirmée, relance du seul Quickshell par le
@@ -11,8 +25,8 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
 - Préparation système en simulation : configuration existante reconnue, mode courant préservé. UPower actif et lancé
   à la demande par D-Bus (unité non activée explicitement : comportement attendu, pas un défaut de démarrage).
 - Le verrou ne bloque pas SSH ni les contrôles matériels. Il interdit l’ouverture de la carte par-dessus la session verrouillée ;
-  focus et clics réels restent à confirmer après déverrouillage. Un cycle réel du câble et la régulation à 80 % après une
-  décharge naturelle restent des contrôles physiques ; aucune décharge forcée.
+  focus et interactions sont désormais validés sur banc avec les vrais composants et le focus natif du compositeur.
+  La régulation à 80 % après une décharge naturelle reste une observation physique ; aucune décharge forcée.
 - Validation distante finale après authentification sudo dans un terminal SSH avec TTY : **code 0**. UPower redémarré
   en préservation puis en pleine charge ; Quickshell brièvement figé pendant chaque relance afin de confirmer la reprise
   du démon avant toute correction possible par le bureau. Dans les deux modes, matériel et préréglage UPower 50–80 %
@@ -42,7 +56,7 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
   dans la session locale, verrouillage conservé. Mode préservation appliqué, seuils réels 50–80 %, aucune erreur de recharge.
   Avertissement Qt textinput déjà connu au retour du verrou ; aucun nouveau diagnostic QML de la carte ou du service.
   Aucun paquet, firmware ou redémarrage système. Bancs arrêtés, archive personnelle non suivie du laptop conservée.
-  Contrôle physique après déverrouillage et persistance au prochain démarrage normal toujours à faire.
+  Interactions de la carte désormais validées sur banc ; persistance au prochain démarrage normal toujours à observer.
 
 ## Carte batterie : préservation et départ (2026-11-21)
 

@@ -162,6 +162,7 @@ lui (il réécrit la ligne `Exec` et ferait sauter `PULSE_PROP_OVERRIDE` et `--l
 | `scripts/crop.sh <image> <géométrie> [sortie]` | recadre une capture | `magick` (`imagemagick`) |
 | `scripts/test-outputs.sh [sway\|hyprland] [-v]` | teste la répartition des espaces (et `$mod+N`, `$mod+Ctrl+N`, début de session) dans une session isolée | `sway` ou `hyprland`, `jq`, `zenity`, `qs` |
 | `scripts/test-service-lifecycle.py [--compositor sway\|hyprland]` | Bluez/FileOps, notifications et rechargements isolés ; BlueZ et commandes factices | `python`, `python-gobject` (Gio/GLib et GTK 3), `gtk3`, `dbus` (`dbus-daemon`), `glib2` (`gdbus`), `qs`, `sway` ou `Hyprland` |
+| `scripts/test-charging.py [--compositor sway\|hyprland] [--scale 1.5]` | vraie carte, accès barre/réglages, focus natif avec clavier virtuel et contrôleur simulé | `python`, `python-gobject`, `python-pywayland`, `libxkbcommon` (`xkbcli`), `wayland` (XML de base), `dbus`, `qs`, `sway` ou `hyprland` ; QtTest |
 | `scripts/plymouth-assets.py build\|check` | images et bloc de données du thème Plymouth (`docs/PLYMOUTH.md`) ; planche de contrôle contre la référence. Jamais lancé par `install.sh` (PNG committés) | `python-cairo`, `python-numpy`, `python-pillow`, `chromium` (+ réseau : DM Sans et Inter de Google Fonts, comme la référence) |
 
 ## Prérequis système d'un nouveau PC (au-delà des paquets)

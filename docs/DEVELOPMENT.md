@@ -134,7 +134,10 @@ verrouillage).
 - `dbus-run-session -- python3 scripts/test-bluetooth-profiles.py` : service Bluez réel, appareils et commandes factices ;
   profils disponibles, concurrence, échec/reprise, lancement impossible, déconnexion et réponse invalide. Aucun accès à l’audio réel.
 
-- `python3 scripts/test-charging.py [--scale 1.5] [--shots DOSSIER]` : carte réelle sur Sway headless, contrôleur simulé ;
+- `python3 scripts/test-charging.py [--compositor sway|hyprland] [--scale 1.5] [--shots DOSSIER]` : carte réelle sur Sway headless ou Hyprland imbriqué, contrôleur simulé ;
+  vrais modules batterie/réglages et LazyLoader partagé, clic depuis les deux accès, aperçu au survol / épinglage,
+  fenêtre réellement active grâce à un clavier Wayland virtuel, navigation Tab puis Entrée/Espace sans focus forcé,
+  clic extérieur, reprise par le bouton Retry, commandes désactivées pendant l’action et données de santé absentes ;
   préservation / départ / retour secteur, départ armé hors secteur, relance complète, refus d’autorisation sans fausse sélection
   ni boucle de reprise, clavier / aperçu / Échap ; installation / retrait dans une racine jetable et contrôle des confirmations
   du client natif. Aucun changement de batterie réelle ; un banc qui utilise le client exige un bus système privé.
