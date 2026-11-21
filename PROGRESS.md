@@ -21,9 +21,17 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
   clavier / aperçu / Échap PASS. Client : écriture ignorée et refus détectés. Préparation : dry-run, installation, répétition,
   retrait et matériel absent PASS ; sélection réelle de l’étape par install.sh avec batterie simulée PASS.
 - Régressions : alertes batterie PASS ; démarrage complet et six rechargements du bureau Sway PASS. Test général de barre :
-  échec de largeur à 1280 px, reproduit exactement sur le code inchangé (mêmes dimensions). Installateur : tous les contrôles
-  passent sauf le dry-run Plymouth, prérequis Plymouth absent sur l’hôte de test ; aucune installation supplémentaire.
-- Déploiement et activation sur le laptop : en cours ; mesures privées et captures réelles exclues du dépôt.
+  échec de largeur à 1280 px, reproduit exactement sur le code inchangé (mêmes dimensions). Installateur complet sur le
+  laptop : **0 échec**. Sur l’hôte de développement, seul le dry-run Plymouth échoue faute du prérequis installé ;
+  contre-vérification sur le laptop réussie, aucun paquet ajouté pour les tests.
+- Carte déployée sur le laptop ; bureau relancé depuis le compositeur dans la session graphique locale active
+  (une relance depuis SSH hérite sinon d’une session distante, incompatible avec les permissions UPower natives).
+  Préparation système effectuée après authentification dans un terminal SSH avec TTY ; ticket sudo invalidé ensuite.
+  Bascule réelle préservation → pleine charge standard → préservation vérifiée par UPower et sysfs, sans erreur après
+  correction du retour D-Bus vide de l’action (test ajouté). Préservation laissée active, aucun redémarrage lancé.
+  Laptop verrouillé / écran en veille à la fin : ouverture de carte volontairement refusée par le verrou ; rendu et interactions
+  validés sur banc seulement. Persistance après redémarrage complet à contrôler au prochain démarrage normal.
+  Mesures privées et captures réelles exclues du dépôt.
 
 ## Mise à jour du laptop depuis le dépôt (2026-11-21)
 
