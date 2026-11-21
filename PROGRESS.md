@@ -3,6 +3,28 @@
 État courant seulement. Historique figé : phases 0 à 10 dans `docs/archive/PROGRESS.md`, maintenance du 2026-11-05 au 2026-11-09
 et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de besoin).
 
+## Mise à jour du laptop depuis le dépôt (2026-11-21)
+
+- Dépôt avancé de 39 commits, de `12cf999` à `c030c24`, par fast-forward. Aucun fichier suivi modifié localement ;
+  archive ZIP non suivie conservée. Copie isolée préparée avant de toucher au bureau réel.
+- Banc Sway : démarrage complet et six rechargements PASS. Banc Hyprland : scénarios Bluetooth / FileOps PASS,
+  démarrage et six rechargements effectués sans erreur de chargement ni avertissement Bluez / FileOps ; le test strict
+  échoue sur des avertissements de démontage Idle / Schedule. Contre-épreuve sur l'ancien code : avertissement Idle
+  également présent, ainsi que les anciens avertissements Bluez / FileOps ; fichiers Idle / Schedule inchangés.
+  Réserve de test conservée, pas de correction de ces services dans cette mise à jour.
+- Déploiement avec arrêt bref de Quickshell pendant le remplacement des fichiers, puis relance ciblée et rechargement
+  natif de la configuration Hyprland. Deux écrans et répartition des espaces conservés ; aucune erreur de configuration.
+- Simulation complète de l'installateur réussie. Les 119 paquets requis étaient déjà présents. `install.sh --yes` exécuté
+  dans un terminal utilisateur, configurations et étapes système appliquées, copie du greeter actualisée. Un réglage
+  Chromium reporté car navigateur rouvert a été repris après fermeture par `--no-system --no-packages --yes` : code 0,
+  aucune étape reportée. Exception de zoom Bitwarden relue à 0 (100 %). Le lanceur temporaire de suivi avait mal enregistré
+  le premier code de sortie ; retiré, contrôle du dernier passage effectué directement par subprocess.
+- Nouvelle règle audio WirePlumber liée et service relancé pour l'activer ; PipeWire / WirePlumber et services système
+  contrôlés actifs. Bureau réel vivant, deux barres / fonds, aucune erreur QML ni erreur de configuration Hyprland après
+  installation. Capture privée de la barre dans `.shots/laptop-update-20261121-bar.png` ; bancs et copie isolée retirés.
+- Aucun firmware appliqué dans cette mise à jour. Politique de batterie inchangée ; questions sur sa gestion à traiter
+  ensuite avec l'utilisateur. Réglages et données personnels conservés ; journaux bruts et captures non versionnés.
+
 ## Outils BIOS / firmwares et diagnostic SSD du laptop (2026-11-21)
 
 **État actuel : reprise du dock terminée, paquet 01.01.17 activé, aucun composant du dock proposé à la mise à jour.
