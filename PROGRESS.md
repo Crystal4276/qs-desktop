@@ -3,6 +3,19 @@
 État courant seulement. Historique figé : phases 0 à 10 dans `docs/archive/PROGRESS.md`, maintenance du 2026-11-05 au 2026-11-09
 et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de besoin).
 
+## Batterie : validation distante complémentaire sans redémarrage (2026-11-21)
+
+- Laptop verrouillé : bascule réelle préservation → pleine charge standard confirmée, relance du seul Quickshell par le
+  compositeur, pleine charge conservée après relance, puis préservation 50–80 % rétablie. Confirmation indépendante par
+  le client UPower et les seuils / mode sysfs à chaque étape ; aucune erreur. Verrou conservé, session graphique locale.
+- Préparation système en simulation : configuration existante reconnue, mode courant préservé. UPower actif et lancé
+  à la demande par D-Bus (unité non activée explicitement : comportement attendu, pas un défaut de démarrage).
+- Le verrou ne bloque pas SSH ni les contrôles matériels. Il interdit l’ouverture de la carte par-dessus la session verrouillée ;
+  focus et clics réels restent à confirmer après déverrouillage. Un cycle réel du câble et la régulation à 80 % après une
+  décharge naturelle restent des contrôles physiques ; aucune décharge forcée.
+- Redémarrage à chaud d’UPower non effectué : authentification administrateur nécessaire, aucun droit sans mot de passe
+  pour cette commande. Aucun redémarrage du laptop ; persistance au prochain démarrage normal toujours non vérifiée.
+
 ## Batterie : corrections après revue (2026-11-21)
 
 - Transitions d’alimentation suivies directement par UPower, même pendant une lecture ou écriture : un retour secteur
