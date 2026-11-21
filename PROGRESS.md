@@ -13,6 +13,14 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
 - Erreurs de lecture et d’action distinctes : rétablissement de lecture visible sans effacer un refus d’autorisation.
 - Contre-épreuves de la revue reproduites avant correction. Tests étendus : transitions natives pendant lecture / écriture,
   réponse périmée, reprise après erreur, échecs des deux copies, sauvegarde manquante et compatibilité ancienne.
+- Validation : recharge aux échelles 1 et 1,5 PASS, alertes batterie PASS, bureau complet et six rechargements isolés PASS
+  (diagnostics des backends absents et avertissement Tailscale déjà connus du banc). Rendu inchangé vérifié sur capture.
+  Dernière passe : aucun autre défaut significatif identifié dans le périmètre revu ; aucune dépendance ni permission ajoutée.
+- Déployé sur desktop puis laptop. Desktop conservé vivant pendant le remplacement ; laptop relancé par son compositeur
+  dans la session locale, verrouillage conservé. Mode préservation appliqué, seuils réels 50–80 %, aucune erreur de recharge.
+  Avertissement Qt textinput déjà connu au retour du verrou ; aucun nouveau diagnostic QML de la carte ou du service.
+  Aucun paquet, firmware ou redémarrage système. Bancs arrêtés, archive personnelle non suivie du laptop conservée.
+  Contrôle physique après déverrouillage et persistance au prochain démarrage normal toujours à faire.
 
 ## Carte batterie : préservation et départ (2026-11-21)
 
