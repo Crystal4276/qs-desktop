@@ -14,8 +14,9 @@ READY = Path("/var/lib/qs-desktop/battery-setup/ready")
 
 
 def call(bus, path, interface, method, parameters=None):
-    return bus.call_sync(NAME, path, interface, method, parameters, None,
-                         Gio.DBusCallFlags.NONE, 8000, None).unpack()[0]
+    result = bus.call_sync(NAME, path, interface, method, parameters, None,
+                          Gio.DBusCallFlags.NONE, 8000, None).unpack()
+    return result[0] if result else None  # EnableChargeThreshold has no return arguments.
 
 
 def properties(bus, path, interface):
