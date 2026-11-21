@@ -19,11 +19,21 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
 - Inventaire fwupd effectué : BIOS, SSD KIOXIA EG6 (11600106), TPM et dock Dell SD25TB4 notamment. Secteur présent,
   batterie à 100 %. `smartd` inactif / désactivé ; bureau PID 201448 conservé, aucun service système en échec ; fwupd ne
   signale aucun redémarrage nécessaire. Pas de changement QML, de réglage BIOS ou de règle sudoers.
-- **Reste bloqué par l'authentification** : sudo sans mot de passe n'autorise que pacman. `sudo -n smartctl` réclame un
-  mot de passe ; rafraîchissement du catalogue LVFS téléchargé mais import refusé (« Failed to obtain auth ») avec
-  authentification interactive désactivée. La liste de mises à jour vide avant cet import ne prouve pas que les firmwares
-  sont à jour. Bilan SMART et recherche / application des mises à jour à reprendre avec authentification disponible.
+- Authentification finalement effectuée par l'utilisateur dans un terminal GNOME sur terrier, SSH avec TTY vers le laptop.
+  Bilan `smartctl -x -j` et rafraîchissement LVFS réussis ; ticket sudo de ce terminal invalidé en fin d'intervention.
   L'exception sudo de cette intervention ne modifie pas les consignes permanentes du dépôt.
+- SMART : état PASSED, avertissement critique 0, température 29 °C, usure estimée 0 %, réserve 100 %, aucune erreur média
+  ni entrée au journal d'erreurs. Deux autotests courts anciens terminés sans erreur, un ancien interrompu ; aucun test
+  nouveau lancé. 42 arrêts non propres cumulés, à surveiller ; ces mesures n'excluent pas un défaut de contrôleur / pilote.
+- Catalogue LVFS actualisé : BIOS 1.19.0 et SSD 11600106 correspondent aux dernières versions publiées pour ces composants.
+  Huit mises à jour proposées : dock MST 9.03.004 → 09.04.03, PD 1.24.0.0 → 01.37.00.00, paquet dock 1.0.1.0 → 01.01.17.01,
+  hubs Gen2 1.13 → 01.17 et 1.20 → 01.23, gestion distante 1.9.0.0 → 02.03.07.00, EC SD25TB4 1.0.4.0 → 01.00.11.01 ;
+  UEFI dbx 20260402 → 20260707. Secure Boot actuellement désactivé. Capot fermé, dock et Wi-Fi présents.
+- **Aucun firmware appliqué** : l'approbation automatique a rejeté la commande globale `fwupdmgr update --assume-yes`,
+  estimant l'autorisation générale insuffisamment précise pour les firmwares du dock et dbx, et le mode différé non confirmé.
+  Aucun contournement. À reprendre après accord explicite sur les versions ciblées et vérification du mode effectif
+  `dell_kestrel.UpdateOnDisconnect` (défaut true documenté par le manuel installé 2.1.10). Activation du dock par débranchement
+  USB-C, alimentation du dock conservée ; redémarrage du laptop laissé à l'utilisateur pour dbx.
 
 ## Notifications : revue en série (2026-11-20)
 
