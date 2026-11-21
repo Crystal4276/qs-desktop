@@ -13,10 +13,17 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
   installés, unicité et `--no-packages`, avec matériel et commandes de paquets simulés. Test complet en copie et HOME
   jetables : **0 échec** ; syntaxe Bash et `git diff --check` OK. Premier passage bloqué par les sockets D-Bus du bac à sable ;
   relance autorisée avec bus privé réussie. Aucun changement QML ni test de compositeur nécessaire.
-- Laptop réel contrôlé en lecture seule : Dell Pro 14 PC14250, BIOS 1.19.0 (2026-09-02), alimentation secteur présente,
-  Quickshell PID 201448, aucun service système en échec. Installation ciblée des deux paquets lancée via polkit depuis
-  une unité utilisateur transitoire ; authentification en attente à ce stade. Pas de flash ni redémarrage lancé.
-  Bilan SMART et inventaire des firmwares restent à effectuer après installation.
+- Laptop réel : Dell Pro 14 PC14250, BIOS 1.19.0 (2026-09-02). Après autorisation exceptionnelle explicite de sudo par
+  l'utilisateur absent du laptop : demande polkit transitoire arrêtée, installation ciblée avec `sudo -n pacman` réussie.
+  `fwupd 2.1.10-1`, `smartmontools 7.5-2` et cinq dépendances officielles installés (46,88 Mio). Aucun firmware appliqué.
+- Inventaire fwupd effectué : BIOS, SSD KIOXIA EG6 (11600106), TPM et dock Dell SD25TB4 notamment. Secteur présent,
+  batterie à 100 %. `smartd` inactif / désactivé ; bureau PID 201448 conservé, aucun service système en échec ; fwupd ne
+  signale aucun redémarrage nécessaire. Pas de changement QML, de réglage BIOS ou de règle sudoers.
+- **Reste bloqué par l'authentification** : sudo sans mot de passe n'autorise que pacman. `sudo -n smartctl` réclame un
+  mot de passe ; rafraîchissement du catalogue LVFS téléchargé mais import refusé (« Failed to obtain auth ») avec
+  authentification interactive désactivée. La liste de mises à jour vide avant cet import ne prouve pas que les firmwares
+  sont à jour. Bilan SMART et recherche / application des mises à jour à reprendre avec authentification disponible.
+  L'exception sudo de cette intervention ne modifie pas les consignes permanentes du dépôt.
 
 ## Notifications : revue en série (2026-11-20)
 
