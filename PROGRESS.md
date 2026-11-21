@@ -13,8 +13,17 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
 - Le verrou ne bloque pas SSH ni les contrôles matériels. Il interdit l’ouverture de la carte par-dessus la session verrouillée ;
   focus et clics réels restent à confirmer après déverrouillage. Un cycle réel du câble et la régulation à 80 % après une
   décharge naturelle restent des contrôles physiques ; aucune décharge forcée.
-- Redémarrage à chaud d’UPower non effectué : authentification administrateur nécessaire, aucun droit sans mot de passe
-  pour cette commande. Aucun redémarrage du laptop ; persistance au prochain démarrage normal toujours non vérifiée.
+- Validation distante finale après authentification sudo dans un terminal SSH avec TTY : **code 0**. UPower redémarré
+  en préservation puis en pleine charge ; Quickshell brièvement figé pendant chaque relance afin de confirmer la reprise
+  du démon avant toute correction possible par le bureau. Dans les deux modes, matériel et préréglage UPower 50–80 %
+  conservés, reconnexion du bureau sans erreur. Réinstallation inchangée également testée dans les deux modes.
+- Sauvegarde initiale relue avec privilèges : complète pour l’ancien format finalisé, appartenant à root et protégée ;
+  état UPower persistant de préservation confirmé. Préréglage installé et propriété udev CHARGE_LIMIT contrôlés.
+  Tests de sauvegarde / restauration en racine jetable aussi réussis directement sur le laptop.
+- Préservation Custom 50–80 % rétablie et relue après fin du test ; bureau vivant, laptop toujours verrouillé, UPower actif.
+  Ticket sudo invalidé par le script, scripts temporaires retirés, diagnostics privés exclus du dépôt.
+  Toutes les vérifications distantes prévues sans redémarrage sont terminées. Restent les contrôles physiques décrits
+  ci-dessus et la persistance au prochain démarrage normal ; aucun redémarrage du laptop ni décharge forcée.
 
 ## Batterie : corrections après revue (2026-11-21)
 
