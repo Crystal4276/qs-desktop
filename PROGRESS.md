@@ -5,9 +5,9 @@ et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de 
 
 ## Outils BIOS / firmwares et diagnostic SSD du laptop (2026-11-21)
 
-**État actuel : outils installés et installateur publié, bilan SSD bon ; préparation du dock partielle après erreur USB,
-à reprendre sur place avant de conclure. Retentative demandée, mais aucun nouveau flash après vérification et confirmation
-qu'aucune personne n'est sur place. Paquet complet 01.01.17 inspecté et empreinte validée. Secure Boot / dbx inchangés.**
+**État actuel : reprise du dock terminée, paquet 01.01.17 activé, aucun composant du dock proposé à la mise à jour.
+Hub RTS5 actif en 1.23 ; écrans / clavier / souris validés et réseau / charge contrôlés. Secure Boot / dbx inchangés.
+Outils installés et installateur publié ; bilan SSD bon. Détail de la vérification finale ci-dessous.**
 
 - Plan approuvé : `install.sh` ajoute `fwupd` et `smartmontools` avec les profils d'énergie quand une batterie est détectée,
   pour les profils travail et jeux. Dépendances et documentation mises à jour ; aucun modèle Dell codé en dur.
@@ -87,6 +87,25 @@ qu'aucune personne n'est sur place. Paquet complet 01.01.17 inspecté et emprein
   cette activation, attendre sa fin puis reconnecter et relire toutes les versions. Vérifier USB / Ethernet / écrans.
   Décider seulement alors d'une réapplication cohérente du CAB complet 01.01.17 avec les contrôles natifs fwupd. Si une
   réinitialisation électrique est nécessaire ensuite, la distinguer de l'activation afin de ne pas couper une écriture en cours.
+
+### Reprise du dock : paquet complet installé et activé (2026-11-21)
+
+- Après activation de la préparation initiale, les versions actives confirmaient une installation encore partielle.
+  Réapplication du **seul CAB complet 01.01.17**, dont le SHA-256 a été contrôlé avant écriture ; son contenu regroupe
+  toutes les images nécessaires. Une seule commande native `fwupdmgr local-install <CAB complet> <identifiant du paquet dock>`,
+  mode différé confirmé, contrôles de sécurité conservés, aucun `--force`, aucune autre archive ni sélection globale.
+- Résultat : `Successfully installed firmware`, code retour 0. Historique natif en succès pour les sept composants,
+  y compris RTS5 01.23 ; cible RMM 02.03.07.00 également en succès. L'ancienne erreur de préparation RTS5 est résolue.
+- Activation physique après confirmation fwupd idle : USB-C retiré, alimentation du dock conservée ; message de fin
+  d'activation réussi puis reconnexion. Fonctionnement écran / clavier / souris confirmé, Ethernet et charge contrôlés.
+- Versions actives relues : paquet 1.1.17.1, MST 9.04.003, PD 1.37.0.0, RTS0 Gen2 1.17, RTS5 Gen2 1.23, EC 1.0.11.1.
+  LAN 2.27, RTS0 Gen1 1.17 et Thunderbolt 44.83 conservés. RMM n'est plus énuméré séparément après reconnexion, même avec
+  `--show-all` : succès d'installation confirmé dans l'historique, mais pas de seconde lecture indépendante de sa version.
+- `get-updates` ne propose plus aucune mise à jour du dock ; seule dbx reste proposée et n'a pas été touchée.
+  Aucun redémarrage système nécessaire, bureau actif et aucun service système en échec. Les scripts temporaires de flash
+  ont été retirés après succès, tickets sudo invalidés ; journaux bruts privés exclus du dépôt.
+- Leçon retenue : pour ce dock composite, utiliser un paquet complet cohérent, activer et contrôler les versions avant
+  toute autre écriture. Ne pas enchaîner plusieurs CAB sur la base des versions présentées par composant.
 
 ## Notifications : revue en série (2026-11-20)
 
