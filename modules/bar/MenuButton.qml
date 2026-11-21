@@ -21,7 +21,7 @@ Item {
         anchors.fill: parent
         visible: root.active
         // Le fond suit l'arrondi intérieur de la pilule.
-        radius: Theme.bar.pillRadius - Theme.bar.pillBorder
+        radius: Theme.bar.pillInnerRadius
         color: Theme.module.menuActiveBackground
     }
 

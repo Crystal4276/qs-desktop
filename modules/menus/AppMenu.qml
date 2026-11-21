@@ -423,7 +423,7 @@ OverlayPopup {
         color: Theme.appMenu.background
         border.width: Theme.appMenu.border
         border.color: Theme.appMenu.borderColor
-        radius: Theme.appMenu.radius
+        radius: Theme.appMenu.frameRadius
 
         // Les clics sur le cadre ne le ferment pas ; ils ferment le menu contextuel.
         MouseArea {

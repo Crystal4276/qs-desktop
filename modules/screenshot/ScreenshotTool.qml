@@ -364,7 +364,7 @@ LazyLoader {
                     anchors.bottomMargin: Theme.screenshot.gap
                     width: tools.implicitWidth + 2 * Theme.panel.padding
                     height: tools.implicitHeight + 2 * Theme.panel.padding
-                    radius: Theme.panel.radius
+                    radius: Theme.panel.frameRadius
                     color: Theme.panel.background
                     border.width: Theme.panel.border
                     border.color: Theme.panel.borderColor

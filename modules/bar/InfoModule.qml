@@ -47,7 +47,7 @@ Item {
         anchors.fill: parent
         visible: root.ownHighlight
         // Le fond suit l'arrondi intérieur de la pilule (module seul dans sa pilule).
-        radius: Theme.bar.pillRadius - Theme.bar.pillBorder
+        radius: Theme.bar.pillInnerRadius
         color: root.color
     }
 

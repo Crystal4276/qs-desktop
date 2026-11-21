@@ -31,7 +31,7 @@ Rectangle {
 
     height: Math.min(column.implicitHeight + 2 * Theme.panel.padding, maxHeight)
     clip: true
-    radius: Theme.panel.radius
+    radius: Theme.panel.frameRadius
     color: Theme.panel.background
     border.width: Theme.panel.border
     border.color: Theme.panel.borderColor

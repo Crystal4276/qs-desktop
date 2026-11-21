@@ -70,8 +70,12 @@ Règles pour Qt :
 
 ## 3. Barre et panneaux
 
+Sous Sway, les groupes de la barre et les cadres extérieurs des panneaux, menus, lanceur, notifications, OSD et outil de capture
+ont un rayon de 0 px. Sous Hyprland, ils utilisent les rayons de la charte ci-dessous. Les cartes et les contrôles intérieurs
+utilisent leurs rayons habituels sur les deux compositeurs.
+
 **Barre** (`Theme.bar`) : zone exclusive 65 px (10 de marge haute + pilule de 55 bordure comprise) ; pilules fond `mantle`, bordure
-1 px `overlay0`, rayon 20 ; 10 px entre pilules et sur les côtés ; padding des modules 10 ; une seule bordure arrondie autour de chaque
+1 px `overlay0`, rayon 20 ; 10 px entre pilules et sur les côtés ; padding des modules 10 ; une seule bordure autour de chaque
 groupe de modules (pilule de la config machine). Horloge : heure à largeur fixe ; date ajustée à son texte, précédée
 d’une seule espace Inter après le glyphe du calendrier. Espaces de travail : glyphes 34 px, neuf couleurs Catppuccin par position :
 `green`, `teal`, `sapphire`, `blue`, `lavender`, `mauve`, `pink`, `peach`, `red`. Chaque barre recommence au début et utilise les
@@ -109,8 +113,8 @@ au contenu jusqu’à 10 px du bas ; le curseur et sa gouttière reprennent les 
 
 ## 5. Lanceur
 
-`Theme.launcher` : couleurs Rofi (`rofiBg`, `rofiFg`, `rofiSel`, prompt `rofiImg`), Inter 20 pt, sélection `green`, cadre arrondi
-vers le haut et la gauche. Icônes d’applications de 32 px. Les lignes gardent 10 px entre le cadre d’icône et le texte (`itemSpacing` +
+`Theme.launcher` : couleurs Rofi (`rofiBg`, `rofiFg`, `rofiSel`, prompt `rofiImg`), Inter 20 pt, sélection `green`, cadre de rayon 20 px sous
+Hyprland. Icônes d’applications de 32 px. Les lignes gardent 10 px entre le cadre d’icône et le texte (`itemSpacing` +
 `itemTextMargin`, comme l’espacement du menu) ; l’en-tête conserve son espacement Rofi.
 
 ## 6. Panneau de réglages

@@ -67,7 +67,7 @@ PanelWindow {
 
         implicitWidth: row.implicitWidth + 2 * Theme.panel.padding
         implicitHeight: row.implicitHeight + 2 * Theme.panel.padding
-        radius: Theme.panel.radius
+        radius: Theme.panel.frameRadius
         color: Theme.panel.background
         border.width: Theme.panel.border
         border.color: Theme.panel.borderColor

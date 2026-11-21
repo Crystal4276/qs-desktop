@@ -172,7 +172,7 @@ OverlayPopup {
     Rectangle {
         id: frame
 
-        // Centré, arrondi vers le haut et la gauche comme Rofi.
+        // Cadre centré dans la zone utile.
         x: Math.floor((parent.width - width) / 2)
         y: Math.floor((parent.height - height) / 2)
         width: Theme.launcher.width

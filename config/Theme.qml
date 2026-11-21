@@ -9,6 +9,9 @@ import Quickshell
 Singleton {
     id: root
 
+    // SWAYSOCK est aussi le signal utilisé par Compositor.
+    readonly property bool squareSurfaceCorners: !!Quickshell.env("SWAYSOCK")
+
     // § 1 — Toutes les couleurs, ici seulement : les autres groupes y font référence (avec une opacité au besoin).
     readonly property QtObject color: QtObject {
         // Palette Catppuccin Mocha (statique, aucun générateur)
@@ -88,7 +91,8 @@ Singleton {
         readonly property int pillBorder: 1
         readonly property color pillBorderColor: root.color.overlay0
         readonly property color pillColor: root.color.mantle
-        readonly property int pillRadius: 20
+        readonly property int pillRadius: root.squareSurfaceCorners ? 0 : 20
+        readonly property int pillInnerRadius: Math.max(0, pillRadius - pillBorder)
         readonly property int marginTop: 10
         readonly property int spacing: 10              // entre pilules
         readonly property int marginSide: 10
@@ -141,6 +145,7 @@ Singleton {
         readonly property int border: 1
         readonly property color borderColor: root.color.overlay0
         readonly property int radius: 20
+        readonly property int frameRadius: root.squareSurfaceCorners ? 0 : radius
         readonly property int padding: 15
         readonly property int spacing: 10
         readonly property int fontSize: 20                  // texte principal (lanceur)
@@ -378,7 +383,7 @@ Singleton {
         readonly property int border: 1
         readonly property color frame: root.color.overlay2
         readonly property color frameCritical: root.color.peach
-        readonly property int radius: 15
+        readonly property int radius: root.squareSurfaceCorners ? 0 : 15
         readonly property int paddingV: 16
         readonly property int paddingH: 8
         readonly property int textPadding: 32         // icône → texte
@@ -436,7 +441,7 @@ Singleton {
         readonly property color background: root.color.rofiBg
         readonly property int border: 1
         readonly property color borderColor: root.color.overlay0
-        readonly property int radius: 20
+        readonly property int radius: root.squareSurfaceCorners ? 0 : 20
         readonly property int padding: 15
         readonly property int spacing: 15
         readonly property color searchButton: root.color.rofiSel
@@ -469,6 +474,7 @@ Singleton {
         readonly property int border: 1
         readonly property color borderColor: root.color.overlay0
         readonly property int radius: 20
+        readonly property int frameRadius: root.squareSurfaceCorners ? 0 : radius
         readonly property int itemPadding: 5
         readonly property int itemMargin: 2
         readonly property int itemRadius: 20

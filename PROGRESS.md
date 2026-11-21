@@ -3,6 +3,19 @@
 État courant seulement. Historique figé : phases 0 à 10 dans `docs/archive/PROGRESS.md`, maintenance du 2026-11-05 au 2026-11-09
 et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de besoin).
 
+## Angles droits pour les cadres Quickshell sous Sway (2026-11-21)
+
+- Rayon extérieur nul sous Sway pour les groupes de la barre, les panneaux, le menu, le lanceur, les notifications,
+  l’OSD et la barre d’outils de capture. Les fonds de survol de la barre suivent son cadre. Les cadres sous Hyprland et
+  les éléments intérieurs des deux bureaux reprennent leurs rayons habituels.
+- Comparaison avant/après sur Sway headless et Hyprland imbriqué, aux échelles 1 et 1,5. Contrôle des quatre coins
+  sur les surfaces concernées, du survol de la barre et d’une liste intérieure. L’affichage de la barre d’outils
+  de capture a été forcé sur le banc pour contrôler le cadre indépendamment du flux de capture.
+- Démarrage complet et six rechargements réussis sur chaque banc. Carte batterie et ouverture/fermeture depuis la
+  barre et les réglages validées aux deux échelles et sur les deux compositeurs. Captures dans `.shots/coins-quickshell/`.
+- Rechargement du bureau Hyprland réel confirmé au même PID et sans nouvelle erreur QML observée. Une barre et un fond
+  sont présents sur chacun des trois écrans. Bancs arrêtés.
+
 ## Batterie : carte entièrement validée sur banc (2026-11-21)
 
 - Tests étendus avec les vrais BatteryModule, SettingsButton, Panels / LazyLoader, BatteryPanel et Charging : ouverture
