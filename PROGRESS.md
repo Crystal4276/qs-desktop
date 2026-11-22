@@ -10,6 +10,16 @@
 État courant seulement. Historique figé : phases 0 à 10 dans `docs/archive/PROGRESS.md`, maintenance du 2026-11-05 au 2026-11-09
 et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de besoin).
 
+## GRUB : noyau standard par défaut (2026-11-22)
+
+- Choix explicite de l’utilisateur : démarrer par défaut sur le noyau standard. Surcharge native de GRUB
+  avec l’identifiant stable `arch-linux.efi`, indépendante de l’ordre du menu et des fichiers gérés par Horizon.
+- Quatre UKI vérifiées : standard 7.3.5 et LTS 6.18.64, avec leurs secours ; sections noyau comparées aux fichiers
+  installés. Sauvegarde préalable, génération temporaire, syntaxe GRUB validée et remplacement atomique du menu.
+  Aucun `next_entry` actif ; entrées LTS et secours conservées. Aucun paquet, initramfs ou firmware modifié.
+- Aucun redémarrage lancé ; le noyau courant reste le LTS 6.18.63 jusqu’au prochain démarrage. Bureau réel vivant.
+  L’effet du noyau standard sur les décrochages liés à la recharge reste à vérifier après ce démarrage.
+
 ## Recharge : diagnostic des décrochages audio (2026-11-22)
 
 - Comparaison de quatre chemins, chacun répété : Chromium via PipeWire-Pulse et lecture native PipeWire,
