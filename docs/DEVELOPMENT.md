@@ -140,7 +140,10 @@ verrouillage).
   clic extérieur, reprise par le bouton Retry, commandes désactivées pendant l’action et données de santé absentes ;
   préservation / départ / retour secteur, départ armé hors secteur, relance complète, refus d’autorisation sans fausse sélection
   ni boucle de reprise, clavier / aperçu / Échap ; installation / retrait dans une racine jetable et contrôle des confirmations
-  du client natif. Aucun changement de batterie réelle ; un banc qui utilise le client exige un bus système privé.
+  du client natif. Relectures périodiques : texte, opacité, sélection, focus et géométrie stables ; choix pendant une lecture lente.
+  `--no-native-keyboard` permet les contrôles visuels avec touches synthétiques sans pywayland : aucune preuve de focus
+  natif ni de navigation Tab dans ce mode. Le mode par défaut conserve ces contrôles.
+  Aucun changement de batterie réelle ; un banc qui utilise le client exige un bus système privé.
 
 - `python3 scripts/test-battery.py` : service Battery réel, source de données simulée et `notify-send` factice ;
   couleurs, seuils 30 % / 15 %, urgence, absence de doublons et réarmement en charge. Aucune décharge ni notification réelle.

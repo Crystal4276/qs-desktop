@@ -18,6 +18,8 @@ Singleton {
     property bool again: false
     property string attempted: ""   // a failed automatic request is retried only by a click or a power-source change
     readonly property bool busy: reader.busy || setter.busy
+    readonly property bool loading: reader.busy && !status.battery
+    readonly property bool changing: setter.busy
     readonly property var details: status.battery ?? ({})
     readonly property bool supported: details.ChargeThresholdSupported === true
     readonly property bool configured: status.configured === true && details.ChargeStartThreshold === 50 && details.ChargeEndThreshold === 80
@@ -29,9 +31,10 @@ Singleton {
     readonly property int limit: mode === "preserve" ? 80 : mode === "full" ? 100 : 0
     readonly property string program: Quickshell.shellPath("scripts/batteryctl.py")
 
+    // A selection during a read is applied by reader.onFinished; the latest choice wins.
     // Public actions are shared by every screen. Never start a second hardware action concurrently.
     function select(departure: bool): void {
-        if (!configured || busy)
+        if (!configured || changing)
             return;
         state.phase = departure ? (onBattery ? "armed" : "connected") : "preserve";
         state.lastOnline = !onBattery;

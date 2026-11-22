@@ -92,7 +92,7 @@ Panel {
             title: "Preserve · 80 %"
             subtitle: "Daily use on AC"
             checked: !Charging.departure && Charging.applied
-            enabled: Charging.configured && !Charging.busy
+            enabled: Charging.configured && !Charging.changing
             opacity: enabled ? 1 : Theme.panel.disabledOpacity
             onClicked: Charging.select(false)
         }
@@ -103,7 +103,7 @@ Panel {
             title: "Full charge · 100 %"
             subtitle: "Prepare a departure"
             checked: Charging.departure && Charging.applied
-            enabled: Charging.configured && !Charging.busy
+            enabled: Charging.configured && !Charging.changing
             opacity: enabled ? 1 : Theme.panel.disabledOpacity
             onClicked: Charging.select(true)
         }
@@ -111,7 +111,7 @@ Panel {
 
     Text {
         Layout.fillWidth: true
-        text: Charging.busy ? "Checking charging mode…"
+        text: Charging.loading || Charging.changing ? "Checking charging mode…"
             : !Charging.supported ? "Charging modes are not supported by this battery controller."
             : !Charging.configured ? "Charging modes have not been configured on this computer."
             : Charging.departure ? "A full charge is allowed for your next departure. Preservation returns automatically when you reconnect after leaving."

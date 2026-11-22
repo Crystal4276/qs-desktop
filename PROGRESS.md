@@ -10,6 +10,21 @@
 État courant seulement. Historique figé : phases 0 à 10 dans `docs/archive/PROGRESS.md`, maintenance du 2026-11-05 au 2026-11-09
 et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de besoin).
 
+## Batterie : relectures sans scintillement (2026-11-22)
+
+- Relectures périodiques séparées du chargement initial et des écritures : les tuiles restent utilisables et ne pâlissent
+  plus ; le texte explicatif, le focus et la hauteur restent stables. Choix pendant une lecture lente appliqué ensuite,
+  commandes toujours sérialisées. Cadence et politique de recharge conservées.
+- Régression reproduite sur le code initial : boutons estompés, focus perdu et hauteur variant de 20 px à chaque lecture.
+  Nouveau test en échec sur cet état, puis réussi avec la correction, y compris sur un déclenchement du timer réel.
+- Tests de la carte sur Sway et Hyprland, échelles 1 et 1,5 : PASS. Changements de mode, refus d’autorisation sans boucle,
+  erreurs de lecture, transitions rapides secteur / batterie et persistance après relance : PASS sur contrôleur simulé.
+  Captures vérifiées dans `.shots/battery-flicker/`. Aucune action sur la batterie réelle ni installation de paquet.
+- Option de banc `--no-native-keyboard` : touches synthétiques et contrôles visuels sans pywayland ; mode natif par défaut
+  conservé. Clavier / activation natifs non revérifiés ici, module absent. Aucun nouvel avertissement QML sur les bancs.
+- Déployé : rechargement automatique confirmé, même instance réelle vivante et aucune nouvelle erreur QML.
+  Mode préservation confirmé sans erreur ; bancs arrêtés.
+
 ## Angles droits pour les cadres Quickshell sous Sway (2026-11-21)
 
 - Rayon extérieur nul sous Sway pour les groupes de la barre, les panneaux, le menu, le lanceur, les notifications,

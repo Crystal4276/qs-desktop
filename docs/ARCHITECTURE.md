@@ -780,7 +780,9 @@ Les web apps conservent leur hôte `open-link` et le focus de la fenêtre qui re
   l’exécution du bureau ; des débranchements / rebranchements entièrement effectués bureau arrêté ne peuvent être reconstruits.
 - Sélection verte seulement après confirmation du contrôleur. Erreur visible et bouton de reprise, pas de boucle d’authentification.
   Transitions natives traitées immédiatement, indépendamment des commandes en cours ; erreurs de lecture et d’action distinctes.
-  Lectures : événements UPower et 60 s en fond / 5 s carte ouverte. Sans batterie, aucune commande ; sans préparation, lecture seule.
+  Lectures : événements UPower et 60 s en fond / 5 s carte ouverte, sans changement visuel pendant une relecture.
+  Un choix fait pendant une lecture est appliqué après son succès ; les commandes restent sérialisées.
+  Chargement initial et changement de mode seuls affichent un état occupé. Sans batterie, aucune commande ; sans préparation, lecture seule.
 - `battery-setup.py`, appelé par l’étape système d’`install.sh` sur laptop, prépare les seuils et le préréglage matériel UPower
   (`61-qs-desktop-battery.hwdb`). Nécessaire pour conserver 50–80 % après une pleine charge et une relance du démon : UPower
   mémorise le choix et charge les seuils au démarrage. Sauvegarde initiale dans `/var/lib/qs-desktop/battery-setup`, relance ciblée

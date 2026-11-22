@@ -194,6 +194,7 @@ import qs.services
 import qs.modules.bar
 import qs.modules.menus
 ShellRoot {
+ property bool nativeKeyboard: true
  PanelWindow {
   id: bar
   anchors { top: true; left: true; right: true }
@@ -236,10 +237,12 @@ ShellRoot {
   function click(name: string): void { events.mouseClick(find(panel.frameItem,name)); }
   function press(full: bool, enter: bool): void {
    const tile = find(panel.frameItem, full ? "battery-full" : "battery-preserve");
+   if (!nativeKeyboard) tile.forceActiveFocus();
    for(let i=0; i<8 && !tile.activeFocus; i++) events.keyClick(Qt.Key_Tab);
    if (!tile.activeFocus) throw new Error("Tile unreachable by Tab");
    events.keyClick(enter ? Qt.Key_Return : Qt.Key_Space);
   }
+  function focusFull(): void { find(panel.frameItem,"battery-full").forceActiveFocus(); }
   function pressEscape(): void { events.keyClick(Qt.Key_Escape); }
   function shot(path: string): void { panel.frameItem.grabToImage(r => r.saveToFile(path)); }
   function state(): string {
@@ -249,6 +252,8 @@ ShellRoot {
     barShown:button.visible,loaded:!!panel,active:focusProbe.windowActive,settingsVisible:settings?.visible ?? false,
     visible:panel?.visible ?? false,preview:panel?.previewing ?? false,height:f?.height ?? 0,max:f?.maxHeight ?? 0,width:f?.width ?? 0,
     preserve:find(f,"battery-preserve")?.checked ?? false,full:find(f,"battery-full")?.checked ?? false,
+    opacity:find(f,"battery-full")?.opacity, preserveOpacity:find(f,"battery-preserve")?.opacity,
+    focus:find(f,"battery-full")?.activeFocus ?? false,
     texts:texts(f),enabled:find(f,"battery-full")?.enabled ?? false});
   }
  }
@@ -280,7 +285,7 @@ print(json.dumps(s))
 '''
 
 
-def card_test(work, shots, scale, compositor_kind="sway"):
+def card_test(work, shots, scale, compositor_kind="sway", native_keyboard=True):
     root = work / "shell"
     shutil.copytree(REPO, root, ignore=shutil.ignore_patterns(".git", ".shots", ".agents", ".codex", ".aws", "__pycache__"))
     (root / "services/Battery.qml").write_text(FIXTURE)
@@ -289,7 +294,7 @@ def card_test(work, shots, scale, compositor_kind="sway"):
     charging.write_text(charging.read_text().replace("target: UPower", "target: TestPower")
                         .replace("UPower.onBattery", "TestPower.onBattery"))
     (root / "services/Session.qml").write_text("pragma Singleton\nimport QtQuick\nQtObject { property bool lockActive: false }")
-    (root / "shell.qml").write_text(SHELL)
+    (root / "shell.qml").write_text(SHELL.replace("property bool nativeKeyboard: true", "property bool nativeKeyboard: " + str(native_keyboard).lower()))
     audio = (REPO / "scripts/tests/bar/Audio.qml").read_text()
     (root / "services/Audio.qml").write_text(audio.replace("function toggleMute()", 'function outputIcon(node) { return "audio-card"; } function toggleMute()'))
     (root / "services/Session.qml").write_text("pragma Singleton\nimport QtQuick\nQtObject { property bool lockActive: false; property bool keepAwake: false; function screenshot() {} function lock() {} function logout() {} function reboot() {} function poweroff() {} }")
@@ -355,29 +360,30 @@ def card_test(work, shots, scale, compositor_kind="sway"):
             until(lambda: (work / "wayland").exists())
             env.update(WAYLAND_DISPLAY=(work / "wayland").read_text().strip(), QT_QPA_PLATFORM="wayland")
 
-        # A real Wayland keyboard is needed for keyboard-enter and native window activation.
-        from pywayland.client import Display
-        protocols = work / "protocols"
-        protocols.mkdir()
-        run(sys.executable,"-m","pywayland.scanner","-i","/usr/share/wayland/wayland.xml",str(REPO/"scripts/tests/charging/virtual-keyboard-unstable-v1.xml"),"-o",str(protocols))
-        sys.path.insert(0,str(work))
-        WlSeat = importlib.import_module("protocols.wayland").WlSeat
-        manager_type = importlib.import_module("protocols.virtual_keyboard_unstable_v1").ZwpVirtualKeyboardManagerV1
-        keyboard_display = Display(str(runtime/env["WAYLAND_DISPLAY"]))
-        keyboard_display.connect()
-        registry = keyboard_display.get_registry()
-        objects = {}
-        def global_added(reg,name,interface,version):
-            if interface == WlSeat.name: objects["seat"] = reg.bind(name,WlSeat,min(version,7))
-            if interface == manager_type.name: objects["manager"] = reg.bind(name,manager_type,1)
-        registry.dispatcher["global"] = global_added
-        keyboard_display.roundtrip()
-        keyboard = objects["manager"].create_virtual_keyboard(objects["seat"])
-        keymap = run("xkbcli","compile-keymap").encode()+b"\0"
-        with tempfile.TemporaryFile() as mapping:
-            mapping.write(keymap);mapping.flush()
-            keyboard.keymap(1,mapping.fileno(),len(keymap))
+        if native_keyboard:
+            # A real Wayland keyboard is needed for keyboard-enter and native window activation.
+            from pywayland.client import Display
+            protocols = work / "protocols"
+            protocols.mkdir()
+            run(sys.executable,"-m","pywayland.scanner","-i","/usr/share/wayland/wayland.xml",str(REPO/"scripts/tests/charging/virtual-keyboard-unstable-v1.xml"),"-o",str(protocols))
+            sys.path.insert(0,str(work))
+            WlSeat = importlib.import_module("protocols.wayland").WlSeat
+            manager_type = importlib.import_module("protocols.virtual_keyboard_unstable_v1").ZwpVirtualKeyboardManagerV1
+            keyboard_display = Display(str(runtime/env["WAYLAND_DISPLAY"]))
+            keyboard_display.connect()
+            registry = keyboard_display.get_registry()
+            objects = {}
+            def global_added(reg,name,interface,version):
+                if interface == WlSeat.name: objects["seat"] = reg.bind(name,WlSeat,min(version,7))
+                if interface == manager_type.name: objects["manager"] = reg.bind(name,manager_type,1)
+            registry.dispatcher["global"] = global_added
             keyboard_display.roundtrip()
+            keyboard = objects["manager"].create_virtual_keyboard(objects["seat"])
+            keymap = run("xkbcli","compile-keymap").encode()+b"\0"
+            with tempfile.TemporaryFile() as mapping:
+                mapping.write(keymap);mapping.flush()
+                keyboard.keymap(1,mapping.fileno(),len(keymap))
+                keyboard_display.roundtrip()
 
         def start():
             return subprocess.Popen(["dbus-run-session", "--", "qs", "-p", str(root)], env=env,
@@ -410,9 +416,33 @@ def card_test(work, shots, scale, compositor_kind="sway"):
         until(lambda: state()["applied"])
         assert not state()["loaded"], state()
         ipc("open")
-        until(lambda: state()["visible"] and state()["active"])
+        until(lambda: state()["visible"] and (not native_keyboard or state()["active"]))
         s = settled()
         assert s["preserve"] and s["mode"] == "preserve" and s["height"] < s["max"], s
+        # Routine reads must preserve the displayed card, including focus and geometry.
+        ipc("focusFull")
+        def appearance(s):
+            return {key: s[key] for key in ("height", "width", "texts", "enabled", "opacity", "preserveOpacity", "preserve", "full", "focus")}
+        baseline = appearance(state())
+        (work / "delay").write_text(".35")
+        for automatic in (False, False, True):
+            if not automatic:
+                ipc("refresh")
+            until(lambda: state()["busy"])
+            assert appearance(state()) == baseline, (baseline, state())
+            assert appearance(settled()) == baseline
+        # A choice made during a slow read is applied once that read finishes.
+        before = (work / "writes").read_text()
+        ipc("refresh")
+        until(lambda: state()["busy"])
+        ipc("click", "battery-full")
+        until(lambda: state()["wanted"] == "full")
+        until(lambda: state()["mode"] == "full" and not state()["busy"])
+        assert (work / "writes").read_text()[len(before):].splitlines() == ["full"]
+        (work / "delay").write_text("0")
+        ipc("choose", "false")
+        until(lambda: state()["preserve"] and not state()["busy"])
+        print(f"PASS silent periodic refresh and choice during read {compositor_kind} {scale}×")
         if shots:
             shots.mkdir(parents=True, exist_ok=True)
             ipc("shot", str(shots / f"battery-preserve-{scale}.png"))
@@ -447,7 +477,7 @@ def card_test(work, shots, scale, compositor_kind="sway"):
         pid = until(lambda: run("pgrep", "-P", str(shell.pid), "qs"))
         until(lambda: state()["applied"] and not state()["busy"])
         ipc("open")
-        until(lambda: state()["visible"] and state()["active"])
+        until(lambda: state()["visible"] and (not native_keyboard or state()["active"]))
         assert state()["full"] and (work / "writes").read_text() == before
         update(onBattery=True)
         update(onBattery=False)
@@ -493,7 +523,7 @@ def card_test(work, shots, scale, compositor_kind="sway"):
         # Mouse actions and disabled controls while an action is pending.
         ipc("close")
         ipc("open")
-        until(lambda: state()["visible"] and state()["active"])
+        until(lambda: state()["visible"] and (not native_keyboard or state()["active"]))
         (work / "delay").write_text(".5")
         ipc("click", "battery-full")
         until(lambda: state()["busy"])
@@ -507,7 +537,7 @@ def card_test(work, shots, scale, compositor_kind="sway"):
         ipc("settingsOpen")
         until(lambda: state()["settingsVisible"])
         ipc("fromSettings")
-        until(lambda: state()["visible"] and state()["active"] and not state()["settingsVisible"])
+        until(lambda: state()["visible"] and (not native_keyboard or state()["active"]) and not state()["settingsVisible"])
         # Unavailable health values must be omitted, never rendered as zero/NaN.
         data = json.loads((work / "controller.json").read_text())
         data["battery"].update(Capacity=0, Temperature=0, ChargeCycles=-1, EnergyFull=0)
@@ -543,7 +573,7 @@ def card_test(work, shots, scale, compositor_kind="sway"):
                         ) and not ("qt.qpa.wayland.textinput:" in line and "Trying to disable" in line) # Qt diagnostic also seen on the real desktop
                     ]
         assert not warnings, "\n".join(warnings)
-        print(f"PASS real card {compositor_kind} {scale}×: real bar/settings/lazy loader, mouse, native window focus, Tab/Enter/Space, outside click, keyboard/preview/Escape, preservation/full/AC-return, off-AC arming, restart persistence, authorization failure/no retry loop, rapid AC return during reads/writes, read recovery, unavailable configuration")
+        print(f"PASS real card {compositor_kind} {scale}× (native keyboard: {native_keyboard}): real bar/settings/lazy loader, mouse, {'native window focus and keys' if native_keyboard else 'synthetic keys only'}, Tab/Enter/Space, outside click, keyboard/preview/Escape, preservation/full/AC-return, off-AC arming, restart persistence, authorization failure/no retry loop, rapid AC return during reads/writes, read recovery, unavailable configuration")
     finally:
         if shell and shell.poll() is None:
             os.killpg(shell.pid, signal.SIGTERM)
@@ -560,12 +590,13 @@ if __name__ == "__main__":
     parser.add_argument("--shots", type=Path)
     parser.add_argument("--compositor", choices=["sway", "hyprland"], default="sway")
     parser.add_argument("--scale", type=float, default=1)
+    parser.add_argument("--no-native-keyboard", action="store_true", help="Use synthetic key events; skip native window activation checks")
     args = parser.parse_args()
     with tempfile.TemporaryDirectory(prefix="qs-chg-") as tmp:
         work = Path(tmp)
         try:
             setup_test(work)
-            card_test(work, args.shots.resolve() if args.shots else None, args.scale, args.compositor)
+            card_test(work, args.shots.resolve() if args.shots else None, args.scale, args.compositor, not args.no_native_keyboard)
         except Exception:
             for name in ("qs.log", "sway.log"):
                 if (work / name).exists():
