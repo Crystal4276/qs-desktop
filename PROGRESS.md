@@ -10,6 +10,22 @@
 État courant seulement. Historique figé : phases 0 à 10 dans `docs/archive/PROGRESS.md`, maintenance du 2026-11-05 au 2026-11-09
 et phases 11-12 dans `docs/archive/PROGRESS-11-12.md` (à n'ouvrir qu'en cas de besoin).
 
+## Recharge : diagnostic des décrochages audio (2026-11-22)
+
+- Comparaison de quatre chemins, chacun répété : Chromium via PipeWire-Pulse et lecture native PipeWire,
+  vers casque Bluetooth et haut-parleurs ALSA. Même fichier PCM à faible amplitude ; quantum réellement vérifié
+  à 1024 échantillons / 48 kHz. Témoins de 20 s sans nouvelle erreur pour les huit essais.
+- Décrochages aux bascules sur les quatre chemins, y compris sans navigateur et sans Bluetooth. Retards de déclenchement
+  de graphe atteignant 241 ms ; traitement des pilotes au plus 3,14 ms. Défaut reproduit sans trace noyau active.
+- Trace ftrace dédiée : huit bascules observées, une écriture de chaque attribut par bascule, sans répétition anormale.
+  Seuil de départ : 8,68–13,05 ms ; seuil d’arrêt : 89,38–106,14 ms ; mode : 86,09–122,20 ms.
+  Durées longues retrouvées dans dell_smbios_wmi_call, via UPower. Chemin noyau / firmware Dell localisé ;
+  attente du pilote et blocage interne du firmware non encore départagés. Aucune interruption SMI globale démontrée.
+- Diagnostics et rapport conservés dans `.shots/charging-audio/`. Première collecte JSON perdue puis reprise correctement ;
+  ses essais ne figurent pas dans les huit mesures comparatives. Aucun correctif de production ni réglage de latence,
+  codec ou priorité appliqué. Aucun paquet, firmware ou redémarrage. Sondes arrêtées, instance ftrace retirée,
+  mode préservation, sortie et volumes initiaux rétablis ; bureau réel vivant.
+
 ## Batterie : relectures sans scintillement (2026-11-22)
 
 - Relectures périodiques séparées du chargement initial et des écritures : les tuiles restent utilisables et ne pâlissent
